@@ -1,0 +1,266 @@
+#
+# NOTE: The indentation in this file is crucial for proper processing. Please keep the existing indentation when editing it.
+#
+
+# Directory for data files.
+sonatypeWork: ./sonatype-work/clm-server
+
+# Path to a license file to automatically install if unlicensed.
+#licenseFile: ./license.lic
+
+# Base URL of the Sonatype CLM server for user facing links back to the server.
+#baseUrl: http://localhost:8070/
+
+# Hour of the day(0-23) to schedule Policy Monitoring execution. The default is midnight.
+#policyMonitoringHour: 0
+
+# If true, allows anonymous policy evaluation from client tooling (e.g. CLI, CI, Maven).
+# If false, forces authentication and disallows anonymous access.
+# Defaults to false for security.
+#anonymousClientAccessAllowed: false
+
+# Enables/disables cross-site request forgery protection. Defaults to true for increased security.
+#csrfProtection: true
+
+# A custom fragment to add to the "user-agent" for HTTP calls
+#userAgentSuffix: "example fragment"
+
+# HTTP-specific options.
+server:
+  # The context path for the application. Note that this must have a leading slash.
+  applicationContextPath: /
+
+  applicationConnectors:
+  
+    - type: http
+    
+      # The port on which the HTTP server listens for service requests.
+      # Because Java cannot drop privileges in a POSIX system, these
+      # ports cannot be in the range 1-1024. A port value of 0 will
+      # make the OS use an arbitrary unused port.
+      port: 8070
+      
+      # The hostname of the interface to which the application HTTP server socket
+      # will be bound. If omitted, the socket will listen on all
+      # interfaces.
+      #bindHost: 127.0.0.1  # only bind to loopback
+  
+  adminConnectors:
+  
+    - type: http
+    
+      # The port on which the HTTP server listens for administrative
+      # requests. Subject to the same limitations as "port".
+      port: 8071
+      
+      # The hostname of the interface to which the admin HTTP server socket
+      # will be bound. If omitted, the socket will listen on all
+      # interfaces.
+      #bindHost: 127.0.0.1  # only bind to loopback
+
+  # HTTP request log settings.
+  requestLog:
+  
+    appenders:
+    
+        # Settings for logging to a file.
+      - type: file
+
+        # The file to which current statements will be logged.
+        currentLogFilename: ./log/request.log
+        
+        logFormat: "%clientHost %l %user [%date] \"%requestURL\" %statusCode %bytesSent %elapsedTime \"%header{User-Agent}\""
+
+        # When the log file rotates, the archived log will be renamed to this and gzipped. The
+        # %d is replaced with the previous day (yyyy-MM-dd). Custom rolling windows can be created
+        # by passing a SimpleDateFormat-compatible format as an argument: "%d{yyyy-MM-dd-hh}".
+        archivedLogFilenamePattern: ./log/request-%d.log.gz
+
+        # The number of archived files to keep.
+        archivedFileCount: 50
+
+# Notification mail settings.
+# If enabled, ensure that the baseUrl configuration setting is also enabled and correct, because generated emails often contain links to the server.
+#mail:
+
+  # The host running the SMTP server to use. 
+  #hostname: "127.0.0.1"
+
+  # The port at which the SMTP server listens on. 
+  #port: 587
+
+  # The address used as From for outgoing notification mails sent by the server.
+  #systemEmail: "SonatypeCLM@localhost"
+
+  # The username used to access the mail server.
+  #username: "anonymous"
+
+  # The password used to access the mail server.
+  #password: "guest"
+  
+  # Connect using SSL.
+  #ssl: true
+  
+  # Connect using TLS.
+  #tls: true
+
+# Notification JIRA settings.
+# Note that any user of the Nexus IQ Server will have access to see all projects and applicable issue types available
+# to the configured JIRA account. More details available in the Nexus IQ Server documentation. If enabled, ensure that
+# the baseUrl configuration setting is also enabled and correct, because generated tickets contain links to the server.
+#jira:
+  # The JIRA server address
+  #url: "https://jira.example.org"
+
+  # The username used to connect to the JIRA server
+  #username: "exampleuser"
+
+  # The password used to connect to the JIRA server
+  #password: "examplepassword"
+
+    # Any JIRA project issue type required fields without default values defined in JIRA must have their initial
+    # field values defined here in order for that project and issue type to be available for policy notifications
+    #customFields:
+    # Example 'user' type system field
+    #reporter:
+    #  name: "username"
+
+    # Example 'array' type system field
+    #labels:
+    #  - test
+    #  - bug
+
+    # Example 'version' type custom field
+    #customfield_12001:
+    #  name: "Example"
+
+    # Example 'option' type custom field
+    #customfield_10050:
+    #  value: "P1"
+
+    # Example 'number' type custom field
+    #customfield_13001: 10
+
+    # Example 'datetime' type custom field
+    #customfield_14000: "2016-11-01"
+
+# Proxy settings.
+#proxy:
+
+  # The host running the proxy server to use.
+  #hostname: "127.0.0.1"
+
+  # The port at which the proxy server listens on.
+  #port: 80
+
+  # The username used to access the proxy server.
+  #username: "anonymous"
+
+  # The password used to access the proxy server.
+  #password: "guest"
+
+# Configures reverse proxy authentication for the web UI.
+#reverseProxyAuthentication:
+
+    # Enables/disables authentication via a reverse proxy. Once the reverse proxy has authenticated a user's identity,
+    # it is expected to forward the username to the CLM server via the HTTP header configured below. The CLM server
+    # will then consider the user logged in without further password prompt.
+    #
+    # WARNING: If improperly configured, this feature poses a security vulnerability. To guard against authentication
+    #   bypass it is crucial that all HTTP access to the CLM server is proxied such that the designated username header
+    #   is only settable by the reverse proxy that performs authentication and cannot be forged by end users themselves.
+    #
+    #enabled: false
+
+    # The name of the HTTP request header that carries the username of an authenticated user.
+    #usernameHeader: "REMOTE_USER"
+
+    # For backwards compatibility of client requests - skips CSRF protection when using RUT
+    #csrfProtectionDisabled: false
+
+    # The service URL that will be redirected to when a user requests logout.
+    #logoutUrl: http://localhost/logout/index.html
+
+# Logging settings.
+logging:
+
+  # The default level of all loggers. Can be OFF, ERROR, WARN, INFO, DEBUG, TRACE, or ALL.
+  level: DEBUG
+
+  # Logger-specific settings.
+  loggers:
+    "com.sonatype.insight.scan": INFO
+    "eu.medsea.mimeutil.MimeUtil2": INFO
+    "org.apache.http": INFO
+    "org.apache.http.wire": ERROR
+    "org.eclipse.birt.report.engine.layout.pdf.font.FontConfigReader": WARN
+    "org.eclipse.jetty": INFO
+    "org.apache.shiro.web.filter.authc.BasicHttpAuthenticationFilter": INFO   # WARNING: This reveals credentials at DEBUG level
+    "com.sonatype.insight.audit":
+      appenders:
+      - type: file
+        # The file to which audit statements will be logged.
+        currentLogFilename: ./log/audit.log
+        # When the audit log file rotates, the archived audit log will be renamed to this and gzipped. The
+        # %d is replaced with the previous day (yyyy-MM-dd). Custom rolling windows can be created
+        # by passing a SimpleDateFormat-compatible format as an argument: "%d{yyyy-MM-dd-hh}".
+        #
+        # If archive is true, this must be specified.
+        archivedLogFilenamePattern: ./log/audit-%d.log.gz
+        # The number of archived audit log files to keep.
+        archivedFileCount: 50
+    #"com.sonatype.insight.policy.violation":
+      #appenders:
+        #- type: file
+          # The file to which policy violations will be logged.
+          #currentLogFilename: ./log/policy-violation.log
+          # When the policy violation log file rotates, the archived policy violation log will be renamed to this 
+          # and gzipped. The %d is replaced with the previous day (yyyy-MM-dd). Custom rolling windows can be created
+          # by passing a SimpleDateFormat-compatible format as an argument: "%d{yyyy-MM-dd-hh}".
+          #
+          # If archive is true, this must be specified.
+          #archivedLogFilenamePattern: ./log/policy-violation-%d.log.gz
+          # The number of archived policy violation log files to keep.
+          #archivedFileCount: 5
+
+  appenders:
+  
+      # Settings for logging to stdout.
+    - type: console
+    
+      # Do not display log statements below this threshold to stdout.
+      threshold: INFO
+      
+      logFormat: "%d{'yyyy-MM-dd HH:mm:ss,SSSZ'} %level [%thread] %X{username} %logger - %msg%n"
+      
+      # Settings for logging to a file.
+    - type: file
+
+      # Do not write log statements below this threshold to the file.
+      threshold: ALL
+      
+      logFormat: "%d{'yyyy-MM-dd HH:mm:ss,SSSZ'} %level [%thread] %X{username} %logger - %msg%n"
+
+      # The file to which current statements will be logged.
+      currentLogFilename: ./log/clm-server.log
+
+      # When the log file rotates, the archived log will be renamed to this and gzipped. The
+      # %d is replaced with the previous day (yyyy-MM-dd). Custom rolling windows can be created
+      # by passing a SimpleDateFormat-compatible format as an argument: "%d{yyyy-MM-dd-hh}".
+      #
+      # If archive is true, this must be specified.
+      archivedLogFilenamePattern: ./log/clm-server-%d.log.gz
+
+      # The number of archived files to keep.
+      archivedFileCount: 50
+
+# Passphrase used to encrypt the Webhook Secret Keys
+#webhookSecretPassphrase: "^d1swM!FF&qQ"
+
+#eventBus:
+  # Configures the number of threads used for the EventBus
+  # Defaults to 500 if not provided.
+  # maxPoolSize: 500
+
+# Sample data is created for new installs.
+createSampleData: true

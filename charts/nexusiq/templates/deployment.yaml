@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "nexus-iq.fullname" . }}
+  labels:
+{{ include "nexus-iq.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+{{ include "nexus-iq.labels" . | indent 7 }}
+  template:
+    metadata:
+      labels: 
+{{ include "nexus-iq.labels" . | indent 7 }}
+    spec:
+      containers:
+        - name: nexus-iq-server
+          image: "{{ .Values.nexusIQ.repository }}:{{ .Values.nexusIQ.tag }}"
+          imagePullPolicy: {{ .Values.nexusIQ.pullPolicy }}
+          ports:
+            - name: {{.Values.nexusIQ.portName}}
+              containerPort: {{.Values.nexusIQ.applicationPort}}
+            - name: metricsport
+              containerPort: {{.Values.nexusIQ.metricsPort}}
+          livenessProbe:
+            httpGet:
+              path: {{.Values.nexusIQ.livenessProbe.path}}
+              port: {{.Values.nexusIQ.applicationPort}}
+            initialDelaySeconds: {{ .Values.nexusIQ.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.nexusIQ.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.nexusIQ.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{.Values.nexusIQ.readinessProbe.path}}
+              port: {{.Values.nexusIQ.applicationPort}}
+            initialDelaySeconds: {{ .Values.nexusIQ.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.nexusIQ.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.nexusIQ.livenessProbe.failureThreshold }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts: 
+           - mountPath: /nexusiq-data
+             name: {{ template "nexus-iq.fullname" . }}-data
+      volumes:
+        - name: {{ template "nexus-iq.fullname" . }}-data
+            {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+              claimName: {{ .Values.persistence.existingClaim | default (printf "%s-%s" (include "nexus-iq.fullname" .) "data") }}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
