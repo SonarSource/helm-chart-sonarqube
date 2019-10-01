@@ -1,0 +1,314 @@
+#
+# Copyright (c) 2012-2018 Red Hat, Inc.
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+# the following section is for secure registries. when uncommented, a pull secret will be created
+#registry:
+#  host: my-secure-private-registry.com
+#  username: myUser
+#  password: myPass
+
+cheWorkspaceHttpProxy: ""
+cheWorkspaceHttpsProxy: ""
+cheWorkspaceNoProxy: ""
+cheImage: eclipse/che-server
+cheImagePullPolicy: Always
+cheKeycloakRealm: "che"
+cheKeycloakClientId: "che-public"
+#customOidcUsernameClaim: ""
+#customOidcProvider: ""
+#workspaceDefaultRamRequest: ""
+#workspaceDefaultRamLimit: ""
+#workspaceSidecarDefaultRamLimit: ""
+
+global:
+  ## ImageTag used for all che related images
+  cheImageTag: nightly
+
+  multiuser: false
+  #  This value can be passed if custom Oidc provider is used, and there is no need to deploy keycloak in multiuser mode
+  #  default (if empty) is true
+  #cheDedicatedKeycloak: false
+  ingressDomain: 192.168.99.100.nip.io
+  # See --annotations-prefix flag (https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/cli-arguments.md)
+  ingressAnnotationsPrefix: "nginx."
+  # options: default-host, single-host, multi-host
+  serverStrategy: multi-host
+
+  ## Allows to enable and configure TLS
+  tls:
+    enabled: false
+
+    ## Secret name that will be used in ALL Che Ingresses for setting TLS up
+    ## Note the helm chart does not create this secret and
+    ## it MUST be pre-created in the configured Che namespace as a wildcard certificate
+    secretName: che-tls
+
+    ## If isDeployed is set to `true` then a Certificate CRD will be created that will request
+    ## a wildcard certificate from Let's Encrypt using your specified cluster-issuer and ingressDomain.
+    ## The name of the secret will be the `secretName` specified above.
+    letsEncrypt:
+      isDeployed: false
+      clusterIissuer:
+
+
+    ## If self-signed certificate is enabled
+    ## then certificate from `tls.selfSignedCertSecretName` will be propagated to Che components' trust stores
+    useSelfSignedCerts: false
+    selfSignedCertSecretName: self-signed-cert
+
+  gitHubClientID: ""
+  gitHubClientSecret: ""
+  pvcClaim: "1Gi"
+  cheWorkspacesNamespace: ""
+  # Service account name that will be mounted to workspaces pods
+  # Note that:
+  # if `cheWorkspacesNamespace` is configured then service account with configured name will be created by helm chart during deploying Che
+  # if `cheWorkspacesNamespace` is empty then Che Server creates new namespace for each workspace and ensures that configured SA exists there
+  cheWorkspaceServiceAccount: "che-workspace"
+  # If set, Che will bind the specified cluster role to the workspace service account when creating a workspace.
+  cheWorkspaceClusterRole: ""
+  workspaceIdleTimeout: "-1"
+  log:
+    loggerConfig: ""
+    appenderName: "plaintext"
+  tracingEnabled: false
+  metricsEnabled: false
+  # Run Che and Che workspaces as the same non-root user
+  securityContext:
+    runAsUser: 1724
+    fsGroup: 1724
+  postgresDebugLogs: false
+  cheDevfileRegistryUrlFormat: "devfile-registry-%s.%s"
+  chePluginRegistryUrlFormat: "plugin-registry-%s.%s"
+
+che:
+  workspace: {}
+  ingress:
+    class: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+#    devfileRegistryUrl: "https://che-devfile-registry.openshift.io/"
+#    pluginRegistryUrl: "https://che-plugin-registry.openshift.io/v3"
+
+workspace:
+  ingress:
+    class: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /$1
+      nginx.ingress.kubernetes.io/proxy-connect-timeout: 3600
+      nginx.ingress.kubernetes.io/proxy-read-timeout: 3600
+
+cheDevfileRegistry:
+  deploy: true
+
+chePluginRegistry:
+  deploy: true
+
+jaeger:
+  deploy: false
+
+metrics:
+  ingress:
+    class: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+
+prometheus:
+  deploy: false
+  alertmanager:
+    enabled: false
+  kubeStateMetrics:
+    enabled: false
+  nodeExporter:
+    enabled: false
+  pushgateway:
+    enabled: false
+  rbac:
+    enabled: false
+  serverFiles:
+    prometheus.yml:
+      scrape_configs:
+      - job_name: che
+        static_configs:
+        - targets:
+          - che-host:8087
+
+grafana:
+  deploy: false
+  adminUser: admin
+  adminPassword: admin
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+      - name: che
+        type: prometheus
+        access: proxy
+        url: http://che-prometheus-server
+        isDefault: true
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: default
+        editable: true
+        type: file
+        folder: ''
+        orgId: 1
+        options:
+          path: /var/lib/grafana/dashboards/default
+  dashboards:
+    default:
+      chejvm:
+        json: |
+          {
+            "annotations": {
+              "list": [
+                {
+                  "builtIn": 1,
+                  "datasource": "-- Grafana --",
+                  "enable": true,
+                  "hide": true,
+                  "iconColor": "rgba(0, 211, 255, 1)",
+                  "name": "Annotations & Alerts",
+                  "type": "dashboard"
+                }
+              ]
+            },
+            "editable": true,
+            "gnetId": null,
+            "graphTooltip": 0,
+            "id": 1,
+            "links": [],
+            "panels": [
+              {
+                "aliasColors": {},
+                "bars": false,
+                "dashLength": 10,
+                "dashes": false,
+                "datasource": "che",
+                "fill": 1,
+                "gridPos": {
+                  "h": 9,
+                  "w": 12,
+                  "x": 0,
+                  "y": 0
+                },
+                "id": 2,
+                "legend": {
+                  "avg": false,
+                  "current": false,
+                  "max": false,
+                  "min": false,
+                  "show": true,
+                  "total": false,
+                  "values": false
+                },
+                "lines": true,
+                "linewidth": 1,
+                "links": [],
+                "nullPointMode": "null",
+                "percentage": false,
+                "pointradius": 5,
+                "points": false,
+                "renderer": "flot",
+                "seriesOverrides": [],
+                "spaceLength": 10,
+                "stack": false,
+                "steppedLine": false,
+                "targets": [
+                  {
+                    "expr": "jvm_memory_used_bytes{job=\"che\"}",
+                    "format": "time_series",
+                    "interval": "",
+                    "intervalFactor": 1,
+                    "legendFormat": "{{ id }}",
+                    "refId": "A"
+                  }
+                ],
+                "thresholds": [],
+                "timeFrom": null,
+                "timeShift": null,
+                "title": "Che JVM Heap",
+                "tooltip": {
+                  "shared": true,
+                  "sort": 0,
+                  "value_type": "individual"
+                },
+                "type": "graph",
+                "xaxis": {
+                  "buckets": null,
+                  "mode": "time",
+                  "name": null,
+                  "show": true,
+                  "values": []
+                },
+                "yaxes": [
+                  {
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  },
+                  {
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                  }
+                ],
+                "yaxis": {
+                  "align": false,
+                  "alignLevel": null
+                }
+              }
+            ],
+            "refresh": false,
+            "schemaVersion": 16,
+            "style": "dark",
+            "tags": [],
+            "templating": {
+              "list": []
+            },
+            "timepicker": {
+              "refresh_intervals": [
+                "5s",
+                "10s",
+                "30s",
+                "1m",
+                "5m",
+                "15m",
+                "30m",
+                "1h",
+                "2h",
+                "1d"
+              ],
+              "time_options": [
+                "5m",
+                "15m",
+                "1h",
+                "6h",
+                "12h",
+                "24h",
+                "2d",
+                "7d",
+                "30d"
+              ]
+            },
+            "timezone": "",
+            "title": "Che JVM Heap",
+            "uid": "IkmWvLLmk",
+            "version": 1
+          }

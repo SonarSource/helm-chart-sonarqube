@@ -1,0 +1,13 @@
+{{- if .Values.global.tls.letsEncrypt.isDeployed }}
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: che-wildcard-certificate
+spec:
+  secretName: {{ .Values.global.tls.secretName }}
+  issuerRef:
+    kind: ClusterIssuer
+    name: {{ .Values.global.tls.letsEncrypt.clusterIssuer }}
+  commonName: "*.{{ .Values.global.ingressDomain }}"
+
+{{- end }}
