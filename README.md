@@ -1,6 +1,6 @@
 # Oteemo Charts Repository
 
-This is an example charts repository.
+This is the Oteemo helm charts repository.
 
 ### How It Works
 
