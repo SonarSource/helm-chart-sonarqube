@@ -15,7 +15,7 @@ This chart bootstraps a SonarQube instance with a PostgreSQL database.
 To install the chart:
 
 ```bash
-$ helm install stable/sonarqube
+$ helm install oteemo.github.io/charts/sonarqube
 ```
 
 The above command deploys Sonarqube on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
