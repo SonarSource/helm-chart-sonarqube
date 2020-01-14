@@ -22,6 +22,12 @@ jobs:
         with:
           version : v2.15.2
         id: install
+        
+      - name: Configure Helm
+        run: |
+          helm init --client-only
+          helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+          helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.0.0-alpha.2
