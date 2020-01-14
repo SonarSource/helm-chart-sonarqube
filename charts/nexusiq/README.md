@@ -16,7 +16,9 @@ This chart bootstraps a Nexus IQ deployment on a cluster using Helm.
 ## Installing the Chart
 
 ### Helm 2.x + Tiller
-Currently this chart is not located within the stable helm repository. To install the chart you must fork this repo and run the helm install command locally. 
+```bash 
+$ helm install oteemo.github.io/charts/nexusiq
+```
 
 ### Helm 2.x without Tiller
 
