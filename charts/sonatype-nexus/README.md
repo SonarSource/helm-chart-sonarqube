@@ -36,7 +36,7 @@ $ helm install --dry-run --debug -f my_values.yaml ./
 To install the chart:
 
 ```bash
-$ helm install stable/sonatype-nexus
+$ helm install oteemo.github.io/charts/sonatype-nexus
 ```
 
 The above command deploys Nexus on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
