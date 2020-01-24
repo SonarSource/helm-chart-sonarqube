@@ -1,12 +1,12 @@
 replicaCount: 1
 
-nexusIQ: 
+nexusIQ:
   repository: sonatype/nexus-iq-server
   tag: 1.63.0
   pullPolicy: IfNotPresent
   metricsPort: 8071
   applicationPort: 8070
- #  env: 
+ #  env:
   #  pvPath: -Djava.util.prefs.userRoot=/some-other-dir
 
   livenessProbe:
@@ -34,36 +34,33 @@ service:
 
 ingress:
   enabled: false
-  annotations: 
+  annotations:
     # certmanager.k8s.io/cluster-issuer: "letsencrypt-prod"
     # nginx.ingress.kubernetes.io/ssl-redirect: "false"
     # nginx.ingress.kubernetes.io/add-base-url: "true"
     # certmanager.k8s.io/acme-challenge-type: "dns01"
     # certmanager.k8s.io/acme-dns01-provider: "aws"
-    # kubernetes.io/tls-acme: "true"    
-  hostName: 
+    # kubernetes.io/tls-acme: "true"
+  hostName:
   hosts:
-    - host: 
+    - host:
       paths: []
   tls:
     - secretName: nexusiq_tls
       hosts:
-      
-      
+
+persistence:
+  enabled: false
+  accessMode: ReadWriteOnce
+  storageSize: 25Gi
+  storageClass: gp2
+  labels:
+  annotations: {}
 
 
-persistence: 
- enabled: false
- accessMode: ReadWriteOnce
- storageSize: 25Gi
- storageClass: gp2
- labels:
- annotations: 
-
-
-resources: 
+resources:
   # Request and Resource limits have not been tested. Please read system requirements for NexusIQ
-  # and experiment based upon usage levels you are monitoring. 
+  # and experiment based upon usage levels you are monitoring.
   # limits:
   #   cpu: 100m
   #   memory: 128Mi
