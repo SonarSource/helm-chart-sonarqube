@@ -106,6 +106,9 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `plugins.resources`                   | Plugin Pod resource requests & limits                                        | `{}`                                           |
 | `plugins.initContainerImage`          | Change init container image                                                  | `alpine:3.10.3`                                |
 | `plugins.initSysctlContainerImage`    | Change init sysctl container image                                           | `busybox:1.31`                                 |
+| `plugins.initVolumesContainerImage`   | Change init volumes container image                                          | `busybox:1.31`                                 |
+| `plugins.initCertsContainerImage`     | Change init ca certs container image                                         | `adoptopenjdk/openjdk11:alpine`                |
+| `plugins.initTestContainerImage`      | Change init test container image                                             | `dduportal/bats:0.4.0`                         |
 | `plugins.deleteDefaultPlugins`        | Remove default plugins and use plugins.install list                          | `[]`                                           |
 | `podLabels`                           | Map of labels to add to the pods                                             | `{}`                                           |
 | `sonarqubeFolder`                     | Directory name of Sonarqube                                                  | `/opt/sonarqube`                               |

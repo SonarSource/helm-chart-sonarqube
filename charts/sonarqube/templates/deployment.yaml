@@ -40,7 +40,7 @@ spec:
       {{- end }}
       initContainers:
         - name: chmod-volume-mounts
-          image: busybox:1.31
+          image: {{ default "busybox:1.31" .Values.plugins.initVolumesContainerImage }}
           command:
             - "sh"
             - "-c"
@@ -71,7 +71,7 @@ spec:
           {{- end }}
       {{- if .Values.caCerts }}
         - name: ca-certs
-          image: adoptopenjdk/openjdk11:alpine
+          image: {{ default "adoptopenjdk/openjdk11:alpine" .Values.plugins.initCertsContainerImage }}
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done;"]
           volumeMounts:
