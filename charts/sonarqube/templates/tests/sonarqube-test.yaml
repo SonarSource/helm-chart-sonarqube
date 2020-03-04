@@ -12,7 +12,7 @@ metadata:
 spec:
   initContainers:
     - name: "test-framework"
-      image: "dduportal/bats:0.4.0"
+      image: {{ default "dduportal/bats:0.4.0" .Values.plugins.initTestContainerImage }}
       command:
       - "bash"
       - "-c"
