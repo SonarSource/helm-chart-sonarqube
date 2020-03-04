@@ -26,3 +26,7 @@ GitHub Pages points to the `gh-pages` branch so anything pushed to that branch w
 1. Don't forget to bump your chart version (if needed)
 1. Create a pull request with the new chart or updates
 1. Once the PR is approved, the automation will publish the chart to our repository
+
+## Notes about current testing
+
+* Current testing is done using Helmv2, and requirement.lock needs to be created by Helmv2 currently in order to pass linting
