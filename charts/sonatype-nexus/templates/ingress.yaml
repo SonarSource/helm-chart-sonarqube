@@ -5,6 +5,9 @@ metadata:
   name: {{ template "nexus.fullname" . }}
   labels:
 {{ include "nexus.labels" . | indent 4 }}
+    {{- range $key, $value := .Values.ingress.labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
   annotations:
     {{- range $key, $value := .Values.ingress.annotations }}
     {{ $key }}: {{ $value | quote }}
