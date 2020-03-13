@@ -193,7 +193,7 @@ spec:
                   name: {{- if .Values.postgresql.enabled }} {{ template "postgresql.fullname" .}} {{- else if .Values.postgresql.existingSecret }} {{ .Values.postgresql.existingSecret }} {{- else }} {{ template "sonarqube.fullname" . }} {{- end }}
                   key: postgresql-password
                   {{- else if eq .Values.database.type "mysql" }}
-                  name: {{- if .Values.mysql.enabled }} {{ template "mysql.fullname" .}} {{- else if .Values.mysql.mysqlPasswordSecret }} {{ .Values.mysql.mysqlPasswordSecret }} {{- else }} {{ template "sonarqube.fullname" . }} {{- end }}
+                  name: {{- if .Values.mysql.enabled }} {{ template "mysql.fullname" .}} {{- else if .Values.mysql.existingSecret }} {{ .Values.mysql.existingSecret }} {{- else }} {{ template "sonarqube.fullname" . }} {{- end }}
                   key: mysql-password
                   {{- end }}
             - name: SONARQUBE_JDBC_URL
