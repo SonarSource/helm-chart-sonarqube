@@ -10,11 +10,11 @@ metadata:
 data:
   install_plugins.sh: |-
     cd {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp
-    {{- if .values.plugins.httpProxy }}
-    export http_proxy={{ .values.plugins.httpProxy }}
+    {{- if .Values.plugins.httpProxy }}
+    export http_proxy={{ .Values.plugins.httpProxy }}
     {{- end }}
-    {{- if .values.plugins.httpsProxy }}
-    export https_proxy={{ .values.plugins.httpsProxy }}
+    {{- if .Values.plugins.httpsProxy }}
+    export https_proxy={{ .Values.plugins.httpsProxy }}
     {{- end }}
     {{- if .Values.plugins.install }}
       {{ range $index, $val := .Values.plugins.install }}echo {{ $val | quote }} >> plugins.txt
