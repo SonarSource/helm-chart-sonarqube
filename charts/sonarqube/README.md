@@ -81,8 +81,8 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `sonarProperties`                     | Custom `sonar.properties` file                                               | `{}`                                           |
 | `database.type`                       | Set to "mysql" to use mysql database                                         | `postgresql`                                   |
 | `postgresql.enabled`                  | Set to `false` to use external server / mysql database                       | `true`                                         |
+| `postgresql.existingSecret`           | Secret containing the password of the external Postgresql server             | `null`                                         |
 | `postgresql.postgresqlServer`         | Hostname of the external Postgresql server                                   | `null`                                         |
-| `postgresql.postgresqlPasswordSecret` | Secret containing the password of the external Postgresql server             | `null`                                         |
 | `postgresql.postgresqlUsername`       | Postgresql database user                                                     | `sonarUser`                                    |
 | `postgresql.postgresqlPassword`       | Postgresql database password                                                 | `sonarPass`                                    |
 | `postgresql.postgresqlDatabase`       | Postgresql database name                                                     | `sonarDB`                                      |
