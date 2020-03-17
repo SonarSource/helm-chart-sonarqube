@@ -1,3 +1,4 @@
+{{- if .Values.enableTests -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -12,3 +13,4 @@ data:
     @test "Testing Sonarqube UI is accessible" {
       curl --connect-timeout 5 --retry 12 --retry-delay 1 --retry-max-time 60 {{ template "sonarqube.fullname" . }}:{{ .Values.service.internalPort }}/sessions/new
     }
+{{- end -}}
