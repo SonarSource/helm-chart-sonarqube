@@ -114,6 +114,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `plugins.httpsProxy`                  | For use behind a corporate proxy when downloading plugins                    | ""                                             |
 | `podLabels`                           | Map of labels to add to the pods                                             | `{}`                                           |
 | `sonarqubeFolder`                     | Directory name of Sonarqube                                                  | `/opt/sonarqube`                               |
+| `enableTests`                         | Flag that allows tests to be excluded from generated yaml                    | true                                           |
 
 You can also configure values for the PostgreSQL / MySQL database via the Postgresql [README.md](https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md) / MySQL [README.md](https://github.com/kubernetes/charts/blob/master/stable/mysql/README.md)
 
