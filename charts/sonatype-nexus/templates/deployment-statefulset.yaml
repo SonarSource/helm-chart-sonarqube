@@ -64,6 +64,9 @@ spec:
       {{- else }}
       serviceAccountName: {{ .Values.serviceAccount.name | quote }}
       {{- end }}
+      {{- if .Values.nexus.priorityClassName }}
+      priorityClassName: {{ .Values.nexus.priorityClassName }}
+      {{- end }}
       containers:
         - name: nexus
           image: {{ .Values.nexus.imageName }}:{{ .Values.nexus.imageTag }}
