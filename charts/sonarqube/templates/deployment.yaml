@@ -101,7 +101,7 @@ spec:
       {{- end }}
       {{- if .Values.plugins.install }}
         - name: install-plugins
-          image: {{ default "alpine:3.10.3" .Values.plugins.initContainerImage }}
+          image: {{ default "rjkernick/alpine-wget:latest" .Values.plugins.initContainerImage }}
           command: ["sh",
             "-c",
             "mkdir -p {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp &&
