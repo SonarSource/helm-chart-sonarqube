@@ -190,12 +190,6 @@ plugins:
 # The 'sonar.secretKeyPath' property will be set automatically.
 # sonarSecretKey: "settings-encryption-secret"
 
-## Configuration value to select database type
-## Option to use "postgresql" or "mysql" database type, by default "postgresql" is chosen
-## Set the "enable" field to true of the database type you select (if you want to use internal database) and false of the one you don't select
-database:
-  type: "postgresql"
-
 ## Configuration values for postgresql dependency
 ## ref: https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md
 postgresql:
@@ -215,27 +209,6 @@ postgresql:
   service:
     port: 5432
 
-## Configuration values for the mysql dependency
-## ref: https://github.com/kubernetes/charts/blob/master/stable/mysql/README.md
-##
-mysql:
-  # Enable to deploy the mySQL chart
-  enabled: false
-  # To use an external mySQL instance, set enabled to false and uncomment
-  # the line below:
-  # mysqlServer: ""
-  # To use an external secret for the password for an external mySQL instance,
-  # set enabled to false and provide the name of the secret on the line below:
-  # existingSecret: ""
-  mysqlUser: "sonarUser"
-  mysqlPassword: "sonarPass"
-  mysqlDatabase: "sonarDB"
-  # mysqlParams:
-  #   useSSL: "true"
-  # Specify the TCP port that mySQL should use
-  service:
-    port: 3306
-#
 # Additional labels to add to the pods:
 # podLabels:
 #   key: value
