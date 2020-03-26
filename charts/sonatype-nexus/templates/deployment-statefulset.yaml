@@ -218,9 +218,9 @@ spec:
         {{- if .Values.deployment.additionalContainers }}
 {{ toYaml .Values.deployment.additionalContainers | indent 8 }}
         {{- end }}
-      {{- if .Values.nexus.securityContext }}
+      {{- if .Values.nexus.securityContext.enabled }}
       securityContext:
-{{ toYaml .Values.nexus.securityContext | indent 8 }}
+        fsGroup: {{.Values.nexus.securityContext.fsGroup }}
       {{- end }}
       volumes:
         {{- if .Values.nexusProxy.env.cloudIamAuthEnabled }}
