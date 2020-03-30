@@ -32,6 +32,13 @@ spec:
       {{- end }}
 {{- end }}
     spec:
+    {{- if .Values.serviceAccount.create }}
+    {{- if .Values.serviceAccount.name }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+    {{- else }}
+      serviceAccountName: {{ include "sonarqube.fullname" . }}
+    {{- end }}
+    {{- end }}
       securityContext:
 {{ toYaml .Values.securityContext | indent 8 }}
       {{- if .Values.image.pullSecret }}
