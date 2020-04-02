@@ -103,7 +103,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `plugins.initVolumesContainerImage`   | Change init volumes container image                                          | `busybox:1.31`                                 |
 | `plugins.initCertsContainerImage`     | Change init ca certs container image                                         | `adoptopenjdk/openjdk11:alpine`                |
 | `plugins.initTestContainerImage`      | Change init test container image                                             | `dduportal/bats:0.4.0`                         |
-| `plugins.deleteDefaultPlugins`        | Remove default plugins and use plugins.install list                          | `[]`                                           |
+| `plugins.deleteDefaultPlugins`        | Remove default plugins and use plugins.install list                          | false                                           |
 | `plugins.httpProxy`                   | For use behind a corporate proxy when downloading plugins                    | ""                                             |
 | `plugins.httpsProxy`                  | For use behind a corporate proxy when downloading plugins                    | ""                                             |
 | `podLabels`                           | Map of labels to add to the pods                                             | `{}`                                           |
