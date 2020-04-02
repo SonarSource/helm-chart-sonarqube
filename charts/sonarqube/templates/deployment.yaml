@@ -98,9 +98,9 @@ spec:
           securityContext:
             privileged: true
           command:
-          - sysctl
-          - -w
-          - vm.max_map_count=262144
+          - /bin/sh
+          - -c
+          - 'if [[ "$(sysctl -n vm.max_map_count)" -lt 262144 ]]; then sysctl -w vm.max_map_count=262144; fi'
           {{- with .Values.env }}
           env:
             {{- . | toYaml | trim | nindent 12 }}
