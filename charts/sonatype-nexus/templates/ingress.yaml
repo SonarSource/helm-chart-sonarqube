@@ -47,8 +47,7 @@ spec:
   {{- end }}
 {{- end -}}
   {{- with .Values.ingress.rules  }}
-  rules:
-    {{- toYaml . | nindent 4 }}
+{{- toYaml . | indent 4 }}
   {{- end -}}
 {{- if .Values.ingress.tls.enabled }}
   tls:
