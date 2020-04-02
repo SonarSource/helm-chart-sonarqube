@@ -72,6 +72,9 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `persistence.size`                    | Size of the volume                                                           | 10Gi                                           |
 | `persistence.volumes`                 | Specify extra volumes. Refer to ".spec.volumes" specification                | []                                             |
 | `persistence.mounts`                  | Specify extra mounts. Refer to ".spec.containers.volumeMounts" specification | []                                             |
+| `serviceAccount.create`               | If set to true, create a serviceAccount                                      | false                                          |
+| `serviceAccount.name`                 | Name of the serviceAccount to create/use                                     | `sonarqube-sonarqube`                          |
+| `serviceAccount.annotations`          | Additional serviceAccount annotations                                        | `{}`                                           |
 | `sonarProperties`                     | Custom `sonar.properties` file                                               | None                                           |
 | `sonarSecretProperties`               | Additional `sonar.properties` file to load from a secret                     | None                                           |
 | `caCerts.secret`                      | Name of the secret containing additional CA certificates                     | `nil`                                          |
