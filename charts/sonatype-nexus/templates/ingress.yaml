@@ -46,8 +46,8 @@ spec:
             path: {{ .Values.ingress.path }}
   {{- end }}
 {{- end -}}
-{{- with .Values.ingress.rules  }}
-{{ toYaml . | indent 2 }}
+  {{- with .Values.ingress.rules }}
+    {{- toYaml . | nindent 4 }}
   {{- end -}}
 {{- if .Values.ingress.tls.enabled }}
   tls:
