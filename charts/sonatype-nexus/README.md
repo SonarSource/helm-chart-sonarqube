@@ -110,7 +110,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `persistence.storageClass`                  | Storage class of Nexus PVC          | `nil`                                   |
 | `persistence.storageSize`                   | Size of Nexus data volume           | `8Gi`                                   |
 | `persistence.annotations`                   | Persistent Volume annotations       | `{}`                                    |
-| `persistence.existingClaim`                 | Existing persistent volume name     | `nil`                                   |
+| `persistence.existingClaim`                 | Existing PVC name                   | `nil`                                   |
 | `nexusBackup.enabled`                       | Nexus backup process                | `false`                                 |
 | `nexusBackup.imageName`                     | Nexus backup image                  | `quay.io/travelaudience/docker-nexus-backup` |
 | `nexusBackup.imageTag`                      | Nexus backup image version          | `1.5.0`                                 |
@@ -122,7 +122,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `nexusBackup.persistence.storageClass`      | Storage class of Nexus backup PVC   | `nil`                                   |
 | `nexusBackup.persistence.storageSize`       | Size of Nexus backup data volume    | `8Gi`                                   |
 | `nexusBackup.persistence.annotations`       | PV annotations for backup           | `{}`                                    |
-| `nexusBackup.persistence.existingClaim`     | Existing PV name for backup         | `nil`                                   |
+| `nexusBackup.persistence.existingClaim`     | Existing PVC name for backup        | `nil`                                   |
 | `nexusBackup.resources`                     | Backup resource requests and limits | `{}`                                    |
 | `ingress.enabled`                           | Create an ingress for Nexus         | `true`                                  |
 | `ingress.annotations`                       | Annotations to enhance ingress configuration  | `{}`                          |
