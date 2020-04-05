@@ -19,7 +19,7 @@ data:
         for original in {{ .Values.sonarqubeFolder }}/extensions/plugins/*.jar
         do
           originalfile=${original##*/} && originalfile=${originalfile%-[0-9]*}
-          if [ "$originalfile" = "$file" ]; then
+          if [ "$originalfile" == "$file" ]; then
             rm -f "$original"
           fi
         done
