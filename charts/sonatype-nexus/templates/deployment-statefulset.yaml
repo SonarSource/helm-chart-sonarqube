@@ -234,7 +234,7 @@ spec:
         - name: {{ template "nexus.fullname" . }}-data
           emptyDir: {}
         {{- end }}
-        {{- if not (and .Values.nexusBackup.enabled .Values.nexusBackup.persistence.enabled) }}
+        {{- if not .Values.nexusBackup.persistence.enabled }}
         - name: {{ template "nexus.fullname" . }}-backup
           emptyDir: {}
         {{- end }}
@@ -247,7 +247,7 @@ spec:
           emptyDir: {}
           {{- end }}
         - name: {{ template "nexus.fullname" . }}-backup
-          {{- if and .Values.nexusBackup.enabled (.Values.nexusBackup.persistence.enabled) }}
+          {{- if .Values.nexusBackup.persistence.enabled }}
           persistentVolumeClaim:
             claimName: {{ .Values.nexusBackup.persistence.existingClaim | default (printf "%s-%s" (include "nexus.fullname" .) "backup") }}
           {{- else }}
@@ -300,7 +300,7 @@ spec:
         {{- end }}
     {{- end }}
 
-    {{- if and .Values.nexusBackup.enabled (.Values.nexusBackup.persistence.enabled) }}
+    {{- if .Values.nexusBackup.persistence.enabled }}
     - metadata:
         name: {{ template "nexus.fullname" . }}-backup
         labels:

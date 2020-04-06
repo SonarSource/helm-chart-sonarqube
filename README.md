@@ -29,4 +29,4 @@ GitHub Pages points to the `gh-pages` branch so anything pushed to that branch w
 
 ## Notes about current testing
 
-* Current testing is done using Helmv2, and requirement.lock needs to be created by Helmv2 currently in order to pass linting
+Testing is currently done with Helm3

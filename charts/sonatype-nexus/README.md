@@ -75,7 +75,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `nexus.nexusPort`                           | Internal port for Nexus service     | `8081`                                  |
 | `nexus.service.type`                        | Service for Nexus                   |`CluserIP`                                |
 | `nexus.service.clusterIp`                   | Specific cluster IP when service type is cluster IP. Use None for headless service |`nil`   |
-| `nexus.securityContext`                     | Security Context (for enabling official image use `fsGroup: 2000`) | `{}`     |
+| `nexus.securityContextEnabled`                     | Security Context (for enabling official image use `fsGroup: 200`) | `{}`     |
 | `nexus.labels`                              | Service labels                      | `{}`                                    |
 | `nexus.podAnnotations`                      | Pod Annotations                     | `{}`
 | `nexus.livenessProbe.initialDelaySeconds`   | LivenessProbe initial delay         | 30                                      |
