@@ -124,7 +124,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `nexusBackup.persistence.annotations`       | PV annotations for backup           | `{}`                                    |
 | `nexusBackup.persistence.existingClaim`     | Existing PVC name for backup        | `nil`                                   |
 | `nexusBackup.resources`                     | Backup resource requests and limits | `{}`                                    |
-| `ingress.enabled`                           | Create an ingress for Nexus         | `true`                                  |
+| `ingress.enabled`                           | Create an ingress for Nexus         | `false`                                  |
 | `ingress.annotations`                       | Annotations to enhance ingress configuration  | `{}`                          |
 | `ingress.tls.enabled`                       | Enable TLS                          | `true`                                 |
 | `ingress.tls.secretName`                    | Name of the secret storing TLS cert, `false` to use the Ingress' default certificate | `nexus-tls`                             |
