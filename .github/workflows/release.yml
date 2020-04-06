@@ -18,18 +18,17 @@ jobs:
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
       - name: Install Helm
-        uses: azure/setup-helm@v1
-        with:
-          version : v2.15.2
-        id: install
+        run: |
+          curl -fsSLo get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+          chmod 700 get_helm.sh
+          ./get_helm.sh
 
       - name: Configure Helm
         run: |
-          helm init --client-only
           helm repo add stable https://kubernetes-charts.storage.googleapis.com/
           helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
 
       - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.0.0-alpha.2
+        uses: helm/chart-releaser-action@v1.0.0-rc.2
         env:
           CR_TOKEN: "${{ secrets.CR_TOKEN }}"
