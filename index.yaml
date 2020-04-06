@@ -3,6 +3,52 @@ entries:
   che:
   - apiVersion: v1
     appVersion: 7.3.1
+    created: "2020-04-06T14:27:24.092865951Z"
+    dependencies:
+    - condition: cheDevfileRegistry.deploy
+      name: che-devfile-registry
+      repository: file://./custom-charts/che-devfile-registry/
+      version: 0.0.1
+    - condition: chePluginRegistry.deploy
+      name: che-plugin-registry
+      repository: file://./custom-charts/che-plugin-registry/
+      version: 0.0.1
+    - condition: global.multiuser
+      name: che-postgres
+      repository: file://./custom-charts/che-postgres/
+      version: 1.0.0
+    - condition: global.cheDedicatedKeycloak,global.multiuser
+      name: che-keycloak
+      repository: file://./custom-charts/che-keycloak/
+      version: 1.0.0
+    - condition: jaeger.deploy
+      name: che-jaeger
+      repository: file://./custom-charts/che-jaeger
+      version: 1.0.0
+    - condition: prometheus.deploy
+      name: prometheus
+      repository: https://kubernetes-charts.storage.googleapis.com/
+      version: ^7.4.5
+    - condition: grafana.deploy
+      name: grafana
+      repository: https://kubernetes-charts.storage.googleapis.com/
+      version: ^1.19.0
+    description: A Helm chart for deploying Eclipse Che to Kubernetes
+    digest: 2fe7bfb488e6b6a47cfbd0b8f8203b0bdff3d8cf150f4e28a8750fcfc5b9c432
+    home: https://www.eclipse.org/che/
+    icon: https://www.eclipse.org/che/images/logo-eclipseche.svg
+    keywords:
+    - che
+    - eclipse
+    maintainers:
+    - email: rjkernick@gmail.com
+      name: rjkernick
+    name: che
+    urls:
+    - https://github.com/Oteemo/charts/releases/download/che-0.1.5/che-0.1.5.tgz
+    version: 0.1.5
+  - apiVersion: v1
+    appVersion: 7.3.1
     created: "2020-01-27T16:43:41.490133169Z"
     description: A Helm chart for deploying Eclipse Che to Kubernetes
     digest: 7cc6df63d7ffd5c7a7f63c92d33ad94dce9ace3f9b68995729087c2d01205ca2
@@ -91,6 +137,34 @@ entries:
     - https://github.com/Oteemo/charts/releases/download/nexusiq-1.0.1/nexusiq-1.0.1.tgz
     version: 1.0.1
   sonarqube:
+  - apiVersion: v1
+    appVersion: 8.2-community
+    created: "2020-04-06T14:27:24.201229194Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 8.6.4
+    description: SonarQube is an open sourced code quality scanning tool
+    digest: d9c4c9dc5d75590cf574b6c6d4eefd972dffeda1fe5772ffdd8bd278f87f418f
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    maintainers:
+    - email: rjkernick@gmail.com
+      name: rjkernick
+    - email: tsiddique@live.com
+      name: tsiddique
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    urls:
+    - https://github.com/Oteemo/charts/releases/download/sonarqube-5.3.0/sonarqube-5.3.0.tgz
+    version: 5.3.0
   - apiVersion: v1
     appVersion: 8.2-community
     created: "2020-04-03T12:30:19.46030942Z"
