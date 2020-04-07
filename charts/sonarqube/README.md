@@ -81,7 +81,6 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `jvmOpts`                             | Values to add to SONARQUBE_WEB_JVM_OPTS                                      | `""`                                           |
 | `env`                                 | Environment variables to attach to the pods                                  | `nil`                                          |
 | `sonarSecretKey`                      | Name of existing secret used for settings encryption                         | None                                           |
-| `sonarProperties`                     | Custom `sonar.properties` file                                               | `{}`                                           |
 | `postgresql.enabled`                  | Set to `false` to use external server                                        | `true`                                         |
 | `postgresql.existingSecret`           | Secret containing the password of the external Postgresql server             | `null`                                         |
 | `postgresql.postgresqlServer`         | Hostname of the external Postgresql server                                   | `null`                                         |
