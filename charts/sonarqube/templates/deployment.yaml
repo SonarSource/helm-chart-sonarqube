@@ -110,12 +110,12 @@ spec:
         - name: install-plugins
           image: {{ default "rjkernick/alpine-wget:latest" .Values.plugins.initContainerImage }}
           command: ["sh",
-            "-c",
-            "mkdir -p {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp &&
-            rm -f {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp/* &&
-            cp /tmp/scripts/install_plugins.sh {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp/install_plugins.sh &&
-            chmod 0775 {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp/install_plugins.sh &&
-            {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp/install_plugins.sh && pwd && ls -lah"]
+            "-ec",
+            "mkdir -p {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp ;
+             cd {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp ;
+            rm -f ./* ;
+            sh -e /tmp/scripts/install_plugins.sh ;
+            pwd ; ls -lah"]
           volumeMounts:
             - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp
               name: sonarqube

@@ -19,6 +19,6 @@ data:
     {{- if .Values.plugins.install }}
       {{ range $index, $val := .Values.plugins.install }}echo {{ $val | quote }} >> plugins.txt
       {{ end }}
-      cat plugins.txt | xargs -n 1 -P 8 wget --no-check-certificate
+      cat plugins.txt | xargs -n 1 -P 8 wget --no-check-certificate --no-verbose
       rm plugins.txt
     {{- end }}
