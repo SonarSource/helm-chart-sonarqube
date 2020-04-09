@@ -56,6 +56,13 @@ $ helm delete plinking-gopher
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
 
+## Official Nexus image vs TravelAudience
+
+There are known issues with backups on the official image. If you want to swap in the official image, just override the values when installing the chart. Please note that backups will not work as expected with the official image.
+
+* [https://issues.sonatype.org/browse/NEXUS-23442](https://issues.sonatype.org/browse/NEXUS-23442)
+* [https://github.com/travelaudience/docker-nexus](https://github.com/travelaudience/docker-nexus)
+
 ## Configuration
 
 The following table lists the configurable parameters of the Nexus chart and their default values.
@@ -66,7 +73,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `replicaCount`                              | Number of Nexus service replicas    | `1`                                     |
 | `deploymentStrategy`                        | Deployment Strategy     |  `rollingUpdate` |
 | `nexus.imageName`                           | Nexus image                         | `quay.io/travelaudience/docker-nexus`   |
-| `nexus.imageTag`                            | Version of Nexus                    | `3.19.1`                                 |
+| `nexus.imageTag`                            | Version of Nexus                    | `3.21.2-03`                                 |
 | `nexus.imagePullPolicy`                     | Nexus image pull policy             | `IfNotPresent`                          |
 | `nexus.imagePullSecret`                     | Secret to download Nexus image from private registry      | `nil`             |
 | `nexus.env`                                 | Nexus environment variables         | `[{install4jAddVmParams: -Xms1200M -Xmx1200M -XX:MaxDirectMemorySize=2G -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap}]` |
@@ -94,7 +101,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `nexusProxy.targetPort`                     | Container Port for Nexus proxy      | `8080`                                  |
 | `nexusProxy.port`                           | Port for exposing Nexus             | `8080`                                  |
 | `nexusProxy.imageName`                      | Proxy image                         | `quay.io/travelaudience/docker-nexus-proxy` |
-| `nexusProxy.imageTag`                       | Proxy image version                 | `2.5.0`                                 |
+| `nexusProxy.imageTag`                       | Proxy image version                 | `2.6.0`                                 |
 | `nexusProxy.imagePullPolicy`                | Proxy image pull policy             | `IfNotPresent`                          |
 | `nexusProxy.resources`                      | Proxy resource requests and limits  | `{}`                                    |
 | `nexusProxy.env.nexusHttpHost`              | Nexus url to access Nexus           | `nil`                                   |
