@@ -167,6 +167,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `route.labels`          | Labels to be added to route                        | `{}` |
 | `route.annotations`     | Annotations to be added to route                   | `{}` |
 | `route.path`            | Host name of Route e.g jenkins.example.com         | nil |
+| `additionalConfigMaps`  | List of ConfigMap data containing Name, Data and Labels | nil |
 
 If `nexusProxy.env.cloudIamAuthEnabled` is set to `true` the following variables need to be configured
 
