@@ -72,6 +72,9 @@ spec:
           - mountPath: /opt/sonarqube/extensions/plugins
             name: sonarqube
             subPath: plugins
+          - mountPath: /opt/sonarqube/certs
+            name: sonarqube
+            subPath: certs
           {{- with .Values.env }}
           env:
             {{- . | toYaml | trim | nindent 12 }}
