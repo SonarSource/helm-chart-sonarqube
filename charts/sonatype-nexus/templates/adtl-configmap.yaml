@@ -1,0 +1,21 @@
+{{ $root := . }}
+{{- if .Values.additionalConfigMaps }}
+{{- range $cm := .Values.additionalConfigMaps }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $cm.name }}
+  labels:
+{{ include "nexus.labels" $root | indent 4 }}
+{{- if $.Values.nexus.labels }}
+{{ toYaml $.Values.nexus.labels | indent 4 }}
+{{- end }}
+{{- if $cm.labels }}
+{{ toYaml $cm.labels | indent 4 }}
+{{- end }}
+data:
+{{ toYaml $cm.data | indent 2 }}
+{{- end }}
+{{- end }}
+
