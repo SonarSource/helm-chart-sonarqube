@@ -115,7 +115,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `sonarqubeFolder`                     | Directory name of Sonarqube                                                  | `/opt/sonarqube`                               |
 | `enableTests`                         | Flag that allows tests to be excluded from generated yaml                    | true                                           |
 
-You can also configure values for the PostgreSQL database via the Postgresql [README.md](https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md)
+You can also configure values for the PostgreSQL database via the Postgresql [Chart](https://hub.helm.sh/charts/bitnami/postgresql)
 
 For overriding variables see: [Customizing the chart](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing)
 
