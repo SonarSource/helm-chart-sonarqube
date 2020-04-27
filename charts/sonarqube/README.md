@@ -58,6 +58,8 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `ingress.labels`                      | Ingress additional labels                                                    | `{}`                                           |
 | `ingress.hosts[0].name`               | Hostname to your SonarQube installation                                      | `sonar.organization.com`                       |
 | `ingress.hosts[0].path`               | Path within the URL structure                                                | /                                              |
+| `ingress.hosts[0].serviceName`        | Optional field to override the default serviceName of a path                 | None                                           |
+| `ingress.hosts[0].servicePort`        | Optional field to override the default servicePort of a path                 | None                                           |
 | `ingress.tls`                         | Ingress secrets for TLS certificates                                         | `[]`                                           |
 | `livenessProbe.sonarWebContext`       | SonarQube web context for livenessProbe                                      | /                                              |
 | `readinessProbe.sonarWebContext`      | SonarQube web context for readinessProbe                                     | /                                              |
