@@ -31,8 +31,8 @@ spec:
         paths:
           - path: {{ .path}}
             backend:
-              serviceName: {{ $serviceName }}
-              servicePort: {{ $servicePort }}
+              serviceName: {{ default $serviceName .serviceName }}
+              servicePort: {{ default $servicePort .servicePort }}
     {{- end -}}
   {{- if .Values.ingress.tls }}
   tls:
