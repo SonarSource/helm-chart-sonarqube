@@ -25,8 +25,11 @@ spec:
 {{- with .Values.podLabels }}
 {{ toYaml . | indent 8 }}
 {{- end }}
-{{ if .Values.annotations}}
       annotations:
+        checksum/plugins: {{ include (print $.Template.BasePath "/install-plugins.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+{{- if .Values.annotations}}
       {{- range $key, $value := .Values.annotations }}
         {{ $key }}: {{ $value | quote }}
       {{- end }}
