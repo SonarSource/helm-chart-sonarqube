@@ -54,8 +54,8 @@ spec:
           command:
             - "sh"
             - "-c"
-            - 'mkdir -p $(printf "/opt/sonarqube/${1-%s\n}" temp logs data extensions/downloads extensions/plugins/tmp extensions/plugins certs) &&
-               chown 999:999 -R $(printf "/opt/sonarqube/${1-%s\n}" temp logs data extensions/downloads extensions/plugins/tmp extensions/plugins certs)'
+            - 'mkdir -p $(printf "/opt/sonarqube/${1-%s\n}" temp logs data extensions/downloads extensions/plugins/tmp certs) &&
+               chown 999:999 -R $(printf "/opt/sonarqube/${1-%s\n}" temp logs data extensions/downloads extensions/plugins/tmp certs)'
           volumeMounts:
           - mountPath: /opt/sonarqube/temp
             name: sonarqube
@@ -72,9 +72,6 @@ spec:
           - mountPath: /opt/sonarqube/extensions/downloads
             name: sonarqube
             subPath: downloads
-          - mountPath: /opt/sonarqube/extensions/plugins
-            name: sonarqube
-            subPath: plugins
           - mountPath: /opt/sonarqube/certs
             name: sonarqube
             subPath: certs
@@ -247,9 +244,6 @@ spec:
             - mountPath: {{ .Values.sonarqubeFolder }}/extensions/downloads
               name: sonarqube
               subPath: downloads
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins
-              name: sonarqube
-              subPath: plugins
             - mountPath: {{ .Values.sonarqubeFolder }}/temp
               name: sonarqube
               subPath: temp
