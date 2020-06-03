@@ -115,6 +115,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `enableTests`                       | Flag that allows tests to be excluded from generated yaml                                                                 | true                                           |
 | `extraConfig.secrets`               | A list of `Secret`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables    | `[]`                                           |
 | `extraConfig.secrets`               | A list of `ConfigMap`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables | `[]`                                           |
+| `emptyDir`                          | Configuration of resources for `emptyDir`                                                                                 | `{}`                                           |
 
 You can also configure values for the PostgreSQL database via the Postgresql [Chart](https://hub.helm.sh/charts/bitnami/postgresql)
 

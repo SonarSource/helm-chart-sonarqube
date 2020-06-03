@@ -298,11 +298,11 @@ spec:
         persistentVolumeClaim:
           claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ template "sonarqube.fullname" . }}{{- end }}
         {{- else }}
-        emptyDir: {}
+        emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
         {{- end  }}
       - name : tmp-dir
-        emptyDir: {}
+        emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
         {{- if .Values.sonarSecretProperties }}
       - name : concat-dir
-        emptyDir: {}
+        emptyDir: {{- toYaml .Values.emptyDir | nindent 10 -}}
         {{- end }}

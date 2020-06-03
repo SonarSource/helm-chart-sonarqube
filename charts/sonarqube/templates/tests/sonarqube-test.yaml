@@ -39,6 +39,6 @@ spec:
     configMap:
       name: {{ template "sonarqube.fullname" . }}-tests
   - name: tools
-    emptyDir: {}
+    emptyDir: {{ toYaml .Values.emptyDir | nindent 6 }}
   restartPolicy: Never
 {{- end -}}
