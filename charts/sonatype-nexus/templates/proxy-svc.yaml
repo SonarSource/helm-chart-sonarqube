@@ -44,7 +44,7 @@ spec:
   {{- if and (eq .Values.nexus.service.type "ClusterIP") .Values.nexus.service.clusterIP }}
   clusterIP: {{ .Values.nexus.service.clusterIP }}
   {{- end }}
-  {{ if eq .Values.nexus.service.type "LoadBalancer" }}
+  {{- if and (eq .Values.nexus.service.type "LoadBalancer") .Values.nexus.service.loadBalancerIP }}
   loadBalancerIP: {{ .Values.nexus.service.loadBalancerIP }}
-  {{ end }}
+  {{- end }}
 {{- end }}
