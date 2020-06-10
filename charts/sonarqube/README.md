@@ -15,8 +15,8 @@ This chart bootstraps a SonarQube instance with a PostgreSQL database.
 To install the chart:
 
 ```bash
-$ helm repo add oteemocharts https://oteemo.github.io/charts
-$ helm install oteemocharts/sonarqube
+helm repo add oteemocharts https://oteemo.github.io/charts
+helm install oteemocharts/sonarqube
 ```
 
 The above command deploys Sonarqube on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
@@ -29,8 +29,8 @@ To uninstall/delete the deployment:
 
 ```bash
 $ helm list
-NAME        REVISION	UPDATED                     STATUS      CHART           NAMESPACE
-kindly-newt	1           Mon Oct  2 15:05:44 2017	DEPLOYED	sonarqube-0.1.0	default
+NAME        REVISION    UPDATED                     STATUS      CHART           NAMESPACE
+kindly-newt 1           Mon Oct  2 15:05:44 2017    DEPLOYED    sonarqube-0.1.0  default
 $ helm delete kindly-newt
 ```
 
@@ -41,7 +41,6 @@ Some cloud may need the path to be /* instead of /. Try this first if you are ha
 ## Configuration
 
 The following table lists the configurable parameters of the Sonarqube chart and their default values.
-
 
 | Parameter                           | Description                                                                                                               | Default                                        |
 |-------------------------------------|---------------------------------------------------------------------------------------------------------------------------|------------------------------------------------|
@@ -141,7 +140,7 @@ In environments with air-gapped setup, especially with internal tooling (repos) 
 2. Upload your `cacerts.yaml` to a secret in the cluster you are installing Sonarqube to.
 
    ```shell
-   $ kubectl apply -f cacerts.yaml
+   kubectl apply -f cacerts.yaml
    ```
 
 3. Set the following values of the chart:
@@ -173,20 +172,20 @@ In such environments, configuration may be read, via environment variables, from
 
 1. Create a `ConfigMap` (or `Secret`) containing key/value pairs, as expected by Sonarqube
 
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: external-sonarqube-opts
-data:
-  SONARQUBE_JDBC_USERNAME: foo
-  SONARQUBE_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
-```
+    ```yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: external-sonarqube-opts
+    data:
+      SONARQUBE_JDBC_USERNAME: foo
+      SONARQUBE_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
+    ```
 
 2. Set the following in your `values.yaml` (using the key `extraConfig.secrets` to reference `Secret`s)
 
-```yaml
-extraConfig:
-  configmaps:
-    - external-sonarqube-opts
-```
+    ```yaml
+    extraConfig:
+      configmaps:
+        - external-sonarqube-opts
+    ```
