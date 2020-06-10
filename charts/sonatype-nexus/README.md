@@ -82,6 +82,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `nexus.nexusPort`                           | Internal port for Nexus service     | `8081`                                  |
 | `nexus.service.type`                        | Service for Nexus                   |`CluserIP`                                |
 | `nexus.service.clusterIp`                   | Specific cluster IP when service type is cluster IP. Use None for headless service |`nil`   |
+| `nexus.service.loadBalancerIP`                        | Custom loadBalancerIP                   |`nil`                                |
 | `nexus.securityContextEnabled`                     | Security Context (for enabling official image use `fsGroup: 200`) | `{}`     |
 | `nexus.labels`                              | Service labels                      | `{}`                                    |
 | `nexus.podAnnotations`                      | Pod Annotations                     | `{}`
@@ -156,6 +157,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `service.labels`                            | Service labels                   | `nil`                                      |
 | `service.annotations`                       | Service annotations              | `nil`                                      |
 | `service.loadBalancerSourceRanges`          | Service LoadBalancer source IP whitelist | `nil`                              |
+| `service.loadBalancerIP`                        | Custom loadBalancerIP                   |`nil`                                |
 | `service.targetPort`                        | Service port                     | `nil`                                      |
 | `service.port`                              | Port for exposing service        | `nil`                                      |
 | `serviceAccount.create`                     | Automatically create a service account | `true`                               |
