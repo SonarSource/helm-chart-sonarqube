@@ -224,3 +224,26 @@ serviceAccount:
   # name:
   ## Annotations for the Service Account
   annotations: {}
+
+# extraConfig is used to load Environment Variables from secrets and configmaps
+# which may have been written by other tools, such as external orchestrators.
+#
+# These Secrets/ ConfigMaps are expecetd to contain Key/ Value pairs, such as:
+#
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: external-sonarqube-opts
+# data:
+#   SONARQUBE_JDBC_USERNAME: foo
+#   SONARQUBE_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
+#
+# These vars can then be injected into the environment by uncommenting the following:
+#
+# extraConfig:
+#   configmaps:
+#     - external-sonarqube-opts
+
+extraConfig:
+  secrets: []
+  configmaps: []

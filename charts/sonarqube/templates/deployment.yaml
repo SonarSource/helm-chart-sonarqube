@@ -163,15 +163,24 @@ spec:
               {{- else }}
               value: "{{ .Values.jvmOpts }}"
               {{- end }}
-            - name: SONARQUBE_JDBC_USERNAME
-              value: {{ .Values.postgresql.postgresqlUsername | quote }}
+{{- if or .Values.postgresql.enabled .Values.postgresql.existingSecret }}
             - name: SONARQUBE_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{- if .Values.postgresql.enabled }} {{ template "postgresql.fullname" .}} {{- else if .Values.postgresql.existingSecret }} {{ .Values.postgresql.existingSecret }} {{- else }} {{ template "sonarqube.fullname" . }} {{- end }}
                   key: postgresql-password
-            - name: SONARQUBE_JDBC_URL
-              value: "jdbc:postgresql://{{ template "postgresql.hostname" . }}:{{- .Values.postgresql.service.port -}}/{{- .Values.postgresql.postgresqlDatabase -}}"
+{{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ template "sonarqube.fullname" . }}-postgres-config
+{{- range .Values.extraConfig.secrets }}
+            - secretRef:
+                name: {{ . }}
+{{- end }}
+{{- range .Values.extraConfig.configmaps }}
+            - configMapRef:
+                name: {{ . }}
+{{- end }}
           livenessProbe:
             httpGet:
               path: {{ .Values.livenessProbe.sonarWebContext }}sessions/new
