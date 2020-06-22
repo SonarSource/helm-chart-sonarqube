@@ -36,3 +36,27 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- printf "%s" .Values.postgresql.postgresqlServer -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Set postgresql.secret
+*/}}
+{{- define "postgresql.secret" -}}
+{{- if .Values.postgresql.existingSecret -}} 
+{{- .Values.postgresql.existingSecret -}}
+{{- else if .Values.postgresql.enabled -}} 
+{{- template "postgresql.fullname" . -}} 
+{{- else -}} 
+{{- template "sonarqube.fullname" . -}} 
+{{- end -}}
+{{- end -}}
+
+{{/*
+Set postgresql.useInternalSecret
+*/}}
+{{- define "postgresql.useInternalSecret" -}}
+{{- if or .Values.postgresql.enabled .Values.postgresql.existingSecret -}} 
+false
+{{- else -}} 
+true
+{{- end -}}
+{{- end -}}
