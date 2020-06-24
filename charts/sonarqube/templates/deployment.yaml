@@ -163,13 +163,11 @@ spec:
               {{- else }}
               value: "{{ .Values.jvmOpts }}"
               {{- end }}
-{{- if or .Values.postgresql.enabled .Values.postgresql.existingSecret }}
             - name: SONARQUBE_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{- if .Values.postgresql.enabled }} {{ template "postgresql.fullname" .}} {{- else if .Values.postgresql.existingSecret }} {{ .Values.postgresql.existingSecret }} {{- else }} {{ template "sonarqube.fullname" . }} {{- end }}
+                  name: {{ template "postgresql.secret" . }}
                   key: postgresql-password
-{{- end }}
           envFrom:
             - configMapRef:
                 name: {{ template "sonarqube.fullname" . }}-postgres-config
