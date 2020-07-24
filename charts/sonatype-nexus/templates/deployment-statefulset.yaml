@@ -7,6 +7,7 @@ kind: Deployment
 {{- end }}
 metadata:
   name: {{ template "nexus.fullname" . }}
+  namespace: {{ template "nexus.namespace" . }}
   labels:
 {{ include "nexus.labels" . | indent 4 }}
 {{- if .Values.nexus.labels }}

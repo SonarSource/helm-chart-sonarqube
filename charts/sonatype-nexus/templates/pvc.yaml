@@ -4,6 +4,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: {{ template "nexus.fullname" . }}-data
+  namespace: {{ template "nexus.namespace" . }}
   labels:
 {{ include "nexus.labels" . | indent 4 }}
 {{- if .Values.persistence.annotations }}

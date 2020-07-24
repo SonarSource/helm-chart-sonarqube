@@ -3,6 +3,7 @@ apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: {{ .Values.route.name }}
+  namespace: {{ template "nexus.namespace" . }}
   labels: 
     {{- range $key, $value := .Values.route.labels }}
     {{ $key }}: {{ $value | quote }}

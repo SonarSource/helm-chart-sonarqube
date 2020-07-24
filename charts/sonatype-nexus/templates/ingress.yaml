@@ -3,6 +3,7 @@ apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: {{ template "nexus.fullname" . }}
+  namespace: {{ template "nexus.namespace" . }}
   labels:
 {{ include "nexus.labels" . | indent 4 }}
     {{- range $key, $value := .Values.ingress.labels }}
