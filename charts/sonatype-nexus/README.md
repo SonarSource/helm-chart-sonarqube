@@ -77,6 +77,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 
 | Parameter                                                     | Description                         | Default                                 |
 | ------------------------------------------------------------  | ----------------------------------  | ----------------------------------------|
+| `namespaceOverride`                                           | Override for namespace              | `nil` |
 | `statefulset.enabled`                                         | Use statefulset instead of deployment | `false` |
 | `replicaCount`                                                | Number of Nexus service replicas    | `1`                                     |
 | `deploymentStrategy`                                          | Deployment Strategy     |  `rollingUpdate` |
