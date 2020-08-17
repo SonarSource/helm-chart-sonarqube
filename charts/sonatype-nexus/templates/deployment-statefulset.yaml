@@ -253,7 +253,7 @@ spec:
           emptyDir: {}
           {{- end }}
         - name: {{ template "nexus.fullname" . }}-backup
-          {{- if .Values.nexusBackup.persistence.enabled }}
+          {{- if and .Values.nexusBackup.persistence.enabled .Values.nexusBackup.enabled }}
           persistentVolumeClaim:
             claimName: {{ .Values.nexusBackup.persistence.existingClaim | default (printf "%s-%s" (include "nexus.fullname" .) "backup") }}
           {{- else }}
