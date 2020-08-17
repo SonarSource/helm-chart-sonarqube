@@ -60,10 +60,10 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.nexus.imagePullSecret }}
       {{- end }}
-      {{- if .Values.serviceAccount.create }}
-      serviceAccountName: {{ template "nexus.fullname" . }}
-      {{- else }}
+      {{- if .Values.serviceAccount.name }}
       serviceAccountName: {{ .Values.serviceAccount.name | quote }}
+      {{- else if .Values.serviceAccount.create }}
+      serviceAccountName: {{ template "nexus.fullname" . }}
       {{- end }}
       {{- if .Values.nexus.priorityClassName }}
       priorityClassName: {{ .Values.nexus.priorityClassName }}
