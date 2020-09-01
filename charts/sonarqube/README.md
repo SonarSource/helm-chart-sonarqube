@@ -45,6 +45,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | Parameter                           | Description                                                                                                               | Default                                        |
 |-------------------------------------|---------------------------------------------------------------------------------------------------------------------------|------------------------------------------------|
 | `replicaCount`                      | Number of replicas deployed                                                                                               | `1`                                            |
+| `schedulerName`                     | Kubernetes scheduler name                                                                                                 | None                                           |
 | `deploymentStrategy`                | Deployment strategy                                                                                                       | `{}`                                           |
 | `image.repository`                  | image repository                                                                                                          | `sonarqube`                                    |
 | `image.tag`                         | `sonarqube` image tag.                                                                                                    | `8.2-community`                                |

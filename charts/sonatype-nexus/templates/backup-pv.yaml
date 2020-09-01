@@ -1,4 +1,4 @@
-{{- if not .Values.statefulset.enabled }}
+{{- if and .Values.nexusBackup.enabled (not .Values.statefulset.enabled) }}
 {{- if .Values.nexusBackup.persistence.pdName -}}
 apiVersion: v1
 kind: PersistentVolume
