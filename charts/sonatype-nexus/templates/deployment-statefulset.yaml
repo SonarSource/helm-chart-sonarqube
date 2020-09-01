@@ -139,7 +139,7 @@ spec:
           imagePullPolicy: {{ .Values.nexusProxy.imagePullPolicy }}
           env:
             - name: ALLOWED_USER_AGENTS_ON_ROOT_REGEX
-              value: "GoogleHC"
+              value: {{ default "GoogleHC" .Values.nexusProxy.env.allowedUserAgentsOnRootRegex | quote }}
             - name: CLOUD_IAM_AUTH_ENABLED
               value: {{ .Values.nexusProxy.env.cloudIamAuthEnabled | quote }}
             - name: BIND_PORT

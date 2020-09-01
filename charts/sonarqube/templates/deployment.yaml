@@ -35,6 +35,10 @@ spec:
       {{- end }}
 {{- end }}
     spec:
+    {{- if .Values.schedulerName }}
+      schedulerName: {{ .Values.schedulerName }}
+    {{- end }}
+
     {{- if .Values.serviceAccount.create }}
     {{- if .Values.serviceAccount.name }}
       serviceAccountName: {{ .Values.serviceAccount.name }}
