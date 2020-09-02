@@ -1,5 +1,7 @@
 # Nexus IQ
 
+***This chart is deprecated. Nexus IQ chart is now managed by sonatype: https://artifacthub.io/packages/helm/sonatype/nexus-iq-server***
+
 ## What is Nexus IQ
 
 Shares component intelligence with your teams early, often and throughout the software supply chain so they make better decisions and build better software.
