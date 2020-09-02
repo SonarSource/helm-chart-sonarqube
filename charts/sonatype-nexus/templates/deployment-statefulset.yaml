@@ -115,8 +115,10 @@ spec:
           volumeMounts:
             - mountPath: /nexus-data
               name: {{ template "nexus.fullname" . }}-data
+            {{- if .Values.nexusBackup.enabled }}
             - mountPath: /nexus-data/backup
               name: {{ template "nexus.fullname" . }}-backup
+            {{- end }}
             {{- if .Values.config.enabled }}
             - mountPath: {{ .Values.config.mountPath }}
               name: {{ template "nexus.name" . }}-conf
@@ -137,7 +139,7 @@ spec:
           imagePullPolicy: {{ .Values.nexusProxy.imagePullPolicy }}
           env:
             - name: ALLOWED_USER_AGENTS_ON_ROOT_REGEX
-              value: "GoogleHC"
+              value: {{ default "GoogleHC" .Values.nexusProxy.env.allowedUserAgentsOnRootRegex | quote }}
             - name: CLOUD_IAM_AUTH_ENABLED
               value: {{ .Values.nexusProxy.env.cloudIamAuthEnabled | quote }}
             - name: BIND_PORT
@@ -240,7 +242,7 @@ spec:
         - name: {{ template "nexus.fullname" . }}-data
           emptyDir: {}
         {{- end }}
-        {{- if not .Values.nexusBackup.persistence.enabled }}
+        {{- if and .Values.nexusBackup.enabled (not .Values.nexusBackup.persistence.enabled) }}
         - name: {{ template "nexus.fullname" . }}-backup
           emptyDir: {}
         {{- end }}
@@ -252,13 +254,15 @@ spec:
           {{- else }}
           emptyDir: {}
           {{- end }}
+        {{- if .Values.nexusBackup.enabled }}
         - name: {{ template "nexus.fullname" . }}-backup
-          {{- if .Values.nexusBackup.persistence.enabled }}
+          {{- if and .Values.nexusBackup.persistence.enabled .Values.nexusBackup.enabled }}
           persistentVolumeClaim:
             claimName: {{ .Values.nexusBackup.persistence.existingClaim | default (printf "%s-%s" (include "nexus.fullname" .) "backup") }}
           {{- else }}
           emptyDir: {}
           {{- end }}
+        {{- end }}
         {{- end }}
         {{- if .Values.config.enabled }}
         - name: {{ template "nexus.name" . }}-conf
