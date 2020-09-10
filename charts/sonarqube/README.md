@@ -84,7 +84,6 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `serviceAccount.annotations`        | Additional serviceAccount annotations                                                                                     | `{}`                                           |
 | `account.adminPassword`             | Custom admin password                                                                                                     | `"admin"`                                      |
 | `account.currentAdminPassword`      | Current admin password                                                                                                    | `"admin"`                                      |
-| `account.proto`                     | Protocol to access sonarqube-api                                                                                          | `"http"`                                       |
 | `curlContainerImage`                | Curl container image                                                                                                      | `"curlimages/curl:latest"`                     |
 | `sonarProperties`                   | Custom `sonar.properties` file                                                                                            | None                                           |
 | `sonarSecretProperties`             | Additional `sonar.properties` file to load from a secret                                                                  | None                                           |
