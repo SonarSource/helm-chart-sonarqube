@@ -160,7 +160,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `secret.enabled`                            | Enable secret                    | `false`                                    |
 | `secret.mountPath`                          | Path to mount the secret         | `/etc/secret-volume`                       |
 | `secret.readOnly`                           | Secret readonly state            | `true`                                     |
-| `secret.data`                               | Secret data                      | `nil`                                      |
+| `secret.data`                               | Secret data to add to secret. If nil then expects that a secret by name of `${.Values.nameOverride}-secret` or `${.Chart.Name}-secret` exists                      | `nil`                                      |
 | `service.enabled`                           | Enable additional service        | `nil`                                      |
 | `service.name`                              | Service name                     | `nil`                                      |
 | `service.portName`                          | Service port name                | `nil`                                      |
