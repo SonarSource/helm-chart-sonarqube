@@ -55,6 +55,8 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `elasticsearch.configureNode`       | Modify k8s worker to conform to system requirements                                                                       | `true`                                         |
 | `elasticsearch.bootstrapChecks`     | Enables/disables Elasticsearch bootstrap checks                                                                           | `true`                                         |
 | `securityContext.fsGroup`           | Group applied to mounted directories/files                                                                                | `999`                                          |
+| `containerSecurityContext`          | SecurityContext for sonarqube container                                                                                   | `{}`                                          |
+| `initContainersSecurityContext`     | SecurityContext for init containers                                                                                       | `{ privileged: true }`                                          |
 | `ingress.enabled`                   | Flag for enabling ingress                                                                                                 | false                                          |
 | `ingress.labels`                    | Ingress additional labels                                                                                                 | `{}`                                           |
 | `ingress.hosts[0].name`             | Hostname to your SonarQube installation                                                                                   | `sonar.organization.com`                       |
@@ -122,6 +124,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `extraConfig.secrets`               | A list of `Secret`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables    | `[]`                                           |
 | `extraConfig.secrets`               | A list of `ConfigMap`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables | `[]`                                           |
 | `emptyDir`                          | Configuration of resources for `emptyDir`                                                                                 | `{}`                                           |
+| `initSysctlResources`               | InitSysctl container resource requests & limits                                                                           | `{}`                                           |
 
 You can also configure values for the PostgreSQL database via the Postgresql [Chart](https://hub.helm.sh/charts/bitnami/postgresql)
 
