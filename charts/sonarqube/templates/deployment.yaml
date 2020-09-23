@@ -7,6 +7,12 @@ metadata:
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "sonarqube.name" . }}-{{ template "sonarqube.fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: {{ template "sonarqube.fullname" . }}
+    app.kubernetes.io/version: {{ .Values.image.tag | quote }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -58,6 +64,8 @@ spec:
           image: {{ default "adoptopenjdk/openjdk11:alpine" .Values.plugins.initCertsContainerImage }}
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
+          securityContext:
+{{ toYaml .Values.initContainersSecurityContext | indent 12 }}
           volumeMounts:
             - mountPath: /tmp/certs
               name: sonarqube
@@ -73,7 +81,11 @@ spec:
         - name: init-sysctl
           image: {{ default "busybox:1.31" .Values.plugins.initSysctlContainerImage }}
           securityContext:
-            privileged: true
+{{ toYaml .Values.initContainersSecurityContext | indent 12 }}
+          {{- if .Values.plugins.initSysctlResources }}
+          resources:
+{{ toYaml .Values.plugins.initSysctlResources | indent 12 }}
+          {{- end }}
           command:
           - /bin/sh
           - -c
@@ -99,6 +111,8 @@ spec:
               subPath: tmp
             - name: install-plugins
               mountPath: /tmp/scripts/
+          securityContext:
+{{ toYaml .Values.initContainersSecurityContext | indent 12 }}
           {{- with .Values.env }}
           env:
             {{- . | toYaml | trim | nindent 12 }}
@@ -200,6 +214,10 @@ spec:
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- if .Values.containerSecurityContext }}
+          securityContext:
+{{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          {{- end }}
           volumeMounts:
 {{- if .Values.persistence.mounts }}
 {{ toYaml .Values.persistence.mounts | indent 12 }}
