@@ -58,3 +58,10 @@ chart: {{ template "nexus.chart" . }}
 release: {{ .Release.Name }}
 heritage: {{ .Release.Service }}
 {{- end -}}
+
+{{/*
+Create a fully qualified name for docker ingress.
+*/}}
+{{- define "nexus.ingres.docker" -}}
+{{- printf "%s-%s" (include "nexus.fullname" .) "docker" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
