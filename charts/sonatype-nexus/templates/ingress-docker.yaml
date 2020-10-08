@@ -1,22 +1,22 @@
-{{- if .Values.ingress.enabled -}}
+{{- if and .Values.ingressDocker.enabled .Values.nexusProxy.enabled }}
 apiVersion: {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }} networking.k8s.io/v1beta1 {{- else }} extensions/v1beta1 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ template "nexus.fullname" . }}
+  name: {{ template "nexus.ingres.docker" . }}
   namespace: {{ template "nexus.namespace" . }}
   labels:
 {{ include "nexus.labels" . | indent 4 }}
-    {{- range $key, $value := .Values.ingress.labels }}
+    {{- range $key, $value := .Values.ingressDocker.labels }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
   annotations:
-    {{- range $key, $value := .Values.ingress.annotations }}
+    {{- range $key, $value := .Values.ingressDocker.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
 spec:
   rules:
-{{- if .Values.nexusProxy.env.nexusHttpHost }}
-    - host: {{ .Values.nexusProxy.env.nexusHttpHost }}
+  {{- if .Values.nexusProxy.env.nexusDockerHost }}
+    - host: {{ .Values.nexusProxy.env.nexusDockerHost }}
       http:
         paths:
           - backend:
@@ -25,24 +25,20 @@ spec:
             {{- else }}
               serviceName: {{ template "nexus.fullname" . }}
             {{- end }}
-{{- if .Values.nexusProxy.enabled }}
               servicePort: {{ .Values.nexusProxy.port }}
-{{- else }}
-              servicePort: {{ .Values.nexus.nexusPort }}
-{{- end }}
             path: {{ .Values.ingress.path }}
-{{- end }}
-  {{- with .Values.ingress.rules }}
+  {{- end }}
+  {{- with .Values.ingressDocker.rules }}
     {{- toYaml . | nindent 4 }}
   {{- end -}}
 {{- if .Values.ingress.tls.enabled }}
   tls:
     - hosts:
-      {{- if .Values.nexusProxy.env.nexusHttpHost }}
-        - {{ .Values.nexusProxy.env.nexusHttpHost }}
+      {{- if .Values.nexusProxy.env.nexusDockerHost }}
+        - {{ .Values.nexusProxy.env.nexusDockerHost }}
       {{- end }}
-      {{- if .Values.ingress.tls.secretName }}
-      secretName: {{ .Values.ingress.tls.secretName | quote }}
+      {{- if .Values.ingressDocker.tls.secretName }}
+      secretName: {{ .Values.ingressDocker.tls.secretName | quote }}
       {{- end }}
 {{- end -}}
 {{- end }}
