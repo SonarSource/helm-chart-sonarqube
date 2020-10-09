@@ -134,6 +134,9 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `nexusBackup.imageTag`                      | Nexus backup image version          | `1.5.0`                                 |
 | `nexusBackup.imagePullPolicy`               | Backup image pull policy            | `IfNotPresent`                          |
 | `nexusBackup.env.targetBucket`              | Required if `nexusBackup` is enabled. Google Cloud Storage bucker for backups format `gs://BACKUP_BUCKET`  | `nil`  |
+| `nexusBackup.env.nexusAuthorization`        | If set, `nexusBackup.nexusAdminPassword` will be disregarded. | `nil`  |
+| `nexusBackup.env.offlineRepos`              | Space separated list of repositories must be taken down to achieve a consistent backup. | `"maven-central maven-public maven-releases maven-snapshots"`  |
+| `nexusBackup.env.gracePeriod`               | The amount of time in seconds to wait between stopping repositories and starting the upload. | `60`  |
 | `nexusBackup.nexusAdminPassword`            | Nexus admin password used by the backup container to access Nexus API. This password should match the one that gets chosen by the user to replace the default admin password after the first login  | `admin123`                |
 | `nexusBackup.persistence.enabled`           | Create a volume for backing Nexus configuration  | `true`                     |
 | `nexusBackup.persistence.accessMode`        | ReadWriteOnce or ReadOnly           | `ReadWriteOnce`                         |
