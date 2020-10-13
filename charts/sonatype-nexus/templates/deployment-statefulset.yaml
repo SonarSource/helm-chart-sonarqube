@@ -199,10 +199,14 @@ spec:
 {{ toYaml .Values.nexusBackup.resources | indent 12 }}
           env:
             - name: NEXUS_AUTHORIZATION
+            {{- if not .Values.nexusBackup.env.nexusAuthorization }}
               valueFrom:
                 secretKeyRef:
                   key: nexus.nexusAdminPassword
                   name: {{ template "nexus.fullname" . }}
+            {{- else }}
+              value: {{ .Values.nexusBackup.env.nexusAuthorization | quote }}
+            {{- end }}
             - name: NEXUS_BACKUP_DIRECTORY
               value: /nexus-data/backup
             - name: NEXUS_DATA_DIRECTORY
@@ -210,11 +214,11 @@ spec:
             - name: NEXUS_LOCAL_HOST_PORT
               value: "localhost:{{ .Values.nexus.nexusPort }}"
             - name: OFFLINE_REPOS
-              value: "maven-central maven-public maven-releases maven-snapshots"
+              value: {{ .Values.nexusBackup.env.offlineRepos | quote }}
             - name: TARGET_BUCKET
               value: {{ .Values.nexusBackup.env.targetBucket | quote }}
             - name: GRACE_PERIOD
-              value: "60"
+              value: {{ .Values.nexusBackup.env.gracePeriod | quote }}
             - name: TRIGGER_FILE
               value: .backup
           volumeMounts:
