@@ -6,7 +6,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ $cm.name }}
-  namespace: {{ template "nexus.namespace" . }}
+  namespace: {{ template "nexus.namespace" $root }}
   labels:
 {{ include "nexus.labels" $root | indent 4 }}
 {{- if $.Values.nexus.labels }}
