@@ -11,6 +11,13 @@ deploymentStrategy: {}
   #   maxUnavailable: 25%
   # type: RollingUpdate
 
+# If enabled, a Job will be launched after the chart is installed to initialize the admin password of your choice
+initAdminPassword:
+  enabled: false
+  # This is the default admin password when Nexus is first started
+  currentAdminPassword: "admin123"
+  newAdminPassword: "admin321"
+
 nexus:
   imageName: quay.io/travelaudience/docker-nexus
   imageTag: 3.25.1
