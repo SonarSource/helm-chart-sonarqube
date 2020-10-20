@@ -1,4 +1,4 @@
-{{- if .Values.enableTests -}}
+{{- if .Values.tests.enabled -}}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -13,7 +13,7 @@ metadata:
 spec:
   initContainers:
     - name: "test-framework"
-      image: {{ default "dduportal/bats:0.4.0" .Values.plugins.initTestContainerImage }}
+      image: {{ default "dduportal/bats:0.4.0" .Values.test.image }}
       command:
       - "bash"
       - "-c"

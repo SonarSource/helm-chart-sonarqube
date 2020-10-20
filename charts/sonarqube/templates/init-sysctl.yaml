@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "sonarqube.fullname" . }}-init-sysctl
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  init_sysctl.sh: |-
+    {{- if .Values.initSysctl.vmMaxMapCount }}
+    sysctl -w vm.max_map_count={{ .Values.initSysctl.vmMaxMapCount }}
+    {{- end }}
+    {{- if .Values.initSysctl.fsFileMax }}
+    sysctl -w fs.file-max={{ .Values.initSysctl.fsFileMax }}
+    {{- end }}
+    {{- if .Values.initSysctl.nofile }}
+    ulimit -n {{ .Values.initSysctl.nofile }}
+    {{- end }}
+    {{- if .Values.initSysctl.nproc }}
+    ulimit -u {{ .Values.initSysctl.nproc }}
+    {{- end }}

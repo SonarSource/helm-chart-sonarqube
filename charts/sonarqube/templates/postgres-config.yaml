@@ -9,10 +9,10 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
 {{- if .Values.postgresql.postgresqlUsername }}
-  SONARQUBE_JDBC_USERNAME:  {{ .Values.postgresql.postgresqlUsername | quote }}
+  SONAR_JDBC_USERNAME: {{ .Values.postgresql.postgresqlUsername | quote }}
 {{- end }}
 {{- if .Values.jdbcUrlOverride }}
-  SONARQUBE_JDBC_URL: "{{- .Values.jdbcUrlOverride -}}"
+  SONAR_JDBC_URL: "{{- .Values.jdbcUrlOverride -}}"
 {{- else if and .Values.postgresql.service.port .Values.postgresql.postgresqlDatabase }}
-  SONARQUBE_JDBC_URL: "jdbc:{{- .Values.jdbcDatabaseType -}}://{{ template "postgresql.hostname" . }}:{{- .Values.postgresql.service.port -}}/{{- .Values.postgresql.postgresqlDatabase -}}"
+  SONAR_JDBC_URL: "jdbc:{{- .Values.jdbcDatabaseType -}}://{{ template "postgresql.hostname" . }}:{{- .Values.postgresql.service.port -}}/{{- .Values.postgresql.postgresqlDatabase -}}"
 {{- end }}

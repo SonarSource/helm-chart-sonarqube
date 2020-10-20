@@ -32,6 +32,7 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
       annotations:
+        checksum/init-sysctl: {{ include (print $.Template.BasePath "/init-sysctl.yaml") . | sha256sum }}
         checksum/plugins: {{ include (print $.Template.BasePath "/install-plugins.yaml") . | sha256sum }}
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
@@ -44,7 +45,6 @@ spec:
     {{- if .Values.schedulerName }}
       schedulerName: {{ .Values.schedulerName }}
     {{- end }}
-
     {{- if .Values.serviceAccount.create }}
     {{- if .Values.serviceAccount.name }}
       serviceAccountName: {{ .Values.serviceAccount.name }}
@@ -61,11 +61,16 @@ spec:
       initContainers:
       {{- if .Values.caCerts }}
         - name: ca-certs
-          image: {{ default "adoptopenjdk/openjdk11:alpine" .Values.plugins.initCertsContainerImage }}
+          image: {{ default "adoptopenjdk/openjdk11:alpine" .Values.caCerts.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy  }}
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
+          {{- if $securityContext := .Values.initContainers.securityContext }}
           securityContext:
-{{ toYaml .Values.initContainersSecurityContext | indent 12 }}
+{{ toYaml $securityContext | indent 12 }}
+          {{- end }}
+          resources:
+{{ toYaml .Values.initContainers.resources | indent 12 }}
           volumeMounts:
             - mountPath: /tmp/certs
               name: sonarqube
@@ -77,19 +82,22 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      {{- if .Values.elasticsearch.configureNode }}
+      {{- if or .Values.initSysctl.enabled .Values.elasticsearch.configureNode }}
         - name: init-sysctl
-          image: {{ default "busybox:1.31" .Values.plugins.initSysctlContainerImage }}
+          image: {{ default "busybox:1.32" .Values.initSysctl.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy  }}
+          {{- if $securityContext := (default .Values.initContainers.securityContext .Values.initSysctl.securityContext) }}
           securityContext:
-{{ toYaml .Values.initContainersSecurityContext | indent 12 }}
-          {{- if .Values.plugins.initSysctlResources }}
-          resources:
-{{ toYaml .Values.plugins.initSysctlResources | indent 12 }}
+{{ toYaml $securityContext | indent 12 }}
           {{- end }}
-          command:
-          - /bin/sh
-          - -c
-          - 'if [[ "$(sysctl -n vm.max_map_count)" -lt 262144 ]]; then sysctl -w vm.max_map_count=262144; fi'
+          resources:
+{{ toYaml (default .Values.initContainers.resources .Values.initSysctl.resources) | indent 12 }}
+          command: ["sh",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
+          volumeMounts:
+            - name: init-sysctl
+              mountPath: /tmp/scripts/
           {{- with .Values.env }}
           env:
             {{- . | toYaml | trim | nindent 12 }}
@@ -97,32 +105,35 @@ spec:
       {{- end }}
       {{- if .Values.plugins.install }}
         - name: install-plugins
-          image: {{ default "rjkernick/alpine-wget:latest" .Values.plugins.initContainerImage }}
+          image: {{ default "rjkernick/alpine-wget:latest" .Values.plugins.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy  }}
           command: ["sh",
-            "-ec",
-            "mkdir -p {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp ;
-             cd {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp ;
-            rm -f ./* ;
-            sh -e /tmp/scripts/install_plugins.sh ;
-            pwd ; ls -lah"]
+            "-e",
+            "/tmp/scripts/install_plugins.sh"]
           volumeMounts:
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp
+            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/downloads
               name: sonarqube
-              subPath: tmp
+              subPath: extensions/downloads
+            - mountPath: {{ .Values.sonarqubeFolder }}/lib/common
+              name: sonarqube
+              subPath: lib/common
             - name: install-plugins
               mountPath: /tmp/scripts/
+          {{- if $securityContext := .Values.initContainers.securityContext }}
           securityContext:
-{{ toYaml .Values.initContainersSecurityContext | indent 12 }}
+{{ toYaml $securityContext | indent 12 }}
+          {{- end }}
+          resources:
+{{ toYaml (default .Values.initContainers.resources .Values.plugins.resource) | indent 12 }}
           {{- with .Values.env }}
           env:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
-          resources:
-{{ toYaml .Values.plugins.resources | indent 12 }}
       {{- end }}
       {{- if and .Values.sonarProperties .Values.sonarSecretProperties }}
         - name: concat-properties
-          image: {{ default "alpine:3.10.3" .Values.plugins.initContainerImage }}
+          image: {{ default "busybox:1.32" .Values.initContainers.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy  }}
           command: ["sh",
             "-c",
             "awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties"]
@@ -135,6 +146,12 @@ spec:
               subPath: secret.properties
             - mountPath: /tmp/result
               name: concat-dir
+          {{- if $securityContext := .Values.initContainers.securityContext }}
+          securityContext:
+{{ toYaml $securityContext | indent 12 }}
+          {{- end }}
+          resources:
+{{ toYaml .Values.initContainers.resources | indent 12 }}
           {{- with .Values.env }}
           env:
             {{- . | toYaml | trim | nindent 12 }}
@@ -167,15 +184,11 @@ spec:
             - name: http
               containerPort: {{ .Values.service.internalPort }}
               protocol: TCP
-          {{- if .Values.plugins.install }}
-          command:
-            - /tmp/scripts/copy_plugins.sh
-          {{- end }}
           env:
             {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
-            - name: SONARQUBE_WEB_JVM_OPTS
+            - name: SONAR_WEB_JAVAOPTS
               {{- if .Values.caCerts }}
               value: {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
               {{- else }}
@@ -185,7 +198,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts" .Values.sonarqubeFolder | trim | quote }}
             {{- end }}
-            - name: SONARQUBE_JDBC_PASSWORD
+            - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ template "postgresql.secret" . }}
@@ -241,12 +254,18 @@ spec:
             - mountPath: {{ .Values.sonarqubeFolder }}/data
               name: sonarqube
               subPath: data
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp
-              name: sonarqube
-              subPath: tmp
+            {{- if .Values.plugins.install }}
             - mountPath: {{ .Values.sonarqubeFolder }}/extensions/downloads
               name: sonarqube
-              subPath: downloads
+              subPath: extensions/downloads
+            {{- end }}
+            {{- if .Values.plugins.lib }}
+            {{- range $index, $val := .Values.plugins.lib }}
+            - mountPath: {{ $.Values.sonarqubeFolder }}/lib/common/{{ $val }}
+              name: sonarqube
+              subPath: lib/common/{{ $val }}
+            {{- end }}
+            {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/temp
               name: sonarqube
               subPath: temp
@@ -255,8 +274,6 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-            - name: copy-plugins
-              mountPath: /tmp/scripts
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- if .Values.nodeSelector }}
@@ -304,19 +321,18 @@ spec:
         secret:
           secretName: {{ .Values.caCerts.secret }}
       {{- end }}
+      - name: init-sysctl
+        configMap:
+          name: {{ template "sonarqube.fullname" . }}-init-sysctl
+          items:
+            - key: init_sysctl.sh
+              path: init_sysctl.sh
       - name: install-plugins
         configMap:
           name: {{ template "sonarqube.fullname" . }}-install-plugins
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
-      - name: copy-plugins
-        configMap:
-          name: {{ template "sonarqube.fullname" . }}-copy-plugins
-          defaultMode: 0755
-          items:
-            - key: copy_plugins.sh
-              path: copy_plugins.sh
       - name: sonarqube
         {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
