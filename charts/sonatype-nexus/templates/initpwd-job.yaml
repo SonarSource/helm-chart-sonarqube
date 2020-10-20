@@ -31,7 +31,7 @@ spec:
               -H "Authorization: Basic $(NEXUS_AUTHORIZATION)"
               --fail
               -s
-              -d "$(NEW_ADMIN_PASSWORD)"
+              -d "$(ADMIN_PASSWORD)"
               "$(NEXUS_URL)/service/rest/beta/security/users/admin/change-password"
           env:
             - name: NEXUS_AUTHORIZATION
@@ -41,10 +41,10 @@ spec:
                   name: {{ template "nexus.name" . }}-initpwd-secret
             - name: NEXUS_URL
               value: http://{{ template "nexus.name" . }}-service.{{ .Release.Namespace }}:{{ .Values.service.port }}
-            - name: NEW_ADMIN_PASSWORD
+            - name: ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  key: newAdminPassword
+                  key: adminPassword
                   name: {{ template "nexus.name" . }}-initpwd-secret
 ---
 apiVersion: v1
@@ -58,6 +58,6 @@ metadata:
 {{ include "nexus.labels" . | indent 4 }}
 type: Opaque
 data:
-  nexusAuthorization: {{ printf "%s%s" "admin:" (default "admin123" .Values.initAdminPassword.currentAdminPassword) | b64enc }}
-  newAdminPassword: {{ .Values.initAdminPassword.newAdminPassword }}
+  nexusAuthorization: {{ printf "%s%s" "admin:" (default "admin123" .Values.initAdminPassword.defaultPasswordOverride) | b64enc }}
+  adminPassword: {{ .Values.initAdminPassword.password }}
 {{- end }}
