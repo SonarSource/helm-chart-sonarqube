@@ -1,4 +1,5 @@
 {{- if .Values.initAdminPassword.enabled }}
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -32,15 +33,15 @@ spec:
               --fail
               -s
               -d "$(ADMIN_PASSWORD)"
-              "$(NEXUS_URL)/service/rest/beta/security/users/admin/change-password"
+              "http://$(NEXUS_HOST)/service/rest/beta/security/users/admin/change-password"
           env:
             - name: NEXUS_AUTHORIZATION
               valueFrom:
                 secretKeyRef:
                   key: nexusAuthorization
                   name: {{ template "nexus.name" . }}-initpwd-secret
-            - name: NEXUS_URL
-              value: http://{{ template "nexus.name" . }}-service.{{ .Release.Namespace }}:{{ .Values.service.port }}
+            - name: NEXUS_HOST
+              value: {{ template "nexus.name" . }}-service.{{ .Release.Namespace }}:{{ .Values.nexus.nexusPort }}
             - name: ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -59,5 +60,5 @@ metadata:
 type: Opaque
 data:
   nexusAuthorization: {{ printf "%s%s" "admin:" (default "admin123" .Values.initAdminPassword.defaultPasswordOverride) | b64enc }}
-  adminPassword: {{ .Values.initAdminPassword.password }}
+  adminPassword: {{ .Values.initAdminPassword.password | b64enc }}
 {{- end }}
