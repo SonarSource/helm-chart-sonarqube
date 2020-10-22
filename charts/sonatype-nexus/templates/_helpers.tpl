@@ -36,13 +36,6 @@ Allow the release namespace to be overridden for multi-namespace deployments in 
 {{- end -}}
 
 {{/*
-Create chart name and version as used by the chart label.
-*/}}
-{{- define "nexus.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
-{{/*
 Create a default fully qualified name for proxy keystore secret.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
@@ -54,7 +47,7 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- define "nexus.labels" -}}
 app: {{ template "nexus.name" . }}
 fullname: {{ template "nexus.fullname" . }}
-chart: {{ template "nexus.chart" . }}
+chart: {{ .Chart.Name }}
 release: {{ .Release.Name }}
 heritage: {{ .Release.Service }}
 {{- end -}}

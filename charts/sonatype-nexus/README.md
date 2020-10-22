@@ -184,6 +184,9 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `serviceAccount.create`                     | Automatically create a service account | `true`                               |
 | `serviceAccount.name`                       | Service account to use           | `nil`  |
 | `serviceAccount.annotations`                | Service account annotations  | `nil` |
+| `rbac.create`                               | Creates a ClusterRoleBinding attached to the Service account. | `false` |
+| `rbac.roleRef`                              | ClusterRoleBinding field `roleRef` content. See examples [here](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#rolebinding-example). | `nil` |
+| `rbac.annotations`                          | ClusterRoleBinding annotations.  | `nil` |
 | `route.enabled`         | Set to true to create route for additional service | `false` |
 | `route.name`            | Name of route                                      | `docker` |
 | `route.portName`        | Target port name of service                        | `docker` |

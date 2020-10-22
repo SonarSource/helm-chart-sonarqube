@@ -15,7 +15,8 @@ deploymentStrategy: {}
 
 image:
   repository: sonarqube
-  tag: 8.2-community
+  tag: 8.5-community
+  pullPolicy: IfNotPresent
   # If using a private repository, the name of the imagePullSecret to use
   # pullSecret: my-repo-secret
 
@@ -25,6 +26,7 @@ securityContext:
 
 # Settings to configure elasticsearch host requirements
 elasticsearch:
+  # DEPRECATED: Use initSysctl.enabled instead
   configureNode: true
   bootstrapChecks: true
 
@@ -102,15 +104,50 @@ livenessProbe:
   # If an ingress *path* is defined, it should be reflected here
   # sonar.web.context: /sonarqube
 
-# Sysctl container requires to be run as privileged
-initContainersSecurityContext:
-  privileged: true
+initContainers:
+  # image: busybox:1.32
+  # We allow the init containers to have a separate security context declaration because
+  # the initContainer may not require the same as SonarQube.
+  # securityContext: {}
+  # We allow the init containers to have a separate resources declaration because
+  # the initContainer does not take as much resources.
+  resources: {}
 
 ## Provide a secret containing one or more certificate files in the keys that will be added to cacerts
 ## The cacerts file will be set via SONARQUBE_WEB_JVM_OPTS and SONAR_CE_JAVAOPTS
 ##
 # caCerts:
-#   secret: my-secret
+  # image: adoptopenjdk/openjdk11:alpine
+  # secret: my-secret
+
+initSysctl:
+  enabled: true
+  vmMaxMapCount: 524288
+  fsFileMax: 131072
+  nofile: 131072
+  nproc: 8192
+  # image: busybox:1.32
+  securityContext:
+    privileged: true
+  # resources: {}
+
+# List of plugins to install.
+# For example:
+# plugins:
+#  install:
+#    - "https://github.com/AmadeusITGroup/sonar-stash/releases/download/1.3.0/sonar-stash-plugin-1.3.0.jar"
+#    - "https://github.com/SonarSource/sonar-ldap/releases/download/2.2-RC3/sonar-ldap-plugin-2.2.0.601.jar"
+plugins:
+  install: []
+  lib: []
+
+  # For use behind a corporate proxy when downloading plugins
+  # httpProxy: ""
+  # httpsProxy: ""
+  # noProxy: ""
+
+  # image: rjkernick/alpine-wget:latest
+  # resources: {}
 
 ## Values to add to SONARQUBE_WEB_JVM_OPTS
 ##
@@ -167,29 +204,6 @@ emptyDir: {}
   # medium: Memory
   # sizeLimit: 16Mi
 
-# List of plugins to install.
-# For example:
-# plugins:
-#  install:
-#    - "https://github.com/AmadeusITGroup/sonar-stash/releases/download/1.3.0/sonar-stash-plugin-1.3.0.jar"
-#    - "https://github.com/SonarSource/sonar-ldap/releases/download/2.2-RC3/sonar-ldap-plugin-2.2.0.601.jar"
-plugins:
-  install: []
-  lib: []
-
-  # For use behind a corporate proxy when downloading plugins
-  # httpProxy: ""
-  # httpsProxy: ""
-
-  # initContainerImage: rjkernick/alpine-wget:latest
-  # initSysctlContainerImage: busybox:1.31
-  # initCertsContainerImage: adoptopenjdk/openjdk11:alpine
-  # initTestContainerImage: dduportal/bats:0.4.0
-  # deleteDefaultPlugins: true
-  resources: {}
-  # We allow the plugins init container to have a separate resources declaration because
-  # the initContainer does not take as much resources.
-
 # A custom sonar.properties file can be provided via dictionary.
 # For example:
 # sonarProperties:
@@ -238,7 +252,9 @@ podLabels: {}
 # For compatibility with 8.2, leave the default. They changed it back to /opt/sonarqube
 sonarqubeFolder: /opt/sonarqube
 
-enableTests: true
+tests:
+  enabled: true
+  # image: bitnami/minideb-extras
 
 serviceAccount:
   create: false
@@ -273,3 +289,5 @@ extraConfig:
 #   adminPassword: admin
 #   currentAdminPassword: admin
 # curlContainerImage: curlimages/curl:latest
+
+terminationGracePeriodSeconds: 60

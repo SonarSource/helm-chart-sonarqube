@@ -9,16 +9,22 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   install_plugins.sh: |-
-    cd {{ .Values.sonarqubeFolder }}/extensions/plugins/tmp
     {{- if .Values.plugins.httpProxy }}
     export http_proxy={{ .Values.plugins.httpProxy }}
     {{- end }}
     {{- if .Values.plugins.httpsProxy }}
     export https_proxy={{ .Values.plugins.httpsProxy }}
     {{- end }}
+    {{- if .Values.plugins.noProxy }}
+    export no_proxy={{ .Values.plugins.noProxy }}
+    {{- end }}
     {{- if .Values.plugins.install }}
-      {{ range $index, $val := .Values.plugins.install }}echo {{ $val | quote }} >> plugins.txt
-      {{ end }}
-      cat plugins.txt | xargs -n 1 -P 8 wget --no-check-certificate --no-verbose
-      rm plugins.txt
+      {{ range $index, $val := .Values.plugins.install }}echo {{ $val | quote }} >> {{ $.Values.sonarqubeFolder }}/extensions/downloads/list{{ end }}
+      cat {{ .Values.sonarqubeFolder }}/extensions/downloads/list | xargs -n 1 -P 8 wget --directory-prefix {{ .Values.sonarqubeFolder }}/extensions/downloads --no-verbose
+      rm {{ .Values.sonarqubeFolder }}/extensions/downloads/list
+    {{- end }}
+    {{- if .Values.plugins.lib }}
+    {{- range $index, $val := .Values.plugins.lib }}
+      cp -f {{ $.Values.sonarqubeFolder }}/extensions/downloads/{{ $val }} {{ $.Values.sonarqubeFolder }}/lib/common/{{ $val }}
+    {{- end }}
     {{- end }}
