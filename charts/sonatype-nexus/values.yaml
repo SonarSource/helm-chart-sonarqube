@@ -18,8 +18,8 @@ nexus:
   # Uncomment this to scheduler pods on priority
   # priorityClassName: "high-priority"
   env:
-    - name: install4jAddVmParams
-      value: "-Xms1200M -Xmx1200M -XX:MaxDirectMemorySize=2G -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap"
+    - name: INSTALL4J_ADD_VM_PARAMS
+      value: "-Xms1200M -Xmx1200M -XX:MaxDirectMemorySize=2G -XX:ActiveProcessorCount=4"
     - name: NEXUS_SECURITY_RANDOMPASSWORD
       value: "false"
   # nodeSelector:
@@ -60,7 +60,7 @@ nexus:
     fsGroup: 200
   podAnnotations: {}
   livenessProbe:
-    initialDelaySeconds: 30
+    initialDelaySeconds: 300
     periodSeconds: 30
     failureThreshold: 6
     # timeoutSeconds: 10
