@@ -81,6 +81,9 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `statefulset.enabled`                                         | Use statefulset instead of deployment | `false` |
 | `replicaCount`                                                | Number of Nexus service replicas    | `1`                                     |
 | `deploymentStrategy`                                          | Deployment Strategy     |  `rollingUpdate` |
+| `initAdminPassword.enabled`                 | Enable initialization of admin password on Helm install | `false`    |
+| `initAdminPassword.defaultPasswordOverride` | Override the default admin password                     | `nil`      |
+| `initAdminPassword.password`                | Admin password to be set                                | `admin321` |
 | `nexus.imageName`                           | Nexus image                         | `quay.io/travelaudience/docker-nexus`   |
 | `nexus.imageTag`                            | Version of Nexus                    | `3.25.1`                                 |
 | `nexus.imagePullPolicy`                     | Nexus image pull policy             | `IfNotPresent`                          |

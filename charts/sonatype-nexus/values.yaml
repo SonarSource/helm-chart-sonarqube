@@ -11,6 +11,13 @@ deploymentStrategy: {}
   #   maxUnavailable: 25%
   # type: RollingUpdate
 
+# If enabled, a Job will be launched after the chart is installed to initialize the admin password of your choice
+initAdminPassword:
+  enabled: false
+  # Set this in the instance where default admin password is different
+  defaultPasswordOverride:
+  password: "admin321"
+
 nexus:
   imageName: quay.io/travelaudience/docker-nexus
   imageTag: 3.25.1
@@ -152,6 +159,7 @@ nexusBackup:
     nexusAuthorization:
     offlineRepos: "maven-central maven-public maven-releases maven-snapshots"
     gracePeriod: 60
+  # This should match the value of `initAdminPassword.password` if `initAdminPassword.enabled` is true
   nexusAdminPassword: "admin123"
   persistence:
     enabled: true
