@@ -148,6 +148,13 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `nexusBackup.persistence.annotations`       | PV annotations for backup           | `{}`                                    |
 | `nexusBackup.persistence.existingClaim`     | Existing PVC name for backup        | `nil`                                   |
 | `nexusBackup.resources`                     | Backup resource requests and limits | `{}`                                    |
+| `nexusCloudiam.enabled`                       | Nexus Cloud IAM service account key path                | `false`                                 |
+| `nexusCloudiam.persistence.accessMode`        | ReadWriteOnce or ReadOnly           | `ReadWriteOnce`                         |
+| `nexusCloudiam.persistence.annotations`       | PV annotations for Cloud IAM service account key path | `{}`                                    |
+| `nexusCloudiam.persistence.enabled`           | Create a volume for Cloud IAM service account key path  | `true`                     |
+| `nexusCloudiam.persistence.existingClaim`     | Existing PVC name for Cloud IAM service account key path        | `nil`                                   |
+| `nexusCloudiam.persistence.storageClass`      | Storage class of Cloud IAM service account path PVC   | `nil`                                   |
+| `nexusCloudiam.persistence.storageSize`       | Size of Cloud IAM service account path volume    | `8Gi`                                   |
 | `ingress.enabled`                           | Create an ingress for Nexus         | `false`                                  |
 | `ingress.annotations`                       | Annotations to enhance ingress configuration  | `{}`                          |
 | `ingress.tls.enabled`                       | Enable TLS                          | `true`                                 |
