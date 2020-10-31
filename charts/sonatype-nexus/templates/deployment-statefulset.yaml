@@ -227,13 +227,17 @@ spec:
               value: .backup
             {{- if .Values.nexusCloudiam.enabled }}
             - name: CLOUD_IAM_SERVICE_ACCOUNT_KEY_PATH
-              value: /nexus-data/cloudiam
+              value: /nexus-data/cloudiam/service-account-key.json
             {{- end }}
           volumeMounts:
             - mountPath: /nexus-data
               name: {{ template "nexus.fullname" . }}-data
             - mountPath: /nexus-data/backup
               name: {{ template "nexus.fullname" . }}-backup
+            {{- if .Values.nexusCloudiam.enabled }}
+            - mountPath: /nexus-data/cloudiam
+              name: {{ template "nexus.fullname" . }}-cloudiam
+            {{- end }}
         {{- end }}
         {{- if .Values.deployment.additionalContainers }}
 {{ toYaml .Values.deployment.additionalContainers | indent 8 }}
