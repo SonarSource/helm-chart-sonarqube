@@ -275,6 +275,47 @@ resources:
     memory: 4800Mi
 ```
 
+### Using GCP Storage for Backup
+
+Irrespective of whether Nexus is deployed to Google's GKE, or to some other k8s installation, it is possible to configure the [nexus-backup](https://github.com/travelaudience/docker-nexus-backup) container to backup to GCP Cloud Storage.
+This makes for a cost effective solution for backups.
+
+To enable, add the following key to the values file:
+
+```yaml
+nexusCloudiam:
+  enabled: true
+```
+
+You should also deploy Nexus as a stateful app, rather than a deployment.
+That means also adding:
+ 
+```yaml
+statefulset:
+  enabled: true
+```
+
+Deploying the chart now will result in a new PV and PVC within the pod that runs the containers.
+
+Create a service account with privileges to upload to your GCP bucket, and creaet a key for this service account.
+Download that service account key as a file, call it `service-account-key.json`.
+
+This file now needs to be made available to the pod running in k8s, and should be called `/nexus-data/cloudiam/service-account-key.json`.
+How this is done will depend upon the storage class used for the PV.
+
+Confirm that the service account file is available to the pod, using:
+ 
+    kubectl exec --stdin --tty \
+        --container nexus-backup \
+        sonatype-nexus-0 \
+        -- find /nexus-data/cloudiam -type f
+
+You might need to scale the deployment to zero and back up to pick up the changes:
+
+    kubectl scale --replicas=0 statefulset.apps/sonatype-nexus
+    kubectl scale --replicas=1 statefulset.apps/sonatype-nexus
+
+
 ## After Installing the Chart
 
 After installing the chart a couple of actions need still to be done in order to use nexus. Please follow the instructions below.
