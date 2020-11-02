@@ -19,6 +19,7 @@ data:
     export no_proxy={{ .Values.plugins.noProxy }}
     {{- end }}
     {{- if .Values.plugins.install }}
+      rm {{ .Values.sonarqubeFolder }}/extensions/downloads/*
       {{ range $index, $val := .Values.plugins.install }}echo {{ $val | quote }} >> {{ $.Values.sonarqubeFolder }}/extensions/downloads/list{{ end }}
       cat {{ .Values.sonarqubeFolder }}/extensions/downloads/list | xargs -n 1 -P 8 wget --directory-prefix {{ .Values.sonarqubeFolder }}/extensions/downloads --no-verbose
       rm {{ .Values.sonarqubeFolder }}/extensions/downloads/list
