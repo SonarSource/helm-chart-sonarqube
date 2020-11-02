@@ -181,6 +181,21 @@ nexusBackup:
       # cpu: 200m
       # memory: 512Mi
 
+nexusCloudiam:
+  enabled: false
+  persistence:
+    enabled: true
+    # existingClaim:
+    # annotations:
+    #  "helm.sh/resource-policy": keep
+    accessMode: ReadWriteOnce
+    # See comment above for information on setting the backup storageClass
+    # storageClass: "-"
+    storageSize: 1Mi
+    # If PersistentDisk already exists you can create a PV for it by including the 2 following keypairs.
+    # pdName: nexus-cloudiam-path
+    # fsType: ext4
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true

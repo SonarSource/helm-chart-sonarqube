@@ -1,0 +1,28 @@
+{{- if and .Values.nexusCloudiam.enabled (not .Values.statefulset.enabled) }}
+{{- if and .Values.nexusCloudiam.persistence.enabled (not .Values.nexusCloudiam.persistence.existingClaim) }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ template "nexus.fullname" . }}-cloudiam
+  namespace: {{ template "nexus.namespace" . }}
+  labels:
+{{ include "nexus.labels" . | indent 4 }}
+{{- if .Values.nexusCloudiam.persistence.annotations }}
+  annotations:
+{{ toYaml .Values.nexusCloudiam.persistence.annotations | indent 4 }}
+{{- end }}
+spec:
+  accessModes:
+    - {{ .Values.nexusCloudiam.persistence.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.nexusCloudiam.persistence.storageSize | quote }}
+{{- if .Values.nexusCloudiam.persistence.storageClass }}
+{{- if (eq "-" .Values.nexusCloudiam.persistence.storageClass) }}
+  storageClassName: ""
+{{- else }}
+  storageClassName: "{{ .Values.nexusCloudiam.persistence.storageClass }}"
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
