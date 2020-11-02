@@ -37,6 +37,10 @@ spec:
       targetPort: {{ .Values.nexusProxy.targetPort }}
 {{- else }}
       targetPort: {{ .Values.nexus.nexusPort }}
+    - port: {{ .Values.nexus.dockerPort }}
+      name: docker
+      protocol: TCP
+      targetPort: {{ .Values.nexus.dockerPort }}
 {{- end }}
   selector:
     app: {{ template "nexus.name" . }}
