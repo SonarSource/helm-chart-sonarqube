@@ -1,0 +1,22 @@
+{{- if and .Values.nexusCloudiam.enabled (not .Values.statefulset.enabled) }}
+{{- if .Values.nexusCloudiam.persistence.pdName -}}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.nexusCloudiam.persistence.pdName }}
+  namespace: {{ template "nexus.namespace" . }}
+  labels:
+{{ include "nexus.labels" . | indent 4 }}
+spec:
+  capacity:
+    storage: {{ .Values.nexusCloudiam.persistence.storageSize }}
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    name: {{ template "nexus.fullname" . }}-cloudiam
+    namespace: {{ .Release.Namespace }}
+  gcePersistentDisk:
+    pdName: {{ .Values.nexusCloudiam.persistence.pdName }}
+    fsType: {{ .Values.nexusCloudiam.persistence.fsType }}
+{{- end }}
+{{- end }}

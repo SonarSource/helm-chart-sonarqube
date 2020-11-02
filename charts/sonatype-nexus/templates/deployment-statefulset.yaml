@@ -119,6 +119,10 @@ spec:
             - mountPath: /nexus-data/backup
               name: {{ template "nexus.fullname" . }}-backup
             {{- end }}
+            {{- if .Values.nexusCloudiam.enabled }}
+            - mountPath: /nexus-data/cloudiam
+              name: {{ template "nexus.fullname" . }}-cloudiam
+            {{- end }}
             {{- if .Values.config.enabled }}
             - mountPath: {{ .Values.config.mountPath }}
               name: {{ template "nexus.name" . }}-conf
@@ -221,11 +225,19 @@ spec:
               value: {{ .Values.nexusBackup.env.gracePeriod | quote }}
             - name: TRIGGER_FILE
               value: .backup
+            {{- if .Values.nexusCloudiam.enabled }}
+            - name: CLOUD_IAM_SERVICE_ACCOUNT_KEY_PATH
+              value: /nexus-data/cloudiam/service-account-key.json
+            {{- end }}
           volumeMounts:
             - mountPath: /nexus-data
               name: {{ template "nexus.fullname" . }}-data
             - mountPath: /nexus-data/backup
               name: {{ template "nexus.fullname" . }}-backup
+            {{- if .Values.nexusCloudiam.enabled }}
+            - mountPath: /nexus-data/cloudiam
+              name: {{ template "nexus.fullname" . }}-cloudiam
+            {{- end }}
         {{- end }}
         {{- if .Values.deployment.additionalContainers }}
 {{ toYaml .Values.deployment.additionalContainers | indent 8 }}
@@ -250,6 +262,10 @@ spec:
         - name: {{ template "nexus.fullname" . }}-backup
           emptyDir: {}
         {{- end }}
+        {{- if and .Values.nexusCloudiam.enabled (not .Values.nexusCloudiam.persistence.enabled) }}
+        - name: {{ template "nexus.fullname" . }}-cloudiam
+          emptyDir: {}
+        {{- end }}
         {{- else }}
         - name: {{ template "nexus.fullname" . }}-data
           {{- if .Values.persistence.enabled }}
@@ -263,6 +279,15 @@ spec:
           {{- if and .Values.nexusBackup.persistence.enabled .Values.nexusBackup.enabled }}
           persistentVolumeClaim:
             claimName: {{ .Values.nexusBackup.persistence.existingClaim | default (printf "%s-%s" (include "nexus.fullname" .) "backup") }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.nexusCloudiam.enabled }}
+        - name: {{ template "nexus.fullname" . }}-cloudiam
+          {{- if and .Values.nexusCloudiam.persistence.enabled .Values.nexusCloudiam.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.nexusCloudiam.persistence.existingClaim | default (printf "%s-%s" (include "nexus.fullname" .) "cloudiam") }}
           {{- else }}
           emptyDir: {}
           {{- end }}
@@ -334,6 +359,29 @@ spec:
         storageClassName: ""
         {{- else }}
         storageClassName: "{{ .Values.nexusBackup.persistence.storageClass }}"
+        {{- end }}
+        {{- end }}
+    {{- end }}
+    {{- if .Values.nexusCloudiam.persistence.enabled }}
+    - metadata:
+        name: {{ template "nexus.fullname" . }}-cloudiam
+        labels:
+{{ include "nexus.labels" . | indent 10 }}
+        {{- if .Values.nexusCloudiam.persistence.annotations }}
+        annotations:
+{{ toYaml .Values.nexusCloudiam.persistence.annotations | indent 10 }}
+        {{- end }}
+      spec:
+        accessModes:
+          - {{ .Values.nexusCloudiam.persistence.accessMode }}
+        resources:
+          requests:
+            storage: {{ .Values.nexusCloudiam.persistence.storageSize | quote }}
+        {{- if .Values.nexusCloudiam.persistence.storageClass }}
+        {{- if (eq "-" .Values.nexusCloudiam.persistence.storageClass) }}
+        storageClassName: ""
+        {{- else }}
+        storageClassName: "{{ .Values.nexusCloudiam.persistence.storageClass }}"
         {{- end }}
         {{- end }}
     {{- end }}
