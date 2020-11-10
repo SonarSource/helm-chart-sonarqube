@@ -2,7 +2,7 @@
 # namespaceOverride:
 
 statefulset:
-  enabled: true
+  enabled: false
 replicaCount: 1
 # By default deploymentStrategy is set to rollingUpdate with maxSurge of 25% and maxUnavailable of 25% . you can change type to `Recreate` or can uncomment `rollingUpdate` specification and adjust them to your usage.
 deploymentStrategy: {}
@@ -13,10 +13,10 @@ deploymentStrategy: {}
 
 # If enabled, a Job will be launched after the chart is installed to initialize the admin password of your choice
 initAdminPassword:
-  enabled: true
+  enabled: false
   # Set this in the instance where default admin password is different
   defaultPasswordOverride:
-  password: "admin32112"
+  password: "admin321"
 
 nexus:
   imageName: quay.io/travelaudience/docker-nexus
@@ -150,13 +150,12 @@ persistence:
   # fsType: ext4
 
 nexusBackup:
-  enabled: true
-  imageName: dbcc/docker-nexus-backup
-  imageTag: latest
+  enabled: false
+  imageName: quay.io/travelaudience/docker-nexus-backup
+  imageTag: 1.5.0
   imagePullPolicy: IfNotPresent
   env:
-    rcloneRemote: MINIOAWS
-    targetBucket: test
+    targetBucket:
     nexusAuthorization:
     offlineRepos: "maven-central maven-public maven-releases maven-snapshots"
     gracePeriod: 60
@@ -181,16 +180,6 @@ nexusBackup:
     # limits:
       # cpu: 200m
       # memory: 512Mi
-  rcloneConfig:
-      rclone.conf: |
-        [minio-local]
-        type = s3
-        provider = Minio
-        env_auth = false
-        access_key_id = AKIAIOSFODNN7EXAMPLE
-        secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-        endpoint = http://172.17.0.3:9000
-        acl = authenticated-read
 
 nexusCloudiam:
   enabled: false

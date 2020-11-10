@@ -151,11 +151,12 @@ persistence:
 
 nexusBackup:
   enabled: false
-  imageName: quay.io/travelaudience/docker-nexus-backup
-  imageTag: 1.5.0
+  imageName: dbcc/docker-nexus-backup
+  imageTag: latest
   imagePullPolicy: IfNotPresent
   env:
-    targetBucket:
+    rcloneRemote: minio
+    targetBucket: my_bucket
     nexusAuthorization:
     offlineRepos: "maven-central maven-public maven-releases maven-snapshots"
     gracePeriod: 60
@@ -180,6 +181,16 @@ nexusBackup:
     # limits:
       # cpu: 200m
       # memory: 512Mi
+  rcloneConfig:
+      rclone.conf: |
+        [minio]
+        type = s3
+        provider = Minio
+        env_auth = false
+        access_key_id = AKIAIOSFODNN7EXAMPLE
+        secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+        endpoint = http://172.17.0.3:9000
+        acl = authenticated-read
 
 nexusCloudiam:
   enabled: false
@@ -278,6 +289,9 @@ deployment:
   # # Uncomment and modify this to run a command after starting the nexus container.
   postStart:
     command:    # '["/bin/sh", "-c", "ls"]'
+    # # Enable nexus scripts settings, disabled by default for versions >= 3.21.2
+    # command:    '["/bin/sh", "-c", "if [[ -z $(grep ^nexus.scripts.allowCreation=true /nexus-data/etc/nexus.properties) ]];then echo nexus.scripts.allowCreation=true >> /nexus-data/etc/nexus.properties;fi"]'
+
   additionalContainers:
   additionalVolumes:
   additionalVolumeMounts:
