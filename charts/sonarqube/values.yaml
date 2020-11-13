@@ -13,6 +13,11 @@ deploymentStrategy: {}
 ##
 # schedulerName:
 
+## Is this deployment for OpenShift? If so, we help with SCCs
+OpenShift:
+  enabled: false
+  createSCC: true
+
 image:
   repository: sonarqube
   tag: 8.5-community
@@ -22,7 +27,9 @@ image:
 
 # Set security context for sonarqube pod
 securityContext:
-  fsGroup: 999
+  fsGroup: 1000
+  #Sonarqube dockerfile creates sonarqube user as UID and GID 1000
+  runAsUser: 1000
 
 # Settings to configure elasticsearch host requirements
 elasticsearch:
@@ -127,9 +134,14 @@ initSysctl:
   nofile: 131072
   nproc: 8192
   # image: busybox:1.32
+  serviceAccount:
+    create: false
+  # name:
   securityContext:
     privileged: true
   # resources: {}
+  job:
+    restartPolicy: OnFailure
 
 # List of plugins to install.
 # For example:
@@ -243,6 +255,37 @@ postgresql:
   # Specify the TCP port that PostgreSQL should use
   service:
     port: 5432
+  resources:
+    limits:
+      cpu: 2
+      memory: 2Gi
+    requests:
+      cpu: 100m
+      memory: 200Mi
+  persistence:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 20Gi
+    storageClass:      
+  securityContext:
+    # enabled needs to false for OpenShift restricted SCC and true for OpenShift anyuid/nonroot SCC
+    enabled: true
+    #fsGroup and runAsUser specifications below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
+    #postgresql dockerfile sets user as 1001
+    fsGroup: 1001
+    runAsUser: 1001
+  volumePermissions:
+    enabled: true
+    # if using restricted SCC set runAsUser: "auto" and if running under anyuid/nonroot SCC - runAsUser needs to match runAsUser above
+    securityContext:
+      runAsUser: 1001
+  shmVolume:
+    chmod:
+      enabled: false
+  serviceAccount:
+    ## If enabled = true, and name is not set, postgreSQL will create a serviceAccount
+    enabled: false
+#    name:
 
 # Additional labels to add to the pods:
 # podLabels:

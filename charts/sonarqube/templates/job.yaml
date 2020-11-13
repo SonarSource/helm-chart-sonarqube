@@ -1,0 +1,57 @@
+{{- if or .Values.initSysctl.enabled .Values.elasticsearch.configureNode }}
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "sonarqube.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ template "sonarqube.name" . }}-{{ template "sonarqube.fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: {{ template "sonarqube.fullname" . }}
+    app.kubernetes.io/version: {{ .Values.image.tag | quote }}
+spec:
+  template:
+    spec:
+    {{- if .Values.initSysctl.serviceAccount.create }}
+    {{- if .Values.initSysctl.serviceAccount.name }}
+      serviceAccountName: {{ .Values.initSysctl.serviceAccount.name }}
+    {{- else }}
+      serviceAccountName: {{ include "sonarqube.fullname" . }}-initsysctl
+    {{- end }}
+    {{- end }}   
+      containers:      
+      - name: init-sysctl
+        image: {{ default "busybox:1.32" .Values.initSysctl.image }}
+        imagePullPolicy: {{ .Values.image.pullPolicy  }}
+        {{- if $securityContext := (default .Values.initContainers.securityContext .Values.initSysctl.securityContext) }}
+        securityContext:
+{{ toYaml $securityContext | indent 12 }}
+        {{- end }}
+        resources:
+{{ toYaml (default .Values.initContainers.resources .Values.initSysctl.resources) | indent 12 }}
+        command: ["sh",
+          "-e",
+          "/tmp/scripts/init_sysctl.sh"]
+        volumeMounts:
+          - name: init-sysctl
+            mountPath: /tmp/scripts/
+        {{- with .Values.env }}
+        env:
+          {{- . | toYaml | trim | nindent 12 }}
+        {{- end }}
+      restartPolicy: {{ .Values.initSysctl.job.restartPolicy }}
+      volumes:
+        - name: init-sysctl
+          configMap:
+            name: {{ template "sonarqube.fullname" . }}-init-sysctl
+            items:
+              - key: init_sysctl.sh
+                path: init_sysctl.sh
+
+{{- end }}

@@ -1,0 +1,58 @@
+{{- if and (.Values.OpenShift.enabled) (.Values.OpenShift.createSCC) }}
+{{- if and (.Values.initSysctl.serviceAccount.create) (not .Values.initSysctl.serviceAccount.name) }}
+
+# This SCC allows any user ID except root
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: "allows pod to run as root, privileged and run sysctl"
+    "helm.sh/hook": pre-install
+  name: {{ .Release.Name }}-initsysctl-privileged-scc
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegedContainer: true
+allowPrivilegeEscalation: true
+allowedCapabilities: []
+allowedFlexVolumes: []
+allowedUnsafeSysctls: []
+defaultAddCapabilities: []
+defaultAllowPrivilegeEscalation: true
+fsGroup:
+  type: RunAsAny
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+- KILL
+- MKNOD
+- SETUID
+- SETGID
+runAsUser:
+  type: RunAsAny
+# This can be customized for your host machine
+seLinuxContext:
+  type: MustRunAs
+# seLinuxOptions:
+#   level:
+#   user:
+#   role:
+#   type:
+supplementalGroups:
+  type: RunAsAny
+# This can be customized for your host machine
+volumes:
+- configMap
+- downwardAPI
+- emptyDir
+- persistentVolumeClaim
+- projected
+- secret
+# If you want a priority on your SCC -- set for a value more than 0
+priority: 11
+users:
+- system:serviceaccount:{{ .Release.Namespace }}:{{ .Release.Name }}-sonarqube-initsysctl
+
+{{- end }}
+{{- end }}
