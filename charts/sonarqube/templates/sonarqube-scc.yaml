@@ -1,29 +1,25 @@
 {{- if and (.Values.OpenShift.enabled) (.Values.OpenShift.createSCC) }}
 
-# This SCC allows any user ID except root
+# This SCC allows any user ID but restricts capabilties and host access
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
   annotations:
-    kubernetes.io/description: "nonroot provides all features of the restricted SCC
-      but allows users to run with any non-root UID.  The user must specify the UID
-      or it must be specified on the by the manifest of the container runtime."
+    kubernetes.io/description: "allows pod to run as root, privileged and run sysctl"
     "helm.sh/hook": pre-install
-  name: {{ .Release.Name }}-nonroot-scc
+  name: {{ .Release.Name }}-privileged-scc
 allowHostDirVolumePlugin: false
 allowHostIPC: false
 allowHostNetwork: false
 allowHostPID: false
 allowHostPorts: false
-allowPrivilegedContainer: false
+allowPrivilegedContainer: true
 allowPrivilegeEscalation: true
 allowedCapabilities: []
 allowedFlexVolumes: []
 allowedUnsafeSysctls: []
 defaultAddCapabilities: []
 defaultAllowPrivilegeEscalation: true
-forbiddenSysctls:
-  - "*"
 fsGroup:
   type: RunAsAny
 readOnlyRootFilesystem: false
@@ -33,7 +29,7 @@ requiredDropCapabilities:
 - SETUID
 - SETGID
 runAsUser:
-  type: MustRunAsNonRoot
+  type: RunAsAny
 # This can be customized for your host machine
 seLinuxContext:
   type: MustRunAs
