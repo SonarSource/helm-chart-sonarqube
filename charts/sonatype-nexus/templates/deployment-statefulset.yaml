@@ -119,6 +119,10 @@ spec:
             - mountPath: /nexus-data/backup
               name: {{ template "nexus.fullname" . }}-backup
             {{- end }}
+            {{- if .Values.nexusCloudiam.enabled }}
+            - mountPath: /nexus-data/cloudiam
+              name: {{ template "nexus.fullname" . }}-cloudiam
+            {{- end }}
             {{- if .Values.config.enabled }}
             - mountPath: {{ .Values.config.mountPath }}
               name: {{ template "nexus.name" . }}-conf

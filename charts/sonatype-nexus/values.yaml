@@ -155,8 +155,8 @@ nexusBackup:
   imageTag: latest
   imagePullPolicy: IfNotPresent
   env:
-    rcloneRemote: minio
-    targetBucket: my_bucket
+    rcloneRemote: 
+    targetBucket: 
     nexusAuthorization:
     offlineRepos: "maven-central maven-public maven-releases maven-snapshots"
     gracePeriod: 60
@@ -183,13 +183,11 @@ nexusBackup:
       # memory: 512Mi
   rcloneConfig:
       rclone.conf: |
-        [minio]
+        [AWS]
         type = s3
-        provider = Minio
-        env_auth = false
-        access_key_id = AKIAIOSFODNN7EXAMPLE
-        secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-        endpoint = http://172.17.0.3:9000
+        provider = AWS
+        env_auth = true
+        region = us-east-1
         acl = authenticated-read
 
 nexusCloudiam:
