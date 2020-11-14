@@ -28,7 +28,7 @@ image:
 # Set security context for sonarqube pod
 securityContext:
   fsGroup: 1000
-  #Sonarqube dockerfile creates sonarqube user as UID and GID 1000
+  # Sonarqube dockerfile creates sonarqube user as UID and GID 1000
   runAsUser: 1000
 
 # Settings to configure elasticsearch host requirements
@@ -261,12 +261,12 @@ postgresql:
     enabled: true
     accessMode: ReadWriteOnce
     size: 20Gi
-    storageClass:      
+    storageClass:
   securityContext:
     # enabled needs to false for OpenShift restricted SCC and true for OpenShift anyuid/nonroot SCC
     enabled: false
-    #fsGroup and runAsUser specifications below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
-    #postgresql dockerfile sets user as 1001
+    # fsGroup and runAsUser specifications below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
+    # postgresql dockerfile sets user as 1001
     fsGroup: 1001
     runAsUser: 1001
   volumePermissions:
