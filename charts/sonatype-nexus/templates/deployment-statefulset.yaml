@@ -227,6 +227,8 @@ spec:
               value: .backup
             - name: RCLONE_REMOTE
               value: {{ .Values.nexusBackup.env.rcloneRemote | quote }}
+            - name: STREAMING_UPLOAD_CUTOFF
+              value: {{ .Values.nexusBackup.env.streamingUploadCutoff | default "5000000" | quote }}
             {{- if .Values.nexusCloudiam.enabled }}
             - name: CLOUD_IAM_SERVICE_ACCOUNT_KEY_PATH
               value: /nexus-data/cloudiam/service-account-key.json

@@ -152,12 +152,14 @@ persistence:
 nexusBackup:
   enabled: false
   imageName: dbcc/docker-nexus-backup
-  imageTag: latest
+  imageTag: 0.0.1
   imagePullPolicy: IfNotPresent
   env:
     rcloneRemote: 
     targetBucket: 
     nexusAuthorization:
+    # Size of the data chunk to stream to the remote
+    streamingUploadCutoff: "5000000"
     offlineRepos: "maven-central maven-public maven-releases maven-snapshots"
     gracePeriod: 60
   # This should match the value of `initAdminPassword.password` if `initAdminPassword.enabled` is true
