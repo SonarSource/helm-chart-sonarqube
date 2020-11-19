@@ -1,6 +1,14 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [9.2.0]
+* Added functionality for deployments to OpenShift clusters.
+    * .Values.OpenShift flag to signify if deploying to OpenShift.
+	* Ability to have chart generate an SCC allowing the init-sysctl container to run as privileged.
+	* Setting of a seperate securityContext section for the main SonarQube container to avoid running as root.
+	* Exposing additional `postreSQL` keys in values.yaml to support configuring postgres to run under standard "restricted" or "anyuid"/"nonroot" SCCs on OpenShift.
+* Added initContainer `wait-for-db` to await postgreSQL successful startup before starting SonarQube, to avoid race conditions.
+
 ## [9.1.1]
 * Update SonarQube to 8.5.1.
 * **Fix:** Purge plugins directory before download.
