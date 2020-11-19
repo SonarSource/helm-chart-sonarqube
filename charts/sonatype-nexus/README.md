@@ -150,7 +150,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `nexusBackup.persistence.annotations`       | PV annotations for backup           | `{}`                                    |
 | `nexusBackup.persistence.existingClaim`     | Existing PVC name for backup        | `nil`                                   |
 | `nexusBackup.resources`                     | Backup resource requests and limits | `{}`                                    |
-| `nexusBackup.rcloneConfig.rclone.conf`                 | Rclone remote configuration, can be generated using the `rclone config` command, or using docker `docker run -it --rm rclone/rclone config` | `[AWS]` <br> `type = s3` <br> `provider = AWS` <br> `env_auth = true` <br> `region = us-east-1` <br> `acl = authenticated-read` |
+| `nexusBackup.rcloneConfig.rclone.conf`                 | Rclone remote configuration, can be generated using the `rclone config` command, or using docker: `docker run -it --rm rclone/rclone config` | `[AWS]` <br> `type = s3` <br> `provider = AWS` <br> `env_auth = true` <br> `region = us-east-1` <br> `acl = authenticated-read` |
 | `nexusCloudiam.enabled`                       | Nexus Cloud IAM service account key path                | `false`                                 |
 | `nexusCloudiam.persistence.accessMode`        | ReadWriteOnce or ReadOnly           | `ReadWriteOnce`                         |
 | `nexusCloudiam.persistence.annotations`       | PV annotations for Cloud IAM service account key path | `{}`                                    |
