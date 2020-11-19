@@ -8,6 +8,7 @@ This chart bootstraps a Nexus OSS deployment on a cluster using Helm.
 This setup is best configured in [GCP](https://cloud.google.com/) since:
 
 - [google cloud storage](https://cloud.google.com/storage/) is used for backups
+- [NEW: Rclone](https://rclone.org/) it uses Rclone to create backups, basically compatible with all the major clouds.
 - [GCE Ingress controller](https://github.com/kubernetes/ingress/blob/master/docs/faq/gce.md) is used for using a pre-allocated static IP in GCE.
 
 There is also the option of using a [proxy for Nexus](https://github.com/travelaudience/nexus-proxy) that authenticates Nexus against an external identity provider (only GCP IAM at the moment) which is **disabled** by default.
