@@ -18,8 +18,19 @@ To install the chart:
 helm repo add oteemocharts https://oteemo.github.io/charts
 helm install oteemocharts/sonarqube
 ```
-
 The above command deploys Sonarqube on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+
+For OpenShift installations; if you wish for the chart to create the required SCC for the privileged initContainer, and run PostgreSQL under the restricted SCC use the following `set` statements:
+
+```bash
+helm repo add oteemocharts https://oteemo.github.io/charts
+helm install oteemocharts/sonarqube --set OpenShift.enabled=true,\
+                                          serviceAccount.create=true,\
+                                          postgresql.serviceAccount.enabled=true,\
+                                          postgresql.securityContext.enabled=false,\
+                                          postgresql.volumePermissions.enabled=true,\
+                                          postgresql.volumePermissions.securityContext.runAsUser="auto"
+```
 
 The default login is admin/admin.
 
