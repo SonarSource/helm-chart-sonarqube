@@ -225,6 +225,10 @@ spec:
               value: {{ .Values.nexusBackup.env.gracePeriod | quote }}
             - name: TRIGGER_FILE
               value: .backup
+            - name: RCLONE_REMOTE
+              value: {{ .Values.nexusBackup.env.rcloneRemote | quote }}
+            - name: STREAMING_UPLOAD_CUTOFF
+              value: {{ .Values.nexusBackup.env.streamingUploadCutoff | default "5000000" | quote }}
             {{- if .Values.nexusCloudiam.enabled }}
             - name: CLOUD_IAM_SERVICE_ACCOUNT_KEY_PATH
               value: /nexus-data/cloudiam/service-account-key.json
@@ -238,6 +242,8 @@ spec:
             - mountPath: /nexus-data/cloudiam
               name: {{ template "nexus.fullname" . }}-cloudiam
             {{- end }}
+            - mountPath: /root/.config/rclone
+              name: {{ template "nexus.fullname" . }}-rclone-config
         {{- end }}
         {{- if .Values.deployment.additionalContainers }}
 {{ toYaml .Values.deployment.additionalContainers | indent 8 }}
@@ -247,6 +253,11 @@ spec:
 {{ toYaml .Values.nexus.securityContext | indent 8 }}
       {{- end }}
       volumes:
+        {{- if .Values.nexusBackup.enabled }}
+        - name: {{ template "nexus.fullname" . }}-rclone-config
+          secret:
+            secretName: {{ template "nexus.name" . }}-rclone-config-secret
+        {{- end }}
         {{- if .Values.nexusProxy.env.cloudIamAuthEnabled }}
         - name: {{ template "nexus.proxy-ks.name" . }}
           secret:

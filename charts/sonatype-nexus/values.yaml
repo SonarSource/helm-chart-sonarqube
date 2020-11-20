@@ -151,12 +151,15 @@ persistence:
 
 nexusBackup:
   enabled: false
-  imageName: quay.io/travelaudience/docker-nexus-backup
-  imageTag: 1.5.0
+  imageName: dbcc/docker-nexus-backup
+  imageTag: 0.0.1
   imagePullPolicy: IfNotPresent
   env:
+    rcloneRemote:
     targetBucket:
     nexusAuthorization:
+    # Size of the data chunk to stream to the remote
+    streamingUploadCutoff: "5000000"
     offlineRepos: "maven-central maven-public maven-releases maven-snapshots"
     gracePeriod: 60
   # This should match the value of `initAdminPassword.password` if `initAdminPassword.enabled` is true
@@ -180,6 +183,14 @@ nexusBackup:
     # limits:
       # cpu: 200m
       # memory: 512Mi
+  rcloneConfig:
+    rclone.conf: |
+      [AWS]
+      type = s3
+      provider = AWS
+      env_auth = true
+      region = us-east-1
+      acl = authenticated-read
 
 nexusCloudiam:
   enabled: false
@@ -278,6 +289,9 @@ deployment:
   # # Uncomment and modify this to run a command after starting the nexus container.
   postStart:
     command:    # '["/bin/sh", "-c", "ls"]'
+    # # Enable nexus scripts settings, disabled by default for versions >= 3.21.2
+    # command:    '["/bin/sh", "-c", "if [[ -z $(grep ^nexus.scripts.allowCreation=true /nexus-data/etc/nexus.properties) ]];then echo nexus.scripts.allowCreation=true >> /nexus-data/etc/nexus.properties;fi"]'
+
   additionalContainers:
   additionalVolumes:
   additionalVolumeMounts:

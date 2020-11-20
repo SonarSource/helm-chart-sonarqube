@@ -8,6 +8,7 @@ This chart bootstraps a Nexus OSS deployment on a cluster using Helm.
 This setup is best configured in [GCP](https://cloud.google.com/) since:
 
 - [google cloud storage](https://cloud.google.com/storage/) is used for backups
+- [NEW: Rclone](https://rclone.org/) it uses Rclone to create backups, basically compatible with all the major clouds.
 - [GCE Ingress controller](https://github.com/kubernetes/ingress/blob/master/docs/faq/gce.md) is used for using a pre-allocated static IP in GCE.
 
 There is also the option of using a [proxy for Nexus](https://github.com/travelaudience/nexus-proxy) that authenticates Nexus against an external identity provider (only GCP IAM at the moment) which is **disabled** by default.
@@ -133,10 +134,12 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `persistence.annotations`                   | Persistent Volume annotations       | `{}`                                    |
 | `persistence.existingClaim`                 | Existing PVC name                   | `nil`                                   |
 | `nexusBackup.enabled`                       | Nexus backup process                | `false`                                 |
-| `nexusBackup.imageName`                     | Nexus backup image                  | `quay.io/travelaudience/docker-nexus-backup` |
-| `nexusBackup.imageTag`                      | Nexus backup image version          | `1.5.0`                                 |
+| `nexusBackup.imageName`                     | Nexus backup image                  | `dbcc/docker-nexus-backup` |
+| `nexusBackup.imageTag`                      | Nexus backup image version          | `0.0.1`                                 |
 | `nexusBackup.imagePullPolicy`               | Backup image pull policy            | `IfNotPresent`                          |
-| `nexusBackup.env.targetBucket`              | Required if `nexusBackup` is enabled. Google Cloud Storage bucker for backups format `gs://BACKUP_BUCKET`  | `nil`  |
+| `nexusBackup.env.rcloneRemote`              | Required if `nexusBackup` is enabled. Name of the Rclone remote as defined in the `rcloneConfig` entry. Example: `AWS`  | `nil`  |
+| `nexusBackup.env.targetBucket`              | Required if `nexusBackup` is enabled. Name of the target bucket or bucket/path. Example: `my_bucket` or `my_bucket/my_folder`  | `nil`  |
+| `nexusBackup.env.streamingUploadCutoff`     | Size of the data chunks to send to the Rclone remote, this value affects the maximum size of the backup file to upload.  | `"5000000"`  |
 | `nexusBackup.env.nexusAuthorization`        | If set, `nexusBackup.nexusAdminPassword` will be disregarded. | `nil`  |
 | `nexusBackup.env.offlineRepos`              | Space separated list of repositories must be taken down to achieve a consistent backup. | `"maven-central maven-public maven-releases maven-snapshots"`  |
 | `nexusBackup.env.gracePeriod`               | The amount of time in seconds to wait between stopping repositories and starting the upload. | `60`  |
@@ -148,6 +151,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `nexusBackup.persistence.annotations`       | PV annotations for backup           | `{}`                                    |
 | `nexusBackup.persistence.existingClaim`     | Existing PVC name for backup        | `nil`                                   |
 | `nexusBackup.resources`                     | Backup resource requests and limits | `{}`                                    |
+| `nexusBackup.rcloneConfig.rclone.conf`                 | Rclone remote configuration, can be generated using the `rclone config` command, or using docker: `docker run -it --rm rclone/rclone config` | `[AWS]` <br> `type = s3` <br> `provider = AWS` <br> `env_auth = true` <br> `region = us-east-1` <br> `acl = authenticated-read` |
 | `nexusCloudiam.enabled`                       | Nexus Cloud IAM service account key path                | `false`                                 |
 | `nexusCloudiam.persistence.accessMode`        | ReadWriteOnce or ReadOnly           | `ReadWriteOnce`                         |
 | `nexusCloudiam.persistence.annotations`       | PV annotations for Cloud IAM service account key path | `{}`                                    |
