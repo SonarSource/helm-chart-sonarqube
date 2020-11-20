@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [9.2.1]
+* Updated the configuration table to include the additional keys added in release 9.2.0.
+
 ## [9.2.0]
 * Added functionality for deployments to OpenShift clusters.
     * .Values.OpenShift flag to signify if deploying to OpenShift.
