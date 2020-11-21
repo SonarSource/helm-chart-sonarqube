@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [9.2.2]
+* Added a condition to deployment.yaml so that `wait-for-db` initContainer is only created if `postgresql.enabled=true`
+
 ## [9.2.1]
 * Updated the configuration table to include the additional keys added in release 9.2.0.
 
