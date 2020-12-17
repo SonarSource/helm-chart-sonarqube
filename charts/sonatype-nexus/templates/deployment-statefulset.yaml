@@ -84,6 +84,10 @@ spec:
             - name: NEXUS_CONTEXT
               value: {{ .Values.nexus.context }}
 {{- end }}
+{{- if .Values.nexus.chownNexusData }}
+            - name: NEXUS_DATA_CHOWN
+              value: {{ .Values.nexus.chownNexusData | quote }}
+{{- end }}
 
           resources:
 {{ toYaml .Values.nexus.resources | indent 12 }}

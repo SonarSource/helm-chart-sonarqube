@@ -85,6 +85,9 @@ nexus:
   #   - "example.com"
   #   - "www.example.com"
   context:
+  # When using nexus it is important that all the files in the data directory have the proper owner configured. Therefore this
+  # value defaults to true to apply chown -R nexus:nexus to the mounted directory at every startup of the container.
+  chownNexusData: true
 
 route:
   enabled: false
