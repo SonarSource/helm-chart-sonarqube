@@ -119,6 +119,10 @@ spec:
               subPath: lib/common
             - name: install-plugins
               mountPath: /tmp/scripts/
+            {{- if .Values.plugins.netrcCreds }}
+            - name: plugins-netrc-file
+              mountPath: /root
+            {{- end }}
           {{- if $securityContext := .Values.initContainers.securityContext }}
           securityContext:
 {{ toYaml $securityContext | indent 12 }}
@@ -328,6 +332,14 @@ spec:
       - name: ca-certs
         secret:
           secretName: {{ .Values.caCerts.secret }}
+      {{- end }}
+      {{- if .Values.plugins.netrcCreds }}
+      - name: plugins-netrc-file
+        secret:
+          secretName: {{ .Values.plugins.netrcCreds }}
+          items:
+          - key: netrc
+            path: .netrc
       {{- end }}
       - name: init-sysctl
         configMap:
