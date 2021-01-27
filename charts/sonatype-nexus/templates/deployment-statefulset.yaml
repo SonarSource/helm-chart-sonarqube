@@ -80,6 +80,8 @@ spec:
           {{- end }}
           env:
 {{ toYaml .Values.nexus.env | indent 12 }}
+            - name: NEXUS_DATA_CHOWN
+              value: {{ .Values.nexus.chownNexusData | quote }}
 {{- if .Values.nexus.context }}
             - name: NEXUS_CONTEXT
               value: {{ .Values.nexus.context }}
@@ -91,7 +93,10 @@ spec:
             - containerPort: {{ .Values.nexus.dockerPort }}
               name: nexus-docker-g
             - containerPort: {{ .Values.nexus.nexusPort }}
-              name: nexus-http
+              name: nexus-http        
+            {{- with .Values.nexus.additionalPorts  }}
+{{ toYaml . | indent 12 }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: {{ .Values.nexus.livenessProbe.path }}
@@ -118,6 +123,10 @@ spec:
             {{- if .Values.nexusBackup.enabled }}
             - mountPath: /nexus-data/backup
               name: {{ template "nexus.fullname" . }}-backup
+            {{- end }}
+            {{- if .Values.nexusCloudiam.enabled }}
+            - mountPath: /nexus-data/cloudiam
+              name: {{ template "nexus.fullname" . }}-cloudiam
             {{- end }}
             {{- if .Values.config.enabled }}
             - mountPath: {{ .Values.config.mountPath }}
@@ -199,10 +208,14 @@ spec:
 {{ toYaml .Values.nexusBackup.resources | indent 12 }}
           env:
             - name: NEXUS_AUTHORIZATION
+            {{- if not .Values.nexusBackup.env.nexusAuthorization }}
               valueFrom:
                 secretKeyRef:
                   key: nexus.nexusAdminPassword
                   name: {{ template "nexus.fullname" . }}
+            {{- else }}
+              value: {{ .Values.nexusBackup.env.nexusAuthorization | quote }}
+            {{- end }}
             - name: NEXUS_BACKUP_DIRECTORY
               value: /nexus-data/backup
             - name: NEXUS_DATA_DIRECTORY
@@ -210,18 +223,32 @@ spec:
             - name: NEXUS_LOCAL_HOST_PORT
               value: "localhost:{{ .Values.nexus.nexusPort }}"
             - name: OFFLINE_REPOS
-              value: "maven-central maven-public maven-releases maven-snapshots"
+              value: {{ .Values.nexusBackup.env.offlineRepos | quote }}
             - name: TARGET_BUCKET
               value: {{ .Values.nexusBackup.env.targetBucket | quote }}
             - name: GRACE_PERIOD
-              value: "60"
+              value: {{ .Values.nexusBackup.env.gracePeriod | quote }}
             - name: TRIGGER_FILE
               value: .backup
+            - name: RCLONE_REMOTE
+              value: {{ .Values.nexusBackup.env.rcloneRemote | quote }}
+            - name: STREAMING_UPLOAD_CUTOFF
+              value: {{ .Values.nexusBackup.env.streamingUploadCutoff | default "5000000" | quote }}
+            {{- if .Values.nexusCloudiam.enabled }}
+            - name: CLOUD_IAM_SERVICE_ACCOUNT_KEY_PATH
+              value: /nexus-data/cloudiam/service-account-key.json
+            {{- end }}
           volumeMounts:
             - mountPath: /nexus-data
               name: {{ template "nexus.fullname" . }}-data
             - mountPath: /nexus-data/backup
               name: {{ template "nexus.fullname" . }}-backup
+            {{- if .Values.nexusCloudiam.enabled }}
+            - mountPath: /nexus-data/cloudiam
+              name: {{ template "nexus.fullname" . }}-cloudiam
+            {{- end }}
+            - mountPath: /root/.config/rclone
+              name: {{ template "nexus.fullname" . }}-rclone-config
         {{- end }}
         {{- if .Values.deployment.additionalContainers }}
 {{ toYaml .Values.deployment.additionalContainers | indent 8 }}
@@ -231,6 +258,11 @@ spec:
 {{ toYaml .Values.nexus.securityContext | indent 8 }}
       {{- end }}
       volumes:
+        {{- if .Values.nexusBackup.enabled }}
+        - name: {{ template "nexus.fullname" . }}-rclone-config
+          secret:
+            secretName: {{ template "nexus.name" . }}-rclone-config-secret
+        {{- end }}
         {{- if .Values.nexusProxy.env.cloudIamAuthEnabled }}
         - name: {{ template "nexus.proxy-ks.name" . }}
           secret:
@@ -246,6 +278,10 @@ spec:
         - name: {{ template "nexus.fullname" . }}-backup
           emptyDir: {}
         {{- end }}
+        {{- if and .Values.nexusCloudiam.enabled (not .Values.nexusCloudiam.persistence.enabled) }}
+        - name: {{ template "nexus.fullname" . }}-cloudiam
+          emptyDir: {}
+        {{- end }}
         {{- else }}
         - name: {{ template "nexus.fullname" . }}-data
           {{- if .Values.persistence.enabled }}
@@ -259,6 +295,15 @@ spec:
           {{- if and .Values.nexusBackup.persistence.enabled .Values.nexusBackup.enabled }}
           persistentVolumeClaim:
             claimName: {{ .Values.nexusBackup.persistence.existingClaim | default (printf "%s-%s" (include "nexus.fullname" .) "backup") }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.nexusCloudiam.enabled }}
+        - name: {{ template "nexus.fullname" . }}-cloudiam
+          {{- if and .Values.nexusCloudiam.persistence.enabled .Values.nexusCloudiam.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.nexusCloudiam.persistence.existingClaim | default (printf "%s-%s" (include "nexus.fullname" .) "cloudiam") }}
           {{- else }}
           emptyDir: {}
           {{- end }}
@@ -279,6 +324,10 @@ spec:
         {{- end }}
     {{- with .Values.tolerations }}
       tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
 {{ toYaml . | indent 8 }}
     {{- end }}
 
@@ -330,6 +379,29 @@ spec:
         storageClassName: ""
         {{- else }}
         storageClassName: "{{ .Values.nexusBackup.persistence.storageClass }}"
+        {{- end }}
+        {{- end }}
+    {{- end }}
+    {{- if .Values.nexusCloudiam.persistence.enabled }}
+    - metadata:
+        name: {{ template "nexus.fullname" . }}-cloudiam
+        labels:
+{{ include "nexus.labels" . | indent 10 }}
+        {{- if .Values.nexusCloudiam.persistence.annotations }}
+        annotations:
+{{ toYaml .Values.nexusCloudiam.persistence.annotations | indent 10 }}
+        {{- end }}
+      spec:
+        accessModes:
+          - {{ .Values.nexusCloudiam.persistence.accessMode }}
+        resources:
+          requests:
+            storage: {{ .Values.nexusCloudiam.persistence.storageSize | quote }}
+        {{- if .Values.nexusCloudiam.persistence.storageClass }}
+        {{- if (eq "-" .Values.nexusCloudiam.persistence.storageClass) }}
+        storageClassName: ""
+        {{- else }}
+        storageClassName: "{{ .Values.nexusCloudiam.persistence.storageClass }}"
         {{- end }}
         {{- end }}
     {{- end }}

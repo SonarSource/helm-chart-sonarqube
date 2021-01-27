@@ -1,4 +1,4 @@
-{{- if .Values.enableTests -}}
+{{- if .Values.tests.enabled -}}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -12,22 +12,25 @@ metadata:
     heritage: {{ .Release.Service }}
 spec:
   initContainers:
-    - name: "test-framework"
-      image: {{ default "dduportal/bats:0.4.0" .Values.plugins.initTestContainerImage }}
-      command:
-      - "bash"
-      - "-c"
-      - |
-        set -ex
-        # copy bats to tools dir
-        cp -R /usr/local/libexec/ /tools/bats/
+    - name: "bats"
+      image: "bats/bats:1.2.1"
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      command: ["bash", "-c"]
+      args:
+        - |-
+          set -ex
+          cp -R /opt/bats /tools/bats/
       volumeMounts:
-      - mountPath: /tools
-        name: tools
+        - mountPath: /tools
+          name: tools
   containers:
     - name: {{ .Release.Name }}-ui-test
-      image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-      command: ["/tools/bats/bats", "-t", "/tests/run.sh"]
+      image: {{ default "bitnami/minideb-extras" .Values.tests.image }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      command: [
+        "/tools/bats/bin/bats",
+        "--tap",
+        "/tests/run.sh"]
       volumeMounts:
       - mountPath: /tests
         name: tests

@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "sonarqube.fullname" . }}-init-sysctl
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  init_sysctl.sh: |-
+    {{- if .Values.initSysctl.vmMaxMapCount }}
+    if [[ "$(sysctl -n vm.max_map_count)" -lt {{ .Values.initSysctl.vmMaxMapCount }} ]]; then
+      sysctl -w vm.max_map_count={{ .Values.initSysctl.vmMaxMapCount }}
+    fi
+    {{- end }}
+    {{- if .Values.initSysctl.fsFileMax }}
+    if [[ "$(sysctl -n fs.file-max)" -lt {{ .Values.initSysctl.fsFileMax }} ]]; then
+      sysctl -w fs.file-max={{ .Values.initSysctl.fsFileMax }}
+    fi
+    {{- end }}
+    {{- if .Values.initSysctl.nofile }}
+    if [[ "$(ulimit -n)" != "unlimited" ]]; then
+      if [[ "$(ulimit -n)" -lt {{ .Values.initSysctl.nofile }} ]]; then
+        echo "ulimit -n {{ .Values.initSysctl.nofile }}"
+        ulimit -n {{ .Values.initSysctl.nofile }}
+      fi
+    fi
+    {{- end }}
+    {{- if .Values.initSysctl.nproc }}
+    if [[ "$(ulimit -u)" != "unlimited" ]]; then
+      if [[ "$(ulimit -u)" -lt {{ .Values.initSysctl.nproc }} ]]; then
+        echo "ulimit -u {{ .Values.initSysctl.nproc }}"
+        ulimit -u {{ .Values.initSysctl.nproc }}
+      fi
+    fi
+    {{- end }}

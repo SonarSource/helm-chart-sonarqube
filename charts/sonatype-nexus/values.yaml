@@ -11,15 +11,22 @@ deploymentStrategy: {}
   #   maxUnavailable: 25%
   # type: RollingUpdate
 
+# If enabled, a Job will be launched after the chart is installed to initialize the admin password of your choice
+initAdminPassword:
+  enabled: false
+  # Set this in the instance where default admin password is different
+  defaultPasswordOverride:
+  password: "admin321"
+
 nexus:
   imageName: quay.io/travelaudience/docker-nexus
-  imageTag: 3.25.1
+  imageTag: 3.27.0
   imagePullPolicy: IfNotPresent
   # Uncomment this to scheduler pods on priority
   # priorityClassName: "high-priority"
   env:
-    - name: install4jAddVmParams
-      value: "-Xms1200M -Xmx1200M -XX:MaxDirectMemorySize=2G -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap"
+    - name: INSTALL4J_ADD_VM_PARAMS
+      value: "-Xms1200M -Xmx1200M -XX:MaxDirectMemorySize=2G -XX:ActiveProcessorCount=4"
     - name: NEXUS_SECURITY_RANDOMPASSWORD
       value: "false"
   # nodeSelector:
@@ -39,6 +46,7 @@ nexus:
   # The ports should only be changed if the nexus image uses a different port
   dockerPort: 5003
   nexusPort: 8081
+  additionalPorts: []
   service:
     type: NodePort
     # clusterIP: None
@@ -60,7 +68,7 @@ nexus:
     fsGroup: 200
   podAnnotations: {}
   livenessProbe:
-    initialDelaySeconds: 30
+    initialDelaySeconds: 300
     periodSeconds: 30
     failureThreshold: 6
     # timeoutSeconds: 10
@@ -78,6 +86,9 @@ nexus:
   #   - "example.com"
   #   - "www.example.com"
   context:
+  # When using nexus it is important that all the files in the data directory have the proper owner configured. Therefore this
+  # value defaults to true to apply chown -R nexus:nexus to the mounted directory at every startup of the container.
+  chownNexusData: true
 
 route:
   enabled: false
@@ -144,11 +155,18 @@ persistence:
 
 nexusBackup:
   enabled: false
-  imageName: quay.io/travelaudience/docker-nexus-backup
-  imageTag: 1.5.0
+  imageName: dbcc/docker-nexus-backup
+  imageTag: 0.0.1
   imagePullPolicy: IfNotPresent
   env:
+    rcloneRemote:
     targetBucket:
+    nexusAuthorization:
+    # Size of the data chunk to stream to the remote
+    streamingUploadCutoff: "5000000"
+    offlineRepos: "maven-central maven-public maven-releases maven-snapshots"
+    gracePeriod: 60
+  # This should match the value of `initAdminPassword.password` if `initAdminPassword.enabled` is true
   nexusAdminPassword: "admin123"
   persistence:
     enabled: true
@@ -169,6 +187,29 @@ nexusBackup:
     # limits:
       # cpu: 200m
       # memory: 512Mi
+  rcloneConfig:
+    rclone.conf: |
+      [AWS]
+      type = s3
+      provider = AWS
+      env_auth = true
+      region = us-east-1
+      acl = authenticated-read
+
+nexusCloudiam:
+  enabled: false
+  persistence:
+    enabled: true
+    # existingClaim:
+    # annotations:
+    #  "helm.sh/resource-policy": keep
+    accessMode: ReadWriteOnce
+    # See comment above for information on setting the backup storageClass
+    # storageClass: "-"
+    storageSize: 1Mi
+    # If PersistentDisk already exists you can create a PV for it by including the 2 following keypairs.
+    # pdName: nexus-cloudiam-path
+    # fsType: ext4
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -176,6 +217,11 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name:
+  annotations: {}
+
+rbac:
+  create: false
+  roleRef: {}
   annotations: {}
 
 ingress:
@@ -200,6 +246,29 @@ ingress:
   #         serviceName: additional-svc
   #         servicePort: 80
 
+ingressDocker:
+  enabled: false
+  path: /
+  labels: {}
+  annotations: {}
+  # # NOTE: Can't use 'false' due to https://github.com/jetstack/kube-lego/issues/173.
+  # kubernetes.io/ingress.allow-http: true
+  # kubernetes.io/ingress.class: gce
+  # kubernetes.io/ingress.global-static-ip-name: ""
+  # kubernetes.io/tls-acme: true
+  tls:
+    enabled: true
+    secretName: nexus-tls
+  # Specify custom rules in addition to or instead of the nexus-proxy rules
+  rules:
+  # - host: http://nexus.127.0.0.1.nip.io
+  #   http:
+  #     paths:
+  #     - backend:
+  #         serviceName: additional-svc
+  #         servicePort: 80
+
+affinity: {}
 
 tolerations: []
 
@@ -225,6 +294,9 @@ deployment:
   # # Uncomment and modify this to run a command after starting the nexus container.
   postStart:
     command:    # '["/bin/sh", "-c", "ls"]'
+    # # Enable nexus scripts settings, disabled by default for versions >= 3.21.2
+    # command:    '["/bin/sh", "-c", "if [[ -z $(grep ^nexus.scripts.allowCreation=true /nexus-data/etc/nexus.properties) ]];then echo nexus.scripts.allowCreation=true >> /nexus-data/etc/nexus.properties;fi"]'
+
   additionalContainers:
   additionalVolumes:
   additionalVolumeMounts:

@@ -1,0 +1,63 @@
+{{- if .Values.initAdminPassword.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "nexus.fullname" . }}-initpwd-job
+  annotations:
+    helm.sh/hook: "post-install"
+    helm.sh/hook-weight: "10"
+    helm.sh/hook-delete-policy: "before-hook-creation"
+  labels:
+{{ include "nexus.labels" . | indent 4 }}
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      name: {{ template "nexus.fullname" . }}-initpwd
+      labels:
+        app: {{ template "nexus.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: nexus-initpwd
+          image: curlimages/curl:7.73.0
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              curl --fail -X PUT \
+                http://$(NEXUS_HOST)/service/rest/beta/security/users/admin/change-password \
+                -H "Content-Type: text/plain" \
+                -H "Authorization: Basic $(NEXUS_AUTHORIZATION)" \
+                -d "$(ADMIN_PASSWORD)"
+          env:
+            - name: NEXUS_AUTHORIZATION
+              valueFrom:
+                secretKeyRef:
+                  key: nexusAuthorization
+                  name: {{ template "nexus.fullname" . }}-initpwd-secret
+            - name: NEXUS_HOST
+              value: {{ template "nexus.fullname" . }}.{{ .Release.Namespace }}:{{ .Values.nexus.nexusPort }}
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: adminPassword
+                  name: {{ template "nexus.fullname" . }}-initpwd-secret
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "nexus.fullname" . }}-initpwd-secret
+  annotations:
+    helm.sh/hook: "post-install"
+    helm.sh/hook-weight: "-10"
+    helm.sh/hook-delete-policy: "hook-succeeded,before-hook-creation"
+  labels:
+{{ include "nexus.labels" . | indent 4 }}
+type: Opaque
+data:
+  nexusAuthorization: {{ printf "%s%s" "admin:" (default "admin123" .Values.initAdminPassword.defaultPasswordOverride) | b64enc | b64enc }}
+  adminPassword: {{ .Values.initAdminPassword.password | b64enc }}
+{{- end }}

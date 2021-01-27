@@ -8,6 +8,7 @@ This chart bootstraps a Nexus OSS deployment on a cluster using Helm.
 This setup is best configured in [GCP](https://cloud.google.com/) since:
 
 - [google cloud storage](https://cloud.google.com/storage/) is used for backups
+- [NEW: Rclone](https://rclone.org/) it uses Rclone to create backups, basically compatible with all the major clouds.
 - [GCE Ingress controller](https://github.com/kubernetes/ingress/blob/master/docs/faq/gce.md) is used for using a pre-allocated static IP in GCE.
 
 There is also the option of using a [proxy for Nexus](https://github.com/travelaudience/nexus-proxy) that authenticates Nexus against an external identity provider (only GCP IAM at the moment) which is **disabled** by default.
@@ -81,6 +82,9 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `statefulset.enabled`                                         | Use statefulset instead of deployment | `false` |
 | `replicaCount`                                                | Number of Nexus service replicas    | `1`                                     |
 | `deploymentStrategy`                                          | Deployment Strategy     |  `rollingUpdate` |
+| `initAdminPassword.enabled`                 | Enable initialization of admin password on Helm install | `false`    |
+| `initAdminPassword.defaultPasswordOverride` | Override the default admin password                     | `nil`      |
+| `initAdminPassword.password`                | Admin password to be set                                | `admin321` |
 | `nexus.imageName`                           | Nexus image                         | `quay.io/travelaudience/docker-nexus`   |
 | `nexus.imageTag`                            | Version of Nexus                    | `3.25.1`                                 |
 | `nexus.imagePullPolicy`                     | Nexus image pull policy             | `IfNotPresent`                          |
@@ -89,7 +93,8 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `nexus.resources`                           | Nexus resource requests and limits  | `{}`                                    |
 | `nexus.dockerPort`                          | Port to access docker               | `5003`                                  |
 | `nexus.nexusPort`                           | Internal port for Nexus service     | `8081`                                  |
-| `nexus.service.type`                        | Service for Nexus                   |`CluserIP`                                |
+| `nexus.additionalPorts`                     | expose additional ports             | `[]`                                  |
+| `nexus.service.type`                        | Service for Nexus                   | `NodePort`                                |
 | `nexus.service.clusterIp`                   | Specific cluster IP when service type is cluster IP. Use None for headless service |`nil`   |
 | `nexus.service.loadBalancerIP`                        | Custom loadBalancerIP                   |`nil`                                |
 | `nexus.securityContextEnabled`                     | Security Context (for enabling official image use `fsGroup: 200`) | `{}`     |
@@ -107,6 +112,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `nexus.readinessProbe.path`                 | Path for ReadinessProbe             | /                                       |
 | `nexus.hostAliases`                         | Aliases for IPs in /etc/hosts       | []                                      |
 | `nexus.context`                             | Non-root path to run Nexus at       | `nil`                                   |
+| `nexus.chownNexusData`                      | Set false to not execute chown to the mounted nexus-data directory at startup | `true` |
 | `nexusProxy.enabled`                        | Enable nexus proxy                  | `true`                                  |
 | `nexusProxy.svcName`                        | Nexus proxy service name            | `nil`                                  |
 | `nexusProxy.targetPort`                     | Container Port for Nexus proxy      | `8080`                                  |
@@ -130,10 +136,15 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `persistence.annotations`                   | Persistent Volume annotations       | `{}`                                    |
 | `persistence.existingClaim`                 | Existing PVC name                   | `nil`                                   |
 | `nexusBackup.enabled`                       | Nexus backup process                | `false`                                 |
-| `nexusBackup.imageName`                     | Nexus backup image                  | `quay.io/travelaudience/docker-nexus-backup` |
-| `nexusBackup.imageTag`                      | Nexus backup image version          | `1.5.0`                                 |
+| `nexusBackup.imageName`                     | Nexus backup image                  | `dbcc/docker-nexus-backup` |
+| `nexusBackup.imageTag`                      | Nexus backup image version          | `0.0.1`                                 |
 | `nexusBackup.imagePullPolicy`               | Backup image pull policy            | `IfNotPresent`                          |
-| `nexusBackup.env.targetBucket`              | Required if `nexusBackup` is enabled. Google Cloud Storage bucker for backups format `gs://BACKUP_BUCKET`  | `nil`  |
+| `nexusBackup.env.rcloneRemote`              | Required if `nexusBackup` is enabled. Name of the Rclone remote as defined in the `rcloneConfig` entry. Example: `AWS`  | `nil`  |
+| `nexusBackup.env.targetBucket`              | Required if `nexusBackup` is enabled. Name of the target bucket or bucket/path. Example: `my_bucket` or `my_bucket/my_folder`  | `nil`  |
+| `nexusBackup.env.streamingUploadCutoff`     | Size of the data chunks to send to the Rclone remote, this value affects the maximum size of the backup file to upload.  | `"5000000"`  |
+| `nexusBackup.env.nexusAuthorization`        | If set, `nexusBackup.nexusAdminPassword` will be disregarded. | `nil`  |
+| `nexusBackup.env.offlineRepos`              | Space separated list of repositories must be taken down to achieve a consistent backup. | `"maven-central maven-public maven-releases maven-snapshots"`  |
+| `nexusBackup.env.gracePeriod`               | The amount of time in seconds to wait between stopping repositories and starting the upload. | `60`  |
 | `nexusBackup.nexusAdminPassword`            | Nexus admin password used by the backup container to access Nexus API. This password should match the one that gets chosen by the user to replace the default admin password after the first login  | `admin123`                |
 | `nexusBackup.persistence.enabled`           | Create a volume for backing Nexus configuration  | `true`                     |
 | `nexusBackup.persistence.accessMode`        | ReadWriteOnce or ReadOnly           | `ReadWriteOnce`                         |
@@ -142,11 +153,24 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `nexusBackup.persistence.annotations`       | PV annotations for backup           | `{}`                                    |
 | `nexusBackup.persistence.existingClaim`     | Existing PVC name for backup        | `nil`                                   |
 | `nexusBackup.resources`                     | Backup resource requests and limits | `{}`                                    |
+| `nexusBackup.rcloneConfig.rclone.conf`                 | Rclone remote configuration, can be generated using the `rclone config` command, or using docker: `docker run -it --rm rclone/rclone config` | `[AWS]` <br> `type = s3` <br> `provider = AWS` <br> `env_auth = true` <br> `region = us-east-1` <br> `acl = authenticated-read` |
+| `nexusCloudiam.enabled`                       | Nexus Cloud IAM service account key path                | `false`                                 |
+| `nexusCloudiam.persistence.accessMode`        | ReadWriteOnce or ReadOnly           | `ReadWriteOnce`                         |
+| `nexusCloudiam.persistence.annotations`       | PV annotations for Cloud IAM service account key path | `{}`                                    |
+| `nexusCloudiam.persistence.enabled`           | Create a volume for Cloud IAM service account key path  | `true`                     |
+| `nexusCloudiam.persistence.existingClaim`     | Existing PVC name for Cloud IAM service account key path        | `nil`                                   |
+| `nexusCloudiam.persistence.storageClass`      | Storage class of Cloud IAM service account path PVC   | `nil`                                   |
+| `nexusCloudiam.persistence.storageSize`       | Size of Cloud IAM service account path volume    | `8Gi`                                   |
 | `ingress.enabled`                           | Create an ingress for Nexus         | `false`                                  |
 | `ingress.annotations`                       | Annotations to enhance ingress configuration  | `{}`                          |
 | `ingress.tls.enabled`                       | Enable TLS                          | `true`                                 |
 | `ingress.tls.secretName`                    | Name of the secret storing TLS cert, `false` to use the Ingress' default certificate | `nexus-tls`                             |
 | `ingress.path`                              | Path for ingress rules. GCP users should set to `/*` | `/`                    |
+| `ingressDocker.enabled`                           | Create an ingress for Docker registry         | `false`                                  |
+| `ingressDocker.annotations`                       | Annotations to enhance docker ingress configuration  | `{}`                          |
+| `ingressDocker.tls.enabled`                       | Enable TLS                          | `true`                                 |
+| `ingressDocker.tls.secretName`                    | Name of the secret storing TLS cert, `false` to use the Ingress' default certificate | `nexus-tls`                             |
+| `ingressDocker.path`                              | Path for docker ingress rules. GCP users should set to `/*` | `/`                    |
 | `tolerations`                               | tolerations list                    | `[]`                                    |
 | `config.enabled`                            | Enable configmap                    | `false`                                 |
 | `config.mountPath`                          | Path to mount the config            | `/sonatype-nexus-conf`                  |
@@ -173,6 +197,9 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `serviceAccount.create`                     | Automatically create a service account | `true`                               |
 | `serviceAccount.name`                       | Service account to use           | `nil`  |
 | `serviceAccount.annotations`                | Service account annotations  | `nil` |
+| `rbac.create`                               | Creates a ClusterRoleBinding attached to the Service account. | `false` |
+| `rbac.roleRef`                              | ClusterRoleBinding field `roleRef` content. See examples [here](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#rolebinding-example). | `nil` |
+| `rbac.annotations`                          | ClusterRoleBinding annotations.  | `nil` |
 | `route.enabled`         | Set to true to create route for additional service | `false` |
 | `route.name`            | Name of route                                      | `docker` |
 | `route.portName`        | Target port name of service                        | `docker` |
@@ -253,6 +280,47 @@ resources:
     #     to use all the available memory.
     memory: 4800Mi
 ```
+
+### Using GCP Storage for Backup
+
+Irrespective of whether Nexus is deployed to Google's GKE, or to some other k8s installation, it is possible to configure the [nexus-backup](https://github.com/travelaudience/docker-nexus-backup) container to backup to GCP Cloud Storage.
+This makes for a cost effective solution for backups.
+
+To enable, add the following key to the values file:
+
+```yaml
+nexusCloudiam:
+  enabled: true
+```
+
+You should also deploy Nexus as a stateful app, rather than a deployment.
+That means also adding:
+ 
+```yaml
+statefulset:
+  enabled: true
+```
+
+Deploying the chart now will result in a new PV and PVC within the pod that runs the containers.
+
+Create a service account with privileges to upload to your GCP bucket, and creaet a key for this service account.
+Download that service account key as a file, call it `service-account-key.json`.
+
+This file now needs to be made available to the pod running in k8s, and should be called `/nexus-data/cloudiam/service-account-key.json`.
+How this is done will depend upon the storage class used for the PV.
+
+Confirm that the service account file is available to the pod, using:
+ 
+    kubectl exec --stdin --tty \
+        --container nexus-backup \
+        sonatype-nexus-0 \
+        -- find /nexus-data/cloudiam -type f
+
+You might need to scale the deployment to zero and back up to pick up the changes:
+
+    kubectl scale --replicas=0 statefulset.apps/sonatype-nexus
+    kubectl scale --replicas=1 statefulset.apps/sonatype-nexus
+
 
 ## After Installing the Chart
 
