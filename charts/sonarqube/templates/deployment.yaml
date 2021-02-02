@@ -266,9 +266,15 @@ spec:
             - mountPath: {{ .Values.sonarqubeFolder }}/data
               name: sonarqube
               subPath: data
+            {{- if .Values.persistence.enabled }}
             - mountPath: {{ .Values.sonarqubeFolder }}/extensions
               name: sonarqube
               subPath: extensions
+            {{- else if .Values.plugins.install }}
+            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/downloads
+              name: sonarqube
+              subPath: extensions/downloads
+            {{- end }}
             {{- if .Values.plugins.lib }}
             {{- range $index, $val := .Values.plugins.lib }}
             - mountPath: {{ $.Values.sonarqubeFolder }}/lib/common/{{ $val }}
