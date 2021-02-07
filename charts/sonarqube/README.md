@@ -45,9 +45,29 @@ kindly-newt 1           Mon Oct  2 15:05:44 2017    DEPLOYED    sonarqube-0.1.0 
 $ helm delete kindly-newt
 ```
 
-## Ingress Paths
+## Ingress
 
+### Path
 Some cloud may need the path to be /* instead of /. Try this first if you are having issues getting traffic through the ingress.
+
+### Default Backend
+
+if you use GCP as a cloud provider you need to set a default backend to avoid useless default backend created by the gce controller. To add this default backend you must set "ingress.class" annotation with "gce" or "gce-internal" value.
+
+Example:
+
+```yaml
+...
+ingress:
+  enabled: true
+  hosts:
+    - name: sonarqube.example.com
+      path: "/*"
+  annotations:
+    kubernetes.io/ingress.class: "gce-internal"
+    kubernetes.io/ingress.allow-http: "false"
+...
+```
 
 ## Configuration
 
