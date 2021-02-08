@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [9.5.0]
+* Add Ingress default backend for GCE class
+
 ## [9.2.3]
 * Added namespace to port-foward command in notes.
 
