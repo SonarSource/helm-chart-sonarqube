@@ -24,12 +24,13 @@ metadata:
     {{- end }}
 {{- end }}
 spec:
-  {{- if .Values.ingress.annotations}}
+  {{- if .Values.ingress.annotations }}
   {{- range $key, $value := .Values.ingress.annotations }}
   {{- if and (eq $key "kubernetes.io/ingress.class") (contains $value "gce") }}
   backend:
     serviceName: {{ default $serviceName .serviceName }}
     servicePort: {{ default $servicePort .servicePort }}
+  {{- end }}
   {{- end }}
   {{- end }}
   rules:
