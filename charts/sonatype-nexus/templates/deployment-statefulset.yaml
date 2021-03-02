@@ -190,6 +190,10 @@ spec:
             - name: JWT_REQUIRES_MEMBERSHIP_VERIFICATION
               value: {{ .Values.nexusProxy.env.requiredMembershipVerification | quote }}
             {{- end }}
+            {{- with .Values.nexusProxy.env.javaOptions }}
+            - name: JAVA_TOOL_OPTIONS
+              value: {{ . | quote }}
+            {{ end }}
           ports:
             - containerPort: {{ .Values.nexusProxy.targetPort }}
               name: nexus-proxy
