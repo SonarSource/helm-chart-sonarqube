@@ -44,5 +44,8 @@ spec:
       {{- if .Values.ingress.tls.secretName }}
       secretName: {{ .Values.ingress.tls.secretName | quote }}
       {{- end }}
+  {{- with .Values.ingress.tls.hosts }}
+    {{- toYaml . | nindent 4 }}
+  {{- end -}}
 {{- end -}}
 {{- end }}
