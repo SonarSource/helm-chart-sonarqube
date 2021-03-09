@@ -171,6 +171,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `ingressDocker.annotations`                       | Annotations to enhance docker ingress configuration  | `{}`                          |
 | `ingressDocker.tls.enabled`                       | Enable TLS                          | `true`                                 |
 | `ingressDocker.tls.secretName`                    | Name of the secret storing TLS cert, `false` to use the Ingress' default certificate | `nexus-tls`                             |
+| `ingressDocker.tls.hosts`                    | Custom TLS hosts configuration | `{}`                             |
 | `ingressDocker.path`                              | Path for docker ingress rules. GCP users should set to `/*` | `/`                    |
 | `tolerations`                               | tolerations list                    | `[]`                                    |
 | `config.enabled`                            | Enable configmap                    | `false`                                 |
