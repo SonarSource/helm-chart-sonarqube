@@ -44,5 +44,8 @@ spec:
       {{- if .Values.ingressDocker.tls.secretName }}
       secretName: {{ .Values.ingressDocker.tls.secretName | quote }}
       {{- end }}
+  {{- with .Values.ingressDocker.tls.hosts }}
+    {{- toYaml . | nindent 4 }}
+  {{- end -}}
 {{- end -}}
 {{- end }}
