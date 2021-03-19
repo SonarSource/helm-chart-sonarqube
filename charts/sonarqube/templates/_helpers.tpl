@@ -43,10 +43,21 @@ Set postgresql.secret
 {{- define "postgresql.secret" -}}
 {{- if .Values.postgresql.existingSecret -}} 
 {{- .Values.postgresql.existingSecret -}}
-{{- else if .Values.postgresql.enabled -}} 
-{{- template "postgresql.fullname" . -}} 
-{{- else -}} 
+{{- else if .Values.postgresql.enabled -}}
+{{- template "postgresql.fullname" . -}}
+{{- else -}}
 {{- template "sonarqube.fullname" . -}} 
+{{- end -}}
+{{- end -}}
+
+{{/*
+Set postgresql.secretKey
+*/}}
+{{- define "postgresql.secretKey" -}}
+{{- if .Values.postgresql.secretKey -}} 
+{{- .Values.postgresql.secretKey -}}
+{{- else -}} 
+{{- "postgres-password" -}} 
 {{- end -}}
 {{- end -}}
 
