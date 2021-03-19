@@ -217,7 +217,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ template "postgresql.secret" . }}
-                  key: {{ template "postgresql.secretKey" . }}
+                  key: {{ template "postgresql.secretPasswordKey" . }}
           envFrom:
             - configMapRef:
                 name: {{ template "sonarqube.fullname" . }}-postgres-config

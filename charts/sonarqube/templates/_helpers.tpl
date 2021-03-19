@@ -53,11 +53,11 @@ Set postgresql.secret
 {{/*
 Set postgresql.secretKey
 */}}
-{{- define "postgresql.secretKey" -}}
-{{- if .Values.postgresql.secretKey -}} 
-{{- .Values.postgresql.secretKey -}}
-{{- else -}} 
-{{- "postgres-password" -}} 
+{{- define "postgresql.secretPasswordKey" -}}
+{{- if and .Values.postgresql.existingSecretPasswordKey .Values.postgresql.existingSecret -}}
+{{- .Values.postgresql.existingSecretPasswordKey -}}
+{{- else -}}
+{{- "postgresql-password" -}}
 {{- end -}}
 {{- end -}}
 
