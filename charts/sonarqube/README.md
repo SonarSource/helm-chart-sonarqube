@@ -48,7 +48,7 @@ $ helm delete kindly-newt
 
 ## Ingress Paths
 
-Some cloud may need the path to be /\* instead of /. Try this first if you are having issues getting traffic through the ingress.
+Some cloud may need the path to be `/*` instead of `/.` Try this first if you are having issues getting traffic through the ingress.
 
 ## Configuration
 
