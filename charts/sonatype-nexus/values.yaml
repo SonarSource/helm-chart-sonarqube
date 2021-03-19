@@ -108,6 +108,8 @@ nexusProxy:
   targetPort: 8080
   # labels: {}
   env:
+    # Example for javaOptions : "-Xms3G -Xmx3G -XX:MaxDirectMemorySize=3G"
+    javaOptions:
     nexusDockerHost:
     nexusHttpHost:
     enforceHttps: false
@@ -237,6 +239,7 @@ ingress:
   tls:
     enabled: true
     secretName: nexus-tls
+    hosts:
   # Specify custom rules in addition to or instead of the nexus-proxy rules
   rules:
   # - host: http://nexus.127.0.0.1.nip.io
@@ -259,6 +262,7 @@ ingressDocker:
   tls:
     enabled: true
     secretName: nexus-tls
+    hosts:
   # Specify custom rules in addition to or instead of the nexus-proxy rules
   rules:
   # - host: http://nexus.127.0.0.1.nip.io

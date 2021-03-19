@@ -123,6 +123,23 @@ initContainers:
   # the initContainer does not take as much resources.
   resources: {}
 
+extraInitContainers: {}
+# Extra init containers to e.g. download required artifacts
+#  - name: "prometheus-exporter-downloader"
+#    image: "busybox"
+#    imagePullPolicy: "IfNotPresent"
+#    securityContext:
+#      runAsNonRoot: true
+#    command:
+#      - wget
+#      - "-O"
+#      - "/downloads/jmx_prometheus_javaagent.jar"
+#      - ${JMX_EXPORTER_URL}
+#    volumeMounts:
+#      - name: "downloads"
+#        mountPath: "/downloads"
+
+
 ## Provide a secret containing one or more certificate files in the keys that will be added to cacerts
 ## The cacerts file will be set via SONARQUBE_WEB_JVM_OPTS and SONAR_CE_JAVAOPTS
 ##
@@ -161,6 +178,9 @@ plugins:
 
   # .netrc secret file with a key "netrc" to use basic auth while downloading plugins
   # netrcCreds: ""
+
+  # Set to true to not validate the server's certificate to download plugin
+  noCheckCertificate: false
 
 ## Values to add to SONARQUBE_WEB_JVM_OPTS
 ##

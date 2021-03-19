@@ -22,7 +22,7 @@ data:
       [ -e {{ .Values.sonarqubeFolder }}/extensions/downloads/* ] && rm {{ .Values.sonarqubeFolder }}/extensions/downloads/*
       {{ range $index, $val := .Values.plugins.install }}
       echo {{ $val | quote }} >> {{ $.Values.sonarqubeFolder }}/extensions/downloads/list{{ end }}
-      cat {{ .Values.sonarqubeFolder }}/extensions/downloads/list | xargs -n 1 -P 8 wget --directory-prefix {{ .Values.sonarqubeFolder }}/extensions/downloads --no-verbose
+      cat {{ .Values.sonarqubeFolder }}/extensions/downloads/list | xargs -n 1 -P 8 wget --directory-prefix {{ .Values.sonarqubeFolder }}/extensions/downloads --no-verbose{{ if .Values.plugins.noCheckCertificate }} --no-check-certificate{{ end }}
       rm {{ .Values.sonarqubeFolder }}/extensions/downloads/list
     {{- end }}
     {{- if .Values.plugins.lib }}

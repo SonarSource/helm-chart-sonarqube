@@ -46,9 +46,29 @@ kindly-newt 1           Mon Oct  2 15:05:44 2017    DEPLOYED    sonarqube-0.1.0 
 $ helm delete kindly-newt
 ```
 
-## Ingress Paths
+## Ingress
+
+### Path
 
 Some cloud may need the path to be `/*` instead of `/.` Try this first if you are having issues getting traffic through the ingress.
+
+### Default Backend
+
+if you use GCP as a cloud provider you need to set a default backend to avoid useless default backend created by the gce controller. To add this default backend you must set "ingress.class" annotation with "gce" or "gce-internal" value.
+
+Example:
+
+```yaml
+---
+ingress:
+  enabled: true
+  hosts:
+    - name: sonarqube.example.com
+      path: "/*"
+  annotations:
+    kubernetes.io/ingress.class: "gce-internal"
+    kubernetes.io/ingress.allow-http: "false"
+```
 
 ## Configuration
 
@@ -98,6 +118,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `initContainers.image`                                   | Change init container image                                                                                               | `busybox:1.32`                  |
 | `initContainers.securityContext`                         | SecurityContext for init containers                                                                                       | `nil`                           |
 | `initContainers.resources`                               | Resources for init containers                                                                                             | `{}`                            |
+| `extraInitContainers`                                    | Extra init containers to e.g. download required artifacts                                                                 | `{}`                            |
 | `caCerts.image`                                          | Change init CA certificates container image                                                                               | `adoptopenjdk/openjdk11:alpine` |
 | `caCerts.secret`                                         | Name of the secret containing additional CA certificates                                                                  | `nil`                           |
 | `initSysctl.enabled`                                     | Modify k8s worker to conform to system requirements                                                                       | `true`                          |
@@ -117,6 +138,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `plugins.image`                                          | Image for plugins container                                                                                               | ""                              |
 | `plugins.resources`                                      | Resources for plugins container                                                                                           | ""                              |
 | `plugins.netrcCreds`                                     | Name of the secret containing .netrc file to use creds when downloading plugins                                           | ""                              |
+| `plugins.noCheckCertificate`                             | Flag to not check server's certificate when downloading plugins                                                           | `false`                         |
 | `jvmOpts`                                                | Values to add to SONARQUBE_WEB_JVM_OPTS                                                                                   | `""`                            |
 | `env`                                                    | Environment variables to attach to the pods                                                                               | `nil`                           |
 | `annotations`                                            | Sonarqube Pod annotations                                                                                                 | `{}`                            |
@@ -167,7 +189,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `serviceAccount.name`                                    | Name of the serviceAccount to create/use                                                                                  | `sonarqube-sonarqube`           |
 | `serviceAccount.annotations`                             | Additional serviceAccount annotations                                                                                     | `{}`                            |
 | `extraConfig.secrets`                                    | A list of `Secret`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables    | `[]`                            |
-| `extraConfig.secrets`                                    | A list of `ConfigMap`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables | `[]`                            |
+| `extraConfig.configmaps`                                 | A list of `ConfigMap`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables | `[]`                            |
 | `account.adminPassword`                                  | Custom admin password                                                                                                     | `"admin"`                       |
 | `account.currentAdminPassword`                           | Current admin password                                                                                                    | `"admin"`                       |
 | `curlContainerImage`                                     | Curl container image                                                                                                      | `"curlimages/curl:latest"`      |
