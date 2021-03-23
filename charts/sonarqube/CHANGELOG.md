@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [9.6.0]
+* Add the possibility of definining the secret key name of the postgres password.
+
 ## [9.5.0]
 * Add Ingress default backend for GCE class
 
