@@ -43,6 +43,9 @@ spec:
       labels:
         app: {{ template "nexus.name" . }}
         release: {{ .Release.Name }}
+        {{- if .Values.nexus.labels }}
+{{ toYaml .Values.nexus.labels | indent 8 }}
+        {{- end }}
     spec:
       {{- if .Values.deployment.initContainers }}
       initContainers:
@@ -344,6 +347,9 @@ spec:
         name: {{ template "nexus.fullname" . }}-data
         labels:
 {{ include "nexus.labels" . | indent 10 }}
+          {{- if .Values.nexus.labels }}
+{{ toYaml .Values.nexus.labels | indent 10 }}
+          {{- end }}
         {{- if .Values.persistence.annotations }}
         annotations:
 {{ toYaml .Values.persistence.annotations | indent 10 }}
