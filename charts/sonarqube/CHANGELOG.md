@@ -1,5 +1,7 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
+## [9.6.2]
+* Change order of env variables to better support 7.9-lts
 
 ## [9.6.1]
 * Add support for setting custom annotations in admin hook job.

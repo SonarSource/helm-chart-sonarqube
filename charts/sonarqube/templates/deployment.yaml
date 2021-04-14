@@ -200,9 +200,6 @@ spec:
               containerPort: {{ .Values.service.internalPort }}
               protocol: TCP
           env:
-            {{- with .Values.env }}
-            {{- . | toYaml | trim | nindent 12 }}
-            {{- end }}
             - name: SONAR_WEB_JAVAOPTS
               {{- if .Values.caCerts }}
               value: {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
@@ -218,6 +215,9 @@ spec:
                 secretKeyRef:
                   name: {{ template "postgresql.secret" . }}
                   key: {{ template "postgresql.secretPasswordKey" . }}
+            {{- with .Values.env }}
+            {{- . | toYaml | trim | nindent 12 }}
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ template "sonarqube.fullname" . }}-postgres-config
