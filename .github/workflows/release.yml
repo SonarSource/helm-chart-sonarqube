@@ -26,6 +26,10 @@ jobs:
           chmod 700 get_helm.sh
           ./get_helm.sh
 
+      - name: Add helm repositories
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.0.0
         env:
