@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [9.6.1]
+* Add support for setting custom annotations in admin hook job.
+
 ## [9.6.0]
 * Add the possibility of definining the secret key name of the postgres password.
 
