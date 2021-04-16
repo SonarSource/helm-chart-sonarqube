@@ -3,6 +3,8 @@
 # Declare variables to be passed into your templates.
 replicaCount: 1
 
+deploymentType: "StatefulSet"
+
  # This will use the default deployment strategy unless it is overriden
 deploymentStrategy: {}
 # Uncomment this to scheduler pods on priority
@@ -20,7 +22,7 @@ OpenShift:
 
 image:
   repository: sonarqube
-  tag: 8.5.1-community
+  tag: 8.7-enterprise
   pullPolicy: IfNotPresent
   # If using a private repository, the name of the imagePullSecret to use
   # pullSecret: my-repo-secret
@@ -52,10 +54,10 @@ service:
   #   - 0.0.0.0/0
   # loadBalancerIP: 1.2.3.4
 ingress:
-  enabled: false
+  enabled: true
   # Used to create an Ingress record.
   hosts:
-    - name: sonar.organization.com
+    - name: k8s-ee.sonarqube.com
       # Different clouds or configurations might need /* as the default path
       path: /
       # For additional control over serviceName and servicePort
@@ -113,6 +115,13 @@ livenessProbe:
   # sonarWebContext: /sonarqube/
   # If an ingress *path* is defined, it should be reflected here
   # sonar.web.context: /sonarqube
+startupProbe:
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  # If an ingress *path* other than the root (/) is defined, it should be reflected here
+  # A trailing "/" must be included
+  sonarWebContext: /
+  # sonarWebContext: /sonarqube/
 
 initContainers:
   # image: busybox:1.32
@@ -157,6 +166,11 @@ initSysctl:
   securityContext:
     privileged: true
   # resources: {}
+
+initFs:
+  # image: busybox:1.32
+  securityContext:
+    privileged: true
 
 # List of plugins to install.
 # For example:
@@ -208,7 +222,7 @@ resources: {}
 #  cpu: 100m
 #  memory: 128Mi
 persistence:
-  enabled: false
+  enabled: true
   ## Set annotations on pvc
   annotations: {}
 
@@ -224,7 +238,8 @@ persistence:
   ##
   storageClass:
   accessMode: ReadWriteOnce
-  size: 10Gi
+  size: 5Gi
+  uid: 1000
 
   ## Specify extra volumes. Refer to ".spec.volumes" specification : https://kubernetes.io/fr/docs/concepts/storage/volumes/
   volumes: []
