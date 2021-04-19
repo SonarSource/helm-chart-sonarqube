@@ -109,6 +109,7 @@ readinessProbe:
 livenessProbe:
   initialDelaySeconds: 60
   periodSeconds: 30
+  failureThreshold: 6
   # If an ingress *path* other than the root (/) is defined, it should be reflected here
   # A trailing "/" must be included
   sonarWebContext: /
@@ -118,7 +119,7 @@ livenessProbe:
 startupProbe:
   initialDelaySeconds: 30
   periodSeconds: 10
-  failureThreshold: 12
+  failureThreshold: 24
   # If an ingress *path* other than the root (/) is defined, it should be reflected here
   # A trailing "/" must be included
   sonarWebContext: /
@@ -213,7 +214,13 @@ monitoringPasscode: "Geheim1!"
 # Set annotations for pods
 annotations: {}
 
-resources: {}
+resources: 
+  limits:
+    cpu: 800m
+    memory: 4096M
+  requests:
+    cpu: 400m
+    memory: 2Gi
 # We usually recommend not to specify default resources and to leave this as a conscious
 # choice for the user. This also increases chances charts run on environments with little
 # resources, such as Minikube. If you do want to specify resources, uncomment the following

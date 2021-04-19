@@ -31,6 +31,7 @@ spec:
 {{- end }}
       annotations:
         checksum/init-sysctl: {{ include (print $.Template.BasePath "/init-sysctl.yaml") . | sha256sum }}
+        checksum/init-fs: {{ include (print $.Template.BasePath "/init-fs.yaml") . | sha256sum }}
         checksum/plugins: {{ include (print $.Template.BasePath "/install-plugins.yaml") . | sha256sum }}
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
@@ -174,6 +175,8 @@ spec:
             - name: http
               containerPort: {{ .Values.service.internalPort }}
               protocol: TCP
+          resources:
+{{ toYaml (default .Values.resources .Values.resource) | indent 12 }}
           env:
             - name: SONAR_WEB_JAVAOPTS
               {{- if .Values.caCerts }}
