@@ -117,7 +117,8 @@ livenessProbe:
   # sonar.web.context: /sonarqube
 startupProbe:
   initialDelaySeconds: 30
-  periodSeconds: 30
+  periodSeconds: 10
+  failureThreshold: 12
   # If an ingress *path* other than the root (/) is defined, it should be reflected here
   # A trailing "/" must be included
   sonarWebContext: /
@@ -200,6 +201,8 @@ plugins:
 ##
 # jvmOpts: "-Djava.net.preferIPv4Stack=true"
 jvmOpts: ""
+
+monitoringPasscode: "Geheim1!"
 
 ## Environment variables to attach to the pods
 ##

@@ -190,6 +190,11 @@ spec:
                 secretKeyRef:
                   name: {{ template "postgresql.secret" . }}
                   key: {{ template "postgresql.secretPasswordKey" . }}
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
             {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
@@ -211,25 +216,23 @@ spec:
               - -c 
               - |
                 #!/bin/bash
-                # A Sonarqube container is considered healthy if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-                # status about migration are added to prevent the node to be kill while sonarqube is updating himself.
+                # A Sonarqube container is considered healthy if the health status is GREEN or YELLOW
                 host="$(hostname -i || echo '127.0.0.1')"
-                if wget -qO- http://${host}:9000{{ .Values.livenessProbe.sonarWebContext }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                if wget --header="X-Sonar-Passcode: ${SONAR_WEB_SYSTEMPASSCODE}" -qO- http://${host}:9000{{ .Values.livenessProbe.sonarWebContext }}api/system/health | grep -q -e '"health":"GREEN"' -e '"health":"YELLOW"'; then
                 	exit 0
                 fi
                 exit 1
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
           readinessProbe:
-            httpGet:
             exec:
               command:
               - sh
               - -c 
               - |
                 #!/bin/bash
-                # A Sonarqube container is considered healthy if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-                # status about migration are added to prevent the node to be kill while sonarqube is updating himself.
+                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
                 host="$(hostname -i || echo '127.0.0.1')"
                 if wget -qO- http://${host}:9000{{ .Values.readinessProbe.sonarWebContext }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
                 	exit 0
@@ -240,19 +243,9 @@ spec:
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
           startupProbe:
             httpGet:
-            exec:
-              command:
-              - sh
-              - -c 
-              - |
-                #!/bin/bash
-                # Sonarqube is considered successfully started when the status is STARTED. 
-                # Everything else in the livecycle should be handled by the readiness and liveness probes
-                host="$(hostname -i || echo '127.0.0.1')"
-                if wget -qO- http://${host}:9000{{ .Values.startupProbe.sonarWebContext }}api/system/status | grep -q -e '"status":"STARTING"'; then
-                	exit 0
-                fi
-                exit 1
+              scheme: HTTP
+              path: {{ .Values.readinessProbe.sonarWebContext }}api/system/status
+              port: 9000
             initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.startupProbe.failureThreshold }}
