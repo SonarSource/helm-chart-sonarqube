@@ -94,11 +94,21 @@ affinity: {}
 
 # Tolerations for pod assignment
 # Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-tolerations: []
+# taint a node with the following command to mark it as not schedulable for new pods
+# kubectl taint nodes <node> sonarqube=true:NoSchedule
+# The following statement will tolerate this taint and as such reverse a node for sonarqube
+tolerations: 
+  - key: "sonarqube"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
 
 # Node labels for pod assignment
 # Ref: https://kubernetes.io/docs/user-guide/node-selection/
-nodeSelector: {}
+# add a label to a node with the following command
+# kubectl label node <node> sonarqube=true
+nodeSelector: 
+  sonarqube: "true"
 
 # hostAliases allows the modification of the hosts file inside a container
 hostAliases: []
