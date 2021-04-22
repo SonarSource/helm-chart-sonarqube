@@ -71,3 +71,18 @@ false
 true
 {{- end -}}
 {{- end -}}
+
+{{/*
+Set sonarqube.jvmOpts
+*/}}
+{{- define "sonarqube.jvmOpts" -}}
+{{- if and .Values.caCerts .Values.prometheusExporter.enabled -}}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=8000:%s/conf/prometheus-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
+{{- else if .Values.caCerts -}}
+{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
+{{- else if .Values.prometheusExporter.enabled -}}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=8000:%s/conf/prometheus-config.yaml %s" .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
+{{- else -}}
+{{ printf "%s" .Values.jvmOpts }}
+{{- end -}}
+{{- end -}}

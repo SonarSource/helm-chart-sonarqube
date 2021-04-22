@@ -194,6 +194,9 @@ initFs:
 
 prometheusExporter:
   enabled: true
+  config:
+    rules:
+      - pattern: ".*"
   # image: busybox:1.32
 
 
@@ -224,7 +227,8 @@ plugins:
 ## Values to add to SONARQUBE_WEB_JVM_OPTS
 ##
 # jvmOpts: "-Djava.net.preferIPv4Stack=true"
-jvmOpts: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8080:/opt/sonarqube/conf/prometheus-config.yaml"
+# jvmOpts: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8080:/opt/sonarqube/conf/prometheus-config.yaml"
+jvmOpts: ""
 
 ## a monitoring passcode needs to be defined in order to get reasonable probe results
 # not setting the monitoring passcode will result in a deployment that will never be ready

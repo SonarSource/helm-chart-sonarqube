@@ -199,15 +199,7 @@ spec:
 {{ toYaml (default .Values.resources .Values.resource) | indent 12 }}
           env:
             - name: SONAR_WEB_JAVAOPTS
-              {{- if .Values.caCerts }}
-              value: {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
-              {{- else }}
-              value: "{{ .Values.jvmOpts }}"
-              {{- end }}
-            {{- if .Values.caCerts }}
-            - name: SONAR_CE_JAVAOPTS
-              value: {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts" .Values.sonarqubeFolder | trim | quote }}
-            {{- end }}
+              value: {{ template "sonarqube.jvmOpts" . }}
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -323,7 +315,7 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf/
+            - mountPath: {{ .Values.sonarqubeFolder }}/conf
               name: prometheus-config
     {{- if .Values.nodeSelector }}
       nodeSelector:
