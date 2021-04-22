@@ -52,6 +52,29 @@ spec:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
           command: ["/bin/sh", "-c", "for i in $(seq 1 200); do nc -z -w3 {{ .Release.Name}}-postgresql 5432 && exit 0 || sleep 2; done; exit 1"]
       {{- if or .Values.initSysctl.enabled .Values.elasticsearch.configureNode }}
+      {{- if .Values.caCerts }}
+        - name: ca-certs
+          image: {{ default "adoptopenjdk/openjdk11:alpine" .Values.caCerts.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy  }}
+          command: ["sh"]
+          args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
+          {{- if $securityContext := .Values.initContainers.securityContext }}
+          securityContext:
+{{ toYaml $securityContext | indent 12 }}
+          {{- end }}
+          resources:
+{{ toYaml .Values.initContainers.resources | indent 12 }}
+          volumeMounts:
+            - mountPath: /tmp/certs
+              name: sonarqube
+              subPath: certs
+            - mountPath: /tmp/secrets/ca-certs
+              name: ca-certs
+          {{- with .Values.env }}
+          env:
+            {{- . | toYaml | trim | nindent 12 }}
+          {{- end }}
+      {{- end }}      
         - name: init-sysctl
           image: {{ default "busybox:1.32" .Values.initSysctl.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
