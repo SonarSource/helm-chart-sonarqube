@@ -42,6 +42,9 @@ spec:
 {{- end }}
     spec:
       initContainers:
+      {{- if .Values.extraInitContainers }}
+{{ toYaml .Values.extraInitContainers | indent 8 }}
+      {{- end }}
         - name: "wait-for-db"
           image: {{ default "busybox:1.32" .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -69,6 +72,23 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
+      {{- if .Values.prometheusExporter.enabled }}
+        - name: inject-prometheus-exporter
+          image: {{ default "busybox:1.32" .Values.prometheusExporter.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy  }}
+          {{- if $securityContext := (default .Values.initContainers.securityContext .Values.prometheusExporter.securityContext) }}
+          securityContext:
+{{ toYaml $securityContext | indent 12 }}
+          {{- end }}
+          resources:
+{{ toYaml (default .Values.initContainers.resources .Values.prometheusExporter.resources) | indent 12 }}
+          command: ["/bin/sh","-c"]
+          args: ["wget https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/{{ default "0.15.0" .Values.prometheusExporter.version }}/jmx_prometheus_javaagent-{{ default "0.15.0" .Values.prometheusExporter.version }}.jar -O /data/jmx_prometheus_javaagent.jar"]
+          volumeMounts:
+            - mountPath: /data
+              name: sonarqube
+              subPath: data
+      {{- end }}
       {{- if .Values.persistence.enabled }}
         - name: init-fs
           image: {{ default "busybox:1.32" .Values.initFs.image }}
@@ -78,7 +98,7 @@ spec:
 {{ toYaml $securityContext | indent 12 }}
           {{- end }}
           resources:
-{{ toYaml (default .Values.initContainers.resources .Values.initSysctl.resources) | indent 12 }}
+{{ toYaml (default .Values.initContainers.resources .Values.initFs.resources) | indent 12 }}
           command: ["sh",
             "-e",
             "/tmp/scripts/init_fs.sh"]
@@ -179,15 +199,7 @@ spec:
 {{ toYaml (default .Values.resources .Values.resource) | indent 12 }}
           env:
             - name: SONAR_WEB_JAVAOPTS
-              {{- if .Values.caCerts }}
-              value: {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
-              {{- else }}
-              value: "{{ .Values.jvmOpts }}"
-              {{- end }}
-            {{- if .Values.caCerts }}
-            - name: SONAR_CE_JAVAOPTS
-              value: {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts" .Values.sonarqubeFolder | trim | quote }}
-            {{- end }}
+              value: {{ template "sonarqube.jvmOpts" . }}
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -303,6 +315,8 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
+            - mountPath: {{ .Values.sonarqubeFolder }}/conf
+              name: prometheus-config
     {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
@@ -374,6 +388,12 @@ spec:
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
+      - name: prometheus-config
+        configMap:
+          name: {{ template "sonarqube.fullname" . }}-prometheus-config
+          items:
+            - key: prometheus-config.yaml
+              path: prometheus-config.yaml
       - name: sonarqube
         {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:

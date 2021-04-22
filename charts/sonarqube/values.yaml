@@ -156,18 +156,17 @@ initContainers:
 extraInitContainers: {}
 # Extra init containers to e.g. download required artifacts
 #  - name: "prometheus-exporter-downloader"
-#    image: "busybox"
+#    image: "busybox:1.32"
 #    imagePullPolicy: "IfNotPresent"
-#    securityContext:
-#      runAsNonRoot: true
 #    command:
 #      - wget
-#      - "-O"
-#      - "/downloads/jmx_prometheus_javaagent.jar"
-#      - ${JMX_EXPORTER_URL}
+#      - https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.15.0/jmx_prometheus_javaagent-0.15.0.jar 
+#      - -O /monitoring/jmx_prometheus_javaagent-0.15.0.jar
 #    volumeMounts:
-#      - name: "downloads"
-#        mountPath: "/downloads"
+#      - mountPath: "/monitoring"
+#        name: "sonarqube"
+#        subPath: "monitoring"
+      
 
 
 ## Provide a secret containing one or more certificate files in the keys that will be added to cacerts
@@ -192,6 +191,14 @@ initFs:
   # image: busybox:1.32
   securityContext:
     privileged: true
+
+prometheusExporter:
+  enabled: true
+  config:
+    rules:
+      - pattern: ".*"
+  # image: busybox:1.32
+
 
 # List of plugins to install.
 # For example:
@@ -220,6 +227,7 @@ plugins:
 ## Values to add to SONARQUBE_WEB_JVM_OPTS
 ##
 # jvmOpts: "-Djava.net.preferIPv4Stack=true"
+# jvmOpts: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8080:/opt/sonarqube/conf/prometheus-config.yaml"
 jvmOpts: ""
 
 ## a monitoring passcode needs to be defined in order to get reasonable probe results
