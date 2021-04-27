@@ -81,6 +81,10 @@ spec:
               exec:
                 command: {{ .Values.deployment.postStart.command }}
           {{- end }}
+          {{- with .Values.nexus.envFrom }}
+          envFrom: 
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
 {{ toYaml .Values.nexus.env | indent 12 }}
             - name: NEXUS_DATA_CHOWN
