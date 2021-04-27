@@ -1,5 +1,8 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
+## [9.6.3]
+* Fixed GH-277 by ensuring current/new admin passwords are URL escaped in the change-admin-password-hook job.
+
 ## [9.6.2]
 * Change order of env variables to better support 7.9-lts
 
@@ -42,6 +45,6 @@ All changes to this chart will be documented in this file.
 * Rework sysctl with support for custom values.
 * Rework plugins installation via `opt/sonarqube/extensions/downloads` folder that is handled by SonarQube itself.
     * **Breaking change:** remove `plugins.deleteDefaultPlugins` as SonarQube stores bundled plugins out of `opt/sonarqube/extensions`.
-* Rename deprecated `SONARQUBE_` environment variables to `SONAR_` ones. 
+* Rename deprecated `SONARQUBE_` environment variables to `SONAR_` ones.
 * **Breaking change:** Rename `enabledTests` to `tests.enabled`.
 * Add `terminationGracePeriodSeconds`.
