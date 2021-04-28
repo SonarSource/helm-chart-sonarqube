@@ -1,9 +1,12 @@
 # Default values for sonarqube.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-replicaCount: 1
 
 deploymentType: "StatefulSet"
+
+# If the deployment Type is set to Deployment sonarqube is deployed as a replica set
+# There should not be more than 1 sonarqube instance connected to the same database
+replicaCount: 1
 
  # This will use the default deployment strategy unless it is overriden
 deploymentStrategy: {}
@@ -22,7 +25,7 @@ OpenShift:
 
 image:
   repository: sonarqube
-  tag: 8.7-enterprise
+  tag: 8.8-community
   pullPolicy: IfNotPresent
   # If using a private repository, the name of the imagePullSecret to use
   # pullSecret: my-repo-secret
@@ -44,7 +47,7 @@ elasticsearch:
 
 # also install the nginx ingress helm chart
 nginx:
-  enabled: true
+  enabled: false
 
 service:
   type: ClusterIP
@@ -58,18 +61,16 @@ service:
   #   - 0.0.0.0/0
   # loadBalancerIP: 1.2.3.4
 ingress:
-  enabled: true
+  enabled: false
   # Used to create an Ingress record.
   hosts:
-    - name: k8s-ee.sonarqube.com
+    - name: sonarqube.your-org.com
       # Different clouds or configurations might need /* as the default path
       path: /
       # For additional control over serviceName and servicePort
       # serviceName: someService
       # servicePort: somePort
-  annotations: 
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+  annotations: {}
   # kubernetes.io/ingress.class: nginx
   # kubernetes.io/tls-acme: "true"
   # This property allows for reports up to a certain size to be uploaded to SonarQube
@@ -79,10 +80,7 @@ ingress:
   # labels:
   #  traffic-type: external
   #  traffic-type: internal
-  tls: 
-  - secretName: tls-ee
-    hosts:
-      - k8s-ee.sonarqube.com
+  tls: []
   # Secrets must be manually created in the namespace.
   # - secretName: chart-example-tls
   #   hosts:
@@ -97,18 +95,18 @@ affinity: {}
 # taint a node with the following command to mark it as not schedulable for new pods
 # kubectl taint nodes <node> sonarqube=true:NoSchedule
 # The following statement will tolerate this taint and as such reverse a node for sonarqube
-tolerations: 
-  - key: "sonarqube"
-    operator: "Equal"
-    value: "true"
-    effect: "NoSchedule"
+tolerations: []
+#  - key: "sonarqube"
+#    operator: "Equal"
+#    value: "true"
+#    effect: "NoSchedule"
 
 # Node labels for pod assignment
 # Ref: https://kubernetes.io/docs/user-guide/node-selection/
 # add a label to a node with the following command
 # kubectl label node <node> sonarqube=true
-nodeSelector: 
-  sonarqube: "true"
+nodeSelector: {}
+#  sonarqube: "true"
 
 # hostAliases allows the modification of the hosts file inside a container
 hostAliases: []
@@ -155,26 +153,13 @@ initContainers:
 
 extraInitContainers: {}
 # Extra init containers to e.g. download required artifacts
-#  - name: "prometheus-exporter-downloader"
-#    image: "busybox:1.32"
-#    imagePullPolicy: "IfNotPresent"
-#    command:
-#      - wget
-#      - https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.15.0/jmx_prometheus_javaagent-0.15.0.jar 
-#      - -O /monitoring/jmx_prometheus_javaagent-0.15.0.jar
-#    volumeMounts:
-#      - mountPath: "/monitoring"
-#        name: "sonarqube"
-#        subPath: "monitoring"
       
-
-
 ## Provide a secret containing one or more certificate files in the keys that will be added to cacerts
 ## The cacerts file will be set via SONARQUBE_WEB_JVM_OPTS and SONAR_CE_JAVAOPTS
 ##
-caCerts:
+#caCerts:
   # image: adoptopenjdk/openjdk11:alpine
-  secret: vilantis-certs
+  # secret: your-secret
 
 initSysctl:
   enabled: true
@@ -188,6 +173,7 @@ initSysctl:
   # resources: {}
 
 initFs:
+  enabeld: true
   # image: busybox:1.32
   securityContext:
     privileged: true
@@ -227,12 +213,11 @@ plugins:
 ## Values to add to SONARQUBE_WEB_JVM_OPTS
 ##
 # jvmOpts: "-Djava.net.preferIPv4Stack=true"
-# jvmOpts: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8080:/opt/sonarqube/conf/prometheus-config.yaml"
 jvmOpts: ""
 
 ## a monitoring passcode needs to be defined in order to get reasonable probe results
 # not setting the monitoring passcode will result in a deployment that will never be ready
-monitoringPasscode: "Geheim1!"
+monitoringPasscode: "define_it"
 
 ## Environment variables to attach to the pods
 ##
@@ -243,6 +228,9 @@ monitoringPasscode: "Geheim1!"
 # Set annotations for pods
 annotations: {}
 
+# We usually don't make specific ressource recommandations, as they are heavily dependend on 
+# The usage of SonarQube and the surrounding infrastructure.
+# Adjust these values to your needs, but make sute that the memory limit is never under 4 GB
 resources: 
   limits:
     cpu: 800m
@@ -250,18 +238,8 @@ resources:
   requests:
     cpu: 400m
     memory: 2Gi
-# We usually recommend not to specify default resources and to leave this as a conscious
-# choice for the user. This also increases chances charts run on environments with little
-# resources, such as Minikube. If you do want to specify resources, uncomment the following
-# lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-# limits:
-#  cpu: 100m
-#  memory: 128Mi
-# requests:
-#  cpu: 100m
-#  memory: 128Mi
 persistence:
-  enabled: true
+  enabled: false
   ## Set annotations on pvc
   annotations: {}
 

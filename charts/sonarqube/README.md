@@ -8,32 +8,35 @@ This chart bootstraps a SonarQube instance with a PostgreSQL database.
 
 ## Prerequisites
 
-- Kubernetes 1.10+
+- Kubernetes 1.19+
 
 ## Installing the chart
 
 To install the chart:
 
 ```bash
-helm repo add oteemocharts https://oteemo.github.io/charts
-helm install oteemocharts/sonarqube
+helm repo add sonarsource <UNDER CONSTRUCTION>
+kubectl create namespace sonarqube
+helm upgrade --install -n sonarqube sonarqube sonarsource/sonarqube
 ```
 
-The above command deploys Sonarqube on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
-
-For OpenShift installations; if you wish for the chart to create the required SCC for the privileged initContainer, and run PostgreSQL under the restricted SCC use the following `set` statements:
-
-```bash
-helm repo add oteemocharts https://oteemo.github.io/charts
-helm install oteemocharts/sonarqube --set OpenShift.enabled=true,\
-                                          serviceAccount.create=true,\
-                                          postgresql.serviceAccount.enabled=true,\
-                                          postgresql.securityContext.enabled=false,\
-                                          postgresql.volumePermissions.enabled=true,\
-                                          postgresql.volumePermissions.securityContext.runAsUser="auto"
-```
+The above command deploys Sonarqube on the Kubernetes cluster in the default configuration in the sonarqube namespace. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 The default login is admin/admin.
+
+### Install the chart without a chart repository
+
+To install Sonarqube without a chart repository, you need to clone this repository and reference this chart locally
+
+```bash
+git clone https://github.com/SonarSource/helm-chart-sonarqube.git
+cd helm-chart-sonarqube
+helm dependency update
+kubectl create namespace sonarqube
+helm upgrade --install -f values.yaml -n sonarqube sonarqube ./
+```
+
+As the other methode this will install sonarqube on the Kubernetes cluster with the default configuration in the sonarqube namespace.
 
 ## Uninstalling the chart
 
@@ -41,8 +44,8 @@ To uninstall/delete the deployment:
 
 ```bash
 $ helm list
-NAME        REVISION    UPDATED                     STATUS      CHART           NAMESPACE
-kindly-newt 1           Mon Oct  2 15:05:44 2017    DEPLOYED    sonarqube-0.1.0  default
+NAME        REVISION    UPDATED                     STATUS      CHART            NAMESPACE
+kindly-newt 1           Mon Oct  2 15:05:44 2017    DEPLOYED    sonarqube-0.1.0  sonarqube
 $ helm delete kindly-newt
 ```
 
@@ -76,6 +79,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 
 | Parameter                                                | Description                                                                                                               | Default                         |
 | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| `deploymentType`                                         | Deployment Type                                                                                                           | `StatefulSet`                   |
 | `replicaCount`                                           | Number of replicas deployed                                                                                               | `1`                             |
 | `deploymentStrategy`                                     | Deployment strategy                                                                                                       | `{}`                            |
 | `priorityClassName`                                      | Schedule pods on priority (commented out)                                                                                 | `"high-priority"`               |
@@ -83,13 +87,14 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `OpenShift.enabled`                                      | Define if this deployment is for OpenShift                                                                                | `false`                         |
 | `OpenShift.createSCC`                                    | If this deployment is for OpenShift, define if SCC should be created for sonarqube pod                                    | `true`                          |
 | `image.repository`                                       | image repository                                                                                                          | `sonarqube`                     |
-| `image.tag`                                              | `sonarqube` image tag.                                                                                                    | `8.5.1-community`               |
+| `image.tag`                                              | `sonarqube` image tag.                                                                                                    | `8.8-community`                 |
 | `image.pullPolicy`                                       | Image pull policy                                                                                                         | `IfNotPresent`                  |
 | `image.pullSecret`                                       | imagePullSecret to use for private repository (commented out)                                                             | `my-repo-secret`                |
 | `securityContext.fsGroup`                                | Group applied to mounted directories/files                                                                                | `1000`                          |
 | `containerSecurityContext.runAsUser`                     | User to run containers in sonarqube pod as, unless overwritten (such as for init-sysctl container)                        | `1000`                          |
 | `elasticsearch.configureNode`                            | [DEPRECATED] Use initSysctl.enabled instead.                                                                              | `true`                          |
 | `elasticsearch.bootstrapChecks`                          | Enables/disables Elasticsearch bootstrap checks                                                                           | `true`                          |
+| `nginx.enabled`                                          | Also install Nginx Ingress Helm                                                                                           | `false`                         |
 | `service.type`                                           | Kubernetes service type                                                                                                   | `ClusterIP`                     |
 | `service.externalPort`                                   | Kubernetes service port                                                                                                   | `9000`                          |
 | `service.internalPort`                                   | Kubernetes container port                                                                                                 | `9000`                          |
@@ -99,7 +104,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `service.loadBalancerIP`                                 | Kubernetes service LB Optional fixed external IP                                                                          | None                            |
 | `ingress.enabled`                                        | Flag for enabling ingress                                                                                                 | false                           |
 | `ingress.labels`                                         | Ingress additional labels                                                                                                 | `{}`                            |
-| `ingress.hosts[0].name`                                  | Hostname to your SonarQube installation                                                                                   | `sonar.organization.com`        |
+| `ingress.hosts[0].name`                                  | Hostname to your SonarQube installation                                                                                   | `sonarqube.your-org.com`        |
 | `ingress.hosts[0].path`                                  | Path within the URL structure                                                                                             | /                               |
 | `ingress.hosts[0].serviceName`                           | Optional field to override the default serviceName of a path                                                              | None                            |
 | `ingress.hosts[0].servicePort`                           | Optional field to override the default servicePort of a path                                                              | None                            |
@@ -115,6 +120,11 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `livenessProbe.initialDelaySecond`                       | LivenessProbe initial delay for SonarQube checking                                                                        | `60`                            |
 | `livenessProbe.periodSeconds`                            | LivenessProbe period between checking SonarQube                                                                           | `30`                            |
 | `livenessProbe.sonarWebContext`                          | SonarQube web context for livenessProbe                                                                                   | /                               |
+| `livenessProbe.failureThreshold`                         | LivenessProbe thresold for marking as dead                                                                                | `6`                             |
+| `startupProbe.initialDelaySecond`                        | StartupProbe initial delay for SonarQube checking                                                                         | `30`                            |
+| `startupProbe.periodSeconds`                             | StartupProbe period between checking SonarQube                                                                            | `10`                            |
+| `startupProbe.sonarWebContext`                           | SonarQube web context for StartupProbe                                                                                    | /                               |
+| `startupProbe.failureThreshold`                          | StartupProbe thresold for marking as failed                                                                               | `24`                            |
 | `initContainers.image`                                   | Change init container image                                                                                               | `busybox:1.32`                  |
 | `initContainers.securityContext`                         | SecurityContext for init containers                                                                                       | `nil`                           |
 | `initContainers.resources`                               | Resources for init containers                                                                                             | `{}`                            |
@@ -129,6 +139,11 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `initSysctl.image`                                       | Change init sysctl container image                                                                                        | `busybox:1.32`                  |
 | `initSysctl.securityContext`                             | InitSysctl container security context                                                                                     | `{privileged: true}`            |
 | `initSysctl.resources`                                   | InitSysctl container resource requests & limits                                                                           | `{}`                            |
+| `initFs.enabled`                                         | Enable file permission change with init container                                                                         | true                            |
+| `initFs.image`                                           | InitFS container image                                                                                                    | `busybox:1.32`                  |
+| `initFs.securityContext.privileged`                      | InitFS container needs to run privileged                                                                                  | true                            |
+| `prometheusExporter.enabled`                             | Use the Prometheus JMX exporter                                                                                           | true                            |
+| `prometheusExporter.config`                              | Prometheus JMX exporter config yaml                                                                                       | see `values.yaml`               |
 | `plugins.install`                                        | List of plugins to install                                                                                                | `[]`                            |
 | `plugins.lib`                                            | Plugins libray                                                                                                            | `[]`                            |
 | `plugins.resources`                                      | Plugin Pod resource requests & limits                                                                                     | `{}`                            |
@@ -140,15 +155,19 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `plugins.netrcCreds`                                     | Name of the secret containing .netrc file to use creds when downloading plugins                                           | ""                              |
 | `plugins.noCheckCertificate`                             | Flag to not check server's certificate when downloading plugins                                                           | `false`                         |
 | `jvmOpts`                                                | Values to add to SONARQUBE_WEB_JVM_OPTS                                                                                   | `""`                            |
+| `monitoringPasscode`                                     | Value for sonar.web.systemPasscode. needed for liveness probes                                                            | `"define_it"`                   |
 | `env`                                                    | Environment variables to attach to the pods                                                                               | `nil`                           |
 | `annotations`                                            | Sonarqube Pod annotations                                                                                                 | `{}`                            |
-| `resources`                                              | Sonarqube Pod resource requests & limits                                                                                  | `{}`                            |
+| `resources.requests.memory`                              | Sonarqube memory request                                                                                                  | `2Gi`                           |
+| `resources.requests.cpu`                                 | Sonarqube cpu request                                                                                                     | `400m`                          |
+| `resources.limits.memory`                                | Sonarqube memory limit                                                                                                    | `4096M`                         |
+| `resources.limits.cpu`                                   | Sonarqube cpu limit                                                                                                       | `800m`                          |
 | `persistence.enabled`                                    | Flag for enabling persistent storage                                                                                      | false                           |
 | `persistence.annotations`                                | Kubernetes pvc annotations                                                                                                | `{}`                            |
 | `persistence.existingClaim`                              | Do not create a new PVC but use this one                                                                                  | None                            |
 | `persistence.storageClass`                               | Storage class to be used                                                                                                  | ""                              |
 | `persistence.accessMode`                                 | Volumes access mode to be set                                                                                             | `ReadWriteOnce`                 |
-| `persistence.size`                                       | Size of the volume                                                                                                        | 10Gi                            |
+| `persistence.size`                                       | Size of the volume                                                                                                        | 5Gi                             |
 | `persistence.volumes`                                    | Specify extra volumes. Refer to ".spec.volumes" specification                                                             | []                              |
 | `persistence.mounts`                                     | Specify extra mounts. Refer to ".spec.containers.volumeMounts" specification                                              | []                              |
 | `emptyDir`                                               | Configuration of resources for `emptyDir`                                                                                 | `{}`                            |
@@ -241,8 +260,6 @@ To enable auto-configuration of the kube worker node, set `elasticsearch.configu
 This will run `sysctl -w vm.max_map_count=262144` on the worker where the sonarqube pod(s) get scheduled. This needs to be set to `262144` but normally defaults to `65530`. Other kernel settings are recommended by the [docker image](https://hub.docker.com/_/sonarqube/#requirements), but the defaults work fine in most cases.
 
 To disable worker node configuration, set `elasticsearch.configureNode` to `false`. Note that if node configuration is not enabled, then you will likely need to also disable the Elasticsearch bootstrap checks. These can be explicitly disabled by setting `elasticsearch.bootstrapChecks` to `false`.
-
-### As of 7.9 Mysql is no longer supported, so it has been removed from the chart
 
 ### Extra Config
 
