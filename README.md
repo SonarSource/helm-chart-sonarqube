@@ -1,32 +1,31 @@
-# Oteemo Charts Repository
+# About this Repo
 
-Welcome to the oteemo charts repository. All charts are in the charts directory.
+This is the Git repo of the official SonarSource Helm Chart for SonarQube.  
+The actual Chart can be found in the [charts](charts/) directory, with further explaination.
 
-## Adding the chart Repository
+Have Question or Feedback?
+--------------------------
 
-`helm repo add oteemocharts https://oteemo.github.io/charts`
+For support questions ("How do I?", "I got this error, why?", ...), please first read the [documentation](https://docs.sonarqube.org) and then head to the [SonarSource forum](https://community.sonarsource.com/). There are chances that a question similar to yours has already been answered. 
 
-## Contributing
+Be aware that this forum is a community, so the standard pleasantries ("Hi", "Thanks", ...) are expected. And if you don't get an answer to your thread, you should sit on your hands for at least three days before bumping it. Operators are not standing by. :-)
 
-Feel free to fork our repo and create a pull request with any new features or bug fixes.
+Contributing
+------------
 
-## Contacting us
+If you would like to see a new feature, please create a new thread in the forum ["Suggest new features"](https://community.sonarsource.com/c/suggestions/features).
 
-For issues or concerns, please fill out an issue or email us at charts@oteemo.com
+With that in mind, if you would like to submit a code contribution, please create a pull request for this repository. Please explain your motives to contribute this change: what problem you are trying to fix, what improvement you are trying to make.
 
-## How It Works
+Note of Thanks
+--------------
 
-GitHub Pages points to the `gh-pages` branch so anything pushed to that branch will be publicly available. We are using a couple github actions to automate testing and deployment of charts. It is based off the example [here](https://github.com/helm/charts-repo-actions-demo).
+The work on this chart was kickstarted by the great people who contributed to the Oteemo charts.  
+SonarSource would like to thank everyone for their contribution and great work they did over the last years of unofficially maintaining a easy way of consuming SonarQube on Kubernetes.
 
-## Process to add a chart to the repository
+License
+-------
 
-1. Create a branch or fork for your new chart
-1. Initialize new chart in the `charts` directory with `helm create mychart` or by copying in your work from outside
-1. After chart development is done, run (at minimum) `helm lint mychart/` to validate yaml and templates
-1. Don't forget to bump your chart version (if needed)
-1. Create a pull request with the new chart or updates
-1. Once the PR is approved, the automation will publish the chart to our repository
+Copyright 2021 SonarSource.
 
-## Notes about current testing
-
-Testing is currently done with Helm3
+Licensed under the [MIT Licence](LICENSE)
