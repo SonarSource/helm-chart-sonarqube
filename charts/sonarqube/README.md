@@ -6,9 +6,11 @@
 
 This chart bootstraps a SonarQube instance with a PostgreSQL database.
 
-## Prerequisites
+## Compatibility
 
-- Kubernetes 1.19+
+| SonarQube Version | Kubernetes Version | Helm Chart Version |
+|-------------------|--------------------|--------------------|
+| 8.8, 8.9          | 1.19, 1.20, 1.21   | 1.0                |
 
 ## Installing the chart
 
