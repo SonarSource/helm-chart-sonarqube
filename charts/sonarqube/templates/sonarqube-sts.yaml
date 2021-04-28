@@ -112,7 +112,7 @@ spec:
               name: sonarqube
               subPath: data
       {{- end }}
-      {{- if .Values.persistence.enabled }}
+      {{- if and .Values.persistence.enabled .Values.initFs.enabeld }}
         - name: init-fs
           image: {{ default "busybox:1.32" .Values.initFs.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
