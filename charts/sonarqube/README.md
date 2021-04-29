@@ -6,6 +6,8 @@
 
 This chart bootstraps a SonarQube instance with a PostgreSQL database.
 
+Please note that this chart only supports SonarQube Community, Developer, and Enterprise Editions.
+
 ## Compatibility
 
 | SonarQube Version | Kubernetes Version | Helm Chart Version |
@@ -17,20 +19,6 @@ This chart bootstraps a SonarQube instance with a PostgreSQL database.
 To install the chart:
 
 ```bash
-helm repo add sonarsource <UNDER CONSTRUCTION>
-kubectl create namespace sonarqube
-helm upgrade --install -n sonarqube sonarqube sonarsource/sonarqube
-```
-
-The above command deploys Sonarqube on the Kubernetes cluster in the default configuration in the sonarqube namespace. The [configuration](#configuration) section lists the parameters that can be configured during installation.
-
-The default login is admin/admin.
-
-### Install the chart without a chart repository
-
-To install Sonarqube without a chart repository, you need to clone this repository and reference this chart locally
-
-```bash
 git clone https://github.com/SonarSource/helm-chart-sonarqube.git
 cd helm-chart-sonarqube
 helm dependency update
@@ -38,7 +26,14 @@ kubectl create namespace sonarqube
 helm upgrade --install -f values.yaml -n sonarqube sonarqube ./
 ```
 
-As the other methode this will install sonarqube on the Kubernetes cluster with the default configuration in the sonarqube namespace.
+The above command deploys Sonarqube on the Kubernetes cluster in the default configuration in the sonarqube namespace. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+
+The default login is admin/admin.
+
+## How to use it
+
+Take some time to read the Deploy on [SonarQube on Kubernetes](https://docs.sonarqube.org/latest/setup/sonarqube-on-kubernetes/) page.
+SonarQube deployment on Kubernetes has been tested with the recommendations and constraints documented there, and deployment has some limitations.
 
 ## Uninstalling the chart
 

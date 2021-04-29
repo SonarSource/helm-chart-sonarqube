@@ -1,7 +1,11 @@
-# About this Repo
+SonarQube Helm Chart
+=================
 
-This is the Git repo of the official SonarSource Helm Chart for SonarQube.  
-The actual chart can be found, with additional information, in the [charts](charts/) directory.
+About this Repo
+----------------
+
+This is the Git repo of the SonarSource Helm Chart for [SonarQube](https://www.sonarqube.org/).  
+The actual chart can be found in the [charts](charts/sonarqube) directory and see the README of the chart for more information. 
 
 Have Question or Feedback?
 --------------------------

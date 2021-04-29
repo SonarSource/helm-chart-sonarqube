@@ -9,7 +9,7 @@ All changes to this chart will be documented in this file.
 * updated application version to 8.8-community
 * improved readiness/startup and liveness probes
 * improved documentation
-* made helm chart the official sonarsource chart for SonarQube 
+
 ## [0.9.6.2]
 * Change order of env variables to better support 7.9-lts
 
