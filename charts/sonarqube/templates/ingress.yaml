@@ -1,7 +1,9 @@
 {{- if .Values.ingress.enabled -}}
 {{- $serviceName := include "sonarqube.fullname" . -}}
 {{- $servicePort := .Values.service.externalPort -}}
-{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+apiVersion: networking.k8s.io/v1
+{{ else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
 apiVersion: networking.k8s.io/v1beta1
 {{ else }}
 apiVersion: extensions/v1beta1
@@ -23,6 +25,22 @@ metadata:
     {{ $key }}: {{ $value | quote }}
     {{- end }}
 {{- end }}
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+spec:
+  rules:
+  {{- range .Values.ingress.hosts }}
+  - host: {{ printf "%s" .name }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: {{ default $serviceName .serviceName }}
+            port:
+              number: {{ default $servicePort .servicePort }}
+        path: {{ .path}}
+        pathType: ImplementationSpecific
+  {{- end }}
+{{ else }}
 spec:
   {{- if .Values.ingress.annotations }}
   {{- range $key, $value := .Values.ingress.annotations }}
@@ -43,6 +61,7 @@ spec:
               serviceName: {{ default $serviceName .serviceName }}
               servicePort: {{ default $servicePort .servicePort }}
     {{- end -}}
+{{ end -}}
   {{- if .Values.ingress.tls }}
   tls:
 {{ toYaml .Values.ingress.tls | indent 4 }}
