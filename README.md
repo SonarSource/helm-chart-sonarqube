@@ -25,7 +25,7 @@ Note of Thanks
 --------------
 
 This chart was based on the great work done on the [Oteemo chart](https://github.com/Oteemo/charts/tree/master/charts/sonarqube). 
-We would like to thank everyone who contributed and for their great work on this project.
+We would like to thank everyone who contributed for their great work on this project.
 
 License
 -------
