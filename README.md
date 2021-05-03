@@ -24,12 +24,10 @@ With that in mind, if you would like to submit a code contribution, please creat
 Note of Thanks
 --------------
 
-The work on this chart was kickstarted by the great people who contributed to the Oteemo charts.  
-SonarSource would like to thank everyone for their contribution and great work they did over the last years of unofficially maintaining a easy way of consuming SonarQube on Kubernetes.
+This chart was based on the great work done on the [Oteemo chart](https://github.com/Oteemo/charts/tree/master/charts/sonarqube). 
+We would like to thank everyone who contributed for their great work on this project.
 
 License
 -------
-
-Copyright 2021 SonarSource.
 
 Licensed under the [MIT Licence](LICENSE)
