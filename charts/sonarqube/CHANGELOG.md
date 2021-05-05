@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.1]
+* fixed missing conditional that was introduced in 0.9.2.2 to sonarqube-sts.yaml
+* updated default application version to 8.9 
+
 ## [1.0.0]
 * changed default deployment from replica set to statefull set
 * added default support for prometheus jmx exporter
