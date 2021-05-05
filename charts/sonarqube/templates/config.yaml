@@ -23,3 +23,8 @@ data:
     {{- if and .Values.sonarSecretKey .Values.sonarProperties }}
       sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
     {{- end }}
+  {{- if .Values.prometheusExporter.enabled }}
+  prometheus-config.yaml: |-
+{{ toYaml .Values.prometheusExporter.config | indent 8 }}
+  {{- end }}
+

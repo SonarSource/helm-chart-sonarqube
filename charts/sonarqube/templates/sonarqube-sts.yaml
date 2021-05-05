@@ -76,7 +76,7 @@ spec:
           env:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
-      {{- end }}      
+      {{- end }}
         - name: init-sysctl
           image: {{ default "busybox:1.32" .Values.initSysctl.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -99,7 +99,7 @@ spec:
       {{- end }}
       {{- if .Values.prometheusExporter.enabled }}
         - name: inject-prometheus-exporter
-          image: {{ default "busybox:1.32" .Values.prometheusExporter.image }}
+          image: {{ default "curlimages/curl:7.76.1" .Values.prometheusExporter.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
           {{- if $securityContext := (default .Values.initContainers.securityContext .Values.prometheusExporter.securityContext) }}
           securityContext:
@@ -108,11 +108,18 @@ spec:
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.prometheusExporter.resources) | indent 12 }}
           command: ["/bin/sh","-c"]
-          args: ["wget https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/{{ default "0.15.0" .Values.prometheusExporter.version }}/jmx_prometheus_javaagent-{{ default "0.15.0" .Values.prometheusExporter.version }}.jar -O /data/jmx_prometheus_javaagent.jar"]
+          args: ["curl -s https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/{{ default "0.15.0" .Values.prometheusExporter.version }}/jmx_prometheus_javaagent-{{ default "0.15.0" .Values.prometheusExporter.version }}.jar --output /data/jmx_prometheus_javaagent.jar"]
           volumeMounts:
             - mountPath: /data
               name: sonarqube
               subPath: data
+          env:
+            - name: http_proxy
+              value: {{ default "" .Values.prometheusExporter.httpProxy }}
+            - name: https_proxy
+              value: {{ default "" .Values.prometheusExporter.httpsProxy }}
+            - name: no_proxy
+              value: {{ default "" .Values.prometheusExporter.noProxy }}
       {{- end }}
       {{- if and .Values.persistence.enabled .Values.initFs.enabeld }}
         - name: init-fs
@@ -340,8 +347,6 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf
-              name: prometheus-config
     {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
@@ -365,6 +370,10 @@ spec:
           items:
           - key: sonar.properties
             path: sonar.properties
+          {{- if .Values.prometheusExporter.enabled }}
+          - key: prometheus-config.yaml
+            path: prometheus-config.yaml
+          {{- end }}
       {{- end }}
       {{- if .Values.sonarSecretProperties }}
       - name: secret-config
@@ -413,12 +422,6 @@ spec:
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
-      - name: prometheus-config
-        configMap:
-          name: {{ template "sonarqube.fullname" . }}-prometheus-config
-          items:
-            - key: prometheus-config.yaml
-              path: prometheus-config.yaml
       - name: sonarqube
         {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:
