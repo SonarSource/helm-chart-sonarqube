@@ -202,15 +202,9 @@ spec:
               protocol: TCP
           env:
             - name: SONAR_WEB_JAVAOPTS
-              {{- if .Values.caCerts }}
-              value: {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
-              {{- else }}
-              value: "{{ .Values.jvmOpts }}"
-              {{- end }}
-            {{- if .Values.caCerts }}
+              value: {{ template "sonarqube.jvmOpts" . }}
             - name: SONAR_CE_JAVAOPTS
-              value: {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts" .Values.sonarqubeFolder | trim | quote }}
-            {{- end }}
+              value: {{ template "sonarqube.jvmCEOpts" . }}
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:

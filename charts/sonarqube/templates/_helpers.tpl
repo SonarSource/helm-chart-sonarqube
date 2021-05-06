@@ -86,3 +86,14 @@ Set sonarqube.jvmOpts
 {{ printf "%s" .Values.jvmOpts }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Set sonarqube.jvmCEOpts
+*/}}
+{{- define "sonarqube.jvmCEOpts" -}}
+{{- if .Values.caCerts -}}
+{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmCeOpts | trim | quote }}
+{{- else -}}
+{{ printf "%s" .Values.jvmCeOpts }}
+{{- end -}}
+{{- end -}}
