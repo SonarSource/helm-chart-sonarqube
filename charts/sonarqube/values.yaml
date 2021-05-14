@@ -183,8 +183,15 @@ prometheusExporter:
   config:
     rules:
       - pattern: ".*"
-  # image: busybox:1.32
-
+  # image: curlimages/curl:7.76.1
+  # For use behind a corporate proxy when downloading prometheus
+  # httpProxy: ""
+  # httpsProxy: ""
+  # noProxy: ""
+  # Setting the security context to root as the /data volume is owned by root at this stage
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
 
 # List of plugins to install.
 # For example:
