@@ -1,8 +1,14 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.3]
+* fixed prometheus config volume mount if disabled
+* switched from wget to curl image per default for downloading agent
+* added support for proxy envs
+
 ## [1.0.2]
 * added option to configure CE java opts separately
+
 ## [1.0.1]
 * fixed missing conditional that was introduced in 0.9.2.2 to sonarqube-sts.yaml
 * updated default application version to 8.9 
