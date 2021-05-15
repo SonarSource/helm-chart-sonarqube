@@ -120,6 +120,9 @@ spec:
               value: {{ default "" .Values.prometheusExporter.httpsProxy }}
             - name: no_proxy
               value: {{ default "" .Values.prometheusExporter.noProxy }}
+          {{- with .Values.env }}
+            {{- . | toYaml | trim | nindent 12 }}
+          {{- end }}
       {{- end }}
       {{- if and .Values.persistence.enabled .Values.initFs.enabeld }}
         - name: init-fs
@@ -183,14 +186,10 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-          {{- with .Values.env }}
-          env:
-            {{- . | toYaml | trim | nindent 12 }}
-          {{- end }}
       {{- end }}
       {{- if .Values.plugins.install }}
         - name: install-plugins
-          image: {{ default "rjkernick/alpine-wget:latest" .Values.plugins.image }}
+          image: {{ default "curlimages/curl:7.76.1" .Values.plugins.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
           command: ["sh",
             "-e",
@@ -214,8 +213,14 @@ spec:
           {{- end }}
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.plugins.resource) | indent 12 }}
-          {{- with .Values.env }}
           env:
+            - name: http_proxy
+              value: {{ default "" .Values.plugins.httpProxy }}
+            - name: https_proxy
+              value: {{ default "" .Values.plugins.httpsProxy }}
+            - name: no_proxy
+              value: {{ default "" .Values.plugins.noProxy }}
+          {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
