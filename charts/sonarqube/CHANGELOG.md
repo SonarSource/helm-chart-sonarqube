@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.4]
+* fix for missing `serviceAccountName` in STS deployment kind
+
 ## [1.0.3]
 * fixed prometheus config volume mount if disabled
 * switched from wget to curl image per default for downloading agent
