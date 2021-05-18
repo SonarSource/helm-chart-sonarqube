@@ -97,3 +97,14 @@ Set sonarqube.jvmCEOpts
 {{ printf "%s" .Values.jvmCeOpts }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Set prometheusExporter.downloadURL
+*/}}
+{{- define "prometheusExporter.downloadURL" -}}
+{{- if .Values.prometheusExporter.downloadURL -}}
+{{ printf "%s" .Values.prometheusExporter.downloadURL }}
+{{- else -}}
+{{ printf "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/%s/jmx_prometheus_javaagent-%s.jar" .Values.prometheusExporter.version .Values.prometheusExporter.version }}
+{{- end -}}
+{{- end -}}
