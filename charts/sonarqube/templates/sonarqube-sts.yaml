@@ -307,10 +307,12 @@ spec:
 {{ toYaml .Values.persistence.mounts | indent 12 }}
 {{- end }}
             {{- if and .Values.sonarProperties .Values.sonarSecretProperties }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf/
+            - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
+              subPath: sonar.properties
               name: concat-dir
             {{- else if or .Values.sonarProperties (not .Values.elasticsearch.bootstrapChecks) }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf/
+            - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
+              subPath: sonar.properties
               name: config
             {{- end }}
             {{- if .Values.sonarSecretKey }}
@@ -350,7 +352,8 @@ spec:
             - mountPath: /tmp
               name: tmp-dir
             {{- if .Values.prometheusExporter.enabled }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf
+            - mountPath: {{ .Values.sonarqubeFolder }}/conf/prometheus-config.yaml
+              subPath: prometheus-config.yaml
               name: prometheus-config
             {{- end }}
     {{- if .Values.nodeSelector }}
