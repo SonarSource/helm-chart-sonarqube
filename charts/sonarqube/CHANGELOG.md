@@ -2,6 +2,9 @@
 All changes to this chart will be documented in this file.
 
 
+## [1.0.7]
+* fix invalid yaml render in `secret.yaml` when using external postgresql
+
 ## [1.0.6]
 * added `prometheusExporter.downloadURL` (custom download URL for the agent jar)
 
@@ -9,7 +12,6 @@ All changes to this chart will be documented in this file.
 * replace `rjkernick/alpine-wget` with `curlimages/curl`
 * update `install-plugins` script
 * fix possible issue with prometheus init container and `env` set in the `values.yaml` 
-
 
 ## [1.0.4]
 * fix for missing `serviceAccountName` in STS deployment kind
