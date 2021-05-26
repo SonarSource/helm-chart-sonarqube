@@ -1,7 +1,7 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-## [1.0.5]
+## [1.0.6]
 * added `prometheusExporter.downloadURL` (custom download URL for the agent jar)
 
 ## [1.0.4]
