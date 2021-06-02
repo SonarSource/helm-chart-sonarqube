@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.8]
+* fix typo in initfs 
+* fix plugin installation init container permissions
+* fix duplicated mount point for conf when sonar.properties are defined
 
 ## [1.0.7]
 * fix invalid yaml render in `secret.yaml` when using external postgresql
