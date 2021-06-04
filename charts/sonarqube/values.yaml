@@ -384,9 +384,15 @@ postgresql:
     # For standard Kubernetes deployment, set enabled=true
     # If using OpenShift, enabled=false for restricted SCC and enabled=true for anyuid/nonroot SCC
     enabled: true
-    # fsGroup and runAsUser specifications below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
+    # fsGroup specification below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
     # postgresql dockerfile sets user as 1001
     fsGroup: 1001
+  containerSecurityContext:
+    # For standard Kubernetes deployment, set enabled=true
+    # If using OpenShift, enabled=false for restricted SCC and enabled=true for anyuid/nonroot SCC
+    enabled: true
+    # runAsUser specification below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
+    # postgresql dockerfile sets user as 1001
     runAsUser: 1001
   volumePermissions:
     # For standard Kubernetes deployment, set enabled=false
@@ -401,7 +407,7 @@ postgresql:
   serviceAccount:
     ## If enabled = true, and name is not set, postgreSQL will create a serviceAccount
     enabled: false
-    #name:
+    # name:
 
 # Additional labels to add to the pods:
 # podLabels:
