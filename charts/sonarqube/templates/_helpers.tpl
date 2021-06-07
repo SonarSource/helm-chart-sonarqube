@@ -67,7 +67,7 @@ Determine JDBC username
 {{- else if and .Values.jdbcOverwrite.enable .Values.jdbcOverwrite.jdbcUsername -}}
   {{- .Values.jdbcOverwrite.jdbcUsername | quote -}}
 {{- else -}}
-  {{- "postgres" -}}
+  {{- .Values.postgresql.postgresqlUsername -}}
 {{- end -}}
 {{- end -}}
 
@@ -79,7 +79,7 @@ Determine the k8s secretKey contrining the JDBC password
   {{- if and .Values.postgresql.existingSecret .Values.postgresql.existingSecretPasswordKey -}}
   {{- .Values.postgresql.existingSecretPasswordKey -}}
   {{- else -}}
-  {{- "postgresql-password" -}}
+  {{- .Values.postgresql.postgresqlPassword -}}
   {{- end -}}
 {{- else if .Values.jdbcOverwrite.enable -}}
   {{- if and .Values.jdbcOverwrite.jdbcSecretName .Values.jdbcOverwrite.jdbcSecretPasswordKey -}}
@@ -88,7 +88,7 @@ Determine the k8s secretKey contrining the JDBC password
   {{- "jdbc-password" -}}
   {{- end -}}
 {{- else -}}
-  {{- "jdbc-password" -}}
+  {{- .Values.postgresql.postgresqlPassword -}}
 {{- end -}}
 {{- end -}}
 
