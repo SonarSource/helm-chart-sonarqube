@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.10]
+* added prometheusExporter.noCheckCertificate option
+ 
 ## [1.0.8]
 * fix typo in initfs 
 * fix plugin installation init container permissions
