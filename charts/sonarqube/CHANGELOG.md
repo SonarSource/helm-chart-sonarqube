@@ -1,8 +1,11 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.9]
+* add missing imagePullSecrets in sts install type
+
 ## [1.0.8]
-* fix typo in initfs 
+* fix typo in initfs
 * fix plugin installation init container permissions
 * fix duplicated mount point for conf when sonar.properties are defined
 
@@ -15,7 +18,7 @@ All changes to this chart will be documented in this file.
 ## [1.0.5]
 * replace `rjkernick/alpine-wget` with `curlimages/curl`
 * update `install-plugins` script
-* fix possible issue with prometheus init container and `env` set in the `values.yaml` 
+* fix possible issue with prometheus init container and `env` set in the `values.yaml`
 
 ## [1.0.4]
 * fix for missing `serviceAccountName` in STS deployment kind
@@ -30,7 +33,7 @@ All changes to this chart will be documented in this file.
 
 ## [1.0.1]
 * fixed missing conditional that was introduced in 0.9.2.2 to sonarqube-sts.yaml
-* updated default application version to 8.9 
+* updated default application version to 8.9
 
 ## [1.0.0]
 * changed default deployment from replica set to statefull set
