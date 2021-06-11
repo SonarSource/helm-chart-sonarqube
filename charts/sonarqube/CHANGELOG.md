@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+
+## [1.0.10]
+* added prometheusExporter.noCheckCertificate option
+ 
 ## [1.0.9]
 * add missing imagePullSecrets in sts install type
 

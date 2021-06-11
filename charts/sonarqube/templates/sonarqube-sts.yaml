@@ -112,7 +112,7 @@ spec:
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.prometheusExporter.resources) | indent 12 }}
           command: ["/bin/sh","-c"]
-          args: ["curl -s '{{ template "prometheusExporter.downloadURL" . }}' --output /data/jmx_prometheus_javaagent.jar -v"]
+          args: ["curl -s '{{ template "prometheusExporter.downloadURL" . }}' {{ if $.Values.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v"]
           volumeMounts:
             - mountPath: /data
               name: sonarqube
