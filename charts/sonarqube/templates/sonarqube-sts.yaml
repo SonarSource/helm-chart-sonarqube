@@ -41,18 +41,22 @@ spec:
       {{- end }}
 {{- end }}
     spec:
+      {{- if .Values.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecret }}
+      {{- end }}
       initContainers:
       {{- if .Values.extraInitContainers }}
 {{ toYaml .Values.extraInitContainers | indent 8 }}
       {{- end }}
-      {{- if .Values.postgresql.enabled }}  
+      {{- if .Values.postgresql.enabled }}
         - name: "wait-for-db"
           image: {{ default "busybox:1.32" .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
           command: ["/bin/sh", "-c", "for i in $(seq 1 200); do nc -z -w3 {{ .Release.Name}}-postgresql 5432 && exit 0 || sleep 2; done; exit 1"]
-      {{- end }} 
+      {{- end }}
       {{- if or .Values.initSysctl.enabled .Values.elasticsearch.configureNode }}
       {{- if .Values.caCerts }}
         - name: ca-certs
@@ -76,7 +80,7 @@ spec:
           env:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
-      {{- end }}      
+      {{- end }}
         - name: init-sysctl
           image: {{ default "busybox:1.32" .Values.initSysctl.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -256,7 +260,7 @@ spec:
             exec:
               command:
               - sh
-              - -c 
+              - -c
               - |
                 #!/bin/bash
                 # A Sonarqube container is considered healthy if the health status is GREEN or YELLOW
@@ -271,7 +275,7 @@ spec:
             exec:
               command:
               - sh
-              - -c 
+              - -c
               - |
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
