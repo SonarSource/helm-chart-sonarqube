@@ -353,6 +353,9 @@ spec:
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/prometheus-config.yaml
               subPath: prometheus-config.yaml
               name: prometheus-config
+            - mountPath: {{ .Values.sonarqubeFolder }}/conf/prometheus-ce-config.yaml
+              subPath: prometheus-ce-config.yaml
+              name: prometheus-ce-config
             {{- end }}
     {{- if .Values.nodeSelector }}
       nodeSelector:
@@ -439,6 +442,12 @@ spec:
           items:
             - key: prometheus-config.yaml
               path: prometheus-config.yaml
+      - name: prometheus-ce-config
+        configMap:
+          name: {{ template "sonarqube.fullname" . }}-prometheus-ce-config
+          items:
+            - key: prometheus-ce-config.yaml
+              path: prometheus-ce-config.yaml
       {{- end }}
       - name: sonarqube
         {{- if .Values.persistence.enabled }}

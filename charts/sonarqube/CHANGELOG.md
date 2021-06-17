@@ -2,6 +2,10 @@
 All changes to this chart will be documented in this file.
 
 
+## [1.0.11]
+* JMX Prometheus exporter agent is now also enabled on the CE process
+* `prometheusExporter.ceConfig` allows specific config of the JMX Prometheus exporter agent for the CE process
+
 ## [1.0.10]
 * added prometheusExporter.noCheckCertificate option
  
