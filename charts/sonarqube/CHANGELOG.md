@@ -2,6 +2,9 @@
 All changes to this chart will be documented in this file.
 
 
+## [1.0.12]
+* make sure SQ is restarted when the JMX Prometheus exporter agents configuration changes
+
 ## [1.0.11]
 * JMX Prometheus exporter agent is now also enabled on the CE process
 * `prometheusExporter.ceConfig` allows specific config of the JMX Prometheus exporter agent for the CE process
