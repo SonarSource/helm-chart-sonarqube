@@ -77,11 +77,11 @@ Set sonarqube.jvmOpts
 */}}
 {{- define "sonarqube.jvmOpts" -}}
 {{- if and .Values.caCerts .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=8000:%s/conf/prometheus-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
 {{- else if .Values.caCerts -}}
 {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
 {{- else if .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=8000:%s/conf/prometheus-config.yaml %s" .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
 {{- else -}}
 {{ printf "%s" .Values.jvmOpts }}
 {{- end -}}
@@ -92,11 +92,11 @@ Set sonarqube.jvmCEOpts
 */}}
 {{- define "sonarqube.jvmCEOpts" -}}
 {{- if and .Values.caCerts .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=8001:%s/conf/prometheus-ce-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.jvmCeOpts | trim | quote }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.jvmCeOpts | trim | quote }}
 {{- else if .Values.caCerts -}}
 {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmCeOpts | trim | quote }}
 {{- else if .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=8001:%s/conf/prometheus-ce-config.yaml %s" .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.jvmCeOpts | trim | quote }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder .Values.jvmCeOpts | trim | quote }}
 {{- else -}}
 {{ printf "%s" .Values.jvmCeOpts }}
 {{- end -}}

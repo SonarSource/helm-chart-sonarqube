@@ -1,6 +1,8 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.13]
+* made prometheus exporter port configurable and support prometheus PodMonitor
 
 ## [1.0.12]
 * make sure SQ is restarted when the JMX Prometheus exporter agents configuration changes

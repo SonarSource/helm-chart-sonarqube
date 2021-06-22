@@ -229,6 +229,14 @@ spec:
             - name: http
               containerPort: {{ .Values.service.internalPort }}
               protocol: TCP
+            {{- if .Values.prometheusExporter.enabled }}
+            - name: monitoring-web
+              containerPort: {{ .Values.prometheusExporter.webBeanPort }}
+              protocol: TCP
+            - name: monitoring-ce
+              containerPort: {{ .Values.prometheusExporter.ceBeanPort }}
+              protocol: TCP
+            {{- end }}
           resources:
 {{ toYaml (default .Values.resources .Values.resource) | indent 12 }}
           env:
