@@ -72,7 +72,17 @@ ingress:
 
 ## Monitoring
 
-This Helm chart offers the possibilitie to monitor SonarQube with Prometheus. Per default the jmx metrics for the Web Bean and the CE Bean are exposed on port 8000 and 8001. These Values can be configures with `prometheusExporter.webBeanPort` and `prometheusExporter.ceBeanPort`.
+This Helm chart offers the possibilitie to monitor SonarQube with Prometheus, with three exporters:
+
+- one for the *Web Server* process: a [jmx_exporter](https://github.com/prometheus/jmx_exporter), running as a JVM agent, and listening by default on port `8000` (`monitoring-web`), with metrics on `/`
+- one for the *Compute Engine* process: a [jmx_exporter](https://github.com/prometheus/jmx_exporter), running as a JVM agent, and listening by default on port `8001` (`monitoring-ce`), with metrics on `/`
+- one for the *Search Engine* process: an [elasticsearch_exporter](https://github.com/prometheus-community/elasticsearch_exporter), running in its own container in the SonarQube pod, and listening by default on port `8002` (`monitoring-es`), with metrics on `/metrics`
+
+All three exporters are enabled by default, and can be disabled via `prometheusExporter.enabled:false`.
+
+Listening ports can be configured with `prometheusExporter.webBeanPort`, `prometheusExporter.ceBeanPort` and `prometheusExporter.esMetricsPort`.
+
+Other `prometheusExporter.*` values are for configuring the two JMX exporter agents, while the ElasticSearch exporter is configured via the `prometheusExporter.elasticsearch.*` values.
 
 ### PodMonitor
 
@@ -97,6 +107,10 @@ spec:
     path: /
     scheme: http
     targetPort: monitoring-web
+  - interval: 30s
+    path: /metrics
+    scheme: http
+    targetPort: monitoring-es
   selector:
     matchLabels:
       app: sonarqube
@@ -171,11 +185,12 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `initFs.enabled`                                         | Enable file permission change with init container                                                                         | true                            |
 | `initFs.image`                                           | InitFS container image                                                                                                    | `busybox:1.32`                  |
 | `initFs.securityContext.privileged`                      | InitFS container needs to run privileged                                                                                  | true                            |
-| `prometheusExporter.enabled`                             | Use the Prometheus JMX exporter                                                                                           | true                            |
+| `prometheusExporter.enabled`                             | Use the Prometheus JMX and ES Prometheus exporters (see [Monitoring](#monitoring))                                        | true                            |
 | `prometheusExporter.version`                             | jmx_prometheus_javaagent version to download from Maven Central                                                           | `0.15.0`                        |
 | `prometheusExporter.noCheckCertificate`                  | Flag to not check server's certificate when downloading jmx_prometheus_javaagent                                          | `false`                         |
 | `prometheusExporter.webBeanPort`                         | Port where the jmx_prometheus_javaagent exposes the metrics for the webBean                                               | `8000`                          |
 | `prometheusExporter.ceBeanPort`                          | Port where the jmx_prometheus_javaagent exposes the metrics for the ceBean                                                | `8001`                          |
+| `prometheusExporter.esMetricsPort`                       | Listening port for the elasticsearch_exporter, for `--web.listen-address=:...`                                            | `8002`                          |
 | `prometheusExporter.downloadURL`                         | Alternative full download URL for the jmx_prometheus_javaagent.jar (overrides `prometheusExporter.version`)               | ""                              |
 | `prometheusExporter.config`                              | Prometheus JMX exporter config yaml for the web process, and the CE process if `prometheusExporter.ceConfig` is not set   | see `values.yaml`               |
 | `prometheusExporter.ceConfig`                            | Prometheus JMX exporter config yaml for the CE process (by default, `prometheusExporter.config` is used)                  | None                            |
@@ -183,6 +198,11 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `prometheusExporter.httpsProxy`                          | HTTPS proxy for downloading JMX agent                                                                                     | `""`                            |
 | `prometheusExporter.noProxy`                             | No proxy for downloading JMX agent                                                                                        | `""`                            |
 | `prometheusExporter.securityContext`                     | Security context for downloading the jmx agent                                                                            | see `values.yaml`               |
+| `prometheusExporter.elasticsearch.image`                 | Image for the [elasticsearch_exporter](https://github.com/prometheus-community/elasticsearch_exporter) container          | `bitnami/elasticsearch-exporter:1.2.0` |
+| `prometheusExporter.elasticsearch.esUri`                 | ElasticSearch API URI (must match `sonar.search.{port,host}` in `sonar.properties`), for `--es.uri=...`                   | `http://localhost:9001`         |
+| `prometheusExporter.elasticsearch.extraArgs`             | Extra parameters for `elasticsearch_exporter`                                                                             | see `values.yaml`               |
+| `prometheusExporter.elasticsearch.securityContext`       | Security context for the `elasticsearch_exporter` container                                                               | see `values.yaml`               |
+| `prometheusExporter.elasticsearch.resources`             | Resources for the `elasticsearch_exporter` container                                                                      | see `values.yaml`               |
 | `plugins.install`                                        | List of plugins to install                                                                                                | `[]`                            |
 | `plugins.lib`                                            | Plugins libray                                                                                                            | `[]`                            |
 | `plugins.resources`                                      | Plugin Pod resource requests & limits                                                                                     | `{}`                            |

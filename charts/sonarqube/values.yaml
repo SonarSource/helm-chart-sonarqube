@@ -190,6 +190,8 @@ prometheusExporter:
   # Ports for the jmx prometheus agent to export metrics at
   webBeanPort: 8000
   ceBeanPort: 8001
+  # Listening port for the elasticsearch_exporter
+  esMetricsPort: 8002
 
   config:
     rules:
@@ -207,6 +209,23 @@ prometheusExporter:
   securityContext:
     runAsUser: 0
     runAsGroup: 0
+  # elasticsearch_exporter settings
+  elasticsearch:
+    image: bitnami/elasticsearch-exporter:1.2.0
+    esUri: http://localhost:9001
+    extraArgs:
+      - "--es.indices"
+      - "--es.shards"
+    securityContext:
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
 
 # List of plugins to install.
 # For example:

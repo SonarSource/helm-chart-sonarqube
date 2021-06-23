@@ -222,6 +222,22 @@ spec:
           {{- end }}
       {{- end }}
       containers:
+        {{- if .Values.prometheusExporter.enabled }}
+        - name: {{ printf "%s-elasticsearch-exporter" .Chart.Name }}
+          image: {{ .Values.prometheusExporter.elasticsearch.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: {{ template "prometheusExporter.elasticsearch.args" . }}
+          resources: {{- toYaml .Values.prometheusExporter.elasticsearch.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.prometheusExporter.esMetricsPort }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          securityContext: {{- toYaml .Values.prometheusExporter.elasticsearch.securityContext | nindent 12 }}
+        {{- end }}
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -235,6 +251,9 @@ spec:
               protocol: TCP
             - name: monitoring-ce
               containerPort: {{ .Values.prometheusExporter.ceBeanPort }}
+              protocol: TCP
+            - name: monitoring-es
+              containerPort: {{ .Values.prometheusExporter.esMetricsPort }}
               protocol: TCP
             {{- end }}
           resources:

@@ -112,3 +112,12 @@ Set prometheusExporter.downloadURL
 {{ printf "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/%s/jmx_prometheus_javaagent-%s.jar" .Values.prometheusExporter.version .Values.prometheusExporter.version }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Set prometheusExporter.elasticsearch.args
+*/}}
+{{- define "prometheusExporter.elasticsearch.args" -}}
+{{- $esUriArg := printf "--es.uri=%s" .Values.prometheusExporter.elasticsearch.esUri -}}
+{{- $webListenAddressArg := printf "--web.listen-address=:%d" (.Values.prometheusExporter.esMetricsPort | int) -}}
+{{ concat (list $esUriArg $webListenAddressArg) .Values.prometheusExporter.elasticsearch.extraArgs | toJson }}
+{{- end -}}
