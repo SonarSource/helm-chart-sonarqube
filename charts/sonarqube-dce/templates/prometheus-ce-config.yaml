@@ -1,0 +1,14 @@
+{{- if .Values.prometheusExporter.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "sonarqube.fullname" . }}-prometheus-ce-config
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  prometheus-ce-config.yaml: |-
+{{ .Values.prometheusExporter.ceConfig | default .Values.prometheusExporter.config | toYaml | indent 8 }}
+{{- end }}
