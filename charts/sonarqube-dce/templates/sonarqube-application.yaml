@@ -30,7 +30,6 @@ spec:
 {{- end }}
       annotations:
         checksum/init-sysctl: {{ include (print $.Template.BasePath "/init-sysctl.yaml") . | sha256sum }}
-        checksum/init-fs: {{ include (print $.Template.BasePath "/init-fs.yaml") . | sha256sum }}
         checksum/plugins: {{ include (print $.Template.BasePath "/install-plugins.yaml") . | sha256sum }}
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
@@ -187,6 +186,15 @@ spec:
           resources:
 {{ toYaml (default .Values.resources .Values.resource) | indent 12 }}
           env:
+            - name: SONAR_CLUSTER_SEARCH_HOSTS
+              value: "{{ template "sonarqube.fullname" . }}-search"
+            - name: SONAR_CLUSTER_HOSTS
+              value: "{{ template "sonarqube.fullname" . }}"
+            - name: SONAR_AUTH_JWTBASE64HS256SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ template "sonarqube.fullname" . }}-JWT"
+                  key: SONAR_AUTH_JWTBASE64HS256SECRET
             - name: SONAR_WEB_JAVAOPTS
               value: {{ template "sonarqube.jvmOpts" . }}
             - name: SONAR_CE_JAVAOPTS
@@ -372,12 +380,6 @@ spec:
           items:
             - key: init_sysctl.sh
               path: init_sysctl.sh
-      - name: init-fs
-        configMap:
-          name: {{ template "sonarqube.fullname" . }}-init-fs
-          items:
-            - key: init_fs.sh
-              path: init_fs.sh
       - name: install-plugins
         configMap:
           name: {{ template "sonarqube.fullname" . }}-install-plugins

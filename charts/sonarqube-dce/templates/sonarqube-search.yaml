@@ -141,7 +141,7 @@ spec:
             - mountPath: /tmp
               name: tmp-dir
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ .Chart.Name }}-search
           image: "{{ .Values.searchNodes.image.repository }}:{{ .Values.searchNodes.image.tag }}"
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy }}
           ports:
@@ -154,6 +154,8 @@ spec:
           resources:
 {{ toYaml (default .Values.searchNodes.resources .Values.resource) | indent 12 }}
           env:
+            - name: SONAR_CLUSTER_ES_HOSTS
+              value: "{{ template "sonarqube.fullname" . }}-search"
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
