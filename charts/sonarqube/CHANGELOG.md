@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.14]
+* added hostAliases to deploymentType statefulset
+
 ## [1.0.13]
 * made prometheus exporter port configurable and support prometheus PodMonitor
 
