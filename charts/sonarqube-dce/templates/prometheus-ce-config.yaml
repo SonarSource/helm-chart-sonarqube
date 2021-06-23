@@ -1,4 +1,4 @@
-{{- if .Values.prometheusExporter.enabled }}
+{{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,5 +10,5 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   prometheus-ce-config.yaml: |-
-{{ .Values.prometheusExporter.ceConfig | default .Values.prometheusExporter.config | toYaml | indent 8 }}
+{{ .Values.ApplicationNodes.prometheusExporter.ceConfig | default .Values.ApplicationNodes.prometheusExporter.config | toYaml | indent 8 }}
 {{- end }}

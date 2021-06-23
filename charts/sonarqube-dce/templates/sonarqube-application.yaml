@@ -55,16 +55,16 @@ spec:
       {{- if .Values.postgresql.enabled }}
         - name: "wait-for-db"
           image: {{ default "busybox:1.32" .Values.initContainers.image }}
-          imagePullPolicy: {{ .Values.image.pullPolicy  }}
+          imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
           command: ["/bin/sh", "-c", "for i in $(seq 1 200); do nc -z -w3 {{ .Release.Name}}-postgresql 5432 && exit 0 || sleep 2; done; exit 1"]
       {{- end }}
-      {{- if or .Values.initSysctl.enabled .Values.elasticsearch.configureNode }}
+      {{- if .Values.initSysctl.enabled }}
       {{- if .Values.caCerts }}
         - name: ca-certs
           image: {{ default "adoptopenjdk/openjdk11:alpine" .Values.caCerts.image }}
-          imagePullPolicy: {{ .Values.image.pullPolicy  }}
+          imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
           {{- if $securityContext := .Values.initContainers.securityContext }}
@@ -86,7 +86,7 @@ spec:
       {{- end }}
         - name: init-sysctl
           image: {{ default "busybox:1.32" .Values.initSysctl.image }}
-          imagePullPolicy: {{ .Values.image.pullPolicy  }}
+          imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           {{- if $securityContext := (default .Values.initContainers.securityContext .Values.initSysctl.securityContext) }}
           securityContext:
 {{ toYaml $securityContext | indent 12 }}
@@ -107,7 +107,7 @@ spec:
       {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
         - name: inject-prometheus-exporter
           image: {{ default "curlimages/curl:7.76.1" .Values.ApplicationNodes.prometheusExporter.image }}
-          imagePullPolicy: {{ .Values.image.pullPolicy  }}
+          imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           {{- if $securityContext := (default .Values.initContainers.securityContext .Values.ApplicationNodes.prometheusExporter.securityContext) }}
           securityContext:
 {{ toYaml $securityContext | indent 12 }}
@@ -134,7 +134,7 @@ spec:
       {{- if .Values.ApplicationNodes.plugins.install }}
         - name: install-plugins
           image: {{ default "curlimages/curl:7.76.1" .Values.ApplicationNodes.plugins.image }}
-          imagePullPolicy: {{ .Values.image.pullPolicy  }}
+          imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh",
             "-e",
             "/tmp/scripts/install_plugins.sh"]
@@ -264,7 +264,7 @@ spec:
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
               subPath: sonar.properties
               name: concat-dir
-            {{- else if or .Values.sonarProperties (not .Values.elasticsearch.bootstrapChecks) }}
+            {{- else if .Values.sonarProperties }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
               subPath: sonar.properties
               name: config
@@ -281,11 +281,7 @@ spec:
             - mountPath: {{ .Values.sonarqubeFolder }}/data
               name: sonarqube
               subPath: data
-            {{- if .Values.persistence.enabled }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions
-              name: sonarqube
-              subPath: extensions
-            {{- else if .Values.ApplicationNodes.plugins.install }}
+            {{- if .Values.ApplicationNodes.plugins.install }}
             - mountPath: {{ .Values.sonarqubeFolder }}/extensions/downloads
               name: sonarqube
               subPath: extensions/downloads
@@ -333,7 +329,7 @@ spec:
     {{- end }}
     {{- end }}
       volumes:
-      {{- if or .Values.sonarProperties (not .Values.elasticsearch.bootstrapChecks) }}
+      {{- if or .Values.sonarProperties }}
       - name: config
         configMap:
           name: {{ template "sonarqube.fullname" . }}-config
@@ -404,7 +400,6 @@ spec:
       {{- end }}
       - name: sonarqube
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
-        {{- end  }}
       - name : tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
         {{- if .Values.sonarSecretProperties }}

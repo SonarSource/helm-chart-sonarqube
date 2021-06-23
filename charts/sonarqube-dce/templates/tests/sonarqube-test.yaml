@@ -14,7 +14,7 @@ spec:
   initContainers:
     - name: "bats"
       image: "bats/bats:1.2.1"
-      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}
       command: ["bash", "-c"]
       args:
         - |-
@@ -26,7 +26,7 @@ spec:
   containers:
     - name: {{ .Release.Name }}-ui-test
       image: {{ default "bitnami/minideb-extras" .Values.tests.image }}
-      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}
       command: [
         "/tools/bats/bin/bats",
         "--tap",

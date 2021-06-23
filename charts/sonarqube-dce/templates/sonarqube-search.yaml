@@ -55,7 +55,7 @@ spec:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
           command: ["/bin/sh", "-c", "for i in $(seq 1 200); do nc -z -w3 {{ .Release.Name}}-postgresql 5432 && exit 0 || sleep 2; done; exit 1"]
       {{- end }}
-      {{- if or .Values.initSysctl.enabled .Values.elasticsearch.configureNode }}
+      {{- if or .Values.initSysctl.enabled }}
       {{- if .Values.caCerts }}
         - name: ca-certs
           image: {{ default "adoptopenjdk/openjdk11:alpine" .Values.caCerts.image }}
@@ -140,7 +140,6 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.searchNodes.image.repository }}:{{ .Values.searchNodes.image.tag }}"
@@ -251,6 +250,7 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
+            {{- end }}
     {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}

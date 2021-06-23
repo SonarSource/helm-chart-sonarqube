@@ -9,6 +9,6 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   init_fs.sh: |-
-    {{- if .Values.persistence.enabled }}
-    chown -R {{ .Values.persistence.uid }}: {{ .Values.sonarqubeFolder }}
+    {{- if .Values.searchNodes.persistence.enabled }}
+    chown -R {{ .Values.searchNodes.persistence.uid }}: {{ .Values.sonarqubeFolder }}
     {{- end }}
