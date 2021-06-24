@@ -26,6 +26,10 @@ spec:
       {{- if .Values.service.nodePort }}
       nodePort: {{ .Values.service.nodePort }}
       {{- end }}
+    - port: 9003
+      targetPort: hazelcast
+      protocol: TCP
+      name: hazelcast
   selector:
     app: {{ template "sonarqube.name" . }}
     release: {{ .Release.Name }}

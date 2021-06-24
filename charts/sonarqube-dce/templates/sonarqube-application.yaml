@@ -182,11 +182,14 @@ spec:
               containerPort: {{ .Values.ApplicationNodes.prometheusExporter.ceBeanPort }}
               protocol: TCP
             {{- end }}
+            - name: hazelcast
+              containerPort: 9003
+              protocol: TCP
           resources:
 {{ toYaml (default .Values.resources .Values.resource) | indent 12 }}
           env:
             - name: SONAR_CLUSTER_SEARCH_HOSTS
-              value: "{{ template "sonarqube.fullname" . }}-search"
+              value: "sonarqube-master:9200"
             - name: SONAR_CLUSTER_HOSTS
               value: "{{ template "sonarqube.fullname" . }}"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
