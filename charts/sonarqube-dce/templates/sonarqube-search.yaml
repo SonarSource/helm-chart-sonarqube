@@ -15,7 +15,6 @@ metadata:
     app.kubernetes.io/version: {{ .Values.searchNodes.image.tag | quote }}
 spec:
   replicas: {{ .Values.searchNodes.replicaCount }}
-  serviceName: {{ template "sonarqube.fullname" . }}-search
   selector:
     matchLabels:
       app: {{ template "sonarqube.name" . }}

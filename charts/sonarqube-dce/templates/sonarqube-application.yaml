@@ -15,7 +15,6 @@ metadata:
     app.kubernetes.io/version: {{ .Values.ApplicationNodes.image.tag | quote }}
 spec:
   replicas: {{ .Values.ApplicationNodes.replicaCount }}
-  serviceName: {{ template "sonarqube.fullname" . }}-app
   selector:
     matchLabels:
       app: {{ template "sonarqube.name" . }}
@@ -193,7 +192,7 @@ spec:
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "sonarqube.fullname" . }}-JWT"
+                  name: "{{ template "sonarqube.fullname" . }}-jwt"
                   key: SONAR_AUTH_JWTBASE64HS256SECRET
             - name: SONAR_WEB_JAVAOPTS
               value: {{ template "sonarqube.jvmOpts" . }}
