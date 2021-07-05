@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.15]
+* bump jmx_exporter to 0.16.0
+
 ## [1.0.14]
 * added hostAliases to deploymentType statefulset
 
