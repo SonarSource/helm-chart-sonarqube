@@ -20,7 +20,7 @@ deploymentStrategy: {}
 
 ## Is this deployment for OpenShift? If so, we help with SCCs
 OpenShift:
-  enabled: false
+  enabled: true
   createSCC: true
 
 image:
@@ -352,7 +352,7 @@ postgresql:
   securityContext:
     # For standard Kubernetes deployment, set enabled=true
     # If using OpenShift, enabled=false for restricted SCC and enabled=true for anyuid/nonroot SCC
-    enabled: true
+    enabled: false
     # fsGroup and runAsUser specifications below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
     # postgresql dockerfile sets user as 1001
     fsGroup: 1001
@@ -360,10 +360,10 @@ postgresql:
   volumePermissions:
     # For standard Kubernetes deployment, set enabled=false
     # For OpenShift, set enabled=true and ensure to set volumepermissions.securitycontext.runAsUser below.
-    enabled: false
+    enabled: true
     # if using restricted SCC set runAsUser: "auto" and if running under anyuid/nonroot SCC - runAsUser needs to match runAsUser above
     securityContext:
-      runAsUser: 0
+      runAsUser: "auto"
   shmVolume:
     chmod:
       enabled: false
@@ -384,8 +384,9 @@ tests:
   enabled: true
   # image: bitnami/minideb-extras
 
+# For OpenShift set create=true to ensure service account is created.
 serviceAccount:
-  create: false
+  create: true
   # name:
   ## Annotations for the Service Account
   annotations: {}
