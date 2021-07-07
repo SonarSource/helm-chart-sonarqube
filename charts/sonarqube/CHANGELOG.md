@@ -1,5 +1,7 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
+## [1.0.16]
+* added route support for OpenShift deployments
 
 ## [1.0.15]
 * bump jmx_exporter to 0.16.0

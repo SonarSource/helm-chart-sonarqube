@@ -20,7 +20,7 @@ deploymentStrategy: {}
 
 ## Is this deployment for OpenShift? If so, we help with SCCs
 OpenShift:
-  enabled: true
+  enabled: false
   createSCC: true
 
 image:
@@ -86,11 +86,12 @@ ingress:
   #   hosts:
   #     - chart-example.local
 
-# Create Route for OpenShift deployments
+# Create Route for OpenShift deployments. Set enabled=true if you want Route to be automatically generated based on service and namespace names.
 route:
-  enabled: true
+  enabled: false
 
   # Add tls section to secure traffic. TODO: extend this section with other secure route settings
+  # Comment this out if you want plain http route created.
   tls:
     termination: edge
 
@@ -360,7 +361,7 @@ postgresql:
   securityContext:
     # For standard Kubernetes deployment, set enabled=true
     # If using OpenShift, enabled=false for restricted SCC and enabled=true for anyuid/nonroot SCC
-    enabled: false
+    enabled: true
     # fsGroup and runAsUser specifications below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
     # postgresql dockerfile sets user as 1001
     fsGroup: 1001
@@ -368,10 +369,10 @@ postgresql:
   volumePermissions:
     # For standard Kubernetes deployment, set enabled=false
     # For OpenShift, set enabled=true and ensure to set volumepermissions.securitycontext.runAsUser below.
-    enabled: true
+    enabled: false
     # if using restricted SCC set runAsUser: "auto" and if running under anyuid/nonroot SCC - runAsUser needs to match runAsUser above
     securityContext:
-      runAsUser: "auto"
+      runAsUser: 0
   shmVolume:
     chmod:
       enabled: false
@@ -394,7 +395,7 @@ tests:
 
 # For OpenShift set create=true to ensure service account is created.
 serviceAccount:
-  create: true
+  create: false
   # name:
   ## Annotations for the Service Account
   annotations: {}
