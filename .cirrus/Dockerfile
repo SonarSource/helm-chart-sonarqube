@@ -1,4 +1,4 @@
-FROM us.gcr.io/sonarqube-team/base:latest as tools
+FROM us.gcr.io/sonarqube-team/base:j11-latest as tools
 
 FROM docker:20.10
 
