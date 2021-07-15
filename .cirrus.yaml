@@ -1,0 +1,59 @@
+gcp_credentials: ENCRYPTED[6e2544e2636518d50d77c24e62107cc0439b328137679c4040a117f037b49f340f9a3ab7e43eaf328154be1afb19680e]
+
+docker_build_container_template: &GKE_CONTAINER_TEMPLATE
+  dockerfile: .cirrus/Dockerfile
+  builder_image_project: sonarqube-team
+  builder_image_name: docker-builder-v20200915
+  cluster_name: cirrus-ci-cluster
+  zone: us-central1-a
+  namespace: default
+  cpu: 1
+  memory: 1Gb
+
+chart_testing_task:
+  timeout_in: 15m
+  gke_container:
+    <<: *GKE_CONTAINER_TEMPLATE
+    cpu: 2
+    memory: 4Gb
+    additional_containers:
+      - name: dockerdaemon
+        privileged: true
+        cpu: 4
+        memory: 3500Mb
+        image: docker:20-dind
+        port: 2375
+        env:
+          DOCKER_DRIVER: overlay2
+          DOCKER_TLS_CERTDIR: ""
+  env:
+    CIRRUS_CLONE_DEPTH: 10
+    DOCKER_HOST: tcp://localhost:2375
+  start_kind_background_script:
+    - kind create cluster
+  wait_for_kind_script:
+    - secs=3600; endTime=$(( $(date +%s) + secs )); while [[ -n "$(kubectl cluster-info --context kind-kind 2>&1 > /dev/null)" ]] || [ $(date +%s) -gt $endTime ]; do sleep 5; done
+  script:
+    - source cirrus-env BUILD
+    - ./.cirrus/append_build_number.sh
+    - ct lint --config test.yaml
+    - ct install --config test.yaml
+
+chart_packaging_task:
+  timeout_in: 15m
+  gke_container:
+    <<: *GKE_CONTAINER_TEMPLATE
+    cpu: 2
+    memory: 1Gb
+  env:
+    CIRRUS_CLONE_DEPTH: 10
+  script:
+    - source cirrus-env
+    - ./.cirrus/append_build_number.sh
+    - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo update
+    - helm dependency build helm-chart-sonarqube/charts/sonarqube
+    - helm package helm-chart-sonarqube/charts/sonarqube
+  depends_on:
+    - chart_testing
