@@ -36,6 +36,7 @@ chart_testing_task:
   script:
     - source cirrus-env BUILD
     - ./.cirrus/append_build_number.sh
+    - cat charts/sonarqube/Chart.yaml
     - ct lint --config test.yaml
     - ct install --config test.yaml
 
