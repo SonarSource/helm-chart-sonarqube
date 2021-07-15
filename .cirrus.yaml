@@ -26,8 +26,6 @@ chart_testing_task:
         env:
           DOCKER_DRIVER: overlay2
           DOCKER_TLS_CERTDIR: ""
-  env:
-    CIRRUS_CLONE_DEPTH: 10
   start_kind_background_script:
     - export DOCKER_HOST=tcp://localhost:2375
     - kind create cluster
@@ -46,8 +44,6 @@ chart_packaging_task:
     <<: *GKE_CONTAINER_TEMPLATE
     cpu: 2
     memory: 1Gb
-  env:
-    CIRRUS_CLONE_DEPTH: 10
   script:
     - source cirrus-env
     - ./.cirrus/append_build_number.sh
