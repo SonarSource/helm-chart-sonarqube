@@ -147,7 +147,17 @@ spec:
 {{ toYaml (default .Values.searchNodes.resources .Values.resource) | indent 12 }}
           env:
             - name: SONAR_CLUSTER_ES_HOSTS
-              value: "{{ template "sonarqube.fullname" . }}-search"
+              value: "{{ template "sonarqube.fullname" . }}-search-headless"
+            - name: SONAR_JDBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "postgresql.secret" . }}
+                  key: {{ template "postgresql.secretPasswordKey" . }}
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
             {{- with .Values.searchNodes.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
