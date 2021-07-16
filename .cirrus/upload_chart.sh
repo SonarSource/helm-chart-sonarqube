@@ -1,10 +1,9 @@
 #!/bin/sh
 
-ARTIFACTS_LOCATION="/tmp/cirrus-ci-build"
 CURRENT_DIR=`pwd`
 
-for chart in `find $ARTIFACTS_LOCATION -name "*.tgz" -type f -exec basename "{}" ";"`; do
-    cd $ARTIFACTS_LOCATION
+for chart in `find $CIRRUS_WORKING_DIR -name "*.tgz" -type f -exec basename "{}" ";"`; do
+    cd $CIRRUS_WORKING_DIR
     echo "Uploading $chart"
     curl "-u${ARTIFACTORY_DEPLOY_USERNAME}:${ARTIFACTORY_DEPLOY_PASSWORD}" "-T $chart" "https://repox.jfrog.io/artifactory/sonarsource-helm-builds/$chart"
     cd $CURRENT_DIR

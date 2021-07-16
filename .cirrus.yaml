@@ -58,7 +58,7 @@ chart_packaging_task:
     memory: 1Gb
   <<: *CLONE_SCRIPT_TEMPLATE
   environment_cache:
-    folder: /tmp/cirrus-ci-build
+    folder: $CIRRUS_WORKING_DIR
     fingerprint_script: echo $CIRRUS_BUILD_ID
   script:
     - source cirrus-env ""
@@ -79,7 +79,7 @@ push_to_repox_task:
     memory: 1Gb
   <<: *CLONE_SCRIPT_TEMPLATE
   environment_cache:
-    folder: /tmp/cirrus-ci-build
+    folder: $CIRRUS_WORKING_DIR
     fingerprint_script: echo $CIRRUS_BUILD_ID
   env:
     ARTIFACTORY_DEPLOY_USERNAME: repox-qa-deployer
