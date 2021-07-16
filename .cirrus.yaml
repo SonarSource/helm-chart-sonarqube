@@ -46,7 +46,6 @@ chart_testing_task:
   script:
     - source cirrus-env BUILD
     - ./.cirrus/append_build_number.sh
-    - cat charts/sonarqube/Chart.yaml
     - ct lint --config test.yaml
     - ct install --config test.yaml
 
@@ -63,7 +62,7 @@ chart_packaging_task:
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
     - helm repo add bitnami https://charts.bitnami.com/bitnami
     - helm repo update
-    - helm dependency build helm-chart-sonarqube/charts/sonarqube
-    - helm package helm-chart-sonarqube/charts/sonarqube
+    - helm dependency charts/sonarqube
+    - helm package charts/sonarqube
   depends_on:
     - chart_testing
