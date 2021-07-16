@@ -10,6 +10,17 @@ docker_build_container_template: &GKE_CONTAINER_TEMPLATE
   cpu: 1
   memory: 1Gb
 
+clone_script_template: &CLONE_SCRIPT_TEMPLATE
+  clone_script: |
+    if [ -z "$CIRRUS_PR" ]; then
+      git clone --recursive --branch=$CIRRUS_BRANCH https://x-access-token:${CIRRUS_REPO_CLONE_TOKEN}@github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
+      git reset --hard $CIRRUS_CHANGE_IN_REPO
+    else
+      git clone --recursive https://x-access-token:${CIRRUS_REPO_CLONE_TOKEN}@github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
+      git fetch origin pull/$CIRRUS_PR/head:pull/$CIRRUS_PR
+      git reset --hard $CIRRUS_CHANGE_IN_REPO
+    fi
+
 chart_testing_task:
   timeout_in: 15m
   gke_container:
@@ -26,6 +37,7 @@ chart_testing_task:
         env:
           DOCKER_DRIVER: overlay2
           DOCKER_TLS_CERTDIR: ""
+  <<: *CLONE_SCRIPT_TEMPLATE
   start_kind_background_script:
     - export DOCKER_HOST=tcp://localhost:2375
     - kind create cluster
@@ -44,6 +56,7 @@ chart_packaging_task:
     <<: *GKE_CONTAINER_TEMPLATE
     cpu: 2
     memory: 1Gb
+  <<: *CLONE_SCRIPT_TEMPLATE
   script:
     - source cirrus-env
     - ./.cirrus/append_build_number.sh
