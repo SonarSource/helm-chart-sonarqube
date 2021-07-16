@@ -137,10 +137,10 @@ spec:
           image: "{{ .Values.searchNodes.image.repository }}:{{ .Values.searchNodes.image.tag }}"
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy }}
           ports:
-            - name: search
+            - name: search-port
               containerPort: 9001
               protocol: TCP
-            - name: es
+            - name: es-port
               containerPort: 9002
               protocol: TCP
           resources:
@@ -148,22 +148,9 @@ spec:
           env:
             - name: SONAR_CLUSTER_ES_HOSTS
               value: "{{ template "sonarqube.fullname" . }}-search-headless"
-            - name: SONAR_JDBC_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ template "postgresql.secret" . }}
-                  key: {{ template "postgresql.secretPasswordKey" . }}
-            - name: SONAR_WEB_SYSTEMPASSCODE
-              valueFrom:
-                secretKeyRef:
-                  name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
-                  key: SONAR_WEB_SYSTEMPASSCODE
             {{- with .Values.searchNodes.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
-          envFrom:
-            - configMapRef:
-                name: {{ template "sonarqube.fullname" . }}-postgres-config
 {{- range .Values.extraConfig.secrets }}
             - secretRef:
                 name: {{ . }}
@@ -179,10 +166,10 @@ spec:
               - -c
               - |
                 #!/bin/bash
-                # A Sonarqube container is considered healthy if the health status is GREEN or YELLOW
+                # A Sonarqube search node container is considered live if http call returns 200
                 host="$(hostname -i || echo '127.0.0.1')"
-                if wget --header="X-Sonar-Passcode: ${SONAR_WEB_SYSTEMPASSCODE}" -qO- http://${host}:9000{{ .Values.searchNodes.livenessProbe.sonarWebContext }}api/system/health | grep -q -e '"health":"GREEN"' -e '"health":"YELLOW"'; then
-                	exit 0
+                if wget -qO- "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
                 fi
                 exit 1
             initialDelaySeconds: {{ .Values.searchNodes.livenessProbe.initialDelaySeconds }}
@@ -194,21 +181,28 @@ spec:
               - -c
               - |
                 #!/bin/bash
-                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
+                # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
                 host="$(hostname -i || echo '127.0.0.1')"
-                if wget -qO- http://${host}:9000{{ .Values.searchNodes.readinessProbe.sonarWebContext }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
-                	exit 0
+                if wget -qO- "http://${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
                 fi
                 exit 1
             initialDelaySeconds: {{ .Values.searchNodes.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.searchNodes.readinessProbe.periodSeconds }}
             failureThreshold: {{ .Values.searchNodes.readinessProbe.failureThreshold }}
           startupProbe:
-            httpGet:
-              scheme: HTTP
-              path: {{ .Values.searchNodes.readinessProbe.sonarWebContext }}api/system/status
-              port: 9000
+            exec:
+             command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered started if http call returns 200
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget -qO- "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
             initialDelaySeconds: {{ .Values.searchNodes.startupProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.searchNodes.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.searchNodes.startupProbe.failureThreshold }}
