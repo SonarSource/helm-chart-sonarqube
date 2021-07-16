@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ template "sonarqube.fullname" . }}-search
   labels:
@@ -15,16 +15,15 @@ metadata:
     app.kubernetes.io/version: {{ .Values.searchNodes.image.tag | quote }}
 spec:
   replicas: {{ .Values.searchNodes.replicaCount }}
-  strategy:
-    type: Recreate
+  serviceName: {{ template "sonarqube.fullname" . }}-search
   selector:
     matchLabels:
-      app: {{ template "sonarqube.name" . }}
+      app: {{ template "sonarqube.name" . }}-search
       release: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: {{ template "sonarqube.name" . }}
+        app: {{ template "sonarqube.name" . }}-search
         release: {{ .Release.Name }}
 {{- with .Values.podLabels }}
 {{ toYaml . | indent 8 }}
@@ -167,7 +166,7 @@ spec:
                 secretKeyRef:
                   name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
-            {{- with .Values.env }}
+            {{- with .Values.searchNodes.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
           envFrom:

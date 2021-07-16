@@ -10,7 +10,13 @@ searchNodes:
     # If using a private repository, the name of the imagePullSecret to use
     # pullSecret: my-repo-secret
 
-  replicaCount: 0
+    ## Environment variables to attach to the search pods
+    ##
+    # env:
+    #   - name: VARIABLE
+    #     value: my-value
+
+  replicaCount: 3
 
   # Set security context for sonarqube search pods
   securityContext:
@@ -92,6 +98,12 @@ ApplicationNodes:
     pullPolicy: IfNotPresent
     # If using a private repository, the name of the imagePullSecret to use
     # pullSecret: my-repo-secret
+
+    ## Environment variables to attach to the application pods
+    ##
+    # env:
+    #   - name: VARIABLE
+    #     value: my-value
 
   replicaCount: 2
 

@@ -191,7 +191,7 @@ spec:
 {{ toYaml (default .Values.resources .Values.resource) | indent 12 }}
           env:
             - name: SONAR_CLUSTER_SEARCH_HOSTS
-              value: "sonarqube-master:9200"
+              value: "{{ template "sonarqube.fullname" . }}-search"
             - name: SONAR_CLUSTER_HOSTS
               value: "{{ template "sonarqube.fullname" . }}"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
@@ -213,7 +213,7 @@ spec:
                 secretKeyRef:
                   name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
-            {{- with .Values.env }}
+            {{- with .Values.ApplicationNodes.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
           envFrom:
