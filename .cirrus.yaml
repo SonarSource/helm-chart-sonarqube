@@ -62,7 +62,7 @@ chart_packaging_task:
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
     - helm repo add bitnami https://charts.bitnami.com/bitnami
     - helm repo update
-    - helm dependency charts/sonarqube
-    - helm package charts/sonarqube
+    - helm dependency build `ct list-changed`
+    - helm package `ct list-changed`
   depends_on:
     - chart_testing
