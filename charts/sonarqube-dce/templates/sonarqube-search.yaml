@@ -155,7 +155,7 @@ spec:
 {{ toYaml (default .Values.searchNodes.resources .Values.resource) | indent 12 }}
           env:
             - name: SONAR_CLUSTER_ES_HOSTS
-              value: "{{ template "sonarqube.fullname" . }}-search"
+              value: "{{ template "sonarqube.fullname" . }}-search-headless"
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
