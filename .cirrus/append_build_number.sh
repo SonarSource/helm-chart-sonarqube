@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -euo pipefail
+
 FILES="charts/*/Chart.yaml"
 
 for f in $FILES

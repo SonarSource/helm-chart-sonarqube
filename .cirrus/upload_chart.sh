@@ -1,6 +1,8 @@
 #!/bin/sh
 
-CURRENT_DIR=${pwd}
+set -euo pipefail
+
+CURRENT_DIR=$(pwd)
 
 for chart in $(find $CIRRUS_WORKING_DIR -name "*.tgz" -type f -maxdepth 1 -exec basename "{}" ";"); do
     cd $CIRRUS_WORKING_DIR
