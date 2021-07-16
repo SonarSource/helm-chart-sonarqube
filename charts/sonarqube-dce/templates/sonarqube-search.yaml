@@ -14,8 +14,9 @@ metadata:
     app.kubernetes.io/component: {{ template "sonarqube.fullname" . }}
     app.kubernetes.io/version: {{ .Values.searchNodes.image.tag | quote }}
 spec:
+  podManagementPolicy : Parallel
   replicas: {{ .Values.searchNodes.replicaCount }}
-  serviceName: {{ template "sonarqube.fullname" . }}-search
+  serviceName: {{ template "sonarqube.fullname" . }}-search-headless
   selector:
     matchLabels:
       app: {{ template "sonarqube.name" . }}-search
@@ -146,6 +147,8 @@ spec:
           resources:
 {{ toYaml (default .Values.searchNodes.resources .Values.resource) | indent 12 }}
           env:
+            - name: SONAR_LOG_LEVEL_ES
+              value: "DEBUG"
             - name: SONAR_CLUSTER_ES_HOSTS
               value: "{{ template "sonarqube.fullname" . }}-search-headless"
             - name: SONAR_JDBC_PASSWORD
@@ -182,6 +185,7 @@ spec:
                   exit 0
                 fi
                 exit 1
+
             initialDelaySeconds: {{ .Values.searchNodes.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.searchNodes.livenessProbe.periodSeconds }}
           readinessProbe:
@@ -197,6 +201,7 @@ spec:
                   exit 0
                 fi
                 exit 1
+
             initialDelaySeconds: {{ .Values.searchNodes.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.searchNodes.readinessProbe.periodSeconds }}
             failureThreshold: {{ .Values.searchNodes.readinessProbe.failureThreshold }}
@@ -213,6 +218,7 @@ spec:
                   exit 0
                 fi
                 exit 1
+
             initialDelaySeconds: {{ .Values.searchNodes.startupProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.searchNodes.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.searchNodes.startupProbe.failureThreshold }}

@@ -101,15 +101,16 @@ metadata:
 {{- end }}
 spec:
   clusterIP: None
+  publishNotReadyAddresses: true
   ports:
     - port: 9001
-      targetPort: search
+      targetPort: 9001
       protocol: TCP
-      name: search
+      name: search-port
     - port: 9002
-      targetPort: es
+      targetPort: 9002
       protocol: TCP
-      name: es
+      name: es-port
   selector:
     app: {{ template "sonarqube.name" . }}-search
     release: {{ .Release.Name }}
