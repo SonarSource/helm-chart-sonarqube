@@ -58,7 +58,7 @@ chart_packaging_task:
     memory: 1Gb
   <<: *CLONE_SCRIPT_TEMPLATE
   script:
-    - source cirrus-env
+    - source cirrus-env ""
     - ./.cirrus/append_build_number.sh
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
     - helm repo add bitnami https://charts.bitnami.com/bitnami
