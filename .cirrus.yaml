@@ -68,14 +68,18 @@ chart_packaging_task:
   environment_cache:
     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
     fingerprint_script: echo $CIRRUS_BUILD_ID
+  env:
+    SONARSOURCE_SIGN_KEYRING: ENCRYPTED[!ef5afaea97ce1729ce488a680ebab6efe5a89f4e2a2b517a5206532dcad21df28f431ae575c230cfb80030aa270ee0fe!]
+    SONARSOURCE_SIGN_KEY_PASSPHRASE: ENCRYPTED[!314a8fc344f45e462dd5e8dccd741d7562283a825e78ebca27d4ae9db8e65ce618e7f6aece386b2782a5abe5171467bd!]
   script:
     - source cirrus-env ""
     - ./.cirrus/append_build_number.sh
+    - echo ${SONARSOURCE_SIGN_KEYRING} | base64 -d > ~/signing-keyring
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
     - helm repo add bitnami https://charts.bitnami.com/bitnami
     - helm repo update
     - helm dependency build $(ct list-changed)
-    - helm package $(ct list-changed)
+    - echo ${SONARSOURCE_SIGN_KEY_PASSPHRASE} | helm package --sign --key 'infra@sonarsource.com' --passphrase-file "-" --keyring ~/signing-keyring $(ct list-changed)
   depends_on:
     - chart_testing
 
