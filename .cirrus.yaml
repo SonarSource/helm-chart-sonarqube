@@ -75,11 +75,12 @@ chart_packaging_task:
     - source cirrus-env ""
     - ./.cirrus/append_build_number.sh
     - echo ${SONARSOURCE_SIGN_KEYRING} | base64 -d > ~/signing-keyring
+    - pip install helm-sign
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
     - helm repo add bitnami https://charts.bitnami.com/bitnami
     - helm repo update
     - helm dependency build $(ct list-changed)
-    - echo ${SONARSOURCE_SIGN_KEY_PASSPHRASE} | helm package --sign --key 'infra@sonarsource.com' --passphrase-file "-" --keyring ~/signing-keyring $(ct list-changed)
+    - ./.cirrus/sign_chart.sh
   depends_on:
     - chart_testing
 
