@@ -14,6 +14,7 @@ metadata:
     app.kubernetes.io/component: {{ template "sonarqube.fullname" . }}
     app.kubernetes.io/version: {{ .Values.searchNodes.image.tag | quote }}
 spec:
+  podManagementPolicy : Parallel
   replicas: {{ .Values.searchNodes.replicaCount }}
   serviceName: {{ template "sonarqube.fullname" . }}-search
   selector:
@@ -147,6 +148,8 @@ spec:
 {{ toYaml (default .Values.searchNodes.resources .Values.resource) | indent 12 }}
           env:
             - name: SONAR_CLUSTER_ES_HOSTS
+              value: sonarqube-sonarqube-dce-search-0,sonarqube-sonarqube-dce-search-1,sonarqube-sonarqube-dce-search-2
+            - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
               value: "{{ template "sonarqube.fullname" . }}-search-headless"
             {{- with .Values.searchNodes.env }}
             {{- . | toYaml | trim | nindent 12 }}
