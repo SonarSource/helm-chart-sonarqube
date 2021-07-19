@@ -1,9 +1,18 @@
 gcp_credentials: ENCRYPTED[!e5f7207bd8d02d383733bef47e18296ac32e3b7d22eb480354e8dd8fdc0004be45a8a4e72c797bd66ee94eb3340fa363!]
 
+
 docker_build_container_template: &GKE_CONTAINER_TEMPLATE
   dockerfile: .cirrus/Dockerfile
   builder_image_project: sonarqube-team
   builder_image_name: docker-builder-v20200915
+  cluster_name: cirrus-ci-cluster
+  zone: us-central1-a
+  namespace: default
+  cpu: 1
+  memory: 1Gb
+
+container_template: &GKE_STD_CONTAINER_TEMPLATE
+  image: us.gcr.io/sonarqube-team/base:j11-latest
   cluster_name: cirrus-ci-cluster
   zone: us-central1-a
   namespace: default
@@ -56,13 +65,35 @@ chart_packaging_task:
     cpu: 2
     memory: 1Gb
   <<: *CLONE_SCRIPT_TEMPLATE
+  environment_cache:
+    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
+    fingerprint_script: echo $CIRRUS_BUILD_ID
   script:
     - source cirrus-env ""
     - ./.cirrus/append_build_number.sh
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
     - helm repo add bitnami https://charts.bitnami.com/bitnami
     - helm repo update
-    - helm dependency build `ct list-changed`
-    - helm package `ct list-changed`
+    - helm dependency build $(ct list-changed)
+    - helm package $(ct list-changed)
   depends_on:
     - chart_testing
+
+push_to_repox_task:
+  timout_in: 15m
+  gke_container:
+    <<: *GKE_STD_CONTAINER_TEMPLATE
+    cpu: 1
+    memory: 1Gb
+  <<: *CLONE_SCRIPT_TEMPLATE
+  environment_cache:
+    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
+    fingerprint_script: echo $CIRRUS_BUILD_ID
+  env:
+    ARTIFACTORY_DEPLOY_USERNAME: repox-qa-deployer
+    ARTIFACTORY_DEPLOY_PASSWORD: ENCRYPTED[!d484e19f33c9ce63b165f70e414a33b1ac6c215a126791aacbf8059626caf0fd8a78e999a20af5c1a4ba01c0b0247921!]
+  script:
+    - ./.cirrus/upload_chart.sh
+  depends_on:
+    - chart_testing
+    - chart_packaging
