@@ -18,6 +18,15 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 {{- end -}}
 
+
+{{- define "searchNodes.endpoints" -}}
+  {{- $replicas := int (toString (.Values.searchNodes.replicaCount)) }}
+  {{- $uname := (include "sonarqube.fullname" .) }}
+  {{- range $i, $e := untilStep 0 $replicas 1 -}}
+    {{ $uname}}-search-{{ $i }},
+  {{- end -}}
+{{- end -}}
+
 {{/*
   Create a default fully qualified mysql/postgresql name.
   We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
