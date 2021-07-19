@@ -11,6 +11,14 @@ docker_build_container_template: &GKE_CONTAINER_TEMPLATE
   cpu: 1
   memory: 1Gb
 
+container_template: &GKE_STD_CONTAINER_TEMPLATE
+  image: us.gcr.io/sonarqube-team/base:j11-latest
+  cluster_name: cirrus-ci-cluster
+  zone: us-central1-a
+  namespace: default
+  cpu: 1
+  memory: 1Gb
+
 clone_script_template: &CLONE_SCRIPT_TEMPLATE
   clone_script: |
     if [ -z "$CIRRUS_PR" ]; then
@@ -58,7 +66,7 @@ chart_packaging_task:
     memory: 1Gb
   <<: *CLONE_SCRIPT_TEMPLATE
   environment_cache:
-    folder: ${CIRRUS_WORKING_DIR}
+    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
     fingerprint_script: echo $CIRRUS_BUILD_ID
   script:
     - source cirrus-env ""
@@ -74,12 +82,12 @@ chart_packaging_task:
 push_to_repox_task:
   timout_in: 15m
   gke_container:
-    <<: *GKE_CONTAINER_TEMPLATE
-    cpu: 2
+    <<: *GKE_STD_CONTAINER_TEMPLATE
+    cpu: 1
     memory: 1Gb
   <<: *CLONE_SCRIPT_TEMPLATE
   environment_cache:
-    folder: ${CIRRUS_WORKING_DIR}
+    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
     fingerprint_script: echo $CIRRUS_BUILD_ID
   env:
     ARTIFACTORY_DEPLOY_USERNAME: repox-qa-deployer
