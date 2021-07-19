@@ -148,7 +148,7 @@ spec:
 {{ toYaml (default .Values.searchNodes.resources .Values.resource) | indent 12 }}
           env:
             - name: SONAR_CLUSTER_ES_HOSTS
-              value: sonarqube-sonarqube-dce-search-0,sonarqube-sonarqube-dce-search-1,sonarqube-sonarqube-dce-search-2
+              value: "{{ template "searchNodes.endpoints" . }}"
             - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
               value: "{{ template "sonarqube.fullname" . }}-search-headless"
             {{- with .Values.searchNodes.env }}
