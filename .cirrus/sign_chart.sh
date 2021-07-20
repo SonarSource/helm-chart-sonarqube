@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-echo $SONARSOURCE_SIGN_KEY > /tmp/key
 echo $SONARSOURCE_SIGN_KEY_PASSPHRASE | gpg --batch --yes --passphrase-fd 0 --import /tmp/key
 
 CURRENT_DIR=$(pwd)
