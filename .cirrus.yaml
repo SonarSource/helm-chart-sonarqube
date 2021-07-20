@@ -47,16 +47,16 @@ chart_testing_task:
           DOCKER_DRIVER: overlay2
           DOCKER_TLS_CERTDIR: ""
   <<: *CLONE_SCRIPT_TEMPLATE
-#  start_kind_background_script:
-#    - export DOCKER_HOST=tcp://localhost:2375
-#    - kind create cluster
-#  wait_for_kind_script:
-#    - secs=3600; endTime=$(( $(date +%s) + secs )); while [[ -n "$(kubectl cluster-info --context kind-kind 2>&1 > /dev/null)" ]] || [ $(date +%s) -gt $endTime ]; do sleep 5; done
+  start_kind_background_script:
+    - export DOCKER_HOST=tcp://localhost:2375
+    - kind create cluster
+  wait_for_kind_script:
+    - secs=3600; endTime=$(( $(date +%s) + secs )); while [[ -n "$(kubectl cluster-info --context kind-kind 2>&1 > /dev/null)" ]] || [ $(date +%s) -gt $endTime ]; do sleep 5; done
   script:
     - source cirrus-env BUILD
     - ./.cirrus/append_build_number.sh
     - ct lint --config test.yaml
-#    - ct install --config test.yaml
+    - ct install --config test.yaml
 
 chart_packaging_task:
   timeout_in: 15m
