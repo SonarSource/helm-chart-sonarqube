@@ -80,6 +80,7 @@ chart_packaging_task:
     - helm repo update
     - helm dependency build $(ct list-changed)
     - helm package $(ct list-changed)
+    - sleep 9000
     - ./.cirrus/sign_chart.sh
   depends_on:
     - chart_testing
