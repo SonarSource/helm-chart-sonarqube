@@ -151,6 +151,10 @@ spec:
               value: "{{ template "searchNodes.endpoints" . }}"
             - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
               value: "{{ template "sonarqube.fullname" . }}-search-headless"
+            - name: SONAR_CLUSTER_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             {{- with .Values.searchNodes.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
