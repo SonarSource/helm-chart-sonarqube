@@ -25,6 +25,7 @@ RUN apk add --update --no-cache \
     moreutils \
     curl \
     git \
+    gnupg \
     libc6-compat \
     openssh-client \
     py3-pip \

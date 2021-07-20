@@ -68,6 +68,13 @@ chart_packaging_task:
   environment_cache:
     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
     fingerprint_script: echo $CIRRUS_BUILD_ID
+  env:
+    SONARSOURCE_SIGN_KEY: ENCRYPTED[!cc216dfe592f79db8006f2a591f8f98b40aa2b078e92025623594976fd32f6864c1e6b6ba74b50647f608e2418e6c336!]
+    SONARSOURCE_SIGN_KEY_ID: 0x7DCD4258
+    SONARSOURCE_SIGN_KEY_PASSPHRASE: ENCRYPTED[!314a8fc344f45e462dd5e8dccd741d7562283a825e78ebca27d4ae9db8e65ce618e7f6aece386b2782a5abe5171467bd!]
+  key_file:
+    path: /tmp/key
+    variable_name: SONARSOURCE_SIGN_KEY
   script:
     - source cirrus-env ""
     - ./.cirrus/append_build_number.sh
@@ -76,6 +83,7 @@ chart_packaging_task:
     - helm repo update
     - helm dependency build $(ct list-changed)
     - helm package $(ct list-changed)
+    - ./.cirrus/sign_chart.sh
   depends_on:
     - chart_testing
 
