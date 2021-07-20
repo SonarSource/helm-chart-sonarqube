@@ -47,16 +47,16 @@ chart_testing_task:
           DOCKER_DRIVER: overlay2
           DOCKER_TLS_CERTDIR: ""
   <<: *CLONE_SCRIPT_TEMPLATE
-  start_kind_background_script:
-    - export DOCKER_HOST=tcp://localhost:2375
-    - kind create cluster
-  wait_for_kind_script:
-    - secs=3600; endTime=$(( $(date +%s) + secs )); while [[ -n "$(kubectl cluster-info --context kind-kind 2>&1 > /dev/null)" ]] || [ $(date +%s) -gt $endTime ]; do sleep 5; done
+#  start_kind_background_script:
+#    - export DOCKER_HOST=tcp://localhost:2375
+#    - kind create cluster
+#  wait_for_kind_script:
+#    - secs=3600; endTime=$(( $(date +%s) + secs )); while [[ -n "$(kubectl cluster-info --context kind-kind 2>&1 > /dev/null)" ]] || [ $(date +%s) -gt $endTime ]; do sleep 5; done
   script:
     - source cirrus-env BUILD
     - ./.cirrus/append_build_number.sh
     - ct lint --config test.yaml
-    - ct install --config test.yaml
+#    - ct install --config test.yaml
 
 chart_packaging_task:
   timeout_in: 15m
@@ -69,12 +69,12 @@ chart_packaging_task:
     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
     fingerprint_script: echo $CIRRUS_BUILD_ID
   env:
-    SONARSOURCE_SIGN_KEYRING: ENCRYPTED[!ef5afaea97ce1729ce488a680ebab6efe5a89f4e2a2b517a5206532dcad21df28f431ae575c230cfb80030aa270ee0fe!]
+    SONARSOURCE_SIGN_KEY: ENCRYPTED[!cc216dfe592f79db8006f2a591f8f98b40aa2b078e92025623594976fd32f6864c1e6b6ba74b50647f608e2418e6c336!]
+    SONARSOURCE_SIGN_KEY_ID: 0x7DCD4258
     SONARSOURCE_SIGN_KEY_PASSPHRASE: ENCRYPTED[!314a8fc344f45e462dd5e8dccd741d7562283a825e78ebca27d4ae9db8e65ce618e7f6aece386b2782a5abe5171467bd!]
   script:
     - source cirrus-env ""
     - ./.cirrus/append_build_number.sh
-    - echo ${SONARSOURCE_SIGN_KEYRING} | base64 -d > ~/signing-keyring
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
     - helm repo add bitnami https://charts.bitnami.com/bitnami
     - helm repo update
