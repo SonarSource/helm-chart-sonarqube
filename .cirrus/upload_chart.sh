@@ -8,8 +8,8 @@ jfrog config add repox --artifactory-url ${ARTIFACTORY_URL} --user ${ARTIFACTORY
 
 for chart in $(find $CIRRUS_WORKING_DIR -maxdepth 1 -name "*.tgz*" -type f -exec basename "{}" ";"); do
     cd $CIRRUS_WORKING_DIR
-    jfrog rt upload --build-name "sonarqube-helm" --build-number "$BUILD_NUMBER" "$chart" sonarsource-helm-builds
+    jfrog rt upload --build-name "$CIRRUS_REPO_NAME" --build-number "$BUILD_NUMBER" "$chart" sonarsource-helm-builds
     cd $CURRENT_DIR
 done
 
-jfrog rt build-publish "sonarqube-helm" "$BUILD_NUMBER"
+jfrog rt build-publish "$CIRRUS_REPO_NAME" "$BUILD_NUMBER"
