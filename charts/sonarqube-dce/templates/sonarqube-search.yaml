@@ -21,6 +21,32 @@ spec:
     matchLabels:
       app: {{ template "sonarqube.name" . }}-search
       release: {{ .Release.Name }}
+{{- if and .Values.searchNodes.persistence.enabled (not .Values.searchNodes.persistence.existingClaim) }}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ template "sonarqube.fullname" . }}
+      labels:
+        release: {{ .Release.Name }}
+        chart: "{{ .Chart.Name }}"
+        app: "{{ template "sonarqube.fullname" . }}"
+    {{- with .Values.searchNodes.persistence.annotations  }}
+      annotations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    spec:
+      accessModes:
+        - {{ .Values.searchNodes.persistence.accessMode | quote }}
+      resources:
+        requests:
+          storage: {{ .Values.searchNodes.persistence.size | quote }}
+    {{- if .Values.searchNodes.persistence.storageClass }}
+    {{- if (eq "-" .Values.searchNodes.persistence.storageClass) }}
+      storageClassName: ""
+    {{- else }}
+      storageClassName: "{{ .Values.searchNodes.persistence.storageClass }}"
+    {{- end }}
+    {{- end }}
+  {{- end }}
   template:
     metadata:
       labels:
@@ -63,7 +89,7 @@ spec:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
           volumeMounts:
             - mountPath: /tmp/certs
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: certs
             - mountPath: /tmp/secrets/ca-certs
               name: ca-certs
@@ -113,23 +139,18 @@ spec:
 {{- end }}
             {{- if .Values.caCerts }}
             - mountPath: {{ .Values.sonarqubeFolder }}/certs
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: certs
             {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/data
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: data
-            {{- if .Values.searchNodes.persistence.enabled }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions
-              name: sonarqube
-              subPath: extensions
-            {{- end }}
             {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/temp
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: temp
             - mountPath: {{ .Values.sonarqubeFolder }}/logs
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -227,25 +248,20 @@ spec:
             {{- end }}
             {{- if .Values.caCerts }}
             - mountPath: {{ .Values.sonarqubeFolder }}/certs
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: certs
             {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/data
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: data
-            {{- if .Values.searchNodes.persistence.enabled }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions
-              name: sonarqube
-              subPath: extensions
             - mountPath: {{ .Values.sonarqubeFolder }}/temp
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: temp
             - mountPath: {{ .Values.sonarqubeFolder }}/logs
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-            {{- end }}
     {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
@@ -294,12 +310,8 @@ spec:
           items:
             - key: init_fs.sh
               path: init_fs.sh
-      - name: sonarqube
-        {{- if .Values.searchNodes.persistence.enabled }}
-        persistentVolumeClaim:
-          claimName: {{ if .Values.searchNodes.persistence.existingClaim }}{{ .Values.searchNodes.persistence.existingClaim }}{{- else }}{{ template "sonarqube.fullname" . }}{{- end }}
-        {{- else }}
-        emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
-        {{- end  }}
+      {{- if .Values.searchNodes.persistence.enabled }}
+      - name: "{{ template "sonarqube.fullname" . }}"
+      {{- end }}
       - name : tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
