@@ -104,9 +104,11 @@ push_to_repox_task:
     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
     fingerprint_script: echo $CIRRUS_BUILD_ID
   env:
+    ARTIFACTORY_URL: https://repox.jfrog.io/artifactory/
     ARTIFACTORY_DEPLOY_USERNAME: repox-qa-deployer
     ARTIFACTORY_DEPLOY_PASSWORD: ENCRYPTED[!d484e19f33c9ce63b165f70e414a33b1ac6c215a126791aacbf8059626caf0fd8a78e999a20af5c1a4ba01c0b0247921!]
   script:
+    - source cirrus-env ""
     - ./.cirrus/upload_chart.sh
   depends_on:
     - chart_testing
