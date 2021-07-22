@@ -192,8 +192,10 @@ spec:
           env:
             - name: SONAR_CLUSTER_SEARCH_HOSTS
               value: "{{ template "sonarqube.fullname" . }}-search"
+            - name: SONAR_CLUSTER_KUBERNETES
+              value: "true"
             - name: SONAR_CLUSTER_HOSTS
-              value: "{{ template "sonarqube.fullname" . }}"
+              value: "{{ template "sonarqube.fullname" . }}-headless"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
               valueFrom:
                 secretKeyRef:
