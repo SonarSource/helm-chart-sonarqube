@@ -312,6 +312,9 @@ spec:
               path: init_fs.sh
       {{- if .Values.searchNodes.persistence.enabled }}
       - name: "{{ template "sonarqube.fullname" . }}"
+      {{- else }}
+      - name: "{{ template "sonarqube.fullname" . }}"
+        emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
       {{- end }}
       - name : tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
