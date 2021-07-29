@@ -21,7 +21,7 @@ spec:
     matchLabels:
       app: {{ template "sonarqube.name" . }}-search
       release: {{ .Release.Name }}
-{{- if and .Values.searchNodes.persistence.enabled (not .Values.searchNodes.persistence.existingClaim) }}
+{{- if .Values.searchNodes.persistence.enabled }}
   volumeClaimTemplates:
   - metadata:
       name: {{ template "sonarqube.fullname" . }}
