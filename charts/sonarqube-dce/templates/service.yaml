@@ -26,10 +26,6 @@ spec:
       {{- if .Values.service.nodePort }}
       nodePort: {{ .Values.service.nodePort }}
       {{- end }}
-    - port: 9003
-      targetPort: hazelcast
-      protocol: TCP
-      name: hazelcast
   selector:
     app: {{ template "sonarqube.name" . }}
     release: {{ .Release.Name }}
@@ -44,6 +40,40 @@ spec:
   loadBalancerIP: {{.Values.service.loadBalancerIP}}
   {{- end }}
   {{- end }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "sonarqube.fullname" . }}-headless
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  {{- range $key, $value := .Values.service.labels }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{ if .Values.service.annotations}}
+    annotations:
+      service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+    {{- range $key, $value := .Values.service.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+{{- end }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: 9003
+      targetPort: hazelcast
+      protocol: TCP
+      name: hazelcast
+  selector:
+    app: {{ template "sonarqube.name" . }}
+    release: {{ .Release.Name }}
+
 
 ---
 apiVersion: v1
