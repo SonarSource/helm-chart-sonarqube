@@ -118,13 +118,13 @@ ApplicationNodes:
   readinessProbe:
     initialDelaySeconds: 120
     periodSeconds: 30
-    failureThreshold: 6
+    failureThreshold: 8
     # If an ingress *path* other than the root (/) is defined, it should be reflected here
     # A trailing "/" must be included
     sonarWebContext: /
     # sonarWebContext: /sonarqube/
   livenessProbe:
-    initialDelaySeconds: 120
+    initialDelaySeconds: 180
     periodSeconds: 30
     failureThreshold: 6
     # If an ingress *path* other than the root (/) is defined, it should be reflected here
@@ -134,9 +134,9 @@ ApplicationNodes:
     # If an ingress *path* is defined, it should be reflected here
     # sonar.web.context: /sonarqube
   startupProbe:
-    initialDelaySeconds: 60
+    initialDelaySeconds: 100
     periodSeconds: 10
-    failureThreshold: 24
+    failureThreshold: 32
     # If an ingress *path* other than the root (/) is defined, it should be reflected here
     # A trailing "/" must be included
     sonarWebContext: /
