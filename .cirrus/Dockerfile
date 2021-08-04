@@ -75,4 +75,5 @@ RUN set -eux; \
     rm chart-testing_${CHART_TESTING_VERSION}_linux_amd64.tar.gz 
 
 COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
+COPY --from=tools /usr/bin/gh /usr/local/bin/gh
 COPY --from=tools /home/sonarsource/.m2/settings-public.xml /root/.m2/settings-public.xml

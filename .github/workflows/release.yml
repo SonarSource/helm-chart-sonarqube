@@ -24,6 +24,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Fetch history
         run: git fetch --prune --unshallow
+      - name: Promote
+        run: jfrog rt build-promote --status released "${{ github.event.repository.name }}" "${{ github.event.inputs.buildNumber }}" sonarsource-helm-releases
       - name: Create local repository directory
         id: local_repo
         run: echo ::set-output name=dir::"$(mktemp -d repo.XXXXXXXX)"
