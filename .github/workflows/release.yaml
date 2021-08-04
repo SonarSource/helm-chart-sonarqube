@@ -1,0 +1,55 @@
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version of the release"
+        required: true
+      buildNumber:
+        description: "Build number of the release"
+        required: true
+
+name: Release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup JFrog CLI
+        uses: jfrog/setup-jfrog-cli@v1
+      - name: JFrog config
+        run: jfrog rt config repox --url https://repox.jfrog.io/artifactory/ --apikey $ARTIFACTORY_API_KEY --basic-auth-only
+        env:
+          ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Fetch history
+        run: git fetch --prune --unshallow
+      - name: Create local repository directory
+        id: local_repo
+        run: echo ::set-output name=dir::"$(mktemp -d repo.XXXXXXXX)"
+      - name: Download Artifacts
+        uses: SonarSource/gh-action_release/download-build@v3
+        with:
+          build-number: ${{ github.event.inputs.buildNumber }}
+          remote-repo: 'sonarsource-helm'
+          local-repo-dir: ${{ steps.local_repo.outputs.dir }}
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file_glob: true
+          file: ${{ steps.local_repo.outputs.dir }}/*
+          tag: ${{ github.event.inputs.version }}
+          overwrite: true
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+      - name: Release to GitHub
+        uses: SonarSource/gh-action_release/helm-index@feature/me/helm
+        env:
+          CR_TOKEN: "${{ secrets.RELEASE_GITHUB_TOKEN }}"
+        with:
+          repository-name: "${{ github.event.repository.name }}"
+          package-path: ${{ steps.local_repo.outputs.dir }}
+          release-name: "${{ github.event.inputs.version}}"

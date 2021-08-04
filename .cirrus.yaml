@@ -113,3 +113,22 @@ push_to_repox_task:
   depends_on:
     - chart_testing
     - chart_packaging
+
+trigger_release_task:
+  only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_RELEASE != ""
+  stateful: 'true'
+  env:
+    GITHUB_TOKEN: ENCRYPTED[!f272985ea5b49b3cf9c414b98de6a8e9096be47bfcee52f33311ba3131a2af637c1b956f49585b7757dd84b7c030233a!]
+    ARTIFACTORY_URL: https://repox.jfrog.io/artifactory/
+    ARTIFACTORY_DEPLOY_USERNAME: repox-qa-deployer
+    ARTIFACTORY_DEPLOY_PASSWORD: ENCRYPTED[!d484e19f33c9ce63b165f70e414a33b1ac6c215a126791aacbf8059626caf0fd8a78e999a20af5c1a4ba01c0b0247921!]
+  promote_script: |
+    source cirrus-env PROMOTE
+    jfrog config add repox --artifactory-url ${ARTIFACTORY_URL} --user ${ARTIFACTORY_DEPLOY_USERNAME} --password ${ARTIFACTORY_DEPLOY_PASSWORD} --basic-auth-only
+    jfrog rt build-promote --status released "$CIRRUS_REPO_NAME" "$BUILD_NUMBER" sonarsource-helm-releases
+  gh_action_script: |
+    source cirrus-env RELEASE
+    gh workflow run release.yml -f version=$CIRRUS_BRANCH -f buildNumber=$BUILD_NUMBER
+  depends_on:
+    - chart_packaging
+    - push_to_repox
