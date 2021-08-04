@@ -7,7 +7,8 @@ VERSION_SEPERATOR="-"
 
 LAST_TAG=$(gh api "/repos/{owner}/{repo}/releases?per_page=2" --jq ".[1].tag_name")
 
-echo $LAST_TAG
+[ -z "$LAST_TAG" ] && LAST_TAG="HEAD" || echo $LAST_TAG
+
 echo $(ct list-changed --since $LAST_TAG)
 
 for chart in $(ct list-changed --since $LAST_TAG); do
