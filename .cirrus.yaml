@@ -115,6 +115,11 @@ push_to_repox_task:
     - chart_packaging
 
 trigger_release_task:
+  timout_in: 15m
+  gke_container:
+    <<: *GKE_STD_CONTAINER_TEMPLATE
+    cpu: 1
+    memory: 1Gb
   only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_RELEASE != ""
   stateful: 'true'
   env:
