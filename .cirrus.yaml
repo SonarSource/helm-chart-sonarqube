@@ -1,0 +1,137 @@
+gcp_credentials: ENCRYPTED[!e5f7207bd8d02d383733bef47e18296ac32e3b7d22eb480354e8dd8fdc0004be45a8a4e72c797bd66ee94eb3340fa363!]
+
+
+only_on_none_release_draft_template: &ONLY_ON_NONE_RELEASE_DRAFT_TEMPLATE
+  only_if: $CIRRUS_PRERELEASE != "true"
+
+docker_build_container_template: &GKE_CONTAINER_TEMPLATE
+  dockerfile: .cirrus/Dockerfile
+  builder_image_project: sonarqube-team
+  builder_image_name: docker-builder-v20200915
+  cluster_name: cirrus-ci-cluster
+  zone: us-central1-a
+  namespace: default
+  cpu: 1
+  memory: 1Gb
+
+container_template: &GKE_STD_CONTAINER_TEMPLATE
+  image: us.gcr.io/sonarqube-team/base:j11-latest
+  cluster_name: cirrus-ci-cluster
+  zone: us-central1-a
+  namespace: default
+  cpu: 1
+  memory: 1Gb
+
+clone_script_template: &CLONE_SCRIPT_TEMPLATE
+  clone_script: |
+    if [ -z "$CIRRUS_PR" ]; then
+      git clone --recursive --branch=$CIRRUS_BRANCH https://github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
+      git reset --hard $CIRRUS_CHANGE_IN_REPO
+    else
+      git clone --recursive https://github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
+      git fetch origin pull/$CIRRUS_PR/head:pull/$CIRRUS_PR
+      git reset --hard $CIRRUS_CHANGE_IN_REPO
+    fi
+
+chart_testing_task:
+  only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_BRANCH != "master"
+  timeout_in: 15m
+  gke_container:
+    <<: *GKE_CONTAINER_TEMPLATE
+    cpu: 2
+    memory: 4Gb
+    additional_containers:
+      - name: dockerdaemon
+        privileged: true
+        cpu: 4
+        memory: 3500Mb
+        image: docker:20-dind
+        port: 2375
+        env:
+          DOCKER_DRIVER: overlay2
+          DOCKER_TLS_CERTDIR: ""
+  <<: *CLONE_SCRIPT_TEMPLATE
+  start_kind_background_script:
+    - export DOCKER_HOST=tcp://localhost:2375
+    - kind create cluster
+  wait_for_kind_script:
+    - secs=3600; endTime=$(( $(date +%s) + secs )); while [[ -n "$(kubectl cluster-info --context kind-kind 2>&1 > /dev/null)" ]] || [ $(date +%s) -gt $endTime ]; do sleep 5; done
+  script:
+    - ct lint --config test.yaml
+    - ct install --config test.yaml
+
+chart_packaging_task:
+  <<: *ONLY_ON_NONE_RELEASE_DRAFT_TEMPLATE
+  timeout_in: 15m
+  gke_container:
+    <<: *GKE_CONTAINER_TEMPLATE
+    cpu: 2
+    memory: 1Gb
+  <<: *CLONE_SCRIPT_TEMPLATE
+  environment_cache:
+    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
+    fingerprint_script: echo $CIRRUS_BUILD_ID
+  env:
+    GITHUB_TOKEN: ENCRYPTED[!f272985ea5b49b3cf9c414b98de6a8e9096be47bfcee52f33311ba3131a2af637c1b956f49585b7757dd84b7c030233a!]
+    SONARSOURCE_SIGN_KEY: ENCRYPTED[!cc216dfe592f79db8006f2a591f8f98b40aa2b078e92025623594976fd32f6864c1e6b6ba74b50647f608e2418e6c336!]
+    SONARSOURCE_SIGN_KEY_ID: "0x7DCD4258"
+    SONARSOURCE_SIGN_KEY_PASSPHRASE: ENCRYPTED[!314a8fc344f45e462dd5e8dccd741d7562283a825e78ebca27d4ae9db8e65ce618e7f6aece386b2782a5abe5171467bd!]
+  key_file:
+    path: /tmp/key
+    variable_name: SONARSOURCE_SIGN_KEY
+  script:
+    - source cirrus-env BUILD
+    - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo update
+    - ./.cirrus/package.sh
+    - ./.cirrus/sign_chart.sh
+  depends_on:
+    - chart_testing
+
+push_to_repox_task:
+  <<: *ONLY_ON_NONE_RELEASE_DRAFT_TEMPLATE
+  timout_in: 15m
+  gke_container:
+    <<: *GKE_STD_CONTAINER_TEMPLATE
+    cpu: 1
+    memory: 1Gb
+  <<: *CLONE_SCRIPT_TEMPLATE
+  environment_cache:
+    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
+    fingerprint_script: echo $CIRRUS_BUILD_ID
+  env:
+    ARTIFACTORY_URL: https://repox.jfrog.io/artifactory/
+    ARTIFACTORY_DEPLOY_USERNAME: repox-qa-deployer
+    ARTIFACTORY_DEPLOY_PASSWORD: ENCRYPTED[!d484e19f33c9ce63b165f70e414a33b1ac6c215a126791aacbf8059626caf0fd8a78e999a20af5c1a4ba01c0b0247921!]
+  script:
+    - source cirrus-env ""
+    - ./.cirrus/upload_chart.sh
+  depends_on:
+    - chart_testing
+    - chart_packaging
+
+trigger_release_task:
+  timout_in: 15m
+  gke_container:
+    <<: *GKE_STD_CONTAINER_TEMPLATE
+    cpu: 1
+    memory: 1Gb
+  only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_RELEASE != ""
+  stateful: 'true'
+  environment_cache:
+    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
+    fingerprint_script: echo $CIRRUS_BUILD_ID
+  env:
+    GITHUB_TOKEN: ENCRYPTED[!f272985ea5b49b3cf9c414b98de6a8e9096be47bfcee52f33311ba3131a2af637c1b956f49585b7757dd84b7c030233a!]
+    ARTIFACTORY_URL: https://repox.jfrog.io/artifactory/
+    ARTIFACTORY_DEPLOY_USERNAME: repox-qa-deployer
+    ARTIFACTORY_DEPLOY_PASSWORD: ENCRYPTED[!d484e19f33c9ce63b165f70e414a33b1ac6c215a126791aacbf8059626caf0fd8a78e999a20af5c1a4ba01c0b0247921!]
+  gh_action_script: |
+    source cirrus-env RELEASE
+    CHARTS=$(find $CIRRUS_WORKING_DIR -maxdepth 1 -name "*.tgz*" -type f -exec basename "{}" ";")
+    [[ "x$CHARTS" == "x" ]] && exit 0
+    gh workflow run release.yml -f version=$CIRRUS_BRANCH -f buildNumber=$BUILD_NUMBER
+  depends_on:
+    - chart_packaging
+    - push_to_repox
