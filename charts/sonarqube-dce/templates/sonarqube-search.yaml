@@ -168,6 +168,8 @@ spec:
           resources:
 {{ toYaml (default .Values.searchNodes.resources .Values.resource) | indent 12 }}
           env:
+            - name: SONAR_LOG_JSONOUTPUT
+              value: "{{ .Values.logging.jsonOutput }}"
             - name: SONAR_CLUSTER_ES_HOSTS
               value: "{{ template "searchNodes.endpoints" . }}"
             - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
