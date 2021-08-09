@@ -190,6 +190,8 @@ spec:
           resources:
 {{ toYaml (default .Values.resources .Values.resource) | indent 12 }}
           env:
+            - name: SONAR_LOG_JSONOUTPUT
+              value: "{{ .Values.logging.jsonOutput }}"
             - name: SONAR_CLUSTER_SEARCH_HOSTS
               value: "{{ template "sonarqube.fullname" . }}-search"
             - name: SONAR_CLUSTER_KUBERNETES
