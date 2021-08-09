@@ -248,6 +248,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `sonarProperties` | Custom `sonar.properties` file | None |
 | `sonarSecretProperties` | Additional `sonar.properties` file to load from a secret | None |
 | `sonarSecretKey` | Name of existing secret used for settings encryption | None |
+| `logging.jsonOutput` | Enable/Disable logging in JSON format | `false` |
 | `jdbcDatabaseType` | Type of the JDBC Database driver | `postgreql` |
 | `jdbcUrlOverride` | Overrides default JDBC URL creation | None |
 | `postgresql.enabled` | Set to `false` to use external server | `true` |
