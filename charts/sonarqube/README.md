@@ -46,6 +46,14 @@ kindly-newt 1           Mon Oct  2 15:05:44 2017    DEPLOYED    sonarqube-0.1.0 
 $ helm delete kindly-newt
 ```
 
+## Upgrade
+
+1. Read through the [SonarQube Upgrade Guide](https://docs.sonarqube.org/latest/setup/upgrading/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
+2. Change the SonarQube version on `values.yaml`
+3. Redeploy SonarQube with the same helm chart (see [Install instructions](#installing-the-chart))
+4. Browse to http://yourSonarQubeServerURL/setup and follow the setup instructions
+5. Reanalyze your projects to get fresh data
+
 ## Ingress
 
 ### Path
