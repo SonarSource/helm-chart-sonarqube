@@ -242,7 +242,7 @@ spec:
               port: 9000
               httpHeaders:
                 - name: X-Sonar-Passcode
-                  value: $SONAR_WEB_SYSTEMPASSCODE
+                  value: {{ .Values.monitoringPasscode }}
             initialDelaySeconds: {{ .Values.ApplicationNodes.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.ApplicationNodes.livenessProbe.periodSeconds }}
           readinessProbe:
