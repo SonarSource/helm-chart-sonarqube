@@ -35,12 +35,20 @@ spec:
         checksum/plugins: {{ include (print $.Template.BasePath "/install-plugins.yaml") . | sha256sum }}
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+{{- if .Values.prometheusExporter.enabled }}
+        checksum/prometheus-config: {{ include (print $.Template.BasePath "/prometheus-config.yaml") . | sha256sum }}
+        checksum/prometheus-ce-config: {{ include (print $.Template.BasePath "/prometheus-ce-config.yaml") . | sha256sum }}
+{{- end }}
 {{- if .Values.annotations}}
       {{- range $key, $value := .Values.annotations }}
         {{ $key }}: {{ $value | quote }}
       {{- end }}
 {{- end }}
     spec:
+      {{- if .Values.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecret }}
+      {{- end }}
       initContainers:
       {{- if .Values.extraInitContainers }}
 {{ toYaml .Values.extraInitContainers | indent 8 }}
@@ -76,7 +84,7 @@ spec:
           env:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
-      {{- end }}      
+      {{- end }}
         - name: init-sysctl
           image: {{ default "busybox:1.32" .Values.initSysctl.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -97,9 +105,38 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
+
+      {{- if and .Values.sonarProperties .Values.sonarSecretProperties }}
+        - name: concat-properties
+          image: {{ default "busybox:1.32" .Values.initContainers.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy  }}
+          command: ["sh",
+            "-c",
+            "awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties"]
+          volumeMounts:
+            - mountPath: /tmp/props/sonar.properties
+              name: config
+              subPath: sonar.properties
+            - mountPath: /tmp/props/secret.properties
+              name: secret-config
+              subPath: secret.properties
+            - mountPath: /tmp/result
+              name: concat-dir
+          {{- if $securityContext := .Values.initContainers.securityContext }}
+          securityContext:
+{{ toYaml $securityContext | indent 12 }}
+          {{- end }}
+          resources:
+{{ toYaml .Values.initContainers.resources | indent 12 }}
+          {{- with .Values.env }}
+          env:
+            {{- . | toYaml | trim | nindent 12 }}
+          {{- end }}
+      {{- end }}
+
       {{- if .Values.prometheusExporter.enabled }}
         - name: inject-prometheus-exporter
-          image: {{ default "busybox:1.32" .Values.prometheusExporter.image }}
+          image: {{ default "curlimages/curl:7.76.1" .Values.prometheusExporter.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
           {{- if $securityContext := (default .Values.initContainers.securityContext .Values.prometheusExporter.securityContext) }}
           securityContext:
@@ -108,11 +145,21 @@ spec:
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.prometheusExporter.resources) | indent 12 }}
           command: ["/bin/sh","-c"]
-          args: ["wget https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/{{ default "0.15.0" .Values.prometheusExporter.version }}/jmx_prometheus_javaagent-{{ default "0.15.0" .Values.prometheusExporter.version }}.jar -O /data/jmx_prometheus_javaagent.jar"]
+          args: ["curl -s '{{ template "prometheusExporter.downloadURL" . }}' {{ if $.Values.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v"]
           volumeMounts:
             - mountPath: /data
               name: sonarqube
               subPath: data
+          env:
+            - name: http_proxy
+              value: {{ default "" .Values.prometheusExporter.httpProxy }}
+            - name: https_proxy
+              value: {{ default "" .Values.prometheusExporter.httpsProxy }}
+            - name: no_proxy
+              value: {{ default "" .Values.prometheusExporter.noProxy }}
+          {{- with .Values.env }}
+            {{- . | toYaml | trim | nindent 12 }}
+          {{- end }}
       {{- end }}
       {{- if and .Values.persistence.enabled .Values.initFs.enabeld }}
         - name: init-fs
@@ -133,17 +180,6 @@ spec:
 {{- if .Values.persistence.mounts }}
 {{ toYaml .Values.persistence.mounts | indent 12 }}
 {{- end }}
-            {{- if and .Values.sonarProperties .Values.sonarSecretProperties }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf/
-              name: concat-dir
-            {{- else if or .Values.sonarProperties (not .Values.elasticsearch.bootstrapChecks) }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf/
-              name: config
-            {{- end }}
-            {{- if .Values.sonarSecretKey }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/secret/
-              name: secret
-            {{- end }}
             {{- if .Values.caCerts }}
             - mountPath: {{ .Values.sonarqubeFolder }}/certs
               name: sonarqube
@@ -176,10 +212,6 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-          {{- with .Values.env }}
-          env:
-            {{- . | toYaml | trim | nindent 12 }}
-          {{- end }}
       {{- end }}
       {{- if .Values.plugins.install }}
         - name: install-plugins
@@ -201,14 +233,13 @@ spec:
             - name: plugins-netrc-file
               mountPath: /root
             {{- end }}
-          {{- if $securityContext := .Values.initContainers.securityContext }}
+          {{- if $securityContext := (default .Values.initContainers.securityContext .Values.plugins.securityContext) }}
           securityContext:
 {{ toYaml $securityContext | indent 12 }}
           {{- end }}
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.plugins.resource) | indent 12 }}
           {{- with .Values.env }}
-          env:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
@@ -220,11 +251,21 @@ spec:
             - name: http
               containerPort: {{ .Values.service.internalPort }}
               protocol: TCP
+            {{- if .Values.prometheusExporter.enabled }}
+            - name: monitoring-web
+              containerPort: {{ .Values.prometheusExporter.webBeanPort }}
+              protocol: TCP
+            - name: monitoring-ce
+              containerPort: {{ .Values.prometheusExporter.ceBeanPort }}
+              protocol: TCP
+            {{- end }}
           resources:
 {{ toYaml (default .Values.resources .Values.resource) | indent 12 }}
           env:
             - name: SONAR_WEB_JAVAOPTS
               value: {{ template "sonarqube.jvmOpts" . }}
+            - name: SONAR_CE_JAVAOPTS
+              value: {{ template "sonarqube.jvmCEOpts" . }}
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -253,7 +294,7 @@ spec:
             exec:
               command:
               - sh
-              - -c 
+              - -c
               - |
                 #!/bin/bash
                 # A Sonarqube container is considered healthy if the health status is GREEN or YELLOW
@@ -268,7 +309,7 @@ spec:
             exec:
               command:
               - sh
-              - -c 
+              - -c
               - |
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
@@ -301,7 +342,8 @@ spec:
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/
               name: concat-dir
             {{- else if or .Values.sonarProperties (not .Values.elasticsearch.bootstrapChecks) }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf/
+            - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
+              subPath: sonar.properties
               name: config
             {{- end }}
             {{- if .Values.sonarSecretKey }}
@@ -340,8 +382,14 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf
+            {{- if .Values.prometheusExporter.enabled }}
+            - mountPath: {{ .Values.sonarqubeFolder }}/conf/prometheus-config.yaml
+              subPath: prometheus-config.yaml
               name: prometheus-config
+            - mountPath: {{ .Values.sonarqubeFolder }}/conf/prometheus-ce-config.yaml
+              subPath: prometheus-ce-config.yaml
+              name: prometheus-ce-config
+            {{- end }}
     {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
@@ -353,6 +401,13 @@ spec:
     {{- if .Values.affinity }}
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
+    {{- end }}
+    {{- if .Values.serviceAccount.create }}
+    {{- if .Values.serviceAccount.name }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+    {{- else }}
+      serviceAccountName: {{ include "sonarqube.fullname" . }}
+    {{- end }}
     {{- end }}
       volumes:
 {{- if .Values.persistence.volumes }}
@@ -413,12 +468,20 @@ spec:
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
+      {{- if .Values.prometheusExporter.enabled }}
       - name: prometheus-config
         configMap:
           name: {{ template "sonarqube.fullname" . }}-prometheus-config
           items:
             - key: prometheus-config.yaml
               path: prometheus-config.yaml
+      - name: prometheus-ce-config
+        configMap:
+          name: {{ template "sonarqube.fullname" . }}-prometheus-ce-config
+          items:
+            - key: prometheus-ce-config.yaml
+              path: prometheus-ce-config.yaml
+      {{- end }}
       - name: sonarqube
         {{- if .Values.persistence.enabled }}
         persistentVolumeClaim:

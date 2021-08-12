@@ -134,7 +134,6 @@ spec:
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.plugins.resource) | indent 12 }}
           {{- with .Values.env }}
-          env:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
@@ -202,15 +201,9 @@ spec:
               protocol: TCP
           env:
             - name: SONAR_WEB_JAVAOPTS
-              {{- if .Values.caCerts }}
-              value: {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
-              {{- else }}
-              value: "{{ .Values.jvmOpts }}"
-              {{- end }}
-            {{- if .Values.caCerts }}
+              value: {{ template "sonarqube.jvmOpts" . }}
             - name: SONAR_CE_JAVAOPTS
-              value: {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts" .Values.sonarqubeFolder | trim | quote }}
-            {{- end }}
+              value: {{ template "sonarqube.jvmCEOpts" . }}
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:

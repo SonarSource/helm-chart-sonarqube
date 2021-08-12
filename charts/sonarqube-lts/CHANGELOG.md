@@ -1,6 +1,47 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.14]
+* fixed usage of `sonarSecretProperties`
+
+## [1.0.13]
+* made prometheus exporter port configurable and support prometheus PodMonitor
+
+## [1.0.12]
+* make sure SQ is restarted when the JMX Prometheus exporter agents configuration changes
+
+## [1.0.11]
+* JMX Prometheus exporter agent is now also enabled on the CE process
+* `prometheusExporter.ceConfig` allows specific config of the JMX Prometheus exporter agent for the CE process
+
+## [1.0.10]
+* added prometheusExporter.noCheckCertificate option
+ 
+## [1.0.9]
+* add missing imagePullSecrets in sts install type
+
+## [1.0.8]
+* fix plugin installation init container permissions
+* fix duplicated mount point for conf when sonar.properties are defined
+
+## [1.0.7]
+* fix invalid yaml render in `secret.yaml` when using external postgresql
+
+## [1.0.6]
+* added `prometheusExporter.downloadURL` (custom download URL for the agent jar)
+
+## [1.0.5]
+* fix possible issue with prometheus init container and `env` set in the `values.yaml`
+
+## [1.0.4]
+* fix for missing `serviceAccountName` in STS deployment kind
+
+## [1.0.3]
+* fixed prometheus config volume mount if disabled
+
+## [1.0.2]
+* added option to configure CE java opts separately
+
 ## [1.0.1]
 * fixed missing conditional that was introduced in 0.9.2.2 to sonarqube-sts.yaml
 * updated default application version to 8.9

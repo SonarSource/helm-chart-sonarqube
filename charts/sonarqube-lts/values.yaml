@@ -180,11 +180,33 @@ initFs:
 
 prometheusExporter:
   enabled: true
+  # jmx_prometheus_javaagent version to download from Maven Central
+  version: "0.15.0"
+  # Alternative full download URL for the jmx_prometheus_javaagent.jar (overrides prometheusExporter.version)
+  # downloadURL: ""
+  # if you need to ignore TLS certificates for whatever reason enable the following flag
+  noCheckCertificate: false
+
+  # Ports for the jmx prometheus agent to export metrics at
+  webBeanPort: 8000
+  ceBeanPort: 8001
+
   config:
     rules:
       - pattern: ".*"
-  # image: busybox:1.32
-
+  # Overrides config for the CE process Prometheus exporter (by default, the same rules are used for both the Web and CE processes).
+  # ceConfig:
+  #   rules:
+  #     - pattern: ".*"
+  # image: curlimages/curl:7.76.1
+  # For use behind a corporate proxy when downloading prometheus
+  # httpProxy: ""
+  # httpsProxy: ""
+  # noProxy: ""
+  # Setting the security context to root as the /data volume is owned by root at this stage
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
 
 # List of plugins to install.
 # For example:
@@ -196,11 +218,6 @@ plugins:
   install: []
   lib: []
 
-  # For use behind a corporate proxy when downloading plugins
-  # httpProxy: ""
-  # httpsProxy: ""
-  # noProxy: ""
-
   # image: rjkernick/alpine-wget:latest
   # resources: {}
 
@@ -209,11 +226,17 @@ plugins:
 
   # Set to true to not validate the server's certificate to download plugin
   noCheckCertificate: false
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
 
 ## Values to add to SONARQUBE_WEB_JVM_OPTS
 ##
 # jvmOpts: "-Djava.net.preferIPv4Stack=true"
 jvmOpts: ""
+
+## Values to add to SONAR_CE_JAVAOPTS
+jvmCeOpts: ""
 
 ## a monitoring passcode needs to be defined in order to get reasonable probe results
 # not setting the monitoring passcode will result in a deployment that will never be ready
@@ -230,7 +253,7 @@ annotations: {}
 
 ## We usually don't make specific ressource recommandations, as they are heavily dependend on
 ## The usage of SonarQube and the surrounding infrastructure.
-## Adjust these values to your needs, but make sute that the memory limit is never under 4 GB
+## Adjust these values to your needs, but make sure that the memory limit is never under 4 GB
 resources:
   limits:
     cpu: 800m
