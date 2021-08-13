@@ -1,0 +1,69 @@
+{{- if .Values.ingress.enabled -}}
+{{- $serviceName := include "sonarqube.fullname" . -}}
+{{- $servicePort := .Values.service.externalPort -}}
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+apiVersion: networking.k8s.io/v1
+{{ else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
+apiVersion: networking.k8s.io/v1beta1
+{{ else }}
+apiVersion: extensions/v1beta1
+{{ end -}}
+kind: Ingress
+metadata:
+  name: {{ template "sonarqube.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+{{- if .Values.ingress.labels }}
+{{ .Values.ingress.labels | toYaml | trimSuffix "\n"| indent 4 -}}
+{{- end}}
+{{- if .Values.ingress.annotations}}
+  annotations:
+    {{- range $key, $value := .Values.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+{{- end }}
+{{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
+spec:
+  rules:
+  {{- range .Values.ingress.hosts }}
+  - host: {{ printf "%s" .name }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: {{ default $serviceName .serviceName }}
+            port:
+              number: {{ default $servicePort .servicePort }}
+        path: {{ .path}}
+        pathType: ImplementationSpecific
+  {{- end }}
+{{ else }}
+spec:
+  {{- if .Values.ingress.annotations }}
+  {{- range $key, $value := .Values.ingress.annotations }}
+  {{- if and (eq $key "kubernetes.io/ingress.class") (contains $value "gce") }}
+  backend:
+    serviceName: {{ default $serviceName .serviceName }}
+    servicePort: {{ default $servicePort .servicePort }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .name }}
+      http:
+        paths:
+          - path: {{ .path}}
+            backend:
+              serviceName: {{ default $serviceName .serviceName }}
+              servicePort: {{ default $servicePort .servicePort }}
+    {{- end -}}
+{{ end -}}
+  {{- if .Values.ingress.tls }}
+  tls:
+{{ toYaml .Values.ingress.tls | indent 4 }}
+  {{- end -}}
+{{- end -}}
