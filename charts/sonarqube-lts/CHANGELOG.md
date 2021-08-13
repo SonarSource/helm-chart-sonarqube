@@ -47,7 +47,7 @@ All changes to this chart will be documented in this file.
 * updated default application version to 8.9
 
 ## [1.0.0]
-* changed default deployment from replica set to statefull set
+* changed default deployment from replica set to stateful set
 * added default support for prometheus jmx exporter
 * added init filesystem container
 * added nginx-ingress as optional dependency
@@ -62,13 +62,13 @@ All changes to this chart will be documented in this file.
 * Add support for setting custom annotations in admin hook job.
 
 ## [0.9.6.0]
-* Add the possibility of definining the secret key name of the postgres password.
+* Add the possibility of defining the secret key name of the postgres password.
 
 ## [0.9.5.0]
 * Add Ingress default backend for GCE class
 
 ## [0.9.2.3]
-* Added namespace to port-foward command in notes.
+* Added namespace to port-forward command in notes.
 
 ## [0.9.2.2]
 * Added a condition to deployment.yaml so that `wait-for-db` initContainer is only created if `postgresql.enabled=true`
@@ -80,7 +80,7 @@ All changes to this chart will be documented in this file.
 * Added functionality for deployments to OpenShift clusters.
     * .Values.OpenShift flag to signify if deploying to OpenShift.
 	* Ability to have chart generate an SCC allowing the init-sysctl container to run as privileged.
-	* Setting of a seperate securityContext section for the main SonarQube container to avoid running as root.
+	* Setting of a separate securityContext section for the main SonarQube container to avoid running as root.
 	* Exposing additional `postreSQL` keys in values.yaml to support configuring postgres to run under standard "restricted" or "anyuid"/"nonroot" SCCs on OpenShift.
 * Added initContainer `wait-for-db` to await postgreSQL successful startup before starting SonarQube, to avoid race conditions.
 
