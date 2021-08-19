@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+[0.1.1]
+* added option to use external secret as jwtSecret
+* removed initSysctl from application pods
+
 [0.1.0]
 * fixed pvc template for search nodes
 * added flag to handle hazelcast on k8s
