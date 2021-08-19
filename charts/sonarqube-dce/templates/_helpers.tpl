@@ -121,3 +121,26 @@ Set prometheusExporter.downloadURL
 {{ printf "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/%s/jmx_prometheus_javaagent-%s.jar" .Values.ApplicationNodes.prometheusExporter.version .Values.ApplicationNodes.prometheusExporter.version }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Set jwtSecret
+*/}}
+{{- define "jwtSecret" -}}
+{{- if .Values.ApplicationNodes.existingJwtSecret -}}
+{{- .Values.ApplicationNodes.existingJwtSecret -}}
+{{- else -}}
+{{- template "sonarqube.fullname" . -}}-jwt
+{{- end -}}
+{{- end -}}
+
+{{/*
+Set jwtSecret.useInternalSecret
+*/}}
+{{- define "jwtSecret.useInternalSecret" -}}
+{{- if .Values.ApplicationNodes.existingJwtSecret -}}
+false
+{{- else -}}
+true
+{{- end -}}
+{{- end -}}
+
