@@ -196,6 +196,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `ApplicationNodes.jvmOpts` | Values to add to SONARQUBE_WEB_JVM_OPTS | `""` |
 | `ApplicationNodes.jvmCEOpts` | Values to add to SONAR_CE_JAVAOPTS | `""` |
 | `ApplicationNodes.jwtSecret` | A HS256 key encoded with base64 | `""` |
+| `ApplicationNodes.existingJwtSecret` | secret that contains the `jwtSecret` | `nil` |
 | `ApplicationNodes.resources.requests.memory` | memory request for app Nodes | `2Gi` |
 | `ApplicationNodes.resources.requests.cpu` | cpu request for app Nodes | `400m` |
 | `ApplicationNodes.resources.limits.memory` | memory limit for app Nodes. should not be under 4G | `4096M` |
