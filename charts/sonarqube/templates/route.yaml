@@ -1,0 +1,22 @@
+{{- if .Values.route.enabled -}}
+{{- $serviceName := include "sonarqube.fullname" . -}}
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: {{ template "sonarqube.name" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  to:
+    kind: Service
+    name: {{ default $serviceName .serviceName }}
+  port:
+    targetPort: http
+  {{- if .Values.route.tls }}
+  tls:
+{{ toYaml .Values.route.tls | indent 4 }}
+  {{- end -}}
+{{- end -}}
