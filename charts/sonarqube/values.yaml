@@ -90,6 +90,14 @@ ingress:
   #   hosts:
   #     - chart-example.local
 
+route:
+  enabled: false
+
+  # Add tls section to secure traffic. TODO: extend this section with other secure route settings
+  # Comment this out if you want plain http route created.
+  tls:
+    termination: edge
+
 # Affinity for pod assignment
 # Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
 affinity: {}
@@ -397,6 +405,7 @@ tests:
   enabled: true
   # image: bitnami/minideb-extras
 
+# For OpenShift set create=true to ensure service account is created.
 serviceAccount:
   create: false
   # name:
