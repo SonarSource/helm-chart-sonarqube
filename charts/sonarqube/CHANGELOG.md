@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.18]
+* Add optional ingress parameter `ingressClassName`
+
 ## [1.0.16]
 * fixed usage of `sonarSecretProperties`
 
