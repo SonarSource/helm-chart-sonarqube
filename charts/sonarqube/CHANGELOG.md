@@ -1,11 +1,15 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.19]
+* Add optional ingress parameter `ingressClassName`
+
 ## [1.0.18]
 * added route support for OpenShift deployments
 
 ## [1.0.17]
 * Add an additional configuration parameter `extraContainers` to allow an array of containers to run alongside the sonarqube container
+
 ## [1.0.16]
 * fixed usage of `sonarSecretProperties`
 
