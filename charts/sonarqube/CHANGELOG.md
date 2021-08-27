@@ -1,7 +1,6 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-
 ## [1.1.0]
 * update jdbc overwrite values
   * replace `jdbcUrlOverride` with `jdbcOverwrite.jdbcUrl`
@@ -10,6 +9,9 @@ All changes to this chart will be documented in this file.
 * update dependency Charts
   * `bitnami/postgresql` from 8.6.4 to 10.4.8
   * `ingress-nginx/ingress-nginx` from 3.29.0 to 3.31.0
+
+## [1.0.19]
+* Add optional ingress parameter `ingressClassName`
 
 ## [1.0.18]
 * added route support for OpenShift deployments
