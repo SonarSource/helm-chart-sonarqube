@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.15]
+* release to helm repository
+
 ## [1.0.14]
 * fixed usage of `sonarSecretProperties`
 
