@@ -15,3 +15,36 @@ sources:
 maintainers:
   - name: tobias-trabelsi-sonarsource
     email: tobias.trabelsi+helm@sonarsource.com
+annotations:
+  artifacthub.io/changes: |
+    - kind: changed
+      description: Helm charts repository moved to a new location
+      links:
+        - name: New location
+          url: TBD
+    - kind: added
+      description: added option to use external secret as jwtSecret
+    - kind: fixed
+      description: removed initSysctl from application pods
+    - kind: fixed
+      description: fixed pvc template for search nodes
+    - kind: added
+      description: added flag to handle hazelcast on k8s
+    - kind: changed
+      description: adapted probes for search nodes
+    - kind: changed
+      description: made search nodes start up in parallel
+    - kind: fixed
+      description: search nodes no longer wait for the database connection
+    - kind: added
+      description: added new headless services for search and app
+    - kind: changed
+      description: separated search and app configuration
+    - kind: changed
+      description: added new search service
+  artifacthub.io/containsSecurityUpdates: "false"
+  artifacthub.io/images: |
+    - name: sonarqube-app
+      image: sonarqube:9.1-datacenter-app
+    - name: sonarqube-search
+      image: sonarqube:9.1-datacenter-app
