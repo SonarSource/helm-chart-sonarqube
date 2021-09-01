@@ -45,10 +45,6 @@ elasticsearch:
   configureNode: true
   bootstrapChecks: true
 
-# also install the nginx ingress helm chart
-nginx:
-  enabled: false
-
 service:
   type: ClusterIP
   externalPort: 9000
@@ -60,6 +56,11 @@ service:
   # loadBalancerSourceRanges:
   #   - 0.0.0.0/0
   # loadBalancerIP: 1.2.3.4
+
+# also install the nginx ingress helm chart
+nginx:
+  enabled: false
+
 ingress:
   enabled: false
   # Used to create an Ingress record.
@@ -135,6 +136,7 @@ readinessProbe:
   # A trailing "/" must be included
   sonarWebContext: /
   # sonarWebContext: /sonarqube/
+
 livenessProbe:
   initialDelaySeconds: 60
   periodSeconds: 30
@@ -145,6 +147,7 @@ livenessProbe:
   # sonarWebContext: /sonarqube/
   # If an ingress *path* is defined, it should be reflected here
   # sonar.web.context: /sonarqube
+
 startupProbe:
   initialDelaySeconds: 30
   periodSeconds: 10
@@ -283,10 +286,11 @@ annotations: {}
 resources:
   limits:
     cpu: 800m
-    memory: 4096M
+    memory: 4Gi
   requests:
     cpu: 400m
     memory: 2Gi
+
 persistence:
   enabled: false
   ## Set annotations on pvc
@@ -333,24 +337,43 @@ emptyDir: {}
 # The 'sonar.secretKeyPath' property will be set automatically.
 # sonarSecretKey: "settings-encryption-secret"
 
-## JDBC Database Type; by default postgresql. To use a different Database type, adjust
-jdbcDatabaseType: postgresql
-
-## Override JDBC URL
-# jdbcUrlOverride: "jdbc:postgresql://myPostgress/myDatabase;socketTimeout=1500"
+## Override JDBC values
+## for external Databases
+jdbcOverwrite:
+  enable: false
+  # The JDBC url of the external DB
+  jdbcUrl: "jdbc:postgresql://myPostgress/myDatabase?socketTimeout=1500"
+  # The DB user that should be used for the JDBC connection
+  jdbcUsername: "sonarUser"
+  # Use this if you don't mind the DB password getting stored in plain text within the values file
+  jdbcPassword: "sonarPass"
+  ## Alternatively, use a pre-existing k8s secret containing the DB password
+  # jdbcSecretName: "sonarqube-jdbc"
+  ## and the secretValueKey of the password found within that secret
+  # jdbcSecretPasswordKey: "jdbc-password"
 
 ## Configuration values for postgresql dependency
 ## ref: https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md
 postgresql:
   # Enable to deploy the PostgreSQL chart
   enabled: true
+  ## postgresql Chart global settings
+  # global:
+  #   imageRegistry: ''
+  #   imagePullSecrets: ''
+  ## bitnami/postgres image tag
+  # image:
+  #   tag: 11.7.0-debian-10-r9
   # To use an external PostgreSQL instance, set enabled to false and uncomment
   # the line below:
+  # DEPRECATED: please use the 'jdbcOverwrite' values to connect to an external Postgres DB
   # postgresqlServer: ""
   # To use an external secret for the password for an external PostgreSQL
   # instance, set enabled to false and provide the name of the secret on the
   # line below:
+  # DEPRECATED: please use the 'jdbcOverwrite' values to connect to an external Postgres DB
   # existingSecret: ""
+  # DEPRECATED: please use the 'jdbcOverwrite' values to connect to an external Postgres DB
   # existingSecretPasswordKey: "postgresql-password"
   postgresqlUsername: "sonarUser"
   postgresqlPassword: "sonarPass"
@@ -374,9 +397,15 @@ postgresql:
     # For standard Kubernetes deployment, set enabled=true
     # If using OpenShift, enabled=false for restricted SCC and enabled=true for anyuid/nonroot SCC
     enabled: true
-    # fsGroup and runAsUser specifications below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
+    # fsGroup specification below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
     # postgresql dockerfile sets user as 1001
     fsGroup: 1001
+  containerSecurityContext:
+    # For standard Kubernetes deployment, set enabled=true
+    # If using OpenShift, enabled=false for restricted SCC and enabled=true for anyuid/nonroot SCC
+    enabled: true
+    # runAsUser specification below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
+    # postgresql dockerfile sets user as 1001
     runAsUser: 1001
   volumePermissions:
     # For standard Kubernetes deployment, set enabled=false
@@ -391,7 +420,7 @@ postgresql:
   serviceAccount:
     ## If enabled = true, and name is not set, postgreSQL will create a serviceAccount
     enabled: false
-#    name:
+    # name:
 
 # Additional labels to add to the pods:
 # podLabels:
