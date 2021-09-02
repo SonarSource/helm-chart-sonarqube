@@ -3,7 +3,7 @@ All changes to this chart will be documented in this file.
 
 
 ## [1.1.1]
-* updated default application version to 9.0
+* updated default application version to 9.0.1
 * release to helm repository
 
 ## [1.1.0]
