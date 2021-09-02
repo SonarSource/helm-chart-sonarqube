@@ -1,12 +1,12 @@
 # SonarQube
 
-[SonarQube](https://www.sonarqube.org/) is an open sourced code quality scanning tool.
+[SonarQube](https://www.sonarqube.org/) offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
 
 ## Introduction
 
-This chart bootstraps a SonarQube instance with a PostgreSQL database.
+This chart bootstraps an instance of the latest SonarQube version with a PostgreSQL database. A helm chart is also available for the [LTS version](../sonarqube-lts).
 
-Please note that this chart only supports SonarQube Community, Developer, and Enterprise Editions.
+Please note that this chart only supports SonarQube Community, Developer, and Enterprise Editions. 
 
 ## Compatibility
 
