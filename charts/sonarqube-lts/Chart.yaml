@@ -1,8 +1,8 @@
 apiVersion: v1
 name: sonarqube
-description: SonarQube is an open sourced code quality & code security scanning tool
-version: 1.0.14
-appVersion: 8.9-community
+description: SonarQube offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
+version: 1.0.15
+appVersion: 8.9.2
 keywords:
   - coverage
   - security
@@ -12,6 +12,68 @@ home: https://www.sonarqube.org/
 icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
 sources:
   - https://github.com/SonarSource/docker-sonarqube
+kubeVersion: '>= 1.19.0-0'
 maintainers:
   - name: tobias-trabelsi-sonarsource
     email: tobias.trabelsi+helm@sonarsource.com
+annotations:
+  artifacthub.io/changes: |
+    - kind: changed
+      description: Helm charts repository moved to a new location
+      links:
+        - name: New location
+          url: https://sonarsource.github.io/helm-chart-sonarqube/
+    - kind: changed
+      description: updated application version to current LTS patch release
+    - kind: fixed
+      description: fixed usage of `sonarSecretProperties`
+    - kind: changed
+      description: made prometheus exporter port configurable and support prometheus PodMonitor
+    - kind: fixed
+      description: make sure SQ is restarted when the JMX Prometheus exporter agents configuration changes
+    - kind: changed
+      description: JMX Prometheus exporter agent is now also enabled on the CE process
+    - kind: changed
+      description: `prometheusExporter.ceConfig` allows specific config of the JMX Prometheus exporter agent for the CE process
+    - kind: added
+      description: added prometheusExporter.noCheckCertificate option
+    - kind: fixed
+      description: add missing imagePullSecrets in sts install type
+    - kind: fixed
+      description:fix plugin installation init container permissions
+    - kind: fixed
+      description: fix duplicated mount point for conf when sonar.properties are defined
+    - kind: fixed
+      description: fix invalid yaml render in `secret.yaml` when using external postgresql
+    - kind: added
+      description: added `prometheusExporter.downloadURL` (custom download URL for the agent jar)
+    - kind: fixed
+      description: fix possible issue with prometheus init container and `env` set in the `values.yaml`
+    - kind: fixed
+      description: fix for missing `serviceAccountName` in STS deployment kind
+    - kind: fixed
+      description: fixed prometheus config volume mount if disabled
+    - kind: added
+      description: added option to configure CE java opts separately
+    - kind: fixed
+      description: fixed missing conditional that was introduced in 0.9.2.2 to sonarqube-sts.yaml
+    - kind: changed
+      description: updated default application version to 8.9
+    - kind: changed
+      description: changed default deployment from replica set to stateful set
+    - kind: added
+      description: added default support for prometheus jmx exporter
+    - kind: added
+      description: added init filesystem container
+    - kind: added
+      description: added nginx-ingress as optional dependency
+    - kind: changed
+      description: updated application version to 8.8-community
+    - kind: changed
+      description: improved readiness/startup and liveness probes
+    - kind: changed
+      description: improved documentation
+  artifacthub.io/containsSecurityUpdates: "false"
+  artifacthub.io/images: |
+    - name: sonarqube
+      image: sonarqube:8.9.2-community
