@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+[0.1.2]
+* changed external database connection logic
+
 [0.1.1]
 * added option to use external secret as jwtSecret
 * removed initSysctl from application pods
