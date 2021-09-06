@@ -1,3 +1,222 @@
 apiVersion: v1
-entries: {}
-generated: "2021-09-06T09:11:15.783565208+02:00"
+entries:
+  sonarqube:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: updated application version to 9.0.1
+        - kind: changed
+          description: Helm charts repository moved to a new location
+          links:
+            - name: New location
+              url: https://sonarsource.github.io/helm-chart-sonarqube/
+        - kind: changed
+          description: update jdbc overwrite values
+        - kind: changed
+          description: replace `jdbcUrlOverride` with `jdbcOverwrite.jdbcUrl`
+        - kind: fixed
+          description: remove useless `jdbcDatabaseType` (was always postgres)
+        - kind: deprecated
+          description: deprecate `postgresql.postgresqlServer`, `postgresql.existingSecret` and `postgresql.existingSecretPasswordKey` in favor of new `jdbcOverwrite` values
+        - kind: changed
+          description: update dependency Charts
+        - kind: added
+          description: Add optional ingress parameter `ingressClassName`
+        - kind: added
+          description: added route support for OpenShift deployments
+        - kind: added
+          description: Add an additional configuration parameter `extraContainers` to allow an array of containers to run alongside the sonarqube container
+        - kind: fixed
+          description: fixed usage of `sonarSecretProperties`
+        - kind: changed
+          description: bump jmx_exporter to 0.16.0
+        - kind: added
+          description: added hostAliases to deploymentType statefulset
+        - kind: changed
+          description: made prometheus exporter port configurable and support prometheus PodMonitor
+        - kind: changed
+          description: make sure SQ is restarted when the JMX Prometheus exporter agents configuration changes
+        - kind: changed
+          description: JMX Prometheus exporter agent is now also enabled on the CE process
+        - kind: added
+          description: `prometheusExporter.ceConfig` allows specific config of the JMX Prometheus exporter agent for the CE process
+        - kind: added
+          description: added prometheusExporter.noCheckCertificate option
+        - kind: fixed
+          description: add missing imagePullSecrets in sts install type
+        - kind: fixed
+          description: fix typo in initfs
+        - kind: fixed
+          description: fix plugin installation init container permissions
+        - kind: fixed
+          description: fix duplicated mount point for conf when sonar.properties are defined
+        - kind: fixed
+          description: fix invalid yaml render in `secret.yaml` when using external postgresql
+        - kind: added
+          description: added `prometheusExporter.downloadURL` (custom download URL for the agent jar)
+        - kind: changed
+          description:  replace `rjkernick/alpine-wget` with `curlimages/curl`
+        - kind: changed
+          description: update `install-plugins` script
+        - kind: fixed
+          description: fix possible issue with prometheus init container and `env` set in the `values.yaml`
+        - kind: fixed
+          description: fix for missing `serviceAccountName` in STS deployment kind
+        - kind: fixed
+          description: fixed prometheus config volume mount if disabled
+        - kind: changed
+          description: switched from wget to curl image per default for downloading agent
+        - kind: added
+          description: added support for proxy envs
+        - kind: added
+          description: added option to configure CE java opts separately
+        - kind: fixed
+          description: fixed missing conditional that was introduced in 0.9.2.2 to sonarqube-sts.yaml
+        - kind: changed
+          description: updated default application version to 8.9
+        - kind: changed
+          description: changed default deployment from replica set to statefull set
+        - kind: added
+          description: added default support for prometheus jmx exporter
+        - kind: added
+          description: added init filesystem container
+        - kind: added
+          description: added nginx-ingress as optional dependency
+        - kind: changed
+          description: updated application version to 8.8-community
+        - kind: changed
+          description: improved readiness/startup and liveness probes
+        - kind: changed
+          description: improved documentation
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube
+          image: sonarqube:9.0.1-community
+    apiVersion: v1
+    appVersion: 9.0.1
+    created: "2021-09-06T07:12:58.532039716Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 10.4.8
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 3.31.0
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: 80659f8ceb8993d721e7d2d90072f2472ae5f0e9829ba575343c2e1052cfc630
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: tobias.trabelsi+helm@sonarsource.com
+      name: tobias-trabelsi-sonarsource
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-8.9LTS-9.0/sonarqube-1.1.1+95.tgz
+    version: 1.1.1+95
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: Helm charts repository moved to a new location
+          links:
+            - name: New location
+              url: https://sonarsource.github.io/helm-chart-sonarqube/
+        - kind: changed
+          description: updated application version to current LTS patch release
+        - kind: fixed
+          description: fixed usage of `sonarSecretProperties`
+        - kind: changed
+          description: made prometheus exporter port configurable and support prometheus PodMonitor
+        - kind: fixed
+          description: make sure SQ is restarted when the JMX Prometheus exporter agents configuration changes
+        - kind: changed
+          description: JMX Prometheus exporter agent is now also enabled on the CE process
+        - kind: changed
+          description: `prometheusExporter.ceConfig` allows specific config of the JMX Prometheus exporter agent for the CE process
+        - kind: added
+          description: added prometheusExporter.noCheckCertificate option
+        - kind: fixed
+          description: add missing imagePullSecrets in sts install type
+        - kind: fixed
+          description:fix plugin installation init container permissions
+        - kind: fixed
+          description: fix duplicated mount point for conf when sonar.properties are defined
+        - kind: fixed
+          description: fix invalid yaml render in `secret.yaml` when using external postgresql
+        - kind: added
+          description: added `prometheusExporter.downloadURL` (custom download URL for the agent jar)
+        - kind: fixed
+          description: fix possible issue with prometheus init container and `env` set in the `values.yaml`
+        - kind: fixed
+          description: fix for missing `serviceAccountName` in STS deployment kind
+        - kind: fixed
+          description: fixed prometheus config volume mount if disabled
+        - kind: added
+          description: added option to configure CE java opts separately
+        - kind: fixed
+          description: fixed missing conditional that was introduced in 0.9.2.2 to sonarqube-sts.yaml
+        - kind: changed
+          description: updated default application version to 8.9
+        - kind: changed
+          description: changed default deployment from replica set to stateful set
+        - kind: added
+          description: added default support for prometheus jmx exporter
+        - kind: added
+          description: added init filesystem container
+        - kind: added
+          description: added nginx-ingress as optional dependency
+        - kind: changed
+          description: updated application version to 8.8-community
+        - kind: changed
+          description: improved readiness/startup and liveness probes
+        - kind: changed
+          description: improved documentation
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube
+          image: sonarqube:8.9.2-community
+    apiVersion: v1
+    appVersion: 8.9.2
+    created: "2021-09-06T07:12:58.523963539Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 8.6.4
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 3.29.0
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: 8b31dd20410d8cc4df2d2d9eccb1df090eb76fb94df09afa30907fc1c40af821
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: tobias.trabelsi+helm@sonarsource.com
+      name: tobias-trabelsi-sonarsource
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-8.9LTS-9.0/sonarqube-1.0.15+95.tgz
+    version: 1.0.15+95
+generated: "2021-09-06T07:12:58.513752767Z"
