@@ -194,8 +194,8 @@ spec:
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ template "postgresql.secret" . }}
-                  key: {{ template "postgresql.secretPasswordKey" . }}
+                  name: {{ template "jdbc.secret" . }}
+                  key: {{ template "jdbc.secretPasswordKey" . }}
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -206,7 +206,7 @@ spec:
             {{- end }}
           envFrom:
             - configMapRef:
-                name: {{ template "sonarqube.fullname" . }}-postgres-config
+                name: {{ template "sonarqube.fullname" . }}-jdbc-config
 {{- range .Values.extraConfig.secrets }}
             - secretRef:
                 name: {{ . }}
