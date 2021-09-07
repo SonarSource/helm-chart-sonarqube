@@ -19,11 +19,10 @@ Please note that this chart only supports SonarQube Community, Developer, and En
 To install the chart:
 
 ```bash
-git clone https://github.com/SonarSource/helm-chart-sonarqube.git
-cd helm-chart-sonarqube/charts/sonarqube
-helm dependency update
+helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
+helm repo update
 kubectl create namespace sonarqube
-helm upgrade --install -f values.yaml -n sonarqube sonarqube ./
+helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube
 ```
 
 The above command deploys Sonarqube on the Kubernetes cluster in the default configuration in the sonarqube namespace. The [configuration](#configuration) section lists the parameters that can be configured during installation.
