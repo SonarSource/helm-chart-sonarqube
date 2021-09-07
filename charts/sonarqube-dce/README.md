@@ -22,11 +22,11 @@ Please ensure that the value for `ApplicationNodes.jwtSecret` is set with someth
 To install the chart:
 
 ```bash
-git clone https://github.com/SonarSource/helm-chart-sonarqube.git
-cd helm-chart-sonarqube/charts/sonarqube-dce
-helm dependency update
+helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
+helm repo update
 kubectl create namespace sonarqube-dce
-helm upgrade --install -f values.yaml -n sonarqube-dce sonarqube ./
+export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64)
+helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set ApplicationNodes.jwtSecret=$JWT_SECRET
 ```
 
 The above command deploys Sonarqube on the Kubernetes cluster in the default configuration in the sonarqube namespace. The [configuration](#configuration) section lists the parameters that can be configured during installation.
