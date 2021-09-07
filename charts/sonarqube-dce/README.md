@@ -22,11 +22,11 @@ Please ensure that the value for `ApplicationNodes.jwtSecret` is set with someth
 To install the chart:
 
 ```bash
-git clone https://github.com/SonarSource/helm-chart-sonarqube.git
-cd helm-chart-sonarqube/charts/sonarqube-dce
-helm dependency update
+helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
+helm repo update
 kubectl create namespace sonarqube-dce
-helm upgrade --install -f values.yaml -n sonarqube-dce sonarqube ./
+export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64)
+helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set ApplicationNodes.jwtSecret=$JWT_SECRET
 ```
 
 The above command deploys Sonarqube on the Kubernetes cluster in the default configuration in the sonarqube namespace. The [configuration](#configuration) section lists the parameters that can be configured during installation.
@@ -250,12 +250,13 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `sonarSecretProperties` | Additional `sonar.properties` file to load from a secret | None |
 | `sonarSecretKey` | Name of existing secret used for settings encryption | None |
 | `logging.jsonOutput` | Enable/Disable logging in JSON format | `false` |
-| `jdbcDatabaseType` | Type of the JDBC Database driver | `postgreql` |
-| `jdbcUrlOverride` | Overrides default JDBC URL creation | None |
+| `jdbcOverwrite.enable` | Enable JDBC overwrites for external Databases (disables `postgresql.enabled`) | `false` |
+| `jdbcOverwrite.jdbcUrl` | The JDBC url to connect the external DB | `jdbc:postgresql://myPostgress/myDatabase?socketTimeout=1500` |
+| `jdbcOverwrite.jdbcUsername` | The DB user that should be used for the JDBC connection | `sonarUser`                     |
+| `jdbcOverwrite.jdbcPassword` | The DB password that should be used for the JDBC connection (Use this if you don't mind the DB password getting stored in plain text within the values file) | `sonarPass` |
+| `jdbcOverwrite.jdbcSecretName` | Alternatively, use a pre-existing k8s secret containing the DB password | `None`                          |
+| `jdbcOverwrite.jdbcSecretPasswordKey` | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret | `None`                          |
 | `postgresql.enabled` | Set to `false` to use external server | `true` |
-| `postgresql.existingSecret` | Secret containing the password of the external Postgresql server | `null` |
-| `postgresql.existingSecretPasswordKey` | Secret Key containing the password of the external Postgresql server | `postgresql-password` |
-| `postgresql.postgresqlServer` | Hostname of the external Postgresql server | `null` |
 | `postgresql.postgresqlUsername` | Postgresql database user | `sonarUser` |
 | `postgresql.postgresqlPassword` | Postgresql database password | `sonarPass` |
 | `postgresql.postgresqlDatabase` | Postgresql database name | `sonarDB` |
