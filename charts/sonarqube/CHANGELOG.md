@@ -1,6 +1,8 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.1.2]
+* fixed condition check to add new certificates
 
 ## [1.1.1]
 * updated default application version to 9.0.1

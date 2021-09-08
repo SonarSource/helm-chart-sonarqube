@@ -61,7 +61,6 @@ spec:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
           command: ["/bin/sh", "-c", "for i in $(seq 1 200); do nc -z -w3 {{ .Release.Name}}-postgresql 5432 && exit 0 || sleep 2; done; exit 1"]
       {{- end }}
-      {{- if or .Values.initSysctl.enabled .Values.elasticsearch.configureNode }}
       {{- if .Values.caCerts }}
         - name: ca-certs
           image: {{ default "adoptopenjdk/openjdk11:alpine" .Values.caCerts.image }}
@@ -85,6 +84,7 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
+      {{- if or .Values.initSysctl.enabled .Values.elasticsearch.configureNode }}
         - name: init-sysctl
           image: {{ default "busybox:1.32" .Values.initSysctl.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
