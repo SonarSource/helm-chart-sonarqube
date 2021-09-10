@@ -1,7 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-## [1.0.16]
+## [1.1.3]
+* fixed `invalid: metadata.labels: Invalid value` error on the `chart` label of the pvc
+
+## [1.0.17]
 * release to helm repository
 * updated appversion to new LTS patch release
 
@@ -23,7 +26,7 @@ All changes to this chart will be documented in this file.
 
 ## [1.0.10]
 * added prometheusExporter.noCheckCertificate option
- 
+
 ## [1.0.9]
 * add missing imagePullSecrets in sts install type
 
