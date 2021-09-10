@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.1.3]
+* fixed `invalid: metadata.labels: Invalid value` error on the `chart` label of the pvc
+
 ## [1.1.2]
 * fixed condition check to add new certificates
 
