@@ -20,6 +20,8 @@ spec:
         - |-
           set -ex
           cp -R /opt/bats /tools/bats/
+      resources:
+{{ toYaml .Values.tests.initContainers.resources | indent 8 }}
       volumeMounts:
         - mountPath: /tools
           name: tools
@@ -31,6 +33,8 @@ spec:
         "/tools/bats/bin/bats",
         "--tap",
         "/tests/run.sh"]
+      resources:
+{{ toYaml .Values.tests.resources | indent 8 }}
       volumeMounts:
       - mountPath: /tests
         name: tests
