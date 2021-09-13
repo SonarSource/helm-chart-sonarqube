@@ -78,7 +78,7 @@ RUN set -eux; \
 
 RUN set -eux; \
     curl -LO https://github.com/artifacthub/hub/releases/download/v${AH_VERSION}/ah_${AH_VERSION}_linux_amd64.tar.gz ; \
-    echo "${AH_CHECKSUM} ah_${AH_VERSION}_linux_amd64.tar.gz" | sha256sum -c ; \
+    echo "${AH_CHECKSUM}  ah_${AH_VERSION}_linux_amd64.tar.gz" | sha256sum -c ; \
     tar -xf ah_${AH_VERSION}_linux_amd64.tar.gz ; \
     chmod +x ./ah ; \
     mv ./ah /usr/bin/ah ; \
