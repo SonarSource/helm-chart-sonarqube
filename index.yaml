@@ -3,6 +3,49 @@ entries:
   sonarqube:
   - annotations:
       artifacthub.io/changes: |
+        - kind: fixed
+          description: fixed condition check to add new certificates
+        - kind: fixed
+          description: fixed `invalid: metadata.labels: Invalid value` error on the `chart` label of the pvc
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube
+          image: sonarqube:9.0.1-community
+    apiVersion: v1
+    appVersion: 9.0.1
+    created: "2021-09-13T07:41:47.150887428Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 10.4.8
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 3.31.0
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: b14698dee396360a22f278ef3d199a0f3fbfd279ae1edfc7d42dfeeb90f86230
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: tobias.trabelsi+helm@sonarsource.com
+      name: tobias-trabelsi-sonarsource
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-1.1.13-sonarqube-lts-1.0.17/sonarqube-1.1.3+107.tgz
+    version: 1.1.3+107
+  - annotations:
+      artifacthub.io/changes: |
         - kind: changed
           description: updated application version to 9.0.1
         - kind: changed
@@ -128,6 +171,47 @@ entries:
   sonarqube-lts:
   - annotations:
       artifacthub.io/changes: |
+        - kind: fixed
+          description: fixed `invalid: metadata.labels: Invalid value` error on the `chart` label of the pvc
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube
+          image: sonarqube:8.9.2-community
+    apiVersion: v1
+    appVersion: 8.9.2
+    created: "2021-09-13T07:41:47.160710245Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 8.6.4
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 3.29.0
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: 416aa752f7b0ceb9f5c1a14a564cda5b13d049643293147c0de256f2464bbe36
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: tobias.trabelsi+helm@sonarsource.com
+      name: tobias-trabelsi-sonarsource
+    name: sonarqube-lts
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-1.1.13-sonarqube-lts-1.0.17/sonarqube-lts-1.0.17+107.tgz
+    version: 1.0.17+107
+  - annotations:
+      artifacthub.io/changes: |
         - kind: changed
           description: Helm charts repository moved to a new location
           links:
@@ -220,4 +304,4 @@ entries:
     urls:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-lts-1.0.16+98.tgz
     version: 1.0.16+98
-generated: "2021-09-06T09:48:50.760944993Z"
+generated: "2021-09-13T07:41:47.138573707Z"
