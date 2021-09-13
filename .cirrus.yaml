@@ -59,6 +59,10 @@ chart_testing_task:
   script:
     - ct lint --config test.yaml
     - ct install --config test.yaml
+  artifacthub_lint_script: |
+    for chart in $(ct list-changed); do
+      yq eval '.entries.sonarqube*[].annotations."artifacthub.io/changes"' $chart/Chart.yaml | yq eval . -
+    done
 
 chart_packaging_task:
   <<: *ONLY_ON_NONE_RELEASE_DRAFT_TEMPLATE
