@@ -12,6 +12,8 @@ ARG KIND_VERSION=0.11.1
 ARG KIND_HASHSUM="949f81b3c30ca03a3d4effdecda04f100fa3edc07a28b19400f72ede7c5f0491"
 ARG YAMLLINT_VERSION=1.26.1
 ARG YAMALE_VERSION=3.0.6
+ARG AH_VERSION=1.2.0
+ARG AH_CHECKSUM="30d3b080c5e65530d6089813233f10a881820361e2b9b32fb7b744466ff74d27"
 
 ENV HELM_BASE_URL="https://get.helm.sh"
 ENV HELM_TAR_FILE="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
@@ -73,6 +75,14 @@ RUN set -eux; \
     mv etc/lintconf.yaml /etc/ct/lintconf.yaml ; \
     mv ./ct /usr/bin/ct ; \
     rm chart-testing_${CHART_TESTING_VERSION}_linux_amd64.tar.gz 
+
+RUN set -eux; \
+    curl -LO https://github.com/artifacthub/hub/releases/download/v${AH_VERSION}/ah_${AH_VERSION}_linux_amd64.tar.gz ; \
+    echo "${AH_CHECKSUM} ah_${AH_VERSION}_linux_amd64.tar.gz" | sha256sum -c ; \
+    tar -xf ah_${AH_VERSION}_linux_amd64.tar.gz ; \
+    chmod +x ./ah ; \
+    mv ./ah /usr/bin/ah ; \
+    rm LICENSE
 
 COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
 COPY --from=tools /usr/bin/gh /usr/local/bin/gh
