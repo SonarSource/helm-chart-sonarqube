@@ -14,6 +14,8 @@ ARG YAMLLINT_VERSION=1.26.1
 ARG YAMALE_VERSION=3.0.6
 ARG AH_VERSION=1.2.0
 ARG AH_CHECKSUM="30d3b080c5e65530d6089813233f10a881820361e2b9b32fb7b744466ff74d27"
+ARG YQ_VERSION=3.4.1
+ARG YQ_CHECKSUM="adbc6dd027607718ac74ceac15f74115ac1f3caef68babfb73246929d4ffb23c"
 
 ENV HELM_BASE_URL="https://get.helm.sh"
 ENV HELM_TAR_FILE="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
@@ -23,7 +25,6 @@ RUN apk add --update --no-cache \
     ca-certificates \
     bash \
     jq \
-    yq \
     moreutils \
     curl \
     git \
@@ -83,6 +84,12 @@ RUN set -eux; \
     chmod +x ./ah ; \
     mv ./ah /usr/bin/ah ; \
     rm LICENSE
+
+RUN set -eux; \
+    curl -LO https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 ; \
+    echo "${YQ_CHECKSUM}  yq_linux_amd64" | sha256sum -c ; \
+    chmod +x ./yq_linux_amd64 ; \
+    mv ./yq_linux_amd64 /usr/bin/yq
 
 COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
 COPY --from=tools /usr/bin/gh /usr/local/bin/gh
