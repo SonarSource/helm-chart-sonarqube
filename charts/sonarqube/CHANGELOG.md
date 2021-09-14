@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.1.4]
+* fixed artifacthub annotations
+
 ## [1.1.3]
 * fixed `invalid: metadata.labels: Invalid value` error on the `chart` label of the pvc
 
