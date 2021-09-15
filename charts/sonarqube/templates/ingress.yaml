@@ -30,6 +30,13 @@ spec:
   {{- if .Values.ingress.ingressClassName }}
   ingressClassName: {{ .Values.ingress.ingressClassName }}
   {{- end }}
+  {{- if .Values.ingress.defaultBackend }}
+  defaultBackend:
+    service:
+      name: {{ default $serviceName .serviceName }}
+      port:
+        number: {{ default $servicePort .servicePort }}
+  {{- end }}
   rules:
   {{- range .Values.ingress.hosts }}
   - host: {{ printf "%s" .name }}
