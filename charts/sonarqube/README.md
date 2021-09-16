@@ -1,6 +1,6 @@
 # SonarQube
 
-[SonarQube](https://www.sonarqube.org/) offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
+Code better in up to 27 languages. Improve Code Quality and Code Security throughout your workflow. [SonarQube](https://www.sonarqube.org/) can detect Bugs, Vulnerabilities, Security Hotspots and Code Smells and give you the guidance to fix them.
 
 ## Introduction
 
