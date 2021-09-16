@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.1.5]
+* added resources to ui-test pod template
+
 ## [1.1.4]
 * fixed artifacthub annotations
 
