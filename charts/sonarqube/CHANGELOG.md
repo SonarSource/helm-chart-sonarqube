@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.1.6]
+* updated sonarqube to 9.1.0
+
 ## [1.1.5]
 * added resources to ui-test pod template
 
