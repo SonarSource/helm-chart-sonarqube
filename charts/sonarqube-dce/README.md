@@ -1,7 +1,6 @@
 # SonarQube
 
-[SonarQube](https://www.sonarqube.org/) is an open sourced code quality scanning tool.
-The Datacenter Edition (DCE) is aiming for High Availability and Clustering, making it a perfect match for scaling the application with increasing demand.
+Code better in up to 27 languages. Improve Code Quality and Code Security throughout your workflow. [SonarQube](https://www.sonarqube.org/) can detect Bugs, Vulnerabilities, Security Hotspots and Code Smells and give you the guidance to fix them.
 
 ## Introduction
 
