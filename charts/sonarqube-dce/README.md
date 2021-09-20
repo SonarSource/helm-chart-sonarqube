@@ -114,7 +114,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `searchNodes.image.repository` | search image repository | `sonarqube` |
-| `searchNodes.image.tag` | search image tag | `9.1-datacenter-search` |
+| `searchNodes.image.tag` | search image tag | `9.1.0-datacenter-search` |
 | `searchNodes.image.pullPolicy` | search image pull policy | `IfNotPresent` |
 | `searchNodes.image.pullSecret` | search imagePullSecret to use for private repository | `nil` |
 | `searchNodes.env` | Environment variables to attach to the search pods | `nil` |
