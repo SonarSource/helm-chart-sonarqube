@@ -12,7 +12,7 @@ Please note that this chart only supports SonarQube Community, Developer, and En
 
 | SonarQube Version | Kubernetes Version | Helm Chart Version |
 |-------------------|--------------------|--------------------|
-| 9.0               | 1.19, 1.20, 1.21   | 1.1                |
+| 9.1               | 1.19, 1.20, 1.21   | 1.1                |
 
 ## Installing the chart
 
@@ -123,7 +123,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `OpenShift.enabled`                                      | Define if this deployment is for OpenShift                                                                                | `false`                         |
 | `OpenShift.createSCC`                                    | If this deployment is for OpenShift, define if SCC should be created for sonarqube pod                                    | `true`                          |
 | `image.repository`                                       | image repository                                                                                                          | `sonarqube`                     |
-| `image.tag`                                              | `sonarqube` image tag.                                                                                                    | `9.0.1-community`                 |
+| `image.tag`                                              | `sonarqube` image tag.                                                                                                    | `9.1.0-community`                 |
 | `image.pullPolicy`                                       | Image pull policy                                                                                                         | `IfNotPresent`                  |
 | `image.pullSecret`                                       | imagePullSecret to use for private repository (commented out)                                                             | `my-repo-secret`                |
 | `securityContext.fsGroup`                                | Group applied to mounted directories/files                                                                                | `1000`                          |
