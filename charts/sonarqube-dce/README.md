@@ -35,7 +35,7 @@ The default login is admin/admin.
 
 ## How to use it
 
-Take some time to read the Deploy on [SonarQube on Kubernetes](https://docs.sonarqube.org/latest/setup/sonarqube-on-kubernetes/) page.
+Take some time to read the Deploy on [SonarQube on Kubernetes](https://docs.sonarqube.org/latest/setup/sonarqube-cluster-on-kubernetes/) page.
 SonarQube deployment on Kubernetes has been tested with the recommendations and constraints documented there, and deployment has some limitations.
 
 ## Uninstalling the chart
