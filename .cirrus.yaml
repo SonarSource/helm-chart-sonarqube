@@ -35,7 +35,7 @@ clone_script_template: &CLONE_SCRIPT_TEMPLATE
 
 chart_testing_task:
   only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_BRANCH != "master"
-  timeout_in: 15m
+  timeout_in: 30m
   gke_container:
     <<: *GKE_CONTAINER_TEMPLATE
     cpu: 2
@@ -44,7 +44,7 @@ chart_testing_task:
       - name: dockerdaemon
         privileged: true
         cpu: 4
-        memory: 3500Mb
+        memory: 16Gb
         image: docker:20-dind
         port: 2375
         env:
