@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+[0.1.5]
+* fixed serviceaccount logic
+
 [0.1.4]
 * fixed wrong limits reference in sonarqube-application deployment
 
