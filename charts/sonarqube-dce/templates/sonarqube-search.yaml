@@ -276,13 +276,7 @@ spec:
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
     {{- end }}
-    {{- if .Values.serviceAccount.create }}
-    {{- if .Values.serviceAccount.name }}
-      serviceAccountName: {{ .Values.serviceAccount.name }}
-    {{- else }}
-      serviceAccountName: {{ include "sonarqube.fullname" . }}
-    {{- end }}
-    {{- end }}
+      serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
       volumes:
 {{- if .Values.searchNodes.persistence.volumes }}
 {{ tpl (toYaml .Values.searchNodes.persistence.volumes | indent 6) . }}
