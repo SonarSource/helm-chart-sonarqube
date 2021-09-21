@@ -46,13 +46,7 @@ spec:
     {{- if .Values.schedulerName }}
       schedulerName: {{ .Values.schedulerName }}
     {{- end }}
-    {{- if .Values.serviceAccount.create }}
-    {{- if .Values.serviceAccount.name }}
-      serviceAccountName: {{ .Values.serviceAccount.name }}
-    {{- else }}
-      serviceAccountName: {{ include "sonarqube.fullname" . }}
-    {{- end }}
-    {{- end }}
+      serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
       securityContext:
 {{ toYaml .Values.securityContext | indent 8 }}
       {{- if .Values.image.pullSecret }}
