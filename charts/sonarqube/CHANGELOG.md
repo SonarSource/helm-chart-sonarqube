@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.1.8]
+* fixed serviceaccount logic
+
 ## [1.1.7]
 * fixed wrong artifact hub images annotation
 
