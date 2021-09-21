@@ -1,6 +1,13 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+[0.1.4]
+* fixed wrong limits reference in sonarqube-application deployment
+
+[0.1.3]
+* Homoginized Description of the Helm Chart
+* fixed wrong link in README.md
+
 [0.1.2]
 * changed external database connection logic
 
