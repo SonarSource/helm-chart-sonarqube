@@ -168,7 +168,7 @@ spec:
               containerPort: 9003
               protocol: TCP
           resources:
-{{ toYaml (default .Values.resources .Values.resource) | indent 12 }}
+{{ toYaml (default .Values.ApplicationNodes.resources .Values.resource) | indent 12 }}
           env:
             - name: SONAR_LOG_JSONOUTPUT
               value: "{{ .Values.logging.jsonOutput }}"
