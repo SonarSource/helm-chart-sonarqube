@@ -11,8 +11,8 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 ## Compatibility
 
 | SonarQube Version | Kubernetes Version | Helm Chart Version |
-|-------------------|--------------------|--------------------|
-| 9.1               | 1.19, 1.20, 1.21   | 0.1                |
+|---|---|---|
+| 9.1 | 1.19, 1.20, 1.21 | 0.1 |
 
 ## Installing the chart
 
@@ -249,13 +249,13 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `sonarSecretProperties` | Additional `sonar.properties` file to load from a secret | None |
 | `sonarSecretKey` | Name of existing secret used for settings encryption | None |
 | `logging.jsonOutput` | Enable/Disable logging in JSON format | `false` |
-| `jdbcOverwrite.enable` | Enable JDBC overwrites for external Databases (disables `postgresql.enabled`) | `false` |
+| `jdbcOverwrite.enabled` | Enable JDBC overwrites for external Databases | `false` |
 | `jdbcOverwrite.jdbcUrl` | The JDBC url to connect the external DB | `jdbc:postgresql://myPostgress/myDatabase?socketTimeout=1500` |
 | `jdbcOverwrite.jdbcUsername` | The DB user that should be used for the JDBC connection | `sonarUser`                     |
 | `jdbcOverwrite.jdbcPassword` | The DB password that should be used for the JDBC connection (Use this if you don't mind the DB password getting stored in plain text within the values file) | `sonarPass` |
-| `jdbcOverwrite.jdbcSecretName` | Alternatively, use a pre-existing k8s secret containing the DB password | `None`                          |
+| `jdbcOverwrite.jdbcSecretName` | Alternatively, use a pre-existing k8s secret containing the DB password | `None` |
 | `jdbcOverwrite.jdbcSecretPasswordKey` | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret | `None`                          |
-| `postgresql.enabled` | Set to `false` to use external server | `true` |
+| `postgresql.enabled` | Set to `true` to use internal server | `true` |
 | `postgresql.postgresqlUsername` | Postgresql database user | `sonarUser` |
 | `postgresql.postgresqlPassword` | Postgresql database password | `sonarPass` |
 | `postgresql.postgresqlDatabase` | Postgresql database name | `sonarDB` |
@@ -302,29 +302,29 @@ In environments with air-gapped setup, especially with internal tooling (repos) 
 
 1. Create a yaml file `cacerts.yaml` with a secret that contains one or more keys to represent the certificates that you want including
 
-   ```yaml
-   apiVersion: v1
-   kind: Secret
-   metadata:
-     name: my-cacerts
-   data:
-     cert-1.crt: |
-       xxxxxxxxxxxxxxxxxxxxxxx
-   ```
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-cacerts
+data:
+  cert-1.crt: |
+    xxxxxxxxxxxxxxxxxxxxxxx
+```
 
 2. Upload your `cacerts.yaml` to a secret in the cluster you are installing Sonarqube to.
 
-   ```shell
-   kubectl apply -f cacerts.yaml
-   ```
+```shell
+kubectl apply -f cacerts.yaml
+```
 
 3. Set the following values of the chart:
 
-   ```yaml
-   caCerts:
-     enabled: true
-     secret: my-cacerts
-   ```
+```yaml
+caCerts:
+  enabled: true
+  secret: my-cacerts
+```
 
 ### Elasticsearch Settings
 
@@ -346,20 +346,20 @@ In such environments, configuration may be read, via environment variables, from
 
 1. Create a `ConfigMap` (or `Secret`) containing key/value pairs, as expected by Sonarqube
 
-   ```yaml
-   apiVersion: v1
-   kind: ConfigMap
-   metadata:
-     name: external-sonarqube-opts
-   data:
-     SONARQUBE_JDBC_USERNAME: foo
-     SONARQUBE_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
-   ```
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: external-sonarqube-opts
+data:
+  SONARQUBE_JDBC_USERNAME: foo
+  SONARQUBE_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
+```
 
 2. Set the following in your `values.yaml` (using the key `extraConfig.secrets` to reference `Secret`s)
 
-   ```yaml
-   extraConfig:
-     configmaps:
-       - external-sonarqube-opts
-   ```
+```yaml
+extraConfig:
+  configmaps:
+    - external-sonarqube-opts
+```
