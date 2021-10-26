@@ -4,6 +4,51 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: fixed
+          description: "fixed wrong scc user reference if name was explicitly set"
+        - kind: fixed
+          description: "fixed wrong artifact hub images annotation"
+        - kind: fixed
+          description: "fixed serviceaccount logic"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube
+          image: sonarqube:9.1.0-community
+    apiVersion: v1
+    appVersion: 9.1.0
+    created: "2021-10-26T12:29:25.488716443Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 10.4.8
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 3.31.0
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: 5e9a628fe5772477de4ae59f95b0ce144f4c45fe1110976479e39310fb90dee6
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: tobias.trabelsi+helm@sonarsource.com
+      name: tobias-trabelsi-sonarsource
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-lts-1.0.19/sonarqube-1.1.9+137.tgz
+    version: 1.1.9+137
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: fixed
           description: "added resources to ui-test pod template"
         - kind: changed
           description: "bumped sonarqube version to 9.1.0"
@@ -214,6 +259,57 @@ entries:
   sonarqube-dce:
   - annotations:
       artifacthub.io/changes: |
+        - kind: fixed
+          description: "fixed wrong scc user reference if name was explicitly set"
+        - kind: fixed
+          description: "fixed wrong limits reference in sonarqube-application deployment"
+        - kind: changed
+          description: "Homoginized Description of the Helm Chart"
+        - kind: fixed
+          description: "fixed wrong link in README.md"
+        - kind: fixed
+          description: "fixed serviceaccount logic"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube-app
+          image: sonarqube:9.1.0-datacenter-app
+        - name: sonarqube-search
+          image: sonarqube:9.1.0-datacenter-app
+    apiVersion: v1
+    appVersion: 9.1.0
+    created: "2021-10-26T12:29:25.509172305Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 8.6.4
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 3.29.0
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: d31c8dcaa6d069dbe7f0d99ec0185d15533386e1916dd4c58e85f58a77df627d
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: tobias.trabelsi+helm@sonarsource.com
+      name: tobias-trabelsi-sonarsource
+    name: sonarqube-dce
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-lts-1.0.19/sonarqube-dce-0.1.6+137.tgz
+    version: 0.1.6+137
+  - annotations:
+      artifacthub.io/changes: |
         - kind: changed
           description: "Helm charts repository moved to a new location"
           links:
@@ -279,6 +375,47 @@ entries:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-release-9.1/sonarqube-dce-0.1.2+121.tgz
     version: 0.1.2+121
   sonarqube-lts:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "updated appversion to new LTS patch release (8.9.3)"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube
+          image: sonarqube:8.9.3-community
+    apiVersion: v1
+    appVersion: 8.9.3
+    created: "2021-10-26T12:29:25.524329925Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 8.6.4
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 3.29.0
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: b8e1eed8d1888d8279ec9fbf83de2f82e56a4bad40ba6cfef9f9ea18b53de820
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: tobias.trabelsi+helm@sonarsource.com
+      name: tobias-trabelsi-sonarsource
+    name: sonarqube-lts
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-lts-1.0.19/sonarqube-lts-1.0.19+137.tgz
+    version: 1.0.19+137
   - annotations:
       artifacthub.io/changes: |
         - kind: fixed
@@ -455,4 +592,4 @@ entries:
     urls:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-lts-1.0.16+98.tgz
     version: 1.0.16+98
-generated: "2021-09-20T10:24:01.523313025Z"
+generated: "2021-10-26T12:29:25.459601313Z"
