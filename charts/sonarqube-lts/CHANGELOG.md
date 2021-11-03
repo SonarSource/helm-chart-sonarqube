@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.20]
+* Fixed LTS default version
+
 ## [1.0.19]
 * updated appversion to new LTS patch release (8.9.3)
 
