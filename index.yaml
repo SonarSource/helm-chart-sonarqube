@@ -377,6 +377,47 @@ entries:
   sonarqube-lts:
   - annotations:
       artifacthub.io/changes: |
+        - kind: fixed
+          description: "Fixed default version to match app version"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube
+          image: sonarqube:8.9.3-community
+    apiVersion: v1
+    appVersion: 8.9.3
+    created: "2021-11-04T09:28:51.652580018Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 8.6.4
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 3.29.0
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: a92a68f1cb4f1a0160964c32c5108221473cb96d71d1542bb31088f83147a070
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: tobias.trabelsi+helm@sonarsource.com
+      name: tobias-trabelsi-sonarsource
+    name: sonarqube-lts
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-lts-1.0.20/sonarqube-lts-1.0.20+140.tgz
+    version: 1.0.20+140
+  - annotations:
+      artifacthub.io/changes: |
         - kind: changed
           description: "updated appversion to new LTS patch release (8.9.3)"
       artifacthub.io/containsSecurityUpdates: "false"
@@ -592,4 +633,4 @@ entries:
     urls:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-lts-1.0.16+98.tgz
     version: 1.0.16+98
-generated: "2021-10-26T12:29:25.459601313Z"
+generated: "2021-11-04T09:28:51.635628879Z"
