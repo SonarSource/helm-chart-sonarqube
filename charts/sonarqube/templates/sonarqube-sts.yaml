@@ -301,18 +301,13 @@ spec:
                 name: {{ . }}
 {{- end }}
           livenessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - |
-                #!/bin/bash
-                # A Sonarqube container is considered healthy if the health status is GREEN or YELLOW
-                host="$(hostname -i || echo '127.0.0.1')"
-                if wget --header="X-Sonar-Passcode: ${SONAR_WEB_SYSTEMPASSCODE}" -qO- http://${host}:9000{{ .Values.livenessProbe.sonarWebContext }}api/system/health | grep -q -e '"health":"GREEN"' -e '"health":"YELLOW"'; then
-                	exit 0
-                fi
-                exit 1
+            httpGet:
+              scheme: HTTP
+              path: {{ .Values.livenessProbe.sonarWebContext }}api/system/liveness
+              port: 9000
+              httpHeaders:
+                - name: X-Sonar-Passcode
+                  value: {{ .Values.monitoringPasscode }}
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
           readinessProbe:
