@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.1.10]
+* fixed missing POD level security context for statefulset deployment
+
 ## [1.1.9]
 * fixed wrong scc user reference if name was explicitly set 
 
