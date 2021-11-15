@@ -117,6 +117,11 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `searchNodes.image.pullPolicy` | search image pull policy | `IfNotPresent` |
 | `searchNodes.image.pullSecret` | search imagePullSecret to use for private repository | `nil` |
 | `searchNodes.env` | Environment variables to attach to the search pods | `nil` |
+| `searchNodes.searchAuthentication.enabled` | Securing the Search Cluster with basic authentication and TLS in between search nodes | `false` |
+| `searchNodes.searchAuthentication.keyStoreSecret` | Existing PKCS#11 Container as Keystore/Truststore to be used | `""` |
+| `searchNodes.searchAuthentication.keyStorePassword` | Password to Keystore/Truststore used in search nodes (optional) | `""` |
+| `searchNodes.searchAuthentication.keyStorePasswordSecret` | Existing secret for Password to Keystore/Truststore used in search nodes (optional) | `nil` |
+| `searchNodes.searchAuthentication.userPassword` | A User Password that will be used to authenticate against the Search Cluster | `""` |
 | `searchNodes.replicaCount` | Replica count of the Search Nodes | `3` |
 | `searchNodes.securityContext.fsGroup` | Group applied to mounted directories/files on search nodes | `1000` |
 | `searchNodes.containerSecurityContext.runAsUser` | User to run search container in sonarqube pod as | `1000` |

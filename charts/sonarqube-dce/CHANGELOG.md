@@ -1,7 +1,11 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-## [1.1.9]
+## [0.1.7]
+* added possibility to secure connection in between search nodes
+* added link to community support forum
+
+## [0.1.6]
 * fixed wrong scc user reference if name was explicitly set 
 
 ## [0.1.5]

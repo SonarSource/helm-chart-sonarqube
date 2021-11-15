@@ -178,6 +178,27 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            {{- if .Values.searchNodes.searchAuthentication.enabled }}
+            - name: SONAR_CLUSTER_SEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ template "search.userPassword" . }}" 
+                  key: SONAR_CLUSTER_SEARCH_PASSWORD
+            - name: SONAR_CLUSTER_ES_SSL_KEYSTORE
+              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
+            - name: SONAR_CLUSTER_ES_SSL_TRUSTSTORE
+              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
+            - name: SONAR_CLUSTER_ES_SSL_KEYSTOREPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ template "search.ksPassword" }}"
+                  key: SONAR_CLUSTER_ES_SSL_KEYSTOREPASSWORD
+            - name: SONAR_CLUSTER_ES_SSL_TRUSTSTOREPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ template "search.ksPassword" }}"
+                  key: SONAR_CLUSTER_ES_SSL_TRUSTSTOREPASSWORD
+            {{- end }}
             {{- with .Values.searchNodes.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
@@ -194,6 +215,16 @@ spec:
               command:
               - sh
               - -c
+              {{ if .Values.searchNodes.searchAuthentication.enabled }}
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered live if http call returns 200
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget -qO- "http://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+              {{- else -}}
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered live if http call returns 200
@@ -202,6 +233,7 @@ spec:
                   exit 0
                 fi
                 exit 1
+              {{- end }}
             initialDelaySeconds: {{ .Values.searchNodes.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.searchNodes.livenessProbe.periodSeconds }}
           readinessProbe:
@@ -209,6 +241,16 @@ spec:
               command:
               - sh
               - -c
+              {{ if .Values.searchNodes.searchAuthentication.enabled }}
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget -qO- "http://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+              {{- else -}}
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
@@ -217,6 +259,7 @@ spec:
                   exit 0
                 fi
                 exit 1
+              {{- end }}
             initialDelaySeconds: {{ .Values.searchNodes.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.searchNodes.readinessProbe.periodSeconds }}
             failureThreshold: {{ .Values.searchNodes.readinessProbe.failureThreshold }}
@@ -225,6 +268,16 @@ spec:
              command:
               - sh
               - -c
+              {{ if .Values.searchNodes.searchAuthentication.enabled }}
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered started if http call returns 200
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget -qO- "http://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+              {{- else -}}
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered started if http call returns 200
@@ -233,6 +286,7 @@ spec:
                   exit 0
                 fi
                 exit 1
+              {{- end }}
             initialDelaySeconds: {{ .Values.searchNodes.startupProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.searchNodes.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.searchNodes.startupProbe.failureThreshold }}
@@ -247,11 +301,18 @@ spec:
             {{- if .Values.sonarSecretKey }}
             - mountPath: {{ .Values.sonarqubeFolder }}/secret/
               name: secret
+              readOnly: true
+            {{- end }}
+            {{- if .Values.searchNodes.searchAuthentication.enabled }}
+            - mountPath: {{ .Values.sonarqubeFolder }}/es-secret/
+              name: es-secret
+              readOnly: true
             {{- end }}
             {{- if .Values.caCerts }}
             - mountPath: {{ .Values.sonarqubeFolder }}/certs
               name: "{{ template "sonarqube.fullname" . }}"
               subPath: certs
+              readOnly: true
             {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/data
               name: "{{ template "sonarqube.fullname" . }}"
@@ -288,6 +349,11 @@ spec:
           items:
           - key: sonar-secret.txt
             path: sonar-secret.txt
+      {{- end }}
+      {{- if .Values.searchNodes.searchAuthentication.enabled }}
+      - name: es-secret
+        secret:
+          secretName: {{ .Values.searchNodes.searchAuthentication.keyStoreSecret }}
       {{- end }}
       {{- if .Values.caCerts }}
       - name: ca-certs
