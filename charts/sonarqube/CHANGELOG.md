@@ -1,9 +1,12 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-## [1.1.10]
+## [1.1.11]
 * fixed missing POD level security context for statefulset deployment
 
+# [1.1.10]
+* added link to community support forum
+* Use liveness endpoint instead of helth endpoint for liveness probe
 ## [1.1.9]
 * fixed wrong scc user reference if name was explicitly set 
 

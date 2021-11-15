@@ -185,3 +185,49 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Set search.useInternalKeystoreSecret
+*/}}
+{{- define "search.useInternalKeystoreSecret" -}}
+{{- if .Values.searchNodes.searchAuthentication.keyStorePasswordSecret -}}
+false
+{{- else -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Set search.userPassword
+*/}}
+{{- define "search.userPassword" -}}
+{{- if .Values.searchNodes.searchAuthentication.userPasswordSecret -}}
+{{- .Values.searchNodes.searchAuthentication.userPasswordSecret -}}
+{{- else -}}
+{{- template "sonarqube.fullname" . -}}-user-pass
+{{- end -}}
+{{- end -}}
+
+{{/*
+Set search.useInternalUserSecret
+*/}}
+{{- define "search.useInternalUserSecret" -}}
+{{- if .Values.searchNodes.searchAuthentication.userPasswordSecret -}}
+false
+{{- else -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+set search.ksPassword
+FIXME: unknown nullpointer when generating the the name of the service with template "sonarqube.fullname"
+Using a fixed name as a workaround
+*/}}
+{{- define "search.ksPassword" -}}
+{{- if .Values.searchNodes.searchAuthentication.keyStorePasswordSecret -}}
+{{- .Values.searchNodes.searchAuthentication.keyStorePasswordSecret -}}
+{{- else -}}
+{{ printf "%s" "sonarqube-keystore-pass" }}
+{{- end -}}
+{{- end -}}

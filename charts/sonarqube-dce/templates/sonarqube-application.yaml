@@ -201,6 +201,13 @@ spec:
                 secretKeyRef:
                   name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
+            {{ if .Values.searchNodes.searchAuthentication.enabled }}
+            - name: SONAR_CLUSTER_SEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ template "search.userPassword" . }}" 
+                  key: SONAR_CLUSTER_SEARCH_PASSWORD
+            {{ end }}
             {{- with .Values.ApplicationNodes.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
@@ -218,7 +225,7 @@ spec:
           livenessProbe:
             httpGet:
               scheme: HTTP
-              path: {{ .Values.ApplicationNodes.startupProbe.sonarWebContext }}api/system/liveness
+              path: {{ .Values.ApplicationNodes.livenessProbe.sonarWebContext }}api/system/liveness
               port: 9000
               httpHeaders:
                 - name: X-Sonar-Passcode
