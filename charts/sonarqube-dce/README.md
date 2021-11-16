@@ -118,7 +118,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `searchNodes.image.pullSecret` | search imagePullSecret to use for private repository | `nil` |
 | `searchNodes.env` | Environment variables to attach to the search pods | `nil` |
 | `searchNodes.searchAuthentication.enabled` | Securing the Search Cluster with basic authentication and TLS in between search nodes | `false` |
-| `searchNodes.searchAuthentication.keyStoreSecret` | Existing PKCS#11 Container as Keystore/Truststore to be used | `""` |
+| `searchNodes.searchAuthentication.keyStoreSecret` | Existing PKCS#12 Container as Keystore/Truststore to be used | `""` |
 | `searchNodes.searchAuthentication.keyStorePassword` | Password to Keystore/Truststore used in search nodes (optional) | `""` |
 | `searchNodes.searchAuthentication.keyStorePasswordSecret` | Existing secret for Password to Keystore/Truststore used in search nodes (optional) | `nil` |
 | `searchNodes.searchAuthentication.userPassword` | A User Password that will be used to authenticate against the Search Cluster | `""` |
