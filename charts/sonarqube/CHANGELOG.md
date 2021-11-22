@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.2.0]
+* updated SonarQube to 9.2.0
+
 ## [1.1.11]
 * fixed missing POD level security context for statefulset deployment
 
