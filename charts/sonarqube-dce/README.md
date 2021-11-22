@@ -113,7 +113,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `searchNodes.image.repository` | search image repository | `sonarqube` |
-| `searchNodes.image.tag` | search image tag | `9.1.0-datacenter-search` |
+| `searchNodes.image.tag` | search image tag | `9.2.0-datacenter-search` |
 | `searchNodes.image.pullPolicy` | search image pull policy | `IfNotPresent` |
 | `searchNodes.image.pullSecret` | search imagePullSecret to use for private repository | `nil` |
 | `searchNodes.env` | Environment variables to attach to the search pods | `nil` |
@@ -151,7 +151,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `ApplicationNodes.image.repository` | app image repository | `sonarqube` |
-| `ApplicationNodes.image.tag` | app image tag | `9.1-datacenter-app` |
+| `ApplicationNodes.image.tag` | app image tag | `9.2.0-datacenter-app` |
 | `ApplicationNodes.image.pullPolicy` | app image pull policy | `IfNotPresent` |
 | `ApplicationNodes.image.pullSecret` | app imagePullSecret to use for private repository | `nil` |
 | `ApplicationNodes.env` | Environment variables to attach to the app pods | `nil` |

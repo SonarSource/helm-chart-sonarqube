@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [0.2.0]
+* updated SonarQube to 9.2.0
+
 ## [0.1.7]
 * added possibility to secure connection in between search nodes
 * added link to community support forum
