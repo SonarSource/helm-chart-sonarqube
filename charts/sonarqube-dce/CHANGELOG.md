@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [0.3.1]
 * added possibility to define the ingress pathType
+* added possibility to define ressources for the change admin password hook
 
 ## [0.3.0]
 * added support for multiple image pull secrets
