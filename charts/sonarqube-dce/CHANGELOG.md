@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [0.3.1]
+* added possibility to define the ingress pathType
+
 ## [0.3.0]
 * added support for multiple image pull secrets
   * added `searchNodes.image.pullSecrets`
