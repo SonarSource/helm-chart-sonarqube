@@ -41,7 +41,7 @@ spec:
             port:
               number: {{ default $servicePort .servicePort }}
         path: {{ .path}}
-        pathType: ImplementationSpecific
+        pathType: {{ default "ImplementationSpecific" .pathType }}
   {{- end }}
 {{ else }}
 spec:
