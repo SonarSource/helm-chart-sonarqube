@@ -210,56 +210,115 @@ The following table lists the configurable parameters of the Sonarqube chart and
 
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
-| `OpenShift.enabled` | Define if this deployment is for OpenShift | `false` |
-| `OpenShift.createSCC` | If this deployment is for OpenShift, define if SCC should be created for sonarqube pod | `true` |
-| `elasticsearch.bootstrapChecks` | Enables/disables Elasticsearch bootstrap checks | `true` |
-| `nginx.enabled` | Also install Nginx Ingress Helm | `false` |
-| `service.type` | Kubernetes service type | `ClusterIP` |
-| `service.externalPort` | Kubernetes service port | `9000` |
-| `service.internalPort` | Kubernetes container port | `9000` |
-| `service.labels` | Kubernetes service labels | None |
-| `service.annotations` | Kubernetes service annotations | None |
-| `service.loadBalancerSourceRanges` | Kubernetes service LB Allowed inbound IP addresses | None |
-| `service.loadBalancerIP` | Kubernetes service LB Optional fixed external IP | None |
-| `ingress.enabled` | Flag for enabling ingress | false |
-| `ingress.labels` | Ingress additional labels | `{}` |
-| `ingress.hosts[0].name` | Hostname to your SonarQube installation | `sonarqube.your-org.com` |
-| `ingress.hosts[0].path` | Path within the URL structure | / |
-| `ingress.hosts[0].serviceName` | Optional field to override the default serviceName of a path | None |
-| `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | None |
-| `ingress.tls` | Ingress secrets for TLS certificates | `[]` |
 | `affinity` | Node / Pod affinities | `{}` |
 | `tolerations` | List of node taints to tolerate | `[]` |
 | `nodeSelector` | Node labels for pod assignment | `{}` |
 | `hostAliases` | Aliases for IPs in /etc/hosts | `[]` |
+| `podLabels` | Map of labels to add to the pods | `{}` |
+| `env` | Environment variables to attach to the pods | `{}`|
+| `annotations` | Sonarqube Pod annotations | `{}` |
+
+### OpenShift
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
+| `OpenShift.enabled` | Define if this deployment is for OpenShift | `false` |
+| `OpenShift.createSCC` | If this deployment is for OpenShift, define if SCC should be created for sonarqube pod | `true` |
+
+### Elasticsearch
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
+| `elasticsearch.bootstrapChecks` | Enables/disables Elasticsearch bootstrap checks | `true` |
+
+### Service
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
+| `service.type` | Kubernetes service type | `ClusterIP` |
+| `service.externalPort` | Kubernetes service port | `9000` |
+| `service.internalPort` | Kubernetes container port | `9000` |
+| `service.labels` | Kubernetes service labels | `None` |
+| `service.annotations` | Kubernetes service annotations | `None` |
+| `service.loadBalancerSourceRanges` | Kubernetes service LB Allowed inbound IP addresses | `None` |
+| `service.loadBalancerIP` | Kubernetes service LB Optional fixed external IP | `None` |
+
+### Ingress
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
+| `nginx.enabled` | Also install Nginx Ingress Helm | `false` |
+| `ingress.enabled` | Flag to enable Ingress | `false` |
+| `ingress.labels` | Ingress additional labels | `{}` |
+| `ingress.hosts[0].name` | Hostname to your SonarQube installation | `sonarqube.your-org.com` |
+| `ingress.hosts[0].path` | Path within the URL structure | `/` |
+| `ingress.hosts[0].serviceName` | Optional field to override the default serviceName of a path | `None` |
+| `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | `None` |
+| `ingress.tls` | Ingress secrets for TLS certificates | `[]` |
+| `ingress.ingressClassName` | Optional field to configure ingress class name | `None` |
+
+### InitContainers
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
 | `initContainers.image` | Change init container image | `busybox:1.32` |
-| `initContainers.securityContext` | SecurityContext for init containers | `nil` |
+| `initContainers.securityContext` | SecurityContext for init containers | `None` |
 | `initContainers.resources` | Resources for init containers | `{}` |
 | `extraInitContainers` | Extra init containers to e.g. download required artifacts | `{}` |
 | `caCerts.image` | Change init CA certificates container image | `adoptopenjdk/openjdk11:alpine` |
-| `caCerts.secret` | Name of the secret containing additional CA certificates | `nil` |
+| `caCerts.secret` | Name of the secret containing additional CA certificates | `None` |
 | `initSysctl.enabled` | Modify k8s worker to conform to system requirements | `true` |
 | `initSysctl.vmMaxMapCount` | Set init sysctl container vm.max_map_count | `524288` |
 | `initSysctl.fsFileMax` | Set init sysctl container fs.file-max | `131072` |
 | `initSysctl.nofile` | Set init sysctl container open file descriptors limit | `131072` |
 | `initSysctl.nproc` | Set init sysctl container open threads limit | `8192 ` |
-| `initSysctl.image` | Change init sysctl container image | `busybox:1.32 |
+| `initSysctl.image` | Change init sysctl container image | `busybox:1.32` |
 | `initSysctl.securityContext` | InitSysctl container security context | `{privileged: true}` |
 | `initSysctl.resources` | InitSysctl container resource requests & limits | `{}` |
-| `initFs.enabled` | Enable file permission change with init container | true |
-| `initFs.image` | InitFS container image | `busybox:1.32`|
-| `initFs.securityContext.privileged` | InitFS container needs to run privileged | true |
-| `emptyDir` | Configuration of resources for `emptyDir | `{}` |
-| `sonarProperties` | Custom `sonar.properties` file | None |
-| `sonarSecretProperties` | Additional `sonar.properties` file to load from a secret | None |
-| `sonarSecretKey` | Name of existing secret used for settings encryption | None |
-| `logging.jsonOutput` | Enable/Disable logging in JSON format | `false` |
+| `initFs.enabled` | Enable file permission change with init container | `true` |
+| `initFs.image` | InitFS container image | `busybox:1.32` |
+| `initFs.securityContext.privileged` | InitFS container needs to run privileged | `true` |
+
+### Persistence
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
+| `persistence.enabled` | Flag for enabling persistent storage | `false` |
+| `persistence.annotations` | Kubernetes pvc annotations | `{}` |
+| `persistence.existingClaim` | Do not create a new PVC but use this one | `None` |
+| `persistence.storageClass` | Storage class to be used | `""` |
+| `persistence.accessMode` | Volumes access mode to be set | `ReadWriteOnce` |
+| `persistence.size` | Size of the volume | `5Gi` |
+| `persistence.volumes` | Specify extra volumes. Refer to ".spec.volumes" specification | `[]` |
+| `persistence.mounts` | Specify extra mounts. Refer to ".spec.containers.volumeMounts" specification | `[]` |
+| `emptyDir` | Configuration of resources for `emptyDir` | `{}` |
+
+### Sonarqube Specific
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
+| `sonarqubeFolder` | Directory name of Sonarqube | `/opt/sonarqube` |
+| `sonarProperties` | Custom `sonar.properties` file | `None` |
+| `sonarSecretProperties` | Additional `sonar.properties` file to load from a secret | `None` |
+| `sonarSecretKey` | Name of existing secret used for settings encryption | `None` |
+| `monitoringPasscode` | Value for sonar.web.systemPasscode. needed for LivenessProbes | `define_it` |
+| `extraContainers` | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars) | `[]` |
+
+### JDBC Overwrite
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
 | `jdbcOverwrite.enable` | Enable JDBC overwrites for external Databases (disables `postgresql.enabled`) | `false` |
 | `jdbcOverwrite.jdbcUrl` | The JDBC url to connect the external DB | `jdbc:postgresql://myPostgress/myDatabase?socketTimeout=1500` |
-| `jdbcOverwrite.jdbcUsername` | The DB user that should be used for the JDBC connection | `sonarUser`                     |
+| `jdbcOverwrite.jdbcUsername` | The DB user that should be used for the JDBC connection | `sonarUser` |
 | `jdbcOverwrite.jdbcPassword` | The DB password that should be used for the JDBC connection (Use this if you don't mind the DB password getting stored in plain text within the values file) | `sonarPass` |
-| `jdbcOverwrite.jdbcSecretName` | Alternatively, use a pre-existing k8s secret containing the DB password | `None`                          |
-| `jdbcOverwrite.jdbcSecretPasswordKey` | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret | `None`                          |
+| `jdbcOverwrite.jdbcSecretName` | Alternatively, use a pre-existing k8s secret containing the DB password | `None` |
+| `jdbcOverwrite.jdbcSecretPasswordKey` | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret | `None` |
+
+### Bundled Postgres Chart
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
 | `postgresql.enabled` | Set to `false` to use external server | `true` |
 | `postgresql.postgresqlUsername` | Postgresql database user | `sonarUser` |
 | `postgresql.postgresqlPassword` | Postgresql database password | `sonarPass` |
@@ -280,19 +339,38 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `postgresql.volumePermissions.securityContext.runAsUser` | Postgres vol permissions secContext runAsUser | `0` |
 | `postgresql.shmVolume.chmod.enabled` | Postgresql shared memory vol en/disabled | `false` |
 | `postgresql.serivceAccount.enabled` | Postgresql service Account creation en/disabled | `false` |
-| `postgresql.serivceAccount.name` | Postgresql service Account name (commented out | `""` |
-| `podLabels` | Map of labels to add to the pods | `{}` |
-| `sonarqubeFolder` | Directory name of Sonarqube | `/opt/sonarqube` |
-| `tests.enabled` | Flag that allows tests to be excluded from generated yaml | true |
+| `postgresql.serivceAccount.name` | Postgresql service Account name | `""` |
+
+### Tests
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
+| `tests.enabled` | Flag that allows tests to be excluded from generated yaml | `true` |
 | `tests.image` | Change init test container image | `dduportal/bats:0.4.0` |
-| `serviceAccount.create` | If set to true, create a serviceAccount | false |
+
+### ServiceAccount
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
+| `serviceAccount.create` | If set to true, create a serviceAccount | `false` |
 | `serviceAccount.name` | Name of the serviceAccount to create/use | `sonarqube-sonarqube` |
 | `serviceAccount.annotations` | Additional serviceAccount annotations | `{}` |
+
+### ExtraConfig
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
 | `extraConfig.secrets` | A list of `Secret`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables | `[]` |
 | `extraConfig.configmaps` | A list of `ConfigMap`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables | `[]` |
-| `account.adminPassword` | Custom new admin password | `"admin"` |
-| `account.currentAdminPassword` | Current admin password | `"admin"` |
-| `curlContainerImage` | Curl container image | `"curlimages/curl:latest"` |
+
+### Advanced Options
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
+| `logging.jsonOutput` | Enable/Disable logging in JSON format | `false` |
+| `account.adminPassword` | Custom new admin password | `admin` |
+| `account.currentAdminPassword` | Current admin password | `admin` |
+| `curlContainerImage` | Curl container image | `curlimages/curl:latest` |
 | `adminJobAnnotations` | Custom annotations for admin hook Job | `{}` |
 | `terminationGracePeriodSeconds` | Configuration of `terminationGracePeriodSeconds` | `60` |
 
