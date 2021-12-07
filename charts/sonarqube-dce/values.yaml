@@ -297,6 +297,17 @@ hostAliases: []
 #   - "example.com"
 #   - "www.example.com"
 
+# Optionally create Network Policies
+networkPolicy:
+  enabled: true
+
+  # If you plan on using the jmx exporter, you need to define where the traffic is coming from
+  prometheusNamespace: "monitoring"
+
+  # If you are using a external database and enable network Policies to be created
+  # you will need to explicitly allow egress traffic to your database
+  # expects https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#networkpolicyspec-v1-networking-k8s-io
+  # additionalNetworkPolicys:
 
 initContainers:
   # image: busybox:1.32
