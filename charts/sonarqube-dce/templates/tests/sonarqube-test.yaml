@@ -11,6 +11,10 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
+  {{- if .Values.ApplicationNodes.image.pullSecrets }}
+  imagePullSecrets:
+{{- toYaml .Values.ApplicationNodes.image.pullSecrets | nindent 8 }}
+  {{- end }}
   initContainers:
     - name: "bats"
       image: "bats/bats:1.2.1"

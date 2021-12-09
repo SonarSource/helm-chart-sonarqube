@@ -115,7 +115,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `searchNodes.image.repository` | search image repository | `sonarqube` |
 | `searchNodes.image.tag` | search image tag | `9.2.0-datacenter-search` |
 | `searchNodes.image.pullPolicy` | search image pull policy | `IfNotPresent` |
-| `searchNodes.image.pullSecret` | search imagePullSecret to use for private repository | `nil` |
+| `searchNodes.image.pullSecrets` | search imagePullSecrets to use for private repository | `nil` |
 | `searchNodes.env` | Environment variables to attach to the search pods | `nil` |
 | `searchNodes.searchAuthentication.enabled` | Securing the Search Cluster with basic authentication and TLS in between search nodes | `false` |
 | `searchNodes.searchAuthentication.keyStoreSecret` | Existing PKCS#12 Container as Keystore/Truststore to be used | `""` |
@@ -153,7 +153,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `ApplicationNodes.image.repository` | app image repository | `sonarqube` |
 | `ApplicationNodes.image.tag` | app image tag | `9.2.0-datacenter-app` |
 | `ApplicationNodes.image.pullPolicy` | app image pull policy | `IfNotPresent` |
-| `ApplicationNodes.image.pullSecret` | app imagePullSecret to use for private repository | `nil` |
+| `ApplicationNodes.image.pullSecrets` | app imagePullSecrets to use for private repository | `nil` |
 | `ApplicationNodes.env` | Environment variables to attach to the app pods | `nil` |
 | `ApplicationNodes.replicaCount` | Replica count of the app Nodes | `2` |
 | `ApplicationNodes.securityContext.fsGroup` | Group applied to mounted directories/files on app nodes | `1000` |

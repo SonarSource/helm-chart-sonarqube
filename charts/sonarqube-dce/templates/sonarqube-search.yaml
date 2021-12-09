@@ -66,9 +66,9 @@ spec:
       {{- end }}
 {{- end }}
     spec:
-      {{- if .Values.searchNodes.image.pullSecret }}
+      {{- if .Values.searchNodes.image.pullSecrets }}
       imagePullSecrets:
-        - name: {{ .Values.searchNodes.image.pullSecret }}
+{{- toYaml .Values.searchNodes.image.pullSecrets | nindent 8 }}
       {{- end }}
       initContainers:
       {{- if .Values.extraInitContainers }}
