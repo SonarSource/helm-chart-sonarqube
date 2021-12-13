@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.2.2]
+* fix hardcoded reference to port 9000
+
 ## [1.2.1]
 * updated SonarQube to 9.2.1
 
