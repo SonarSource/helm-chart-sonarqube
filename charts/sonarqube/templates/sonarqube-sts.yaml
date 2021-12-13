@@ -306,7 +306,7 @@ spec:
             httpGet:
               scheme: HTTP
               path: {{ .Values.livenessProbe.sonarWebContext }}api/system/liveness
-              port: 9000
+              port: http
               httpHeaders:
                 - name: X-Sonar-Passcode
                   value: {{ .Values.monitoringPasscode }}
@@ -322,7 +322,7 @@ spec:
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
                 host="$(hostname -i || echo '127.0.0.1')"
-                if wget -qO- http://${host}:9000{{ .Values.readinessProbe.sonarWebContext }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                if wget -qO- http://${host}:{{ .Values.service.internalPort }}{{ .Values.readinessProbe.sonarWebContext }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
                 	exit 0
                 fi
                 exit 1
@@ -333,7 +333,7 @@ spec:
             httpGet:
               scheme: HTTP
               path: {{ .Values.readinessProbe.sonarWebContext }}api/system/status
-              port: 9000
+              port: http
             initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.startupProbe.failureThreshold }}
