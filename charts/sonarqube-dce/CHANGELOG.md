@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [0.2.3]
+* updated SonarQube to 9.2.2
+
 ## [0.2.2]
 * replaced hardcoded port's values
 
