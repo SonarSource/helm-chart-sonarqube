@@ -134,6 +134,7 @@ spec:
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.plugins.resource) | indent 12 }}
           {{- with .Values.env }}
+          env:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
