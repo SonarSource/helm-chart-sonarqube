@@ -1,9 +1,11 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.24]
+* fixed missing `env` key for the install-plugins container in both the Deployment and StatefulSet
+  
 ## [1.0.23]
-* fixed missing `env` key for the install-plugins container in both the  
-  Deployment and StatefulSet
+* updated SonarQube LTS to 8.9.6
 
 ## [1.0.22]
 * updated SonarQube LTS to 8.9.5
