@@ -66,9 +66,14 @@ spec:
       {{- end }}
 {{- end }}
     spec:
-      {{- if .Values.searchNodes.image.pullSecret }}
+      {{- if or .Values.searchNodes.image.pullSecrets .Values.searchNodes.image.pullSecret }}
       imagePullSecrets:
+        {{- if .Values.searchNodes.image.pullSecret }}
         - name: {{ .Values.searchNodes.image.pullSecret }}
+        {{- end }}
+        {{- if .Values.searchNodes.image.pullSecrets }}
+{{ toYaml .Values.searchNodes.image.pullSecrets | indent 8 }}
+        {{- end }}
       {{- end }}
       initContainers:
       {{- if .Values.extraInitContainers }}

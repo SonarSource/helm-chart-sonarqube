@@ -11,6 +11,15 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
+  {{- if or .Values.image.pullSecrets .Values.image.pullSecret }}
+  imagePullSecrets:
+    {{- if .Values.image.pullSecret }}
+    - name: {{ .Values.image.pullSecret }}
+    {{- end}}
+    {{- if .Values.image.pullSecrets}}
+{{ toYaml .Values.image.pullSecrets | indent 4 }}
+    {{- end}}
+  {{- end }}
   initContainers:
     - name: "bats"
       image: "bats/bats:1.2.1"

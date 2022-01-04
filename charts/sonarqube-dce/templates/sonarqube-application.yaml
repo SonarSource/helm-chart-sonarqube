@@ -43,9 +43,14 @@ spec:
       {{- end }}
 {{- end }}
     spec:
-      {{- if .Values.ApplicationNodes.image.pullSecret }}
+      {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret }}
       imagePullSecrets:
+        {{- if .Values.ApplicationNodes.image.pullSecret }}
         - name: {{ .Values.ApplicationNodes.image.pullSecret }}
+        {{- end }}
+        {{- if .Values.ApplicationNodes.image.pullSecrets }}
+{{ toYaml .Values.ApplicationNodes.image.pullSecrets | indent 8 }}
+        {{- end }}
       {{- end }}
       initContainers:
       {{- if .Values.ApplicationNodes.extraInitContainers }}

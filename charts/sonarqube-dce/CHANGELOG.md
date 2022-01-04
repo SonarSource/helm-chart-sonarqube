@@ -1,6 +1,15 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [0.3.0]
+* added support for multiple image pull secrets
+  * added `searchNodes.image.pullSecrets`
+  * added `ApplicationNodes.image.pullSecrets`
+* deprecated support for singular image pull secret
+  * deprecated `searchNodes.image.pullSecret`
+  * deprecated `ApplicationNodes.image.pullSecret`
+* fixed missing image pull secret in admin hook job
+
 ## [0.2.5]
 * updated SonarQube to 9.2.4
 
