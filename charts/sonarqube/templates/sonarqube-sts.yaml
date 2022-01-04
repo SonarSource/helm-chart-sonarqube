@@ -47,9 +47,14 @@ spec:
     spec:
       securityContext:
 {{ toYaml .Values.securityContext | indent 8 }}
-      {{- if .Values.image.pullSecrets }}
+      {{- if or .Values.image.pullSecrets .Values.image.pullSecret }}
       imagePullSecrets:
-{{ toYaml .Values.image.pullSecrets | nindent 8 }}
+        {{- if .Values.image.pullSecret }}
+        - name: {{ .Values.image.pullSecret }}
+        {{- end }}
+        {{- if .Values.image.pullSecrets}}
+{{ toYaml .Values.image.pullSecrets | indent 8 }}
+        {{- end }}
       {{- end }}
       initContainers:
       {{- if .Values.extraInitContainers }}

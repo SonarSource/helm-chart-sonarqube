@@ -11,9 +11,14 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-  {{- if .Values.ApplicationNodes.image.pullSecrets }}
+  {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret }}
   imagePullSecrets:
-{{ toYaml .Values.ApplicationNodes.image.pullSecrets | nindent 8 }}
+    {{- if .Values.ApplicationNodes.image.pullSecret }}
+    - name: {{ .Values.ApplicationNodes.image.pullSecret }}
+    {{- end }}
+    {{- if .Values.ApplicationNodes.image.pullSecrets }}
+{{ toYaml .Values.ApplicationNodes.image.pullSecrets | indent 4 }}
+    {{- end }}
   {{- end }}
   initContainers:
     - name: "bats"

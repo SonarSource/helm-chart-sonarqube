@@ -144,6 +144,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `image.repository` | image repository | `sonarqube` |
 | `image.tag` | `sonarqube` image tag. | `9.2.0-community` |
 | `image.pullPolicy` | Image pull policy  | `IfNotPresent` |
+| `image.pullSecret` | (DEPRECATED) imagePullSecret to use for private repository | `None` |
 | `image.pullSecrets` | imagePullSecrets to use for private repository | `None` |
 
 ### Security

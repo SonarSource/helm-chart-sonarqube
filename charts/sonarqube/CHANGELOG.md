@@ -2,8 +2,10 @@
 All changes to this chart will be documented in this file.
 
 ## [2.0.0]
-* added support multiple image pull secrets
-  * replaced `image.pullSecret` with `image.pullSecrets`
+* added support for multiple image pull secrets
+  * added `image.pullSecrets`
+* deprecated support for singular image pull secret
+  * deprecated `image.pullSecret`
 * fixed missing image pull secret in admin hook job
 
 ## [1.2.5]
