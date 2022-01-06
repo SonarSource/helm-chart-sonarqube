@@ -27,6 +27,7 @@ spec:
       labels:
         app: {{ template "sonarqube.name" . }}
         release: {{ .Release.Name }}
+        sonarqube.datacenter/type: "app"
 {{- with .Values.podLabels }}
 {{ toYaml . | indent 8 }}
 {{- end }}
