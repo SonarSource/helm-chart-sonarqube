@@ -35,6 +35,10 @@ searchNodes:
 
   replicaCount: 3
 
+  # Pod Distribution Budget for search nodes
+  podDistributionBudget:
+    maxUnavailable: "33%"
+
   # Set security context for sonarqube search pods
   securityContext:
     fsGroup: 1000
@@ -101,6 +105,10 @@ ApplicationNodes:
     #     value: my-value
 
   replicaCount: 2
+
+  # Pod Distribution Budget for search nodes
+  podDistributionBudget:
+    minAvailable: "1"
 
   # Set security context for sonarqube app pods
   securityContext:

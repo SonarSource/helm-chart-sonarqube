@@ -53,6 +53,7 @@ spec:
       labels:
         app: {{ template "sonarqube.name" . }}-search
         release: {{ .Release.Name }}
+        sonarqube.datacenter/type: "search"
 {{- with .Values.podLabels }}
 {{ toYaml . | indent 8 }}
 {{- end }}
