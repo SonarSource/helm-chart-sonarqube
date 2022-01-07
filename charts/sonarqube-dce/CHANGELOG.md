@@ -1,9 +1,14 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-## [0.3.1]
+## [0.4.0]
 * added possibility to define the ingress pathType
+* added network policies
 * added possibility to define ressources for the change admin password hook
+* default permissions for prometheus injector now align with pod fs permissions
+* updated dependencies
+* admin hook now honors web context
+* added pod distribution budget
 
 ## [0.3.0]
 * added support for multiple image pull secrets

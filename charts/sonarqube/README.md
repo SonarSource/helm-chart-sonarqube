@@ -130,6 +130,13 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `env` | Environment variables to attach to the pods | `{}`|
 | `annotations` | Sonarqube Pod annotations | `{}` |
 
+### NetworkPolicies
+
+| Parameter | Description | Default |
+| `networkPolicy.enabled` | Create NetworkPolicies | `false` |
+| `networkPolicy.prometheusNamespace` | Allow incoming traffic to monitoring ports from this namespace | `nil` |
+| `networkPolicy.additionalNetworkPolicys` | User defined NetworkPolicies (usefull for external database) | `nil` |
+
 ### OpenShift
 
 | Parameter | Description | Default |
@@ -370,6 +377,11 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | --------- | ----------- | ------- |
 | `account.adminPassword` | Custom admin password | `admin` |
 | `account.currentAdminPassword` | Current admin password | `admin` |
+| `account.resources.requests.memory` | Memory request for Admin hook | `128Mi` |
+| `account.resources.requests.cpu` | CPU request for Admin hook | `100m` |
+| `account.resources.limits.memory` | Memory limit for Admin hook | `128Mi` |
+| `account.resources.limits.cpu` | CPU limit for Admin hook | `100m` |
+| `account.sonarWebContext` | SonarQube web context for Admin hook | `nil` |
 | `curlContainerImage` | Curl container image | `curlimages/curl:latest` |
 | `adminJobAnnotations` | Custom annotations for admin hook Job | `{}` |
 | `terminationGracePeriodSeconds` | Configuration of `terminationGracePeriodSeconds` | `60` |

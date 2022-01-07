@@ -12,7 +12,7 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 | SonarQube Version | Kubernetes Version | Helm Chart Version |
 |-------------------|--------------------|--------------------|
-| 9.1               | 1.19, 1.20, 1.21   | 0.1                |
+| 9.2               | 1.19, 1.20, 1.21   | 0.4                |
 
 ## Installing the chart
 
@@ -124,6 +124,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `searchNodes.searchAuthentication.keyStorePasswordSecret` | Existing secret for Password to Keystore/Truststore used in search nodes (optional) | `nil` |
 | `searchNodes.searchAuthentication.userPassword` | A User Password that will be used to authenticate against the Search Cluster | `""` |
 | `searchNodes.replicaCount` | Replica count of the Search Nodes | `3` |
+| `searchNodes.podDistributionBudget` | PodDisctributionBudget for the Search Nodes | `maxUnavailable: "33%"` |
 | `searchNodes.securityContext.fsGroup` | Group applied to mounted directories/files on search nodes | `1000` |
 | `searchNodes.containerSecurityContext.runAsUser` | User to run search container in sonarqube pod as | `1000` |
 | `searchNodes.readinessProbe.initialDelaySecond` | ReadinessProbe initial delay for Search Node checking| `60` |
@@ -158,6 +159,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `ApplicationNodes.image.pullSecrets` | app imagePullSecrets to use for private repository | `nil` |
 | `ApplicationNodes.env` | Environment variables to attach to the app pods | `nil` |
 | `ApplicationNodes.replicaCount` | Replica count of the app Nodes | `2` |
+| `ApplicationNodes.podDistributionBudget` | PodDisctributionBudget for the App Nodes | `minAvailable: "50%"` |
 | `ApplicationNodes.securityContext.fsGroup` | Group applied to mounted directories/files on app nodes | `1000` |
 | `ApplicationNodes.containerSecurityContext.runAsUser` | User to run app container in sonarqube pod as | `1000` |
 | `ApplicationNodes.readinessProbe.initialDelaySecond` | ReadinessProbe initial delay for app Node checking| `60` |
@@ -219,6 +221,14 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `podLabels` | Map of labels to add to the pods | `{}` |
 | `env` | Environment variables to attach to the pods | `{}`|
 | `annotations` | Sonarqube Pod annotations | `{}` |
+
+
+### NetworkPolicies
+
+| Parameter | Description | Default |
+| `networkPolicy.enabled` | Create NetworkPolicies | `false` |
+| `networkPolicy.prometheusNamespace` | Allow incoming traffic to monitoring ports from this namespace | `nil` |
+| `networkPolicy.additionalNetworkPolicys` | User defined NetworkPolicies (usefull for external database) | `nil` |
 
 ### OpenShift
 
@@ -372,6 +382,11 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `logging.jsonOutput` | Enable/Disable logging in JSON format | `false` |
 | `account.adminPassword` | Custom new admin password | `admin` |
 | `account.currentAdminPassword` | Current admin password | `admin` |
+| `account.resources.requests.memory` | Memory request for Admin hook | `128Mi` |
+| `account.resources.requests.cpu` | CPU request for Admin hook | `100m` |
+| `account.resources.limits.memory` | Memory limit for Admin hook | `128Mi` |
+| `account.resources.limits.cpu` | CPU limit for Admin hook | `100m` |
+| `account.sonarWebContext` | SonarQube web context for Admin hook | `nil` |
 | `curlContainerImage` | Curl container image | `curlimages/curl:latest` |
 | `adminJobAnnotations` | Custom annotations for admin hook Job | `{}` |
 | `terminationGracePeriodSeconds` | Configuration of `terminationGracePeriodSeconds` | `60` |
