@@ -82,6 +82,11 @@ spec:
               name: ca-certs
           {{- with .Values.env }}
           env:
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
