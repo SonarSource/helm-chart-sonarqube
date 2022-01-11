@@ -156,6 +156,9 @@ spec:
           {{- end }}
       {{- end }}
       containers:
+      {{- if .Values.ApplicationNodes.extraContainers }}
+        {{- toYaml .Values.ApplicationNodes.extraContainers | nindent 8 }}
+      {{- end }}
         - name: {{ .Chart.Name }}
           image: "{{ .Values.ApplicationNodes.image.repository }}:{{ .Values.ApplicationNodes.image.tag }}"
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}

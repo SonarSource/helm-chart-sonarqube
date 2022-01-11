@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [0.5.0]
+* added support for additional sidecar container
+
 ## [0.4.0]
 * added possibility to define the ingress pathType
 * added network policies
