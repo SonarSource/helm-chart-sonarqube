@@ -13,7 +13,7 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: {{ template "sonarqube.fullname" . }}
-    app.kubernetes.io/version: {{ .Values.image.tag | quote }}
+    app.kubernetes.io/version: {{ tpl .Values.image.tag . | quote }}
 spec:
   replicas: 1
   serviceName: {{ template "sonarqube.fullname" . }}
@@ -262,7 +262,7 @@ spec:
         {{- toYaml .Values.extraContainers | nindent 8 }}
       {{- end }}
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ tpl .Values.image.tag . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http

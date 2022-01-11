@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.5.0]
+* detached sonarqube edition from version
+
 ## [1.4.0]
 * added possibility to define the ingress pathType
 * added network policies
