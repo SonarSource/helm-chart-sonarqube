@@ -129,6 +129,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `podLabels` | Map of labels to add to the pods | `{}` |
 | `env` | Environment variables to attach to the pods | `{}`|
 | `annotations` | Sonarqube Pod annotations | `{}` |
+| `edition` | SonarQube Edition to use | `community` |
 
 ### NetworkPolicies
 
@@ -149,7 +150,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `image.repository` | image repository | `sonarqube` |
-| `image.tag` | `sonarqube` image tag. | `9.2.0-community` |
+| `image.tag` | `sonarqube` image tag. | `9.2.4-{{ .Values.edition }}` |
 | `image.pullPolicy` | Image pull policy  | `IfNotPresent` |
 | `image.pullSecret` | (DEPRECATED) imagePullSecret to use for private repository | `None` |
 | `image.pullSecrets` | imagePullSecrets to use for private repository | `None` |
