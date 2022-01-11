@@ -146,7 +146,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `searchNodes.persistence.accessMode` | Volumes access mode to be set | `ReadWriteOnce` |
 | `searchNodes.persistence.size` | Size of the PVC | `5G` |
 | `searchNodes.persistence.uid` | UID used for init-fs container | `1000` |
-
+| `searchNodes.extraContainers` | Array of extra containers to run alongside | `[]` |
 
 ### App Nodes Configuration
 
@@ -209,6 +209,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `ApplicationNodes.resources.requests.cpu` | cpu request for app Nodes | `400m` |
 | `ApplicationNodes.resources.limits.memory` | memory limit for app Nodes. should not be under 4G | `4096M` |
 | `ApplicationNodes.resources.limits.cpu` | cpu limit for app Nodes | `800m` |
+| `ApplicationNodes.extraContainers` | Array of extra containers to run alongside | `[]` |
 
 ### Generic Configuration
 

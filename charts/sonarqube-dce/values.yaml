@@ -88,6 +88,14 @@ searchNodes:
     size: 5Gi
     uid: 1000
 
+  ## Array of extra containers to run alongside the sonarqube search container
+  ##
+  ## Example:
+  ## - name: myapp-container
+  ##   image: busybox
+  ##   command: ['sh', '-c', 'echo Hello && sleep 3600']
+  ##
+  extraContainers: []
 
 ApplicationNodes:
   image:
@@ -227,6 +235,15 @@ ApplicationNodes:
     requests:
       cpu: 400m
       memory: 2Gi
+
+  ## Array of extra containers to run alongside the sonarqube search container
+  ##
+  ## Example:
+  ## - name: myapp-container
+  ##   image: busybox
+  ##   command: ['sh', '-c', 'echo Hello && sleep 3600']
+  ##
+  extraContainers: []
 
 ## Is this deployment for OpenShift? If so, we help with SCCs
 OpenShift:

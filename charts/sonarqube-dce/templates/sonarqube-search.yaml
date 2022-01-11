@@ -162,6 +162,9 @@ spec:
             - mountPath: /tmp
               name: tmp-dir
       containers:
+      {{- if .Values.searchNodes.extraContainers }}
+        {{- toYaml .Values.searchNodes.extraContainers | nindent 8 }}
+      {{- end }}
         - name: {{ .Chart.Name }}-search
           image: "{{ .Values.searchNodes.image.repository }}:{{ .Values.searchNodes.image.tag }}"
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy }}
