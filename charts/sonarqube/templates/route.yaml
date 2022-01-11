@@ -10,6 +10,9 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
+{{- if .Values.route.host }}
+  host: {{ .Values.route.host }}
+{{- end }}
   to:
     kind: Service
     name: {{ default $serviceName .serviceName }}
