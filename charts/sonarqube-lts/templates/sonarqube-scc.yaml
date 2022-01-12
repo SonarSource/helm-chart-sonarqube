@@ -52,7 +52,7 @@ volumes:
 priority: 11
 users:
 {{- if .Values.serviceAccount.name }}
-- system:serviceaccount:{{ .Release.Namespace }}:{{ .Release.Name }}-{{ .Values.serviceAccount.name }}
+- system:serviceaccount:{{ .Release.Namespace }}:{{ .Values.serviceAccount.name }}
 {{- else  }}
 - system:serviceaccount:{{ .Release.Namespace }}:{{ .Release.Name }}-sonarqube
 {{- end }}
