@@ -1,6 +1,8 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [0.6.1]
+* reverted liveness prove change
 ## [0.5.0]
 * added support for additional sidecar container
 
