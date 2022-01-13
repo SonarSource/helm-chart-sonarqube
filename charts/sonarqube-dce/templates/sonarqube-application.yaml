@@ -233,14 +233,13 @@ spec:
                 name: {{ . }}
 {{- end }}
           livenessProbe:
-            exec:
-              command:
-                - bash
-                - -c
-                - wget
-                - -qO-
-                - --header="X-Sonar-Passcode:${SONAR_WEB_SYSTEMPASSCODE}"
-                - http://localhost:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.livenessProbe.sonarWebContext }}api/system/liveness
+            httpGet:
+              scheme: HTTP
+              path: {{ .Values.ApplicationNodes.livenessProbe.sonarWebContext }}api/system/liveness
+              port: http
+              httpHeaders:
+                - name: X-Sonar-Passcode
+                  value: {{ .Values.monitoringPasscode }}
             initialDelaySeconds: {{ .Values.ApplicationNodes.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.ApplicationNodes.livenessProbe.periodSeconds }}
           readinessProbe:

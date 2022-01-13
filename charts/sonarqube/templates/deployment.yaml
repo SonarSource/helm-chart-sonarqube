@@ -82,11 +82,6 @@ spec:
               name: ca-certs
           {{- with .Values.env }}
           env:
-            - name: SONAR_WEB_SYSTEMPASSCODE
-              valueFrom:
-                secretKeyRef:
-                  name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
-                  key: SONAR_WEB_SYSTEMPASSCODE
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
@@ -223,6 +218,11 @@ spec:
                 secretKeyRef:
                   name: {{ template "jdbc.secret" . }}
                   key: {{ template "jdbc.secretPasswordKey" . }}
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
             {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
@@ -238,14 +238,13 @@ spec:
                 name: {{ . }}
 {{- end }}
           livenessProbe:
-              exec:
-                command:
-                  - bash
-                  - -c
-                  - wget
-                  - -qO-
-                  - --header="X-Sonar-Passcode:${SONAR_WEB_SYSTEMPASSCODE}"
-                  - http://localhost:{{ .Values.service.internalPort }}{{ .Values.livenessProbe.sonarWebContext }}api/system/liveness
+            httpGet:
+              scheme: HTTP
+              path: {{ .Values.livenessProbe.sonarWebContext }}api/system/liveness
+              port: http
+              httpHeaders:
+                - name: X-Sonar-Passcode
+                  value: {{ .Values.monitoringPasscode }}
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
           readinessProbe:
