@@ -1,14 +1,8 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-
-## [1.6.0]
-* fix missing `SONAR_WEB_SYSTEMPASSCODE` environment variable causing failed liveness checks
-* update `livenessProbe` to use exec probes and reuse `SONAR_WEB_SYSTEMPASSCODE` environment variable
-
 ## [1.5.1]
 * added possibility to define host of a route
-
 
 ## [1.5.0]
 * detached sonarqube edition from version
