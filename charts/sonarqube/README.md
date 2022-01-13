@@ -200,6 +200,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `route.enabled` | Flag to enable OpenShift Route | `false` |
+| `route.host` | Host of the route | `""` |
 | `route.tls.termination` | TLS termination type. Currently supported values are `edge` and `passthrough` | `edge` |
 
 ### Probes
