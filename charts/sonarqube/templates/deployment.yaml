@@ -62,7 +62,7 @@ spec:
       {{- if .Values.extraInitContainers }}
 {{ toYaml .Values.extraInitContainers | indent 8 }}
       {{- end }}
-      {{- if .Values.caCerts }}
+      {{- if .Values.caCerts.enabled }}
         - name: ca-certs
           image: {{ default "adoptopenjdk/openjdk11:alpine" .Values.caCerts.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}

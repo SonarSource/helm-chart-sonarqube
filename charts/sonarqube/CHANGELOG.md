@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.6.2]
+* added missing logic for `caCerts.enabled`
+
 ## [1.6.1]
 * fix missing `SONAR_WEB_SYSTEMPASSCODE` environment variable causing failed liveness checks
 

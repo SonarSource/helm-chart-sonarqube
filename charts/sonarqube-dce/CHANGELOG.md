@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [0.6.2]
+* added missing logic for `caCerts.enabled`
+
 ## [0.6.1]
 * reverted liveness prove change
 ## [0.5.0]

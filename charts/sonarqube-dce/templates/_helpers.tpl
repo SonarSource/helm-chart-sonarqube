@@ -116,9 +116,9 @@ Determine JDBC password if internal secret is used
 Set sonarqube.jvmOpts
 */}}
 {{- define "sonarqube.jvmOpts" -}}
-{{- if and .Values.caCerts .Values.ApplicationNodes.prometheusExporter.enabled -}}
+{{- if and .Values.caCerts.enabled .Values.ApplicationNodes.prometheusExporter.enabled -}}
 {{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.ApplicationNodes.prometheusExporter.webBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.ApplicationNodes.jvmOpts | trim | quote }}
-{{- else if .Values.caCerts -}}
+{{- else if .Values.caCerts.enabled -}}
 {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.ApplicationNodes.jvmOpts | trim | quote }}
 {{- else if .Values.ApplicationNodes.prometheusExporter.enabled -}}
 {{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml %s" .Values.sonarqubeFolder (int .Values.ApplicationNodes.prometheusExporter.webBeanPort) .Values.sonarqubeFolder .Values.ApplicationNodes.jvmOpts | trim | quote }}
@@ -131,9 +131,9 @@ Set sonarqube.jvmOpts
 Set sonarqube.jvmCEOpts
 */}}
 {{- define "sonarqube.jvmCEOpts" -}}
-{{- if and .Values.caCerts .Values.ApplicationNodes.prometheusExporter.enabled -}}
+{{- if and .Values.caCerts.enabled .Values.ApplicationNodes.prometheusExporter.enabled -}}
 {{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.ApplicationNodes.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.ApplicationNodes.jvmCeOpts | trim | quote }}
-{{- else if .Values.caCerts -}}
+{{- else if .Values.caCerts.enabled -}}
 {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.ApplicationNodes.jvmCeOpts | trim | quote }}
 {{- else if .Values.ApplicationNodes.prometheusExporter.enabled -}}
 {{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml %s" .Values.sonarqubeFolder (int .Values.ApplicationNodes.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder .Values.ApplicationNodes.jvmCeOpts | trim | quote }}
