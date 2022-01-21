@@ -107,9 +107,9 @@ Determine JDBC password if internal secret is used
 Set sonarqube.jvmOpts
 */}}
 {{- define "sonarqube.jvmOpts" -}}
-{{- if and .Values.caCerts .Values.prometheusExporter.enabled -}}
+{{- if and .Values.caCerts.enabled .Values.prometheusExporter.enabled -}}
 {{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
-{{- else if .Values.caCerts -}}
+{{- else if .Values.caCerts.enabled -}}
 {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
 {{- else if .Values.prometheusExporter.enabled -}}
 {{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
@@ -122,9 +122,9 @@ Set sonarqube.jvmOpts
 Set sonarqube.jvmCEOpts
 */}}
 {{- define "sonarqube.jvmCEOpts" -}}
-{{- if and .Values.caCerts .Values.prometheusExporter.enabled -}}
+{{- if and .Values.caCerts.enabled .Values.prometheusExporter.enabled -}}
 {{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.jvmCeOpts | trim | quote }}
-{{- else if .Values.caCerts -}}
+{{- else if .Values.caCerts.enabled -}}
 {{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmCeOpts | trim | quote }}
 {{- else if .Values.prometheusExporter.enabled -}}
 {{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder .Values.jvmCeOpts | trim | quote }}
