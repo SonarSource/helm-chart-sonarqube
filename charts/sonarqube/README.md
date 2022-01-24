@@ -207,15 +207,15 @@ The following table lists the configurable parameters of the Sonarqube chart and
 
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
-| `readinessProbe.initialDelaySecond` | ReadinessProbe initial delay for SonarQube checking | `60` |
+| `readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for SonarQube checking | `60` |
 | `readinessProbe.periodSeconds` | ReadinessProbe period between checking SonarQube | `30` |
 | `readinessProbe.failureThreshold` | ReadinessProbe threshold for marking as failed | `6` |
 | `readinessProbe.sonarWebContext` | SonarQube web context for readinessProbe | `/` |
-| `livenessProbe.initialDelaySecond` | LivenessProbe initial delay for SonarQube checking | `60` |
+| `livenessProbe.initialDelaySeconds` | LivenessProbe initial delay for SonarQube checking | `60` |
 | `livenessProbe.periodSeconds` | LivenessProbe period between checking SonarQube | `30` |
 | `livenessProbe.sonarWebContext` | SonarQube web context for LivenessProbe | `/` |
 | `livenessProbe.failureThreshold` | LivenessProbe threshold for marking as dead | `6` |
-| `startupProbe.initialDelaySecond` | StartupProbe initial delay for SonarQube checking | `30` |
+| `startupProbe.initialDelaySeconds` | StartupProbe initial delay for SonarQube checking | `30` |
 | `startupProbe.periodSeconds` | StartupProbe period between checking SonarQube | `10` |
 | `startupProbe.sonarWebContext` | SonarQube web context for StartupProbe | `/` |
 | `startupProbe.failureThreshold` | StartupProbe threshold for marking as failed | `24` |

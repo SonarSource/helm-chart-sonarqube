@@ -127,13 +127,13 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `searchNodes.podDistributionBudget` | PodDisctributionBudget for the Search Nodes | `maxUnavailable: "33%"` |
 | `searchNodes.securityContext.fsGroup` | Group applied to mounted directories/files on search nodes | `1000` |
 | `searchNodes.containerSecurityContext.runAsUser` | User to run search container in sonarqube pod as | `1000` |
-| `searchNodes.readinessProbe.initialDelaySecond` | ReadinessProbe initial delay for Search Node checking| `60` |
+| `searchNodes.readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for Search Node checking| `60` |
 | `searchNodes.readinessProbe.periodSeconds` | ReadinessProbe period between checking Search Node | `30` |
 | `searchNodes.readinessProbe.failureThreshold`| ReadinessProbe thresold for marking as failed | `6` |
-| `searchNodes.livenessProbe.initialDelaySecond`| LivenessProbe initial delay for Search Node checking | `60` |
+| `searchNodes.livenessProbe.initialDelaySeconds`| LivenessProbe initial delay for Search Node checking | `60` |
 | `searchNodes.livenessProbe.periodSeconds`| LivenessProbe period between checking Search Node | `30` |
 | `searchNodes.livenessProbe.failureThreshold`| LivenessProbe thresold for marking as dead | `6` |
-| `searchNodes.startupProbe.initialDelaySecond`| StartupProbe initial delay for Search Node checking | `30` |
+| `searchNodes.startupProbe.initialDelaySeconds`| StartupProbe initial delay for Search Node checking | `30` |
 | `searchNodes.startupProbe.periodSeconds`| StartupProbe period between checking Search Node | `10` |
 | `searchNodes.startupProbe.failureThreshold`| StartupProbe thresold for marking as failed | `24` |
 | `searchNodes.resources.requests.memory` | memory request for Search Nodes | `2Gi` |
@@ -162,15 +162,15 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `ApplicationNodes.podDistributionBudget` | PodDisctributionBudget for the App Nodes | `minAvailable: "50%"` |
 | `ApplicationNodes.securityContext.fsGroup` | Group applied to mounted directories/files on app nodes | `1000` |
 | `ApplicationNodes.containerSecurityContext.runAsUser` | User to run app container in sonarqube pod as | `1000` |
-| `ApplicationNodes.readinessProbe.initialDelaySecond` | ReadinessProbe initial delay for app Node checking| `60` |
+| `ApplicationNodes.readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for app Node checking| `60` |
 | `ApplicationNodes.readinessProbe.periodSeconds` | ReadinessProbe period between checking app Node | `30` |
 | `ApplicationNodes.readinessProbe.failureThreshold`| ReadinessProbe thresold for marking as failed | `6` |
 | `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for readinessProbe | `/` |
-| `ApplicationNodes.livenessProbe.initialDelaySecond`| LivenessProbe initial delay for app Node checking | `60` |
+| `ApplicationNodes.livenessProbe.initialDelaySeconds`| LivenessProbe initial delay for app Node checking | `60` |
 | `ApplicationNodes.livenessProbe.periodSeconds`| LivenessProbe period between checking app Node | `30` |
 | `ApplicationNodes.livenessProbe.failureThreshold`| LivenessProbe thresold for marking as dead | `6` |
 | `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for StartupProbe | `/` |
-| `ApplicationNodes.startupProbe.initialDelaySecond`| StartupProbe initial delay for app Node checking | `30` |
+| `ApplicationNodes.startupProbe.initialDelaySeconds`| StartupProbe initial delay for app Node checking | `30` |
 | `ApplicationNodes.startupProbe.periodSeconds`| StartupProbe period between checking app Node | `10` |
 | `ApplicationNodes.startupProbe.failureThreshold`| StartupProbe thresold for marking as failed | `24` |
 | `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for StartupProbe | `/` |
