@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.6.3]
+* `livenessProbe.failureThreshold` was never rendered
+
 ## [1.6.2]
 * added missing logic for `caCerts.enabled`
 
