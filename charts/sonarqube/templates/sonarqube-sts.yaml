@@ -64,6 +64,10 @@ spec:
         - name: "wait-for-db"
           image: {{ default "busybox:1.32" .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
+          {{- if $securityContext := .Values.initContainers.securityContext }}
+          securityContext:
+{{ toYaml $securityContext | indent 12 }}
+          {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
           command: ["/bin/sh", "-c", "for i in $(seq 1 200); do nc -z -w3 {{ .Release.Name}}-postgresql 5432 && exit 0 || sleep 2; done; exit 1"]
@@ -327,7 +331,7 @@ spec:
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
                 host="$(hostname -i || echo '127.0.0.1')"
-                if wget -qO- http://${host}:{{ .Values.service.internalPort }}{{ .Values.readinessProbe.sonarWebContext }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                if wget --proxy off -qO- http://${host}:{{ .Values.service.internalPort }}{{ .Values.readinessProbe.sonarWebContext }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
                 	exit 0
                 fi
                 exit 1
