@@ -91,6 +91,48 @@ spec:
           {{- end }}
       {{- end }}
       {{- end }}
+      {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties }}
+        - name: concat-properties
+          image: {{ default "busybox:1.32" .Values.initContainers.image }}
+          imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
+          command: 
+          - sh
+          - -c
+          - |
+            #!/bin/sh
+            if [ -f /tmp/props/sonar.properties ]; then
+              cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/secret.properties ]; then
+              cat /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
+              awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+          volumeMounts:
+          {{- if .Values.ApplicationNodes.sonarProperties }}
+            - mountPath: /tmp/props/sonar.properties
+              name: config
+              subPath: sonar.properties
+          {{- end }}
+          {{- if .Values.ApplicationNodes.sonarSecretProperties }}
+            - mountPath: /tmp/props/secret.properties
+              name: secret-config
+              subPath: secret.properties
+          {{- end }}
+            - mountPath: /tmp/result
+              name: concat-dir
+          {{- if $securityContext := .Values.initContainers.securityContext }}
+          securityContext:
+{{ toYaml $securityContext | indent 12 }}
+          {{- end }}
+          resources:
+{{ toYaml .Values.initContainers.resources | indent 12 }}
+          {{- with .Values.env }}
+          env:
+            {{- . | toYaml | trim | nindent 12 }}
+          {{- end }}
+      {{- end }}
       {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
         - name: inject-prometheus-exporter
           image: {{ default "curlimages/curl:7.76.1" .Values.ApplicationNodes.prometheusExporter.image }}
@@ -273,7 +315,7 @@ spec:
 {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if and .Values.sonarProperties .Values.sonarSecretProperties }}
+            {{- if or .Values.sonarProperties .Values.sonarSecretProperties }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
               subPath: sonar.properties
               name: concat-dir
@@ -336,7 +378,7 @@ spec:
     {{- end }}
       serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
       volumes:
-      {{- if or .Values.sonarProperties }}
+      {{- if .Values.ApplicationNodes.sonarProperties }}
       - name: config
         configMap:
           name: {{ template "sonarqube.fullname" . }}-config
@@ -344,10 +386,10 @@ spec:
           - key: sonar.properties
             path: sonar.properties
       {{- end }}
-      {{- if .Values.sonarSecretProperties }}
+      {{- if .Values.ApplicationNodes.sonarSecretProperties }}
       - name: secret-config
         secret:
-          secretName: {{ .Values.sonarSecretProperties }}
+          secretName: {{ .Values.ApplicationNodes.sonarSecretProperties }}
           items:
           - key: secret.properties
             path: secret.properties
@@ -403,7 +445,7 @@ spec:
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
       - name : tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
-        {{- if .Values.sonarSecretProperties }}
+        {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties }}
       - name : concat-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 -}}
         {{- end }}

@@ -11,11 +11,21 @@ searchNodes:
     # pullSecrets:
     #   - name: my-repo-secret
 
-    ## Environment variables to attach to the search pods
-    ##
-    # env:
-    #   - name: VARIABLE
-    #     value: my-value
+  ## Environment variables to attach to the search pods
+  ##
+  # env:
+  #   - name: VARIABLE
+  #     value: my-value
+
+  # A custom sonar.properties file can be provided via dictionary.
+  # For example:
+  # sonarProperties:
+  #   sonar.forceAuthentication: true
+  #   sonar.security.realm: LDAP
+  #   ldap.url: ldaps://organization.com
+
+  # Additional sonar properties to load from a secret with a key "secret.properties" (must be a string)
+  # sonarSecretProperties:
 
   # Securing the Search Cluster with basic authentication and TLS in between search nodes
   searchAuthentication:
@@ -106,11 +116,21 @@ ApplicationNodes:
     # pullSecrets:
     #   - name: my-repo-secret
 
-    ## Environment variables to attach to the application pods
-    ##
-    # env:
-    #   - name: VARIABLE
-    #     value: my-value
+  ## Environment variables to attach to the application pods
+  ##
+  # env:
+  #   - name: VARIABLE
+  #     value: my-value
+
+  # A custom sonar.properties file can be provided via dictionary.
+  # For example:
+  # sonarProperties:
+  #   sonar.forceAuthentication: true
+  #   sonar.security.realm: LDAP
+  #   ldap.url: ldaps://organization.com
+
+  # Additional sonar properties to load from a secret with a key "secret.properties" (must be a string)
+  # sonarSecretProperties:
 
   replicaCount: 2
 
@@ -389,16 +409,6 @@ emptyDir: {}
   # Example of resouces that might be used:
   # medium: Memory
   # sizeLimit: 16Mi
-
-# A custom sonar.properties file can be provided via dictionary.
-# For example:
-# sonarProperties:
-#   sonar.forceAuthentication: true
-#   sonar.security.realm: LDAP
-#   ldap.url: ldaps://organization.com
-
-# Additional sonar properties to load from a secret with a key "secret.properties" (must be a string)
-# sonarSecretProperties:
 
 # Kubernetes secret that contains the encryption key for the sonarqube instance.
 # The secret must contain the key 'sonar-secret.txt'.
