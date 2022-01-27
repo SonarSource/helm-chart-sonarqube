@@ -143,20 +143,35 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      {{- if and .Values.sonarProperties .Values.sonarSecretProperties }}
+      {{- if or .Values.sonarProperties .Values.sonarSecretProperties }}
         - name: concat-properties
           image: {{ default "busybox:1.32" .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
-          command: ["sh",
-            "-c",
-            "awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties"]
+          command: 
+          - sh
+          - -c
+          - |
+            #!/bin/sh
+            if [ -f /tmp/props/sonar.properties ]; then
+              cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/secret.properties ]; then
+              cat /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
+              awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
           volumeMounts:
+          {{- if .Values.sonarProperties }}
             - mountPath: /tmp/props/sonar.properties
               name: config
               subPath: sonar.properties
+          {{- end }}
+          {{- if .Values.sonarSecretProperties }}
             - mountPath: /tmp/props/secret.properties
               name: secret-config
               subPath: secret.properties
+          {{- end }}
             - mountPath: /tmp/result
               name: concat-dir
           {{- if $securityContext := .Values.initContainers.securityContext }}
@@ -263,7 +278,7 @@ spec:
 {{- if .Values.persistence.mounts }}
 {{ toYaml .Values.persistence.mounts | indent 12 }}
 {{- end }}
-            {{- if and .Values.sonarProperties .Values.sonarSecretProperties }}
+            {{- if or .Values.sonarProperties .Values.sonarSecretProperties }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/
               name: concat-dir
             {{- else if or .Values.sonarProperties (not .Values.elasticsearch.bootstrapChecks) }}
@@ -370,7 +385,7 @@ spec:
         {{- end  }}
       - name : tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
-        {{- if .Values.sonarSecretProperties }}
+        {{- if or .Values.sonarProperties .Values.sonarSecretProperties }}
       - name : concat-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 -}}
         {{- end }}
