@@ -2,7 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [1.6.4]
-* properties are now currectly set
+* properties are now correctly set
 
 ## [1.6.3]
 * `livenessProbe.failureThreshold` was never rendered

@@ -118,6 +118,9 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `searchNodes.image.pullSecret` | (DEPRECATED) search imagePullSecret to use for private repository | `nil` |
 | `searchNodes.image.pullSecrets` | search imagePullSecrets to use for private repository | `nil` |
 | `searchNodes.env` | Environment variables to attach to the search pods | `nil` |
+| `searchNodes.sonarProperties` | Custom `sonar.properties` file for Search Nodes | `None` |
+| `searchNodes.sonarSecretProperties` | Additional `sonar.properties` file for Search Nodes to load from a secret | `None` |
+| `searchNodes.sonarSecretKey` | Name of existing secret used for settings encryption | `None` |
 | `searchNodes.searchAuthentication.enabled` | Securing the Search Cluster with basic authentication and TLS in between search nodes | `false` |
 | `searchNodes.searchAuthentication.keyStoreSecret` | Existing PKCS#12 Container as Keystore/Truststore to be used | `""` |
 | `searchNodes.searchAuthentication.keyStorePassword` | Password to Keystore/Truststore used in search nodes (optional) | `""` |
@@ -158,6 +161,9 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `ApplicationNodes.image.pullSecret` | (DEPRECATED) app imagePullSecret to use for private repository | `nil` |
 | `ApplicationNodes.image.pullSecrets` | app imagePullSecrets to use for private repository | `nil` |
 | `ApplicationNodes.env` | Environment variables to attach to the app pods | `nil` |
+| `ApplicationNodes.sonarProperties` | Custom `sonar.properties` file for App Nodes | `None` |
+| `ApplicationNodes.sonarSecretProperties` | Additional `sonar.properties` file for App Nodes to load from a secret | `None` |
+| `ApplicationNodes.sonarSecretKey` | Name of existing secret used for settings encryption | `None` |
 | `ApplicationNodes.replicaCount` | Replica count of the app Nodes | `2` |
 | `ApplicationNodes.podDistributionBudget` | PodDisctributionBudget for the App Nodes | `minAvailable: "50%"` |
 | `ApplicationNodes.securityContext.fsGroup` | Group applied to mounted directories/files on app nodes | `1000` |
@@ -312,9 +318,6 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `sonarqubeFolder` | Directory name of Sonarqube | `/opt/sonarqube` |
-| `sonarProperties` | Custom `sonar.properties` file | `None` |
-| `sonarSecretProperties` | Additional `sonar.properties` file to load from a secret | `None` |
-| `sonarSecretKey` | Name of existing secret used for settings encryption | `None` |
 | `monitoringPasscode` | Value for sonar.web.systemPasscode. needed for LivenessProbes | `define_it` |
 | `extraContainers` | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars) | `[]` |
 
