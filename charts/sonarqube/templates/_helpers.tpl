@@ -155,3 +155,16 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Create curl request to cconfigure aml github
+*/}}
+{{- define "sonarqube.aml.github"  -}}
+curl -L -k -u admin:{{ .Values.account.adminPassword | default "admin" }} -X POST "{{ template "sonarqube.fullname" . }}:{{ default 9000 .Values.service.internalPort }}/api/alm_settings/create_github" \
+-F "appId=\"{{ .Values.aml.github.appId }}\"" \
+-F "url=\"{{ .Values.aml.github.url }}\"" \
+-F "clientId=\"{{ .Values.aml.github.clientId }}\"" \
+-F "clientSecret=\"{{ .Values.aml.github.clientSecret }}\"" \
+-F "key=\"{{ .Values.aml.github.key }}\"" \
+-F "privateKey=\"{{- .Values.aml.github.privateKey  }}\""
+{{- end }}

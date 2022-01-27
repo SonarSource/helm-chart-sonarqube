@@ -1,0 +1,45 @@
+{{- if .Values.aml }}
+{{- if .Values.aml.github }}
+{{- if and .Values.aml.github.appId .Values.aml.github.url .Values.aml.github.clientId .Values.aml.github.clientSecret .Values.aml.github.key .Values.aml.github.privateKey }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "sonarqube.fullname" . }}-apply-aml-github-hook
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+    "helm.sh/hook-weight": "1"
+spec:
+  template:
+    metadata:
+      name: {{ template "sonarqube.fullname" . }}-apply-aml-github-hook
+      labels:
+        app: {{ template "sonarqube.name" . }}
+        heritage: {{ .Release.Service }}
+        release: {{ .Release.Name }}
+      {{- range $key, $value := .Values.service.labels }}
+        {{ $key }}: {{ $value | quote }}
+      {{- end }}
+    spec:
+      restartPolicy: OnFailure
+      containers: 
+      - name: {{ template "sonarqube.fullname" . }}-apply-aml-github
+        image: {{ default "curlimages/curl:latest" .Values.curlContainerImage }}
+        {{- if $securityContext := (.Values.initContainers.securityContext) }}
+        securityContext:
+{{ toYaml $securityContext | indent 12 }}
+        {{- end }}
+        command:
+        - "sh"
+        - "-c"
+        - |
+{{- (include "sonarqube.aml.github" .) | nindent 12 }}
+          
+{{- end }}
+{{- end }}
+{{- end }}
