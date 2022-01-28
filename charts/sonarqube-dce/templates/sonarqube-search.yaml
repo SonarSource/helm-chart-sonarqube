@@ -126,6 +126,48 @@ spec:
           {{- end }}
       {{- end }}
       {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled }}
+      {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties }}
+        - name: concat-properties
+          image: {{ default "busybox:1.32" .Values.initContainers.image }}
+          imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
+          command: 
+          - sh
+          - -c
+          - |
+            #!/bin/sh
+            if [ -f /tmp/props/sonar.properties ]; then
+              cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/secret.properties ]; then
+              cat /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
+              awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+          volumeMounts:
+          {{- if .Values.searchNodes.sonarProperties }}
+            - mountPath: /tmp/props/sonar.properties
+              name: config
+              subPath: sonar.properties
+          {{- end }}
+          {{- if .Values.searchNodes.sonarSecretProperties }}
+            - mountPath: /tmp/props/secret.properties
+              name: secret-config
+              subPath: secret.properties
+          {{- end }}
+            - mountPath: /tmp/result
+              name: concat-dir
+          {{- if $securityContext := .Values.initContainers.securityContext }}
+          securityContext:
+{{ toYaml $securityContext | indent 12 }}
+          {{- end }}
+          resources:
+{{ toYaml .Values.initContainers.resources | indent 12 }}
+          {{- with .Values.env }}
+          env:
+            {{- . | toYaml | trim | nindent 12 }}
+          {{- end }}
+      {{- end }}
         - name: init-fs
           image: {{ default "busybox:1.32" .Values.initFs.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
@@ -361,6 +403,22 @@ spec:
           - key: sonar-secret.txt
             path: sonar-secret.txt
       {{- end }}
+      {{- if .Values.searchNodes.sonarProperties }}
+      - name: config
+        configMap:
+          name: {{ template "sonarqube.fullname" . }}-search-config
+          items:
+          - key: sonar.properties
+            path: sonar.properties
+      {{- end }}
+      {{- if .Values.searchNodes.sonarSecretProperties }}
+      - name: secret-config
+        secret:
+          secretName: {{ .Values.searchNodes.sonarSecretProperties }}
+          items:
+          - key: secret.properties
+            path: secret.properties
+      {{- end }}
       {{- if .Values.searchNodes.searchAuthentication.enabled }}
       - name: es-secret
         secret:
@@ -391,3 +449,7 @@ spec:
       {{- end }}
       - name : tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
+        {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties }}
+      - name : concat-dir
+        emptyDir: {{- toYaml .Values.emptyDir | nindent 10 -}}
+        {{- end }}

@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [0.6.4]
+* properties are now correctly set
+
 ## [0.6.3]
 * `livenessProbe.failureThreshold` was never rendered
 
