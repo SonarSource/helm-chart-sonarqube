@@ -1,6 +1,8 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [0.6.5]
+* name of elasticsearch keystore password secret is now aligned with the rest of the chart
 ## [0.6.4]
 * properties are now correctly set
 
