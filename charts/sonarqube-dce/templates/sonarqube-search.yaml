@@ -243,12 +243,12 @@ spec:
             - name: SONAR_CLUSTER_ES_SSL_KEYSTOREPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "search.ksPassword" }}"
+                  name: "{{ template "search.ksPassword" . }}"
                   key: SONAR_CLUSTER_ES_SSL_KEYSTOREPASSWORD
             - name: SONAR_CLUSTER_ES_SSL_TRUSTSTOREPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "search.ksPassword" }}"
+                  name: "{{ template "search.ksPassword" . }}"
                   key: SONAR_CLUSTER_ES_SSL_TRUSTSTOREPASSWORD
             {{- end }}
             {{- with .Values.searchNodes.env }}
