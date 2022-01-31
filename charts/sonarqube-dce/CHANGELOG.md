@@ -1,8 +1,13 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.0]
+* updated SonarQube to 9.3.0
+* officially support SonarQube DCE
+
 ## [0.6.5]
 * name of elasticsearch keystore password secret is now aligned with the rest of the chart
+
 ## [0.6.4]
 * properties are now correctly set
 
