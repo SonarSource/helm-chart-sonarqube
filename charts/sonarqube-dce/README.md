@@ -12,7 +12,7 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 | SonarQube Version | Kubernetes Version | Helm Chart Version |
 |-------------------|--------------------|--------------------|
-| 9.2               | 1.19, 1.20, 1.21   | 0.4                |
+| latest            | 1.19, 1.20, 1.21   | 1.0                |
 
 ## Installing the chart
 
