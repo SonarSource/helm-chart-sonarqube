@@ -221,13 +221,11 @@ true
 
 {{/*
 set search.ksPassword
-FIXME: unknown nullpointer when generating the the name of the service with template "sonarqube.fullname"
-Using a fixed name as a workaround
 */}}
 {{- define "search.ksPassword" -}}
 {{- if .Values.searchNodes.searchAuthentication.keyStorePasswordSecret -}}
 {{- .Values.searchNodes.searchAuthentication.keyStorePasswordSecret -}}
 {{- else -}}
-{{ printf "%s" "sonarqube-keystore-pass" }}
+{{- template "sonarqube.fullname" . -}}-keystore-pass
 {{- end -}}
 {{- end -}}
