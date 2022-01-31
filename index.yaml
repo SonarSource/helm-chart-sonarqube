@@ -3,6 +3,80 @@ entries:
   sonarqube:
   - annotations:
       artifacthub.io/changes: |
+        - kind: added
+          description: "added support multiple image pull secrets"
+        - kind: deprecated
+          description: "deprecated support for singular image pull secret"
+        - kind: fixed
+          description: "fixed missing image pull secret in admin hook job"
+        - kind: added
+          description: "added possibility to define the ingress pathType"
+        - kind: added
+          description: "added network policies"
+        - kind: added
+          description: "added possibility to define ressources for the change admin password hook"
+        - kind: added
+          description: "default permissions for prometheus injector now align with pod fs permissions"
+        - kind: changed
+          description: "updated dependencies"
+        - kind: fixed
+          description: "admin hook now honors web context"
+        - kind: changed
+          description: "detached sonarqube version from edition"
+        - kind: fixed
+          description: "SONAR_WEB_SYSTEMPASSCODE env var is available with deploymentType=Deployment"
+        - kind: fixed
+          description: "added missing logic for `caCerts.enabled`"
+        - kind: fixed
+          description: "livenessProbe.failureThreshold was never rendered"
+        - kind: fixed
+          description: "properties are now correctly set"
+        - kind: fixed
+          description: "add securitycontext to wait-for-db and change-password hook"
+        - kind: changed
+          description: "updated SonarQube to 9.3.0"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube
+          image: sonarqube:9.3.0-community
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+    apiVersion: v1
+    appVersion: 9.3.0
+    created: "2022-01-31T14:06:07.93443535Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 10.15.0
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.0.13
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: 17c8899c0c5b66524dc81439e2a978866b90758f5a70357ad26279c6dcf7ca95
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: tobias.trabelsi+helm@sonarsource.com
+      name: tobias-trabelsi-sonarsource
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/master/sonarqube-2.0.0+233.tgz
+    version: 2.0.0+233
+  - annotations:
+      artifacthub.io/changes: |
         - kind: changed
           description: "updated SonarQube to 9.2.4"
       artifacthub.io/containsSecurityUpdates: "false"
@@ -487,6 +561,82 @@ entries:
   sonarqube-dce:
   - annotations:
       artifacthub.io/changes: |
+        - kind: added
+          description: "added support multiple image pull secrets"
+        - kind: deprecated
+          description: "deprecated support for singular image pull secret"
+        - kind: fixed
+          description: "fixed missing image pull secret in admin hook job"
+        - kind: added
+          description: "added possibility to define the ingress pathType"
+        - kind: added
+          description: "added possibility to define ressources for the change admin password hook"
+        - kind: added
+          description: "added optional deployment of NetworkPolicies"
+        - kind: added
+          description: "default permissions for prometheus injector now align with pod fs permissions"
+        - kind: added
+          description: "added pod distribution budget"
+        - kind: changed
+          description: "updated dependencies"
+        - kind: fixed
+          description: "admin hook now honors web context"
+        - kind: added
+          description: "added support for additional sidecar containers"
+        - kind: fixed
+          description: "added missing logic for `caCerts.enabled`"
+        - kind: fixed
+          description: "livenessProbe.failureThreshold was never rendered"
+        - kind: fixed
+          description: "properties are now correctly set"
+        - kind: changed
+          description: "name of elasticsearch keystore password secret is now aligned with the rest of the chart"
+        - kind: changed
+          description: "updated SonarQube to 9.3.0"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube-app
+          image: sonarqube:9.3.0-datacenter-app
+        - name: sonarqube-search
+          image: sonarqube:9.3.0-datacenter-app
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+    apiVersion: v1
+    appVersion: 9.3.0
+    created: "2022-01-31T14:06:07.943753106Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 10.15.0
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.0.13
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: 3f61086df4dfd4637101a2f092cba88f15ed010eac3be5e6f4103245cede3671
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: tobias.trabelsi+helm@sonarsource.com
+      name: tobias-trabelsi-sonarsource
+    name: sonarqube-dce
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/master/sonarqube-dce-1.0.0+233.tgz
+    version: 1.0.0+233
+  - annotations:
+      artifacthub.io/changes: |
         - kind: changed
           description: "updated SonarQube to 9.2.4"
       artifacthub.io/containsSecurityUpdates: "false"
@@ -839,6 +989,47 @@ entries:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-release-9.1/sonarqube-dce-0.1.2+121.tgz
     version: 0.1.2+121
   sonarqube-lts:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: fixed
+          description: "fixed missing `env` key for the install-plugins container in both the Deployment and StatefulSet"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube
+          image: sonarqube:8.9.6-community
+    apiVersion: v1
+    appVersion: 8.9.6
+    created: "2022-01-31T14:06:07.950663747Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 8.6.4
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 3.29.0
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: abb49c89d4b90509819862a00f89edf9bf093ea9efc34618da4239eca3e4ec47
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: tobias.trabelsi+helm@sonarsource.com
+      name: tobias-trabelsi-sonarsource
+    name: sonarqube-lts
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/master/sonarqube-lts-1.0.24+233.tgz
+    version: 1.0.24+233
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
@@ -1222,4 +1413,4 @@ entries:
     urls:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-lts-1.0.16+98.tgz
     version: 1.0.16+98
-generated: "2021-12-21T09:40:18.179594876Z"
+generated: "2022-01-31T14:06:07.923195982Z"
