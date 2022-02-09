@@ -206,7 +206,7 @@ spec:
 {{- if .Values.persistence.mounts }}
 {{ toYaml .Values.persistence.mounts | indent 12 }}
 {{- end }}
-            {{- if .Values.caCerts }}
+            {{- if .Values.caCerts.enabled }}
             - mountPath: {{ .Values.sonarqubeFolder }}/certs
               name: sonarqube
               subPath: certs
@@ -382,7 +382,7 @@ spec:
             - mountPath: {{ .Values.sonarqubeFolder }}/secret/
               name: secret
             {{- end }}
-            {{- if .Values.caCerts }}
+            {{- if .Values.caCerts.enabled }}
             - mountPath: {{ .Values.sonarqubeFolder }}/certs
               name: sonarqube
               subPath: certs
@@ -467,7 +467,7 @@ spec:
           - key: sonar-secret.txt
             path: sonar-secret.txt
       {{- end }}
-      {{- if .Values.caCerts }}
+      {{- if .Values.caCerts.enabled }}
       - name: ca-certs
         secret:
           secretName: {{ .Values.caCerts.secret }}

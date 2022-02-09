@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2.0.1]
+* Updated all instances of the caCerts enabled check
+
 ## [2.0.0]
 * updated SonarQube to 9.3.0
 
