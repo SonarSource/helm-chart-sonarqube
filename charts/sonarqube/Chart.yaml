@@ -1,7 +1,7 @@
 apiVersion: v1
 name: sonarqube
 description: SonarQube offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
-version: 2.0.1
+version: 2.0.2
 appVersion: 9.3.0
 keywords:
   - coverage
@@ -12,6 +12,7 @@ home: https://www.sonarqube.org/
 icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
 sources:
   - https://github.com/SonarSource/docker-sonarqube
+  - https://github.com/SonarSource/sonarqube
 kubeVersion: '>= 1.19.0-0'
 maintainers:
   - name: tobias-trabelsi-sonarsource
@@ -20,39 +21,13 @@ annotations:
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/
+    - name: Chart Source
+      url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
   artifacthub.io/changes: |
-    - kind: added
-      description: "added support multiple image pull secrets"
-    - kind: deprecated
-      description: "deprecated support for singular image pull secret"
-    - kind: fixed
-      description: "fixed missing image pull secret in admin hook job"
-    - kind: added
-      description: "added possibility to define the ingress pathType"
-    - kind: added
-      description: "added network policies"
-    - kind: added
-      description: "added possibility to define ressources for the change admin password hook"
-    - kind: added
-      description: "default permissions for prometheus injector now align with pod fs permissions"
     - kind: changed
-      description: "updated dependencies"
+      description: "changed links to get a better overview of sources"
     - kind: fixed
-      description: "admin hook now honors web context"
-    - kind: changed
-      description: "detached sonarqube version from edition"
-    - kind: fixed
-      description: "SONAR_WEB_SYSTEMPASSCODE env var is available with deploymentType=Deployment"
-    - kind: fixed
-      description: "added missing logic for `caCerts.enabled`"
-    - kind: fixed
-      description: "livenessProbe.failureThreshold was never rendered"
-    - kind: fixed
-      description: "properties are now correctly set"
-    - kind: fixed
-      description: "add securitycontext to wait-for-db and change-password hook"
-    - kind: changed
-      description: "updated SonarQube to 9.3.0"
+      description: "Updated all instances of the caCerts enabled check"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube
