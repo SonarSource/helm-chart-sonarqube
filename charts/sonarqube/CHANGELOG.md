@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2.0.2]
+* changed links to get a better overview of sources
+
 ## [2.0.1]
 * Updated all instances of the caCerts enabled check
 
