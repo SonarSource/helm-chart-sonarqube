@@ -1,6 +1,8 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2.0.3]
+* changed description of dependency postgresql chart
 ## [2.0.2]
 * changed links to get a better overview of sources
 
