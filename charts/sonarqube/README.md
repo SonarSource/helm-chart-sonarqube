@@ -328,9 +328,8 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `postgresql.enabled` | Set to `false` to use external server  | `true` |
-| `postgresql.existingSecret` | (DEPRECATED) Secret containing the password of the external Postgresql server | `null` |
-| `postgresql.existingSecretPasswordKey` | (DEPRECATED) Secret Key containing the password of the external Postgresql server | `postgresql-password` |
-| `postgresql.postgresqlServer` | (DEPRECATED) Hostname of the external Postgresql server | `null` |
+| `postgresql.existingSecret` |  existingSecret Name of existing secret to use for PostgreSQL passwords | `nil` |
+| `postgresql.postgresqlServer` | (DEPRECATED) Hostname of the external Postgresql server | `nil` |
 | `postgresql.postgresqlUsername` | Postgresql database user | `sonarUser` |
 | `postgresql.postgresqlPassword` | Postgresql database password | `sonarPass` |
 | `postgresql.postgresqlDatabase` | Postgresql database name | `sonarDB` |

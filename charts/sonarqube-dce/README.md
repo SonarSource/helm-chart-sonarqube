@@ -325,7 +325,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
-| `jdbcOverwrite.enable` | Enable JDBC overwrites for external Databases (disables `postgresql.enabled`) | `false` |
+| `jdbcOverwrite.enable` | Enable JDBC overwrites for external Databases (disable `postgresql.enabled`) | `false` |
 | `jdbcOverwrite.jdbcUrl` | The JDBC url to connect the external DB | `jdbc:postgresql://myPostgress/myDatabase?socketTimeout=1500` |
 | `jdbcOverwrite.jdbcUsername` | The DB user that should be used for the JDBC connection | `sonarUser` |
 | `jdbcOverwrite.jdbcPassword` | The DB password that should be used for the JDBC connection (Use this if you don't mind the DB password getting stored in plain text within the values file) | `sonarPass` |
@@ -336,7 +336,8 @@ The following table lists the configurable parameters of the Sonarqube chart and
 
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
-| `postgresql.enabled` | Set to `false` to use external server | `true` |
+| `postgresql.enabled` | Set to `false` to use external database server | `true` |
+| `postgresql.existingSecret` | existingSecret Name of existing secret to use for PostgreSQL passwords | `nil` |
 | `postgresql.postgresqlUsername` | Postgresql database user | `sonarUser` |
 | `postgresql.postgresqlPassword` | Postgresql database password | `sonarPass` |
 | `postgresql.postgresqlDatabase` | Postgresql database name | `sonarDB` |
