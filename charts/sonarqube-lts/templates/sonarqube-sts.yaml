@@ -161,7 +161,7 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      {{- if and .Values.persistence.enabled .Values.initFs.enabled }}
+      {{- if and .Values.persistence.enabled ( or .Values.initFs.enabeld .Values.initFs.enabled ) }}
         - name: init-fs
           image: {{ default "busybox:1.32" .Values.initFs.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
