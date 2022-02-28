@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.4]
+* secure admin password in k8s secret
+
 ## [1.0.3]
 * changed description of dependency postgresql chart
 

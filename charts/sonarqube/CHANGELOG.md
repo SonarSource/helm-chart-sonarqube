@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2.0.5]
+* secure admin password in k8s secret
+
 ## [2.0.4]
 * no longer automount service account token
 
