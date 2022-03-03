@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2.0.6]
+* Specify service account name in change admin password hook
+
 ## [2.0.5]
 * secure admin password in k8s secret
 
