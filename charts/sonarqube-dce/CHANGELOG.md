@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.6]
+* Fixed properties scope for app deployment and search sts
+
 ## [1.0.5]
 * Specify service account name in change admin password hook
 
