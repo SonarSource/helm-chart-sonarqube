@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.7]
+* Specify location of .netrc file when downloading plugins that require auth
+
 ## [1.0.6]
 * Fixed properties scope for app deployment and search sts
 
