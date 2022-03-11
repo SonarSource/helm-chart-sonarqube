@@ -13,7 +13,7 @@ data:
       [ -e {{ .Values.sonarqubeFolder }}/extensions/downloads/* ] && rm {{ .Values.sonarqubeFolder }}/extensions/downloads/*
       cd {{ .Values.sonarqubeFolder }}/extensions/downloads
       {{- range $index, $val := .Values.plugins.install }}
-      curl {{ if $.Values.plugins.noCheckCertificate }}--insecure{{ end }} -fsSLO {{ $val | quote }}
+      curl {{ if $.Values.plugins.noCheckCertificate }}--insecure{{ end }} {{ if $.Values.plugins.netrcCreds }}--netrc-file /root/.netrc{{ end }} -fsSLO {{ $val | quote }}
       {{- end }}
     {{- end }}
     {{- if .Values.plugins.lib }}
