@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2.0.7]
+* Specify location of .netrc file when downloading plugins that require auth
+
 ## [2.0.6]
 * Specify service account name in change admin password hook
 
