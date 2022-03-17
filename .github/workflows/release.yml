@@ -55,3 +55,10 @@ jobs:
           repository-name: "${{ github.event.repository.name }}"
           package-path: ${{ steps.local_repo.outputs.dir }}
           release-name: "${{ github.event.inputs.version}}"
+      - name: Notify failures on Slack
+        if: failure()
+        uses: Ilshidur/action-slack@2.0.0
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_SQ_DEVOPS_WEBHOOK }}
+        with:
+          args: "Helm Chart Release failed, see the logs at https://github.com/SonarSource/helm-chart-sonarqube/actions"
