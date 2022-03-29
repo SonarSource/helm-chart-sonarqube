@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2.0.8]
+* updated helm api version to make helm3 explicit
+
 ## [2.0.7]
 * Specify location of .netrc file when downloading plugins that require auth
 
