@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [3.0.0]
+* updated SonarQube to 9.4.0
+
 ## [2.0.7]
 * Specify location of .netrc file when downloading plugins that require auth
 
