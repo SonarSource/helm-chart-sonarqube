@@ -135,7 +135,7 @@ trigger_release_task:
     source cirrus-env RELEASE
     CHARTS=$(find $CIRRUS_WORKING_DIR -maxdepth 1 -name "*.tgz*" -type f -exec basename "{}" ";")
     [[ "x$CHARTS" == "x" ]] && exit 0
-    gh workflow run release.yml -f version=$CIRRUS_BRANCH -f buildNumber=$BUILD_NUMBER
+    gh workflow run release.yml -f version=$CIRRUS_TAG -f buildNumber=$BUILD_NUMBER
   depends_on:
     - chart_packaging
     - push_to_repox
