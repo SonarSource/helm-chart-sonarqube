@@ -233,6 +233,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 ### NetworkPolicies
 
 | Parameter | Description | Default |
+| --------- | ----------- | ------- |
 | `networkPolicy.enabled` | Create NetworkPolicies | `false` |
 | `networkPolicy.prometheusNamespace` | Allow incoming traffic to monitoring ports from this namespace | `nil` |
 | `networkPolicy.additionalNetworkPolicys` | User defined NetworkPolicies (usefull for external database) | `nil` |
