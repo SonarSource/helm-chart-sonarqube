@@ -27,6 +27,7 @@ metadata:
 {{- end }}
 {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
 spec:
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
   rules:
   {{- range .Values.ingress.hosts }}
   - host: {{ printf "%s" .name }}
