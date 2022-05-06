@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.27]
+* Add an additional configuration parameter `extraContainers` to allow an array of containers to run alongside the sonarqube container
+
 ## [1.0.26]
 * updated SonarQube LTS to 8.9.8
 

@@ -262,6 +262,8 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `curlContainerImage`                                     | Curl container image                                                                                                      | `"curlimages/curl:latest"`      |
 | `adminJobAnnotations`                                    | Custom annotations for admin hook Job                                                                                     | `{}`                            |
 | `terminationGracePeriodSeconds`                          | Configuration of `terminationGracePeriodSeconds`                                                                          | `60`                            |
+| `extraContainers`                                        | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars)                                      | `[]`                            |
+
 
 You can also configure values for the PostgreSQL database via the Postgresql [Chart](https://hub.helm.sh/charts/bitnami/postgresql)
 
