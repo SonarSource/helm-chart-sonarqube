@@ -129,7 +129,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `podLabels` | Map of labels to add to the pods | `{}` |
 | `env` | Environment variables to attach to the pods | `{}`|
 | `annotations` | Sonarqube Pod annotations | `{}` |
-| `edition` | SonarQube Edition to use | `community` |
+| `edition` | SonarQube Edition to use (e.g. `community`, `developer` or `enterprise`) | `community` |
 
 ### NetworkPolicies
 
