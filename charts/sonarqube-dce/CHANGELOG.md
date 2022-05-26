@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2.0.3]
+* Add automount service account token flag
+
 ## [2.0.2]
 * Add documentation to setup web context via environment variable
 
