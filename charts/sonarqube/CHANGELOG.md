@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [3.0.4]
+* Fix issue with additional network policy
+
 ## [3.0.3]
 * Add automount service account token flag
 

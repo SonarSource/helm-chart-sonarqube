@@ -174,7 +174,7 @@ spec:
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: {{ template "sonarqube.fullname" . }}-network-policy
+  name: {{ template "sonarqube.fullname" . }}-additional-network-policy
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -182,6 +182,6 @@ metadata:
     heritage: {{ .Release.Service }}
 spec:
 {{- with .Values.networkPolicy.additionalNetworkPolicys -}}
-{{ toYaml . | indent 4 }}
+{{ toYaml . | nindent 2 }}
 {{- end }}
 {{- end -}}
