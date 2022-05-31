@@ -365,7 +365,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 |---------------------------------|--------------------------------------------------------------------------------------|-----------------------|
 | `serviceAccount.create`         | If set to true, create a serviceAccount                                              | `false`               |
 | `serviceAccount.name`           | Name of the serviceAccount to create/use                                             | `sonarqube-sonarqube` |
-| `serviceAccount.automountToken` | manage `automountServiceAccountToken` field for mounting service account credentials | `false`               |
+| `serviceAccount.automountToken` | Manage `automountServiceAccountToken` field for mounting service account credentials | `false`               |
 | `serviceAccount.annotations`    | Additional serviceAccount annotations                                                | `{}`                  |
 
 ### ExtraConfig
