@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.28]
+* Add documentation for ingress annotations
+
 ## [1.0.27]
 * Fix repository issues with bitnami/postgres
 

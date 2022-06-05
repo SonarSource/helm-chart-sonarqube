@@ -145,6 +145,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `ingress.hosts[0].serviceName`                           | Optional field to override the default serviceName of a path                                                              | None                            |
 | `ingress.hosts[0].servicePort`                           | Optional field to override the default servicePort of a path                                                              | None                            |
 | `ingress.tls`                                            | Ingress secrets for TLS certificates                                                                                      | `[]`                            |
+| `ingress.annotations` | Optional field to add extra annotations to the ingress | `None` |
 | `affinity`                                               | Node / Pod affinities                                                                                                     | `{}`                            |
 | `tolerations`                                            | List of node taints to tolerate                                                                                           | `[]`                            |
 | `nodeSelector`                                           | Node labels for pod assignment                                                                                            | `{}`                            |
