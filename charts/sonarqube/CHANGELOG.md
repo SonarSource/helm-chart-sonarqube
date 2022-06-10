@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [3.0.5]
+* Fix issue with Openshift route name to use use fullname instead of name
+
 ## [3.0.4]
 * Fix issue with additional network policy
 
