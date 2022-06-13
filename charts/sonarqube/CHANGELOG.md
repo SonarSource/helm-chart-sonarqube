@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [4.0.0]
+* updated SonarQube to 9.5.0
+
 ## [3.0.4]
 * Fix issue with additional network policy
 
