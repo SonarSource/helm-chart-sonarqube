@@ -1,8 +1,8 @@
 apiVersion: v1
 name: sonarqube-dce
 description: SonarQube offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
-version: 2.0.4
-appVersion: 9.4.0
+version: 3.0.0
+appVersion: 9.5.0
 keywords:
   - coverage
   - security
@@ -24,23 +24,19 @@ annotations:
     - name: Chart Source
       url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
   artifacthub.io/changes: |
-    - kind: changed
-      description: "changed links to get a better overview of sources"
-    - kind: changed
-      description: "changed description of dependency postgresql chart"
-    - kind: changed
-      description: "secure admin password in k8s secret"
-    - kind: changed
-      description: "Specify service account name in change admin password hook"
+    - kind: added
+      description: "adding tolerations and affinity to change password hooks"
+    - kind: added
+      description: "Add documentation to setup web context via environment variable"
+    - kind: added
+      description: "Add automount service account token flag"
     - kind: fixed
-      description: "Fixed properties scope for app deployment and search sts"
-    - kind: fixed
-      description: "Specify location of .netrc file when downloading plugins that require auth"
+      description: "Fix issue with additional network policy"
     - kind: changed
-      description: "updated SonarQube to 9.4.0"
+      description: "updated SonarQube to 9.5.0"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-app
-      image: sonarqube:9.4.0-datacenter-app
+      image: sonarqube:9.5.0-datacenter-app
     - name: sonarqube-search
-      image: sonarqube:9.4.0-datacenter-app
+      image: sonarqube:9.5.0-datacenter-app
