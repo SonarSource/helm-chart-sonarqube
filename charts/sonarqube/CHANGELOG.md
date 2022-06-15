@@ -1,9 +1,11 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [4.0.2]
+* Fix issue with Openshift route name to use use fullname instead of name
 
 ## [4.0.1]
-* Fix issue with Openshift route name to use use fullname instead of name
+* Add documentation for ingress annotations
 
 ## [4.0.0]
 * updated SonarQube to 9.5.0
