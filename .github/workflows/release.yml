@@ -30,7 +30,7 @@ jobs:
         id: local_repo
         run: echo ::set-output name=dir::"$(mktemp -d repo.XXXXXXXX)"
       - name: Download Artifacts
-        uses: SonarSource/gh-action_release/download-build@v3
+        uses: SonarSource/gh-action_release/download-build@v4
         with:
           build-number: ${{ github.event.inputs.buildNumber }}
           remote-repo: 'sonarsource-helm'
@@ -48,7 +48,7 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
       - name: Release to GitHub
-        uses: SonarSource/gh-action_release/helm-index@v3
+        uses: SonarSource/gh-action_release/helm-index@v4
         env:
           CR_TOKEN: "${{ secrets.RELEASE_GITHUB_TOKEN }}"
         with:
