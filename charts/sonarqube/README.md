@@ -195,6 +195,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | `None` |
 | `ingress.tls` | Ingress secrets for TLS certificates | `[]` |
 | `ingress.ingressClassName` | Optional field to configure ingress class name | `None` |
+| `ingress.annotations` | Optional field to add extra annotations to the ingress | `None` |
 
 ### Route
 

@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [3.0.1]
+* Add documentation for ingress annotations
+
 ## [3.0.0]
 * updated SonarQube to 9.5.0
 
@@ -132,4 +135,3 @@ All changes to this chart will be documented in this file.
 ## [0.0.1]
 * separated search and app configuration
 * added new search service
-
