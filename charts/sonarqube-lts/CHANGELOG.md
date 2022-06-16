@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.29]
+* updated SonarQube LTS to 8.9.9
+
 ## [1.0.28]
 * Add documentation for ingress annotations
 
