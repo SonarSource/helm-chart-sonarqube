@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [4.0.3]
+* Add support for Openshift Route labels and annotations
+
 ## [4.0.2]
 * Fix issue with Openshift route name to use use fullname instead of name
 

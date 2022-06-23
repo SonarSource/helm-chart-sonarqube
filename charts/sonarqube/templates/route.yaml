@@ -9,6 +9,15 @@ metadata:
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+{{- if .Values.route.labels }}
+{{ .Values.route.labels | toYaml | trimSuffix "\n"| indent 4 -}}
+{{- end}}
+{{- if .Values.route.annotations}}
+  annotations:
+    {{- range $key, $value := .Values.route.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+{{- end }}
 spec:
 {{- if .Values.route.host }}
   host: {{ .Values.route.host }}
