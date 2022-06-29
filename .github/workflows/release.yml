@@ -29,12 +29,14 @@ jobs:
       - name: Create local repository directory
         id: local_repo
         run: echo ::set-output name=dir::"$(mktemp -d repo.XXXXXXXX)"
-      - name: Download Artifacts
-        uses: SonarSource/gh-action_release/download-build@v4
-        with:
-          build-number: ${{ github.event.inputs.buildNumber }}
-          remote-repo: 'sonarsource-helm'
-          local-repo-dir: ${{ steps.local_repo.outputs.dir }}
+      - name: Download artifacts
+        shell: bash
+        working-directory: ${{ steps.local_repo.outputs.dir }}
+        run: jfrog rt download --fail-no-op --build "${{ github.event.repository.name }}/${{ github.event.inputs.buildNumber }}" sonarsource-helm/
+      - name: Download checksums
+        shell: bash
+        working-directory: ${{ steps.local_repo.outputs.dir }}
+        run: find . -type f -not \( -name "*.asc" -or -name "*.md5" -or -name "*.sha1" -or -name "*.sha256" \) -exec jfrog rt curl "sonarsource-helm/{{}}.{md5,sha1,sha256}" --output "#1.#2" \;
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
@@ -48,7 +50,7 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
       - name: Release to GitHub
-        uses: SonarSource/gh-action_release/helm-index@v4
+        uses: ./.github/actions/helm-index
         env:
           CR_TOKEN: "${{ secrets.RELEASE_GITHUB_TOKEN }}"
         with:
