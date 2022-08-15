@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [5.0.0]
+* Updated SonarQube to 9.6.0
+
 ## [4.0.3]
 * Add support for Openshift Route labels and annotations
 
