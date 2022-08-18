@@ -28,7 +28,7 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              networking/namespace: monitoring
+              networking/namespace: {{ .Values.networkPolicy.prometheusNamespace }}
       ports:
         - port: {{ .Values.prometheusExporter.ceBeanPort }}
           protocol: TCP
