@@ -1,6 +1,13 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [5.1.0]
+* Bump apiVersion to v2
+* Set the number of allowed replicas to 0 and 1
+* Add documentation for ingress tls
+* Add documentation for sonarProperties and sonarSecretProperties
+* Add the possibility of using a secret for customizing the admin password
+
 ## [5.0.6]
 * Updated SonarQube to 9.6.1
 
