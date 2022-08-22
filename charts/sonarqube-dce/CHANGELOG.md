@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [4.0.2]
+* Add documentation for ApplicationNodes.jwtSecret
+
 ## [4.0.1]
 * Add documentation for ingress tls
 
