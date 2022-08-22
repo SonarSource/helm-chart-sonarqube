@@ -118,7 +118,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `deploymentType` | Deployment Type (supported values are `StatefulSet` or `Deployment`) | `StatefulSet` |
-| `replicaCount`   | Number of replicas deployed  | `1` |
+| `replicaCount`   | Number of replicas deployed (supported values are 0 and 1)  | `1` |
 | `deploymentStrategy` | Deployment strategy | `{}` |
 | `priorityClassName` | Schedule pods on priority (e.g. `high-priority`) | `None` |
 | `schedulerName` | Kubernetes scheduler name | `None` |

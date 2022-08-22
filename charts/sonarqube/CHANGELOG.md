@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [5.0.2]
+* Set the number of allowed replicas to 0 and 1
+
 ## [5.0.1]
 * Add documentation for ingress tls
 
