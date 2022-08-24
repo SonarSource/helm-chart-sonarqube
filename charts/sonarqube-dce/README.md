@@ -16,7 +16,12 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 ## Installing the chart
 
-Please ensure that the value for `ApplicationNodes.jwtSecret` is set with something like `echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64` and persist this in your `values.yaml`.
+> **_NOTE:_**  Please refer to [the official page](https://docs.sonarqube.org/latest/setup/sonarqube-cluster-on-kubernetes/) for further information on how to install and tune the helm chart specifications.
+
+Prior to installing the chart, please ensure that the `ApplicationNodes.jwtSecret` value is set properly with a HS256 key encoded with base64. In the following, an example on how to generate this key on a Unix system:
+```bash
+echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64
+```
 
 To install the chart:
 
@@ -209,7 +214,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `ApplicationNodes.plugins.securityContext` | Security context for the container to download plugins | see `values.yaml |
 | `ApplicationNodes.jvmOpts` | Values to add to SONARQUBE_WEB_JVM_OPTS | `""` |
 | `ApplicationNodes.jvmCeOpts` | Values to add to SONAR_CE_JAVAOPTS | `""` |
-| `ApplicationNodes.jwtSecret` | A HS256 key encoded with base64 | `""` |
+| `ApplicationNodes.jwtSecret` | A HS256 key encoded with base64 (*This value must be set before installing the chart, see [the documentation](https://docs.sonarqube.org/latest/setup/sonarqube-cluster-on-kubernetes/)*) | `""` |
 | `ApplicationNodes.existingJwtSecret` | secret that contains the `jwtSecret` | `nil` |
 | `ApplicationNodes.resources.requests.memory` | memory request for app Nodes | `2Gi` |
 | `ApplicationNodes.resources.requests.cpu` | cpu request for app Nodes | `400m` |
