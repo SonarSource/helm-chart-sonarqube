@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [5.2.0]
+* Add support for monitoringPasscode passed as a secret and removal of livenessprobe httpheader defined in clear text
+
 ## [5.1.0]
 * Bump apiVersion to v2
 * Set the number of allowed replicas to 0 and 1
