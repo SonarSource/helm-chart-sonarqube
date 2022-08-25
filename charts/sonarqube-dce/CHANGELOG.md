@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [4.0.4]
+* Remove unreachable condition and fix the right values for sonarProperties and sonarSecretProperties
+
 ## [4.0.3]
 * Bump apiVersion to v2
 

@@ -287,8 +287,8 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `jvmOpts` | Values to add to SONARQUBE_WEB_JVM_OPTS | `""` |
 | `jvmCeOpts` | Values to add to SONAR_CE_JAVAOPTS | `""` |
 | `sonarqubeFolder` | Directory name of Sonarqube | `/opt/sonarqube` |
-| `sonarProperties` | Custom `sonar.properties` file | `None` |
-| `sonarSecretProperties` | Additional `sonar.properties` file to load from a secret | `None` |
+| `sonarProperties` | Custom `sonar.properties` key-value pairs (e.g., "sonarProperties.sonar.forceAuthentication=true") | `None` |
+| `sonarSecretProperties` | Additional `sonar.properties` key-value pairs to load from a secret | `None` |
 | `sonarSecretKey` | Name of existing secret used for settings encryption | `None` |
 | `monitoringPasscode` | Value for sonar.web.systemPasscode. needed for LivenessProbes | `define_it` |
 | `extraContainers` | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars) | `[]` |
