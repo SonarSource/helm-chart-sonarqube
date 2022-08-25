@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [4.0.3]
+* Bump apiVersion to v2
+
 ## [4.0.2]
 * Add documentation for ApplicationNodes.jwtSecret
 
