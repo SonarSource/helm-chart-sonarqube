@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [5.0.4]
+* Add documentation for sonarProperties and sonarSecretProperties
+
 ## [5.0.3]
 * Bump apiVersion to v2
 

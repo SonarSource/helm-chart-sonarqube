@@ -166,8 +166,8 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `ApplicationNodes.image.pullSecret` | (DEPRECATED) app imagePullSecret to use for private repository | `nil` |
 | `ApplicationNodes.image.pullSecrets` | app imagePullSecrets to use for private repository | `nil` |
 | `ApplicationNodes.env` | Environment variables to attach to the app pods | `nil` |
-| `ApplicationNodes.sonarProperties` | Custom `sonar.properties` file for App Nodes | `None` |
-| `ApplicationNodes.sonarSecretProperties` | Additional `sonar.properties` file for App Nodes to load from a secret | `None` |
+| `ApplicationNodes.sonarProperties` | Custom `sonar.properties` key-value pairs for App Nodes (e.g., "ApplicationNodes.sonarProperties.sonar.forceAuthentication=true") | `None` |
+| `ApplicationNodes.sonarSecretProperties` | Additional `sonar.properties` key-value pairs for App Nodes to load from a secret | `None` |
 | `ApplicationNodes.sonarSecretKey` | Name of existing secret used for settings encryption | `None` |
 | `ApplicationNodes.replicaCount` | Replica count of the app Nodes | `2` |
 | `ApplicationNodes.podDistributionBudget` | PodDisctributionBudget for the App Nodes | `minAvailable: "50%"` |

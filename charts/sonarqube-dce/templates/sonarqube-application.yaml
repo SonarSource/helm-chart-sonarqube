@@ -315,14 +315,10 @@ spec:
 {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if or .Values.sonarProperties .Values.sonarSecretProperties }}
+            {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
               subPath: sonar.properties
               name: concat-dir
-            {{- else if .Values.sonarProperties }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
-              subPath: sonar.properties
-              name: config
             {{- end }}
             {{- if .Values.sonarSecretKey }}
             - mountPath: {{ .Values.sonarqubeFolder }}/secret/
