@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [4.0.5]
+* Add the possibility of using a secret for customizing the admin password
+
 ## [4.0.4]
 * Remove unreachable condition and fix the right values for sonarProperties and sonarSecretProperties
 
