@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [5.0.5]
+* Add the possibility of using a secret for customizing the admin password
+
 ## [5.0.4]
 * Add documentation for sonarProperties and sonarSecretProperties
 

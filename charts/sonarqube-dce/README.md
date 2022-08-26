@@ -396,6 +396,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `logging.jsonOutput` | Enable/Disable logging in JSON format | `false` |
 | `account.adminPassword` | Custom new admin password | `admin` |
 | `account.currentAdminPassword` | Current admin password | `admin` |
+| `account.adminPasswordSecretName` | Secret containing `password` (custom password) and `currentPassword` (current password) keys for admin | `None` |
 | `account.resources.requests.memory` | Memory request for Admin hook | `128Mi` |
 | `account.resources.requests.cpu` | CPU request for Admin hook | `100m` |
 | `account.resources.limits.memory` | Memory limit for Admin hook | `128Mi` |
