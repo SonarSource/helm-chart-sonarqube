@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.31]
+* added hostAliases to deploymentType statefulset
+
 ## [1.0.30]
 * Add documentation for ingress tls
 
