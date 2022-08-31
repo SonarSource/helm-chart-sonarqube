@@ -2,13 +2,13 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# If the deployment Type is set to Deployment sonarqube is deployed as a replica set.
 deploymentType: "StatefulSet"
 
-# There should not be more than 1 sonarqube instance connected to the same database. Please set this value to 1 or 0 (in case you need to scale down programmatically).
+# If the deployment Type is set to Deployment sonarqube is deployed as a replica set
+# There should not be more than 1 sonarqube instance connected to the same database
 replicaCount: 1
 
-# This will use the default deployment strategy unless it is overriden
+ # This will use the default deployment strategy unless it is overriden
 deploymentStrategy: {}
 # Uncomment this to scheduler pods on priority
 # priorityClassName: "high-priority"
@@ -27,7 +27,7 @@ edition: "community"
 
 image:
   repository: sonarqube
-  tag: 9.6.0-{{ .Values.edition }}
+  tag: 9.6.1-{{ .Values.edition }}
   pullPolicy: IfNotPresent
   # If using a private repository, the imagePullSecrets to use
   # pullSecrets:
@@ -103,7 +103,7 @@ ingress:
   #  traffic-type: external
   #  traffic-type: internal
   tls: []
-  # Secrets must be manually created in the namespace. To generate a self-signed certificate (and private key) and then create the secret in the cluster please refer to official documentation available at https://kubernetes.github.io/ingress-nginx/user-guide/tls/#tls-secrets
+  # Secrets must be manually created in the namespace.
   # - secretName: chart-example-tls
   #   hosts:
   #     - chart-example.local
@@ -498,12 +498,8 @@ extraConfig:
   configmaps: []
 
 # account:
-# The values can be set to define the current and the (new) custom admin passwords at the startup (the username will remain "admin")
 #   adminPassword: admin
 #   currentAdminPassword: admin
-# The above values can be also provided by a secret that contains "password" and "currentPassword" as keys. You can generate such a secret in your cluster
-# using "kubectl create secret generic admin-password-secret-name --from-literal=password=admin --from-literal=currentPassword=admin"
-#   adminPasswordSecretName: ""
 #   securityContext: {}
 #   resources:
 #     limits:
