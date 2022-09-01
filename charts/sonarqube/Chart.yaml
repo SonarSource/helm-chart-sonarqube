@@ -1,7 +1,8 @@
-apiVersion: v1
+apiVersion: v2
 name: sonarqube
 description: SonarQube offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
-version: 5.0.6
+type: application
+version: 5.1.0
 appVersion: 9.6.1
 keywords:
   - coverage
@@ -30,3 +31,12 @@ annotations:
   artifacthub.io/images: |
     - name: sonarqube
       image: sonarqube:9.6.1-community
+dependencies:
+  - name: postgresql
+    version: 10.15.0
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: ingress-nginx
+    version: 4.0.13
+    repository: https://kubernetes.github.io/ingress-nginx
+    condition: nginx.enabled

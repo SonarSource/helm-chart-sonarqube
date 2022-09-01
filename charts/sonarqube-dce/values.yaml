@@ -242,7 +242,7 @@ ApplicationNodes:
   ## Values to add to SONAR_CE_JAVAOPTS
   jvmCeOpts: ""
 
-  # SONAR_AUTH_JWTBASE64HS256SECRET
+  # Set this value with a HS256 key encoded with base64. You can generate a key using the following command on a Unix system: echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64
   jwtSecret: ""
   # can use existing secret with SONAR_AUTH_JWTBASE64HS256SECRET as key
   # existingJwtSecret: ""
@@ -311,7 +311,7 @@ ingress:
   #  traffic-type: external
   #  traffic-type: internal
   tls: []
-  # Secrets must be manually created in the namespace.
+  # Secrets must be manually created in the namespace. To generate a self-signed certificate (and private key) and then create the secret in the cluster please refer to official documentation available at https://kubernetes.github.io/ingress-nginx/user-guide/tls/#tls-secrets
   # - secretName: chart-example-tls
   #   hosts:
   #     - chart-example.local
@@ -549,8 +549,12 @@ extraConfig:
   configmaps: []
 
 # account:
+# The values can be set to define the current and the (new) custom admin passwords at the startup (the username will remain "admin")
 #   adminPassword: admin
 #   currentAdminPassword: admin
+# The above values can be also provided by a secret that contains "password" and "currentPassword" as keys. You can generate such a secret in your cluster
+# using "kubectl create secret generic admin-password-secret-name --from-literal=password=admin --from-literal=currentPassword=admin"
+#   adminPasswordSecretName: ""
 #   resources:
 #     limits:
 #       cpu: 100m
