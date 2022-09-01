@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [4.2.0]
+* Add support for monitoringPasscode passed as a secret and removal of livenessprobe httpheader defined in clear text
+
 ## [4.1.0]
 * Add the possibility of using a secret for customizing the admin password
 * Remove unreachable condition and fix the right values for sonarProperties and sonarSecretProperties

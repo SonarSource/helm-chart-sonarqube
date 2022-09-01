@@ -240,8 +240,13 @@ spec:
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
+                {{- if and .Values.monitoringPasscodeSecretName .Values.monitoringPasscodeSecretKey }}
+                  name: {{ .Values.monitoringPasscodeSecretName }}
+                  key: {{ .Values.monitoringPasscodeSecretKey }}
+                {{- else }}
                   name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
+                {{- end }}
             {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
@@ -257,13 +262,14 @@ spec:
                 name: {{ . }}
 {{- end }}
           livenessProbe:
-            httpGet:
-              scheme: HTTP
-              path: {{ .Values.livenessProbe.sonarWebContext }}api/system/liveness
-              port: http
-              httpHeaders:
-                - name: X-Sonar-Passcode
-                  value: {{ .Values.monitoringPasscode }}
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                host="$(hostname -i || echo '127.0.0.1')"
+                reply=$(wget -qO- --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" http://${host}:{{ .Values.service.internalPort }}{{ .Values.livenessProbe.sonarWebContext }}api/system/liveness 2>&1)
+                if [ -z "$reply" ]; then exit 0; else exit 1; fi
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}

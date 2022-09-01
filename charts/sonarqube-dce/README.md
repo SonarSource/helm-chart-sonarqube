@@ -325,7 +325,9 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `sonarqubeFolder` | Directory name of Sonarqube | `/opt/sonarqube` |
-| `monitoringPasscode` | Value for sonar.web.systemPasscode. needed for LivenessProbes | `define_it` |
+| `monitoringPasscode` | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format) | `define_it` |
+| `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode` | `None` |
+| `monitoringPasscodeSecretKey` | Key of an existing secret containing `monitoringPasscode` | `None` |
 | `extraContainers` | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars) | `[]` |
 
 ### JDBC Overwrite
