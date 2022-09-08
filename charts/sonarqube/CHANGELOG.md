@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [5.3.0]
+* Use the networkPolicy.prometheusNamespace value for the network policy namespace selector
+* Uncomment default value in values.yaml for backwards compatibility
+
 ## [5.2.0]
 * Add support for monitoringPasscode passed as a secret and removal of livenessprobe httpheader defined in clear text
 
@@ -130,7 +134,7 @@ All changes to this chart will be documented in this file.
 * Use liveness endpoint instead of helth endpoint for liveness probe
 
 ## [1.1.9]
-* fixed wrong scc user reference if name was explicitly set 
+* fixed wrong scc user reference if name was explicitly set
 
 ## [1.1.8]
 * fixed serviceaccount logic
