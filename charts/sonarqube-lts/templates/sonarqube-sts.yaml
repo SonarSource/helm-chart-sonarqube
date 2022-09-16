@@ -106,7 +106,7 @@ spec:
           {{- end }}
       {{- end }}
 
-      {{- if and .Values.sonarProperties .Values.sonarSecretProperties }}
+      {{- if or .Values.sonarProperties .Values.sonarSecretProperties }}
         - name: concat-properties
           image: {{ default "busybox:1.32" .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -339,7 +339,7 @@ spec:
 {{- if .Values.persistence.mounts }}
 {{ toYaml .Values.persistence.mounts | indent 12 }}
 {{- end }}
-            {{- if and .Values.sonarProperties .Values.sonarSecretProperties }}
+            {{- if or .Values.sonarProperties .Values.sonarSecretProperties }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/
               name: concat-dir
             {{- else if or .Values.sonarProperties (not .Values.elasticsearch.bootstrapChecks) }}
