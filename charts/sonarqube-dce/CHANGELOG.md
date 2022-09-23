@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [4.2.1]
+* Fix wrong image's tag in application nodes
+
 ## [4.2.0]
 * Add support for monitoringPasscode passed as a secret and removal of livenessprobe httpheader defined in clear text
 
