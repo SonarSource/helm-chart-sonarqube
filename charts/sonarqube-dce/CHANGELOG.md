@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [4.0.7]
+* Updated SonarQube to 9.6.1 for the DCE-chart application nodes
+
 ## [4.0.6]
 * Updated SonarQube to 9.6.1
 
