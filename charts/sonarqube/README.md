@@ -359,10 +359,11 @@ The following table lists the configurable parameters of the Sonarqube chart and
 
 ### Tests
 
-| Parameter | Description | Default |
-| --------- | ----------- | ------- |
-| `tests.enabled` | Flag that allows tests to be excluded from generated yaml | `true` |
-| `tests.image` | Change init test container image | `dduportal/bats:0.4.0` |
+| Parameter                    | Description                                                   | Default |
+|------------------------------|---------------------------------------------------------------| ------- |
+| `tests.enabled`              | Flag that allows tests to be excluded from the generated yaml | `true` |
+| `tests.image`                | Change test container image                                   | `bitnami/minideb-extras` |
+| `tests.initContainers.image` | Change test init container image                              | `bats/bats:1.2.1` |
 
 ### ServiceAccount
 

@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [4.3.0]
+* Allow `tests.image` to be configured and update README accordingly.
+* Allow `tests.initContainers.image` to be configured and update README accordingly.
+
 ## [4.2.1]
 * Fix wrong image's tag in application nodes
 
