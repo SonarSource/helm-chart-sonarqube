@@ -8,18 +8,13 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  {{- if and .Values.sonarSecretKey (not .Values.sonarProperties) (not .Values.elasticsearch.bootstrapChecks) }}
-  sonar.properties: sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
-  {{- end }}
-  {{- if or .Values.sonarProperties (not .Values.elasticsearch.bootstrapChecks) }}
-  sonar.properties:
-  {{ range $key, $val := .Values.sonarProperties }}
+  sonar.properties: |
+  {{- range $key, $val := .Values.sonarProperties }}
     {{ $key }}={{ $val }}
-  {{ end }}
+  {{- end }}
   {{- if not .Values.elasticsearch.bootstrapChecks }}
     sonar.es.bootstrap.checks.disable=true
   {{- end }}
+  {{- if .Values.sonarSecretKey }}
+    sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
   {{- end }}
-    {{- if and .Values.sonarSecretKey .Values.sonarProperties }}
-      sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
-    {{- end }}

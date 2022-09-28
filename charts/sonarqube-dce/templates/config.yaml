@@ -9,18 +9,13 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  {{- if and .Values.sonarSecretKey (not .Values.ApplicationNodes.sonarProperties) }}
-  sonar.properties: sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
-  {{- end }}
-  {{- if or .Values.ApplicationNodes.sonarProperties }}
-  sonar.properties:
-  {{ range $key, $val := .Values.ApplicationNodes.sonarProperties }}
+  sonar.properties: |
+  {{- range $key, $val := .Values.ApplicationNodes.sonarProperties }}
     {{ $key }}={{ $val }}
-  {{ end }}
   {{- end }}
-    {{- if and .Values.sonarSecretKey .Values.ApplicationNodes.sonarProperties }}
-      sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
-    {{- end }}
+  {{- if .Values.sonarSecretKey }}
+    sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
+  {{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -32,15 +27,10 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  {{- if and .Values.sonarSecretKey (not .Values.searchNodes.sonarProperties) }}
-  sonar.properties: sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
-  {{- end }}
-  {{- if or .Values.searchNodes.sonarProperties }}
-  sonar.properties:
-  {{ range $key, $val := .Values.searchNodes.sonarProperties }}
+  sonar.properties: |
+  {{- range $key, $val := .Values.searchNodes.sonarProperties }}
     {{ $key }}={{ $val }}
-  {{ end }}
   {{- end }}
-    {{- if and .Values.sonarSecretKey .Values.searchNodes.sonarProperties }}
-      sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
-    {{- end }}
+  {{- if .Values.sonarSecretKey }}
+    sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
+  {{- end }}
