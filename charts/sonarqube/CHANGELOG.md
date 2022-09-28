@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [5.4.0]
+* Allow `tests.image` to be configured and update README accordingly.
+* Allow `tests.initContainers.image` to be configured and update README accordingly.
+
 ## [5.3.0]
 * Use the networkPolicy.prometheusNamespace value for the network policy namespace selector
 * Uncomment default value in values.yaml for backwards compatibility
