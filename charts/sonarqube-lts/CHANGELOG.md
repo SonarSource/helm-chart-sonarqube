@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.31]
+* added `webApi.requests` (It will allow to generate resources on the platform after the installation through Web API)
+
 ## [1.0.30]
 * Add documentation for ingress tls
 
