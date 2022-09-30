@@ -1,0 +1,26 @@
+{{- if .Values.webApi }}
+{{- $fullName := include "sonarqube.fullname" . -}}
+{{- $internalPort := .Values.service.internalPort -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $fullName }}-web-api-hook
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: {{ $fullName }}-web-api-hook
+        image: {{ default "curlimages/curl:latest" .Values.webApi.curlContainerImage }}
+        command: [ 'sh', '-c']
+        {{- if .Values.webApi.requests }}
+        args:
+          - 'until curl -v --connect-timeout 100 {{ $fullName }}:{{ default 9000 $internalPort }}/api/system/status | grep -w UP; do sleep 10; done; '
+          {{- range $key, $val := .Values.webApi.requests }}
+          - 'curl -v --connect-timeout 100 -X POST "{{ $fullName }}:{{ default 9000 $internalPort }}/{{ $val }}"'
+          {{- end }}
+        {{- end }}
+{{- end }}

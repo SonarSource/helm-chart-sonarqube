@@ -1,0 +1,23 @@
+suite: webApi requests
+templates:
+  - post-install-hook.yaml
+tests:
+  - it: job should not render by default
+    asserts:
+      - isKind:
+          of: Job
+      - hasDocuments:
+          count: 1
+  - it: requests should be present
+    set:
+      webApi:
+        requests:
+          - web_api/api/qualitygates/create?name=QG_Q1
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - 'until curl -v --connect-timeout 100 RELEASE-NAME-sonarqube-lts:9000/api/system/status | grep -w UP; do sleep 10; done; '
+            - 'curl -v --connect-timeout 100 -X POST "RELEASE-NAME-sonarqube-lts:9000/web_api/api/qualitygates/create?name=QG_Q1"'
