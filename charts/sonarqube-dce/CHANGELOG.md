@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [4.0.8]
+* Fixed DCE chart to properly mount sonarProperties into the app pod
+
 ## [4.0.7]
 * Updated SonarQube to 9.6.1 for the DCE-chart application nodes
 
@@ -114,7 +117,7 @@ All changes to this chart will be documented in this file.
 * added link to community support forum
 
 ## [0.1.6]
-* fixed wrong scc user reference if name was explicitly set 
+* fixed wrong scc user reference if name was explicitly set
 
 ## [0.1.5]
 * fixed serviceaccount logic

@@ -95,7 +95,7 @@ spec:
         - name: concat-properties
           image: {{ default "busybox:1.32" .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
-          command: 
+          command:
           - sh
           - -c
           - |
@@ -257,7 +257,7 @@ spec:
             - name: SONAR_CLUSTER_SEARCH_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "search.userPassword" . }}" 
+                  name: "{{ template "search.userPassword" . }}"
                   key: SONAR_CLUSTER_SEARCH_PASSWORD
             {{ end }}
             {{- with .Values.ApplicationNodes.env }}
@@ -315,11 +315,11 @@ spec:
 {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if or .Values.sonarProperties .Values.sonarSecretProperties }}
+            {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
               subPath: sonar.properties
               name: concat-dir
-            {{- else if .Values.sonarProperties }}
+            {{- else if .Values.ApplicationNodes.sonarProperties }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
               subPath: sonar.properties
               name: config
