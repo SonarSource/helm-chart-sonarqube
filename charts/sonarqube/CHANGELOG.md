@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [6.1.0]
+* Fix the installation of plugins using the standard folder `extensions/plugins` instead of `extensions/downloads` and `lib/common`
+* Remove `plugins.lib` and other small edits in the documentation
+
 ## [6.0.0]
 * Updated SonarQube to 9.7.0
 
