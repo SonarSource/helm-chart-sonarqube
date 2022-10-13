@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [4.3.1]
+* Fix the right-dash curly brace issue with the additional network policy parameter
+
 ## [4.3.0]
 * Allow `tests.image` to be configured and update README accordingly.
 * Allow `tests.initContainers.image` to be configured and update README accordingly.
