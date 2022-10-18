@@ -4,6 +4,76 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
+          description: "Updated SonarQube to 9.7.0"
+        - kind: fixed
+          description: "Fix the right-dash curly brace issue with the additional network policy parameter"
+        - kind: added
+          description: "Allow `tests.image` to be configured and update README accordingly"
+        - kind: added
+          description: "Allow `tests.initContainers.image` to be configured and update README accordingly"
+        - kind: changed
+          description: "Use the networkPolicy.prometheusNamespace value for the network policy namespace selector"
+        - kind: changed
+          description: "Uncomment default value in values.yaml for backwards compatibility"
+        - kind: added
+          description: "Add support for monitoringPasscode passed as a secret and removal of livenessprobe httpheader defined in clear text"
+        - kind: changed
+          description: "Bump apiVersion to v2"
+        - kind: changed
+          description: "Set the number of allowed replicas to 0 and 1"
+        - kind: added
+          description: "Add documentation for ingress tls"
+        - kind: added
+          description: "Add documentation for sonarProperties and sonarSecretProperties"
+        - kind: added
+          description: "Add the possibility of using a secret for customizing the admin password"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube
+          image: sonarqube:9.7.0-community
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
+    apiVersion: v2
+    appVersion: 9.7.0
+    created: "2022-10-18T14:45:45.458012174Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 10.15.0
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.0.13
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: 4fd912494346c9408eae32e48445bc4e1c48ba377252aff9a3cd747862089378
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: leo.geoffroy+helm@sonarsource.com
+      name: leo-geoffroy-sonarsource
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-6.0.0-sonarqube-dce-5.0.0/sonarqube-6.0.0+403.tgz
+    version: 6.0.0+403
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
           description: "Updated SonarQube to 9.6.1"
       artifacthub.io/containsSecurityUpdates: "false"
       artifacthub.io/images: |
@@ -883,6 +953,76 @@ entries:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-1.1.1+98.tgz
     version: 1.1.1+98
   sonarqube-dce:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "Updated SonarQube to 9.7.0"
+        - kind: fixed
+          description: "Fix the right-dash curly brace issue with the additional network policy parameter"
+        - kind: added
+          description: "Allow `tests.image` to be configured and update README accordingly"
+        - kind: added
+          description: "Allow `tests.initContainers.image` to be configured and update README accordingly"
+        - kind: fixed
+          description: "Fix wrong image's tag in application nodes"
+        - kind: added
+          description: "Add support for monitoringPasscode passed as a secret and removal of livenessprobe httpheader defined in clear text"
+        - kind: added
+          description: "Add the possibility of using a secret for customizing the admin password"
+        - kind: removed
+          description: "Remove unreachable condition and fix the right values for sonarProperties and sonarSecretProperties"
+        - kind: changed
+          description: "Bump apiVersion to v2"
+        - kind: added
+          description: "Add documentation for ApplicationNodes.jwtSecret"
+        - kind: added
+          description: "Add documentation for ingress tls"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube-app
+          image: sonarqube:9.7.0-datacenter-app
+        - name: sonarqube-search
+          image: sonarqube:9.7.0-datacenter-search
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
+    apiVersion: v2
+    appVersion: 9.7.0
+    created: "2022-10-18T14:45:45.469363456Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 10.15.0
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.0.13
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: 78611de4676fbcac39006b80138669054198bf93c88b779dac88e604960be217
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: leo.geoffroy+helm@sonarsource.com
+      name: leo-geoffroy-sonarsource
+    name: sonarqube-dce
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-6.0.0-sonarqube-dce-5.0.0/sonarqube-dce-5.0.0+403.tgz
+    version: 5.0.0+403
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
@@ -2290,4 +2430,4 @@ entries:
     urls:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-lts-1.0.16+98.tgz
     version: 1.0.16+98
-generated: "2022-09-26T10:18:31.452662062Z"
+generated: "2022-10-18T14:45:45.444708778Z"
