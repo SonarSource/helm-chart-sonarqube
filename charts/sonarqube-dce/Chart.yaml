@@ -2,8 +2,8 @@ apiVersion: v2
 name: sonarqube-dce
 description: SonarQube offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
 type: application
-version: 4.3.1
-appVersion: 9.6.1
+version: 5.0.0
+appVersion: 9.7.0
 keywords:
   - coverage
   - security
@@ -19,20 +19,40 @@ maintainers:
   - name: leo-geoffroy-sonarsource
     email: leo.geoffroy+helm@sonarsource.com
 annotations:
+  artifacthub.io/changes: |
+    - kind: changed
+      description: "Updated SonarQube to 9.7.0"
+    - kind: fixed
+      description: "Fix the right-dash curly brace issue with the additional network policy parameter"
+    - kind: added
+      description: "Allow `tests.image` to be configured and update README accordingly"
+    - kind: added
+      description: "Allow `tests.initContainers.image` to be configured and update README accordingly"
+    - kind: fixed
+      description: "Fix wrong image's tag in application nodes"
+    - kind: added
+      description: "Add support for monitoringPasscode passed as a secret and removal of livenessprobe httpheader defined in clear text"
+    - kind: added
+      description: "Add the possibility of using a secret for customizing the admin password"
+    - kind: removed
+      description: "Remove unreachable condition and fix the right values for sonarProperties and sonarSecretProperties"
+    - kind: changed
+      description: "Bump apiVersion to v2"
+    - kind: added
+      description: "Add documentation for ApplicationNodes.jwtSecret"
+    - kind: added
+      description: "Add documentation for ingress tls"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/
     - name: Chart Source
       url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
-  artifacthub.io/changes: |
-    - kind: changed
-      description: "Updated SonarQube to 9.6.1"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-app
-      image: sonarqube:9.6.1-datacenter-app
+      image: sonarqube:9.7.0-datacenter-app
     - name: sonarqube-search
-      image: sonarqube:9.6.1-datacenter-search
+      image: sonarqube:9.7.0-datacenter-search
 dependencies:
   - name: postgresql
     version: 10.15.0
