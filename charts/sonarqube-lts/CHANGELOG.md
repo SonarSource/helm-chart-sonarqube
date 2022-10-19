@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.31]
+* Updated SonarQube LTS to 8.9.10
+
 ## [1.0.30]
 * Add documentation for ingress tls
 
