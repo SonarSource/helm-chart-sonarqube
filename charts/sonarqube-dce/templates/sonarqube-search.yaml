@@ -126,7 +126,7 @@ spec:
           {{- end }}
       {{- end }}
       {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled }}
-      {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties }}
+      {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
           image: {{ default "busybox:1.32" .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
@@ -145,7 +145,7 @@ spec:
               awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
             fi
           volumeMounts:
-          {{- if .Values.searchNodes.sonarProperties }}
+          {{- if or .Values.searchNodes.sonarProperties .Values.sonarSecretKey }}
             - mountPath: /tmp/props/sonar.properties
               name: config
               subPath: sonar.properties
@@ -351,6 +351,11 @@ spec:
 {{- if .Values.searchNodes.persistence.mounts }}
 {{ toYaml .Values.searchNodes.persistence.mounts | indent 12 }}
 {{- end }}
+            {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
+            - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
+              subPath: sonar.properties
+              name: concat-dir
+            {{- end }}
             {{- if .Values.sonarSecretKey }}
             - mountPath: {{ .Values.sonarqubeFolder }}/secret/
               name: secret
@@ -403,7 +408,7 @@ spec:
           - key: sonar-secret.txt
             path: sonar-secret.txt
       {{- end }}
-      {{- if .Values.searchNodes.sonarProperties }}
+      {{- if or .Values.searchNodes.sonarProperties .Values.sonarSecretKey }}
       - name: config
         configMap:
           name: {{ template "sonarqube.fullname" . }}-search-config
@@ -449,7 +454,7 @@ spec:
       {{- end }}
       - name : tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
-        {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties }}
+        {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
       - name : concat-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 -}}
         {{- end }}
