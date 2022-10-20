@@ -201,8 +201,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `ApplicationNodes.prometheusExporter.httpsProxy` | HTTPS proxy for downloading JMX agent | `""` |
 | `ApplicationNodes.prometheusExporter.noProxy` | No proxy for downloading JMX agent | `""` |
 | `ApplicationNodes.prometheusExporter.securityContext` | Security context for downloading the jmx agent | see `values.yaml`|
-| `ApplicationNodes.plugins.install` | List of plugins to install | `[]` |
-| `ApplicationNodes.plugins.lib` | Plugins libray | `[]` |
+| `ApplicationNodes.plugins.install` | Link(s) to the plugin JARs to download and install | `[]` |
 | `ApplicationNodes.plugins.resources` | Plugin Pod resource requests & limits | `{}` |
 | `ApplicationNodes.plugins.httpProxy` | For use behind a corporate proxy when downloading plugins | `""` |
 | `ApplicationNodes.plugins.httpsProxy` | For use behind a corporate proxy when downloading plugins | `""` |

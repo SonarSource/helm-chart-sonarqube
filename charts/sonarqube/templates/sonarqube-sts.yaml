@@ -219,16 +219,9 @@ spec:
               name: sonarqube
               subPath: extensions
             {{- else if .Values.plugins.install }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/downloads
+            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins
               name: sonarqube
-              subPath: extensions/downloads
-            {{- end }}
-            {{- if .Values.plugins.lib }}
-            {{- range $index, $val := .Values.plugins.lib }}
-            - mountPath: {{ $.Values.sonarqubeFolder }}/lib/common/{{ $val }}
-              name: sonarqube
-              subPath: lib/common/{{ $val }}
-            {{- end }}
+              subPath: extensions/plugins
             {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/temp
               name: sonarqube
@@ -247,12 +240,9 @@ spec:
             "-e",
             "/tmp/scripts/install_plugins.sh"]
           volumeMounts:
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/downloads
+            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins
               name: sonarqube
-              subPath: extensions/downloads
-            - mountPath: {{ .Values.sonarqubeFolder }}/lib/common
-              name: sonarqube
-              subPath: lib/common
+              subPath: extensions/plugins
             - name: install-plugins
               mountPath: /tmp/scripts/
             {{- if .Values.plugins.netrcCreds }}
@@ -401,16 +391,9 @@ spec:
               name: sonarqube
               subPath: extensions
             {{- else if .Values.plugins.install }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/downloads
+            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins
               name: sonarqube
-              subPath: extensions/downloads
-            {{- end }}
-            {{- if .Values.plugins.lib }}
-            {{- range $index, $val := .Values.plugins.lib }}
-            - mountPath: {{ $.Values.sonarqubeFolder }}/lib/common/{{ $val }}
-              name: sonarqube
-              subPath: lib/common/{{ $val }}
-            {{- end }}
+              subPath: extensions/plugins
             {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/temp
               name: sonarqube
