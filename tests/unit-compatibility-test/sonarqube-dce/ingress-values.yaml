@@ -1,0 +1,17 @@
+ingress:
+  enabled: true
+  hosts:
+  - name: sonarqube.your-org.com
+    path: /
+    serviceName: someService
+    servicePort: 1010
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+  labels:
+    traffic-type: external
+  tls:
+  - secretName: chart-example-tls
+    hosts:
+    - chart-example.local
