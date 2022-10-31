@@ -57,7 +57,7 @@ chart_testing_task:
   wait_for_kind_script:
     - secs=3600; endTime=$(( $(date +%s) + secs )); while [[ -n "$(kubectl cluster-info --context kind-kind 2>&1 > /dev/null)" ]] || [ $(date +%s) -gt $endTime ]; do sleep 5; done
   script:
-    - ct lint --config test.yaml
+    - ct lint --config test.yaml --target-branch branch-6.0.x-dce-5.0.x
     - ct install --config test.yaml
   artifacthub_lint_script:
     - ah lint

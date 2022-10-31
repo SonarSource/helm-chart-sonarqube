@@ -1,9 +1,12 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [5.0.1]
+* Updated SonarQube to 9.7.1
+
 ## [5.0.0]
 * Updated SonarQube to 9.7.0
-* 
+
 ## [4.3.1]
 * Fix the right-dash curly brace issue with the additional network policy parameter
 
