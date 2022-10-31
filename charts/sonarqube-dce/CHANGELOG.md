@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [5.1.2]
+* Updated SonarQube to 9.7.1
+
 ## [5.1.1]
 * Refactor templating of ConfigMap for sonar.properties
 * Fix the bug where sonarSecretKey was not applied without sonar.properties set
