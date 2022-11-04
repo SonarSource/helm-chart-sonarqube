@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [6.2.0]
+* Refactor Ingress to be compatible with static compatibitly test and 1.19 minimum requirement
+
 ## [6.1.2]
 * Updated SonarQube to 9.7.1
 

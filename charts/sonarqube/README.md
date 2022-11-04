@@ -10,10 +10,9 @@ Please note that this chart only supports SonarQube Community, Developer, and En
 
 ## Compatibility
 
-| SonarQube Version | Kubernetes Version | Helm Chart Version |
-|-------------------|--------------------|--------------------|
-| latest            | 1.19, 1.20, 1.21   | 2.0                |
+Compatible Sonarqube Version: see chart.appVersion
 
+Compatible Kubernetes Versions: From 1.19 to 1.25
 ## Installing the chart
 
 To install the chart:
