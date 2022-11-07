@@ -1,0 +1,62 @@
+# tests/unit-compatibility-test/sonarqube/change-admin-password-hook-values.yaml
+account:
+  adminPassword: admin1
+  currentAdminPassword: admin
+  securityContext: 
+    runAsGroup: 1001
+    runAsUser: 1001
+  resources:
+    limits:
+      cpu: 3
+      memory: 16Gi
+    requests:
+      cpu: 3
+      memory: 16Gi
+curlContainerImage: curlimages/curl:latest
+adminJobAnnotations:
+  someAnnotaion: toto
+sonarWebContext: /
+
+# tests/unit-compatibility-test/sonarqube/config-values.yaml
+sonarProperties:
+  sonar.forceAuthentication: false
+
+elasticsearch:
+  bootstrapChecks: false
+
+# tests/unit-compatibility-test/sonarqube/ingress-values.yaml
+ingress:
+  enabled: true
+  hosts:
+  - name: sonarqube.ourorg.com
+    path: /
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+  labels:
+    traffic-type: external
+
+# tests/unit-compatibility-test/sonarqube/install-plugins-values.yaml
+plugins:
+ install:
+   - "https://github.com/elegoff/sonar-rust/releases/download/v0.0.9/community-rust-plugin-0.0.9.jar"
+
+# tests/unit-compatibility-test/sonarqube/jdbc-config-values.yaml # It requires an external db
+# tests/unit-compatibility-test/sonarqube/networkpolicy-values.yaml
+networkPolicy:
+  enabled: true
+  prometheusNamespace: "monitoring"
+
+# tests/unit-compatibility-test/sonarqube/pvc-values.yaml
+persistence:
+  enabled: true
+  annotations:
+      someAnnotations: toto
+postgresql:
+  persistence:
+    enabled: true
+
+# tests/unit-compatibility-test/sonarqube/secret-values.yaml
+# tests/unit-compatibility-test/sonarqube/service-values.yaml
+# tests/unit-compatibility-test/sonarqube/serviceaccount-values.yaml
