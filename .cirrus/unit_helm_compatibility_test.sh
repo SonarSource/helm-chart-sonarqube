@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 set -euo pipefail
 
 KUBE_VERSION="${KUBE_VERSION:-1.25.0}"
