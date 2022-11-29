@@ -7,7 +7,9 @@ CHARTS=$(find $CIRRUS_WORKING_DIR -maxdepth 1 -name "*.tgz*" -type f -exec basen
 
 [[ "x$CHARTS" == "x" ]] && exit 0
 
-jfrog config add repox --artifactory-url ${ARTIFACTORY_URL} --user ${ARTIFACTORY_DEPLOY_USERNAME} --password ${ARTIFACTORY_DEPLOY_PASSWORD} --basic-auth-only
+jfrog config add repox \
+  --artifactory-url "${ARTIFACTORY_URL}" \
+  --access-token "${ARTIFACTORY_ACCESS_TOKEN}"
 
 for chart in $CHARTS; do
     cd $CIRRUS_WORKING_DIR

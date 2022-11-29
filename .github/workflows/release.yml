@@ -13,13 +13,19 @@ name: Release
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
     steps:
-      - name: Setup JFrog CLI
-        uses: jfrog/setup-jfrog-cli@v1
-      - name: JFrog config
-        run: jfrog rt config repox --url https://repox.jfrog.io/artifactory/ --apikey $ARTIFACTORY_API_KEY --basic-auth-only
-        env:
-          ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
+      - id: secrets
+        uses: SonarSource/vault-action-wrapper@2.4.3-1
+        with:
+          secrets: |
+            development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | artifactory_access_token;
+            development/kv/data/slack webhook | slack_webhook_url;
+      - uses: SonarSource/jfrog-setup-wrapper@3.0.0-1
+        with:
+          jfrogAccessToken: ${{ fromJSON(steps.secrets.outputs.vault).artifactory_access_token }}
       - name: Checkout
         uses: actions/checkout@v3
       - name: Fetch history
@@ -29,14 +35,11 @@ jobs:
       - name: Create local repository directory
         id: local_repo
         run: echo ::set-output name=dir::"$(mktemp -d repo.XXXXXXXX)"
-      - name: Download artifacts
-        shell: bash
-        working-directory: ${{ steps.local_repo.outputs.dir }}
-        run: jfrog rt download --fail-no-op --build "${{ github.event.repository.name }}/${{ github.event.inputs.buildNumber }}" sonarsource-helm/
-      - name: Download checksums
-        shell: bash
-        working-directory: ${{ steps.local_repo.outputs.dir }}
-        run: find . -type f -not \( -name "*.asc" -or -name "*.md5" -or -name "*.sha1" -or -name "*.sha256" \) -exec jfrog rt curl "sonarsource-helm/{{}}.{md5,sha1,sha256}" --output "#1.#2" \;
+      - uses: SonarSource/gh-action_release/download-build@v5
+        with:
+          local-repo-dir: ${{ steps.local_repo.outputs.dir }}
+          remote-repo: sonarsource-helm
+          build-number: ${{ github.event.inputs.buildNumber }}
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
@@ -52,7 +55,7 @@ jobs:
       - name: Release to GitHub
         uses: ./.github/actions/helm-index
         env:
-          CR_TOKEN: "${{ secrets.RELEASE_GITHUB_TOKEN }}"
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         with:
           repository-name: "${{ github.event.repository.name }}"
           package-path: ${{ steps.local_repo.outputs.dir }}
@@ -61,6 +64,7 @@ jobs:
         if: failure()
         uses: Ilshidur/action-slack@2.0.0
         env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_SQ_DEVOPS_WEBHOOK }}
+          SLACK_WEBHOOK: ${{ fromJSON(steps.secrets.outputs.vault).slack_webhook_url }}
+          SLACK_CHANNEL: team-sonarqube-build
         with:
           args: "Helm Chart Release failed, see the logs at https://github.com/SonarSource/helm-chart-sonarqube/actions"
