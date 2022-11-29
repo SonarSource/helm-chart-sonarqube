@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [7.0.3]
+* Refactor Deployment manifest to match the Statefulset manifest
+
 ## [7.0.2]
 * Update the list of supported kubernetes versions
 
