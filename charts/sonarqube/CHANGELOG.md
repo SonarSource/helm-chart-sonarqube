@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [9.3.0]
+* Refactor Deployment manifest to match the Statefulset manifest
+
 ## [9.2.0]
 * Add a configurable Prometheus PodMonitor resource
 * Refactor Prometheus exporter's documentation and bump to version 0.17.2

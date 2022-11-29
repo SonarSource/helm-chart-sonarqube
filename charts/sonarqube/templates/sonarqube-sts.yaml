@@ -45,6 +45,9 @@ spec:
       {{- end }}
 {{- end }}
     spec:
+    {{- if .Values.schedulerName }}
+      schedulerName: {{ .Values.schedulerName }}
+    {{- end }}      
       securityContext:
 {{ toYaml .Values.securityContext | indent 8 }}
       {{- if or .Values.image.pullSecrets .Values.image.pullSecret }}
