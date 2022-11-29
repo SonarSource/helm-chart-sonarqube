@@ -2,10 +2,12 @@
 
 set -euo pipefail
 
-curl -X POST "$SLACK_SQ_DEVOPS_WEBHOOK" \
-  -H 'Content-type: application/json' \
+curl -X POST https://slack.com/api/chat.postMessage \
+  -H "Authorization: Bearer ${SLACK_TOKEN}" \
+  -H 'Content-type: application/json; charset=utf-8' \
   --data-binary @- <<EOF
 {
+  "channel": "team-sq-devops",
 	"blocks": [
 		{
 			"type": "header",

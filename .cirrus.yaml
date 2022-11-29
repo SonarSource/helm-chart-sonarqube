@@ -74,10 +74,10 @@ chart_packaging_task:
     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
     fingerprint_script: echo $CIRRUS_BUILD_ID
   env:
-    GITHUB_TOKEN: ENCRYPTED[!f458126aa9ed2ac526f220c5acb51dd9cc255726b34761a56fc78d4294c11089502a882888cef0ca7dd4085e72e611a5!]
-    SONARSOURCE_SIGN_KEY: ENCRYPTED[!cc216dfe592f79db8006f2a591f8f98b40aa2b078e92025623594976fd32f6864c1e6b6ba74b50647f608e2418e6c336!]
-    SONARSOURCE_SIGN_KEY_ID: "0x7DCD4258"
-    SONARSOURCE_SIGN_KEY_PASSPHRASE: ENCRYPTED[!314a8fc344f45e462dd5e8dccd741d7562283a825e78ebca27d4ae9db8e65ce618e7f6aece386b2782a5abe5171467bd!]
+    GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-releases token]
+    SONARSOURCE_SIGN_KEY: VAULT[development/kv/data/sign data.key]
+    SONARSOURCE_SIGN_KEY_ID: VAULT[development/kv/data/sign data.key_id]
+    SONARSOURCE_SIGN_KEY_PASSPHRASE: VAULT[development/kv/data/sign data.passphrase]
   key_file:
     path: /tmp/key
     variable_name: SONARSOURCE_SIGN_KEY
@@ -104,9 +104,8 @@ push_to_repox_task:
     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
     fingerprint_script: echo $CIRRUS_BUILD_ID
   env:
-    ARTIFACTORY_URL: https://repox.jfrog.io/artifactory/
-    ARTIFACTORY_DEPLOY_USERNAME: repox-qa-deployer-sq-ef42e7
-    ARTIFACTORY_DEPLOY_PASSWORD: ENCRYPTED[!d8838c939fe77f3b0a0510774c3b270832646e06cab8e477b35ff776933042105d211e7a0fb8ddcf826ce9f53258c519!]
+    ARTIFACTORY_URL: VAULT[development/kv/data/repox data.url]
+    ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
   script:
     - source cirrus-env ""
     - ./.cirrus/upload_chart.sh
@@ -127,11 +126,8 @@ trigger_release_task:
     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
     fingerprint_script: echo $CIRRUS_BUILD_ID
   env:
-    GITHUB_TOKEN: ENCRYPTED[!f458126aa9ed2ac526f220c5acb51dd9cc255726b34761a56fc78d4294c11089502a882888cef0ca7dd4085e72e611a5!]
-    ARTIFACTORY_URL: https://repox.jfrog.io/artifactory/
-    ARTIFACTORY_DEPLOY_USERNAME: repox-qa-deployer-sq-ef42e7
-    ARTIFACTORY_DEPLOY_PASSWORD: ENCRYPTED[!d8838c939fe77f3b0a0510774c3b270832646e06cab8e477b35ff776933042105d211e7a0fb8ddcf826ce9f53258c519!]
-    SLACK_SQ_DEVOPS_WEBHOOK: ENCRYPTED[b8ae6e031a9d9045d6314ee7ad7df1cbc57e1c3860acabe2913290329ac898dd2cf5b5093962606b28b305478c99c03f]
+    GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-release token]
+    SLACK_TOKEN: VAULT[development/kv/data/slack token]
   gh_action_script: |
     source cirrus-env RELEASE
     CHARTS=$(find $CIRRUS_WORKING_DIR -maxdepth 1 -name "*.tgz*" -type f -exec basename "{}" ";")
