@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+##[1.1.0]
+* added ability to set ingress class name if using networking.k8s.io/v1 API
+
 ## [1.0.31]
 * Updated SonarQube LTS to 8.9.10
 
