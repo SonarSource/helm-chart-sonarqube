@@ -18,6 +18,8 @@ Be aware that this forum is a community, so the standard pleasantries ("Hi", "Th
 Contributing
 ------------
 
+**Caution** our LTS chart is frozen as per our LTS policy, please do not ask or create modifications for that one.
+
 If you would like to see a new feature, please create a new Community thread: ["Suggest new features"](https://community.sonarsource.com/c/suggestions/features).
 
 Please be aware that we are not actively looking for feature contributions. The truth is that it's extremely difficult for someone outside SonarSource to comply with our roadmap and expectations. Therefore, we typically only accept minor cosmetic changes and typo fixes.
