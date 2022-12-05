@@ -1,4 +1,5 @@
-FROM us.gcr.io/sonarqube-team/base:j11-latest as tools
+ARG CIRRUS_AWS_ACCOUNT
+FROM ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j11-latest as tools
 
 FROM docker:20.10
 

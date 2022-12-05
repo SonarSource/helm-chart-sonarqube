@@ -1,23 +1,24 @@
-gcp_credentials: ENCRYPTED[!e5f7207bd8d02d383733bef47e18296ac32e3b7d22eb480354e8dd8fdc0004be45a8a4e72c797bd66ee94eb3340fa363!]
-
-
 only_on_none_release_draft_template: &ONLY_ON_NONE_RELEASE_DRAFT_TEMPLATE
   only_if: $CIRRUS_PRERELEASE != "true"
 
-docker_build_container_template: &GKE_CONTAINER_TEMPLATE
+docker_build_container_template: &CONTAINER_TEMPLATE
   dockerfile: .cirrus/Dockerfile
-  builder_image_project: sonarqube-team
-  builder_image_name: docker-builder-v20200915
-  cluster_name: cirrus-ci-cluster
-  zone: us-central1-a
+  docker_arguments:
+      CIRRUS_AWS_ACCOUNT: ${CIRRUS_AWS_ACCOUNT}
+  cluster_name: ${CIRRUS_CLUSTER_NAME}
+  builder_role: cirrus-builder
+  builder_image: docker-builder-v*
+  builder_instance_type: t2.small
+  builder_subnet_id: ${CIRRUS_AWS_SUBNET}
+  region: eu-central-1
   namespace: default
   cpu: 1
   memory: 1Gb
 
-container_template: &GKE_STD_CONTAINER_TEMPLATE
-  image: us.gcr.io/sonarqube-team/base:j11-latest
-  cluster_name: cirrus-ci-cluster
-  zone: us-central1-a
+container_template: &STD_CONTAINER_TEMPLATE
+  image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j11-latest
+  cluster_name: ${CIRRUS_CLUSTER_NAME}
+  region: eu-central-1
   namespace: default
   cpu: 1
   memory: 1Gb
@@ -36,8 +37,8 @@ clone_script_template: &CLONE_SCRIPT_TEMPLATE
 chart_testing_task:
   only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_BRANCH != "master"
   timeout_in: 30m
-  gke_container:
-    <<: *GKE_CONTAINER_TEMPLATE
+  eks_container:
+    <<: *CONTAINER_TEMPLATE
     cpu: 2
     memory: 4Gb
     additional_containers:
@@ -65,8 +66,8 @@ chart_testing_task:
 chart_packaging_task:
   <<: *ONLY_ON_NONE_RELEASE_DRAFT_TEMPLATE
   timeout_in: 15m
-  gke_container:
-    <<: *GKE_CONTAINER_TEMPLATE
+  eks_container:
+    <<: *CONTAINER_TEMPLATE
     cpu: 2
     memory: 1Gb
   <<: *CLONE_SCRIPT_TEMPLATE
@@ -95,8 +96,8 @@ chart_packaging_task:
 push_to_repox_task:
   <<: *ONLY_ON_NONE_RELEASE_DRAFT_TEMPLATE
   timeout_in: 15m
-  gke_container:
-    <<: *GKE_STD_CONTAINER_TEMPLATE
+  eks_container:
+    <<: *STD_CONTAINER_TEMPLATE
     cpu: 1
     memory: 1Gb
   <<: *CLONE_SCRIPT_TEMPLATE
@@ -115,8 +116,8 @@ push_to_repox_task:
 
 trigger_release_task:
   timeout_in: 15m
-  gke_container:
-    <<: *GKE_STD_CONTAINER_TEMPLATE
+  eks_container:
+    <<: *STD_CONTAINER_TEMPLATE
     cpu: 1
     memory: 1Gb
   only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_RELEASE != ""
