@@ -391,6 +391,9 @@ spec:
               subPath: prometheus-ce-config.yaml
               name: prometheus-ce-config
             {{- end }}
+    {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+    {{- end }}
     {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}

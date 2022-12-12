@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.32]
+* Allow setting priorityClassName for StatefulSet too
+
 ## [1.0.31]
 * Updated SonarQube LTS to 8.9.10
 
