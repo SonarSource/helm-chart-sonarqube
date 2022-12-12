@@ -248,6 +248,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | --------- | ----------- | ------- |
 | `affinity` | Node / Pod affinities | `{}` |
 | `tolerations` | List of node taints to tolerate | `[]` |
+| `priorityClassName` | Schedule pods on priority (e.g. `high-priority`) | `None` |
 | `nodeSelector` | Node labels for pod assignment | `{}` |
 | `hostAliases` | Aliases for IPs in /etc/hosts | `[]` |
 | `podLabels` | Map of labels to add to the pods | `{}` |

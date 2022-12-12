@@ -386,6 +386,9 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
+    {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+    {{- end }}
     {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}

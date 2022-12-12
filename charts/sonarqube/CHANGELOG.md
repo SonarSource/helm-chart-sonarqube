@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [9.1.0]
+* Allow setting priorityClassName for StatefulSets
+
 ## [9.0.1]
 * Adds timeoutSeconds parameter to probes
 
