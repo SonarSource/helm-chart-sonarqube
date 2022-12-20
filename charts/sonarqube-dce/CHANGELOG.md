@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [5.2.1]
+* Update the postgresql chart's repository
+
 ## [5.2.0]
 * Refactor Pdb and Ingress to be compatible with static compatibitly test and 1.19 minimum requirement
 * Fix indent in Service.yaml annotations
