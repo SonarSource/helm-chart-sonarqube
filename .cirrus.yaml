@@ -128,7 +128,7 @@ trigger_release_task:
     fingerprint_script: echo $CIRRUS_BUILD_ID
   env:
     GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-release token]
-    SLACK_TOKEN: VAULT[development/kv/data/slack token]
+    SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
   gh_action_script: |
     source cirrus-env RELEASE
     CHARTS=$(find $CIRRUS_WORKING_DIR -maxdepth 1 -name "*.tgz*" -type f -exec basename "{}" ";")
