@@ -2,8 +2,8 @@ apiVersion: v2
 name: sonarqube
 description: SonarQube offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
 type: application
-version: 6.2.1
-appVersion: 9.7.1
+version: 7.0.0
+appVersion: 9.8.0
 keywords:
   - coverage
   - security
@@ -26,35 +26,15 @@ annotations:
       url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
   artifacthub.io/changes: |
     - kind: changed
-      description: "Updated SonarQube to 9.7.1"
-    - kind: changed
-      description: "Updated SonarQube to 9.7.0"
+      description: "Update SonarQube to 9.8.0"
     - kind: fixed
-      description: "Fix the right-dash curly brace issue with the additional network policy parameter"
-    - kind: added
-      description: "Allow `tests.image` to be configured and update README accordingly"
-    - kind: added
-      description: "Allow `tests.initContainers.image` to be configured and update README accordingly"
+      description: "Update the postgresql chart's repository"
     - kind: changed
-      description: "Use the networkPolicy.prometheusNamespace value for the network policy namespace selector"
-    - kind: changed
-      description: "Uncomment default value in values.yaml for backwards compatibility"
-    - kind: added
-      description: "Add support for monitoringPasscode passed as a secret and removal of livenessprobe httpheader defined in clear text"
-    - kind: changed
-      description: "Bump apiVersion to v2"
-    - kind: changed
-      description: "Set the number of allowed replicas to 0 and 1"
-    - kind: added
-      description: "Add documentation for ingress tls"
-    - kind: added
-      description: "Add documentation for sonarProperties and sonarSecretProperties"
-    - kind: added
-      description: "Add the possibility of using a secret for customizing the admin password"
+      description: "Refactor Ingress to be compatible with static compatibility test and 1.19 minimum requirement"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube
-      image: sonarqube:9.7.1-community
+      image: sonarqube:9.8.0-community
 dependencies:
   - name: postgresql
     version: 10.15.0
