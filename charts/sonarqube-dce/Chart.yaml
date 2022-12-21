@@ -2,8 +2,8 @@ apiVersion: v2
 name: sonarqube-dce
 description: SonarQube offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
 type: application
-version: 5.2.1
-appVersion: 9.7.1
+version: 6.0.0
+appVersion: 9.8.0
 keywords:
   - coverage
   - security
@@ -21,29 +21,13 @@ maintainers:
 annotations:
   artifacthub.io/changes: |
     - kind: changed
-      description: "Updated SonarQube to 9.7.1"
-    - kind: changed
-      description: "Updated SonarQube to 9.7.0"
+      description: "Update SonarQube to 9.8.0"
     - kind: fixed
-      description: "Fix the right-dash curly brace issue with the additional network policy parameter"
-    - kind: added
-      description: "Allow `tests.image` to be configured and update README accordingly"
-    - kind: added
-      description: "Allow `tests.initContainers.image` to be configured and update README accordingly"
-    - kind: fixed
-      description: "Fix wrong image's tag in application nodes"
-    - kind: added
-      description: "Add support for monitoringPasscode passed as a secret and removal of livenessprobe httpheader defined in clear text"
-    - kind: added
-      description: "Add the possibility of using a secret for customizing the admin password"
-    - kind: removed
-      description: "Remove unreachable condition and fix the right values for sonarProperties and sonarSecretProperties"
+      description: "Update the postgresql chart's repository"
     - kind: changed
-      description: "Bump apiVersion to v2"
-    - kind: added
-      description: "Add documentation for ApplicationNodes.jwtSecret"
-    - kind: added
-      description: "Add documentation for ingress tls"
+      description: "Refactor Pdb and Ingress to be compatible with static compatibility test and 1.19 minimum requirement"
+    - kind: fixed
+      description: "Fix indent in Service.yaml annotations"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/
@@ -52,9 +36,9 @@ annotations:
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-app
-      image: sonarqube:9.7.0-datacenter-app
+      image: sonarqube:9.8.0-datacenter-app
     - name: sonarqube-search
-      image: sonarqube:9.7.0-datacenter-search
+      image: sonarqube:9.8.0-datacenter-search
 dependencies:
   - name: postgresql
     version: 10.15.0
