@@ -1,6 +1,12 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [since 1.0.31]
+* update jdbc overwrite values
+  * replace `jdbcUrlOverride` with `jdbcOverwrite.jdbcUrl`
+  * remove useless `jdbcDatabaseType` (was always postgres)
+* deprecate `postgresql.postgresqlServer`, `postgresql.existingSecret` and `postgresql.existingSecretPasswordKey` in favor of new `jdbcOverwrite` values
+
 ## [1.0.31]
 * Updated SonarQube LTS to 8.9.10
 
