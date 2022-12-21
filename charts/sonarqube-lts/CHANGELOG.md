@@ -1,7 +1,7 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-## [since 1.0.31]
+## [1.1.0]
 * update jdbc overwrite values
   * replace `jdbcUrlOverride` with `jdbcOverwrite.jdbcUrl`
   * remove useless `jdbcDatabaseType` (was always postgres)
