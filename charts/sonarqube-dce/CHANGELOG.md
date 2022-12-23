@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [6.0.1]
+* Fix a bug in the generation of the Data Center Edition chart search StatefulSet.
+
 ## [6.0.0]
 * Update SonarQube to 9.8.0
 
