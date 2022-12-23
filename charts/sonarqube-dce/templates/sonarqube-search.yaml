@@ -194,7 +194,6 @@ spec:
             - mountPath: {{ .Values.sonarqubeFolder }}/data
               name: "{{ template "sonarqube.fullname" . }}"
               subPath: data
-            {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/temp
               name: "{{ template "sonarqube.fullname" . }}"
               subPath: temp
@@ -203,6 +202,7 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
+      {{- end }}
       containers:
       {{- if .Values.searchNodes.extraContainers }}
         {{- toYaml .Values.searchNodes.extraContainers | nindent 8 }}
