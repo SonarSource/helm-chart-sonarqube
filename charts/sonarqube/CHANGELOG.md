@@ -1,11 +1,15 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [7.1.0]
+* Add configurable Prometheus PodMonitor resource
+
 ## [7.0.0]
 * Update SonarQube to 9.8.0
 
 ## [6.2.1]
 * Update the postgresql chart's repository
+
 
 ## [6.2.0]
 * Refactor Ingress to be compatible with static compatibitly test and 1.19 minimum requirement
