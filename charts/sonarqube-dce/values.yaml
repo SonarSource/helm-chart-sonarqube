@@ -300,11 +300,13 @@ ingress:
       # servicePort: somePort
       # the pathType can be one of the following values: Exact|Prefix|ImplementationSpecific(default)
       # pathType: ImplementationSpecific
-  annotations: {}
-  # kubernetes.io/ingress.class: nginx
+  annotations:
   # kubernetes.io/tls-acme: "true"
   # This property allows for reports up to a certain size to be uploaded to SonarQube
-  # nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+    nginx.ingress.kubernetes.io/proxy-body-size: "64m"
+
+  # Set the ingressClassName on the ingress record
+  # ingressClassName: nginx
 
 # Additional labels for Ingress manifest file
   # labels:

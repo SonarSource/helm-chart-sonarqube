@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [7.0.1]
+* Set a new default (maximum) allowed size of the client request body on the ingress
+
 ## [7.0.0]
 * Update SonarQube to 9.8.0
 
