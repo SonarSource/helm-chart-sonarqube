@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [6.0.2]
+* Update the list of supported kubernetes versions
+
 ## [6.0.1]
 * Set a new default (maximum) allowed size of the client request body on the ingress
 

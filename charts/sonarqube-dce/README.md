@@ -10,9 +10,10 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 ## Compatibility
 
-Compatible Sonarqube Version: see chart.appVersion
+Compatible SonarQube Version: `9.8.0`
 
-Compatible Kubernetes Versions: From 1.19 to 1.25
+Supported Kubernetes Versions: From `1.23` to `1.26`
+
 ## Installing the chart
 
 > **_NOTE:_**  Please refer to [the official page](https://docs.sonarqube.org/latest/setup/sonarqube-cluster-on-kubernetes/) for further information on how to install and tune the helm chart specifications.
@@ -32,7 +33,7 @@ export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key
 helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set ApplicationNodes.jwtSecret=$JWT_SECRET
 ```
 
-The above command deploys Sonarqube on the Kubernetes cluster in the default configuration in the sonarqube namespace. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 The default login is admin/admin.
 
@@ -110,7 +111,7 @@ spec:
 
 ## Configuration
 
-The following table lists the configurable parameters of the Sonarqube chart and their default values.
+The following table lists the configurable parameters of the SonarQube chart and their default values.
 
 ### Search Nodes Configuration
 
@@ -230,7 +231,7 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `hostAliases` | Aliases for IPs in /etc/hosts | `[]` |
 | `podLabels` | Map of labels to add to the pods | `{}` |
 | `env` | Environment variables to attach to the pods | `{}`|
-| `annotations` | Sonarqube Pod annotations | `{}` |
+| `annotations` | SonarQube Pod annotations | `{}` |
 
 
 ### NetworkPolicies
@@ -319,11 +320,11 @@ The following table lists the configurable parameters of the Sonarqube chart and
 | `persistence.mounts` | Specify extra mounts. Refer to ".spec.containers.volumeMounts" specification | `[]` |
 | `emptyDir` | Configuration of resources for `emptyDir` | `{}` |
 
-### Sonarqube Specific
+### SonarQube Specific
 
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
-| `sonarqubeFolder` | Directory name of Sonarqube | `/opt/sonarqube` |
+| `sonarqubeFolder` | Directory name of SonarQube | `/opt/sonarqube` |
 | `monitoringPasscode` | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format) | `define_it` |
 | `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode` | `None` |
 | `monitoringPasscodeSecretKey` | Key of an existing secret containing `monitoringPasscode` | `None` |
@@ -429,7 +430,7 @@ In environments with air-gapped setup, especially with internal tooling (repos) 
        xxxxxxxxxxxxxxxxxxxxxxx
    ```
 
-2. Upload your `cacerts.yaml` to a secret in the cluster you are installing Sonarqube to.
+2. Upload your `cacerts.yaml` to a secret in the cluster you are installing SonarQube to.
 
    ```shell
    kubectl apply -f cacerts.yaml
@@ -461,7 +462,7 @@ For environments where another tool, such as terraform or ansible, is used to pr
 
 In such environments, configuration may be read, via environment variables, from Secrets and ConfigMaps.
 
-1. Create a `ConfigMap` (or `Secret`) containing key/value pairs, as expected by Sonarqube
+1. Create a `ConfigMap` (or `Secret`) containing key/value pairs, as expected by SonarQube.
 
    ```yaml
    apiVersion: v1
