@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [1.0.32]
+* Add optional ingress parameter `ingressClassName`
+
 ## [1.0.31]
 * Updated SonarQube LTS to 8.9.10
 
