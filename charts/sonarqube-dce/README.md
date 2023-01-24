@@ -10,7 +10,7 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 ## Compatibility
 
-Compatible SonarQube Version: `9.8.0`
+Compatible SonarQube Version: `9.9.0`
 
 Supported Kubernetes Versions: From `1.23` to `1.26`
 
@@ -36,6 +36,14 @@ helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set 
 The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 The default login is admin/admin.
+
+## Installing the LTS chart
+
+The LTS chart is being distributed as the 7.x.x of this chart.
+
+In order to use it, please use the version constraint ```~7``` which is equivalent to ```>=7.0.0 && <= 8.0.0```
+
+that version parameter **should** be used in every helm related command including ```install``` ```upgrade``` ```template``` ```diff``` ( might not be an exhaustiv list )
 
 ## How to use it
 
@@ -118,7 +126,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `searchNodes.image.repository` | search image repository | `sonarqube` |
-| `searchNodes.image.tag` | search image tag | `9.8.0-datacenter-search` |
+| `searchNodes.image.tag` | search image tag | `9.9.0-datacenter-search` |
 | `searchNodes.image.pullPolicy` | search image pull policy | `IfNotPresent` |
 | `searchNodes.image.pullSecret` | (DEPRECATED) search imagePullSecret to use for private repository | `nil` |
 | `searchNodes.image.pullSecrets` | search imagePullSecrets to use for private repository | `nil` |
@@ -161,7 +169,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `ApplicationNodes.image.repository` | app image repository | `sonarqube` |
-| `ApplicationNodes.image.tag` | app image tag | `9.8.0-datacenter-app` |
+| `ApplicationNodes.image.tag` | app image tag | `9.9.0-datacenter-app` |
 | `ApplicationNodes.image.pullPolicy` | app image pull policy | `IfNotPresent` |
 | `ApplicationNodes.image.pullSecret` | (DEPRECATED) app imagePullSecret to use for private repository | `nil` |
 | `ApplicationNodes.image.pullSecrets` | app imagePullSecrets to use for private repository | `nil` |

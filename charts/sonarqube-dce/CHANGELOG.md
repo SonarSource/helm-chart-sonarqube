@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [7.0.0]
+* Update Sonarqube to 9.9.0
+* Mark 7.0.0 chart as LTS
+
 ## [6.0.2]
 * Update the list of supported kubernetes versions
 

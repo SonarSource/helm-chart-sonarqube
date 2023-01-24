@@ -1,8 +1,11 @@
 apiVersion: v1
 name: sonarqube-lts
-description: SonarQube offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
-version: 1.0.31
+description: DEPRECATED SonarQube offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
+version: 2.0.0
 appVersion: 8.9.10
+# This chart is being deprecated in favor of https://artifacthub.io/packages/helm/sonarqube/sonarqube#upgrade-from-sonarqube-lts-to-this-chart
+# Please note that now the LTS is being distributed as a major version of the standard chart ( see detail on the link above )
+deprecated: true
 keywords:
   - coverage
   - security
@@ -13,13 +16,10 @@ icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f
 sources:
   - https://github.com/SonarSource/docker-sonarqube
 kubeVersion: ">= 1.19.0-0"
-maintainers:
-  - name: leo-geoffroy-sonarsource
-    email: leo.geoffroy+helm@sonarsource.com
 annotations:
   artifacthub.io/changes: |
-    - kind: changed
-      description: "Updated SonarQube to 8.9.10"
+    - kind: deprecated
+      description: "sonarqube-lts chart is being deprecated in favor of sonarqube chart"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube
