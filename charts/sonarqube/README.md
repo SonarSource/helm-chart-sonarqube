@@ -10,7 +10,7 @@ Please note that this chart only supports SonarQube Community, Developer, and En
 
 ## Compatibility
 
-Compatible SonarQube Version: `9.8.0`
+Compatible SonarQube Version: `9.9.0`
 
 Supported Kubernetes Versions: From `1.23` to `1.26`
 
@@ -28,6 +28,14 @@ helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube
 The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 The default login is admin/admin.
+
+## Installing the LTS chart
+
+The LTS chart is being distributed as the 8.x.x of this chart.
+
+In order to use it, please use the version constraint ```~8``` which is equivalent to ```>=8.0.0 && <= 9.0.0```
+
+that version parameter **should** be used in every helm related command including ```install``` ```upgrade``` ```template``` ```diff``` ( might not be an exhaustiv list )
 
 ## How to use it
 
@@ -52,6 +60,28 @@ $ helm delete kindly-newt
 3. Redeploy SonarQube with the same helm chart (see [Install instructions](#installing-the-chart))
 4. Browse to http://yourSonarQubeServerURL/setup and follow the setup instructions
 5. Reanalyze your projects to get fresh data
+
+### Upgrade from sonarqube-lts to this chart
+
+Please carefully read the [Upgrade doc above](./README#upgrade) and **backup** your db instance before atempting the migration.
+
+As Sonarqube only requires the database instance as persistence data, the general upgrade process will be to uninstall your instance, before installing the new lts.
+
+First verify your value file and if the parameters are still compatible with the targeted chart, adjusting if necessary.
+
+#### Upgrade with an external database
+
+If you are using an external database, that scenario is the simpler as you dont have any persistent data inside kubernetes
+
+#### Upgrade when using the embedeed postgresql chart ( not recommended )
+
+**Disclaimer** : The embedeed postgresql chart should only be used for testing and not for production usage.
+
+If one want to upgrade in that case, uninstalling the chart will keep the PVC alive. which can then be reused.
+
+Either by specifying ```postgresql.existingClaim``` in the values ( recommended )
+
+Or by not doing anything. If you have the exact same values, the name of the PVC will be generated the same and reused as is.
 
 ## Ingress
 
@@ -151,7 +181,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `image.repository` | image repository | `sonarqube` |
-| `image.tag` | `sonarqube` image tag. | `9.8.0-{{ .Values.edition }}` |
+| `image.tag` | `sonarqube` image tag. | `9.9.0-{{ .Values.edition }}` |
 | `image.pullPolicy` | Image pull policy  | `IfNotPresent` |
 | `image.pullSecret` | (DEPRECATED) imagePullSecret to use for private repository | `None` |
 | `image.pullSecrets` | imagePullSecrets to use for private repository | `None` |
