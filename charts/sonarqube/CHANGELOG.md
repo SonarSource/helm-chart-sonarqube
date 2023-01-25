@@ -2,8 +2,9 @@
 All changes to this chart will be documented in this file.
 
 ## [8.0.0]
-* Update Sonarqube to 9.9.0
-* Mark 8.x.x chart as LTS
+* Update SonarQube to 9.9.0
+* Bootstrap version 8.x.x dedicated to the SonarQube 9.9 LTS chart
+
 ## [7.0.2]
 * Update the list of supported kubernetes versions
 

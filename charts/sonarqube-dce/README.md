@@ -4,7 +4,11 @@ Code better in up to 27 languages. Improve Code Quality and Code Security throug
 
 ## Introduction
 
-This chart bootstraps a SonarQube DCE Cluster with a PostgreSQL database.
+This helm chart bootstraps a SonarQube Data Center Edition cluster with a PostgreSQL database.
+
+The latest version of the chart installs the latest SonarQube version.
+
+To install the version of the chart for SonarQube 9.9 LTS, please read the section [below](#installing-the-lts-chart). Deciding between LTS and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/)
 
 Please note that this chart does NOT support SonarQube Community, Developer, and Enterprise Editions.
 
@@ -37,13 +41,16 @@ The above command deploys SonarQube on the Kubernetes cluster in the default con
 
 The default login is admin/admin.
 
-## Installing the LTS chart
+## Installing the SonarQube 9.9 LTS chart
 
-The LTS chart is being distributed as the 7.x.x of this chart.
+The version of the chart for the SonarQube 9.9 LTS is being distributed as the `7.x.x` version of this chart.
 
-In order to use it, please use the version constraint ```~7``` which is equivalent to ```>=7.0.0 && <= 8.0.0```
+In order to use it, please set the version constraint `~7`, which is equivalent to `>=7.0.0 && <= 8.0.0`. That version parameter **must** be used in every helm related command including `install`, `upgrade`, `template`, and `diff` (don't treat this as an exhaustive list).
 
-that version parameter **should** be used in every helm related command including ```install``` ```upgrade``` ```template``` ```diff``` ( might not be an exhaustiv list )
+Example:
+```
+helm upgrade --install -n sonarqube-dce --version ~7 sonarqube sonarqube/sonarqube-dce --set ApplicationNodes.jwtSecret=$JWT_SECRET
+```
 
 ## How to use it
 

@@ -4,9 +4,9 @@ Code better in up to 27 languages. Improve Code Quality and Code Security throug
 
 ## Introduction
 
-This chart bootstraps an instance of the latest SonarQube version with a PostgreSQL database. A helm chart is also available for the [LTS version](../sonarqube-lts).
+This chart bootstraps an instance of the latest SonarQube version with a PostgreSQL database. A helm chart containing the SonarQube LTS version can be installed following the steps outlined [here](#installing-the-lts-chart).
 
-Please note that this chart only supports SonarQube Community, Developer, and Enterprise Editions.
+Please note that this chart only supports SonarQube Community, Developer, and Enterprise editions.
 
 ## Compatibility
 
@@ -29,13 +29,18 @@ The above command deploys SonarQube on the Kubernetes cluster in the default con
 
 The default login is admin/admin.
 
-## Installing the LTS chart
+## Installing the SonarQube 9.9 LTS chart
 
-The LTS chart is being distributed as the 8.x.x of this chart.
+The version of the chart for the SonarQube 9.9 LTS is being distributed as the `8.x.x` version of this chart.
 
-In order to use it, please use the version constraint ```~8``` which is equivalent to ```>=8.0.0 && <= 9.0.0```
+In order to use it, please set the version constraint `~8`, which is equivalent to `>=8.0.0 && <= 9.0.0`. That version parameter **must** be used in every helm related command including `install`, `upgrade`, `template`, and `diff` (don't treat this as an exhaustive list).
 
-that version parameter **should** be used in every helm related command including ```install``` ```upgrade``` ```template``` ```diff``` ( might not be an exhaustiv list )
+Example:
+```
+helm upgrade --install -n sonarqube --version ~8 sonarqube sonarqube/sonarqube
+```
+
+To upgrade from the old and unmaintained [sonarqube-lts chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube-lts), please follow the steps described [in this section](#upgrade-from-sonarqube-lts-to-this-chart).
 
 ## How to use it
 
@@ -61,27 +66,9 @@ $ helm delete kindly-newt
 4. Browse to http://yourSonarQubeServerURL/setup and follow the setup instructions
 5. Reanalyze your projects to get fresh data
 
-### Upgrade from sonarqube-lts to this chart
+### Upgrade from the old sonarqube-lts to this chart
 
-Please carefully read the [Upgrade doc above](./README#upgrade) and **backup** your db instance before atempting the migration.
-
-As Sonarqube only requires the database instance as persistence data, the general upgrade process will be to uninstall your instance, before installing the new lts.
-
-First verify your value file and if the parameters are still compatible with the targeted chart, adjusting if necessary.
-
-#### Upgrade with an external database
-
-If you are using an external database, that scenario is the simpler as you dont have any persistent data inside kubernetes
-
-#### Upgrade when using the embedeed postgresql chart ( not recommended )
-
-**Disclaimer** : The embedeed postgresql chart should only be used for testing and not for production usage.
-
-If one want to upgrade in that case, uninstalling the chart will keep the PVC alive. which can then be reused.
-
-Either by specifying ```postgresql.existingClaim``` in the values ( recommended )
-
-Or by not doing anything. If you have the exact same values, the name of the PVC will be generated the same and reused as is.
+Please refer to the Helm upgrade section accessible [here](https://docs.sonarqube.org/latest/setup-and-upgrade/upgrade-the-server/upgrade-guide/)
 
 ## Ingress
 
