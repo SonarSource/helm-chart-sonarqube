@@ -1,6 +1,6 @@
 # SonarQube 8.9 (previous LTS) (NOT MAINTAINED)
 
-> **DEPRECATION NOTICE**: Since the latest SonarQube LTS (9.9.0), this chart has been deprecated, is no longer maintained and is replaced by the standard [sonarqube chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube). **Please read the upgrade notes available at [this page](https://artifacthub.io/packages/helm/sonarqube/sonarqube#upgrade-from-sonarqube-lts-to-this-chart) to install the current LTS chart.**
+> **NOTE**: Since SonarQube 9.9 LTS, this chart is no longer maintained. Please use the [sonarqube chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube) to install the SonarQube 9.9 LTS. **Please read the upgrade notes available at [this page](https://artifacthub.io/packages/helm/sonarqube/sonarqube#upgrade-from-sonarqube-lts-to-this-chart) to install the current LTS chart.**
 
 Improve Code Quality and Code Security throughout your workflow for up to 27 languages. [SonarQube](https://www.sonarqube.org/) can detect Bugs, Vulnerabilities, Security Hotspots and Code Smells and give you the guidance to fix them.
 
