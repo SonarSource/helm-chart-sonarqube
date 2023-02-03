@@ -1,14 +1,12 @@
 # SonarQube 8.9 (previous LTS) (NOT MAINTAINED)
 
-> **NOTE**: Since SonarQube 9.9 LTS, this chart is no longer maintained. Please use the [sonarqube chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube) to install the SonarQube 9.9 LTS. **Please read the upgrade notes available at [this page](https://artifacthub.io/packages/helm/sonarqube/sonarqube#upgrade-from-sonarqube-lts-to-this-chart) to install the current LTS chart.**
+> **NOTE**: Since SonarQube 9.9 LTS, this chart is no longer maintained. Please use the [sonarqube chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube) to install the SonarQube 9.9 LTS. **Please read the upgrade notes available at [this page](https://artifacthub.io/packages/helm/sonarqube/sonarqube#upgrade-from-the-old-sonarqube-lts-to-this-chart) to install the current LTS chart.**
 
 Improve Code Quality and Code Security throughout your workflow for up to 27 languages. [SonarQube](https://www.sonarqube.org/) can detect Bugs, Vulnerabilities, Security Hotspots and Code Smells and give you the guidance to fix them.
 
 ## Introduction
 
-This chart bootstraps a SonarQube LTS instance with a PostgreSQL database. If you want to use the latest version of SonarQube, please use the [sonarqube](../sonarqube/) helm chart. Deciding between LTS and Latest? [This may help](https://www.sonarqube.org/downloads/lts/)
-
-Please note that this chart only supports SonarQube Community, Developer, and Enterprise Editions.
+This chart bootstraps a SonarQube 8.9 (previous LTS) instance with a PostgreSQL database. If you want to use the latest version of SonarQube or the SonarQube 9.9 LTS, please use the [sonarqube](https://github.com/SonarSource/helm-chart-sonarqube/pull/sonarqube/) helm chart. Deciding between LTS and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/)
 
 ## Compatibility
 

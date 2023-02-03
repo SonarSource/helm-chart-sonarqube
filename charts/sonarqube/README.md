@@ -4,7 +4,11 @@ Code better in up to 27 languages. Improve Code Quality and Code Security throug
 
 ## Introduction
 
-This chart bootstraps an instance of the latest SonarQube version with a PostgreSQL database. A helm chart containing the SonarQube LTS version can be installed following the steps outlined [here](#installing-the-lts-chart).
+This chart bootstraps an instance of the latest SonarQube version with a PostgreSQL database.
+
+The latest version of the chart installs the latest SonarQube version.
+
+To install the version of the chart for SonarQube 9.9 LTS, please read the section [below](#installing-the-sonarqube-99-lts-chart). Deciding between LTS and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/)
 
 Please note that this chart only supports SonarQube Community, Developer, and Enterprise editions.
 
@@ -40,7 +44,7 @@ Example:
 helm upgrade --install -n sonarqube --version ~8 sonarqube sonarqube/sonarqube
 ```
 
-To upgrade from the old and unmaintained [sonarqube-lts chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube-lts), please follow the steps described [in this section](#upgrade-from-sonarqube-lts-to-this-chart).
+To upgrade from the old and unmaintained [sonarqube-lts chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube-lts), please follow the steps described [in this section](#upgrade-from-the-old-sonarqube-lts-to-this-chart).
 
 ## How to use it
 
