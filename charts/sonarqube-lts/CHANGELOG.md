@@ -2,7 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [2.0.0]
-* This chart is deprecated and no longer maintained
+* This chart is no longer maintained. Please use the 'sonarqube' chart to install the new SonarQube 9.9 LTS
 
 ## [1.0.31]
 * Updated SonarQube LTS to 8.9.10
