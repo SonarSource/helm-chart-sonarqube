@@ -1,4 +1,4 @@
-# SonarQube LTS (Deprecated)
+# SonarQube 8.9 (previous LTS) (NOT MAINTAINED)
 
 > **DEPRECATION NOTICE**: Since the latest SonarQube LTS (9.9.0), this chart has been deprecated, is no longer maintained and is replaced by the standard [sonarqube chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube). **Please read the upgrade notes available at [this page](https://artifacthub.io/packages/helm/sonarqube/sonarqube#upgrade-from-sonarqube-lts-to-this-chart) to install the current LTS chart.**
 
