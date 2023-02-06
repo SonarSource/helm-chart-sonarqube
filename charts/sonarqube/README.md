@@ -4,13 +4,17 @@ Code better in up to 27 languages. Improve Code Quality and Code Security throug
 
 ## Introduction
 
-This chart bootstraps an instance of the latest SonarQube version with a PostgreSQL database. A helm chart is also available for the [LTS version](../sonarqube-lts).
+This chart bootstraps an instance of the latest SonarQube version with a PostgreSQL database.
 
-Please note that this chart only supports SonarQube Community, Developer, and Enterprise Editions.
+The latest version of the chart installs the latest SonarQube version.
+
+To install the version of the chart for SonarQube 9.9 LTS, please read the section [below](#installing-the-sonarqube-99-lts-chart). Deciding between LTS and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/)
+
+Please note that this chart only supports SonarQube Community, Developer, and Enterprise editions.
 
 ## Compatibility
 
-Compatible SonarQube Version: `9.8.0`
+Compatible SonarQube Version: `9.9.0`
 
 Supported Kubernetes Versions: From `1.23` to `1.26`
 
@@ -28,6 +32,19 @@ helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube
 The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 The default login is admin/admin.
+
+## Installing the SonarQube 9.9 LTS chart
+
+The version of the chart for the SonarQube 9.9 LTS is being distributed as the `8.x.x` version of this chart.
+
+In order to use it, please set the version constraint `~8`, which is equivalent to `>=8.0.0 && <= 9.0.0`. That version parameter **must** be used in every helm related command including `install`, `upgrade`, `template`, and `diff` (don't treat this as an exhaustive list).
+
+Example:
+```
+helm upgrade --install -n sonarqube --version ~8 sonarqube sonarqube/sonarqube
+```
+
+To upgrade from the old and unmaintained [sonarqube-lts chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube-lts), please follow the steps described [in this section](#upgrade-from-the-old-sonarqube-lts-to-this-chart).
 
 ## How to use it
 
@@ -52,6 +69,10 @@ $ helm delete kindly-newt
 3. Redeploy SonarQube with the same helm chart (see [Install instructions](#installing-the-chart))
 4. Browse to http://yourSonarQubeServerURL/setup and follow the setup instructions
 5. Reanalyze your projects to get fresh data
+
+### Upgrade from the old sonarqube-lts to this chart
+
+Please refer to the Helm upgrade section accessible [here](https://docs.sonarqube.org/latest/setup-and-upgrade/upgrade-the-server/upgrade-guide/)
 
 ## Ingress
 
@@ -151,7 +172,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `image.repository` | image repository | `sonarqube` |
-| `image.tag` | `sonarqube` image tag. | `9.8.0-{{ .Values.edition }}` |
+| `image.tag` | `sonarqube` image tag. | `9.9.0-{{ .Values.edition }}` |
 | `image.pullPolicy` | Image pull policy  | `IfNotPresent` |
 | `image.pullSecret` | (DEPRECATED) imagePullSecret to use for private repository | `None` |
 | `image.pullSecrets` | imagePullSecrets to use for private repository | `None` |

@@ -2,8 +2,8 @@ apiVersion: v2
 name: sonarqube
 description: SonarQube offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
 type: application
-version: 7.0.2
-appVersion: 9.8.0
+version: 8.0.0
+appVersion: 9.9.0
 keywords:
   - coverage
   - security
@@ -18,6 +18,10 @@ kubeVersion: '>= 1.19.0-0'
 maintainers:
   - name: leo-geoffroy-sonarsource
     email: leo.geoffroy+helm@sonarsource.com
+  - name: carminevassallo
+    email: carmine.vassallo@sonarsource.com
+  - name: jCOTINEAU
+    email: jeremy.cotineau@sonarsource.com
 annotations:
   artifacthub.io/links: |
     - name: support
@@ -26,15 +30,17 @@ annotations:
       url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
   artifacthub.io/changes: |
     - kind: changed
-      description: "Update SonarQube to 9.8.0"
-    - kind: fixed
-      description: "Update the postgresql chart's repository"
+      description : "Update the list of supported kubernetes versions"
     - kind: changed
-      description: "Refactor Ingress to be compatible with static compatibility test and 1.19 minimum requirement"
+      description : "Set a new default (maximum) allowed size of the client request body on the ingress"
+    - kind: changed
+      description: "Update SonarQube to 9.9.0"
+    - kind: changed
+      description: "Mark 8.x.x chart as the LTS (SonarQube 9.9.x) chart"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube
-      image: sonarqube:9.8.0-community
+      image: sonarqube:9.9.0-community
 dependencies:
   - name: postgresql
     version: 10.15.0
