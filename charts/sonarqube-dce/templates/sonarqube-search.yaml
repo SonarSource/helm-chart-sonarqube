@@ -289,6 +289,7 @@ spec:
             initialDelaySeconds: {{ .Values.searchNodes.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.searchNodes.livenessProbe.periodSeconds }}
             failureThreshold: {{ .Values.searchNodes.livenessProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.searchNodes.livenessProbe.timeoutSeconds }}
           readinessProbe:
             exec:
               command:
@@ -316,6 +317,7 @@ spec:
             initialDelaySeconds: {{ .Values.searchNodes.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.searchNodes.readinessProbe.periodSeconds }}
             failureThreshold: {{ .Values.searchNodes.readinessProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.searchNodes.readinessProbe.timeoutSeconds }}
           startupProbe:
             exec:
              command:
@@ -343,6 +345,7 @@ spec:
             initialDelaySeconds: {{ .Values.searchNodes.startupProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.searchNodes.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.searchNodes.startupProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.searchNodes.startupProbe.timeoutSeconds }}
           {{- if .Values.searchNodes.containerSecurityContext }}
           securityContext:
 {{- toYaml .Values.searchNodes.containerSecurityContext | nindent 12 }}

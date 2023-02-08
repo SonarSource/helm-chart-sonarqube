@@ -153,12 +153,15 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for Search Node checking| `60` |
 | `searchNodes.readinessProbe.periodSeconds` | ReadinessProbe period between checking Search Node | `30` |
 | `searchNodes.readinessProbe.failureThreshold`| ReadinessProbe thresold for marking as failed | `6` |
+| `searchNodes.readinessProbe.timeoutSeconds`| ReadinessProbe timeout delay | `1` |
 | `searchNodes.livenessProbe.initialDelaySeconds`| LivenessProbe initial delay for Search Node checking | `60` |
 | `searchNodes.livenessProbe.periodSeconds`| LivenessProbe period between checking Search Node | `30` |
 | `searchNodes.livenessProbe.failureThreshold`| LivenessProbe thresold for marking as dead | `6` |
+| `searchNodes.livenessProbe.timeoutSeconds`| LivenessProbe timeout delay | `1` |
 | `searchNodes.startupProbe.initialDelaySeconds`| StartupProbe initial delay for Search Node checking | `30` |
 | `searchNodes.startupProbe.periodSeconds`| StartupProbe period between checking Search Node | `10` |
 | `searchNodes.startupProbe.failureThreshold`| StartupProbe thresold for marking as failed | `24` |
+| `searchNodes.startupProbe.timeoutSeconds`| StartupProbe timeout delay | `1` |
 | `searchNodes.resources.requests.memory` | memory request for Search Nodes | `2Gi` |
 | `searchNodes.resources.requests.cpu` | cpu request for Search Nodes | `400m` |
 | `searchNodes.resources.limits.memory` | memory limit for Search Nodes. should not be under 4G | `4096M` |
@@ -191,14 +194,17 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for app Node checking| `60` |
 | `ApplicationNodes.readinessProbe.periodSeconds` | ReadinessProbe period between checking app Node | `30` |
 | `ApplicationNodes.readinessProbe.failureThreshold`| ReadinessProbe thresold for marking as failed | `6` |
+| `ApplicationNodes.readinessProbe.timeoutSeconds`| ReadinessProbe timeout delay | `1` |
 | `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for readinessProbe | `/` |
 | `ApplicationNodes.livenessProbe.initialDelaySeconds`| LivenessProbe initial delay for app Node checking | `60` |
 | `ApplicationNodes.livenessProbe.periodSeconds`| LivenessProbe period between checking app Node | `30` |
 | `ApplicationNodes.livenessProbe.failureThreshold`| LivenessProbe thresold for marking as dead | `6` |
+| `ApplicationNodes.livenessProbe.timeoutSeconds`| LivenessProbe timeout delay | `1` |
 | `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for StartupProbe | `/` |
 | `ApplicationNodes.startupProbe.initialDelaySeconds`| StartupProbe initial delay for app Node checking | `30` |
 | `ApplicationNodes.startupProbe.periodSeconds`| StartupProbe period between checking app Node | `10` |
 | `ApplicationNodes.startupProbe.failureThreshold`| StartupProbe thresold for marking as failed | `24` |
+| `ApplicationNodes.startupProbe.timeoutSeconds`| StartupProbe timeout delay | `1` |
 | `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for StartupProbe | `/` |
 | `ApplicationNodes.resources.requests.memory` | memory request for app Nodes | `2Gi` |
 | `ApplicationNodes.resources.requests.cpu` | cpu request for app Nodes | `400m` |

@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [8.0.1]
+* Adds timeoutSeconds parameter to probes
+
 ## [8.0.0]
 * Update SonarQube logo
 * Bootstrap chart version 8.x.x dedicated to the future SonarQube 10.0
