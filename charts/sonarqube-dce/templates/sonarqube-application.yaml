@@ -288,6 +288,7 @@ spec:
             initialDelaySeconds: {{ .Values.ApplicationNodes.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.ApplicationNodes.livenessProbe.periodSeconds }}
             failureThreshold: {{ .Values.ApplicationNodes.livenessProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.ApplicationNodes.livenessProbe.timeoutSeconds }}
           readinessProbe:
             exec:
               command:
@@ -305,6 +306,7 @@ spec:
             initialDelaySeconds: {{ .Values.ApplicationNodes.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.ApplicationNodes.readinessProbe.periodSeconds }}
             failureThreshold: {{ .Values.ApplicationNodes.readinessProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.ApplicationNodes.readinessProbe.timeoutSeconds }}
           startupProbe:
             httpGet:
               scheme: HTTP
@@ -313,6 +315,7 @@ spec:
             initialDelaySeconds: {{ .Values.ApplicationNodes.startupProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.ApplicationNodes.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.ApplicationNodes.startupProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.ApplicationNodes.startupProbe.timeoutSeconds }}
           {{- if .Values.containerSecurityContext }}
           securityContext:
 {{- toYaml .Values.containerSecurityContext | nindent 12 }}
