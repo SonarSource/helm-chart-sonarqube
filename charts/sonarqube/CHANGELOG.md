@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [9.0.0]
+* Update SonarQube logo
+* Bootstrap chart version 9.x.x dedicated to the future SonarQube 10.0
 ## [8.0.0]
 * Update SonarQube to 9.9.0
 * Bootstrap chart version 8.x.x dedicated to SonarQube 9.9 LTS
