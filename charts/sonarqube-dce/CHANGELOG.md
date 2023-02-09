@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [8.0.2]
+* Fix the volume mounts for the init-fs container
+
 ## [8.0.1]
 * Adds timeoutSeconds parameter to probes
 
