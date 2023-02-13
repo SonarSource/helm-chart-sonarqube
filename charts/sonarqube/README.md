@@ -309,6 +309,8 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode` | `None` |
 | `monitoringPasscodeSecretKey` | Key of an existing secret containing `monitoringPasscode` | `None` |
 | `extraContainers` | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars) | `[]` |
+| `extraVolumes` | Array of extra volumes to add to the SonarQube deployment | `[]` |
+| `extraVolumeMounts` | Array of extra volume mounts to add to the SonarQube deployment | `[]` |
 
 ### Resources
 

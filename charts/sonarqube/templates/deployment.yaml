@@ -329,6 +329,9 @@ spec:
 {{- if .Values.persistence.mounts }}
 {{ toYaml .Values.persistence.mounts | indent 12 }}
 {{- end }}
+{{- if .Values.extraVolumeMounts }}
+{{- .Values.extraVolumeMounts | toYaml | nindent 12 }}
+{{- end }}
             {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/
               name: concat-dir
@@ -391,6 +394,9 @@ spec:
     {{- end }}
       serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
       volumes:
+{{- if .Values.extraVolumes }}
+{{- .Values.extraVolumes | toYaml | nindent 6 }}
+{{- end }}
 {{- if .Values.persistence.volumes }}
 {{ tpl (toYaml .Values.persistence.volumes | indent 6) . }}
 {{- end }}
