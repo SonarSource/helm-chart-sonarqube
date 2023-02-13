@@ -190,9 +190,9 @@ ApplicationNodes:
     # sonarWebContext: /sonarqube/
 
   prometheusExporter:
-    enabled: true
+    enabled: false
     # jmx_prometheus_javaagent version to download from Maven Central
-    version: "0.15.0"
+    version: "0.17.2"
     # Alternative full download URL for the jmx_prometheus_javaagent.jar (overrides prometheusExporter.version)
     # downloadURL: ""
     # if you need to ignore TLS certificates for whatever reason enable the following flag
@@ -218,6 +218,21 @@ ApplicationNodes:
     securityContext:
       runAsUser: 1000
       runAsGroup: 1000
+
+  prometheusMonitoring:
+    # Generate a Prometheus Pod Monitor (https://github.com/coreos/prometheus-operator)
+    #
+    podMonitor:
+      # Create PodMonitor Resource for Prometheus scraping
+      enabled: false
+      # Specify a custom namespace where the PodMonitor will be created
+      namespace: "default"
+      # Specify the interval how often metrics should be scraped
+      interval: 30s
+      # Specify the timeout after a scrape is ended
+      # scrapeTimeout: ""
+      # Name of the label on target services that prometheus uses as job name
+      # jobLabel: ""
 
   # List of plugins to install.
   # For example:
