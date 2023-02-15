@@ -2,10 +2,11 @@
 All changes to this chart will be documented in this file.
 
 ## [9.4.0]
-* Added support for `extraValues` and `extraVolumeMounts` in sonar pod.
+* Added support for `extraVolumes` and `extraVolumeMounts` in sonar pod.
 
 ## [9.3.1]
 * Clarify doc for custom cacert secret
+
 ## [9.3.0]
 * Refactor Deployment manifest to match the Statefulset manifest
 
