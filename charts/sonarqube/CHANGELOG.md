@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [9.3.1]
+* Clarify doc for custom cacert secret
+
 ## [9.3.0]
 * Refactor Deployment manifest to match the Statefulset manifest
 
