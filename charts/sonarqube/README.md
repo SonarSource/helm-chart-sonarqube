@@ -428,7 +428,7 @@ In environments with air-gapped setup, especially with internal tooling (repos) 
    kind: Secret
    metadata:
      name: my-cacerts
-   data:
+   stringData:
      cert-1.crt: |
        xxxxxxxxxxxxxxxxxxxxxxx
    ```

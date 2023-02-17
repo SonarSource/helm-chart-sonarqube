@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [8.2.1]
+* Clarify doc for custom cacert secret
+
 ## [8.2.0]
 * Add a configurable Prometheus PodMonitor resource
 * Refactor Prometheus exporter's documentation and bump to version 0.17.2
