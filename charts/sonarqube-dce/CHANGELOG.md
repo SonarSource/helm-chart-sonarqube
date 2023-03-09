@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [8.3.0]
+* Add helm-chart-sonarqube as chart sources
+
 ## [8.2.3]
 * Fixed unsupported wget parameter `--proxy off` with `--no-proxy`
 ## [8.2.2]
