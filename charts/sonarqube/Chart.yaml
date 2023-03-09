@@ -2,7 +2,7 @@ apiVersion: v2
 name: sonarqube
 description: SonarQube offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
 type: application
-version: 9.4.2
+version: 9.5.0
 appVersion: 9.9.0
 keywords:
   - coverage
@@ -12,6 +12,7 @@ keywords:
 home: https://www.sonarqube.org/
 icon: https://raw.githubusercontent.com/SonarSource/sonarqube-static-resources/master/helm/SonarQubeLogo.svg
 sources:
+  - https://github.com/SonarSource/helm-chart-sonarqube
   - https://github.com/SonarSource/docker-sonarqube
   - https://github.com/SonarSource/sonarqube
 kubeVersion: '>= 1.19.0-0'
@@ -29,6 +30,8 @@ annotations:
     - name: Chart Source
       url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
   artifacthub.io/changes: |
+    - kind: added
+      description: "Add helm-chart-sonarqube as chart source"
     - kind: fixed
       description: "Fixed unsupported wget parameter --proxy off with --no-proxy"
     - kind: fixed
