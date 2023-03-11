@@ -175,3 +175,16 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{- define "recurseFlattenMap" -}}
+{{- $map := first . -}}
+{{- $label := last . -}}
+{{- range $key, $val := $map -}}
+  {{- $sublabel := list $label $key | join "." -}}
+  {{- if kindOf $val | eq "map" -}}
+    {{- list $val $sublabel | include "recurseFlattenMap" -}}
+  {{- else -}}
+{{ $sublabel }}={{ $val }}
+  {{ end -}}
+{{- end -}}
+{{- end -}}

@@ -9,9 +9,9 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   sonar.properties: |
-  {{- range $key, $val := .Values.sonarProperties }}
-    {{ $key }}={{ $val }}
-  {{- end }}
+  {{- if .Values.sonarProperties }}
+    {{ list .Values.sonarProperties.sonar "sonar" | include "recurseFlattenMap" | indent 4 }}
+  {{- end}}
   {{- if not .Values.elasticsearch.bootstrapChecks }}
     sonar.es.bootstrap.checks.disable=true
   {{- end }}

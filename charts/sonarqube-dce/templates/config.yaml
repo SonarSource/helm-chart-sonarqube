@@ -28,8 +28,8 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   sonar.properties: |
-  {{- range $key, $val := .Values.searchNodes.sonarProperties }}
-    {{ $key }}={{ $val }}
+  {{- if .Values.sonarProperties }}
+    {{ list .Values.sonarProperties.sonar "sonar" | include "recurseFlattenMap" | indent 4 }}
   {{- end }}
   {{- if .Values.sonarSecretKey }}
     sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt

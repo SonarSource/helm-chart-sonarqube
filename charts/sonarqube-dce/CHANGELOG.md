@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [8.3.2]
+* Add helper function to flatten dictionary keys and values to render properties correctly in properties file.
+
 ## [8.3.1]
 * Make `jvmOpts` and `jvmCeOpts` not override env vars and sonar properties
 
