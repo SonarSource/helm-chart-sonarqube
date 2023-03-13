@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [8.2.2]
+* Fix install_plugins.sh not deleting previously installed plugins
+
 ## [8.2.1]
 * Clarify doc for custom cacert secret
 
