@@ -10,7 +10,7 @@ metadata:
 data:
   install_plugins.sh: |-
     {{- if .Values.ApplicationNodes.plugins.install }}
-      [ -e {{ .Values.sonarqubeFolder }}/extensions/plugins/* ] && rm {{ .Values.sonarqubeFolder }}/extensions/plugins/*
+      rm -f {{ .Values.sonarqubeFolder }}/extensions/plugins/*
       cd {{ .Values.sonarqubeFolder }}/extensions/plugins
       {{- range $index, $val := .Values.ApplicationNodes.plugins.install }}
       curl {{ if $.Values.ApplicationNodes.plugins.noCheckCertificate }}--insecure{{ end }} {{ if $.Values.ApplicationNodes.plugins.netrcCreds }}--netrc-file /root/.netrc{{ end }} -fsSLO {{ $val | quote }}
