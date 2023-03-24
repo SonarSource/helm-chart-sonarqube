@@ -1,6 +1,8 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [8.2.3]
+* Fixed unsupported wget parameter `--proxy off` with `--no-proxy`
 ## [8.2.2]
 * Fix install_plugins.sh not deleting previously installed plugins
 
