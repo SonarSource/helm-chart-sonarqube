@@ -107,14 +107,24 @@ Determine JDBC password if internal secret is used
 Set sonarqube.jvmOpts
 */}}
 {{- define "sonarqube.jvmOpts" -}}
+{{- $tempJvm := .Values.jvmOpts -}}
+{{- if and .Values.sonarProperties (hasKey .Values.sonarProperties "sonar.web.javaOpts")}}
+{{- $tempJvm = (get .Values.sonarProperties "sonar.web.javaOpts") -}}
+{{- else if .Values.env -}}
+{{- range $index, $val := .Values.env -}}
+{{- if eq $val.name "SONAR_WEB_JAVAOPTS" -}}
+{{- $tempJvm = $val.value -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- if and .Values.caCerts.enabled .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder $tempJvm | trim | quote }}
 {{- else if .Values.caCerts.enabled -}}
-{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
+{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder $tempJvm | trim | quote }}
 {{- else if .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder .Values.jvmOpts | trim | quote }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder $tempJvm | trim | quote }}
 {{- else -}}
-{{ printf "%s" .Values.jvmOpts }}
+{{ printf "%s" $tempJvm }}
 {{- end -}}
 {{- end -}}
 
@@ -122,14 +132,24 @@ Set sonarqube.jvmOpts
 Set sonarqube.jvmCEOpts
 */}}
 {{- define "sonarqube.jvmCEOpts" -}}
+{{- $tempJvm := .Values.jvmCeOpts -}}
+{{- if and .Values.sonarProperties (hasKey .Values.sonarProperties "sonar.ce.javaOpts")}}
+{{- $tempJvm = (get .Values.sonarProperties "sonar.ce.javaOpts") -}}
+{{- else if .Values.env -}}
+{{- range $index, $val := .Values.env -}}
+{{- if eq $val.name "SONAR_CE_JAVAOPTS" -}}
+{{- $tempJvm = $val.value -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- if and .Values.caCerts.enabled .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder .Values.jvmCeOpts | trim | quote }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder $tempJvm | trim | quote }}
 {{- else if .Values.caCerts.enabled -}}
-{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder .Values.jvmCeOpts | trim | quote }}
+{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder $tempJvm | trim | quote }}
 {{- else if .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder .Values.jvmCeOpts | trim | quote }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder $tempJvm | trim | quote }}
 {{- else -}}
-{{ printf "%s" .Values.jvmCeOpts }}
+{{ printf "%s" $tempJvm }}
 {{- end -}}
 {{- end -}}
 
