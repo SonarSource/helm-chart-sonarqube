@@ -1,7 +1,7 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-## [9.4.3]
+## [8.2.4]
 * Improve values file comments
 
 ## [8.2.3]
