@@ -1,0 +1,49 @@
+on:
+  # Trigger analysis when pushing in master or pull requests, and when creating
+  # a pull request. 
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, synchronize, reopened]
+    
+name: Main Workflow
+jobs:
+  next:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      pull-requests: read
+      contents: read
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        # Disabling shallow clone is recommended for improving relevancy of reporting
+        fetch-depth: 0
+    - uses: azure/setup-helm@v3
+      with:
+        version: latest # default is latest (stable)
+        token: ${{ secrets.GITHUB_TOKEN }} # only needed if version is 'latest'
+      id: install-helm
+    - id: secrets
+      uses: SonarSource/vault-action-wrapper@2.4.3-1
+      with:
+        secrets: |
+          development/kv/data/next token | sq_next_token;
+    - name: run templating
+      run: |
+        helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+        helm repo add bitnami https://charts.bitnami.com/bitnami
+        helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+        cd ${{ github.workspace }}/charts/sonarqube
+        helm dependency build
+        ../../.cirrus/generate-yaml-for-next-scan.sh
+        cd ${{ github.workspace }}/charts/sonarqube-dce
+        helm dependency build
+        ../../.cirrus/generate-yaml-for-next-scan.sh
+    - name: SonarQube Next Scan
+      uses: sonarsource/sonarqube-scan-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).sq_next_token }}
+        SONAR_HOST_URL: https://next.sonarqube.com
