@@ -220,8 +220,8 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.plugins.netrcCreds` | Name of the secret containing .netrc file to use creds when downloading plugins | `""` |
 | `ApplicationNodes.plugins.noCheckCertificate` | Flag to not check server's certificate when downloading plugins | `false |
 | `ApplicationNodes.plugins.securityContext` | Security context for the container to download plugins | see `values.yaml |
-| `ApplicationNodes.jvmOpts` | Values to add to SONARQUBE_WEB_JVM_OPTS | `""` |
-| `ApplicationNodes.jvmCeOpts` | Values to add to SONAR_CE_JAVAOPTS | `""` |
+| `ApplicationNodes.jvmOpts` | (DEPRECATED) Values to add to SONARQUBE_WEB_JVM_OPTS | `""` |
+| `ApplicationNodes.jvmCeOpts` | (DEPRECATED) Values to add to SONAR_CE_JAVAOPTS | `""` |
 | `ApplicationNodes.jwtSecret` | A HS256 key encoded with base64 (*This value must be set before installing the chart, see [the documentation](https://docs.sonarqube.org/latest/setup/sonarqube-cluster-on-kubernetes/)*) | `""` |
 | `ApplicationNodes.existingJwtSecret` | secret that contains the `jwtSecret` | `nil` |
 | `ApplicationNodes.resources.requests.memory` | memory request for app Nodes | `2Gi` |

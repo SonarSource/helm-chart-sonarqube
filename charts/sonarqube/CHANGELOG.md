@@ -1,11 +1,15 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [9.5.1]
+* Make `jvmOpts` and `jvmCeOpts` not override env vars and sonar properties
+
 ## [9.5.0]
 * Add helm-chart-sonarqube as chart source
 
 ## [9.4.2]
 * Fixed unsupported wget parameter `--proxy off` with `--no-proxy`
+
 ## [9.4.1]
 * Fix install_plugins.sh not deleting previously installed plugins
 

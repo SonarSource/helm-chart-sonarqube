@@ -291,6 +291,9 @@ spec:
           resources:
 {{ toYaml (default .Values.resources .Values.resource) | indent 12 }}
           env:
+            {{- with .Values.env }}
+            {{- . | toYaml | trim | nindent 12 }}
+            {{- end }}
             - name: SONAR_WEB_JAVAOPTS
               value: {{ template "sonarqube.jvmOpts" . }}
             - name: SONAR_CE_JAVAOPTS
@@ -310,9 +313,6 @@ spec:
                   name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
                 {{- end }}
-            {{- with .Values.env }}
-            {{- . | toYaml | trim | nindent 12 }}
-            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ template "sonarqube.fullname" . }}-jdbc-config

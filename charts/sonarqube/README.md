@@ -299,8 +299,8 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
-| `jvmOpts` | Values to add to SONARQUBE_WEB_JVM_OPTS | `""` |
-| `jvmCeOpts` | Values to add to SONAR_CE_JAVAOPTS | `""` |
+| `jvmOpts` | (DEPRECATED) Values to add to SONARQUBE_WEB_JVM_OPTS | `""` |
+| `jvmCeOpts` | (DEPRECATED) Values to add to SONAR_CE_JAVAOPTS | `""` |
 | `sonarqubeFolder` | Directory name of SonarQube | `/opt/sonarqube` |
 | `sonarProperties` | Custom `sonar.properties` key-value pairs (e.g., "sonarProperties.sonar.forceAuthentication=true") | `None` |
 | `sonarSecretProperties` | Additional `sonar.properties` key-value pairs to load from a secret | `None` |
