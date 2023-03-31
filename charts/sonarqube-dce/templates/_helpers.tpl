@@ -117,7 +117,7 @@ Set sonarqube.jvmOpts
 */}}
 {{- define "sonarqube.jvmOpts" -}}
 {{- $tempJvm := .Values.ApplicationNodes.jvmOpts -}}
-{{- if and .Values.ApplicationNodes.sonarProperties (hasKey .Values.ApplicationNodes.sonarProperties "sonar.web.javaOpts")}}
+{{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.web.javaOpts")}}
 {{- $tempJvm = (get .Values.ApplicationNodes.sonarProperties "sonar.web.javaOpts") -}}
 {{- else if .Values.ApplicationNodes.env -}}
 {{- range $index, $val := .Values.ApplicationNodes.env -}}
@@ -142,7 +142,7 @@ Set sonarqube.jvmCEOpts
 */}}
 {{- define "sonarqube.jvmCEOpts" -}}
 {{- $tempJvm := .Values.ApplicationNodes.jvmCeOpts -}}
-{{- if and .Values.ApplicationNodes.sonarProperties (hasKey .Values.ApplicationNodes.sonarProperties "sonar.ce.javaOpts")}}
+{{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.ce.javaOpts")}}
 {{- $tempJvm = (get .Values.ApplicationNodes.sonarProperties "sonar.ce.javaOpts") -}}
 {{- else if .Values.ApplicationNodes.env -}}
 {{- range $index, $val := .Values.ApplicationNodes.env -}}
