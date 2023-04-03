@@ -1,0 +1,454 @@
+---
+# Source: sonarqube/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: default-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: default-values.yaml
+    heritage: Helm
+type: Opaque
+data:
+  jdbc-password: "c29uYXJQYXNz"
+---
+# Source: sonarqube/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: default-values.yaml-sonarqube-monitoring-passcode
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: default-values.yaml
+    heritage: Helm
+type: Opaque
+data:
+  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+---
+# Source: sonarqube/templates/config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: default-values.yaml-sonarqube-config
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: default-values.yaml
+    heritage: Helm
+data:
+  sonar.properties: |
+---
+# Source: sonarqube/templates/init-fs.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: default-values.yaml-sonarqube-init-fs
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: default-values.yaml
+    heritage: Helm
+data:
+  init_fs.sh: |-
+---
+# Source: sonarqube/templates/init-sysctl.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: default-values.yaml-sonarqube-init-sysctl
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: default-values.yaml
+    heritage: Helm
+data:
+  init_sysctl.sh: |-
+    if [[ "$(sysctl -n vm.max_map_count)" -lt 524288 ]]; then
+      sysctl -w vm.max_map_count=524288
+    fi
+    if [[ "$(sysctl -n fs.file-max)" -lt 131072 ]]; then
+      sysctl -w fs.file-max=131072
+    fi
+    if [[ "$(ulimit -n)" != "unlimited" ]]; then
+      if [[ "$(ulimit -n)" -lt 131072 ]]; then
+        echo "ulimit -n 131072"
+        ulimit -n 131072
+      fi
+    fi
+    if [[ "$(ulimit -u)" != "unlimited" ]]; then
+      if [[ "$(ulimit -u)" -lt 8192 ]]; then
+        echo "ulimit -u 8192"
+        ulimit -u 8192
+      fi
+    fi
+---
+# Source: sonarqube/templates/install-plugins.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: default-values.yaml-sonarqube-install-plugins
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: default-values.yaml
+    heritage: Helm
+data:
+  install_plugins.sh: |-
+---
+# Source: sonarqube/templates/jdbc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: default-values.yaml-sonarqube-jdbc-config
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: default-values.yaml
+    heritage: Helm
+data:
+  SONAR_JDBC_USERNAME: sonarUser
+  SONAR_JDBC_URL: "jdbc:postgresql://%!s(<nil>):5432/sonarDB"
+---
+# Source: sonarqube/templates/prometheus-ce-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: default-values.yaml-sonarqube-prometheus-ce-config
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: default-values.yaml
+    heritage: Helm
+data:
+  prometheus-ce-config.yaml: |-
+        rules:
+        - pattern: .*
+---
+# Source: sonarqube/templates/prometheus-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: default-values.yaml-sonarqube-prometheus-config
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: default-values.yaml
+    heritage: Helm
+data:
+  prometheus-config.yaml: |-
+        rules:
+        - pattern: .*
+---
+# Source: sonarqube/templates/tests/test-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: default-values.yaml-sonarqube-tests
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: default-values.yaml
+    heritage: Helm
+data:
+  run.sh: |-
+    @test "Testing Sonarqube UI is accessible" {
+      curl --connect-timeout 5 --retry 12 --retry-delay 1 --retry-max-time 60 default-values.yaml-sonarqube:9000/api/system/status
+    }
+---
+# Source: sonarqube/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: default-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: default-values.yaml
+    heritage: Helm
+
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: sonarqube
+    release: default-values.yaml
+---
+# Source: sonarqube/templates/sonarqube-sts.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: default-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: default-values.yaml
+    heritage: Helm
+    app.kubernetes.io/name: sonarqube-default-values.yaml-sonarqube
+    app.kubernetes.io/instance: default-values.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: default-values.yaml-sonarqube
+    app.kubernetes.io/version: "9.9.0-community"
+spec:
+  replicas: 1
+  serviceName: default-values.yaml-sonarqube
+  selector:
+    matchLabels:
+      app: sonarqube
+      release: default-values.yaml
+  template:
+    metadata:
+      labels:
+        app: sonarqube
+        release: default-values.yaml
+      annotations:
+        checksum/init-sysctl: 43de68b5a73fc4812428fcaee7f49b8bce95fe30608e9d9900bd6c9966492b03
+        checksum/init-fs: 34df2f5fd8393ddfa4865d9c635a000112472b6d9bbeeb2224e67341f8267e6b
+        checksum/plugins: 91016a18fc7e646bb83a3155d0e564797e18554f0edf230d2834cf2e171a5171
+        checksum/config: 5c4c92154e7644dfecc0c92cd085bf377b608de9fa991c99c7efb6b14cf5fdec
+        checksum/secret: 9c12cb894a05b8468032e8c4dadbd8f6f5d25005a1f7ff771958f229452e1147
+        checksum/prometheus-config: 7ec3959018186bdb926c74bd3fbf1f2c9816560d1afc26daa95039db1caaf8ac
+        checksum/prometheus-ce-config: ef55ca3c297331ddaeb77731dc490618f6d402d0ebb3cdda218b491b056bfd89
+    spec:      
+      securityContext:
+        fsGroup: 1000
+      initContainers:
+        - name: init-sysctl
+          image: busybox:1.32
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          resources:
+            {}
+          command: ["sh",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
+          volumeMounts:
+            - name: init-sysctl
+              mountPath: /tmp/scripts/
+          env:
+            - name: SONAR_WEB_JAVAOPTS
+              value: -XX:MaxHeapFreeRatio=70
+        - name: inject-prometheus-exporter
+          image: curlimages/curl:7.76.1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsGroup: 1000
+            runAsUser: 1000
+          resources:
+            {}
+          command: ["/bin/sh","-c"]
+          args: ["curl -s 'https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.17.2/jmx_prometheus_javaagent-0.17.2.jar'  --output /data/jmx_prometheus_javaagent.jar -v"]
+          volumeMounts:
+            - mountPath: /data
+              name: sonarqube
+              subPath: data
+          env:
+            - name: http_proxy
+              value: 
+            - name: https_proxy
+              value: 
+            - name: no_proxy
+              value: 
+            - name: SONAR_WEB_JAVAOPTS
+              value: -XX:MaxHeapFreeRatio=70
+      containers:
+        - name: sonarqube
+          image: "sonarqube:9.9.0-community"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+            - name: monitoring-web
+              containerPort: 8000
+              protocol: TCP
+            - name: monitoring-ce
+              containerPort: 8001
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              memory: 4Gi
+            requests:
+              cpu: 400m
+              memory: 2Gi
+          env:
+            - name: SONAR_WEB_JAVAOPTS
+              value: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml -XX:MaxHeapFreeRatio=70"
+            - name: SONAR_CE_JAVAOPTS
+              value: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml"
+            - name: SONAR_JDBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: default-values.yaml-sonarqube
+                  key: jdbc-password
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: default-values.yaml-sonarqube-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
+            - name: SONAR_WEB_JAVAOPTS
+              value: -XX:MaxHeapFreeRatio=70
+          envFrom:
+            - configMapRef:
+                name: default-values.yaml-sonarqube-jdbc-config
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                host="$(hostname -i || echo '127.0.0.1')"
+                reply=$(wget --no-proxy -qO- --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" http://${host}:9000/api/system/liveness 2>&1)
+                if [ -z "$reply" ]; then exit 0; else exit 1; fi
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --no-proxy -qO- http://${host}:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                	exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              scheme: HTTP
+              path: /api/system/status
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 24
+            timeoutSeconds: 1
+          securityContext:
+            runAsUser: 1000
+          volumeMounts:
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+            - mountPath: /opt/sonarqube/conf/prometheus-config.yaml
+              subPath: prometheus-config.yaml
+              name: prometheus-config
+            - mountPath: /opt/sonarqube/conf/prometheus-ce-config.yaml
+              subPath: prometheus-ce-config.yaml
+              name: prometheus-ce-config
+      serviceAccountName: default
+      volumes:
+      - name: init-sysctl
+        configMap:
+          name: default-values.yaml-sonarqube-init-sysctl
+          items:
+            - key: init_sysctl.sh
+              path: init_sysctl.sh
+      - name: init-fs
+        configMap:
+          name: default-values.yaml-sonarqube-init-fs
+          items:
+            - key: init_fs.sh
+              path: init_fs.sh
+      - name: install-plugins
+        configMap:
+          name: default-values.yaml-sonarqube-install-plugins
+          items:
+            - key: install_plugins.sh
+              path: install_plugins.sh
+      - name: prometheus-config
+        configMap:
+          name: default-values.yaml-sonarqube-prometheus-config
+          items:
+            - key: prometheus-config.yaml
+              path: prometheus-config.yaml
+      - name: prometheus-ce-config
+        configMap:
+          name: default-values.yaml-sonarqube-prometheus-ce-config
+          items:
+            - key: prometheus-ce-config.yaml
+              path: prometheus-ce-config.yaml
+      - name: sonarqube
+        emptyDir:
+          {}
+      - name : tmp-dir
+        emptyDir:
+          {}
+---
+# Source: sonarqube/templates/secret.yaml
+---
+---
+# Source: sonarqube/templates/tests/sonarqube-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "default-values.yaml-ui-test"
+  annotations:
+    "helm.sh/hook": test-success
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: default-values.yaml
+    heritage: Helm
+spec:
+  initContainers:
+    - name: "bats"
+      image: "bats/bats:1.2.1"
+      imagePullPolicy: IfNotPresent
+      command: ["bash", "-c"]
+      args:
+        - |-
+          set -ex
+          cp -R /opt/bats /tools/bats/
+      resources:
+        {}
+      volumeMounts:
+        - mountPath: /tools
+          name: tools
+  containers:
+    - name: default-values.yaml-ui-test
+      image: "bitnami/minideb-extras"
+      imagePullPolicy: IfNotPresent
+      command: [
+        "/tools/bats/bin/bats",
+        "--tap",
+        "/tests/run.sh"]
+      resources:
+        {}
+      volumeMounts:
+      - mountPath: /tests
+        name: tests
+        readOnly: true
+      - mountPath: /tools
+        name: tools
+  volumes:
+  - name: tests
+    configMap:
+      name: default-values.yaml-sonarqube-tests
+  - name: tools
+    emptyDir: 
+      {}
+  restartPolicy: Never

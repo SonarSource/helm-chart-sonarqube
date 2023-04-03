@@ -41,6 +41,11 @@ jobs:
         cd ${{ github.workspace }}/charts/sonarqube-dce
         helm dependency build
         ../../.cirrus/generate-yaml-for-next-scan.sh
+    - name: debug
+      run: |
+        pwd
+        ls -al .
+        ls -al ${{ github.workspace }}/helm-chart-yaml-files/
     - name: SonarQube Next Scan
       uses: sonarsource/sonarqube-scan-action@master
       env:

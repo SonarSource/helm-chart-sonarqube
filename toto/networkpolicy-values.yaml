@@ -1,0 +1,545 @@
+---
+# Source: sonarqube/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: networkpolicy-values.yaml-sonarqube-network-policy
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+spec:
+  podSelector:
+    matchLabels:
+      app: sonarqube
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sonarqube
+              release: networkpolicy-values.yaml
+      ports:
+        - port: 9000
+
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              networking/namespace: monitoring
+      ports:
+        - port: 8001
+          protocol: TCP
+        - port: 8000
+          protocol: TCP
+
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              networking/namespace: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+---
+# Source: sonarqube/templates/networkpolicy.yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: networkpolicy-values.yaml-sonarqube-additional-network-policy
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+spec:
+  egress:
+  - ports:
+    - port: 5978
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 10.0.0.0/24
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: 172.17.0.0/16
+        except:
+        - 172.17.1.0/24
+    - namespaceSelector:
+        matchLabels:
+          project: myproject
+    - podSelector:
+        matchLabels:
+          role: frontend
+    ports:
+    - port: 6379
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      role: db
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# Source: sonarqube/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: networkpolicy-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+type: Opaque
+data:
+  jdbc-password: "c29uYXJQYXNz"
+---
+# Source: sonarqube/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: networkpolicy-values.yaml-sonarqube-monitoring-passcode
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+type: Opaque
+data:
+  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+---
+# Source: sonarqube/templates/config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: networkpolicy-values.yaml-sonarqube-config
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+data:
+  sonar.properties: |
+---
+# Source: sonarqube/templates/init-fs.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: networkpolicy-values.yaml-sonarqube-init-fs
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+data:
+  init_fs.sh: |-
+---
+# Source: sonarqube/templates/init-sysctl.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: networkpolicy-values.yaml-sonarqube-init-sysctl
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+data:
+  init_sysctl.sh: |-
+    if [[ "$(sysctl -n vm.max_map_count)" -lt 524288 ]]; then
+      sysctl -w vm.max_map_count=524288
+    fi
+    if [[ "$(sysctl -n fs.file-max)" -lt 131072 ]]; then
+      sysctl -w fs.file-max=131072
+    fi
+    if [[ "$(ulimit -n)" != "unlimited" ]]; then
+      if [[ "$(ulimit -n)" -lt 131072 ]]; then
+        echo "ulimit -n 131072"
+        ulimit -n 131072
+      fi
+    fi
+    if [[ "$(ulimit -u)" != "unlimited" ]]; then
+      if [[ "$(ulimit -u)" -lt 8192 ]]; then
+        echo "ulimit -u 8192"
+        ulimit -u 8192
+      fi
+    fi
+---
+# Source: sonarqube/templates/install-plugins.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: networkpolicy-values.yaml-sonarqube-install-plugins
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+data:
+  install_plugins.sh: |-
+---
+# Source: sonarqube/templates/jdbc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: networkpolicy-values.yaml-sonarqube-jdbc-config
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+data:
+  SONAR_JDBC_USERNAME: sonarUser
+  SONAR_JDBC_URL: "jdbc:postgresql://%!s(<nil>):5432/sonarDB"
+---
+# Source: sonarqube/templates/prometheus-ce-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: networkpolicy-values.yaml-sonarqube-prometheus-ce-config
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+data:
+  prometheus-ce-config.yaml: |-
+        rules:
+        - pattern: .*
+---
+# Source: sonarqube/templates/prometheus-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: networkpolicy-values.yaml-sonarqube-prometheus-config
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+data:
+  prometheus-config.yaml: |-
+        rules:
+        - pattern: .*
+---
+# Source: sonarqube/templates/tests/test-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: networkpolicy-values.yaml-sonarqube-tests
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+data:
+  run.sh: |-
+    @test "Testing Sonarqube UI is accessible" {
+      curl --connect-timeout 5 --retry 12 --retry-delay 1 --retry-max-time 60 networkpolicy-values.yaml-sonarqube:9000/api/system/status
+    }
+---
+# Source: sonarqube/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: networkpolicy-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: sonarqube
+    release: networkpolicy-values.yaml
+---
+# Source: sonarqube/templates/sonarqube-sts.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: networkpolicy-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+    app.kubernetes.io/name: sonarqube-networkpolicy-values.yaml-sonarqube
+    app.kubernetes.io/instance: networkpolicy-values.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: networkpolicy-values.yaml-sonarqube
+    app.kubernetes.io/version: "9.9.0-community"
+spec:
+  replicas: 1
+  serviceName: networkpolicy-values.yaml-sonarqube
+  selector:
+    matchLabels:
+      app: sonarqube
+      release: networkpolicy-values.yaml
+  template:
+    metadata:
+      labels:
+        app: sonarqube
+        release: networkpolicy-values.yaml
+      annotations:
+        checksum/init-sysctl: b282afa17bf5adf9c95a12324f54ac8cd90ebb4d49e6809a0edd6653fad0a7e5
+        checksum/init-fs: 5ef317894f02e8987b3a3126acbfea745aa4397f53e24f74857e6dad5380accc
+        checksum/plugins: 28d16cbc53c0cf97fab73ba465408d58919ef7eb54962385b3b2b57e03bd3dde
+        checksum/config: dc0444f84276376e83ca161c4cb7eaf6316c04e1b02f3030a913341c2a5224fc
+        checksum/secret: fb104327b3d67cf7a3754987f83c0b1d61d3b4ca1222bdec2e9d79d7a7ab77a6
+        checksum/prometheus-config: 54213fb28ba3dfe2f10630f58dad34a2d16d7f8798d208e7d5755d8e4f3577af
+        checksum/prometheus-ce-config: b82a6efa65da76eb983f6608dcc7324118382043f3200b57610d4c7b5712803e
+    spec:      
+      securityContext:
+        fsGroup: 1000
+      initContainers:
+        - name: init-sysctl
+          image: busybox:1.32
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          resources:
+            {}
+          command: ["sh",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
+          volumeMounts:
+            - name: init-sysctl
+              mountPath: /tmp/scripts/
+          env:
+            - name: SONAR_WEB_JAVAOPTS
+              value: -XX:MaxHeapFreeRatio=70
+        - name: inject-prometheus-exporter
+          image: curlimages/curl:7.76.1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsGroup: 1000
+            runAsUser: 1000
+          resources:
+            {}
+          command: ["/bin/sh","-c"]
+          args: ["curl -s 'https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.17.2/jmx_prometheus_javaagent-0.17.2.jar'  --output /data/jmx_prometheus_javaagent.jar -v"]
+          volumeMounts:
+            - mountPath: /data
+              name: sonarqube
+              subPath: data
+          env:
+            - name: http_proxy
+              value: 
+            - name: https_proxy
+              value: 
+            - name: no_proxy
+              value: 
+            - name: SONAR_WEB_JAVAOPTS
+              value: -XX:MaxHeapFreeRatio=70
+      containers:
+        - name: sonarqube
+          image: "sonarqube:9.9.0-community"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+            - name: monitoring-web
+              containerPort: 8000
+              protocol: TCP
+            - name: monitoring-ce
+              containerPort: 8001
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              memory: 4Gi
+            requests:
+              cpu: 400m
+              memory: 2Gi
+          env:
+            - name: SONAR_WEB_JAVAOPTS
+              value: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml -XX:MaxHeapFreeRatio=70"
+            - name: SONAR_CE_JAVAOPTS
+              value: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml"
+            - name: SONAR_JDBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: networkpolicy-values.yaml-sonarqube
+                  key: jdbc-password
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: networkpolicy-values.yaml-sonarqube-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
+            - name: SONAR_WEB_JAVAOPTS
+              value: -XX:MaxHeapFreeRatio=70
+          envFrom:
+            - configMapRef:
+                name: networkpolicy-values.yaml-sonarqube-jdbc-config
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                host="$(hostname -i || echo '127.0.0.1')"
+                reply=$(wget --no-proxy -qO- --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" http://${host}:9000/api/system/liveness 2>&1)
+                if [ -z "$reply" ]; then exit 0; else exit 1; fi
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --no-proxy -qO- http://${host}:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                	exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              scheme: HTTP
+              path: /api/system/status
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 24
+            timeoutSeconds: 1
+          securityContext:
+            runAsUser: 1000
+          volumeMounts:
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+            - mountPath: /opt/sonarqube/conf/prometheus-config.yaml
+              subPath: prometheus-config.yaml
+              name: prometheus-config
+            - mountPath: /opt/sonarqube/conf/prometheus-ce-config.yaml
+              subPath: prometheus-ce-config.yaml
+              name: prometheus-ce-config
+      serviceAccountName: default
+      volumes:
+      - name: init-sysctl
+        configMap:
+          name: networkpolicy-values.yaml-sonarqube-init-sysctl
+          items:
+            - key: init_sysctl.sh
+              path: init_sysctl.sh
+      - name: init-fs
+        configMap:
+          name: networkpolicy-values.yaml-sonarqube-init-fs
+          items:
+            - key: init_fs.sh
+              path: init_fs.sh
+      - name: install-plugins
+        configMap:
+          name: networkpolicy-values.yaml-sonarqube-install-plugins
+          items:
+            - key: install_plugins.sh
+              path: install_plugins.sh
+      - name: prometheus-config
+        configMap:
+          name: networkpolicy-values.yaml-sonarqube-prometheus-config
+          items:
+            - key: prometheus-config.yaml
+              path: prometheus-config.yaml
+      - name: prometheus-ce-config
+        configMap:
+          name: networkpolicy-values.yaml-sonarqube-prometheus-ce-config
+          items:
+            - key: prometheus-ce-config.yaml
+              path: prometheus-ce-config.yaml
+      - name: sonarqube
+        emptyDir:
+          {}
+      - name : tmp-dir
+        emptyDir:
+          {}
+---
+# Source: sonarqube/templates/secret.yaml
+---
+---
+# Source: sonarqube/templates/tests/sonarqube-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "networkpolicy-values.yaml-ui-test"
+  annotations:
+    "helm.sh/hook": test-success
+  labels:
+    app: sonarqube
+    chart: sonarqube-9.4.3
+    release: networkpolicy-values.yaml
+    heritage: Helm
+spec:
+  initContainers:
+    - name: "bats"
+      image: "bats/bats:1.2.1"
+      imagePullPolicy: IfNotPresent
+      command: ["bash", "-c"]
+      args:
+        - |-
+          set -ex
+          cp -R /opt/bats /tools/bats/
+      resources:
+        {}
+      volumeMounts:
+        - mountPath: /tools
+          name: tools
+  containers:
+    - name: networkpolicy-values.yaml-ui-test
+      image: "bitnami/minideb-extras"
+      imagePullPolicy: IfNotPresent
+      command: [
+        "/tools/bats/bin/bats",
+        "--tap",
+        "/tests/run.sh"]
+      resources:
+        {}
+      volumeMounts:
+      - mountPath: /tests
+        name: tests
+        readOnly: true
+      - mountPath: /tools
+        name: tools
+  volumes:
+  - name: tests
+    configMap:
+      name: networkpolicy-values.yaml-sonarqube-tests
+  - name: tools
+    emptyDir: 
+      {}
+  restartPolicy: Never
