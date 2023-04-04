@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.0.0]
+* Update SonarQube to 10.0.0
+* Helm chart versioning will now follow the SonarQube product versioning
+
 ## [9.5.1]
 * Make `jvmOpts` and `jvmCeOpts` not override env vars and sonar properties
 
