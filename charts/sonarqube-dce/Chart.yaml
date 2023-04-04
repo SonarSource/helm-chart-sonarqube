@@ -2,8 +2,8 @@ apiVersion: v2
 name: sonarqube-dce
 description: SonarQube offers Code Quality and Code Security analysis for up to 27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells throughout your workflow.
 type: application
-version: 8.3.1
-appVersion: 9.9.0
+version: 10.0.0
+appVersion: 10.0.0
 keywords:
   - coverage
   - security
@@ -25,6 +25,10 @@ maintainers:
     email: jeremy.cotineau@sonarsource.com
 annotations:
   artifacthub.io/changes: |
+    - kind: changed
+      description: "Helm chart versioning will now follow the SonarQube product versioning"
+    - kind: changed
+      description: "Update SonarQube to 10.0.0"
     - kind: fixed
       description: "Make jvmOpts and jvmCeOpts not override env vars and sonar properties"
     - kind: added
@@ -57,9 +61,9 @@ annotations:
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-app
-      image: sonarqube:9.9.0-datacenter-app
+      image: sonarqube:10.0.0-datacenter-app
     - name: sonarqube-search
-      image: sonarqube:9.9.0-datacenter-search
+      image: sonarqube:10.0.0-datacenter-search
 dependencies:
   - name: postgresql
     version: 10.15.0
