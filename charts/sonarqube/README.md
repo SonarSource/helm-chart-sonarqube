@@ -62,6 +62,36 @@ kindly-newt 1           Mon Oct  2 15:05:44 2017    DEPLOYED    sonarqube-0.1.0 
 $ helm delete kindly-newt
 ```
 
+## Prerequisites and Production use cases.
+
+Please read the official documentation prerequisites [here](https://docs.sonarqube.org/latest/requirements/prerequisites-and-overview/)
+
+### Elasticsearch prerequisites
+
+SonarQube is running elasticsearch under the hood.
+
+Elasticsearch is rolling out a policy of strict prerequisites that cannot be disabled when running in production context(see [this](https://www.elastic.co/blog/bootstrap_checks_annoying_instead_of_devastating) blog post regarding bootstrap checks, and the [associated doc](https://www.elastic.co/guide/en/elasticsearch/reference/5.0/bootstrap-checks.html))
+
+Based on that, even when running in Docker containers, SonarQube requires some settings at the host/kernel level.
+
+Please carefully read the following and make sure those are setup at the host level:
+
+- [vm.max_map_count](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html#vm-max-map-count)
+- [seccomp filter should be available](https://github.com/SonarSource/docker-sonarqube/issues/614)
+
+In general please carefully read the elasticsearch [documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/system-config.html)
+
+### Sonarqube helm chart and production use case
+
+The SonarQube helm chart is packed with multiple features allowing user to easily install and test SonarQube on kubernetes.
+
+Nonetheless if you intend to run a production-grade sonarqube please read the following recommendations.
+
+- set `nginx.enabled` to **false**. That parameter would run the nginx chart. This is useful for testing but ingress-controllers are a huge part of Kubernetes, we advise users to install their own.
+- set `postgresql.enabled` to **false**. That parameter would run the postgresql pre-2022 bitnami chart. That is usefull for testing but database being the core of SonarQube we advise user to be really careful with it and use a well maintained db as a service or deploy their own database on top of kubernetes.
+- set `initSysctl.enabled` to **false**. That parameter would run a **root** `sysctl` commands, those sysctl value should be set by the kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
+- set `initFs.enabled` to **false**. That parameter would run a **root** `chown command` which is here to fix non-posix CSI-driver or old buggy ones.
+
 ## Upgrade
 
 1. Read through the [SonarQube Upgrade Guide](https://docs.sonarqube.org/latest/setup/upgrading/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
