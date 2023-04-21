@@ -125,7 +125,6 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled }}
       {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
           image: {{ default "busybox:1.32" .Values.initContainers.image }}
@@ -168,6 +167,7 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
+      {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled }}
         - name: init-fs
           image: {{ default "busybox:1.32" .Values.initFs.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
@@ -183,9 +183,9 @@ spec:
           volumeMounts:
             - name: init-fs
               mountPath: /tmp/scripts/
-{{- if .Values.searchNodes.persistence.mounts }}
-{{ toYaml .Values.searchNodes.persistence.mounts | indent 12 }}
-{{- end }}
+            {{- if .Values.searchNodes.persistence.mounts }}
+            {{- toYaml .Values.searchNodes.persistence.mounts | nindent 12 }}
+            {{- end }}
             {{- if .Values.caCerts }}
             - mountPath: {{ .Values.sonarqubeFolder }}/certs
               name: "{{ template "sonarqube.fullname" . }}"

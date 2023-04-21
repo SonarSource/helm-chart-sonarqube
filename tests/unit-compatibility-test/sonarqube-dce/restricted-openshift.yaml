@@ -1,0 +1,64 @@
+# That case test when we disable sysctl/initfs/postgresql in order to have a full set of rootless containers.
+# Aiming at verifying that the chart is compatible with restricted environement. ( OpenShift or other )
+initSysctl:
+  enabled: false
+initFs:
+  enabled: false
+initContainers:
+  image: sonarqube:9.9.0-datacenter-search
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
+    allowPrivilegeEscalation: false
+
+OpenShift:
+  enabled: true
+  createSCC: false
+
+ApplicationNodes:
+  image:
+    repository: sonarqube
+    tag: 9.9.0-datacenter-app
+  jwtSecret: dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=
+  containerSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
+    allowPrivilegeEscalation: false
+  sonarProperties:
+    sonar.forceAuthentication: true
+
+searchNodes:
+  image:
+    repository: sonarqube
+    tag: 9.9.0-datacenter-search
+  containerSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
+    allowPrivilegeEscalation: false
+    runAsUser:
+  sonarProperties:
+    sonar.forceAuthentication: true
+
+tests:
+  enabled: false
+
+jdbcOverwrite:
+  enable: true
+  jdbcUrl: "someUrl"
+  jdbcUsername: "same"
+  jdbcPassword: "same"
+
+postgresql:
+  enabled: false
