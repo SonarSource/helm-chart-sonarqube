@@ -7,8 +7,9 @@ metadata:
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+{{ if .Values.persistence.enabled }}
 data:
   init_fs.sh: |-
-    {{- if .Values.persistence.enabled }}
+
     chown -R {{ .Values.persistence.uid }}: {{ .Values.sonarqubeFolder }}
-    {{- end }}
+{{ end }}
