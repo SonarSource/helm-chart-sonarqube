@@ -288,8 +288,7 @@ spec:
               - -c
               - |
                 host="$(hostname -i || echo '127.0.0.1')"
-                reply=$(wget --no-proxy -qO- --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" http://${host}:{{ .Values.service.internalPort }}{{ .Values.livenessProbe.sonarWebContext }}api/system/liveness 2>&1)
-                if [ -z "$reply" ]; then exit 0; else exit 1; fi
+                wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:{{ .Values.service.internalPort }}{{ .Values.livenessProbe.sonarWebContext }}api/system/liveness"
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}

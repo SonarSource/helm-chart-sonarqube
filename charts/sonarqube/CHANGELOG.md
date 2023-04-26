@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [10.1.0]
 * Update Chart's version to 10.1.0
+* Fix liveness probe to detect when a failure occurs.
 
 ## [10.0.0]
 * Update SonarQube to 10.0.0
