@@ -283,7 +283,7 @@ spec:
               - -c
               - |
                 host="$(hostname -i || echo '127.0.0.1')"
-                wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:{{ .Values.service.internalPort }}{{ .Values.livenessProbe.sonarWebContext }}api/system/liveness"
+                wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.ApplicationNodes.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.livenessProbe.sonarWebContext }}api/system/liveness"
             initialDelaySeconds: {{ .Values.ApplicationNodes.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.ApplicationNodes.livenessProbe.periodSeconds }}
             failureThreshold: {{ .Values.ApplicationNodes.livenessProbe.failureThreshold }}
