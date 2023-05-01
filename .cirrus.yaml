@@ -1,4 +1,11 @@
-only_on_none_release_draft_template: &ONLY_ON_NONE_RELEASE_DRAFT_TEMPLATE
+env:
+### Shared variables
+  NIGHTLY_CRON: 'nightly-cron'
+
+except_nightly_cron: &EXCEPT_ON_NIGHTLY_CRON
+  only_if: $CIRRUS_CRON != $NIGHTLY_CRON
+
+only_on_non_release_draft_template: &ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   only_if: $CIRRUS_PRERELEASE != "true"
 
 docker_build_container_template: &CONTAINER_TEMPLATE
@@ -35,7 +42,7 @@ clone_script_template: &CLONE_SCRIPT_TEMPLATE
     fi
 
 chart_testing_task:
-  only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_BRANCH != "master"
+  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   timeout_in: 30m
   eks_container:
     <<: *CONTAINER_TEMPLATE
@@ -64,7 +71,7 @@ chart_testing_task:
     - ah lint
 
 chart_packaging_task:
-  <<: *ONLY_ON_NONE_RELEASE_DRAFT_TEMPLATE
+  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   timeout_in: 15m
   eks_container:
     <<: *CONTAINER_TEMPLATE
@@ -94,7 +101,8 @@ chart_packaging_task:
     - chart_testing
 
 push_to_repox_task:
-  <<: *ONLY_ON_NONE_RELEASE_DRAFT_TEMPLATE
+  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
+  <<: *EXCEPT_ON_NIGHTLY_CRON
   timeout_in: 15m
   eks_container:
     <<: *STD_CONTAINER_TEMPLATE
