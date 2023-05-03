@@ -2,6 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [10.1.0]
+* mark `postgresql.enabled` and `nginx.enabled` as deprecated. both are critical systems and shoud be explicitely managed by users.
 * Update Chart's version to 10.1.0
 
 ## [10.0.0]
