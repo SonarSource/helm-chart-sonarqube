@@ -34,7 +34,7 @@ jobs:
         run: jfrog rt build-promote --status released "${{ github.event.repository.name }}" "${{ github.event.inputs.buildNumber }}" sonarsource-helm-releases
       - name: Create local repository directory
         id: local_repo
-        run: echo ::set-output name=dir::"$(mktemp -d repo.XXXXXXXX)"
+        run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> "$GITHUB_OUTPUT"
       - uses: SonarSource/gh-action_release/download-build@v5
         with:
           local-repo-dir: ${{ steps.local_repo.outputs.dir }}
