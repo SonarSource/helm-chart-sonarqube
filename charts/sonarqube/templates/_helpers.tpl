@@ -175,3 +175,16 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Set sonarqube.webcontext
+*/}}
+{{- define "sonarqube.webcontext" -}}
+{{- $tempWebcontext := .Values.sonarWebContext -}}
+{{- range $index, $val := .Values.env -}}
+{{- if eq $val.name "SONAR_WEB_CONTEXT" -}}
+{{- $tempWebcontext = $val.value -}}
+{{- end -}}
+{{- end -}}
+{{ printf "%s" $tempWebcontext }}
+{{- end -}}

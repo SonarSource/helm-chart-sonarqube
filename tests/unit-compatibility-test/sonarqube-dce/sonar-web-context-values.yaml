@@ -1,0 +1,13 @@
+# In the context of SONAR-18991, we are simplifying the web context configuration.
+# Testing that it is propaged correctly.
+sonarWebContext: /sonarqube-web-context/
+account:
+  adminPassword: admin1
+  currentAdminPassword: admin
+  adminPasswordSecretName: ""
+  # no sonarWebContext, verifying the top sonarWebContext value is injected here
+ingress:
+  enabled: true
+  hosts:
+    - name: sonarqube.your-org.com
+      # no path, verifying the sonarWebContext is injected here
