@@ -164,7 +164,7 @@ ApplicationNodes:
     timeoutSeconds: 1
     # If an ingress *path* other than the root (/) is defined, it should be reflected here
     # A trailing "/" must be included
-    sonarWebContext: /
+    # deprecated please use sonarWebContext at the value top level
     # sonarWebContext: /sonarqube/
   livenessProbe:
     initialDelaySeconds: 180
@@ -174,10 +174,8 @@ ApplicationNodes:
     timeoutSeconds: 1
     # If an ingress *path* other than the root (/) is defined, it should be reflected here
     # A trailing "/" must be included
-    sonarWebContext: /
+    # deprecated please use sonarWebContext at the value top level
     # sonarWebContext: /sonarqube/
-    # If an ingress *path* is defined, it should be reflected here
-    # sonar.web.context: /sonarqube
   startupProbe:
     initialDelaySeconds: 100
     periodSeconds: 10
@@ -186,7 +184,7 @@ ApplicationNodes:
     timeoutSeconds: 1
     # If an ingress *path* other than the root (/) is defined, it should be reflected here
     # A trailing "/" must be included
-    sonarWebContext: /
+    # deprecated please use sonarWebContext at the value top level
     # sonarWebContext: /sonarqube/
 
   prometheusExporter:
@@ -299,6 +297,10 @@ ApplicationNodes:
 OpenShift:
   enabled: false
   createSCC: true
+
+# will be used as default for ingress path and probes path, will be injected in .Values.env as SONAR_WEB_CONTEXT
+# if .Values.env.SONAR_WEB_CONTEXT is set, this value will be ignored
+sonarWebContext: /
 
 # also install the nginx ingress helm chart
 nginx:
@@ -600,6 +602,7 @@ extraConfig:
 #       memory: 128Mi
 # curlContainerImage: curlimages/curl:latest
 # adminJobAnnotations: {}
+# deprecated please use sonarWebContext at the value top level
 # sonarWebContext: /
 
 terminationGracePeriodSeconds: 60

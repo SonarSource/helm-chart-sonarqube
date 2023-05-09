@@ -1,0 +1,19 @@
+# In the context of SONAR-18991, we are simplifying the web context configuration.
+# Testing that deprecated values are still working
+account:
+  adminPassword: admin1
+  currentAdminPassword: admin
+  adminPasswordSecretName: ""
+  sonarWebContext: /sonarqube-account/
+ingress:
+  enabled: true
+  hosts:
+    - name: sonarqube.your-org.com
+      path: /sonarqube-ingress/
+ApplicationNodes:
+  livenessProbe:
+    sonarWebContext: /sonarqube-liveness/
+  readinessProbe:
+    sonarWebContext: /sonarqube-readiness/
+  startupProbe:
+    sonarWebContext: /sonarqube-startup/

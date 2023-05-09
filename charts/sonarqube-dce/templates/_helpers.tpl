@@ -267,3 +267,16 @@ Return the appropriate apiVersion for poddisruptionbudget.
 {{- print "policy/v1" -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Set sonarqube.webcontext
+*/}}
+{{- define "sonarqube.webcontext" -}}
+{{- $tempWebcontext := .Values.sonarWebContext -}}
+{{- range $index, $val := .Values.env -}}
+{{- if eq $val.name "SONAR_WEB_CONTEXT" -}}
+{{- $tempWebcontext = $val.value -}}
+{{- end -}}
+{{- end -}}
+{{ printf "%s" $tempWebcontext }}
+{{- end -}}
