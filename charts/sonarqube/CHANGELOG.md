@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.1.1]
+* Changed prometheus podmonitor's podMetricsEndpoints port name (http -> monitoring-web)
+* Update Chart's version to 10.1.1
+
 ## [10.1.0]
 * Changed default test process to wget, using sonarqube image as default
 * Update Chart's version to 10.1.0
