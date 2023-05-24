@@ -17,7 +17,7 @@ spec:
     matchLabels:
       app: {{ template "sonarqube.name" . }}
   podMetricsEndpoints:
-  - port: http
+  - port: monitoring-web
     path: /api/monitoring/metrics
     scheme: http
     {{- if .Values.prometheusMonitoring.podMonitor.interval }}
