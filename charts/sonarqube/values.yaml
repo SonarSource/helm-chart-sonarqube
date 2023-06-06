@@ -74,14 +74,14 @@ networkPolicy:
 
 # will be used as default for ingress path and probes path, will be injected in .Values.env as SONAR_WEB_CONTEXT
 # if .Values.env.SONAR_WEB_CONTEXT is set, this value will be ignored
-sonarWebContext: /
+sonarWebContext: ""
 
 # also install the nginx ingress helm chart
 nginx:
   enabled: false
 
 ingress:
-  enabled: false
+  enabled: true
   # Used to create an Ingress record.
   hosts:
     - name: sonarqube.your-org.com
@@ -519,10 +519,10 @@ extraConfig:
   secrets: []
   configmaps: []
 
-# account:
+account:
 # The values can be set to define the current and the (new) custom admin passwords at the startup (the username will remain "admin")
-#   adminPassword: admin
-#   currentAdminPassword: admin
+  adminPassword: admin
+  currentAdminPassword: admin
 # The above values can be also provided by a secret that contains "password" and "currentPassword" as keys. You can generate such a secret in your cluster
 # using "kubectl create secret generic admin-password-secret-name --from-literal=password=admin --from-literal=currentPassword=admin"
 #   adminPasswordSecretName: ""
@@ -537,6 +537,6 @@ extraConfig:
 # curlContainerImage: curlimages/curl:latest
 # adminJobAnnotations: {}
 # deprecated please use sonarWebContext at the value top level
-# sonarWebContext: /
+#  sonarWebContext: 
 
 terminationGracePeriodSeconds: 60
