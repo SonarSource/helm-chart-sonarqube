@@ -16,7 +16,7 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 Compatible SonarQube Version: `10.0.0`
 
-Supported Kubernetes Versions: From `1.23` to `1.26`
+Supported Kubernetes Versions: From `1.24` to `1.27`
 
 ## Installing the chart
 
