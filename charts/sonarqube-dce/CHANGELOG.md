@@ -7,7 +7,7 @@ All changes to this chart will be documented in this file.
 ## [10.1.0]
 * Update SonarQube to 10.1.0
 * Support Kubernetes v1.27 while dropping v1.23
-* `ApplicationNodes.readinessProbe.sonarWebContext`, `ApplicationNodes.startupProbe.sonarWebContext`, `ApplicationNodes.livenessProbe.sonarWebContext` are deprecated, please use `sonarWebContext` at the value top level.
+* `ApplicationNodes.readinessProbe.sonarWebContext`, `ApplicationNodes.startupProbe.sonarWebContext`, `ApplicationNodes.livenessProbe.sonarWebContext` and `account.sonarWebContext` are deprecated, please use `sonarWebContext` at the value top level.
 * Changed default test process to wget, using sonarqube image as default
 * Fix wrong condition between initFs and concat-properties
 * Update Chart's version to 10.1.0
