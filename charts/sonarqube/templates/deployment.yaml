@@ -251,6 +251,8 @@ spec:
             {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
+            - name: SONAR_HELM_CHART_VERSION
+              value: {{ .Chart.Version | replace "+" "_" }}
             - name: SONAR_WEB_JAVAOPTS
               value: {{ template "sonarqube.jvmOpts" . }}
             - name: SONAR_CE_JAVAOPTS

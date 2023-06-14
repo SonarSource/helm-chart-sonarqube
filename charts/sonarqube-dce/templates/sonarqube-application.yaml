@@ -222,6 +222,8 @@ spec:
             {{- with .Values.ApplicationNodes.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
+            - name: SONAR_HELM_CHART_VERSION
+              value: {{ .Chart.Version | replace "+" "_" }}
             - name: SONAR_LOG_JSONOUTPUT
               value: "{{ .Values.logging.jsonOutput }}"
             - name: SONAR_CLUSTER_SEARCH_HOSTS
