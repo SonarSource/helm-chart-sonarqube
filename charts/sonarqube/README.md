@@ -171,7 +171,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `env` | Environment variables to attach to the pods | `{}`|
 | `annotations` | SonarQube Pod annotations | `{}` |
 | `edition` | SonarQube Edition to use (e.g. `community`, `developer` or `enterprise`) | `community` |
-| `sonarWebContext` | SonarQube web context, also serve as default value for `ingress.path` and `account.sonarWebContext`. When set, it must start with a forward slash (for example /sonarqube) | `` |
+| `sonarWebContext` | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path. When set, it must start with a forward slash (for example /sonarqube) | `` |
 
 ### NetworkPolicies
 
