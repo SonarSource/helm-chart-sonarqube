@@ -171,7 +171,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `env` | Environment variables to attach to the pods | `{}`|
 | `annotations` | SonarQube Pod annotations | `{}` |
 | `edition` | SonarQube Edition to use (e.g. `community`, `developer` or `enterprise`) | `community` |
-| `sonarWebContext` | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path. When set, it must start with a forward slash (for example /sonarqube) | `` |
+| `sonarWebContext` | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path. | `` |
 
 ### NetworkPolicies
 
@@ -447,7 +447,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `account.resources.requests.cpu` | CPU request for Admin hook | `100m` |
 | `account.resources.limits.memory` | Memory limit for Admin hook | `128Mi` |
 | `account.resources.limits.cpu` | CPU limit for Admin hook | `100m` |
-| `account.sonarWebContext` | (DEPRECATED) SonarQube web context for Admin hook. When set, it must start with a forward slash (for example /sonarqube) | `nil` |
+| `account.sonarWebContext` | (DEPRECATED) SonarQube web context for Admin hook. please use sonarWebContext at the value top level instead | `nil` |
 | `account.securityContext` | SecurityContext for change-password-hook | `{}` |
 | `curlContainerImage` | Curl container image | `curlimages/curl:latest` |
 | `adminJobAnnotations` | Custom annotations for admin hook Job | `{}` |

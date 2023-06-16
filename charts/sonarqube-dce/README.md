@@ -216,17 +216,17 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.readinessProbe.periodSeconds` | ReadinessProbe period between checking app Node | `30` |
 | `ApplicationNodes.readinessProbe.failureThreshold`| ReadinessProbe thresold for marking as failed | `6` |
 | `ApplicationNodes.readinessProbe.timeoutSeconds`| ReadinessProbe timeout delay | `1` |
-| `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for readinessProbe | `/` |
+| `ApplicationNodes.readinessProbe.sonarWebContext`| (DEPRECATED) SonarQube web context for readinessProbe, please use sonarWebContext at the value top level instead | `/` |
 | `ApplicationNodes.livenessProbe.initialDelaySeconds`| LivenessProbe initial delay for app Node checking | `60` |
 | `ApplicationNodes.livenessProbe.periodSeconds`| LivenessProbe period between checking app Node | `30` |
 | `ApplicationNodes.livenessProbe.failureThreshold`| LivenessProbe thresold for marking as dead | `6` |
 | `ApplicationNodes.livenessProbe.timeoutSeconds`| LivenessProbe timeout delay | `1` |
-| `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for StartupProbe | `/` |
+| `ApplicationNodes.livenessProbe.sonarWebContext`| (DEPRECATED) SonarQube web context for livenessProbe, please use sonarWebContext at the value top level instead | `/` |
 | `ApplicationNodes.startupProbe.initialDelaySeconds`| StartupProbe initial delay for app Node checking | `30` |
 | `ApplicationNodes.startupProbe.periodSeconds`| StartupProbe period between checking app Node | `10` |
 | `ApplicationNodes.startupProbe.failureThreshold`| StartupProbe thresold for marking as failed | `24` |
 | `ApplicationNodes.startupProbe.timeoutSeconds`| StartupProbe timeout delay | `1` |
-| `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for StartupProbe | `/` |
+| `ApplicationNodes.startupProbe.sonarWebContext`| (DEPRECATED) SonarQube web context for startupProbe, please use sonarWebContext at the value top level instead | `/` |
 | `ApplicationNodes.resources.requests.memory` | memory request for app Nodes | `2Gi` |
 | `ApplicationNodes.resources.requests.cpu` | cpu request for app Nodes | `400m` |
 | `ApplicationNodes.resources.limits.memory` | memory limit for app Nodes. should not be under 4G | `4096M` |
@@ -280,7 +280,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `podLabels` | Map of labels to add to the pods | `{}` |
 | `env` | Environment variables to attach to the pods | `{}`|
 | `annotations` | SonarQube Pod annotations | `{}` |
-| `sonarWebContext` | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path. When set, it must start with a forward slash (for example /sonarqube) | `` |
+| `sonarWebContext` | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path. | `` |
 
 
 ### NetworkPolicies
@@ -452,7 +452,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `account.resources.requests.cpu` | CPU request for Admin hook | `100m` |
 | `account.resources.limits.memory` | Memory limit for Admin hook | `128Mi` |
 | `account.resources.limits.cpu` | CPU limit for Admin hook | `100m` |
-| `account.sonarWebContext` | (DEPRECATED) SonarQube web context for Admin hook. When set, it must start with a forward slash (for example /sonarqube) | `nil` |
+| `account.sonarWebContext` | (DEPRECATED) SonarQube web context for Admin hook. please use sonarWebContext at the value top level instead | `nil` |
 | `curlContainerImage` | Curl container image | `curlimages/curl:latest` |
 | `adminJobAnnotations` | Custom annotations for admin hook Job | `{}` |
 | `terminationGracePeriodSeconds` | Configuration of `terminationGracePeriodSeconds` | `60` |
