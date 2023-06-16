@@ -257,6 +257,8 @@ spec:
               value: {{ template "sonarqube.jvmOpts" . }}
             - name: SONAR_CE_JAVAOPTS
               value: {{ template "sonarqube.jvmCEOpts" . }}
+            - name: SONAR_WEB_CONTEXT
+              value: {{ include "sonarqube.webcontext" . }}
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -316,7 +318,7 @@ spec:
           startupProbe:
             httpGet:
               scheme: HTTP
-              path: {{ .Values.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status
+              path: {{ .Values.startupProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status
               port: http
             initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.startupProbe.periodSeconds }}

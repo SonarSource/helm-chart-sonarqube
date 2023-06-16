@@ -86,7 +86,7 @@ ingress:
   hosts:
     - name: sonarqube.your-org.com
       # Different clouds or configurations might need /* as the default path
-      path: /
+      # path: /
       # For additional control over serviceName and servicePort
       # serviceName: someService
       # servicePort: somePort
@@ -519,10 +519,10 @@ extraConfig:
   secrets: []
   configmaps: []
 
-#account:
+# account:
 # The values can be set to define the current and the (new) custom admin passwords at the startup (the username will remain "admin")
-  #adminPassword: admin
-  #currentAdminPassword: admin
+#   adminPassword: admin
+#   currentAdminPassword: admin
 # The above values can be also provided by a secret that contains "password" and "currentPassword" as keys. You can generate such a secret in your cluster
 # using "kubectl create secret generic admin-password-secret-name --from-literal=password=admin --from-literal=currentPassword=admin"
 #   adminPasswordSecretName: ""
@@ -534,9 +534,9 @@ extraConfig:
 #     requests:
 #       cpu: 100m
 #       memory: 128Mi
-# curlContainerImage: curlimages/curl:latest
-# adminJobAnnotations: {}
+#   curlContainerImage: curlimages/curl:latest
+#   adminJobAnnotations: {}
 # deprecated please use sonarWebContext at the value top level
-#  sonarWebContext: 
+#   sonarWebContext:
 
 terminationGracePeriodSeconds: 60

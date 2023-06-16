@@ -177,7 +177,7 @@ Create the name of the service account to use
 {{- end -}}
 
 {{/*
-Set sonarqube.webcontext
+Set sonarqube.webcontext, ensuring it starts and ends with a slash, in order to ease probes url template
 */}}
 {{- define "sonarqube.webcontext" -}}
 {{- $tempWebcontext := .Values.sonarWebContext -}}
@@ -185,6 +185,12 @@ Set sonarqube.webcontext
 {{- if eq $val.name "SONAR_WEB_CONTEXT" -}}
 {{- $tempWebcontext = $val.value -}}
 {{- end -}}
+{{- end -}}
+{{- if not (hasPrefix "/" $tempWebcontext) -}}
+{{- $tempWebcontext = print "/" $tempWebcontext -}}
+{{- end -}}
+{{- if not (hasSuffix "/" $tempWebcontext) -}}
+{{- $tempWebcontext = print $tempWebcontext "/" -}}
 {{- end -}}
 {{ printf "%s" $tempWebcontext }}
 {{- end -}}
