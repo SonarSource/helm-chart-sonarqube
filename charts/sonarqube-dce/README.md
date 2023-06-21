@@ -14,7 +14,7 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 ## Compatibility
 
-Compatible SonarQube Version: `10.0.0`
+Compatible SonarQube Version: `10.1.0`
 
 Supported Kubernetes Versions: From `1.24` to `1.27`
 
@@ -143,122 +143,122 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Search Nodes Configuration
 
-| Parameter | Description | Default |
-| --------- | ----------- | ------- |
-| `searchNodes.image.repository` | search image repository | `sonarqube` |
-| `searchNodes.image.tag` | search image tag | `10.0.0-datacenter-search` |
-| `searchNodes.image.pullPolicy` | search image pull policy | `IfNotPresent` |
-| `searchNodes.image.pullSecret` | (DEPRECATED) search imagePullSecret to use for private repository | `nil` |
-| `searchNodes.image.pullSecrets` | search imagePullSecrets to use for private repository | `nil` |
-| `searchNodes.env` | Environment variables to attach to the search pods | `nil` |
-| `searchNodes.sonarProperties` | Custom `sonar.properties` file for Search Nodes | `None` |
-| `searchNodes.sonarSecretProperties` | Additional `sonar.properties` file for Search Nodes to load from a secret | `None` |
-| `searchNodes.sonarSecretKey` | Name of existing secret used for settings encryption | `None` |
-| `searchNodes.searchAuthentication.enabled` | Securing the Search Cluster with basic authentication and TLS in between search nodes | `false` |
-| `searchNodes.searchAuthentication.keyStoreSecret` | Existing PKCS#12 Container as Keystore/Truststore to be used | `""` |
-| `searchNodes.searchAuthentication.keyStorePassword` | Password to Keystore/Truststore used in search nodes (optional) | `""` |
-| `searchNodes.searchAuthentication.keyStorePasswordSecret` | Existing secret for Password to Keystore/Truststore used in search nodes (optional) | `nil` |
-| `searchNodes.searchAuthentication.userPassword` | A User Password that will be used to authenticate against the Search Cluster | `""` |
-| `searchNodes.replicaCount` | Replica count of the Search Nodes | `3` |
-| `searchNodes.podDistributionBudget` | PodDisctributionBudget for the Search Nodes | `maxUnavailable: "33%"` |
-| `searchNodes.securityContext.fsGroup` | Group applied to mounted directories/files on search nodes | `1000` |
-| `searchNodes.containerSecurityContext.runAsUser` | User to run search container in sonarqube pod as | `1000` |
-| `searchNodes.readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for Search Node checking| `60` |
-| `searchNodes.readinessProbe.periodSeconds` | ReadinessProbe period between checking Search Node | `30` |
-| `searchNodes.readinessProbe.failureThreshold`| ReadinessProbe thresold for marking as failed | `6` |
-| `searchNodes.readinessProbe.timeoutSeconds`| ReadinessProbe timeout delay | `1` |
-| `searchNodes.livenessProbe.initialDelaySeconds`| LivenessProbe initial delay for Search Node checking | `60` |
-| `searchNodes.livenessProbe.periodSeconds`| LivenessProbe period between checking Search Node | `30` |
-| `searchNodes.livenessProbe.failureThreshold`| LivenessProbe thresold for marking as dead | `6` |
-| `searchNodes.livenessProbe.timeoutSeconds`| LivenessProbe timeout delay | `1` |
-| `searchNodes.startupProbe.initialDelaySeconds`| StartupProbe initial delay for Search Node checking | `30` |
-| `searchNodes.startupProbe.periodSeconds`| StartupProbe period between checking Search Node | `10` |
-| `searchNodes.startupProbe.failureThreshold`| StartupProbe thresold for marking as failed | `24` |
-| `searchNodes.startupProbe.timeoutSeconds`| StartupProbe timeout delay | `1` |
-| `searchNodes.resources.requests.memory` | memory request for Search Nodes | `2Gi` |
-| `searchNodes.resources.requests.cpu` | cpu request for Search Nodes | `400m` |
-| `searchNodes.resources.limits.memory` | memory limit for Search Nodes. should not be under 4G | `4096M` |
-| `searchNodes.resources.limits.cpu` | cpu limit for Search Nodes | `800m` |
-| `searchNodes.persistence.enabled` | enabled or disables the creation of VPCs for the Search Nodes | `true` |
-| `searchNodes.persistence.annotations` | PVC annotations for the Search Nodes | `{}` |
-| `searchNodes.persistence.storageClass` | Storage class to be used | `""` |
-| `searchNodes.persistence.accessMode` | Volumes access mode to be set | `ReadWriteOnce` |
-| `searchNodes.persistence.size` | Size of the PVC | `5G` |
-| `searchNodes.persistence.uid` | UID used for init-fs container | `1000` |
-| `searchNodes.extraContainers` | Array of extra containers to run alongside | `[]` |
+| Parameter | Description | Default                    |
+| --------- | ----------- |----------------------------|
+| `searchNodes.image.repository` | search image repository | `sonarqube`                |
+| `searchNodes.image.tag` | search image tag | `10.1.0-datacenter-search` |
+| `searchNodes.image.pullPolicy` | search image pull policy | `IfNotPresent`             |
+| `searchNodes.image.pullSecret` | (DEPRECATED) search imagePullSecret to use for private repository | `nil`                      |
+| `searchNodes.image.pullSecrets` | search imagePullSecrets to use for private repository | `nil`                      |
+| `searchNodes.env` | Environment variables to attach to the search pods | `nil`                      |
+| `searchNodes.sonarProperties` | Custom `sonar.properties` file for Search Nodes | `None`                     |
+| `searchNodes.sonarSecretProperties` | Additional `sonar.properties` file for Search Nodes to load from a secret | `None`                     |
+| `searchNodes.sonarSecretKey` | Name of existing secret used for settings encryption | `None`                     |
+| `searchNodes.searchAuthentication.enabled` | Securing the Search Cluster with basic authentication and TLS in between search nodes | `false`                    |
+| `searchNodes.searchAuthentication.keyStoreSecret` | Existing PKCS#12 Container as Keystore/Truststore to be used | `""`                       |
+| `searchNodes.searchAuthentication.keyStorePassword` | Password to Keystore/Truststore used in search nodes (optional) | `""`                       |
+| `searchNodes.searchAuthentication.keyStorePasswordSecret` | Existing secret for Password to Keystore/Truststore used in search nodes (optional) | `nil`                      |
+| `searchNodes.searchAuthentication.userPassword` | A User Password that will be used to authenticate against the Search Cluster | `""`                       |
+| `searchNodes.replicaCount` | Replica count of the Search Nodes | `3`                        |
+| `searchNodes.podDistributionBudget` | PodDisctributionBudget for the Search Nodes | `maxUnavailable: "33%"`    |
+| `searchNodes.securityContext.fsGroup` | Group applied to mounted directories/files on search nodes | `1000`                     |
+| `searchNodes.containerSecurityContext.runAsUser` | User to run search container in sonarqube pod as | `1000`                     |
+| `searchNodes.readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for Search Node checking| `60`                       |
+| `searchNodes.readinessProbe.periodSeconds` | ReadinessProbe period between checking Search Node | `30`                       |
+| `searchNodes.readinessProbe.failureThreshold`| ReadinessProbe thresold for marking as failed | `6`                        |
+| `searchNodes.readinessProbe.timeoutSeconds`| ReadinessProbe timeout delay | `1`                        |
+| `searchNodes.livenessProbe.initialDelaySeconds`| LivenessProbe initial delay for Search Node checking | `60`                       |
+| `searchNodes.livenessProbe.periodSeconds`| LivenessProbe period between checking Search Node | `30`                       |
+| `searchNodes.livenessProbe.failureThreshold`| LivenessProbe thresold for marking as dead | `6`                        |
+| `searchNodes.livenessProbe.timeoutSeconds`| LivenessProbe timeout delay | `1`                        |
+| `searchNodes.startupProbe.initialDelaySeconds`| StartupProbe initial delay for Search Node checking | `30`                       |
+| `searchNodes.startupProbe.periodSeconds`| StartupProbe period between checking Search Node | `10`                       |
+| `searchNodes.startupProbe.failureThreshold`| StartupProbe thresold for marking as failed | `24`                       |
+| `searchNodes.startupProbe.timeoutSeconds`| StartupProbe timeout delay | `1`                        |
+| `searchNodes.resources.requests.memory` | memory request for Search Nodes | `2Gi`                      |
+| `searchNodes.resources.requests.cpu` | cpu request for Search Nodes | `400m`                     |
+| `searchNodes.resources.limits.memory` | memory limit for Search Nodes. should not be under 4G | `4096M`                    |
+| `searchNodes.resources.limits.cpu` | cpu limit for Search Nodes | `800m`                     |
+| `searchNodes.persistence.enabled` | enabled or disables the creation of VPCs for the Search Nodes | `true`                     |
+| `searchNodes.persistence.annotations` | PVC annotations for the Search Nodes | `{}`                       |
+| `searchNodes.persistence.storageClass` | Storage class to be used | `""`                       |
+| `searchNodes.persistence.accessMode` | Volumes access mode to be set | `ReadWriteOnce`            |
+| `searchNodes.persistence.size` | Size of the PVC | `5G`                       |
+| `searchNodes.persistence.uid` | UID used for init-fs container | `1000`                     |
+| `searchNodes.extraContainers` | Array of extra containers to run alongside | `[]`                       |
 
 ### App Nodes Configuration
 
-| Parameter | Description | Default |
-| --------- | ----------- | ------- |
-| `ApplicationNodes.image.repository` | app image repository | `sonarqube` |
-| `ApplicationNodes.image.tag` | app image tag | `10.0.0-datacenter-app` |
-| `ApplicationNodes.image.pullPolicy` | app image pull policy | `IfNotPresent` |
-| `ApplicationNodes.image.pullSecret` | (DEPRECATED) app imagePullSecret to use for private repository | `nil` |
-| `ApplicationNodes.image.pullSecrets` | app imagePullSecrets to use for private repository | `nil` |
-| `ApplicationNodes.env` | Environment variables to attach to the app pods | `nil` |
-| `ApplicationNodes.sonarProperties` | Custom `sonar.properties` key-value pairs for App Nodes (e.g., "ApplicationNodes.sonarProperties.sonar.forceAuthentication=true") | `None` |
-| `ApplicationNodes.sonarSecretProperties` | Additional `sonar.properties` key-value pairs for App Nodes to load from a secret | `None` |
-| `ApplicationNodes.sonarSecretKey` | Name of existing secret used for settings encryption | `None` |
-| `ApplicationNodes.replicaCount` | Replica count of the app Nodes | `2` |
-| `ApplicationNodes.podDistributionBudget` | PodDisctributionBudget for the App Nodes | `minAvailable: "50%"` |
-| `ApplicationNodes.securityContext.fsGroup` | Group applied to mounted directories/files on app nodes | `1000` |
-| `ApplicationNodes.containerSecurityContext.runAsUser` | User to run app container in sonarqube pod as | `1000` |
-| `ApplicationNodes.readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for app Node checking| `60` |
-| `ApplicationNodes.readinessProbe.periodSeconds` | ReadinessProbe period between checking app Node | `30` |
-| `ApplicationNodes.readinessProbe.failureThreshold`| ReadinessProbe thresold for marking as failed | `6` |
-| `ApplicationNodes.readinessProbe.timeoutSeconds`| ReadinessProbe timeout delay | `1` |
-| `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for readinessProbe | `/` |
-| `ApplicationNodes.livenessProbe.initialDelaySeconds`| LivenessProbe initial delay for app Node checking | `60` |
-| `ApplicationNodes.livenessProbe.periodSeconds`| LivenessProbe period between checking app Node | `30` |
-| `ApplicationNodes.livenessProbe.failureThreshold`| LivenessProbe thresold for marking as dead | `6` |
-| `ApplicationNodes.livenessProbe.timeoutSeconds`| LivenessProbe timeout delay | `1` |
-| `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for StartupProbe | `/` |
-| `ApplicationNodes.startupProbe.initialDelaySeconds`| StartupProbe initial delay for app Node checking | `30` |
-| `ApplicationNodes.startupProbe.periodSeconds`| StartupProbe period between checking app Node | `10` |
-| `ApplicationNodes.startupProbe.failureThreshold`| StartupProbe thresold for marking as failed | `24` |
-| `ApplicationNodes.startupProbe.timeoutSeconds`| StartupProbe timeout delay | `1` |
-| `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for StartupProbe | `/` |
-| `ApplicationNodes.resources.requests.memory` | memory request for app Nodes | `2Gi` |
-| `ApplicationNodes.resources.requests.cpu` | cpu request for app Nodes | `400m` |
-| `ApplicationNodes.resources.limits.memory` | memory limit for app Nodes. should not be under 4G | `4096M` |
-| `ApplicationNodes.resources.limits.cpu` | cpu limit for app Nodes | `800m` |
-| `ApplicationNodes.prometheusExporter.enabled` | Use the Prometheus JMX exporter | `false` |
-| `ApplicationNodes.prometheusExporter.version` | jmx_prometheus_javaagent version to download from Maven Central | `0.17.2`|
-| `ApplicationNodes.prometheusExporter.noCheckCertificate` | Flag to not check server's certificate when downloading jmx_prometheus_javaagent | `false`|
-| `ApplicationNodes.prometheusExporter.webBeanPort` | Port where the jmx_prometheus_javaagent exposes the metrics for the webBean | `8000`|
-| `ApplicationNodes.prometheusExporter.ceBeanPort` | Port where the jmx_prometheus_javaagent exposes the metrics for the ceBean | `8001`|
-| `ApplicationNodes.prometheusExporter.downloadURL` | Alternative full download URL for the jmx_prometheus_javaagent.jar (overrides `prometheusExporter.version`) | `""` |
-| `ApplicationNodes.prometheusExporter.config` | Prometheus JMX exporter config yaml for the web process, and the CE process if `prometheusExporter.ceConfig` is not set | see `values.yaml`|
-| `ApplicationNodes.prometheusExporter.ceConfig` | Prometheus JMX exporter config yaml for the CE process (by default, `prometheusExporter.config` is used | `None` |
-| `ApplicationNodes.prometheusExporter.httpProxy` | HTTP proxy for downloading JMX agent | `""` |
-| `ApplicationNodes.prometheusExporter.httpsProxy` | HTTPS proxy for downloading JMX agent | `""` |
-| `ApplicationNodes.prometheusExporter.noProxy` | No proxy for downloading JMX agent | `""` |
-| `ApplicationNodes.prometheusExporter.securityContext` | Security context for downloading the jmx agent | see `values.yaml`|
-| `ApplicationNodes.prometheusMonitoring.podMonitor.enabled` | Enable Prometheus PodMonitor | `false` |
-| `ApplicationNodes.prometheusMonitoring.podMonitor.namespace` | Specify a custom namespace where the PodMonitor will be created | `default` |
-| `ApplicationNodes.prometheusMonitoring.podMonitor.interval` | Specify the interval how often metrics should be scraped | `30s` |
-| `ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout` | Specify the timeout after a scrape is ended | `None` |
-| `ApplicationNodes.prometheusMonitoring.podMonitor.jobLabel` |  Name of the label on target services that prometheus uses as job name | `None` |
-| `ApplicationNodes.plugins.install` | Link(s) to the plugin JARs to download and install | `[]` |
-| `ApplicationNodes.plugins.resources` | Plugin Pod resource requests & limits | `{}` |
-| `ApplicationNodes.plugins.httpProxy` | For use behind a corporate proxy when downloading plugins | `""` |
-| `ApplicationNodes.plugins.httpsProxy` | For use behind a corporate proxy when downloading plugins | `""` |
-| `ApplicationNodes.plugins.noProxy` | For use behind a corporate proxy when downloading plugins | `""` |
-| `ApplicationNodes.plugins.image` | Image for plugins container | `""` |
-| `ApplicationNodes.plugins.resources` | Resources for plugins container | `""` |
-| `ApplicationNodes.plugins.netrcCreds` | Name of the secret containing .netrc file to use creds when downloading plugins | `""` |
-| `ApplicationNodes.plugins.noCheckCertificate` | Flag to not check server's certificate when downloading plugins | `false |
-| `ApplicationNodes.plugins.securityContext` | Security context for the container to download plugins | see `values.yaml |
-| `ApplicationNodes.jvmOpts` | (DEPRECATED) Values to add to SONARQUBE_WEB_JVM_OPTS | `""` |
-| `ApplicationNodes.jvmCeOpts` | (DEPRECATED) Values to add to SONAR_CE_JAVAOPTS | `""` |
-| `ApplicationNodes.jwtSecret` | A HS256 key encoded with base64 (*This value must be set before installing the chart, see [the documentation](https://docs.sonarqube.org/latest/setup/sonarqube-cluster-on-kubernetes/)*) | `""` |
-| `ApplicationNodes.existingJwtSecret` | secret that contains the `jwtSecret` | `nil` |
-| `ApplicationNodes.resources.requests.memory` | memory request for app Nodes | `2Gi` |
-| `ApplicationNodes.resources.requests.cpu` | cpu request for app Nodes | `400m` |
-| `ApplicationNodes.resources.limits.memory` | memory limit for app Nodes. should not be under 4G | `4096M` |
-| `ApplicationNodes.resources.limits.cpu` | cpu limit for app Nodes | `800m` |
-| `ApplicationNodes.extraContainers` | Array of extra containers to run alongside | `[]` |
+| Parameter | Description | Default                 |
+| --------- | ----------- |-------------------------|
+| `ApplicationNodes.image.repository` | app image repository | `sonarqube`             |
+| `ApplicationNodes.image.tag` | app image tag | `10.1.0-datacenter-app` |
+| `ApplicationNodes.image.pullPolicy` | app image pull policy | `IfNotPresent`          |
+| `ApplicationNodes.image.pullSecret` | (DEPRECATED) app imagePullSecret to use for private repository | `nil`                   |
+| `ApplicationNodes.image.pullSecrets` | app imagePullSecrets to use for private repository | `nil`                   |
+| `ApplicationNodes.env` | Environment variables to attach to the app pods | `nil`                   |
+| `ApplicationNodes.sonarProperties` | Custom `sonar.properties` key-value pairs for App Nodes (e.g., "ApplicationNodes.sonarProperties.sonar.forceAuthentication=true") | `None`                  |
+| `ApplicationNodes.sonarSecretProperties` | Additional `sonar.properties` key-value pairs for App Nodes to load from a secret | `None`                  |
+| `ApplicationNodes.sonarSecretKey` | Name of existing secret used for settings encryption | `None`                  |
+| `ApplicationNodes.replicaCount` | Replica count of the app Nodes | `2`                     |
+| `ApplicationNodes.podDistributionBudget` | PodDisctributionBudget for the App Nodes | `minAvailable: "50%"`   |
+| `ApplicationNodes.securityContext.fsGroup` | Group applied to mounted directories/files on app nodes | `1000`                  |
+| `ApplicationNodes.containerSecurityContext.runAsUser` | User to run app container in sonarqube pod as | `1000`                  |
+| `ApplicationNodes.readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for app Node checking| `60`                    |
+| `ApplicationNodes.readinessProbe.periodSeconds` | ReadinessProbe period between checking app Node | `30`                    |
+| `ApplicationNodes.readinessProbe.failureThreshold`| ReadinessProbe thresold for marking as failed | `6`                     |
+| `ApplicationNodes.readinessProbe.timeoutSeconds`| ReadinessProbe timeout delay | `1`                     |
+| `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for readinessProbe | `/`                     |
+| `ApplicationNodes.livenessProbe.initialDelaySeconds`| LivenessProbe initial delay for app Node checking | `60`                    |
+| `ApplicationNodes.livenessProbe.periodSeconds`| LivenessProbe period between checking app Node | `30`                    |
+| `ApplicationNodes.livenessProbe.failureThreshold`| LivenessProbe thresold for marking as dead | `6`                     |
+| `ApplicationNodes.livenessProbe.timeoutSeconds`| LivenessProbe timeout delay | `1`                     |
+| `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for StartupProbe | `/`                     |
+| `ApplicationNodes.startupProbe.initialDelaySeconds`| StartupProbe initial delay for app Node checking | `30`                    |
+| `ApplicationNodes.startupProbe.periodSeconds`| StartupProbe period between checking app Node | `10`                    |
+| `ApplicationNodes.startupProbe.failureThreshold`| StartupProbe thresold for marking as failed | `24`                    |
+| `ApplicationNodes.startupProbe.timeoutSeconds`| StartupProbe timeout delay | `1`                     |
+| `ApplicationNodes.readinessProbe.sonarWebContext`| SonarQube web context for StartupProbe | `/`                     |
+| `ApplicationNodes.resources.requests.memory` | memory request for app Nodes | `2Gi`                   |
+| `ApplicationNodes.resources.requests.cpu` | cpu request for app Nodes | `400m`                  |
+| `ApplicationNodes.resources.limits.memory` | memory limit for app Nodes. should not be under 4G | `4096M`                 |
+| `ApplicationNodes.resources.limits.cpu` | cpu limit for app Nodes | `800m`                  |
+| `ApplicationNodes.prometheusExporter.enabled` | Use the Prometheus JMX exporter | `false`                 |
+| `ApplicationNodes.prometheusExporter.version` | jmx_prometheus_javaagent version to download from Maven Central | `0.17.2`                |
+| `ApplicationNodes.prometheusExporter.noCheckCertificate` | Flag to not check server's certificate when downloading jmx_prometheus_javaagent | `false`                 |
+| `ApplicationNodes.prometheusExporter.webBeanPort` | Port where the jmx_prometheus_javaagent exposes the metrics for the webBean | `8000`                  |
+| `ApplicationNodes.prometheusExporter.ceBeanPort` | Port where the jmx_prometheus_javaagent exposes the metrics for the ceBean | `8001`                  |
+| `ApplicationNodes.prometheusExporter.downloadURL` | Alternative full download URL for the jmx_prometheus_javaagent.jar (overrides `prometheusExporter.version`) | `""`                    |
+| `ApplicationNodes.prometheusExporter.config` | Prometheus JMX exporter config yaml for the web process, and the CE process if `prometheusExporter.ceConfig` is not set | see `values.yaml`       |
+| `ApplicationNodes.prometheusExporter.ceConfig` | Prometheus JMX exporter config yaml for the CE process (by default, `prometheusExporter.config` is used | `None`                  |
+| `ApplicationNodes.prometheusExporter.httpProxy` | HTTP proxy for downloading JMX agent | `""`                    |
+| `ApplicationNodes.prometheusExporter.httpsProxy` | HTTPS proxy for downloading JMX agent | `""`                    |
+| `ApplicationNodes.prometheusExporter.noProxy` | No proxy for downloading JMX agent | `""`                    |
+| `ApplicationNodes.prometheusExporter.securityContext` | Security context for downloading the jmx agent | see `values.yaml`       |
+| `ApplicationNodes.prometheusMonitoring.podMonitor.enabled` | Enable Prometheus PodMonitor | `false`                 |
+| `ApplicationNodes.prometheusMonitoring.podMonitor.namespace` | Specify a custom namespace where the PodMonitor will be created | `default`               |
+| `ApplicationNodes.prometheusMonitoring.podMonitor.interval` | Specify the interval how often metrics should be scraped | `30s`                   |
+| `ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout` | Specify the timeout after a scrape is ended | `None`                  |
+| `ApplicationNodes.prometheusMonitoring.podMonitor.jobLabel` |  Name of the label on target services that prometheus uses as job name | `None`                  |
+| `ApplicationNodes.plugins.install` | Link(s) to the plugin JARs to download and install | `[]`                    |
+| `ApplicationNodes.plugins.resources` | Plugin Pod resource requests & limits | `{}`                    |
+| `ApplicationNodes.plugins.httpProxy` | For use behind a corporate proxy when downloading plugins | `""`                    |
+| `ApplicationNodes.plugins.httpsProxy` | For use behind a corporate proxy when downloading plugins | `""`                    |
+| `ApplicationNodes.plugins.noProxy` | For use behind a corporate proxy when downloading plugins | `""`                    |
+| `ApplicationNodes.plugins.image` | Image for plugins container | `""`                    |
+| `ApplicationNodes.plugins.resources` | Resources for plugins container | `""`                    |
+| `ApplicationNodes.plugins.netrcCreds` | Name of the secret containing .netrc file to use creds when downloading plugins | `""`                    |
+| `ApplicationNodes.plugins.noCheckCertificate` | Flag to not check server's certificate when downloading plugins | `false                  |
+| `ApplicationNodes.plugins.securityContext` | Security context for the container to download plugins | see `values.yaml        |
+| `ApplicationNodes.jvmOpts` | (DEPRECATED) Values to add to SONARQUBE_WEB_JVM_OPTS | `""`                    |
+| `ApplicationNodes.jvmCeOpts` | (DEPRECATED) Values to add to SONAR_CE_JAVAOPTS | `""`                    |
+| `ApplicationNodes.jwtSecret` | A HS256 key encoded with base64 (*This value must be set before installing the chart, see [the documentation](https://docs.sonarqube.org/latest/setup/sonarqube-cluster-on-kubernetes/)*) | `""`                    |
+| `ApplicationNodes.existingJwtSecret` | secret that contains the `jwtSecret` | `nil`                   |
+| `ApplicationNodes.resources.requests.memory` | memory request for app Nodes | `2Gi`                   |
+| `ApplicationNodes.resources.requests.cpu` | cpu request for app Nodes | `400m`                  |
+| `ApplicationNodes.resources.limits.memory` | memory limit for app Nodes. should not be under 4G | `4096M`                 |
+| `ApplicationNodes.resources.limits.cpu` | cpu limit for app Nodes | `800m`                  |
+| `ApplicationNodes.extraContainers` | Array of extra containers to run alongside | `[]`                    |
 
 ### Generic Configuration
 
