@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.1.1]
+* Add PodDisruptionBudget
+
 ## [10.1.0]
 * Update SonarQube to 10.1.0
 * Support Kubernetes v1.27 while dropping v1.23
