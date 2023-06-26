@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.2.0]
+* Update Chart's version to 10.2.0
+
 ## [10.1.0]
 * Update SonarQube to 10.1.0
 * Support Kubernetes v1.27 while dropping v1.23
