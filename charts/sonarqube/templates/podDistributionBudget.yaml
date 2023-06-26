@@ -1,0 +1,17 @@
+apiVersion: {{ include "common.capabilities.policy.apiVersion" . }}
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "sonarqube.fullname" . }}-search
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+{{- with .Values.searchNodes.podDistributionBudget }}
+{{ toYaml . | indent 2 }}
+{{- end }}
+  selector:
+    matchLabels:
+      app: {{ template "sonarqube.name" . }}
+      release: {{ .Release.Name }}
