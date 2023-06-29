@@ -317,9 +317,9 @@ spec:
             periodSeconds: {{ .Values.ApplicationNodes.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.ApplicationNodes.startupProbe.failureThreshold }}
             timeoutSeconds: {{ .Values.ApplicationNodes.startupProbe.timeoutSeconds }}
-          {{- if .Values.containerSecurityContext }}
+          {{- if .Values.ApplicationNodes.containerSecurityContext }}
           securityContext:
-{{- toYaml .Values.containerSecurityContext | nindent 12 }}
+{{- toYaml .Values.ApplicationNodes.containerSecurityContext | nindent 12 }}
           {{- end }}
           volumeMounts:
             {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey}}
