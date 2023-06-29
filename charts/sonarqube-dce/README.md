@@ -72,6 +72,10 @@ $ helm delete kindly-newt
 
 Please read the official documentation prerequisites [here](https://docs.sonarqube.org/latest/requirements/prerequisites-and-overview/).
 
+### Kubernetes environment recommendations
+
+Please ensure that you follow our official [Kubernetes environment recommendations](https://docs.sonarqube.org/latest/setup-and-upgrade/deploy-on-kubernetes/deploy-sonarqube-on-kubernetes/#kubernetes-environment-recommendations) when installing our official Chart. Pay special attention to the part about Pod policies.
+
 ### Elasticsearch prerequisites
 
 SonarQube runs Elasticsearch under the hood.
