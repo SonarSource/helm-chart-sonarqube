@@ -72,6 +72,14 @@ $ helm delete kindly-newt
 
 Please read the official documentation prerequisites [here](https://docs.sonarqube.org/latest/requirements/prerequisites-and-overview/).
 
+### Kubernetes - Pod Security Standards
+
+The following [Pod Security levels](https://kubernetes.io/docs/concepts/security/pod-security-admission/#pod-security-levels) cannot be used in combination with SonarQube's chart:
+
+* Baseline. The `init-sysctl` and `init-fs` containers requires `securityContext.privileged=true`.
+* Restricted. In addition to the previous requirement,
+  * The `sonarqube-postgresql`, `wait-for-db`, `init-sysctl`, `init-fs`, `sonarqube-dce-search`, and `sonarqube-dce` containers require `securityContext.allowPrivilegeEscalation=true`, unrestricted capabilities, running as `root`, and a `seccompProfile` different from `RuntimeDefault` or `localhost`.
+
 ### Elasticsearch prerequisites
 
 SonarQube runs Elasticsearch under the hood.
