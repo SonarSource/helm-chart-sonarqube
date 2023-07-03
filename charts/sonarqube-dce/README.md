@@ -78,7 +78,7 @@ The following [Pod Security levels](https://kubernetes.io/docs/concepts/security
 
 * Baseline. The `init-sysctl` and `init-fs` containers requires `securityContext.privileged=true`.
 * Restricted. In addition to the previous requirement,
-  * The `sonarqube-postgresql`, `wait-for-db`, `init-sysctl`, `init-fs`, `sonarqube-dce-search`, and `sonarqube-dce` containers require `securityContext.allowPrivilegeEscalation=true`, unrestricted capabilities, running as root, and a seccompProfile different from `RuntimeDefault` or `localhost`.
+  * The `sonarqube-postgresql`, `wait-for-db`, `init-sysctl`, `init-fs`, `sonarqube-dce-search`, and `sonarqube-dce` containers require `securityContext.allowPrivilegeEscalation=true`, unrestricted capabilities, running as `root`, and a `seccompProfile` different from `RuntimeDefault` or `localhost`.
 
 ### Elasticsearch prerequisites
 
