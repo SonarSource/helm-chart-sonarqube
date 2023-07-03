@@ -442,7 +442,10 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `account.securityContext` | SecurityContext for change-password-hook | `{}` |
 | `curlContainerImage` | Curl container image | `curlimages/curl:latest` |
 | `adminJobAnnotations` | Custom annotations for admin hook Job | `{}` |
+| `adminJobHelmHook` | Custom Helm hook phase for admin hook Job | `post-install` |
 | `terminationGracePeriodSeconds` | Configuration of `terminationGracePeriodSeconds` | `60` |
+
+To set the appropriate Helm hook phase this overview helps [Helm - The Available Hooks](https://helm.sh/docs/topics/charts_hooks/#the-available-hooks)
 
 You can also configure values for the PostgreSQL database via the Postgresql [Chart](https://hub.helm.sh/charts/bitnami/postgresql)
 
