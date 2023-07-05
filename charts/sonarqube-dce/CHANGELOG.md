@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [10.3.0]
 * Update SonarQube to 10.3.0
 * Add a possibility to adjust the Helm hook phase for admin job
+* Add change awareness to "change admin password hook"
 
 ## [10.2.0]
 * Update Chart's version to 10.2.0
