@@ -30,7 +30,7 @@ spec:
             name: {{ default $serviceName .serviceName }}
             port:
               number: {{ default $servicePort .servicePort }}
-        path: {{ .path | default (include "sonarqube.webcontext" $) }}
+        path: {{ .path}}
         pathType: {{ default "ImplementationSpecific" .pathType }}
   {{- end }}
   {{- if .Values.ingress.tls }}

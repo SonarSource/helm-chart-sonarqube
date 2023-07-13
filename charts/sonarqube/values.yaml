@@ -72,10 +72,6 @@ networkPolicy:
   # expects https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#networkpolicyspec-v1-networking-k8s-io
   # additionalNetworkPolicys:
 
-# will be used as default for ingress path and probes path, will be injected in .Values.env as SONAR_WEB_CONTEXT
-# if .Values.env.SONAR_WEB_CONTEXT is set, this value will be ignored
-sonarWebContext: ""
-
 # also install the nginx ingress helm chart
 nginx:
   enabled: false
@@ -86,7 +82,7 @@ ingress:
   hosts:
     - name: sonarqube.your-org.com
       # Different clouds or configurations might need /* as the default path
-      # path: /
+      path: /
       # For additional control over serviceName and servicePort
       # serviceName: someService
       # servicePort: somePort
@@ -164,7 +160,7 @@ readinessProbe:
   timeoutSeconds: 1
   # If an ingress *path* other than the root (/) is defined, it should be reflected here
   # A trailing "/" must be included
-  # deprecated please use sonarWebContext at the value top level
+  sonarWebContext: /
   # sonarWebContext: /sonarqube/
 
 livenessProbe:
@@ -175,8 +171,10 @@ livenessProbe:
   timeoutSeconds: 1
   # If an ingress *path* other than the root (/) is defined, it should be reflected here
   # A trailing "/" must be included
-  # deprecated please use sonarWebContext at the value top level
+  sonarWebContext: /
   # sonarWebContext: /sonarqube/
+  # If an ingress *path* is defined, it should be reflected here
+  # sonar.web.context: /sonarqube
 
 startupProbe:
   initialDelaySeconds: 30
@@ -186,7 +184,7 @@ startupProbe:
   timeoutSeconds: 1
   # If an ingress *path* other than the root (/) is defined, it should be reflected here
   # A trailing "/" must be included
-  # deprecated please use sonarWebContext at the value top level
+  sonarWebContext: /
   # sonarWebContext: /sonarqube/
 
 initContainers:
@@ -534,9 +532,8 @@ extraConfig:
 #     requests:
 #       cpu: 100m
 #       memory: 128Mi
-#   curlContainerImage: curlimages/curl:latest
-#   adminJobAnnotations: {}
-# deprecated please use sonarWebContext at the value top level
-#   sonarWebContext:
+# curlContainerImage: curlimages/curl:latest
+# adminJobAnnotations: {}
+# sonarWebContext: /
 
 terminationGracePeriodSeconds: 60

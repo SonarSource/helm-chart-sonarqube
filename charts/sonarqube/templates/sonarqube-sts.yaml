@@ -298,8 +298,6 @@ spec:
               value: {{ .Chart.Version | replace "+" "_" }}
             - name: SONAR_WEB_JAVAOPTS
               value: {{ template "sonarqube.jvmOpts" . }}
-            - name: SONAR_WEB_CONTEXT
-              value: {{ include "sonarqube.webcontext" . }}
             - name: SONAR_CE_JAVAOPTS
               value: {{ template "sonarqube.jvmCEOpts" . }}
             - name: SONAR_JDBC_PASSWORD
@@ -335,7 +333,7 @@ spec:
               - -c
               - |
                 host="$(hostname -i || echo '127.0.0.1')"
-                wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:{{ .Values.service.internalPort }}{{ .Values.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
+                wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:{{ .Values.service.internalPort }}{{ .Values.livenessProbe.sonarWebContext }}api/system/liveness"
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
@@ -350,7 +348,7 @@ spec:
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
                 host="$(hostname -i || echo '127.0.0.1')"
-                if wget --no-proxy -qO- http://${host}:{{ .Values.service.internalPort }}{{ .Values.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                if wget --no-proxy -qO- http://${host}:{{ .Values.service.internalPort }}{{ .Values.readinessProbe.sonarWebContext }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
                 	exit 0
                 fi
                 exit 1
@@ -361,7 +359,7 @@ spec:
           startupProbe:
             httpGet:
               scheme: HTTP
-              path: {{ .Values.startupProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status
+              path: {{ .Values.readinessProbe.sonarWebContext }}api/system/status
               port: http
             initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.startupProbe.periodSeconds }}
