@@ -448,7 +448,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `account.resources.limits.cpu` | CPU limit for Admin hook | `100m` |
 | `account.sonarWebContext` | SonarQube web context for Admin hook | `nil` |
 | `account.securityContext` | SecurityContext for change-password-hook | `{}` |
-| `curlContainerImage` | Curl container image | `curlimages/curl:latest` |
+| `curlContainerImage` | Curl container image | `curlimages/curl:8.2.0` |
 | `adminJobAnnotations` | Custom annotations for admin hook Job | `{}` |
 | `terminationGracePeriodSeconds` | Configuration of `terminationGracePeriodSeconds` | `60` |
 

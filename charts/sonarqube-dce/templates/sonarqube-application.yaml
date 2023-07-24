@@ -135,7 +135,7 @@ spec:
       {{- end }}
       {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
         - name: inject-prometheus-exporter
-          image: {{ default "curlimages/curl:7.76.1" .Values.ApplicationNodes.prometheusExporter.image }}
+          image: {{ default "curlimages/curl:8.2.0" .Values.ApplicationNodes.prometheusExporter.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           {{- if $securityContext := (default .Values.initContainers.securityContext .Values.ApplicationNodes.prometheusExporter.securityContext) }}
           securityContext:
@@ -162,7 +162,7 @@ spec:
       {{- end }}
       {{- if .Values.ApplicationNodes.plugins.install }}
         - name: install-plugins
-          image: {{ default "curlimages/curl:7.76.1" .Values.ApplicationNodes.plugins.image }}
+          image: {{ default "curlimages/curl:8.2.0" .Values.ApplicationNodes.plugins.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh",
             "-e",
