@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [10.2.0]
 * Update Chart's version to 10.2.0
 * Update curl image to 8.2.0
+* `ApplicationNodes.readinessProbe.sonarWebContext`, `ApplicationNodes.startupProbe.sonarWebContext`, `ApplicationNodes.livenessProbe.sonarWebContext` and `account.sonarWebContext` are deprecated, please use `sonarWebContext` at the value top level.
 
 ## [10.1.0]
 * Update SonarQube to 10.1.0

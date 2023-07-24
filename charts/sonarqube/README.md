@@ -171,6 +171,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `env` | Environment variables to attach to the pods | `{}`|
 | `annotations` | SonarQube Pod annotations | `{}` |
 | `edition` | SonarQube Edition to use (e.g. `community`, `developer` or `enterprise`) | `community` |
+| `sonarWebContext` | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path. | `` |
 
 ### NetworkPolicies
 
@@ -257,15 +258,15 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `readinessProbe.periodSeconds` | ReadinessProbe period between checking SonarQube | `30` |
 | `readinessProbe.failureThreshold` | ReadinessProbe threshold for marking as failed | `6` |
 | `readinessProbe.timeoutSeconds`| ReadinessProbe timeout delay | `1` |
-| `readinessProbe.sonarWebContext` | SonarQube web context for readinessProbe | `/` |
+| `readinessProbe.sonarWebContext` | (DEPRECATED) SonarQube web context for readinessProbe, please use sonarWebContext at the value top level instead | `/` |
 | `livenessProbe.initialDelaySeconds` | LivenessProbe initial delay for SonarQube checking | `60` |
 | `livenessProbe.periodSeconds` | LivenessProbe period between checking SonarQube | `30` |
-| `livenessProbe.sonarWebContext` | SonarQube web context for LivenessProbe | `/` |
+| `livenessProbe.sonarWebContext` | (DEPRECATED) SonarQube web context for LivenessProbe, please use sonarWebContext at the value top level instead | `/` |
 | `livenessProbe.failureThreshold` | LivenessProbe threshold for marking as dead | `6` |
 | `livenessProbe.timeoutSeconds`| LivenessProbe timeout delay | `1` |
 | `startupProbe.initialDelaySeconds` | StartupProbe initial delay for SonarQube checking | `30` |
 | `startupProbe.periodSeconds` | StartupProbe period between checking SonarQube | `10` |
-| `startupProbe.sonarWebContext` | SonarQube web context for StartupProbe | `/` |
+| `startupProbe.sonarWebContext` | (DEPRECATED) SonarQube web context for StartupProbe, please use sonarWebContext at the value top level instead | `/` |
 | `startupProbe.failureThreshold` | StartupProbe threshold for marking as failed | `24` |
 | `startupProbe.timeoutSeconds`| StartupProbe timeout delay | `1` |
 
@@ -446,7 +447,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `account.resources.requests.cpu` | CPU request for Admin hook | `100m` |
 | `account.resources.limits.memory` | Memory limit for Admin hook | `128Mi` |
 | `account.resources.limits.cpu` | CPU limit for Admin hook | `100m` |
-| `account.sonarWebContext` | SonarQube web context for Admin hook | `nil` |
+| `account.sonarWebContext` | (DEPRECATED) SonarQube web context for Admin hook. please use sonarWebContext at the value top level instead | `nil` |
 | `account.securityContext` | SecurityContext for change-password-hook | `{}` |
 | `curlContainerImage` | Curl container image | `curlimages/curl:8.2.0` |
 | `adminJobAnnotations` | Custom annotations for admin hook Job | `{}` |
