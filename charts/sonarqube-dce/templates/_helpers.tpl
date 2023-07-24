@@ -267,3 +267,25 @@ Return the appropriate apiVersion for poddisruptionbudget.
 {{- print "policy/v1" -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Set sonarqube.webcontext, ensuring it starts and ends with a slash, in order to ease probes url template
+*/}}
+{{- define "sonarqube.webcontext" -}}
+{{- $tempWebcontext := .Values.sonarWebContext -}}
+{{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.web.context") -}}
+{{- $tempWebcontext = (get .Values.ApplicationNodes.sonarProperties "sonar.web.context") -}}
+{{- end -}}
+{{- range $index, $val := .Values.ApplicationNodes.env -}}
+{{- if eq $val.name "SONAR_WEB_CONTEXT" -}}
+{{- $tempWebcontext = $val.value -}}
+{{- end -}}
+{{- end -}}
+{{- if not (hasPrefix "/" $tempWebcontext) -}}
+{{- $tempWebcontext = print "/" $tempWebcontext -}}
+{{- end -}}
+{{- if not (hasSuffix "/" $tempWebcontext) -}}
+{{- $tempWebcontext = print $tempWebcontext "/" -}}
+{{- end -}}
+{{ printf "%s" $tempWebcontext }}
+{{- end -}}
