@@ -168,7 +168,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.searchAuthentication.keyStorePasswordSecret` | Existing secret for Password to Keystore/Truststore used in search nodes (optional) | `nil`                      |
 | `searchNodes.searchAuthentication.userPassword` | A User Password that will be used to authenticate against the Search Cluster | `""`                       |
 | `searchNodes.replicaCount` | Replica count of the Search Nodes | `3`                        |
-| `searchNodes.podDistributionBudget` | PodDisctributionBudget for the Search Nodes | `maxUnavailable: "33%"`    |
+| `searchNodes.podDistributionBudget` | PodDisruptionBudget for the Search Nodes | `minAvailable: 2`    |
 | `searchNodes.securityContext.fsGroup` | Group applied to mounted directories/files on search nodes | `1000`                     |
 | `searchNodes.containerSecurityContext.runAsUser` | User to run search container in sonarqube pod as | `1000`                     |
 | `searchNodes.readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for Search Node checking| `60`                       |
@@ -209,7 +209,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.sonarSecretProperties` | Additional `sonar.properties` key-value pairs for App Nodes to load from a secret | `None` |
 | `ApplicationNodes.sonarSecretKey` | Name of existing secret used for settings encryption | `None` |
 | `ApplicationNodes.replicaCount` | Replica count of the app Nodes | `2` |
-| `ApplicationNodes.podDistributionBudget` | PodDisctributionBudget for the App Nodes | `minAvailable: "50%"` |
+| `ApplicationNodes.podDistributionBudget` | PodDisruptionBudget for the App Nodes | `minAvailable: 1` |
 | `ApplicationNodes.securityContext.fsGroup` | Group applied to mounted directories/files on app nodes | `1000` |
 | `ApplicationNodes.containerSecurityContext.runAsUser` | User to run app container in sonarqube pod as | `1000` |
 | `ApplicationNodes.readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for app Node checking| `60` |
