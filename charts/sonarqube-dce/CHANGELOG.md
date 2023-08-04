@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Update curl image to 8.2.0
 * `ApplicationNodes.readinessProbe.sonarWebContext`, `ApplicationNodes.startupProbe.sonarWebContext`, `ApplicationNodes.livenessProbe.sonarWebContext` and `account.sonarWebContext` are deprecated, please use `sonarWebContext` at the value top level.
 * Set the minimum values for PodDisruptionBudget
+* Updates ingress-nginx dependency to 4.7.1
 
 ## [10.1.0]
 * Update SonarQube to 10.1.0
