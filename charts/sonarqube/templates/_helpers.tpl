@@ -164,6 +164,36 @@ Set prometheusExporter.downloadURL
 {{- end -}}
 {{- end -}}
 
+{{/*
+Common labels
+*/}}
+{{- define "sonarqube.labels" -}}
+{{ include "sonarqube.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- with .Values.extraLabels }}
+{{ toYaml . }}
+{{- end }}
+{{- end }}
+
+{{/*
+Extra Annotations
+*/}}
+{{- define "extraAnnotations" -}}
+{{- with .Values.extraAnnotations }}
+{{ toYaml . }}
+{{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "sonarqube.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "sonarqube.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
 
 {{/*
 Create the name of the service account to use

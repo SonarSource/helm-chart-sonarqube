@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.2.1]
+* Update Chart's version to 10.2.1
+* Support adding extra annotations & labels
+
 ## [10.2.0]
 * Update Chart's version to 10.2.0
 * Update curl image to 8.2.0
