@@ -4,21 +4,22 @@ kind: Deployment
 metadata:
   name: {{ template "sonarqube.fullname" . }}
   namespace: {{ .Release.Namespace }}
-{{- if .Values.annotations}}
   annotations:
-    {{- range $key, $value := .Values.annotations }}
-      {{ $key }}: {{ $value | quote }}
-    {{- end }}
-{{- end }}
-  {{- include "extraAnnotations" . | indent 4 }}
+   {{- include "extraAnnotations" . | indent 4 }}
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-  {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ template "sonarqube.name" . }}-{{ template "sonarqube.fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: {{ template "sonarqube.fullname" . }}
+    app.kubernetes.io/version: {{ tpl .Values.image.tag . | quote }}
+{{- with .Values.podLabels }}
+{{ toYaml . | indent 4 }}
+{{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
