@@ -6,7 +6,9 @@ metadata:
   namespace: {{ .Values.prometheusMonitoring.podMonitor.namespace | quote }}
   labels:
     app: {{ template "sonarqube.name" . }}
-{{- include .Values.podLabels . | indent 4 }}
+{{- with .Values.podLabels }}
+{{ toYaml . | indent 4 }}
+{{- end }}
 spec:
    {{- if .Values.prometheusMonitoring.podMonitor.jobLabel }}
   jobLabel: {{ .Values.prometheusMonitoring.podMonitor.jobLabel | quote }}
