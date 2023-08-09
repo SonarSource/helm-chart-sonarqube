@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.2.2]
+* Update Chart's version to 10.2.2
+* Remove embedded postgresql-10.14.0.tgz & ingress-nginx-4.0.13.tgz
+
 ## [10.2.1]
 * Update Chart's version to 10.2.1
 * Support adding extra annotations & labels
