@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Update curl image to 8.2.0
 * `readinessProbe.sonarWebContext`, `startupProbe.sonarWebContext`, `livenessProbe.sonarWebContext`, and `account.sonarWebContext` are deprecated, please use `sonarWebContext` at the value top level.
 * Updates ingress-nginx dependency to 4.7.1
+* Fixes broken table on README
 
 ## [10.1.0]
 * Update SonarQube to 10.1.0
