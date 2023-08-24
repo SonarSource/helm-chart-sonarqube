@@ -312,6 +312,8 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Monitoring (Prometheus PodMonitor)
 
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
 | `prometheusMonitoring.podMonitor.enabled` | Enable Prometheus PodMonitor | `false` |
 | `prometheusMonitoring.podMonitor.namespace` | Specify a custom namespace where the PodMonitor will be created | `default` |
 | `prometheusMonitoring.podMonitor.interval` | Specify the interval how often metrics should be scraped | `30s` |
