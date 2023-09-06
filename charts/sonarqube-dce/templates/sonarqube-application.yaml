@@ -60,7 +60,7 @@ spec:
       {{- end }}
       {{- if .Values.postgresql.enabled }}
         - name: "wait-for-db"
-          image: {{ default "busybox:1.32" .Values.initContainers.image }}
+          image: {{ default "busybox:1.36" .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
@@ -93,7 +93,7 @@ spec:
       {{- end }}
       {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
-          image: {{ default "busybox:1.32" .Values.initContainers.image }}
+          image: {{ default "busybox:1.36" .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: 
           - sh
@@ -135,7 +135,7 @@ spec:
       {{- end }}
       {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
         - name: inject-prometheus-exporter
-          image: {{ default "curlimages/curl:8.2.0" .Values.ApplicationNodes.prometheusExporter.image }}
+          image: {{ default "curlimages/curl:8.2.1" .Values.ApplicationNodes.prometheusExporter.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           {{- if $securityContext := (default .Values.initContainers.securityContext .Values.ApplicationNodes.prometheusExporter.securityContext) }}
           securityContext:
@@ -162,7 +162,7 @@ spec:
       {{- end }}
       {{- if .Values.ApplicationNodes.plugins.install }}
         - name: install-plugins
-          image: {{ default "curlimages/curl:8.2.0" .Values.ApplicationNodes.plugins.image }}
+          image: {{ default "curlimages/curl:8.2.1" .Values.ApplicationNodes.plugins.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh",
             "-e",

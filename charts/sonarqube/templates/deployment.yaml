@@ -67,7 +67,7 @@ spec:
       {{- end }}
       {{- if .Values.postgresql.enabled }}
         - name: "wait-for-db"
-          image: {{ default "busybox:1.32" .Values.initContainers.image }}
+          image: {{ default "busybox:1.36" .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
           {{- if $securityContext := .Values.initContainers.securityContext }}
           securityContext:
@@ -102,7 +102,7 @@ spec:
       {{- end }}
       {{- if or .Values.initSysctl.enabled .Values.elasticsearch.configureNode }}
         - name: init-sysctl
-          image: {{ default "busybox:1.32" .Values.initSysctl.image }}
+          image: {{ default "busybox:1.36" .Values.initSysctl.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
           {{- if $securityContext := (default .Values.initContainers.securityContext .Values.initSysctl.securityContext) }}
           securityContext:
@@ -124,7 +124,7 @@ spec:
 
       {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
         - name: concat-properties
-          image: {{ default "busybox:1.32" .Values.initContainers.image }}
+          image: {{ default "busybox:1.36" .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
           command:
           - sh
@@ -167,7 +167,7 @@ spec:
 
       {{- if .Values.prometheusExporter.enabled }}
         - name: inject-prometheus-exporter
-          image: {{ default "curlimages/curl:8.2.0" .Values.prometheusExporter.image }}
+          image: {{ default "curlimages/curl:8.2.1" .Values.prometheusExporter.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
           {{- if $securityContext := (default .Values.initContainers.securityContext .Values.prometheusExporter.securityContext) }}
           securityContext:
@@ -194,7 +194,7 @@ spec:
       {{- end }}
       {{- if .Values.plugins.install }}
         - name: install-plugins
-          image: {{ default "curlimages/curl:8.2.0" .Values.plugins.image }}
+          image: {{ default "curlimages/curl:8.2.1" .Values.plugins.image }}
           imagePullPolicy: {{ .Values.image.pullPolicy  }}
           command: ["sh",
             "-e",

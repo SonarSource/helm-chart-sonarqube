@@ -274,7 +274,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
-| `initContainers.image` | Change init container image | `busybox:1.32` |
+| `initContainers.image` | Change init container image | `busybox:1.36` |
 | `initContainers.securityContext` | SecurityContext for init containers | `None` |
 | `initContainers.resources` | Resources for init containers | `{}` |
 | `extraInitContainers` | Extra init containers to e.g. download required artifacts | `{}` |
@@ -286,11 +286,11 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `initSysctl.fsFileMax` | Set init sysctl container fs.file-max | `131072` |
 | `initSysctl.nofile` | Set init sysctl container open file descriptors limit | `131072` |
 | `initSysctl.nproc` | Set init sysctl container open threads limit | `8192 ` |
-| `initSysctl.image` | Change init sysctl container image | `busybox:1.32` |
+| `initSysctl.image` | Change init sysctl container image | `busybox:1.36` |
 | `initSysctl.securityContext` | InitSysctl container security context | `{privileged: true}` |
 | `initSysctl.resources` | InitSysctl container resource requests & limits | `{}` |
 | `initFs.enabled` | Enable file permission change with init container | `true` |
-| `initFs.image` | InitFS container image | `busybox:1.32` |
+| `initFs.image` | InitFS container image | `busybox:1.36` |
 | `initFs.securityContext.privileged` | InitFS container needs to run privileged | `true` |
 
 ### Monitoring (Prometheus Exporter)
@@ -451,7 +451,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `account.resources.limits.cpu` | CPU limit for Admin hook | `100m` |
 | `account.sonarWebContext` | (DEPRECATED) SonarQube web context for Admin hook. please use sonarWebContext at the value top level instead | `nil` |
 | `account.securityContext` | SecurityContext for change-password-hook | `{}` |
-| `curlContainerImage` | Curl container image | `curlimages/curl:8.2.0` |
+| `curlContainerImage` | Curl container image | `curlimages/curl:8.2.1` |
 | `adminJobAnnotations` | Custom annotations for admin hook Job | `{}` |
 | `terminationGracePeriodSeconds` | Configuration of `terminationGracePeriodSeconds` | `60` |
 
