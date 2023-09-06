@@ -3,6 +3,8 @@ All changes to this chart will be documented in this file.
 
 ## [8.0.2]
 * Fix missing `bitnami/minideb-extras` image during helm tests
+* Update SonarQube to 9.9.2
+
 
 ## [8.0.1]
 * Update SonarQube to 9.9.1
