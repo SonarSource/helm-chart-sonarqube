@@ -207,7 +207,7 @@ ApplicationNodes:
     # ceConfig:
     #   rules:
     #     - pattern: ".*"
-    # image: curlimages/curl:8.2.0
+    # image: curlimages/curl:8.2.1
     # For use behind a corporate proxy when downloading prometheus
     # httpProxy: ""
     # httpsProxy: ""
@@ -247,7 +247,7 @@ ApplicationNodes:
     # httpsProxy: ""
     # noProxy: ""
 
-    # image: curlimages/curl:8.2.0
+    # image: curlimages/curl:8.2.1
     # resources: {}
 
     # .netrc secret file with a key "netrc" to use basic auth while downloading plugins
@@ -392,7 +392,7 @@ networkPolicy:
   # additionalNetworkPolicys:
 
 initContainers:
-  # image: busybox:1.32
+  # image: busybox:1.36
   # We allow the init containers to have a separate security context declaration because
   # the initContainer may not require the same as SonarQube.
   # securityContext: {}
@@ -417,14 +417,14 @@ initSysctl:
   fsFileMax: 131072
   nofile: 131072
   nproc: 8192
-  # image: busybox:1.32
+  # image: busybox:1.36
   securityContext:
     privileged: true
   # resources: {}
 
 initFs:
   enabled: true
-  # image: busybox:1.32
+  # image: busybox:1.36
   securityContext:
     privileged: true
 
@@ -600,7 +600,7 @@ extraConfig:
 #     requests:
 #       cpu: 100m
 #       memory: 128Mi
-# curlContainerImage: curlimages/curl:8.2.0
+# curlContainerImage: curlimages/curl:8.2.1
 # adminJobAnnotations: {}
 # deprecated please use sonarWebContext at the value top level
 # sonarWebContext: /
