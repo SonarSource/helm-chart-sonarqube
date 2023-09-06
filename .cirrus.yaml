@@ -63,7 +63,7 @@ chart_testing_task:
     - export DOCKER_HOST=tcp://localhost:2375
     - kind create cluster
   wait_for_kind_script:
-    - secs=3600; endTime=$(( $(date +%s) + secs )); while [[ -n "$(kubectl cluster-info --context kind-kind 2>&1 > /dev/null)" ]] || [ $(date +%s) -gt $endTime ]; do sleep 5; done
+    - - ./.cirrus/wait-for-kind.sh
   script:
     - ct lint --config test.yaml --all
     - ct install --config test.yaml --all
