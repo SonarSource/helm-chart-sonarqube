@@ -20,41 +20,21 @@ spec:
 {{ toYaml .Values.image.pullSecrets | indent 4 }}
     {{- end}}
   {{- end }}
-  initContainers:
-    - name: "bats"
-      image: {{ .Values.tests.initContainers.image | quote }}
-      imagePullPolicy: {{ .Values.image.pullPolicy }}
-      command: ["bash", "-c"]
-      args:
-        - |-
-          set -ex
-          cp -R /opt/bats /tools/bats/
-      resources:
-{{ toYaml .Values.tests.initContainers.resources | indent 8 }}
-      volumeMounts:
-        - mountPath: /tools
-          name: tools
   containers:
     - name: {{ .Release.Name }}-ui-test
-      image: {{ .Values.tests.image | quote }}
+      image: {{ .Values.tests.image | default (printf "%s:%s" .Values.image.repository (tpl .Values.image.tag .)) | quote }}
       imagePullPolicy: {{ .Values.image.pullPolicy }}
-      command: [
-        "/tools/bats/bin/bats",
-        "--tap",
-        "/tests/run.sh"]
+      command: ['wget']
+      args: [
+        '--retry-connrefused',
+        '--waitretry=1',
+        '--timeout=5',
+        '-t',
+        '12',
+        '-qO-',
+        '{{ template "sonarqube.fullname" . }}:{{ .Values.service.internalPort }}/api/system/status'
+        ]
       resources:
 {{ toYaml .Values.tests.resources | indent 8 }}
-      volumeMounts:
-      - mountPath: /tests
-        name: tests
-        readOnly: true
-      - mountPath: /tools
-        name: tools
-  volumes:
-  - name: tests
-    configMap:
-      name: {{ template "sonarqube.fullname" . }}-tests
-  - name: tools
-    emptyDir: {{ toYaml .Values.emptyDir | nindent 6 }}
   restartPolicy: Never
 {{- end -}}
