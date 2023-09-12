@@ -1,6 +1,8 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.3.1]
+* Fixed ingress annotations when you are not using nginx load balancer
 ## [10.3.0]
 * Update Chart's version to 10.3.0
 * Update default images to the latest versions
