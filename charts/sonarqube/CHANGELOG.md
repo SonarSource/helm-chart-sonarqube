@@ -5,6 +5,7 @@ All changes to this chart will be documented in this file.
 * Update Chart's version to 10.3.0
 * Update default images to the latest versions
 * Remove the nginx-proxy-body annotation when nginx is disabled
+* Enable post-upgrade in the change-admin-password hook
 
 ## [10.2.0]
 * Update SonarQube to 10.2.0
