@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [10.3.0]
 * Update Chart's version to 10.3.0
 * Update default images to the latest versions
+* Fix crash when adding a digests to the image tag
 
 ## [10.2.0]
 * Update SonarQube to 10.2.0
