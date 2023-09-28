@@ -4,6 +4,8 @@ All changes to this chart will be documented in this file.
 ## [10.3.0]
 * Update Chart's version to 10.3.0
 * Update default images to the latest versions
+* Remove the nginx-proxy-body annotation when nginx is disabled
+* Enable post-upgrade in the change-admin-password hook
 * Fix crash when adding a digests to the image tag
 
 ## [10.2.0]
