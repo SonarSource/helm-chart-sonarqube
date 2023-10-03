@@ -332,16 +332,19 @@ monitoringPasscode: "define_it"
 # Set annotations for pods
 annotations: {}
 
-## We usually don't make specific ressource recommandations, as they are heavily dependend on
-## The usage of SonarQube and the surrounding infrastructure.
-## Adjust these values to your needs, but make sure that the memory limit is never under 4 GB
+## We usually don't make specific resource recommendations, as they are heavily dependent on
+## the usage of SonarQube and the surrounding infrastructure.
+## Adjust these values to your needs.
+## If you did not change the individual JVM heap size settings (environment variables),
+## then the memory limit should never be under 4 GB for the Community and Developer Editions,
+## 6 GB for the Enterprise Edition.
 resources:
   limits:
     cpu: 800m
-    memory: 4Gi
+    memory: 6Gi
   requests:
     cpu: 400m
-    memory: 2Gi
+    memory: 3Gi
 
 persistence:
   enabled: false
