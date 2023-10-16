@@ -57,15 +57,19 @@ spec:
 {{- with .Values.podLabels }}
 {{ toYaml . | indent 8 }}
 {{- end }}
+{{- with .Values.searchNodes.podLabels }}
+{{ toYaml . | indent 8 }}
+{{- end }}
       annotations:
         checksum/init-sysctl: {{ include (print $.Template.BasePath "/init-sysctl.yaml") . | sha256sum }}
         checksum/init-fs: {{ include (print $.Template.BasePath "/init-fs.yaml") . | sha256sum }}
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
-{{- if .Values.annotations}}
-      {{- range $key, $value := .Values.annotations }}
-        {{ $key }}: {{ $value | quote }}
-      {{- end }}
+{{- with .Values.annotations }}
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.searchNodes.annotations }}
+{{ toYaml . | indent 8 }}
 {{- end }}
     spec:
       {{- if or .Values.searchNodes.image.pullSecrets .Values.searchNodes.image.pullSecret }}

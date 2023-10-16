@@ -158,7 +158,9 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.image.pullPolicy` | search image pull policy | `IfNotPresent`             |
 | `searchNodes.image.pullSecret` | (DEPRECATED) search imagePullSecret to use for private repository | `nil`                      |
 | `searchNodes.image.pullSecrets` | search imagePullSecrets to use for private repository | `nil`                      |
+| `searchNodes.annotations` | Map of annotations to add to the search pods | `{}` |
 | `searchNodes.env` | Environment variables to attach to the search pods | `nil`                      |
+| `searchNodes.podLabels` | Map of labels to add to the search pods | `{}` |
 | `searchNodes.sonarProperties` | Custom `sonar.properties` file for Search Nodes | `None`                     |
 | `searchNodes.sonarSecretProperties` | Additional `sonar.properties` file for Search Nodes to load from a secret | `None`                     |
 | `searchNodes.sonarSecretKey` | Name of existing secret used for settings encryption | `None`                     |
@@ -204,7 +206,9 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.image.pullPolicy` | app image pull policy | `IfNotPresent` |
 | `ApplicationNodes.image.pullSecret` | (DEPRECATED) app imagePullSecret to use for private repository | `nil` |
 | `ApplicationNodes.image.pullSecrets` | app imagePullSecrets to use for private repository | `nil` |
+| `ApplicationNodes.annotations` | Map of annotations to add to the app pods | `{}` |
 | `ApplicationNodes.env` | Environment variables to attach to the app pods | `nil` |
+| `ApplicationNodes.podLabels` | Map of labels to add to the app pods | `{}` |
 | `ApplicationNodes.sonarProperties` | Custom `sonar.properties` key-value pairs for App Nodes (e.g., "ApplicationNodes.sonarProperties.sonar.forceAuthentication=true") | `None` |
 | `ApplicationNodes.sonarSecretProperties` | Additional `sonar.properties` key-value pairs for App Nodes to load from a secret | `None` |
 | `ApplicationNodes.sonarSecretKey` | Name of existing secret used for settings encryption | `None` |
@@ -279,7 +283,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `hostAliases` | Aliases for IPs in /etc/hosts | `[]` |
 | `podLabels` | Map of labels to add to the pods | `{}` |
 | `env` | Environment variables to attach to the pods | `{}`|
-| `annotations` | SonarQube Pod annotations | `{}` |
+| `annotations` | Map of annotations to add to the pods | `{}` |
 | `sonarWebContext` | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path. | `` |
 
 
