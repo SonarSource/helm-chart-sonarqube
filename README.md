@@ -4,11 +4,12 @@ SonarQube Helm Chart
 About this Repo
 ----------------
 
-This is the Git repo of the SonarSource Helm Chart for [SonarQube](https://www.sonarqube.org/).  
+This is the Git repo of the SonarSource Helm Chart for [SonarQube](https://www.sonarqube.org/) which assists developers in writing [Clean Code](https://www.sonarsource.com/solutions/clean-code/?utm_medium=referral&utm_source=github&utm_campaign=clean-code&utm_content=helm-chart-sonarqube).
+
 The actual chart can be found in the [charts](charts/sonarqube) directory and see the README of the chart for more information. 
 
-Have Question or Feedback?
---------------------------
+Have Questions or Feedback?
+---------------------------
 
 For support questions ("How do I?", "I got this error, why?", ...), please first read the [documentation](https://docs.sonarqube.org) and then head to the [SonarSource Community](https://community.sonarsource.com/c/help/sq/10). The answer to your question has likely already been answered! 🤓
 
