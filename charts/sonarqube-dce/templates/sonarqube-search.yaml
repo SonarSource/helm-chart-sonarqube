@@ -85,7 +85,27 @@ spec:
       {{- if .Values.extraInitContainers }}
 {{ toYaml .Values.extraInitContainers | indent 8 }}
       {{- end }}
-      {{- if or .Values.initSysctl.enabled }}
+      {{- if .Values.initSysctl.enabled }}
+        - name: init-sysctl
+          image: {{ default "busybox:1.36" .Values.initSysctl.image }}
+          imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
+          {{- if $securityContext := (default .Values.initContainers.securityContext .Values.initSysctl.securityContext) }}
+          securityContext:
+{{ toYaml $securityContext | indent 12 }}
+          {{- end }}
+          resources:
+{{ toYaml (default .Values.initContainers.resources .Values.initSysctl.resources) | indent 12 }}
+          command: ["sh",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
+          volumeMounts:
+            - name: init-sysctl
+              mountPath: /tmp/scripts/
+          {{- with .Values.env }}
+          env:
+            {{- . | toYaml | trim | nindent 12 }}
+          {{- end }}
+      {{- end }}
       {{- if .Values.caCerts.enabled }}
         - name: ca-certs
           image: {{ default "adoptopenjdk/openjdk11:alpine" .Values.caCerts.image }}
@@ -104,26 +124,6 @@ spec:
               subPath: certs
             - mountPath: /tmp/secrets/ca-certs
               name: ca-certs
-          {{- with .Values.env }}
-          env:
-            {{- . | toYaml | trim | nindent 12 }}
-          {{- end }}
-      {{- end }}
-        - name: init-sysctl
-          image: {{ default "busybox:1.36" .Values.initSysctl.image }}
-          imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
-          {{- if $securityContext := (default .Values.initContainers.securityContext .Values.initSysctl.securityContext) }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
-          {{- end }}
-          resources:
-{{ toYaml (default .Values.initContainers.resources .Values.initSysctl.resources) | indent 12 }}
-          command: ["sh",
-            "-e",
-            "/tmp/scripts/init_sysctl.sh"]
-          volumeMounts:
-            - name: init-sysctl
-              mountPath: /tmp/scripts/
           {{- with .Values.env }}
           env:
             {{- . | toYaml | trim | nindent 12 }}

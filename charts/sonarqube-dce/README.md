@@ -74,11 +74,32 @@ Please read the official documentation prerequisites [here](https://docs.sonarqu
 
 ### Kubernetes - Pod Security Standards
 
-The following [Pod Security levels](https://kubernetes.io/docs/concepts/security/pod-security-admission/#pod-security-levels) cannot be used in combination with SonarQube's chart:
+Here is the list of containers associated with which [Pod Security levels](https://kubernetes.io/docs/concepts/security/pod-security-admission/#pod-security-levels) they are compatible with.
 
-* Baseline. The `init-sysctl` and `init-fs` containers requires `securityContext.privileged=true`.
-* Restricted. In addition to the previous requirement,
-  * The `sonarqube-postgresql`, `wait-for-db`, `init-sysctl`, `init-fs`, `sonarqube-dce-search`, and `sonarqube-dce` containers require `securityContext.allowPrivilegeEscalation=true`, unrestricted capabilities, running as `root`, and a `seccompProfile` different from `RuntimeDefault` or `localhost`.
+* privileged:
+  * `init-sysctl`
+* baseline:
+  * `init-fs`
+* restricted:
+  * SQ application containers
+  * SQ init containers.
+  * postgresql containers.
+
+This is achieved by setting this SecurityContext as default on **most** containers:
+```
+allowPrivilegeEscalation: false
+runAsNonRoot: true
+runAsUser: 1000
+runAsGroup: 1000
+seccompProfile:
+  type: RuntimeDefault
+capabilities:
+  drop: ["ALL"]
+```
+
+Based on that, one can run the SQ helm chart in a full restricted namespace, by deactivating the `initSysctl.enabled` and `initFs.enabled` parameters, which requires root access.
+
+Please take a look at [production-use-case](#production-use-case) for more information or directly at the values.yaml file.
 
 ### Elasticsearch prerequisites
 
@@ -172,7 +193,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.replicaCount` | Replica count of the Search Nodes | `3`                        |
 | `searchNodes.podDistributionBudget` | PodDisruptionBudget for the Search Nodes | `minAvailable: 2`    |
 | `searchNodes.securityContext.fsGroup` | Group applied to mounted directories/files on search nodes | `1000`                     |
-| `searchNodes.containerSecurityContext.runAsUser` | User to run search container in sonarqube pod as | `1000`                     |
+| `searchNodes.containerSecurityContext` | SecurityContext for search container in sonarqube pod | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `searchNodes.readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for Search Node checking| `60`                       |
 | `searchNodes.readinessProbe.periodSeconds` | ReadinessProbe period between checking Search Node | `30`                       |
 | `searchNodes.readinessProbe.failureThreshold`| ReadinessProbe thresold for marking as failed | `6`                        |
@@ -215,7 +236,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.replicaCount` | Replica count of the app Nodes | `2` |
 | `ApplicationNodes.podDistributionBudget` | PodDisruptionBudget for the App Nodes | `minAvailable: 1` |
 | `ApplicationNodes.securityContext.fsGroup` | Group applied to mounted directories/files on app nodes | `1000` |
-| `ApplicationNodes.containerSecurityContext.runAsUser` | User to run app container in sonarqube pod as | `1000` |
+| `ApplicationNodes.containerSecurityContext` | SecurityContext for app container in sonarqube pod | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `ApplicationNodes.readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for app Node checking| `60` |
 | `ApplicationNodes.readinessProbe.periodSeconds` | ReadinessProbe period between checking app Node | `30` |
 | `ApplicationNodes.readinessProbe.failureThreshold`| ReadinessProbe thresold for marking as failed | `6` |
@@ -261,7 +282,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.plugins.resources` | Resources for plugins container | `""` |
 | `ApplicationNodes.plugins.netrcCreds` | Name of the secret containing .netrc file to use creds when downloading plugins | `""` |
 | `ApplicationNodes.plugins.noCheckCertificate` | Flag to not check server's certificate when downloading plugins | `false |
-| `ApplicationNodes.plugins.securityContext` | Security context for the container to download plugins | see `values.yaml |
+| `ApplicationNodes.plugins.securityContext` | Security context for the container to download plugins | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `ApplicationNodes.jvmOpts` | (DEPRECATED) Values to add to SONARQUBE_WEB_JVM_OPTS | `""` |
 | `ApplicationNodes.jvmCeOpts` | (DEPRECATED) Values to add to SONAR_CE_JAVAOPTS | `""` |
 | `ApplicationNodes.jwtSecret` | A HS256 key encoded with base64 (*This value must be set before installing the chart, see [the documentation](https://docs.sonarqube.org/latest/setup/sonarqube-cluster-on-kubernetes/)*) | `""` |
@@ -340,7 +361,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `initContainers.image` | Change init container image | `busybox:1.36` |
-| `initContainers.securityContext` | SecurityContext for init containers | `None` |
+| `initContainers.securityContext` | SecurityContext for init containers | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `initContainers.resources` | Resources for init containers | `{}` |
 | `extraInitContainers` | Extra init containers to e.g. download required artifacts | `{}` |
 | `caCerts.enabled` | Flag for enabling additional CA certificates | `false` |
@@ -457,6 +478,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `account.resources.limits.cpu` | CPU limit for Admin hook | `100m` |
 | `curlContainerImage` | Curl container image | `curlimages/curl:8.2.1` |
 | `account.sonarWebContext` | (DEPRECATED) SonarQube web context for Admin hook. please use sonarWebContext at the value top level instead | `nil` |
+| `account.securityContext` | Security context for downloading the prometheus exporter | see `values.yaml`|
 | `adminJobAnnotations` | Custom annotations for admin hook Job | `{}` |
 | `terminationGracePeriodSeconds` | Configuration of `terminationGracePeriodSeconds` | `60` |
 
