@@ -68,11 +68,32 @@ Please read the official documentation prerequisites [here](https://docs.sonarqu
 
 ### Kubernetes - Pod Security Standards
 
-The following [Pod Security levels](https://kubernetes.io/docs/concepts/security/pod-security-admission/#pod-security-levels) cannot be used in combination with SonarQube's chart:
+Here is the list of containers associated with which [Pod Security levels](https://kubernetes.io/docs/concepts/security/pod-security-admission/#pod-security-levels) they are compatible with.
 
-* Baseline. The `init-sysctl` container requires `securityContext.privileged=true`.
-* Restricted. In addition to the previous requirement,
-  * The `sonarqube-postgresql`, `wait-for-db`, `init-sysctl`, and `sonarqube` containers require `securityContext.allowPrivilegeEscalation=true`, unrestricted capabilities, running as `root`, and a `seccompProfile` different from `RuntimeDefault` or `localhost`.
+* privileged:
+  * `init-sysctl`
+* baseline:
+  * `init-fs`
+* restricted:
+  * SQ application containers
+  * SQ init containers.
+  * postgresql containers.
+
+This is achieved by setting this SecurityContext as default on **most** containers:
+```
+allowPrivilegeEscalation: false
+runAsNonRoot: true
+runAsUser: 1000
+runAsGroup: 1000
+seccompProfile:
+  type: RuntimeDefault
+capabilities:
+  drop: ["ALL"]
+```
+
+Based on that, one can run the SQ helm chart in a full restricted namespace, by deactivating the `initSysctl.enabled` and `initFs.enabled` parameters, which requires root access.
+
+Please take a look at [production-use-case](#production-use-case) for more information or directly at the values.yaml file.
 
 ### Elasticsearch prerequisites
 
@@ -203,13 +224,13 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `securityContext.fsGroup` | Group applied to mounted directories/files | `1000` |
-| `containerSecurityContext.runAsUser` | User to run containers in sonarqube pod as, unless overwritten (such as for init-sysctl container) | `1000` |
+| `containerSecurityContext` | SecurityContext for container in sonarqube pod | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 
 ### Elasticsearch
 
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
-| `elasticsearch.configureNode` | [DEPRECATED] Use initSysctl.enabled instead. | `true` |
+| `elasticsearch.configureNode` | [DEPRECATED] Use initSysctl.enabled instead. | `false` |
 | `elasticsearch.bootstrapChecks` | Enables/disables Elasticsearch bootstrap checks | `true` |
 
 ### Service
@@ -274,7 +295,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
 | `initContainers.image` | Change init container image | `busybox:1.36` |
-| `initContainers.securityContext` | SecurityContext for init containers | `None` |
+| `initContainers.securityContext` | SecurityContext for init containers | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `initContainers.resources` | Resources for init containers | `{}` |
 | `extraInitContainers` | Extra init containers to e.g. download required artifacts | `{}` |
 | `caCerts.enabled` | Flag for enabling additional CA certificates | `false` |
@@ -307,7 +328,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `prometheusExporter.httpProxy` | HTTP proxy for downloading JMX agent | `""` |
 | `prometheusExporter.httpsProxy` | HTTPS proxy for downloading JMX agent | `""` |
 | `prometheusExporter.noProxy` | No proxy for downloading JMX agent | `""` |
-| `prometheusExporter.securityContext` | Security context for downloading the jmx agent | see `values.yaml` |
+| `prometheusExporter.securityContext` | Security context for downloading the jmx agent | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 
 ### Monitoring (Prometheus PodMonitor)
 
@@ -333,7 +354,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `plugins.resources` | Resources for plugins container | `{}`                              |
 | `plugins.netrcCreds` | Name of the secret containing .netrc file to use creds when downloading plugins | `""` |
 | `plugins.noCheckCertificate` | Flag to not check server's certificate when downloading plugins | `false` |
-| `plugins.securityContext` | Security context for the container to download plugins | see `values.yaml` |
+| `plugins.securityContext` | Security context for the container to download plugins | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 
 ### SonarQube Specific
 
@@ -406,8 +427,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `postgresql.persistence.size` | Postgresql persistence size | `20Gi` |
 | `postgresql.persistence.storageClass` | Postgresql persistence storageClass | `""` |
 | `postgresql.securityContext.enabled` | Postgresql securityContext en/disabled | `true` |
-| `postgresql.securityContext.fsGroup` | Postgresql securityContext fsGroup | `1001` |
-| `postgresql.securityContext.runAsUser` | Postgresql securityContext runAsUser | `1001` |
+| `postgresql.securityContext` | Postgresql securityContext | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `postgresql.volumePermissions.enabled` | Postgres vol permissions en/disabled | `false` |
 | `postgresql.volumePermissions.securityContext.runAsUser` | Postgres vol permissions secContext runAsUser | `0` |
 | `postgresql.shmVolume.chmod.enabled` | Postgresql shared memory vol en/disabled | `false` |
@@ -449,7 +469,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `account.resources.limits.memory` | Memory limit for Admin hook | `128Mi` |
 | `account.resources.limits.cpu` | CPU limit for Admin hook | `100m` |
 | `account.sonarWebContext` | (DEPRECATED) SonarQube web context for Admin hook. please use sonarWebContext at the value top level instead | `nil` |
-| `account.securityContext` | SecurityContext for change-password-hook | `{}` |
+| `account.securityContext` | SecurityContext for change-password-hook | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `curlContainerImage` | Curl container image | `curlimages/curl:8.2.1` |
 | `adminJobAnnotations` | Custom annotations for admin hook Job | `{}` |
 | `terminationGracePeriodSeconds` | Configuration of `terminationGracePeriodSeconds` | `60` |

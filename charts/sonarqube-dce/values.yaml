@@ -69,7 +69,15 @@ searchNodes:
   # Set security context for sonarqube search container
   containerSecurityContext:
     # Sonarqube dockerfile creates sonarqube user as UID and GID 1000
+    # Those default are used to match pod security standard restricted as least privileged approach
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
     runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
 
   # Probe threshold configuration for the search nodes
   readinessProbe:
@@ -174,7 +182,15 @@ ApplicationNodes:
   # Set security context for sonarqube app container
   containerSecurityContext:
     # Sonarqube dockerfile creates sonarqube user as UID and GID 1000
+    # Those default are used to match pod security standard restricted as least privileged approach
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
     runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
 
   readinessProbe:
     initialDelaySeconds: 120
@@ -233,9 +249,8 @@ ApplicationNodes:
     # httpsProxy: ""
     # noProxy: ""
     # Setting the security context to the default sonarqube user 1000/1000
-    securityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
+    # Reuse default initcontainers.securityContext that match restricted pod security standard
+    # securityContext: {}
 
   prometheusMonitoring:
     # Generate a Prometheus Pod Monitor (https://github.com/coreos/prometheus-operator)
@@ -275,9 +290,8 @@ ApplicationNodes:
 
     # Set to true to not validate the server's certificate to download plugin
     noCheckCertificate: false
-    securityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
+    # Reuse default initcontainers.securityContext that match restricted pod security standard
+    # securityContext: {}
 
   ## (DEPRECATED) Please use SONAR_WEB_JAVAOPTS or sonar.web.javaOpts
   ##
@@ -413,7 +427,16 @@ initContainers:
   # image: busybox:1.36
   # We allow the init containers to have a separate security context declaration because
   # the initContainer may not require the same as SonarQube.
-  # securityContext: {}
+  securityContext:
+    # Those default are used to match pod security standard restricted as least privileged approach
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
   # We allow the init containers to have a separate resources declaration because
   # the initContainer does not take as much resources.
   resources: {}
@@ -437,14 +460,24 @@ initSysctl:
   nproc: 8192
   # image: busybox:1.36
   securityContext:
+    # Compatible with podSecurity standard privileged
     privileged: true
   # resources: {}
 
 initFs:
   enabled: true
   # image: busybox:1.36
+  # Compatible with podSecurity standard baseline
   securityContext:
-    privileged: true
+    privileged: false
+    runAsNonRoot: false
+    runAsUser: 0
+    runAsGroup: 0
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
+      add: ["CHOWN"]
 
 # a monitoring passcode needs to be defined in order to get reasonable probe results
 # not setting the monitoring passcode will result in a deployment that will never be ready
@@ -540,8 +573,14 @@ postgresql:
     # If using OpenShift, enabled=false for restricted SCC and enabled=true for anyuid/nonroot SCC
     enabled: true
     # runAsUser specification below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
-    # postgresql dockerfile sets user as 1001
+    # postgresql dockerfile sets user as 1001, the rest aim at making it compatible with restricted pod security standard.
     runAsUser: 1001
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
   volumePermissions:
     # For standard Kubernetes deployment, set enabled=false
     # For OpenShift, set enabled=true and ensure to set volumepermissions.securitycontext.runAsUser below.
@@ -618,9 +657,11 @@ extraConfig:
 #     requests:
 #       cpu: 100m
 #       memory: 128Mi
-# curlContainerImage: curlimages/curl:8.2.1
-# adminJobAnnotations: {}
+#   curlContainerImage: curlimages/curl:8.2.1
+#   adminJobAnnotations: {}
 # deprecated please use sonarWebContext at the value top level
-# sonarWebContext: /
+#   sonarWebContext: /
+# Reuse default initcontainers.securityContext that match restricted pod security standard
+#   securityContext: {}
 
 terminationGracePeriodSeconds: 60

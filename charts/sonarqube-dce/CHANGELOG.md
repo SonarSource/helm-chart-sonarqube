@@ -7,6 +7,10 @@ All changes to this chart will be documented in this file.
 * Remove the nginx-proxy-body annotation when nginx is disabled
 * Enable post-upgrade in the change-admin-password hook
 * Separate annotations and labels for app and search pods
+* Update default ContainerSecurityContext, InitContainerSecurityContext and postgresql.securityContext to match restricted podSecurityStandard
+* Update initFs default securityContext to match baseline podSecurityStandard
+* Add securityContext feature to change admin password Job
+* Remove unneeded if condition for Sysctl initContainer
 
 ## [10.2.0]
 * Update SonarQube to 10.2.0

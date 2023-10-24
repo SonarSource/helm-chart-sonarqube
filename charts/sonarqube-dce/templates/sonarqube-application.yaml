@@ -66,11 +66,14 @@ spec:
         - name: "wait-for-db"
           image: {{ default "busybox:1.36" .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
+          {{- if $securityContext := .Values.initContainers.securityContext }}
+          securityContext:
+{{ toYaml $securityContext | indent 12 }}
+          {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
           command: ["/bin/sh", "-c", "for i in $(seq 1 200); do nc -z -w3 {{ .Release.Name}}-postgresql 5432 && exit 0 || sleep 2; done; exit 1"]
       {{- end }}
-      {{- if .Values.initSysctl.enabled }}
       {{- if .Values.caCerts.enabled }}
         - name: ca-certs
           image: {{ default "adoptopenjdk/openjdk11:alpine" .Values.caCerts.image }}
@@ -93,7 +96,6 @@ spec:
           env:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
-      {{- end }}
       {{- end }}
       {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
@@ -420,12 +422,6 @@ spec:
           - key: netrc
             path: .netrc
       {{- end }}
-      - name: init-sysctl
-        configMap:
-          name: {{ template "sonarqube.fullname" . }}-init-sysctl
-          items:
-            - key: init_sysctl.sh
-              path: init_sysctl.sh
       - name: install-plugins
         configMap:
           name: {{ template "sonarqube.fullname" . }}-install-plugins

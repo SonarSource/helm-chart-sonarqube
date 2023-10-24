@@ -6,6 +6,11 @@ All changes to this chart will be documented in this file.
 * Update default images to the latest versions
 * Remove the nginx-proxy-body annotation when nginx is disabled
 * Enable post-upgrade in the change-admin-password hook
+* Update default ContainerSecurityContext, InitContainerSecurityContext and postgresql.securityContext to match restricted podSecurityStandard
+* Update initFs defaut securityContext to match baseline podSecurityStandard
+* Update Elasticsearch.configureNode to false by default after 3 year deprecation
+* Fix wrong condition on initSysctl feature
+
 
 ## [10.2.0]
 * Update SonarQube to 10.2.0
