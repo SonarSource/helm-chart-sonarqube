@@ -75,7 +75,7 @@ spec:
           {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
-          command: ["/bin/sh", "-c", "for i in $(seq 1 200); do nc -z -w3 {{ .Release.Name}}-postgresql 5432 && exit 0 || sleep 2; done; exit 1"]
+          command: ["/bin/sh", "-c", "for i in $(seq 1 200); do (echo >/dev/tcp/{{ .Release.Name}}-postgresql/5432) &>/dev/null && exit 0 || sleep 2; done; exit 1"]
       {{- end }}
       {{- if .Values.caCerts.enabled }}
         - name: ca-certs
@@ -110,7 +110,7 @@ spec:
           {{- end }}
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.initSysctl.resources) | indent 12 }}
-          command: ["sh",
+          command: ["/bin/bash",
             "-e",
             "/tmp/scripts/init_sysctl.sh"]
           volumeMounts:
