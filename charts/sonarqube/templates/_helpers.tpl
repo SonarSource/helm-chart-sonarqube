@@ -19,6 +19,13 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{/*
+Expand the Application Image name.
+*/}}
+{{- define "sonarqube.image" -}}
+{{- printf "%s:%s" .Values.image.repository (tpl .Values.image.tag .) }}
+{{- end -}}
+
+{{/*
   Create a default fully qualified mysql/postgresql name.
   We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}

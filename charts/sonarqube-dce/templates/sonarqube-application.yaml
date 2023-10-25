@@ -64,7 +64,7 @@ spec:
       {{- end }}
       {{- if .Values.postgresql.enabled }}
         - name: "wait-for-db"
-          image: {{ template "waitForDb.image" . }}
+          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           {{- if $securityContext := .Values.initContainers.securityContext }}
           securityContext:
@@ -76,7 +76,7 @@ spec:
       {{- end }}
       {{- if .Values.caCerts.enabled }}
         - name: ca-certs
-          image: {{ template "caCerts.image" . }}
+          image: {{ default (include "sonarqube.image" $) .Values.caCerts.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
@@ -99,7 +99,7 @@ spec:
       {{- end }}
       {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
-          image: {{ template "concatProperties.image" . }}
+          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: 
           - sh
@@ -141,7 +141,7 @@ spec:
       {{- end }}
       {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
         - name: inject-prometheus-exporter
-          image: {{ template "prometheusExporter.image" . }}
+          image: {{ default (include "sonarqube.image" $) .Values.ApplicationNodes.prometheusExporter.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           {{- if $securityContext := (default .Values.initContainers.securityContext .Values.ApplicationNodes.prometheusExporter.securityContext) }}
           securityContext:
@@ -168,7 +168,7 @@ spec:
       {{- end }}
       {{- if .Values.ApplicationNodes.plugins.install }}
         - name: install-plugins
-          image: {{ template "installPlugins.image" . }}
+          image: {{ default (include "sonarqube.image" $) .Values.ApplicationNodes.plugins.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh",
             "-e",
