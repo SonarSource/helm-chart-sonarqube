@@ -18,6 +18,69 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 {{- end -}}
 
+{{/*
+Expand the Application Image name.
+*/}}
+{{- define "sonarqube.image" -}}
+{{- printf "%s:%s" .Values.ApplicationNodes.image.repository .Values.ApplicationNodes.image.tag }}
+{{- end -}}
+
+{{- define "waitForDb.image" -}}
+{{- if .Values.initContainers.image -}}
+{{- printf "%s" .Values.initContainers.image -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "caCerts.image" -}}
+{{- if .Values.caCerts.image -}}
+{{- printf "%s" .Values.caCerts.image -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
+
+
+{{- define "concatProperties.image" -}}
+{{- if .Values.initContainers.image -}}
+{{- printf "%s" .Values.initContainers.image -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "prometheusExporter.image" -}}
+{{- if .Values.ApplicationNodes.prometheusExporter.image -}}
+{{- printf "%s" .Values.ApplicationNodes.prometheusExporter.image -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "installPlugins.image" -}}
+{{- if .Values.ApplicationNodes.plugins.image -}}
+{{- printf "%s" .Values.ApplicationNodes.plugins.image -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "initFs.image" -}}
+{{- if .Values.initFs.image -}}
+{{- printf "%s" .Values.initFs.image -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "curlContainer.image" -}}
+{{- if .Values.curlContainerImage -}}
+{{- printf "%s" .Values.curlContainerImage -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
 
 {{- define "searchNodes.endpoints" -}}
   {{- $replicas := int (toString (.Values.searchNodes.replicaCount)) }}

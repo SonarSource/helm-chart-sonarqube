@@ -95,7 +95,7 @@ spec:
           {{- end }}
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.initSysctl.resources) | indent 12 }}
-          command: ["sh",
+          command: ["/bin/bash",
             "-e",
             "/tmp/scripts/init_sysctl.sh"]
           volumeMounts:
@@ -131,7 +131,7 @@ spec:
       {{- end }}
       {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
-          image: {{ default "busybox:1.36" .Values.initContainers.image }}
+          image: {{ template "concatProperties.image" . }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
           command: 
           - sh
@@ -173,7 +173,7 @@ spec:
       {{- end }}
       {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled }}
         - name: init-fs
-          image: {{ default "busybox:1.36" .Values.initFs.image }}
+          image: {{ template "initFs.image" . }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
           {{- if $securityContext := (default .Values.initContainers.securityContext .Values.initFs.securityContext) }}
           securityContext:
@@ -182,7 +182,7 @@ spec:
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.initFs.resources) | indent 12 }}
           command: ["sh",
-            "-e",
+            "-ex",
             "/tmp/scripts/init_fs.sh"]
           volumeMounts:
             - name: init-fs
