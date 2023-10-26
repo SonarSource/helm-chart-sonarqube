@@ -11,6 +11,7 @@ All changes to this chart will be documented in this file.
 * Update initFs default securityContext to match baseline podSecurityStandard
 * Add securityContext feature to change admin password Job
 * Remove unneeded if condition for Sysctl initContainer
+* Update default image of initContainers to sonarqube image, allowing for faster loading time and less external images needed
 
 ## [10.2.0]
 * Update SonarQube to 10.2.0

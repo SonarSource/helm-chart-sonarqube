@@ -64,7 +64,7 @@ spec:
       {{- end }}
       {{- if .Values.postgresql.enabled }}
         - name: "wait-for-db"
-          image: {{ default "busybox:1.36" .Values.initContainers.image }}
+          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           {{- if $securityContext := .Values.initContainers.securityContext }}
           securityContext:
@@ -72,11 +72,12 @@ spec:
           {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
-          command: ["/bin/sh", "-c", "for i in $(seq 1 200); do nc -z -w3 {{ .Release.Name}}-postgresql 5432 && exit 0 || sleep 2; done; exit 1"]
+          command: ["/bin/bash", "-c"]
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/{{.Release.Name}}-postgresql/5432) && exit 0; sleep 2;done; exit 1']
       {{- end }}
       {{- if .Values.caCerts.enabled }}
         - name: ca-certs
-          image: {{ default "adoptopenjdk/openjdk11:alpine" .Values.caCerts.image }}
+          image: {{ default (include "sonarqube.image" $) .Values.caCerts.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
@@ -99,7 +100,7 @@ spec:
       {{- end }}
       {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
-          image: {{ default "busybox:1.36" .Values.initContainers.image }}
+          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: 
           - sh
@@ -141,7 +142,7 @@ spec:
       {{- end }}
       {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
         - name: inject-prometheus-exporter
-          image: {{ default "curlimages/curl:8.2.1" .Values.ApplicationNodes.prometheusExporter.image }}
+          image: {{ default (include "sonarqube.image" $) .Values.ApplicationNodes.prometheusExporter.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           {{- if $securityContext := (default .Values.initContainers.securityContext .Values.ApplicationNodes.prometheusExporter.securityContext) }}
           securityContext:
@@ -168,7 +169,7 @@ spec:
       {{- end }}
       {{- if .Values.ApplicationNodes.plugins.install }}
         - name: install-plugins
-          image: {{ default "curlimages/curl:8.2.1" .Values.ApplicationNodes.plugins.image }}
+          image: {{ default (include "sonarqube.image" $) .Values.ApplicationNodes.plugins.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh",
             "-e",
@@ -205,7 +206,7 @@ spec:
         {{- toYaml .Values.ApplicationNodes.extraContainers | nindent 8 }}
       {{- end }}
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.ApplicationNodes.image.repository }}:{{ .Values.ApplicationNodes.image.tag }}"
+          image: {{ template "sonarqube.image" . }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}
           ports:
             - name: http

@@ -18,6 +18,12 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 {{- end -}}
 
+{{/*
+Expand the Application Image name.
+*/}}
+{{- define "sonarqube.image" -}}
+{{- printf "%s:%s" .Values.ApplicationNodes.image.repository .Values.ApplicationNodes.image.tag }}
+{{- end -}}
 
 {{- define "searchNodes.endpoints" -}}
   {{- $replicas := int (toString (.Values.searchNodes.replicaCount)) }}
