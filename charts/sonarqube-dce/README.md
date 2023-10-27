@@ -74,7 +74,7 @@ Please read the official documentation prerequisites [here](https://docs.sonarqu
 
 ### Kubernetes - Pod Security Standards
 
-Here is the list of containers associated with which [Pod Security levels](https://kubernetes.io/docs/concepts/security/pod-security-admission/#pod-security-levels) they are compatible with.
+Here is the list of containers that are compatible with the [Pod Security levels](https://kubernetes.io/docs/concepts/security/pod-security-admission/#pod-security-levels):
 
 * privileged:
   * `init-sysctl`
@@ -97,7 +97,7 @@ capabilities:
   drop: ["ALL"]
 ```
 
-Based on that, one can run the SQ helm chart in a full restricted namespace, by deactivating the `initSysctl.enabled` and `initFs.enabled` parameters, which requires root access.
+Based on that, one can run the SQ helm chart in a full restricted namespace, by deactivating the `initSysctl.enabled` and `initFs.enabled` parameters, which require root access.
 
 Please take a look at [production-use-case](#production-use-case) for more information or directly at the values.yaml file.
 
