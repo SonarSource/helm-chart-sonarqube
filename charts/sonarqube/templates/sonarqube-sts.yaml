@@ -31,6 +31,32 @@ spec:
     matchLabels:
       app: {{ template "sonarqube.name" . }}
       release: {{ .Release.Name }}
+{{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ template "sonarqube.fullname" . }}
+      labels:
+        release: {{ .Release.Name }}
+        chart: "{{ .Chart.Name }}"
+        app: "{{ template "sonarqube.fullname" . }}"
+    {{- with .Values.persistence.annotations  }}
+      annotations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    spec:
+      accessModes:
+        - {{ .Values.persistence.accessMode | quote }}
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size | quote }}
+    {{- if .Values.persistence.storageClass }}
+    {{- if (eq "-" .Values.persistence.storageClass) }}
+      storageClassName: ""
+    {{- else }}
+      storageClassName: "{{ .Values.persistence.storageClass }}"
+    {{- end }}
+    {{- end }}
+  {{- end }}
   template:
     metadata:
       labels:
@@ -100,7 +126,7 @@ spec:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
           volumeMounts:
             - mountPath: /tmp/certs
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: certs
             - mountPath: /tmp/secrets/ca-certs
               name: ca-certs
@@ -188,7 +214,7 @@ spec:
           args: ["curl -s '{{ template "prometheusExporter.downloadURL" . }}' {{ if $.Values.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v"]
           volumeMounts:
             - mountPath: /data
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: data
           env:
             - name: http_proxy
@@ -222,26 +248,26 @@ spec:
 {{- end }}
             {{- if .Values.caCerts.enabled }}
             - mountPath: {{ .Values.sonarqubeFolder }}/certs
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: certs
             {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/data
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: data
-            {{- if .Values.persistence.enabled }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions
-              name: sonarqube
-              subPath: extensions
-            {{- else if .Values.plugins.install }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins
-              name: sonarqube
-              subPath: extensions/plugins
-            {{- end }}
+#            {{- if .Values.persistence.enabled }}
+#            - mountPath: {{ .Values.sonarqubeFolder }}/extensions
+#              name: sonarqube
+#              subPath: extensions
+#            {{- else if .Values.plugins.install }}
+#            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins
+#              name: sonarqube
+#              subPath: extensions/plugins
+#            {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/temp
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: temp
             - mountPath: {{ .Values.sonarqubeFolder }}/logs
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -255,7 +281,7 @@ spec:
             "/tmp/scripts/install_plugins.sh"]
           volumeMounts:
             - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: extensions/plugins
             - name: install-plugins
               mountPath: /tmp/scripts/
@@ -399,7 +425,7 @@ spec:
             {{- end }}
             {{- if .Values.caCerts.enabled }}
             - mountPath: {{ .Values.sonarqubeFolder }}/certs
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}" 
               subPath: certs
             {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/data
@@ -407,18 +433,18 @@ spec:
               subPath: data
             {{- if .Values.persistence.enabled }}
             - mountPath: {{ .Values.sonarqubeFolder }}/extensions
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}" 
               subPath: extensions
             {{- else if .Values.plugins.install }}
             - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}" 
               subPath: extensions/plugins
             {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/temp
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}" 
               subPath: temp
             - mountPath: {{ .Values.sonarqubeFolder }}/logs
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}" 
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
