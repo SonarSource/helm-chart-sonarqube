@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# Set the timeout in seconds
-timeout=3600
+# CirrusCI timeout is 30 minutes.
+# In case of errors, we need to know what went wrong so we can debug.
+# That is why the timeout is set to 25 minutes (1500 seconds)
+timeout=1500
 
 # Set the interval in seconds to check for the cluster
 interval=5
@@ -17,7 +19,7 @@ for ((i=0; i<$timeout; i+=$interval)); do
   fi
 
   # Wait for the interval before checking again
-  sleep $interval
+  sleep "${interval}"
 done
 
 # Timeout reached, Kind cluster is not available
