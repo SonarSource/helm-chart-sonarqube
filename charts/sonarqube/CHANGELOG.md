@@ -11,7 +11,7 @@ All changes to this chart will be documented in this file.
 * Update Elasticsearch.configureNode to false by default after 3 year deprecation
 * Fix wrong condition on initSysctl feature
 * Update default image of initContainers to sonarqube image, allowing for faster loading time and less external images needed
-
+* Support Kubernetes v1.28 while dropping EOL versions (i.e., v1.24 and v.1.25)
 
 ## [10.2.0]
 * Update SonarQube to 10.2.0
