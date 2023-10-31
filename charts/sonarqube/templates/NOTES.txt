@@ -21,7 +21,6 @@
   kubectl port-forward $POD_NAME 8080:{{ .Values.service.externalPort }} -n {{ .Release.Namespace }}
 {{- end }}
 {{ if .Values.postgresql.enabled }}
-WARNING: It is highly recommended to use a database outside of the cluster for production use.
-         The embedded PostgreSQL is intended for test and/or development only.
+WARNING: The embedded PostgreSQL is intended for evaluation only, it is DEPRECATED, and it will be REMOVED in a future release.
          Please see https://artifacthub.io/packages/helm/sonarqube/sonarqube#production-use-case for more information.
 {{- end }}
