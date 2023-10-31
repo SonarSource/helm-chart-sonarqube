@@ -24,6 +24,8 @@ done
 
 # Timeout reached, Kind cluster is not available
 echo "Timeout reached, Kind cluster is not available"
-echo "Error logs:"
 kubectl cluster-info --context kind-kind 2>&1
+echo "-------------------------"
+echo "Detailed logs:"
+kubectl cluster-info dump --context kind-kind 2>&1
 exit 1
