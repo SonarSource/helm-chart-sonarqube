@@ -167,7 +167,7 @@ spec:
           - |
             #!/bin/sh
             if [ -f /tmp/props/sonar.properties ]; then
-              cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
+             cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
             fi
             if [ -f /tmp/props/secret.properties ]; then
               cat /tmp/props/secret.properties > /tmp/result/sonar.properties
@@ -388,7 +388,7 @@ spec:
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
                 host="$(hostname -i || echo '127.0.0.1')"
                 if wget --no-proxy -qO- http://${host}:{{ .Values.service.internalPort }}{{ .Values.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
-                	exit 0
+                exit 0
                 fi
                 exit 1
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
@@ -429,7 +429,7 @@ spec:
               subPath: certs
             {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/data
-              name: sonarqube
+              name: "{{ template "sonarqube.fullname" . }}"
               subPath: data
             {{- if .Values.persistence.enabled }}
             - mountPath: {{ .Values.sonarqubeFolder }}/extensions
@@ -555,7 +555,7 @@ spec:
        {{- if .Values.persistence.enabled }}
       - name: "{{ template "sonarqube.fullname" . }}"
       {{- end }}
-	- name : tmp-dir
+      - name : tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
         {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
       - name : concat-dir
