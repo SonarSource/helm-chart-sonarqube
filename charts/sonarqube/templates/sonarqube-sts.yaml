@@ -552,9 +552,9 @@ spec:
             - key: prometheus-ce-config.yaml
               path: prometheus-ce-config.yaml
       {{- end }}
-       {{- if .Values.persistence.enabled }}
-      - name: "{{ template "sonarqube.fullname" . }}"
-      {{- end }}
+#       {{- if .Values.persistence.enabled }}
+#      - name: "{{ template "sonarqube.fullname" . }}"
+#      {{- end }}
       - name : tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
         {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
