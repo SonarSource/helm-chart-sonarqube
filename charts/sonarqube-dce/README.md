@@ -415,7 +415,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `jdbcOverwrite.jdbcSecretName`        | Alternatively, use a pre-existing k8s secret containing the DB password                                                                                      | `None`                                                        |
 | `jdbcOverwrite.jdbcSecretPasswordKey` | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret                                    | `None`                                                        |
 
-### Bundled Postgres Chart (DEPRECATED)
+### Bundled PostgreSQL Chart (DEPRECATED)
 
 The bundled PostgreSQL Chart is deprecated. Please see https://artifacthub.io/packages/helm/sonarqube/sonarqube#production-use-case for more information.
 
@@ -438,8 +438,8 @@ The bundled PostgreSQL Chart is deprecated. Please see https://artifacthub.io/pa
 | `postgresql.securityContext.enabled`                     | Postgresql securityContext en/disabled                                 | `true`          |
 | `postgresql.securityContext.fsGroup`                     | Postgresql securityContext fsGroup                                     | `1001`          |
 | `postgresql.securityContext.runAsUser`                   | Postgresql securityContext runAsUser                                   | `1001`          |
-| `postgresql.volumePermissions.enabled`                   | Postgres vol permissions en/disabled                                   | `false`         |
-| `postgresql.volumePermissions.securityContext.runAsUser` | Postgres vol permissions secContext runAsUser                          | `0`             |
+| `postgresql.volumePermissions.enabled`                   | PostgreSQL vol permissions en/disabled                                 | `false`         |
+| `postgresql.volumePermissions.securityContext.runAsUser` | PostgreSQL vol permissions secContext runAsUser                        | `0`             |
 | `postgresql.shmVolume.chmod.enabled`                     | Postgresql shared memory vol en/disabled                               | `false`         |
 | `postgresql.serivceAccount.enabled`                      | Postgresql service Account creation en/disabled                        | `false`         |
 | `postgresql.serivceAccount.name`                         | Postgresql service Account name                                        | `""`            |
