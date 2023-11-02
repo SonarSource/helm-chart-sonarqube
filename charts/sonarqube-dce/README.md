@@ -415,32 +415,34 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `jdbcOverwrite.jdbcSecretName`        | Alternatively, use a pre-existing k8s secret containing the DB password                                                                                      | `None`                                                        |
 | `jdbcOverwrite.jdbcSecretPasswordKey` | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret                                    | `None`                                                        |
 
-### Bundled Postgres Chart
+### Bundled PostgreSQL Chart (DEPRECATED)
+
+The bundled PostgreSQL Chart is deprecated. Please see https://artifacthub.io/packages/helm/sonarqube/sonarqube#production-use-case for more information.
 
 | Parameter                                                | Description                                                            | Default         |
 | -------------------------------------------------------- | ---------------------------------------------------------------------- | --------------- |
 | `postgresql.enabled`                                     | Set to `false` to use external database server                         | `true`          |
 | `postgresql.existingSecret`                              | existingSecret Name of existing secret to use for PostgreSQL passwords | `nil`           |
-| `postgresql.postgresqlUsername`                          | Postgresql database user                                               | `sonarUser`     |
-| `postgresql.postgresqlPassword`                          | Postgresql database password                                           | `sonarPass`     |
-| `postgresql.postgresqlDatabase`                          | Postgresql database name                                               | `sonarDB`       |
-| `postgresql.service.port`                                | Postgresql port                                                        | `5432`          |
-| `postgresql.resources.requests.memory`                   | Postgresql memory request                                              | `256Mi`         |
-| `postgresql.resources.requests.cpu`                      | Postgresql cpu request                                                 | `250m`          |
-| `postgresql.resources.limits.memory`                     | Postgresql memory limit                                                | `2Gi`           |
-| `postgresql.resources.limits.cpu`                        | Postgresql cpu limit                                                   | `2`             |
-| `postgresql.persistence.enabled`                         | Postgresql persistence en/disabled                                     | `true`          |
-| `postgresql.persistence.accessMode`                      | Postgresql persistence accessMode                                      | `ReadWriteOnce` |
-| `postgresql.persistence.size`                            | Postgresql persistence size                                            | `20Gi`          |
-| `postgresql.persistence.storageClass`                    | Postgresql persistence storageClass                                    | `""`            |
-| `postgresql.securityContext.enabled`                     | Postgresql securityContext en/disabled                                 | `true`          |
-| `postgresql.securityContext.fsGroup`                     | Postgresql securityContext fsGroup                                     | `1001`          |
-| `postgresql.securityContext.runAsUser`                   | Postgresql securityContext runAsUser                                   | `1001`          |
-| `postgresql.volumePermissions.enabled`                   | Postgres vol permissions en/disabled                                   | `false`         |
-| `postgresql.volumePermissions.securityContext.runAsUser` | Postgres vol permissions secContext runAsUser                          | `0`             |
-| `postgresql.shmVolume.chmod.enabled`                     | Postgresql shared memory vol en/disabled                               | `false`         |
-| `postgresql.serivceAccount.enabled`                      | Postgresql service Account creation en/disabled                        | `false`         |
-| `postgresql.serivceAccount.name`                         | Postgresql service Account name                                        | `""`            |
+| `postgresql.postgresqlUsername`                          | PostgreSQL database user                                               | `sonarUser`     |
+| `postgresql.postgresqlPassword`                          | PostgreSQL database password                                           | `sonarPass`     |
+| `postgresql.postgresqlDatabase`                          | PostgreSQL database name                                               | `sonarDB`       |
+| `postgresql.service.port`                                | PostgreSQL port                                                        | `5432`          |
+| `postgresql.resources.requests.memory`                   | PostgreSQL memory request                                              | `256Mi`         |
+| `postgresql.resources.requests.cpu`                      | PostgreSQL cpu request                                                 | `250m`          |
+| `postgresql.resources.limits.memory`                     | PostgreSQL memory limit                                                | `2Gi`           |
+| `postgresql.resources.limits.cpu`                        | PostgreSQL cpu limit                                                   | `2`             |
+| `postgresql.persistence.enabled`                         | PostgreSQL persistence en/disabled                                     | `true`          |
+| `postgresql.persistence.accessMode`                      | PostgreSQL persistence accessMode                                      | `ReadWriteOnce` |
+| `postgresql.persistence.size`                            | PostgreSQL persistence size                                            | `20Gi`          |
+| `postgresql.persistence.storageClass`                    | PostgreSQL persistence storageClass                                    | `""`            |
+| `postgresql.securityContext.enabled`                     | PostgreSQL securityContext en/disabled                                 | `true`          |
+| `postgresql.securityContext.fsGroup`                     | PostgreSQL securityContext fsGroup                                     | `1001`          |
+| `postgresql.securityContext.runAsUser`                   | PostgreSQL securityContext runAsUser                                   | `1001`          |
+| `postgresql.volumePermissions.enabled`                   | PostgreSQL vol permissions en/disabled                                 | `false`         |
+| `postgresql.volumePermissions.securityContext.runAsUser` | PostgreSQL vol permissions secContext runAsUser                        | `0`             |
+| `postgresql.shmVolume.chmod.enabled`                     | PostgreSQL shared memory vol en/disabled                               | `false`         |
+| `postgresql.serivceAccount.enabled`                      | PostgreSQL service Account creation en/disabled                        | `false`         |
+| `postgresql.serivceAccount.name`                         | PostgreSQL service Account name                                        | `""`            |
 
 ### Tests
 
@@ -484,7 +486,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `terminationGracePeriodSeconds`     | Configuration of `terminationGracePeriodSeconds`                                                             | `60`                     |
 
 
-You can also configure values for the PostgreSQL database via the Postgresql [Chart](https://hub.helm.sh/charts/bitnami/postgresql)
+You can also configure values for the PostgreSQL database via the PostgreSQL [Chart](https://hub.helm.sh/charts/bitnami/postgresql)
 
 For overriding variables see: [Customizing the chart](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing)
 

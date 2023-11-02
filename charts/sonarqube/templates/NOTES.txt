@@ -20,3 +20,7 @@
   echo "Visit http://127.0.0.1:8080 to use your application"
   kubectl port-forward $POD_NAME 8080:{{ .Values.service.externalPort }} -n {{ .Release.Namespace }}
 {{- end }}
+{{ if .Values.postgresql.enabled }}
+WARNING: The embedded PostgreSQL is intended for evaluation only, it is DEPRECATED, and it will be REMOVED in a future release.
+         Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube#production-use-case for more information.
+{{- end }}
