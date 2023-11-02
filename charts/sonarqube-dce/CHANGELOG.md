@@ -13,6 +13,7 @@ All changes to this chart will be documented in this file.
 * Remove unneeded if condition for Sysctl initContainer
 * Update default image of initContainers to sonarqube image, allowing for faster loading time and less external images needed
 * Support Kubernetes v1.28 while dropping EOL versions (i.e., v1.24 and v.1.25)
+* Avoid duplicate SONAR_WEB_SYSTEMPASSCODE secrets
 
 ## [10.2.0]
 * Update SonarQube to 10.2.0
