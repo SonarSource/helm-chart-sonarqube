@@ -15,7 +15,7 @@ sources:
   - https://github.com/SonarSource/helm-chart-sonarqube
   - https://github.com/SonarSource/docker-sonarqube
   - https://github.com/SonarSource/sonarqube
-kubeVersion: '>= 1.24.0-0'
+kubeVersion: '>= 1.26.0-0'
 maintainers:
   - name: leo-geoffroy-sonarsource
     email: leo.geoffroy+helm@sonarsource.com
@@ -47,6 +47,8 @@ annotations:
       description: "Remove unneeded if condition for Sysctl initContainer"
     - kind: changed
       description: "Update default image of initContainers to sonarqube image, allowing for faster loading time and less external images needed"
+    - kind: changed
+      description: "Support Kubernetes v1.28 while dropping EOL versions (i.e., v1.24 and v.1.25)"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/
