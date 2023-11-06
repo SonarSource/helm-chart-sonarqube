@@ -31,90 +31,108 @@ Expand the Application Image name.
 {{- end -}}
 
 {{- define "waitForDb.image" -}}
-{{- if .Values.initContainers.image -}}
+{{- if .Values.waitForDb -}}
+{{- if .Values.waitForDb.image -}}
+{{- if .Values.global -}}
 {{- if .Values.global.imageRegistry -}}
 {{- printf "%s/" .Values.global.imageRegistry -}}
 {{- end -}}
-{{- printf "%s" .Values.initContainers.image -}}
+{{- end -}}
+{{- printf "%s" .Values.waitForDb.image -}}
+{{- end -}}
 {{- else -}}
-{{- include "sonarqube.image" -}}
+{{- include "sonarqube.image" . -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "caCerts.image" -}}
 {{- if .Values.caCerts.image -}}
+{{- if .Values.global -}}
 {{- if .Values.global.imageRegistry -}}
 {{- printf "%s/" .Values.global.imageRegistry -}}
 {{- end -}}
+{{- end -}}
 {{- printf "%s" .Values.caCerts.image -}}
 {{- else -}}
-{{- include "sonarqube.image" -}}
+{{- include "sonarqube.image" . -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "initSysctl.image" -}}
 {{- if .Values.initSysctl.image -}}
+{{- if .Values.global -}}
 {{- if .Values.global.imageRegistry -}}
 {{- printf "%s/" .Values.global.imageRegistry -}}
 {{- end -}}
+{{- end -}}
 {{- printf "%s" .Values.initSysctl.image -}}
 {{- else -}}
-{{- include "sonarqube.image" -}}
+{{- include "sonarqube.image" . -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "concatProperties.image" -}}
 {{- if .Values.initContainers.image -}}
+{{- if .Values.global -}}
 {{- if .Values.global.imageRegistry -}}
 {{- printf "%s/" .Values.global.imageRegistry -}}
 {{- end -}}
+{{- end -}}
 {{- printf "%s" .Values.initContainers.image -}}
 {{- else -}}
-{{- include "sonarqube.image" -}}
+{{- include "sonarqube.image" . -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "prometheusExporter.image" -}}
 {{- if .Values.prometheusExporter.image -}}
+{{- if .Values.global -}}
 {{- if .Values.global.imageRegistry -}}
 {{- printf "%s/" .Values.global.imageRegistry -}}
 {{- end -}}
+{{- end -}}
 {{- printf "%s" .Values.prometheusExporter.image -}}
 {{- else -}}
-{{- include "sonarqube.image" -}}
+{{- include "sonarqube.image" . -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "installPlugins.image" -}}
 {{- if .Values.plugins.image -}}
+{{- if .Values.global -}}
 {{- if .Values.global.imageRegistry -}}
 {{- printf "%s/" .Values.global.imageRegistry -}}
 {{- end -}}
+{{- end -}}
 {{- printf "%s" .Values.plugins.image -}}
 {{- else -}}
-{{- include "sonarqube.image" -}}
+{{- include "sonarqube.image" . -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "initFs.image" -}}
 {{- if .Values.initFs.image -}}
+{{- if .Values.global -}}
 {{- if .Values.global.imageRegistry -}}
 {{- printf "%s/" .Values.global.imageRegistry -}}
 {{- end -}}
+{{- end -}}
 {{- printf "%s" .Values.initFs.image -}}
 {{- else -}}
-{{- include "sonarqube.image" -}}
+{{- include "sonarqube.image" . -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "curlContainer.image" -}}
 {{- if .Values.curlContainerImage -}}
+{{- if .Values.global -}}
 {{- if .Values.global.imageRegistry -}}
 {{- printf "%s/" .Values.global.imageRegistry -}}
 {{- end -}}
+{{- end -}}
 {{- printf "%s" .Values.curlContainerImage -}}
 {{- else -}}
-{{- include "sonarqube.image" -}}
+{{- include "sonarqube.image" . -}}
 {{- end -}}
 {{- end -}}
 
