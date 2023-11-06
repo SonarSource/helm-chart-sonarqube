@@ -14,6 +14,7 @@ All changes to this chart will be documented in this file.
 * Support Kubernetes v1.28
 * Avoid duplicate SONAR_WEB_SYSTEMPASSCODE secrets
 * Deprecate embedded PostgreSQL
+* Add global.imageRegistry option
 
 ## [10.2.0]
 * Update SonarQube to 10.2.0

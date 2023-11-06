@@ -296,17 +296,18 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Generic Configuration
 
-| Parameter           | Description                                                                                                       | Default |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------- | ------- |
-| `affinity`          | Node / Pod affinities                                                                                             | `{}`    |
-| `tolerations`       | List of node taints to tolerate                                                                                   | `[]`    |
-| `priorityClassName` | Schedule pods on priority (e.g. `high-priority`)                                                                  | `None`  |
-| `nodeSelector`      | Node labels for pod assignment                                                                                    | `{}`    |
-| `hostAliases`       | Aliases for IPs in /etc/hosts                                                                                     | `[]`    |
-| `podLabels`         | Map of labels to add to the pods                                                                                  | `{}`    |
-| `env`               | Environment variables to attach to the pods                                                                       | `{}`    |
-| `annotations`       | Map of annotations to add to the pods                                                                             | `{}`    |
-| `sonarWebContext`   | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path. | ``      |
+| Parameter              | Description                                                                                                       | Default |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------- | ------- |
+| `affinity`             | Node / Pod affinities                                                                                             | `{}`    |
+| `tolerations`          | List of node taints to tolerate                                                                                   | `[]`    |
+| `priorityClassName`    | Schedule pods on priority (e.g. `high-priority`)                                                                  | `None`  |
+| `nodeSelector`         | Node labels for pod assignment                                                                                    | `{}`    |
+| `hostAliases`          | Aliases for IPs in /etc/hosts                                                                                     | `[]`    |
+| `podLabels`            | Map of labels to add to the pods                                                                                  | `{}`    |
+| `env`                  | Environment variables to attach to the pods                                                                       | `{}`    |
+| `annotations`          | Map of annotations to add to the pods                                                                             | `{}`    |
+| `sonarWebContext`      | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path. | ``      |
+| `global.imageRegistry` | Global Image Registry to fetch images from                                                                        | `None`  |
 
 
 ### NetworkPolicies
