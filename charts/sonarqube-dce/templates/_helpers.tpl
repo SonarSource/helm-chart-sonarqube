@@ -22,7 +22,105 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 Expand the Application Image name.
 */}}
 {{- define "sonarqube.image" -}}
+{{- if .Values.global.imageRegistry -}}
+{{- printf "%s/" .Values.global.imageRegistry -}}
+{{- end -}}
 {{- printf "%s:%s" .Values.ApplicationNodes.image.repository .Values.ApplicationNodes.image.tag }}
+{{- end -}}
+
+{{- define "searchNodes.image" -}}
+{{- if .Values.global.imageRegistry -}}
+{{- printf "%s/" .Values.global.imageRegistry -}}
+{{- end -}}
+{{- printf "%s:%s" .Values.searchNodes.image.repository .Values.searchNodes.image.tag -}}
+{{- end -}}
+
+{{- define "waitForDb.image" -}}
+{{- if .Values.initContainers.image -}}
+{{- if .Values.global.imageRegistry -}}
+{{- printf "%s/" .Values.global.imageRegistry -}}
+{{- end -}}
+{{- printf "%s" .Values.initContainers.image -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "caCerts.image" -}}
+{{- if .Values.caCerts.image -}}
+{{- if .Values.global.imageRegistry -}}
+{{- printf "%s/" .Values.global.imageRegistry -}}
+{{- end -}}
+{{- printf "%s" .Values.caCerts.image -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "initSysctl.image" -}}
+{{- if .Values.initSysctl.image -}}
+{{- if .Values.global.imageRegistry -}}
+{{- printf "%s/" .Values.global.imageRegistry -}}
+{{- end -}}
+{{- printf "%s" .Values.initSysctl.image -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "concatProperties.image" -}}
+{{- if .Values.initContainers.image -}}
+{{- if .Values.global.imageRegistry -}}
+{{- printf "%s/" .Values.global.imageRegistry -}}
+{{- end -}}
+{{- printf "%s" .Values.initContainers.image -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "prometheusExporter.image" -}}
+{{- if .Values.ApplicationNodes.prometheusExporter.image -}}
+{{- if .Values.global.imageRegistry -}}
+{{- printf "%s/" .Values.global.imageRegistry -}}
+{{- end -}}
+{{- printf "%s" .Values.ApplicationNodes.prometheusExporter.image -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "installPlugins.image" -}}
+{{- if .Values.ApplicationNodes.plugins.image -}}
+{{- if .Values.global.imageRegistry -}}
+{{- printf "%s/" .Values.global.imageRegistry -}}
+{{- end -}}
+{{- printf "%s" .Values.ApplicationNodes.plugins.image -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "initFs.image" -}}
+{{- if .Values.initFs.image -}}
+{{- if .Values.global.imageRegistry -}}
+{{- printf "%s/" .Values.global.imageRegistry -}}
+{{- end -}}
+{{- printf "%s" .Values.initFs.image -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "curlContainer.image" -}}
+{{- if .Values.curlContainerImage -}}
+{{- if .Values.global.imageRegistry -}}
+{{- printf "%s/" .Values.global.imageRegistry -}}
+{{- end -}}
+{{- printf "%s" .Values.curlContainerImage -}}
+{{- else -}}
+{{- include "sonarqube.image" -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "searchNodes.endpoints" -}}

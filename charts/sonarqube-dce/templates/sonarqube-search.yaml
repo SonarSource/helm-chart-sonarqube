@@ -87,7 +87,7 @@ spec:
       {{- end }}
       {{- if .Values.initSysctl.enabled }}
         - name: init-sysctl
-          image: {{ default (include "sonarqube.image" $) .Values.initSysctl.image }}
+          image: {{ include "initSysctl.image" $ }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
           {{- if $securityContext := (default .Values.initContainers.securityContext .Values.initSysctl.securityContext) }}
           securityContext:
@@ -108,7 +108,7 @@ spec:
       {{- end }}
       {{- if .Values.caCerts.enabled }}
         - name: ca-certs
-          image: {{ default (include "sonarqube.image" $) .Values.caCerts.image }}
+          image: {{ include "caCerts.image" $ }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
@@ -131,7 +131,7 @@ spec:
       {{- end }}
       {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
-          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
+          image: {{ include "concatProperties.image" $ }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
           command: 
           - sh
@@ -173,7 +173,7 @@ spec:
       {{- end }}
       {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled }}
         - name: init-fs
-          image: {{ default (include "sonarqube.image" $) .Values.initFs.image }}
+          image: {{ include "initFs.image" $ }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
           {{- if $securityContext := (default .Values.initContainers.securityContext .Values.initFs.securityContext) }}
           securityContext:
@@ -212,7 +212,7 @@ spec:
         {{- toYaml .Values.searchNodes.extraContainers | nindent 8 }}
       {{- end }}
         - name: {{ .Chart.Name }}-search
-          image: "{{ .Values.searchNodes.image.repository }}:{{ .Values.searchNodes.image.tag }}"
+          image: {{ include "searchNodes.image" $ }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy }}
           ports:
             - name: search-port
