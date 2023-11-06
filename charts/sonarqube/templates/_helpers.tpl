@@ -31,14 +31,14 @@ Expand the Application Image name.
 {{- end -}}
 
 {{- define "waitForDb.image" -}}
-{{- if .Values.waitForDb -}}
-{{- if .Values.waitForDb.image -}}
+{{- if .Values.initContainers -}}
+{{- if .Values.initContainers.image -}}
 {{- if .Values.global -}}
 {{- if .Values.global.imageRegistry -}}
 {{- printf "%s/" .Values.global.imageRegistry -}}
 {{- end -}}
 {{- end -}}
-{{- printf "%s" .Values.waitForDb.image -}}
+{{- printf "%s" .Values.initContainers.image -}}
 {{- end -}}
 {{- else -}}
 {{- include "sonarqube.image" . -}}
