@@ -61,10 +61,8 @@ chart_testing_task:
           DOCKER_DRIVER: overlay2
           DOCKER_TLS_CERTDIR: ""
   <<: *CLONE_SCRIPT_TEMPLATE
-  start_kind_background_script:
+  start_kind_script:
     - export DOCKER_HOST=tcp://localhost:2375
-    - kind create cluster
-  wait_for_kind_script:
     - ./.cirrus/wait_for_kind.sh
   script:
     - helm repo add clustersecret https://charts.clustersecret.io/
