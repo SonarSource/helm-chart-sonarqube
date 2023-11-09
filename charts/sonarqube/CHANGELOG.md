@@ -14,6 +14,7 @@ All changes to this chart will be documented in this file.
 * Support Kubernetes v1.28
 * Avoid duplicate SONAR_WEB_SYSTEMPASSCODE secrets
 * Deprecate embedded PostgreSQL
+* Update nginx-ingress-controller dependency to version 4.8.3
 
 ## [10.2.0]
 * Update SonarQube to 10.2.0
