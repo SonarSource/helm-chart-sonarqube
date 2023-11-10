@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [7.0.3]
+* Update SonarQube to 9.9.3
+
 ## [7.0.2]
 * Fix missing `bitnami/minideb-extras` image during helm tests
 * Update SonarQube to 9.9.2
