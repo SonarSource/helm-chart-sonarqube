@@ -344,18 +344,18 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Ingress
 
-| Parameter                      | Description                                                  | Default                                                                     |
-| ------------------------------ | ------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| `nginx.enabled`                | Also install Nginx Ingress Helm                              | `false`                                                                     |
-| `ingress.enabled`              | Flag to enable Ingress                                       | `false`                                                                     |
-| `ingress.labels`               | Ingress additional labels                                    | `{}`                                                                        |
-| `ingress.hosts[0].name`        | Hostname to your SonarQube installation                      | `sonarqube.your-org.com`                                                    |
-| `ingress.hosts[0].path`        | Path within the URL structure                                | `/`                                                                         |
-| `ingress.hosts[0].serviceName` | Optional field to override the default serviceName of a path | `None`                                                                      |
-| `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | `None`                                                                      |
-| `ingress.tls`                  | Ingress secrets for TLS certificates                         | `[]`                                                                        |
-| `ingress.ingressClassName`     | Optional field to configure ingress class name               | `None`                                                                      |
-| `ingress.annotations`          | Field to add extra annotations to the ingress                | {`nginx.org/proxy-body-size: "64m"`} if `nginx.enabled=true` |
+| Parameter                      | Description                                                  | Default                                                                        |
+| ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `nginx.enabled`                | Also install Nginx Ingress Helm                              | `false`                                                                        |
+| `ingress.enabled`              | Flag to enable Ingress                                       | `false`                                                                        |
+| `ingress.labels`               | Ingress additional labels                                    | `{}`                                                                           |
+| `ingress.hosts[0].name`        | Hostname to your SonarQube installation                      | `sonarqube.your-org.com`                                                       |
+| `ingress.hosts[0].path`        | Path within the URL structure                                | `/`                                                                            |
+| `ingress.hosts[0].serviceName` | Optional field to override the default serviceName of a path | `None`                                                                         |
+| `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | `None`                                                                         |
+| `ingress.tls`                  | Ingress secrets for TLS certificates                         | `[]`                                                                           |
+| `ingress.ingressClassName`     | Optional field to configure ingress class name               | `None`                                                                         |
+| `ingress.annotations`          | Field to add extra annotations to the ingress                | {`nginx.ingress.kubernetes.io/proxy-body-size: "64m"`} if `nginx.enabled=true` |
 
 ### InitContainers
 

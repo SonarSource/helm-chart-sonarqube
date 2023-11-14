@@ -19,7 +19,7 @@ metadata:
     {{ $key }}: {{ $value | quote }}
     {{- end }}
     {{- if and .Values.nginx.enabled (not (hasKey (.Values.ingress.annotations) "nginx.ingress.kubernetes.io/proxy-body-size")) }}
-    nginx.org/proxy-body-size: "64m"
+    nginx.ingress.kubernetes.io/proxy-body-size: "64m"
     {{- end -}}
 {{- end }}
 spec:
