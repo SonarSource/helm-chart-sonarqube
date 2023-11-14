@@ -16,6 +16,7 @@ All changes to this chart will be documented in this file.
 * Avoid duplicate SONAR_WEB_SYSTEMPASSCODE secrets
 * Deprecate embedded PostgreSQL
 * Update nginx-ingress-controller dependency to version 4.8.3, please carefully read the changelog of this new major version.
+* Remove duplicated 'proxy-body-size' from ingress annotation.
 
 ## [10.2.0]
 * Update SonarQube to 10.2.0
