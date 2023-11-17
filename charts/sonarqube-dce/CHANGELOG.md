@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [10.4.0]
 * Update Chart's version to 10.4.0
+* Improve the description of deprecated `ApplicationNodes.jvmOpts` and `ApplicationNodes.jvmCeOpts` values
 
 ## [10.3.0]
 * Upgrade SonarQube to 10.3.0

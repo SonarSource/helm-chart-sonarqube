@@ -358,20 +358,20 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### SonarQube Specific
 
-| Parameter                      | Description                                                                                        | Default          |
-| ------------------------------ | -------------------------------------------------------------------------------------------------- | ---------------- |
-| `jvmOpts`                      | (DEPRECATED) Values to add to SONARQUBE_WEB_JVM_OPTS                                               | `""`             |
-| `jvmCeOpts`                    | (DEPRECATED) Values to add to SONAR_CE_JAVAOPTS                                                    | `""`             |
-| `sonarqubeFolder`              | Directory name of SonarQube                                                                        | `/opt/sonarqube` |
-| `sonarProperties`              | Custom `sonar.properties` key-value pairs (e.g., "sonarProperties.sonar.forceAuthentication=true") | `None`           |
-| `sonarSecretProperties`        | Additional `sonar.properties` key-value pairs to load from a secret                                | `None`           |
-| `sonarSecretKey`               | Name of existing secret used for settings encryption                                               | `None`           |
-| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format)            | `define_it`      |
-| `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                              | `None`           |
-| `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                          | `None`           |
-| `extraContainers`              | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars)               | `[]`             |
-| `extraVolumes`                 | Array of extra volumes to add to the SonarQube deployment                                          | `[]`             |
-| `extraVolumeMounts`            | Array of extra volume mounts to add to the SonarQube deployment                                    | `[]`             |
+| Parameter                      | Description                                                                                                           | Default          |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `jvmOpts`                      | (DEPRECATED) Values to add to `SONAR_WEB_JAVAOPTS`. Please set directly `SONAR_WEB_JAVAOPTS` or `sonar.web.javaOpts`  | `""`             |
+| `jvmCeOpts`                    | (DEPRECATED) Values to add to `SONAR_CE_JAVAOPTS`. Please set directly `SONAR_CE_JAVAOPTS` or `sonar.ce.javaOpts`     | `""`             |
+| `sonarqubeFolder`              | Directory name of SonarQube                                                                                           | `/opt/sonarqube` |
+| `sonarProperties`              | Custom `sonar.properties` key-value pairs (e.g., "sonarProperties.sonar.forceAuthentication=true")                    | `None`           |
+| `sonarSecretProperties`        | Additional `sonar.properties` key-value pairs to load from a secret                                                   | `None`           |
+| `sonarSecretKey`               | Name of existing secret used for settings encryption                                                                  | `None`           |
+| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format)                               | `define_it`      |
+| `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                                                 | `None`           |
+| `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                                             | `None`           |
+| `extraContainers`              | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars)                                  | `[]`             |
+| `extraVolumes`                 | Array of extra volumes to add to the SonarQube deployment                                                             | `[]`             |
+| `extraVolumeMounts`            | Array of extra volume mounts to add to the SonarQube deployment                                                       | `[]`             |
 
 ### Resources
 
