@@ -1,16 +1,13 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-## [10.4.1]
-* Update Chart's version to 10.4.1
-* Fix empty ingress annotations in values
-
 ## [10.4.0]
 * Update Chart's version to 10.4.0
 * Improve the description of deprecated `jvmOpts` and `jvmCeOpts` values
 * Run the initSysctl init-container as root to prevent 'permission denied' issues
 * Add revisionHistoryLimit configuration for SonarQube application Deployment ReplicaSets & StatefulSets
 * Update the security contexts to use root as group ID
+* Fix empty ingress annotations in values
 
 ## [10.3.0]
 * Upgrade SonarQube to 10.3.0
