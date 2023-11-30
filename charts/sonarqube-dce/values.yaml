@@ -461,6 +461,8 @@ initSysctl:
   securityContext:
     # Compatible with podSecurity standard privileged
     privileged: true
+    # if run without root permissions, error "sysctl: permission denied on key xxx, ignoring"
+    runAsUser: 0
   # resources: {}
 
 initFs:
