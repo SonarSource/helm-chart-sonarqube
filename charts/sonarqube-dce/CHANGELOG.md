@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [10.4.0]
 * Update Chart's version to 10.4.0
 * Improve the description of deprecated `ApplicationNodes.jvmOpts` and `ApplicationNodes.jvmCeOpts` values
+* Run the initSysctl init-container as root to prevent "permission denied" issues
 
 ## [10.3.0]
 * Upgrade SonarQube to 10.3.0
@@ -239,7 +240,7 @@ All changes to this chart will be documented in this file.
 * added link to community support forum
 
 ## [0.1.6]
-* fixed wrong scc user reference if name was explicitly set 
+* fixed wrong scc user reference if name was explicitly set
 
 ## [0.1.5]
 * fixed serviceaccount logic

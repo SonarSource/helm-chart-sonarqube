@@ -243,6 +243,8 @@ initSysctl:
   securityContext:
     # Compatible with podSecurity standard privileged
     privileged: true
+    # if run without root permissions, error "sysctl: permission denied on key xxx, ignoring"
+    runAsUser: 0
   # resources: {}
 
 # This should not be required anymore, used to chown/chmod folder created by faulty CSI driver that are not applying properly POSIX fsgroup.
