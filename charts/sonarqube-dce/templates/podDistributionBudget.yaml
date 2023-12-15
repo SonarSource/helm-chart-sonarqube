@@ -9,7 +9,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-{{- with .Values.searchNodes.podDistributionBudget }}
+{{- with .Values.searchNodes.podDisruptionBudget }}
 {{ toYaml . | indent 2 }}
 {{- end }}
   selector:
@@ -27,7 +27,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-{{- with .Values.ApplicationNodes.podDistributionBudget }}
+{{- with .Values.ApplicationNodes.podDisruptionBudget }}
 {{ toYaml . | indent 2 }}
 {{- end }}
   selector:
