@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [TBD]
+* Fix PDB typo
+
 ## [10.4.0]
 * Update Chart's version to 10.4.0
 * Improve the description of deprecated `ApplicationNodes.jvmOpts` and `ApplicationNodes.jvmCeOpts` values
