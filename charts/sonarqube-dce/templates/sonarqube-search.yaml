@@ -276,6 +276,8 @@ spec:
                 #!/bin/bash
                 # A Sonarqube search node container is considered live if http call returns 200
                 host="$(hostname -i || echo '127.0.0.1')"
+                # ensure v6 also works
+                [[ "$host" == *":"* ]] && host="[$host]"
                 if wget --no-proxy -qO- "http://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
@@ -285,6 +287,8 @@ spec:
                 #!/bin/bash
                 # A Sonarqube search node container is considered live if http call returns 200
                 host="$(hostname -i || echo '127.0.0.1')"
+                # ensure v6 also works
+                [[ "$host" == *":"* ]] && host="[$host]"
                 if wget --no-proxy -qO- "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
@@ -304,6 +308,8 @@ spec:
                 #!/bin/bash
                 # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
                 host="$(hostname -i || echo '127.0.0.1')"
+                # ensure v6 also works
+                [[ "$host" == *":"* ]] && host="[$host]"
                 if wget --no-proxy -qO- "http://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
@@ -313,6 +319,8 @@ spec:
                 #!/bin/bash
                 # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
                 host="$(hostname -i || echo '127.0.0.1')"
+                # ensure v6 also works
+                [[ "$host" == *":"* ]] && host="[$host]"
                 if wget --no-proxy -qO- "http://${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
@@ -332,6 +340,8 @@ spec:
                 #!/bin/bash
                 # A Sonarqube search node container is considered started if http call returns 200
                 host="$(hostname -i || echo '127.0.0.1')"
+                # ensure v6 also works
+                [[ "$host" == *":"* ]] && host="[$host]"
                 if wget --no-proxy -qO- "http://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
@@ -341,6 +351,8 @@ spec:
                 #!/bin/bash
                 # A Sonarqube search node container is considered started if http call returns 200
                 host="$(hostname -i || echo '127.0.0.1')"
+                # ensure v6 also works
+                [[ "$host" == *":"* ]] && host="[$host]"
                 if wget --no-proxy -qO- "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
