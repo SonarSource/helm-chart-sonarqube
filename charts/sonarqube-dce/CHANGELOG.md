@@ -2,7 +2,8 @@
 All changes to this chart will be documented in this file.
 
 ## [TBD]
-* Fix PDB typo
+
+* `sonarqube-dce`-only: Introduce `ApplicationNodes.podDistributionBudget` and `searchNodes.podDistributionBudget` in place of deprecated `ApplicationNodes.podDistributionBudget` and `searchNodes.podDistributionBudget`.
 
 ## [10.4.0]
 * Update Chart's version to 10.4.0

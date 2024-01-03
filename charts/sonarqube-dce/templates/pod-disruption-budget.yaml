@@ -9,13 +9,18 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-{{- with .Values.searchNodes.podDisruptionBudget }}
-{{ toYaml . | indent 2 }}
-{{- end }}
+{{ if .Values.searchNodes.podDisruptionBudget }}
+  {{- with .Values.searchNodes.podDisruptionBudget -}}
+    {{ toYaml .  | indent 2 -}}
+  {{ end }}
+{{ else }}
+  {{- with .Values.searchNodes.podDistributionBudget -}}
+    {{ toYaml .  | indent 2 -}}
+  {{ end -}}
+{{ end }}
   selector:
     matchLabels:
       sonarqube.datacenter/type: "search"
-
 ---
 apiVersion: {{ include "common.capabilities.policy.apiVersion" . }}
 kind: PodDisruptionBudget
@@ -27,9 +32,15 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-{{- with .Values.ApplicationNodes.podDisruptionBudget }}
-{{ toYaml . | indent 2 }}
-{{- end }}
+{{ if .Values.ApplicationNodes.podDisruptionBudget }}
+  {{- with .Values.ApplicationNodes.podDisruptionBudget -}}
+    {{ toYaml .  | indent 2 -}}
+  {{ end }}
+{{ else }}
+  {{- with .Values.ApplicationNodes.podDistributionBudget -}}
+    {{ toYaml .  | indent 2 -}}
+  {{ end -}}
+{{ end }}
   selector:
     matchLabels:
       sonarqube.datacenter/type: "app"
