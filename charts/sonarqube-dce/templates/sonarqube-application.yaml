@@ -291,7 +291,10 @@ spec:
           livenessProbe:
             exec:
               command:
-                - wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.ApplicationNodes.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
+                - sh
+                - -c
+                - |
+                  wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.ApplicationNodes.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
             initialDelaySeconds: {{ .Values.ApplicationNodes.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.ApplicationNodes.livenessProbe.periodSeconds }}
             failureThreshold: {{ .Values.ApplicationNodes.livenessProbe.failureThreshold }}
