@@ -5,7 +5,7 @@ All changes to this chart will be documented in this file.
 * Update Chart's version to 10.4.0
 * Improve the description of deprecated `ApplicationNodes.jvmOpts` and `ApplicationNodes.jvmCeOpts` values
 * Run the initSysctl init-container as root to prevent 'permission denied' issues
-* Add support for IPv6 single stack clusters
+* Add support for dual stack and IPv6 single stack clusters in readiness/liveness probes
 
 ## [10.3.0]
 * Upgrade SonarQube to 10.3.0
