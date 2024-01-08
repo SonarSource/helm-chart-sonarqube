@@ -9,6 +9,7 @@ All changes to this chart will be documented in this file.
 * Introduce `ApplicationNodes.podDisruptionBudget` and `searchNodes.podDisruptionBudget` and deprecate `ApplicationNodes.podDistributionBudget` and `searchNodes.podDistributionBudget`.
 * Update the security contexts to use root as group ID
 * Add support for IPv6 single stack clusters
+* Add support for dual stack and IPv6 single stack clusters in readiness/liveness probes
 
 ## [10.3.0]
 * Upgrade SonarQube to 10.3.0

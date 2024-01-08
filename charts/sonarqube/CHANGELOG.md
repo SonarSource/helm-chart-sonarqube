@@ -8,6 +8,7 @@ All changes to this chart will be documented in this file.
 * Add revisionHistoryLimit configuration for SonarQube application Deployment ReplicaSets & StatefulSets
 * Update the security contexts to use root as group ID
 * Add support for IPv6 single stack clusters
+* Add support for dual stack and IPv6 single stack clusters in readiness/liveness probes
 
 ## [10.3.0]
 * Upgrade SonarQube to 10.3.0
