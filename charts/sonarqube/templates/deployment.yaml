@@ -16,6 +16,7 @@ metadata:
     app.kubernetes.io/version: {{ tpl .Values.image.tag . | quote }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
       app: {{ template "sonarqube.name" . }}

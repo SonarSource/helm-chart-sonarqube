@@ -16,6 +16,7 @@ metadata:
     app.kubernetes.io/version: {{ .Values.ApplicationNodes.image.tag | quote }}
 spec:
   replicas: {{ .Values.ApplicationNodes.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   strategy:
     type: Recreate
   selector:
