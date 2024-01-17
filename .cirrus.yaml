@@ -3,6 +3,7 @@ env:
   NIGHTLY_CRON: 'nightly-cron'
   DOCKER_USERNAME: VAULT[development/kv/data/docker/sonardockerrw data.username]
   DOCKER_PASSWORD: VAULT[development/kv/data/docker/sonardockerrw data.access_token_rwd]
+  KUBE_VERSION: 1.28.0
 
 except_nightly_cron: &EXCEPT_ON_NIGHTLY_CRON
   only_if: $CIRRUS_CRON != $NIGHTLY_CRON
@@ -43,6 +44,25 @@ clone_script_template: &CLONE_SCRIPT_TEMPLATE
       git reset --hard $CIRRUS_CHANGE_IN_REPO
     fi
 
+chart_static_compatibility_test_task:
+  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
+  timeout_in: 30m
+  eks_container:
+    <<: *CONTAINER_TEMPLATE
+    cpu: 1
+    memory: 1Gb
+  <<: *CLONE_SCRIPT_TEMPLATE
+  script:
+    - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+    - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube
+    - helm dependency build
+    - ../../.cirrus/unit_helm_compatibility_test.sh
+    - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube-dce
+    - helm dependency build
+    - ../../.cirrus/unit_helm_compatibility_test.sh    
+
 chart_testing_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   timeout_in: 30m
@@ -74,6 +94,8 @@ chart_testing_task:
     - ct install --config test.yaml --all
   artifacthub_lint_script:
     - ah lint
+  depends_on:
+    - chart_static_compatibility_test
 
 chart_packaging_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE

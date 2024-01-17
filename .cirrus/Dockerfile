@@ -17,6 +17,8 @@ ARG AH_VERSION=1.16.0
 ARG AH_CHECKSUM="d5955b409361922f609c261bf4b124c4d8ecd294cf85e5fee11c2ba774d45366"
 ARG YQ_VERSION=4.35.2
 ARG YQ_CHECKSUM="8afd786b3b8ba8053409c5e7d154403e2d4ed4cf3e93c237462dc9ef75f38c8d"
+ARG KUBECONFORM_VERSION=0.6.4
+ARG KUBECONFORM_CHECKSUM="2b4ebeaa4d5ac4843cf8f7b7e66a8874252b6b71bc7cbfc4ef1cbf85acec7c07"
 
 ENV HELM_BASE_URL="https://get.helm.sh"
 ENV HELM_TAR_FILE="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
@@ -92,6 +94,14 @@ RUN set -eux; \
     chmod +x ./yq_linux_amd64 ; \
     mv ./yq_linux_amd64 /usr/bin/yq
 
+RUN set -eux; \
+    curl -LO https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz ; \
+    echo "${KUBECONFORM_CHECKSUM}  kubeconform-linux-amd64.tar.gz" | sha256sum -c ; \
+    tar -xf kubeconform-linux-amd64.tar.gz ; \
+    chmod +x ./kubeconform ; \
+    mv ./kubeconform /usr/bin/kubeconform ; \
+    rm kubeconform-linux-amd64.tar.gz
+
 COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
-COPY --from=tools /usr/bin/gh /usr/local/bin/gh
+COPY --from=tools /usr/local/bin/gh /usr/local/bin/gh
 COPY --from=tools /home/sonarsource/.m2/settings-public.xml /root/.m2/settings-public.xml
