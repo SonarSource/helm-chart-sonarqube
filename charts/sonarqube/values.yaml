@@ -38,16 +38,16 @@ image:
 
 # Set security context for sonarqube pod
 securityContext:
-  fsGroup: 1000
+  fsGroup: 0
 
 # Set security context for sonarqube container
 containerSecurityContext:
-  # Sonarqube dockerfile creates sonarqube user as UID and GID 1000
+  # Sonarqube dockerfile creates sonarqube user as UID and GID 0
   # Those default are used to match pod security standard restricted as least privileged approach
   allowPrivilegeEscalation: false
   runAsNonRoot: true
   runAsUser: 1000
-  runAsGroup: 1000
+  runAsGroup: 0
   seccompProfile:
     type: RuntimeDefault
   capabilities:
@@ -207,7 +207,7 @@ initContainers:
     allowPrivilegeEscalation: false
     runAsNonRoot: true
     runAsUser: 1000
-    runAsGroup: 1000
+    runAsGroup: 0
     seccompProfile:
       type: RuntimeDefault
     capabilities:
@@ -390,7 +390,7 @@ persistence:
   accessMode: ReadWriteOnce
   size: 5Gi
   uid: 1000
-  guid: 1000
+  guid: 0
 
   ## Specify extra volumes. Refer to ".spec.volumes" specification : https://kubernetes.io/fr/docs/concepts/storage/volumes/
   volumes: []

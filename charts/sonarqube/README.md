@@ -84,7 +84,7 @@ This is achieved by setting this SecurityContext as default on **most** containe
 allowPrivilegeEscalation: false
 runAsNonRoot: true
 runAsUser: 1000
-runAsGroup: 1000
+runAsGroup: 0
 seccompProfile:
   type: RuntimeDefault
 capabilities:
@@ -223,7 +223,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                  | Description                                    | Default                                                                |
 | -------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
-| `securityContext.fsGroup`  | Group applied to mounted directories/files     | `1000`                                                                 |
+| `securityContext.fsGroup`  | Group applied to mounted directories/files     | `0`                                                                 |
 | `containerSecurityContext` | SecurityContext for container in sonarqube pod | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 
 ### Elasticsearch
@@ -395,7 +395,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `persistence.volumes`       | Specify extra volumes. Refer to ".spec.volumes" specification                | `[]`            |
 | `persistence.mounts`        | Specify extra mounts. Refer to ".spec.containers.volumeMounts" specification | `[]`            |
 | `persistence.uid`           | UID used for init-fs container                                               | `1000`          |
-| `persistence.guid`          | GUID used for init-fs container                                              | `1000`          |
+| `persistence.guid`          | GUID used for init-fs container                                              | `0`          |
 | `emptyDir`                  | Configuration of resources for `emptyDir`                                    | `{}`            |
 
 ### JDBC Overwrite
