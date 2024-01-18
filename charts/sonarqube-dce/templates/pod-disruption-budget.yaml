@@ -9,14 +9,14 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-{{ if .Values.searchNodes.podDisruptionBudget }}
+{{ if .Values.searchNodes.podDistributionBudget }}
+  {{- with .Values.searchNodes.podDistributionBudget -}}
+    {{ toYaml .  | indent 2 -}}
+  {{ end -}} 
+{{ else }}
   {{- with .Values.searchNodes.podDisruptionBudget -}}
     {{ toYaml .  | indent 2 -}}
   {{ end }}
-{{ else }}
-  {{- with .Values.searchNodes.podDistributionBudget -}}
-    {{ toYaml .  | indent 2 -}}
-  {{ end -}}
 {{ end }}
   selector:
     matchLabels:
@@ -32,14 +32,14 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
-{{ if .Values.ApplicationNodes.podDisruptionBudget }}
-  {{- with .Values.ApplicationNodes.podDisruptionBudget -}}
-    {{ toYaml .  | indent 2 -}}
-  {{ end }}
-{{ else }}
+{{ if .Values.ApplicationNodes.podDistributionBudget }}
   {{- with .Values.ApplicationNodes.podDistributionBudget -}}
     {{ toYaml .  | indent 2 -}}
   {{ end -}}
+{{ else }}
+  {{- with .Values.ApplicationNodes.podDisruptionBudget -}}
+    {{ toYaml .  | indent 2 -}}
+  {{ end }}
 {{ end }}
   selector:
     matchLabels:
