@@ -90,7 +90,7 @@ This is achieved by setting this SecurityContext as default on **most** containe
 allowPrivilegeEscalation: false
 runAsNonRoot: true
 runAsUser: 1000
-runAsGroup: 1000
+runAsGroup: 0
 seccompProfile:
   type: RuntimeDefault
 capabilities:
@@ -193,7 +193,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.replicaCount`                                | Replica count of the Search Nodes                                                     | `3`                                                                    |
 | `searchNodes.podDisruptionBudget`                         | PodDisruptionBudget for the Search Nodes                                              | `minAvailable: 2`                                                      |
 | `searchNodes.podDistributionBudget`                       | (DEPRECATED typo) PodDisruptionBudget for the Search Nodes                            | `minAvailable: 2`                                                      |
-| `searchNodes.securityContext.fsGroup`                     | Group applied to mounted directories/files on search nodes                            | `1000`                                                                 |
+| `searchNodes.securityContext.fsGroup`                     | Group applied to mounted directories/files on search nodes                            | `0`                                                                 |
 | `searchNodes.containerSecurityContext`                    | SecurityContext for search container in sonarqube pod                                 | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `searchNodes.readinessProbe.initialDelaySeconds`          | ReadinessProbe initial delay for Search Node checking                                 | `60`                                                                   |
 | `searchNodes.readinessProbe.periodSeconds`                | ReadinessProbe period between checking Search Node                                    | `30`                                                                   |
@@ -217,7 +217,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.persistence.accessMode`                      | Volumes access mode to be set                                                         | `ReadWriteOnce`                                                        |
 | `searchNodes.persistence.size`                            | Size of the PVC                                                                       | `5G`                                                                   |
 | `searchNodes.persistence.uid`                             | UID used for init-fs container                                                        | `1000`                                                                 |
-| `searchNodes.persistence.guid`                            | GUID used for init-fs container                                                       | `1000`                                                                 |
+| `searchNodes.persistence.guid`                            | GUID used for init-fs container                                                       | `0`                                                                 |
 | `searchNodes.extraContainers`                             | Array of extra containers to run alongside                                            | `[]`                                                                   |
 
 ### App Nodes Configuration
@@ -238,7 +238,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.replicaCount`                                  | Replica count of the app Nodes                                                                                                                                                            | `2`                                                                    |
 | `ApplicationNodes.podDisruptionBudget`                           | PodDisruptionBudget for the App Nodes                                                                                                                                                     | `minAvailable: 1`                                                      |
 | `ApplicationNodes.podDistributionBudget`                         | (DEPRECATED typo) PodDisruptionBudget for the App Nodes                                                                                                                                   | `minAvailable: 1`                                                      |
-| `ApplicationNodes.securityContext.fsGroup`                       | Group applied to mounted directories/files on app nodes                                                                                                                                   | `1000`                                                                 |
+| `ApplicationNodes.securityContext.fsGroup`                       | Group applied to mounted directories/files on app nodes                                                                                                                                   | `0`                                                                 |
 | `ApplicationNodes.containerSecurityContext`                      | SecurityContext for app container in sonarqube pod                                                                                                                                        | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `ApplicationNodes.readinessProbe.initialDelaySeconds`            | ReadinessProbe initial delay for app Node checking                                                                                                                                        | `60`                                                                   |
 | `ApplicationNodes.readinessProbe.periodSeconds`                  | ReadinessProbe period between checking app Node                                                                                                                                           | `30`                                                                   |

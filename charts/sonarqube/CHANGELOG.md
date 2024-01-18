@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Improve the description of deprecated `jvmOpts` and `jvmCeOpts` values
 * Run the initSysctl init-container as root to prevent 'permission denied' issues
 * Add revisionHistoryLimit configuration for SonarQube application Deployment ReplicaSets & StatefulSets
+* Update the security contexts to use root as group ID
 
 ## [10.3.0]
 * Upgrade SonarQube to 10.3.0

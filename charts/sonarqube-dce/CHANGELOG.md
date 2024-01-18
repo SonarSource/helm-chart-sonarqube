@@ -7,6 +7,7 @@ All changes to this chart will be documented in this file.
 * Run the initSysctl init-container as root to prevent 'permission denied' issues
 * Add revisionHistoryLimit configuration for SonarQube application Deployment ReplicaSets
 * Introduce `ApplicationNodes.podDisruptionBudget` and `searchNodes.podDisruptionBudget` and deprecate `ApplicationNodes.podDistributionBudget` and `searchNodes.podDistributionBudget`.
+* Update the security contexts to use root as group ID
 
 ## [10.3.0]
 * Upgrade SonarQube to 10.3.0
