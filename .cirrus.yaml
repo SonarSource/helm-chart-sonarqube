@@ -85,13 +85,7 @@ chart_testing_task:
     - export DOCKER_HOST=tcp://localhost:2375
     - ./.cirrus/wait_for_kind.sh
   script:
-    - helm repo add clustersecret https://charts.clustersecret.io/
-    - helm install clustersecret clustersecret/cluster-secret -n clustersecret --create-namespace
-    - DOCKER_CONFIG=$(kubectl create secret docker-registry unused --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run -o json | jq '.data.".dockerconfigjson"')
-    - sed -i "s|DOCKER_CONFIG_JSON|${DOCKER_CONFIG}|g" .cirrus/docker_hub_test_pull_secret.yaml
-    - kubectl apply -f .cirrus/docker_hub_test_pull_secret.yaml
-    - ct lint --config test.yaml --all
-    - ct install --config test.yaml --all
+    - ./.cirrus/chart_testing_task.sh
   artifacthub_lint_script:
     - ah lint
   depends_on:
