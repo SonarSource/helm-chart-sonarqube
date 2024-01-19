@@ -6,7 +6,7 @@ All changes to this chart will be documented in this file.
 * Improve the description of deprecated `ApplicationNodes.jvmOpts` and `ApplicationNodes.jvmCeOpts` values
 * Run the initSysctl init-container as root to prevent 'permission denied' issues
 * Add revisionHistoryLimit configuration for SonarQube application Deployment ReplicaSets
-* Introduce `ApplicationNodes.podDistributionBudget` and `searchNodes.podDistributionBudget` in place of deprecated `ApplicationNodes.podDistributionBudget` and `searchNodes.podDistributionBudget`.
+* Introduce `ApplicationNodes.podDisruptionBudget` and `searchNodes.podDisruptionBudget` and deprecate `ApplicationNodes.podDistributionBudget` and `searchNodes.podDistributionBudget`.
 
 ## [10.3.0]
 * Upgrade SonarQube to 10.3.0
