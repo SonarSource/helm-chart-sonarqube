@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eoUu pipefail
+set -euo pipefail
 
 if [[ -n "${DOCKER_USERNAME}" ]] && [[ -n "${DOCKER_PASSWORD}" ]]; then
     helm repo add clustersecret https://charts.clustersecret.io/
