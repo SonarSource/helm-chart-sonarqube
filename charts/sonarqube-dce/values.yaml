@@ -58,9 +58,13 @@ searchNodes:
 
   replicaCount: 3
 
-  # Pod Distribution Budget for search nodes
-  podDistributionBudget:
+  # Pod Disruption Budget for search nodes
+  podDisruptionBudget:
     minAvailable: 2
+
+  # (DEPRECATED typo) Please use searchNodes.podDisruptionBudget instead
+  # podDistributionBudget:
+  #   minAvailable: 2
 
   # Set security context for sonarqube search pods
   securityContext:
@@ -175,9 +179,13 @@ ApplicationNodes:
   # How many revisions to retain (Deployment ReplicaSets)
   revisionHistoryLimit: 10
 
-  # Pod Distribution Budget for app nodes
-  podDistributionBudget:
+  # Pod Disruption Budget for app nodes
+  podDisruptionBudget:
     minAvailable: 1
+
+  # (DEPRECATED typo) Please use searchNodes.podDisruptionBudget instead
+  # podDistributionBudget:
+  #   minAvailable: 2
 
   # Set security context for sonarqube app pods
   securityContext:
