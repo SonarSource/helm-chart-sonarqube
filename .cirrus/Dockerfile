@@ -1,5 +1,5 @@
-ARG CIRRUS_AWS_ACCOUNT
-FROM ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j11-latest as tools
+# ARG CIRRUS_AWS_ACCOUNT
+# FROM ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j11-latest as tools
 
 FROM docker:20.10
 
@@ -102,6 +102,6 @@ RUN set -eux; \
     mv ./kubeconform /usr/bin/kubeconform ; \
     rm kubeconform-linux-amd64.tar.gz
 
-COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
-COPY --from=tools /usr/local/bin/gh /usr/local/bin/gh
-COPY --from=tools /home/sonarsource/.m2/settings-public.xml /root/.m2/settings-public.xml
+# COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
+# COPY --from=tools /usr/local/bin/gh /usr/local/bin/gh
+# COPY --from=tools /home/sonarsource/.m2/settings-public.xml /root/.m2/settings-public.xml

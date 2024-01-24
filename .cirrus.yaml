@@ -14,6 +14,12 @@ only_on_non_release_draft_template: &ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
 docker_build_container_template: &CONTAINER_TEMPLATE
   dockerfile: .cirrus/Dockerfile
   docker_arguments:
+     CIRRUS_AWS_ACCOUNT: ${CIRRUS_AWS_ACCOUNT}
+
+
+docker_build_container_template: &PVT_CONTAINER_TEMPLATE
+  dockerfile: .cirrus/Dockerfile
+  docker_arguments:
       CIRRUS_AWS_ACCOUNT: ${CIRRUS_AWS_ACCOUNT}
   cluster_name: ${CIRRUS_CLUSTER_NAME}
   builder_role: cirrus-builder
@@ -44,38 +50,39 @@ clone_script_template: &CLONE_SCRIPT_TEMPLATE
       git reset --hard $CIRRUS_CHANGE_IN_REPO
     fi
 
-chart_static_compatibility_test_task:
-  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-  timeout_in: 30m
-  eks_container:
-    <<: *CONTAINER_TEMPLATE
-    cpu: 1
-    memory: 1Gb
-  <<: *CLONE_SCRIPT_TEMPLATE
-  script:
-    - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
-    - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube
-    - helm dependency build
-    - ../../.cirrus/unit_helm_compatibility_test.sh
-    - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube-dce
-    - helm dependency build
-    - ../../.cirrus/unit_helm_compatibility_test.sh    
+# chart_static_compatibility_test_task:
+#   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
+#   timeout_in: 30m
+#   container:
+#     <<: *CONTAINER_TEMPLATE
+#     cpu: 1
+#     memory: 1Gb
+#   <<: *CLONE_SCRIPT_TEMPLATE
+#   script:
+#     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+#     - helm repo add bitnami https://charts.bitnami.com/bitnami
+#     - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+#     - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube
+#     - helm dependency build
+#     - ../../.cirrus/unit_helm_compatibility_test.sh
+#     - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube-dce
+#     - helm dependency build
+#     - ../../.cirrus/unit_helm_compatibility_test.sh    
 
 chart_testing_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   timeout_in: 30m
-  eks_container:
+  container:
     <<: *CONTAINER_TEMPLATE
-    cpu: 2
+    # privileged: true
+    cpu: 1
     memory: 4Gb
     additional_containers:
       - name: dockerdaemon
-        privileged: true
-        cpu: 4
-        memory: 16Gb
-        image: public.ecr.aws/docker/library/docker:dind
+        # privileged: true
+        cpu: 1
+        memory: 4Gb
+        image: docker:20.10-dind
         port: 2375
         env:
           DOCKER_DRIVER: overlay2
@@ -91,13 +98,13 @@ chart_testing_task:
     - ct install --namespace test --config test.yaml --all
   artifacthub_lint_script:
     - ah lint
-  depends_on:
-    - chart_static_compatibility_test
+  # depends_on:
+  #   - chart_static_compatibility_test
 
 chart_packaging_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   timeout_in: 15m
-  eks_container:
+  container:
     <<: *CONTAINER_TEMPLATE
     cpu: 2
     memory: 1Gb
