@@ -94,6 +94,8 @@ RUN set -eux; \
     chmod +x ./yq_linux_amd64 ; \
     mv ./yq_linux_amd64 /usr/bin/yq
 
+RUN echo "test"
+
 RUN set -eux; \
     curl -LO https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz ; \
     echo "${KUBECONFORM_CHECKSUM}  kubeconform-linux-amd64.tar.gz" | sha256sum -c ; \
