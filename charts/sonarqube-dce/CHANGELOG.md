@@ -8,6 +8,7 @@ All changes to this chart will be documented in this file.
 * Add revisionHistoryLimit configuration for SonarQube application Deployment ReplicaSets
 * Introduce `ApplicationNodes.podDisruptionBudget` and `searchNodes.podDisruptionBudget` and deprecate `ApplicationNodes.podDistributionBudget` and `searchNodes.podDistributionBudget`.
 * Update the security contexts to use root as group ID
+* Fix empty ingress annotations in values
 
 ## [10.3.0]
 * Upgrade SonarQube to 10.3.0
