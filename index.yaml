@@ -4,6 +4,76 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
+          description: "Upgrade SonarQube to 10.4.0"
+        - kind: changed
+          description: "Update Chart's version to 10.4.0"
+        - kind: fixed
+          description: "Improve the description of deprecated 'jvmOpts' and 'jvmCeOpts' values"
+        - kind: fixed
+          description: "Run the initSysctl init-container as root to prevent 'permission denied' issues"
+        - kind: changed
+          description: "Add revisionHistoryLimit configuration for SonarQube application Deployment ReplicaSets & StatefulSets"
+        - kind: changed
+          description: "Update the security contexts to use root as group ID"
+        - kind: changed
+          description: "Fix empty ingress annotations in values"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube
+          image: sonarqube:10.4.0-community
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
+    apiVersion: v2
+    appVersion: 10.4.0
+    created: "2024-02-06T09:52:06.352709996Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+      version: 10.15.0
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.8.3
+    description: SonarQube is a self-managed, automatic code review tool that systematically
+      helps you deliver clean code. As a core element of our Sonar solution, SonarQube
+      integrates into your existing workflow and detects issues in your code to help
+      you perform continuous code inspections of your projects. The tool analyses
+      30+ different programming languages and integrates into your CI pipeline and
+      DevOps platform to ensure that your code meets high-quality standards.
+    digest: 9f2f7c0bce32627a91afb1aed07ab4a5b812d0ebe773a80fbc36eeaea9c8fdce
+    home: https://www.sonarqube.org/
+    icon: https://raw.githubusercontent.com/SonarSource/sonarqube-static-resources/master/helm/SonarQubeLogo.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: leo.geoffroy+helm@sonarsource.com
+      name: leo-geoffroy-sonarsource
+    - email: carmine.vassallo@sonarsource.com
+      name: carminevassallo
+    - email: jeremy.cotineau@sonarsource.com
+      name: jCOTINEAU
+    - email: davi.koscianski-vidal@sonarsource.com
+      name: davividal
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/helm-chart-sonarqube
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-10.4.0-sonarqube-dce-10.4.0/sonarqube-10.4.0+2288.tgz
+    version: 10.4.0+2288
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
           description: "Upgrade SonarQube to 10.3.0"
         - kind: changed
           description: "Update Chart's version to 10.3.0"
@@ -1632,6 +1702,80 @@ entries:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-1.1.1+98.tgz
     version: 1.1.1+98
   sonarqube-dce:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "Upgrade SonarQube to 10.4.0"
+        - kind: changed
+          description: "Update Chart's version to 10.4.0"
+        - kind: fixed
+          description: "Improve the description of deprecated 'ApplicationNodes.jvmOpts' and 'ApplicationNodes.jvmCeOpts' values"
+        - kind: fixed
+          description: "Run the initSysctl init-container as root to prevent 'permission denied' issues"
+        - kind: changed
+          description: "Add revisionHistoryLimit configuration for SonarQube application Deployment ReplicaSets"
+        - kind: deprecated
+          description: "Introduce `ApplicationNodes.podDisruptionBudget` and `searchNodes.podDisruptionBudget` and deprecate `ApplicationNodes.podDistributionBudget` and `searchNodes.podDistributionBudget`."
+        - kind: changed
+          description: "Update the security contexts to use root as group ID"
+        - kind: changed
+          description: "Fix empty ingress annotations in values"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube-app
+          image: sonarqube:10.4.0-datacenter-app
+        - name: sonarqube-search
+          image: sonarqube:10.4.0-datacenter-search
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
+    apiVersion: v2
+    appVersion: 10.4.0
+    created: "2024-02-06T09:52:06.361877246Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+      version: 10.15.0
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.8.3
+    description: SonarQube is a self-managed, automatic code review tool that systematically
+      helps you deliver clean code. As a core element of our Sonar solution, SonarQube
+      integrates into your existing workflow and detects issues in your code to help
+      you perform continuous code inspections of your projects. The tool analyses
+      30+ different programming languages and integrates into your CI pipeline and
+      DevOps platform to ensure that your code meets high-quality standards.
+    digest: 16e9dd9ddaec170770f2de501922b6ae80417afaed6452806817bf699d0403e6
+    home: https://www.sonarqube.org/
+    icon: https://raw.githubusercontent.com/SonarSource/sonarqube-static-resources/master/helm/SonarQubeLogo.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: leo.geoffroy+helm@sonarsource.com
+      name: leo-geoffroy-sonarsource
+    - email: carmine.vassallo@sonarsource.com
+      name: carminevassallo
+    - email: jeremy.cotineau@sonarsource.com
+      name: jCOTINEAU
+    - email: davi.koscianski-vidal@sonarsource.com
+      name: davividal
+    name: sonarqube-dce
+    sources:
+    - https://github.com/SonarSource/helm-chart-sonarqube
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-10.4.0-sonarqube-dce-10.4.0/sonarqube-dce-10.4.0+2288.tgz
+    version: 10.4.0+2288
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
@@ -3896,4 +4040,4 @@ entries:
     urls:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-lts-1.0.16+98.tgz
     version: 1.0.16+98
-generated: "2023-11-15T13:42:42.353504786Z"
+generated: "2024-02-06T09:52:06.342869799Z"
