@@ -93,5 +93,5 @@ RUN set -eux; \
     mv ./yq_linux_amd64 /usr/bin/yq
 
 COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
-COPY --from=tools /usr/bin/gh /usr/local/bin/gh
+COPY --from=tools /usr/local/bin/gh /usr/local/bin/gh
 COPY --from=tools /home/sonarsource/.m2/settings-public.xml /root/.m2/settings-public.xml
