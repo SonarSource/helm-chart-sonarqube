@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-KUBE_VERSION="${KUBE_VERSION:-1.28.0}"
+KUBE_VERSION="${KUBE_VERSION:-1.29.0}"
 STATIC_TEST_FOLDER='../../tests/unit-compatibility-test/'$(basename $PWD)
 YAML_SCAN_FOLDER='../../helm-chart-yaml-files/'$(basename $PWD)
 
