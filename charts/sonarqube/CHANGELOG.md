@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [10.5.0]
 * Update Chart's version to 10.5.0
+* Update nginx-ingress-controller dependency to version 4.9.1
 
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0
