@@ -23,6 +23,9 @@ metadata:
     {{- end -}}
 {{- end }}
 spec:
+  {{- if .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  {{- end }}
   rules:
   {{- range .Values.ingress.hosts }}
   - host: {{ printf "%s" .name }}
