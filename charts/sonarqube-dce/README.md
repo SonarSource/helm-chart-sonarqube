@@ -1,6 +1,6 @@
 # SonarQube
 
-Code better in up to 27 languages. Improve Code Quality and Code Security throughout your workflow. [SonarQube](https://www.sonarqube.org/) can detect Bugs, Vulnerabilities, Security Hotspots and Code Smells and give you the guidance to fix them.
+Code better in up to 27 languages. Improve Code Quality and Code Security throughout your workflow. [SonarQube](https://www.sonarsource.com/products/sonarqube/) can detect Bugs, Vulnerabilities, Security Hotspots, and Code Smells plus gives you the guidance to fix them.
 
 ## Introduction
 
@@ -20,7 +20,7 @@ Supported Kubernetes Versions: From `1.24` to `1.29`
 
 ## Installing the chart
 
-> **_NOTE:_**  Please refer to [the official page](https://docs.sonarqube.org/latest/setup/sonarqube-cluster-on-kubernetes/) for further information on how to install and tune the helm chart specifications.
+> **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/) for further information on how to install and tune the helm chart specifications.
 
 Prior to installing the chart, please ensure that the `ApplicationNodes.jwtSecret` value is set properly with a HS256 key encoded with base64. In the following, an example on how to generate this key on a Unix system:
 ```bash
@@ -54,7 +54,7 @@ helm upgrade --install -n sonarqube-dce --version ~7 sonarqube sonarqube/sonarqu
 
 ## How to use it
 
-Take some time to read the Deploy [SonarQube on Kubernetes](https://docs.sonarqube.org/latest/setup/sonarqube-cluster-on-kubernetes/) page.
+Take some time to read the Deploy [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/) page.
 SonarQube deployment on Kubernetes has been tested with the recommendations and constraints documented there, and deployment has some limitations.
 
 ## Uninstalling the chart
@@ -70,7 +70,7 @@ $ helm delete kindly-newt
 
 ## Prerequisites and suggested settings for production
 
-Please read the official documentation prerequisites [here](https://docs.sonarqube.org/latest/requirements/prerequisites-and-overview/).
+Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube/latest/requirements/prerequisites-and-overview/).
 
 ### Kubernetes - Pod Security Standards
 
@@ -288,7 +288,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.plugins.securityContext`                       | Security context for the container to download plugins                                                                                                                                    | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `ApplicationNodes.jvmOpts`                                       | (DEPRECATED) Values to add to `SONAR_WEB_JAVAOPTS`. Please set directly `SONAR_WEB_JAVAOPTS` or `sonar.web.javaOpts`                                                                      | `""`                                                                   |
 | `ApplicationNodes.jvmCeOpts`                                     | (DEPRECATED) Values to add to `SONAR_CE_JAVAOPTS`. Please set directly `SONAR_CE_JAVAOPTS` or `sonar.ce.javaOpts`                                                                         | `""`                                                                   |
-| `ApplicationNodes.jwtSecret`                                     | A HS256 key encoded with base64 (*This value must be set before installing the chart, see [the documentation](https://docs.sonarqube.org/latest/setup/sonarqube-cluster-on-kubernetes/)*) | `""`                                                                   |
+| `ApplicationNodes.jwtSecret`                                     | A HS256 key encoded with base64 (*This value must be set before installing the chart, see [the documentation](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/)*) | `""`                                                                   |
 | `ApplicationNodes.existingJwtSecret`                             | secret that contains the `jwtSecret`                                                                                                                                                      | `nil`                                                                  |
 | `ApplicationNodes.resources.requests.memory`                     | memory request for app Nodes                                                                                                                                                              | `2Gi`                                                                  |
 | `ApplicationNodes.resources.requests.cpu`                        | cpu request for app Nodes                                                                                                                                                                 | `400m`                                                                 |
