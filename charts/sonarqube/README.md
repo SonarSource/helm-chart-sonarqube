@@ -1,6 +1,6 @@
 # SonarQube
 
-Code better in up to 27 languages. Improve Code Quality and Code Security throughout your workflow. [SonarQube](https://www.sonarqube.org/) can detect Bugs, Vulnerabilities, Security Hotspots and Code Smells and give you the guidance to fix them.
+Code better in up to 27 languages. Improve Code Quality and Code Security throughout your workflow. [SonarQube](https://www.sonarsource.com/products/sonarqube/) can detect Bugs, Vulnerabilities, Security Hotspots and Code Smells and give you the guidance to fix them.
 
 ## Introduction
 
@@ -48,7 +48,7 @@ To upgrade from the old and unmaintained [sonarqube-lts chart](https://artifacth
 
 ## How to use it
 
-Take some time to read the Deploy on [SonarQube on Kubernetes](https://docs.sonarqube.org/latest/setup/sonarqube-on-kubernetes/) page.
+Take some time to read the Deploy on [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/sonarqube/) page.
 SonarQube deployment on Kubernetes has been tested with the recommendations and constraints documented there, and deployment has some limitations.
 
 ## Uninstalling the chart
@@ -64,7 +64,7 @@ $ helm delete kindly-newt
 
 ## Prerequisites and suggested settings for production
 
-Please read the official documentation prerequisites [here](https://docs.sonarqube.org/latest/requirements/prerequisites-and-overview/).
+Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube/latest/requirements/prerequisites-and-overview/).
 
 ### Kubernetes - Pod Security Standards
 
@@ -123,7 +123,7 @@ Nonetheless, if you intend to run a production-grade SonarQube please follow the
 
 ## Upgrade
 
-1. Read through the [SonarQube Upgrade Guide](https://docs.sonarqube.org/latest/setup/upgrading/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
+1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/upgrade-the-server/roadmap/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
 2. Change the SonarQube version on `values.yaml`
 3. Redeploy SonarQube with the same helm chart (see [Install instructions](#installing-the-chart))
 4. Browse to http://yourSonarQubeServerURL/setup and follow the setup instructions
@@ -131,7 +131,7 @@ Nonetheless, if you intend to run a production-grade SonarQube please follow the
 
 ### Upgrade from the old sonarqube-lts to this chart
 
-Please refer to the Helm upgrade section accessible [here](https://docs.sonarqube.org/latest/setup-and-upgrade/upgrade-the-server/upgrade-guide/)
+Please refer to the Helm upgrade section accessible [here](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/upgrade-the-server/roadmap/)
 
 ## Ingress
 
