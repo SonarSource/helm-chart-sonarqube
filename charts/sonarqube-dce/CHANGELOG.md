@@ -5,6 +5,7 @@ All changes to this chart will be documented in this file.
 * Update Chart's version to 10.5.0
 * Update nginx-ingress-controller dependency to version 4.9.1
 * Fix the ingress.ingressClassName not being evaluated
+* Fix searchNodes.securityContext and ApplicationNodes.securityContext not being evaluated
 
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0

@@ -207,6 +207,8 @@ spec:
             - mountPath: /tmp
               name: tmp-dir
       {{- end }}
+      securityContext:
+        {{- toYaml .Values.searchNodes.securityContext | nindent 8 }}
       containers:
       {{- if .Values.searchNodes.extraContainers }}
         {{- toYaml .Values.searchNodes.extraContainers | nindent 8 }}
