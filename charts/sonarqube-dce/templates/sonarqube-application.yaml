@@ -202,6 +202,8 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
+      securityContext:
+        {{- toYaml .Values.ApplicationNodes.securityContext | nindent 8 }}
       containers:
       {{- if .Values.ApplicationNodes.extraContainers }}
         {{- toYaml .Values.ApplicationNodes.extraContainers | nindent 8 }}
