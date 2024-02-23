@@ -16,6 +16,6 @@ echo 'Running unit compatibility tests for Kubernetes version' $KUBE_VERSION
 for file in "$STATIC_TEST_FOLDER"/*; do
     TEST_CASE_NAME=$(basename "$file")
     echo 'Entering test for' $TEST_CASE_NAME
-    helm template --kube-version $KUBE_VERSION --dry-run --debug -f "$file" $TEST_CASE_NAME . | kubeconform --kubernetes-version $KUBE_VERSION --summary --strict
+    helm template --kube-version $KUBE_VERSION --dry-run --debug -f "$file" $TEST_CASE_NAME . | kubeconform --kubernetes-version $KUBE_VERSION --summary --strict -schema-location default -schema-location "../../tests/test-crds/app.k8s.io/application_v1beta1.json" 
     echo 'Ending test for' $TEST_CASE_NAME
 done

@@ -18,6 +18,7 @@ export VERSION=10.4.0
 export MINOR_VERSION=$(echo $VERSION | cut -d. -f1,2)
 # Deployer does not care about patch version. see [here](https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/blob/master/docs/building-deployer-helm.md#images-in-staging-gcr)
 docker build -f google-cloud-marketplace-k8s-app/Dockerfile --tag $REGISTRY/$APP_NAME/deployer:$MINOR_VERSION .
+docker push $REGISTRY/$APP_NAME/deployer:$MINOR_VERSION
 ```
 
 With the deployer being built, one can deploy the app as is, with 

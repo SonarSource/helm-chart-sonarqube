@@ -43,18 +43,19 @@ properties:
     description: A HS256 key encoded with base64 (This value must be set before installing the app, see documentation for more details)
     maxLength: 44
     type: string
+    default: dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=
     x-google-marketplace:
       type: MASKED_FIELD
   postgresql.enabled:
     title: Enable embedeed PostgreSQL
     description: If true, PostgreSQL will be installed (not recommended for production use case)
     type: boolean
-    default: false
+    default: true
   jdbcOverwrite.enable:
     title: Enable external DB configuration
     description: If true, the JDBC URL, username and password will be used to connect to the database. Make sure enable embedeed PostgreSQL is set to false
     type: boolean
-    default: true
+    default: false
   jdbcOverwrite.jdbcUrl:
     title: JDBC URL
     description: The JDBC URL to connect to the database
@@ -70,13 +71,7 @@ properties:
     description: The password to connect to the database
     type: string
     default: ''
-  gcp_marketplace:
-    title: GCP Marketplace enabled
-    description: this flag indicate to the chart that it runs as a gcp marketplace application
-    type: string
-    default: 'true'
-    enum:
-      - 'true'
+
 required:
 - name
 - namespace
