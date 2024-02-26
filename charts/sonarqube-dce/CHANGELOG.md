@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Update nginx-ingress-controller dependency to version 4.9.1
 * Fix the ingress.ingressClassName not being evaluated
 * Fix searchNodes.securityContext and ApplicationNodes.securityContext not being evaluated
+* Fix duplicated `ApplicationNodes.resources` parameters in the README
 * Add `gcp_marketplace` value, implementing compatibility with google cloud marketplace app
 
 ## [10.4.0]
