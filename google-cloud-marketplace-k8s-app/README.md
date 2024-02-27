@@ -25,8 +25,6 @@ With the deployer being built, one can deploy the app as is, with
 
 ```shell
 # make sure the namespace has been created already.
-export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64)
-
 mpdev install \
   --deployer=$REGISTRY/$APP_NAME/deployer:$MINOR_VERSION \
   --parameters='{"name": "sonarqube-dce-gcapp-test", "namespace": "test-ns","ApplicationNodes.jwtSecret": "dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=", "postgresql.enabled": true, "jdbcOverwrite.enable": false }'
