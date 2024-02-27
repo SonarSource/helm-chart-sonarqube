@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.4.1]
+* Upgrade SonarQube to 10.4.1
+* Update Chart's version to 10.4.1
+
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0
 * Update Chart's version to 10.4.0
