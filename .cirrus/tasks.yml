@@ -7,7 +7,7 @@ env:
   DOCKER_GCLOUD_SA_KEY: VAULT[development/team/sonarqube/kv/data/gcp-marketplace-registry-staging data.key]
   GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider
   GCLOUD_PRODUCT_NAME: sonarqube-dce
-  TAG: 10.4.0
+  GCLOUD_TAG: 10.4.0
 
 except_nightly_cron: &EXCEPT_ON_NIGHTLY_CRON
   only_if: $CIRRUS_CRON != $NIGHTLY_CRON
@@ -191,10 +191,10 @@ trigger_gcp_pre_prod_deployer_release_task: &TRIGGER_GCP_PRE_PROD_DEPLOYER_RELEA
     - export DOCKER_GCLOUD_PASSWORD=$(echo ${DOCKER_GCLOUD_SA_KEY} | base64 -d)
     - docker login -u _json_key -p "$DOCKER_GCLOUD_PASSWORD" https://${GCLOUD_REGISTRY}
   tag_and_promote_script:
-    - export CURRENT_MINOR_VERSION=$(echo ${TAG} | cut -d '.' -f 1,2)
-    - docker build -f google-cloud-marketplace-k8s-app/Dockerfile --tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} .
-    - docker tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${TAG}
-    - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${TAG}
+    - export CURRENT_MINOR_VERSION=$(echo ${GCLOUD_TAG} | cut -d '.' -f 1,2)
+    - docker build -f google-cloud-marketplace-k8s-app/Dockerfile --build-arg REGISTRY=${GCLOUD_REGISTRY} --build-arg TAG=${GCLOUD_TAG} --tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} .
+    - docker tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${GCLOUD_TAG}
+    - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${GCLOUD_TAG}
     - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION}
 
 trigger_gcp_prod_app_release_task:
