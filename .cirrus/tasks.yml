@@ -4,6 +4,10 @@ env:
   DOCKER_USERNAME: VAULT[development/kv/data/docker/sonardockerrw data.username]
   DOCKER_PASSWORD: VAULT[development/kv/data/docker/sonardockerrw data.access_token_rwd]
   KUBE_VERSION: 1.29.0
+  DOCKER_GCLOUD_SA_KEY: VAULT[development/team/sonarqube/kv/data/gcp-marketplace-registry-staging data.key]
+  GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider
+  GCLOUD_PRODUCT_NAME: sonarqube-dce
+  TAG: 10.4.0
 
 except_nightly_cron: &EXCEPT_ON_NIGHTLY_CRON
   only_if: $CIRRUS_CRON != $NIGHTLY_CRON
@@ -179,12 +183,7 @@ vm_instance_template: &VM_TEMPLATE
   region: eu-central-1
   subnet_id: ${CIRRUS_AWS_SUBNET}
 
-trigger_gcp_deployer_release_task:
-  env:
-    DOCKER_GCLOUD_SA_KEY: VAULT[development/team/sonarqube/kv/data/gcp-marketplace-registry-staging data.key]
-    GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider
-    GCLOUD_PRODUCT_NAME: sonarqube-dce
-    TAG: 10.4.0
+trigger_gcp_pre_prod_deployer_release_task: &TRIGGER_GCP_PRE_PROD_DEPLOYER_RELEASE_TASK
   only_if: $TRIGGER == "PUSH_DEPLOYER"
   ec2_instance:
     <<: *VM_TEMPLATE
@@ -197,3 +196,10 @@ trigger_gcp_deployer_release_task:
     - docker tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${TAG}
     - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${TAG}
     - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION}
+
+trigger_gcp_prod_app_release_task:
+  <<: *TRIGGER_GCP_PRE_PROD_DEPLOYER_RELEASE_TASK
+  only_if: $TRIGGER == "PUSH_PROD_DEPLOYER"
+  env:
+    GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider
+    GCLOUD_PRODUCT_NAME: sonarqube-dce-prod
