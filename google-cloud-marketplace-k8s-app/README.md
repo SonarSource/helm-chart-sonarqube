@@ -14,8 +14,8 @@ in order to build the deployer, one must be at the top level of this repository 
 # make sure you are on a staging account
 export REGISTRY=gcr.io/$(gcloud config get-value project | tr ':' '/')
 export APP_NAME=sonarqube-dce
-export VERSION=10.4.0
-export MINOR_VERSION=$(echo $VERSION | cut -d. -f1,2)
+export TAG=10.4.0
+export MINOR_VERSION=$(echo $TAG | cut -d. -f1,2)
 # Deployer does not care about patch version. see [here](https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/blob/master/docs/building-deployer-helm.md#images-in-staging-gcr)
 docker build -f google-cloud-marketplace-k8s-app/Dockerfile --tag $REGISTRY/$APP_NAME/deployer:$MINOR_VERSION .
 docker push $REGISTRY/$APP_NAME/deployer:$MINOR_VERSION

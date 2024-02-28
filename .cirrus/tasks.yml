@@ -172,3 +172,28 @@ trigger_release_task:
   on_failure:
     slack_notification_script:
       - ./.cirrus/slack-notification.sh
+
+vm_instance_template: &VM_TEMPLATE
+  image: docker-builder-v*
+  type: t2.small
+  region: eu-central-1
+  subnet_id: ${CIRRUS_AWS_SUBNET}
+
+trigger_gcp_deployer_release_task:
+  env:
+    DOCKER_GCLOUD_SA_KEY: VAULT[development/team/sonarqube/kv/data/gcp-marketplace-registry-staging data.key]
+    GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider
+    GCLOUD_PRODUCT_NAME: sonarqube-dce
+    TAG: 10.4.0
+  only_if: $TRIGGER == "PUSH_DEPLOYER"
+  ec2_instance:
+    <<: *VM_TEMPLATE
+  login_to_gcr_script:
+    - export DOCKER_GCLOUD_PASSWORD=$(echo ${DOCKER_GCLOUD_SA_KEY} | base64 -d)
+    - docker login -u _json_key -p "$DOCKER_GCLOUD_PASSWORD" https://${GCLOUD_REGISTRY}
+  tag_and_promote_script:
+    - export CURRENT_MINOR_VERSION=$(echo ${TAG} | cut -d '.' -f 1,2)
+    - docker build -f google-cloud-marketplace-k8s-app/Dockerfile --tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} .
+    - docker tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${TAG}
+    - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${TAG}
+    - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION}
