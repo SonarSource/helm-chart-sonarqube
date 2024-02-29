@@ -5,9 +5,9 @@ env:
   DOCKER_PASSWORD: VAULT[development/kv/data/docker/sonardockerrw data.access_token_rwd]
   KUBE_VERSION: 1.29.0
   DOCKER_GCLOUD_SA_KEY: VAULT[development/team/sonarqube/kv/data/gcp-marketplace-registry-staging data.key]
-  GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider
-  GCLOUD_PRODUCT_NAME: sonarqube-dce
-  GCLOUD_TAG: 10.4.1
+  GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider # This is the staging registry
+  GCLOUD_PRODUCT_NAME: sonarqube-dce-staging # This is the staging product name
+  GCLOUD_TAG: 10.5.0
 
 except_nightly_cron: &EXCEPT_ON_NIGHTLY_CRON
   only_if: $CIRRUS_CRON != $NIGHTLY_CRON
@@ -37,6 +37,12 @@ container_template: &STD_CONTAINER_TEMPLATE
   cpu: 1
   memory: 1Gb
 
+vm_instance_template: &VM_TEMPLATE
+  image: docker-builder-v*
+  type: t2.small
+  region: eu-central-1
+  subnet_id: ${CIRRUS_AWS_SUBNET}
+
 clone_script_template: &CLONE_SCRIPT_TEMPLATE
   clone_script: |
     if [ -z "$CIRRUS_PR" ]; then
@@ -48,143 +54,8 @@ clone_script_template: &CLONE_SCRIPT_TEMPLATE
       git reset --hard $CIRRUS_CHANGE_IN_REPO
     fi
 
-chart_static_compatibility_test_task:
-  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-  timeout_in: 30m
-  eks_container:
-    <<: *CONTAINER_TEMPLATE
-    cpu: 1
-    memory: 1Gb
-  <<: *CLONE_SCRIPT_TEMPLATE
-  script:
-    - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
-    - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube
-    - helm dependency build
-    - ../../.cirrus/unit_helm_compatibility_test.sh
-    - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube-dce
-    - helm dependency build
-    - ../../.cirrus/unit_helm_compatibility_test.sh    
-
-chart_testing_task:
-  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-  timeout_in: 30m
-  eks_container:
-    <<: *CONTAINER_TEMPLATE
-    cpu: 2
-    memory: 4Gb
-    additional_containers:
-      - name: dockerdaemon
-        privileged: true
-        cpu: 4
-        memory: 16Gb
-        image: public.ecr.aws/docker/library/docker:dind
-        port: 2375
-        env:
-          DOCKER_DRIVER: overlay2
-          DOCKER_TLS_CERTDIR: ""
-  <<: *CLONE_SCRIPT_TEMPLATE
-  start_kind_script:
-    - export DOCKER_HOST=tcp://localhost:2375
-    - ./.cirrus/wait_for_kind.sh
-  script:
-    - kubectl create namespace test
-    - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD}
-    - ct lint --config test.yaml --all
-    - ct install --namespace test --config test.yaml --all
-  artifacthub_lint_script:
-    - ah lint
-  depends_on:
-    - chart_static_compatibility_test
-
-chart_packaging_task:
-  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-  timeout_in: 15m
-  eks_container:
-    <<: *CONTAINER_TEMPLATE
-    cpu: 2
-    memory: 1Gb
-  <<: *CLONE_SCRIPT_TEMPLATE
-  environment_cache:
-    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
-    fingerprint_script: echo $CIRRUS_BUILD_ID
-  env:
-    GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-releases token]
-    SONARSOURCE_SIGN_KEY: VAULT[development/kv/data/sign data.key]
-    SONARSOURCE_SIGN_KEY_ID: VAULT[development/kv/data/sign data.key_id]
-    SONARSOURCE_SIGN_KEY_PASSPHRASE: VAULT[development/kv/data/sign data.passphrase]
-  key_file:
-    path: /tmp/key
-    variable_name: SONARSOURCE_SIGN_KEY
-  script:
-    - source cirrus-env BUILD
-    - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
-    - helm repo update
-    - ./.cirrus/package.sh
-    - ./.cirrus/sign_chart.sh
-  depends_on:
-    - chart_testing
-
-push_to_repox_task:
-  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-  <<: *EXCEPT_ON_NIGHTLY_CRON
-  timeout_in: 15m
-  eks_container:
-    <<: *STD_CONTAINER_TEMPLATE
-    cpu: 1
-    memory: 1Gb
-  <<: *CLONE_SCRIPT_TEMPLATE
-  environment_cache:
-    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
-    fingerprint_script: echo $CIRRUS_BUILD_ID
-  env:
-    ARTIFACTORY_URL: VAULT[development/kv/data/repox data.url]
-    ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
-  script:
-    - source cirrus-env ""
-    - ./.cirrus/upload_chart.sh
-  depends_on:
-    - chart_testing
-    - chart_packaging
-
-trigger_release_task:
-  timeout_in: 15m
-  eks_container:
-    <<: *STD_CONTAINER_TEMPLATE
-    cpu: 1
-    memory: 1Gb
-  only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_RELEASE != ""
-  <<: *CLONE_SCRIPT_TEMPLATE
-  stateful: 'true'
-  environment_cache:
-    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
-    fingerprint_script: echo $CIRRUS_BUILD_ID
-  env:
-    GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-releases token]
-    SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
-  gh_action_script: |
-    source cirrus-env RELEASE
-    CHARTS=$(find $CIRRUS_WORKING_DIR -maxdepth 1 -name "*.tgz*" -type f -exec basename "{}" ";")
-    [[ "x$CHARTS" == "x" ]] && exit 0
-    gh workflow run release.yml -f version=$CIRRUS_TAG -f buildNumber=$BUILD_NUMBER
-  depends_on:
-    - chart_packaging
-    - push_to_repox
-  on_failure:
-    slack_notification_script:
-      - ./.cirrus/slack-notification.sh
-
-vm_instance_template: &VM_TEMPLATE
-  image: docker-builder-v*
-  type: t2.small
-  region: eu-central-1
-  subnet_id: ${CIRRUS_AWS_SUBNET}
-
 trigger_gcp_pre_prod_deployer_release_task: &TRIGGER_GCP_PRE_PROD_DEPLOYER_RELEASE_TASK
-  only_if: $TRIGGER == "PUSH_DEPLOYER"
+  # only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $BRANCH == "master"
   ec2_instance:
     <<: *VM_TEMPLATE
   login_to_gcr_script:
@@ -194,7 +65,7 @@ trigger_gcp_pre_prod_deployer_release_task: &TRIGGER_GCP_PRE_PROD_DEPLOYER_RELEA
     - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
     - chmod 700 get_helm.sh
     - ./get_helm.sh
-  helm_depdency_build_script:
+  helm_dependency_build_script:
     - cd charts/sonarqube-dce
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
     - helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -207,9 +78,164 @@ trigger_gcp_pre_prod_deployer_release_task: &TRIGGER_GCP_PRE_PROD_DEPLOYER_RELEA
     - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${GCLOUD_TAG}
     - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION}
 
+chart_gcp_verify_task:
+  # only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $BRANCH == "master"
+  env:
+    BASE_FOLDER: "/root/.gcp/cache"
+    PATH: "${BASE_FOLDER}/bin:${BASE_FOLDER}/google-cloud-sdk/bin:${PATH}"
+    KUBE_CONFIG: "/tmp/kubeconfig"
+    KUBECONFIG: "${KUBE_CONFIG}"
+    HOME: "/tmp"
+  gcp_cache:
+    folder: ${BASE_FOLDER}
+    fingerprint_script: grep "gcloud" .tool-versions | awk '{print $NF}'
+    populate_script: 
+      - ./.cirrus/setup.sh
+  ec2_instance:
+    <<: *VM_TEMPLATE
+  login_script:
+    - echo ${DOCKER_GCLOUD_SA_KEY} | base64 -d > /tmp/key.json
+    - gcloud auth activate-service-account cirrusciservice@sonarqube-marketplace-provider.iam.gserviceaccount.com --key-file /tmp/key.json --project=sonarqube-marketplace-provider
+    - gcloud container clusters get-credentials sonarqube-marketplace-staging-standard --zone=europe-west1-b --project=sonarqube-marketplace-provider
+  verify_script:
+    - kubectl get pods
+    - mpdev verify --deployer=$GCLOUD_REGISTRY/$GCLOUD_PRODUCT_NAME/deployer:$GCLOUD_TAG --wait_timeout=1200 --parameters='{"name":"${GCLOUD_PRODUCT_NAME}-cirrus-test", "namespace":"test-cirrus","ApplicationNodes.jwtSecret":"dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=", "postgresql.enabled":true, "jdbcOverwrite.enable":false }'
+  depends_on:
+    - trigger_gcp_pre_prod_deployer_release
+
+# chart_static_compatibility_test_task:
+#   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
+#   timeout_in: 30m
+#   eks_container:
+#     <<: *CONTAINER_TEMPLATE
+#     cpu: 1
+#     memory: 1Gb
+#   <<: *CLONE_SCRIPT_TEMPLATE
+#   script:
+#     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+#     - helm repo add bitnami https://charts.bitnami.com/bitnami
+#     - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+#     - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube
+#     - helm dependency build
+#     - ../../.cirrus/unit_helm_compatibility_test.sh
+#     - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube-dce
+#     - helm dependency build
+#     - ../../.cirrus/unit_helm_compatibility_test.sh    
+
+# chart_testing_task:
+#   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
+#   timeout_in: 30m
+#   eks_container:
+#     <<: *CONTAINER_TEMPLATE
+#     cpu: 2
+#     memory: 4Gb
+#     additional_containers:
+#       - name: dockerdaemon
+#         privileged: true
+#         cpu: 4
+#         memory: 16Gb
+#         image: public.ecr.aws/docker/library/docker:dind
+#         port: 2375
+#         env:
+#           DOCKER_DRIVER: overlay2
+#           DOCKER_TLS_CERTDIR: ""
+#   <<: *CLONE_SCRIPT_TEMPLATE
+#   start_kind_script:
+#     - export DOCKER_HOST=tcp://localhost:2375
+#     - ./.cirrus/wait_for_kind.sh
+#   script:
+#     - kubectl create namespace test
+#     - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD}
+#     - ct lint --config test.yaml --all
+#     - ct install --namespace test --config test.yaml --all
+#   artifacthub_lint_script:
+#     - ah lint
+#   depends_on:
+#     - chart_static_compatibility_test
+
+# chart_packaging_task:
+#   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
+#   timeout_in: 15m
+#   eks_container:
+#     <<: *CONTAINER_TEMPLATE
+#     cpu: 2
+#     memory: 1Gb
+#   <<: *CLONE_SCRIPT_TEMPLATE
+#   environment_cache:
+#     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
+#     fingerprint_script: echo $CIRRUS_BUILD_ID
+#   env:
+#     GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-releases token]
+#     SONARSOURCE_SIGN_KEY: VAULT[development/kv/data/sign data.key]
+#     SONARSOURCE_SIGN_KEY_ID: VAULT[development/kv/data/sign data.key_id]
+#     SONARSOURCE_SIGN_KEY_PASSPHRASE: VAULT[development/kv/data/sign data.passphrase]
+#   key_file:
+#     path: /tmp/key
+#     variable_name: SONARSOURCE_SIGN_KEY
+#   script:
+#     - source cirrus-env BUILD
+#     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+#     - helm repo add bitnami https://charts.bitnami.com/bitnami
+#     - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+#     - helm repo update
+#     - ./.cirrus/package.sh
+#     - ./.cirrus/sign_chart.sh
+#   depends_on:
+#     - chart_testing
+
+# push_to_repox_task:
+#   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
+#   <<: *EXCEPT_ON_NIGHTLY_CRON
+#   timeout_in: 15m
+#   eks_container:
+#     <<: *STD_CONTAINER_TEMPLATE
+#     cpu: 1
+#     memory: 1Gb
+#   <<: *CLONE_SCRIPT_TEMPLATE
+#   environment_cache:
+#     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
+#     fingerprint_script: echo $CIRRUS_BUILD_ID
+#   env:
+#     ARTIFACTORY_URL: VAULT[development/kv/data/repox data.url]
+#     ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
+#   script:
+#     - source cirrus-env ""
+#     - ./.cirrus/upload_chart.sh
+#   depends_on:
+#     - chart_testing
+#     - chart_packaging
+
+# trigger_release_task:
+#   timeout_in: 15m
+#   eks_container:
+#     <<: *STD_CONTAINER_TEMPLATE
+#     cpu: 1
+#     memory: 1Gb
+#   only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_RELEASE != ""
+#   <<: *CLONE_SCRIPT_TEMPLATE
+#   stateful: 'true'
+#   environment_cache:
+#     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
+#     fingerprint_script: echo $CIRRUS_BUILD_ID
+#   env:
+#     GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-releases token]
+#     SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
+#   gh_action_script: |
+#     source cirrus-env RELEASE
+#     CHARTS=$(find $CIRRUS_WORKING_DIR -maxdepth 1 -name "*.tgz*" -type f -exec basename "{}" ";")
+#     [[ "x$CHARTS" == "x" ]] && exit 0
+#     gh workflow run release.yml -f version=$CIRRUS_TAG -f buildNumber=$BUILD_NUMBER
+#   depends_on:
+#     - chart_packaging
+#     - push_to_repox
+#   on_failure:
+#     slack_notification_script:
+#       - ./.cirrus/slack-notification.sh
+
 trigger_gcp_prod_app_release_task:
   <<: *TRIGGER_GCP_PRE_PROD_DEPLOYER_RELEASE_TASK
   only_if: $TRIGGER == "PUSH_PROD_DEPLOYER"
   env:
     GCLOUD_REGISTRY: gcr.io/sonarsource-public
     GCLOUD_PRODUCT_NAME: official-sonarqube-data-center-edition
+    GCLOUD_TAG: 1.4.1
