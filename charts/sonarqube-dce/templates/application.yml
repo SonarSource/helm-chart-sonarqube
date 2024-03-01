@@ -34,9 +34,7 @@ spec:
         For extended documentation on how to configure this app, please refer to the [official SonarQube helm chart documentation](https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce) and the main [README](https://github.com/SonarSource/helm-chart-sonarqube/blob/master/README.md)
   selector:
     matchLabels:
-      # we should use app.kubernetes.io/name, which should be set by default to all pods, but this is not working.
-      # so we rely on our own custom release field
-      release: "{{ .Release.Name }}" 
+      app.kubernetes.io/name: "{{ .Release.Name }}" 
   addOwnerRef: true
   componentKinds:
   - group: v1
