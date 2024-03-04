@@ -103,134 +103,134 @@ chart_gcp_verify_task:
   depends_on:
     - trigger_gcp_pre_prod_deployer_release
 
-# chart_static_compatibility_test_task:
-#   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-#   timeout_in: 30m
-#   eks_container:
-#     <<: *CONTAINER_TEMPLATE
-#     cpu: 1
-#     memory: 1Gb
-#   <<: *CLONE_SCRIPT_TEMPLATE
-#   script:
-#     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-#     - helm repo add bitnami https://charts.bitnami.com/bitnami
-#     - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
-#     - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube
-#     - helm dependency build
-#     - ../../.cirrus/unit_helm_compatibility_test.sh
-#     - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube-dce
-#     - helm dependency build
-#     - ../../.cirrus/unit_helm_compatibility_test.sh    
+chart_static_compatibility_test_task:
+  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
+  timeout_in: 30m
+  eks_container:
+    <<: *CONTAINER_TEMPLATE
+    cpu: 1
+    memory: 1Gb
+  <<: *CLONE_SCRIPT_TEMPLATE
+  script:
+    - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+    - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube
+    - helm dependency build
+    - ../../.cirrus/unit_helm_compatibility_test.sh
+    - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube-dce
+    - helm dependency build
+    - ../../.cirrus/unit_helm_compatibility_test.sh    
 
-# chart_testing_task:
-#   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-#   timeout_in: 30m
-#   eks_container:
-#     <<: *CONTAINER_TEMPLATE
-#     cpu: 2
-#     memory: 4Gb
-#     additional_containers:
-#       - name: dockerdaemon
-#         privileged: true
-#         cpu: 4
-#         memory: 16Gb
-#         image: public.ecr.aws/docker/library/docker:dind
-#         port: 2375
-#         env:
-#           DOCKER_DRIVER: overlay2
-#           DOCKER_TLS_CERTDIR: ""
-#   <<: *CLONE_SCRIPT_TEMPLATE
-#   start_kind_script:
-#     - export DOCKER_HOST=tcp://localhost:2375
-#     - ./.cirrus/wait_for_kind.sh
-#   script:
-#     - kubectl create namespace test
-#     - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD}
-#     - ct lint --config test.yaml --all
-#     - ct install --namespace test --config test.yaml --all
-#   artifacthub_lint_script:
-#     - ah lint
-#   depends_on:
-#     - chart_static_compatibility_test
+chart_testing_task:
+  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
+  timeout_in: 30m
+  eks_container:
+    <<: *CONTAINER_TEMPLATE
+    cpu: 2
+    memory: 4Gb
+    additional_containers:
+      - name: dockerdaemon
+        privileged: true
+        cpu: 4
+        memory: 16Gb
+        image: public.ecr.aws/docker/library/docker:dind
+        port: 2375
+        env:
+          DOCKER_DRIVER: overlay2
+          DOCKER_TLS_CERTDIR: ""
+  <<: *CLONE_SCRIPT_TEMPLATE
+  start_kind_script:
+    - export DOCKER_HOST=tcp://localhost:2375
+    - ./.cirrus/wait_for_kind.sh
+  script:
+    - kubectl create namespace test
+    - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD}
+    - ct lint --config test.yaml --all
+    - ct install --namespace test --config test.yaml --all
+  artifacthub_lint_script:
+    - ah lint
+  depends_on:
+    - chart_static_compatibility_test
 
-# chart_packaging_task:
-#   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-#   timeout_in: 15m
-#   eks_container:
-#     <<: *CONTAINER_TEMPLATE
-#     cpu: 2
-#     memory: 1Gb
-#   <<: *CLONE_SCRIPT_TEMPLATE
-#   environment_cache:
-#     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
-#     fingerprint_script: echo $CIRRUS_BUILD_ID
-#   env:
-#     GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-releases token]
-#     SONARSOURCE_SIGN_KEY: VAULT[development/kv/data/sign data.key]
-#     SONARSOURCE_SIGN_KEY_ID: VAULT[development/kv/data/sign data.key_id]
-#     SONARSOURCE_SIGN_KEY_PASSPHRASE: VAULT[development/kv/data/sign data.passphrase]
-#   key_file:
-#     path: /tmp/key
-#     variable_name: SONARSOURCE_SIGN_KEY
-#   script:
-#     - source cirrus-env BUILD
-#     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-#     - helm repo add bitnami https://charts.bitnami.com/bitnami
-#     - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
-#     - helm repo update
-#     - ./.cirrus/package.sh
-#     - ./.cirrus/sign_chart.sh
-#   depends_on:
-#     - chart_testing
+chart_packaging_task:
+  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
+  timeout_in: 15m
+  eks_container:
+    <<: *CONTAINER_TEMPLATE
+    cpu: 2
+    memory: 1Gb
+  <<: *CLONE_SCRIPT_TEMPLATE
+  environment_cache:
+    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
+    fingerprint_script: echo $CIRRUS_BUILD_ID
+  env:
+    GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-releases token]
+    SONARSOURCE_SIGN_KEY: VAULT[development/kv/data/sign data.key]
+    SONARSOURCE_SIGN_KEY_ID: VAULT[development/kv/data/sign data.key_id]
+    SONARSOURCE_SIGN_KEY_PASSPHRASE: VAULT[development/kv/data/sign data.passphrase]
+  key_file:
+    path: /tmp/key
+    variable_name: SONARSOURCE_SIGN_KEY
+  script:
+    - source cirrus-env BUILD
+    - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+    - helm repo update
+    - ./.cirrus/package.sh
+    - ./.cirrus/sign_chart.sh
+  depends_on:
+    - chart_testing
 
-# push_to_repox_task:
-#   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-#   <<: *EXCEPT_ON_NIGHTLY_CRON
-#   timeout_in: 15m
-#   eks_container:
-#     <<: *STD_CONTAINER_TEMPLATE
-#     cpu: 1
-#     memory: 1Gb
-#   <<: *CLONE_SCRIPT_TEMPLATE
-#   environment_cache:
-#     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
-#     fingerprint_script: echo $CIRRUS_BUILD_ID
-#   env:
-#     ARTIFACTORY_URL: VAULT[development/kv/data/repox data.url]
-#     ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
-#   script:
-#     - source cirrus-env ""
-#     - ./.cirrus/upload_chart.sh
-#   depends_on:
-#     - chart_testing
-#     - chart_packaging
+push_to_repox_task:
+  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
+  <<: *EXCEPT_ON_NIGHTLY_CRON
+  timeout_in: 15m
+  eks_container:
+    <<: *STD_CONTAINER_TEMPLATE
+    cpu: 1
+    memory: 1Gb
+  <<: *CLONE_SCRIPT_TEMPLATE
+  environment_cache:
+    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
+    fingerprint_script: echo $CIRRUS_BUILD_ID
+  env:
+    ARTIFACTORY_URL: VAULT[development/kv/data/repox data.url]
+    ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
+  script:
+    - source cirrus-env ""
+    - ./.cirrus/upload_chart.sh
+  depends_on:
+    - chart_testing
+    - chart_packaging
 
-# trigger_release_task:
-#   timeout_in: 15m
-#   eks_container:
-#     <<: *STD_CONTAINER_TEMPLATE
-#     cpu: 1
-#     memory: 1Gb
-#   only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_RELEASE != ""
-#   <<: *CLONE_SCRIPT_TEMPLATE
-#   stateful: 'true'
-#   environment_cache:
-#     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
-#     fingerprint_script: echo $CIRRUS_BUILD_ID
-#   env:
-#     GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-releases token]
-#     SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
-#   gh_action_script: |
-#     source cirrus-env RELEASE
-#     CHARTS=$(find $CIRRUS_WORKING_DIR -maxdepth 1 -name "*.tgz*" -type f -exec basename "{}" ";")
-#     [[ "x$CHARTS" == "x" ]] && exit 0
-#     gh workflow run release.yml -f version=$CIRRUS_TAG -f buildNumber=$BUILD_NUMBER
-#   depends_on:
-#     - chart_packaging
-#     - push_to_repox
-#   on_failure:
-#     slack_notification_script:
-#       - ./.cirrus/slack-notification.sh
+trigger_release_task:
+  timeout_in: 15m
+  eks_container:
+    <<: *STD_CONTAINER_TEMPLATE
+    cpu: 1
+    memory: 1Gb
+  only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_RELEASE != ""
+  <<: *CLONE_SCRIPT_TEMPLATE
+  stateful: 'true'
+  environment_cache:
+    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
+    fingerprint_script: echo $CIRRUS_BUILD_ID
+  env:
+    GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-releases token]
+    SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
+  gh_action_script: |
+    source cirrus-env RELEASE
+    CHARTS=$(find $CIRRUS_WORKING_DIR -maxdepth 1 -name "*.tgz*" -type f -exec basename "{}" ";")
+    [[ "x$CHARTS" == "x" ]] && exit 0
+    gh workflow run release.yml -f version=$CIRRUS_TAG -f buildNumber=$BUILD_NUMBER
+  depends_on:
+    - chart_packaging
+    - push_to_repox
+  on_failure:
+    slack_notification_script:
+      - ./.cirrus/slack-notification.sh
 
 trigger_gcp_prod_app_release_task:
   <<: *TRIGGER_GCP_PRE_PROD_DEPLOYER_RELEASE_TASK

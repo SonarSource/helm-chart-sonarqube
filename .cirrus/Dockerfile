@@ -19,8 +19,6 @@ ARG YQ_VERSION=4.35.2
 ARG YQ_CHECKSUM="8afd786b3b8ba8053409c5e7d154403e2d4ed4cf3e93c237462dc9ef75f38c8d"
 ARG KUBECONFORM_VERSION=0.6.4
 ARG KUBECONFORM_CHECKSUM="2b4ebeaa4d5ac4843cf8f7b7e66a8874252b6b71bc7cbfc4ef1cbf85acec7c07"
-ARG GCLOUD_CLI_VERSION=466.0.0
-ARG GCLOUD_CLI_CHECKSUM="ab7e256cb7e05f8ad2f4410cf33f2f9dcc3dbe0c3ed7b745f85c7d9793043e4d"
 
 ENV HELM_BASE_URL="https://get.helm.sh"
 ENV HELM_TAR_FILE="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
@@ -44,9 +42,6 @@ RUN apk add --update --no-cache \
 
 RUN pip install "yamllint==${YAMLLINT_VERSION}" && \
     pip install "yamale==${YAMALE_VERSION}"
-
-# ADD ./Sonar-FGT-FW-TLS-Traffic-Inspection.cer /usr/local/share/ca-certificates/Sonar-FGT-FW-TLS-Traffic-Inspection.crt
-# RUN update-ca-certificates
 
 RUN set -eux; \
     curl -sL ${HELM_BASE_URL}/${HELM_TAR_FILE} -o ${HELM_TAR_FILE} ; \
@@ -107,23 +102,6 @@ RUN set -eux; \
     chmod +x ./kubeconform ; \
     mv ./kubeconform /usr/bin/kubeconform ; \
     rm kubeconform-linux-amd64.tar.gz
-
-RUN set -eux; \
-    curl -LO https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz ; \
-    echo "${GCLOUD_CLI_CHECKSUM}  google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz" | sha256sum -c ; \
-    tar -xf google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz ; \
-    chmod +x ./google-cloud-sdk ; \
-    mv ./google-cloud-sdk /usr/bin/google-cloud-sdk ; \
-    rm -rf google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz
-ENV PATH="/usr/bin/google-cloud-sdk/bin:${PATH}"
-# RUN gcloud config set core/custom_ca_certs_file /usr/local/share/ca-certificates/Sonar-FGT-FW-TLS-Traffic-Inspection.crt
-RUN gcloud components install gke-gcloud-auth-plugin
-
-RUN set -eux; \
-    curl -o mpdev https://raw.githubusercontent.com/GoogleCloudPlatform/marketplace-k8s-app-tools/master/scripts/dev; \
-    chmod +x mpdev; \
-    mv mpdev /usr/bin/mpdev
-ENV PATH="/usr/bin/mpdev:${PATH}"
 
 COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
 COPY --from=tools /usr/local/bin/gh /usr/local/bin/gh
