@@ -55,7 +55,7 @@ clone_script_template: &CLONE_SCRIPT_TEMPLATE
     fi
 
 trigger_gcp_pre_prod_deployer_release_task: &TRIGGER_GCP_PRE_PROD_DEPLOYER_RELEASE_TASK
-  # only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $BRANCH == "master"
+  only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $BRANCH == "master"
   ec2_instance:
     <<: *VM_TEMPLATE
   login_to_gcr_script:
@@ -79,7 +79,7 @@ trigger_gcp_pre_prod_deployer_release_task: &TRIGGER_GCP_PRE_PROD_DEPLOYER_RELEA
     - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION}
 
 chart_gcp_verify_task:
-  # only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $BRANCH == "master"
+  only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $BRANCH == "master"
   env:
     BASE_FOLDER: "/root/.gcp/cache"
     PATH: "${BASE_FOLDER}/bin:${BASE_FOLDER}/google-cloud-sdk/bin:${PATH}"
