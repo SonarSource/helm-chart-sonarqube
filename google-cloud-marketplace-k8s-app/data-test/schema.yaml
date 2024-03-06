@@ -7,7 +7,7 @@ x-google-marketplace:
   publishedVersion: "$TAG"
   publishedVersionMetadata:
     releaseNote: >-
-      A first release.
+      Sonarqube 10.4.x google cloud marketpalce release test schema
   images:
     '':
       properties:
@@ -31,13 +31,6 @@ properties:
     type: string
     x-google-marketplace:
       type: NAMESPACE
-  appUid:
-    type: string
-    x-google-marketplace:
-      type: APPLICATION_UID
-      applicationUid:
-        generatedProperties:
-          createApplicationBoolean: application.create
   ApplicationNodes.jwtSecret:
     title: JWT Token for app authentication
     description: A HS256 key encoded with base64 (This value must be set before installing the app, see documentation for more details)
@@ -51,26 +44,6 @@ properties:
     description: If true, PostgreSQL will be installed (not recommended for production use case)
     type: boolean
     default: true
-  jdbcOverwrite.enable:
-    title: Enable external DB configuration
-    description: If true, the JDBC URL, username and password will be used to connect to the database. Make sure enable embedded PostgreSQL is set to false
-    type: boolean
-    default: false
-  jdbcOverwrite.jdbcUrl:
-    title: JDBC URL
-    description: The JDBC URL to connect to the database
-    type: string
-    default: ''
-  jdbcOverwrite.jdbcUsername:
-    title: JDBC Username
-    description: The username to connect to the database
-    type: string
-    default: ''
-  jdbcOverwrite.jdbcPassword:
-    title: JDBC Password
-    description: The password to connect to the database
-    type: string
-    default: ''
 
 required:
 - name
