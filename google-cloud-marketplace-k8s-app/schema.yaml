@@ -32,28 +32,15 @@ properties:
     type: string
     x-google-marketplace:
       type: NAMESPACE
-  appUid:
-    type: string
-    x-google-marketplace:
-      type: APPLICATION_UID
-      applicationUid:
-        generatedProperties:
-          createApplicationBoolean: application.create
   ApplicationNodes.jwtSecret:
-    title: JWT Token for app authentication
-    description: A HS256 key encoded with base64 (This value must be set before installing the app, see documentation for more details)
-    maxLength: 44
+    title: Application authentication JWT Token
+    description: A HS256 key encoded with base64. Please refer to docs.sonarsource.com for more details.
     type: string
     x-google-marketplace:
       type: MASKED_FIELD
-  postgresql.enabled:
-    title: Enable embedded PostgreSQL
-    description: If true, PostgreSQL will be installed (not recommended for production use case)
-    type: boolean
-    default: false
   jdbcOverwrite.enable:
-    title: Enable external DB configuration
-    description: If true, the JDBC URL, username and password will be used to connect to the database. Make sure enable embedded PostgreSQL is set to false
+    title: Connection to a database - Recommended
+    description: Connect SonarQube to your PostgreSQL database. The connection parameters JDBC URL, username, and password will be used. Make sure that the Embedded database option is disabled.
     type: boolean
     default: true
   jdbcOverwrite.jdbcUrl:
@@ -71,23 +58,38 @@ properties:
     description: The password to connect to the database
     type: string
     default: ''
+  ApplicationNodes.replicaCount:
+    title: Application nodes replicas
+    description: Number of replicas for the Application nodes
+    type: integer
+    default: 2
+  searchNodes.replicaCount:
+    title: Search nodes replicas
+    description: Number of replicas for the Search nodes
+    type: integer
+    default: 3
   initSysctl.enabled:
     title: Enable initSysctl privileged initContainer to setup elasticearch kernel parameters.
-    description: please read our doc here https://github.com/SonarSource/helm-chart-sonarqube/blob/master/charts/sonarqube-dce/README.md#elasticsearch-prerequisites, this should be disabled and setup by your cluster admin
+    description: please read docs.sonarsource.com related to elasticsearch prerequisites, this should be disabled and setup by your cluster admin in most case.
     type: boolean
     default: true
   initFs.enabled:
     title: Enable initFs root initContainer to setup filesystem parameters.
-    description: please read our doc here https://github.com/SonarSource/helm-chart-sonarqube/blob/master/charts/sonarqube-dce/README.md#production-use-case, this should not be required on google kubernetes clusters
+    description: please read docs.sonarsource.com kubernetes section, this should not be required on google kubernetes clusters
     type: boolean
     default: false
   gcp_marketplace:
-    title: GCP Marketplace enabled
-    description: this flag indicate to the chart that it runs as a gcp marketplace application
+    title: GCP Marketplace application
+    description: This flag is required to indicate that the chart runs as a GCP marketplace application.
     type: string
     default: 'true'
     enum:
       - 'true'
+  postgresql.enabled:
+    title: Embedded database - For testing purposes only
+    description: Not recommended for production, a test PostgreSQL database will be installed.
+    type: boolean
+    default: false
 required:
 - name
 - namespace
