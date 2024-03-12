@@ -11,6 +11,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
+  automountServiceAccountToken: false
   {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret }}
   imagePullSecrets:
     {{- if .Values.ApplicationNodes.image.pullSecret }}
