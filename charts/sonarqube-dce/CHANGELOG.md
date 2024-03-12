@@ -9,6 +9,7 @@ All changes to this chart will be documented in this file.
 * Fix duplicated `ApplicationNodes.resources` parameters in the README
 * Add `gcp_marketplace` value, implementing compatibility with google cloud marketplace app
 * Set `automountServiceAccountToken` to false in pod's specifications
+* Update default `ApplicationNodes.resources` and `searchNodes.resources` to values matching better default Xmx and Xms of the SonarQube processes.
 
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0

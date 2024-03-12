@@ -121,6 +121,29 @@ Nonetheless, if you intend to run a production-grade SonarQube please follow the
 - Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
 - Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
 
+#### Cpu and memory settings
+
+Monitoring cpu and memory is an important part of software reliability. The SonarQube helm chart comes with default values for cpu and memory requests and limits. Those memory values are matching the default Sonarqube JVM Xmx and Xms values.
+
+Xmx define the maximum size of the JVM heap, this is **not** the maximum memory the JVM can allocate.
+
+This is why most recommendation state that Xmx should be set to ~80% of the total amount of memory available on the machine.(or in kubernetes, the request and limits)
+
+Please find here the default Sonarqube Xmx parameter to setup the memory requests and limits accordingly.
+
+|Edition|Sum of Xmx|
+|---|---|
+|community edition|1536M|
+|developer edition|1536M|
+|enterprise edition|5G|
+
+This is why the default request and limit for this chart are set to 2048M and 6144M, to accomodate with the 3 editions and the 80% rule mentioned above.
+
+Please feel free to adjust those values to your needs, but memory being a non-compresible resource, we advise to setup the memory requests and limits to the **same** value for production use case, making memory a guaranteed resource.
+
+In order to change Xmx and Xms, prese refer to [this documentation](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/configure-and-operate-a-server/environment-variables/) and set the env_var or sonar.properties accordingly.
+
+
 ## Upgrade
 
 1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/upgrade-the-server/roadmap/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
@@ -223,7 +246,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                  | Description                                    | Default                                                                |
 | -------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
-| `securityContext.fsGroup`  | Group applied to mounted directories/files     | `0`                                                                 |
+| `securityContext.fsGroup`  | Group applied to mounted directories/files     | `0`                                                                    |
 | `containerSecurityContext` | SecurityContext for container in sonarqube pod | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 
 ### Elasticsearch
@@ -358,28 +381,28 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### SonarQube Specific
 
-| Parameter                      | Description                                                                                                           | Default          |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| `jvmOpts`                      | (DEPRECATED) Values to add to `SONAR_WEB_JAVAOPTS`. Please set directly `SONAR_WEB_JAVAOPTS` or `sonar.web.javaOpts`  | `""`             |
-| `jvmCeOpts`                    | (DEPRECATED) Values to add to `SONAR_CE_JAVAOPTS`. Please set directly `SONAR_CE_JAVAOPTS` or `sonar.ce.javaOpts`     | `""`             |
-| `sonarqubeFolder`              | Directory name of SonarQube                                                                                           | `/opt/sonarqube` |
-| `sonarProperties`              | Custom `sonar.properties` key-value pairs (e.g., "sonarProperties.sonar.forceAuthentication=true")                    | `None`           |
-| `sonarSecretProperties`        | Additional `sonar.properties` key-value pairs to load from a secret                                                   | `None`           |
-| `sonarSecretKey`               | Name of existing secret used for settings encryption                                                                  | `None`           |
-| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format)                               | `define_it`      |
-| `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                                                 | `None`           |
-| `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                                             | `None`           |
-| `extraContainers`              | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars)                                  | `[]`             |
-| `extraVolumes`                 | Array of extra volumes to add to the SonarQube deployment                                                             | `[]`             |
-| `extraVolumeMounts`            | Array of extra volume mounts to add to the SonarQube deployment                                                       | `[]`             |
+| Parameter                      | Description                                                                                                          | Default          |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `jvmOpts`                      | (DEPRECATED) Values to add to `SONAR_WEB_JAVAOPTS`. Please set directly `SONAR_WEB_JAVAOPTS` or `sonar.web.javaOpts` | `""`             |
+| `jvmCeOpts`                    | (DEPRECATED) Values to add to `SONAR_CE_JAVAOPTS`. Please set directly `SONAR_CE_JAVAOPTS` or `sonar.ce.javaOpts`    | `""`             |
+| `sonarqubeFolder`              | Directory name of SonarQube                                                                                          | `/opt/sonarqube` |
+| `sonarProperties`              | Custom `sonar.properties` key-value pairs (e.g., "sonarProperties.sonar.forceAuthentication=true")                   | `None`           |
+| `sonarSecretProperties`        | Additional `sonar.properties` key-value pairs to load from a secret                                                  | `None`           |
+| `sonarSecretKey`               | Name of existing secret used for settings encryption                                                                 | `None`           |
+| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format)                              | `define_it`      |
+| `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                                                | `None`           |
+| `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                                            | `None`           |
+| `extraContainers`              | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars)                                 | `[]`             |
+| `extraVolumes`                 | Array of extra volumes to add to the SonarQube deployment                                                            | `[]`             |
+| `extraVolumeMounts`            | Array of extra volume mounts to add to the SonarQube deployment                                                      | `[]`             |
 
 ### Resources
 
 | Parameter                   | Description              | Default |
 | --------------------------- | ------------------------ | ------- |
-| `resources.requests.memory` | SonarQube memory request | `2Gi`   |
+| `resources.requests.memory` | SonarQube memory request | `2048M` |
 | `resources.requests.cpu`    | SonarQube cpu request    | `400m`  |
-| `resources.limits.memory`   | SonarQube memory limit   | `4Gi`   |
+| `resources.limits.memory`   | SonarQube memory limit   | `6144M` |
 | `resources.limits.cpu`      | SonarQube cpu limit      | `800m`  |
 
 ### Persistence
@@ -395,7 +418,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `persistence.volumes`       | Specify extra volumes. Refer to ".spec.volumes" specification                | `[]`            |
 | `persistence.mounts`        | Specify extra mounts. Refer to ".spec.containers.volumeMounts" specification | `[]`            |
 | `persistence.uid`           | UID used for init-fs container                                               | `1000`          |
-| `persistence.guid`          | GUID used for init-fs container                                              | `0`          |
+| `persistence.guid`          | GUID used for init-fs container                                              | `0`             |
 | `emptyDir`                  | Configuration of resources for `emptyDir`                                    | `{}`            |
 
 ### JDBC Overwrite

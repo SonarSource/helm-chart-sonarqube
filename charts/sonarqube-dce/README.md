@@ -130,6 +130,30 @@ Nonetheless, if you intend to run a production-grade SonarQube please follow the
 * Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
 * Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
 
+#### Cpu and memory settings
+
+Monitoring cpu and memory is an important part of software reliability. The SonarQube helm chart comes with default values for cpu and memory requests and limits. Those memory values are matching the default Sonarqube JVM Xmx and Xms values.
+
+Xmx define the maximum size of the JVM heap, this is **not** the maximum memory the JVM can allocate.
+
+This is why most recommendation state that Xmx should be set to ~80% of the total amount of memory available on the machine.(or in kubernetes, the request and limits)
+
+Please find here the default Sonarqube Xmx parameter to setup the memory requests and limits accordingly.
+
+|Edition|Sum of Xmx|
+|---|---|
+|datacenter edition SearhNodes|2G|
+|datacenter edition ApplicationNodes|3G|
+
+This is why to accomodate with the 80% rule we set the default to:
+
+- searchNodes.resources.memory.request/limit=3072M
+- ApplicationNodes.resources.memory.request/limit=4096M
+
+Please feel free to adjust those values to your needs but memory being a non-compresible resource, we advise to setup the memory requests and limits to the **same** value for production use case, making memory a guaranteed resource.
+
+In order to change Xmx and Xms, prese refer to [this documentation](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/configure-and-operate-a-server/environment-variables/) and set the env_var or sonar.properties accordingly.
+
 ## Ingress use cases
 
 ### Path
@@ -209,9 +233,9 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.startupProbe.periodSeconds`                  | StartupProbe period between checking Search Node                                      | `10`                                                                   |
 | `searchNodes.startupProbe.failureThreshold`               | StartupProbe thresold for marking as failed                                           | `24`                                                                   |
 | `searchNodes.startupProbe.timeoutSeconds`                 | StartupProbe timeout delay                                                            | `1`                                                                    |
-| `searchNodes.resources.requests.memory`                   | memory request for Search Nodes                                                       | `2Gi`                                                                  |
+| `searchNodes.resources.requests.memory`                   | memory request for Search Nodes                                                       | `3072M`                                                                  |
 | `searchNodes.resources.requests.cpu`                      | cpu request for Search Nodes                                                          | `400m`                                                                 |
-| `searchNodes.resources.limits.memory`                     | memory limit for Search Nodes. should not be under 4G                                 | `4096M`                                                                |
+| `searchNodes.resources.limits.memory`                     | memory limit for Search Nodes. should not be under 3G                                 | `3072M`                                                                |
 | `searchNodes.resources.limits.cpu`                        | cpu limit for Search Nodes                                                            | `800m`                                                                 |
 | `searchNodes.persistence.enabled`                         | enabled or disables the creation of VPCs for the Search Nodes                         | `true`                                                                 |
 | `searchNodes.persistence.annotations`                     | PVC annotations for the Search Nodes                                                  | `{}`                                                                   |
@@ -257,7 +281,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.startupProbe.failureThreshold`                 | StartupProbe thresold for marking as failed                                                                                                                                                                    | `24`                                                                   |
 | `ApplicationNodes.startupProbe.timeoutSeconds`                   | StartupProbe timeout delay                                                                                                                                                                                     | `1`                                                                    |
 | `ApplicationNodes.startupProbe.sonarWebContext`                  | (DEPRECATED) SonarQube web context for startupProbe, please use sonarWebContext at the value top level instead                                                                                                 | `/`                                                                    |
-| `ApplicationNodes.resources.requests.memory`                     | memory request for app Nodes                                                                                                                                                                                   | `2Gi`                                                                  |
+| `ApplicationNodes.resources.requests.memory`                     | memory request for app Nodes                                                                                                                                                                                   | `4096M`                                                                  |
 | `ApplicationNodes.resources.requests.cpu`                        | cpu request for app Nodes                                                                                                                                                                                      | `400m`                                                                 |
 | `ApplicationNodes.resources.limits.memory`                       | memory limit for app Nodes. should not be under 4G                                                                                                                                                             | `4096M`                                                                |
 | `ApplicationNodes.resources.limits.cpu`                          | cpu limit for app Nodes                                                                                                                                                                                        | `800m`                                                                 |
