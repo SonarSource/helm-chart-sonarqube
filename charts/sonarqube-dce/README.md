@@ -134,25 +134,25 @@ Nonetheless, if you intend to run a production-grade SonarQube please follow the
 
 Monitoring cpu and memory is an important part of software reliability. The SonarQube helm chart comes with default values for cpu and memory requests and limits. Those memory values are matching the default SonarQube JVM Xmx and Xms values.
 
-Xmx define the maximum size of the JVM heap, this is **not** the maximum memory the JVM can allocate.
+Xmx defines the maximum size of the JVM heap, this is **not** the maximum memory the JVM can allocate.
 
-This is why most recommendation state that Xmx should be set to ~80% of the total amount of memory available on the machine.(or in kubernetes, the request and limits)
+For this reason, it is recommended to set Xmx to the ~80% of the total amount of memory available on the machine (in Kubernetes, this corresponds to requests and limits).
 
-Please find here the default SonarQube Xmx parameter to setup the memory requests and limits accordingly.
+Please find here the default SonarQube Xmx parameters to setup the memory requests and limits accordingly.
 
 |Edition|Sum of Xmx|
 |---|---|
 |datacenter edition searchNodes|2G|
 |datacenter edition ApplicationNodes|3G|
 
-This is why to accomodate with the 80% rule we set the default to:
+To comply with the 80% rule mentioned above, we set the following default values:
 
 - searchNodes.resources.memory.request/limit=3072M
 - ApplicationNodes.resources.memory.request/limit=4096M
 
-Please feel free to adjust those values to your needs but memory being a non-compresible resource, we advise to setup the memory requests and limits to the **same** value for production use case, making memory a guaranteed resource.
+Please feel free to adjust those values to your needs. However, given that memory is a “non-compressible” resource, we advise you to set the memory requests and limits to the **same**, making memory a guaranteed resource. This is needed especially for production use cases. 
 
-In order to change Xmx and Xms, prese refer to [this documentation](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/configure-and-operate-a-server/environment-variables/) and set the env_var or sonar.properties accordingly.
+To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/configure-and-operate-a-server/environment-variables/) and set the environment variables or sonar.properties accordingly.
 
 ## Ingress use cases
 
