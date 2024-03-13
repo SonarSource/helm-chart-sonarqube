@@ -123,13 +123,13 @@ Nonetheless, if you intend to run a production-grade SonarQube please follow the
 
 #### Cpu and memory settings
 
-Monitoring cpu and memory is an important part of software reliability. The SonarQube helm chart comes with default values for cpu and memory requests and limits. Those memory values are matching the default Sonarqube JVM Xmx and Xms values.
+Monitoring cpu and memory is an important part of software reliability. The SonarQube helm chart comes with default values for cpu and memory requests and limits. Those memory values are matching the default SonarQube JVM Xmx and Xms values.
 
 Xmx define the maximum size of the JVM heap, this is **not** the maximum memory the JVM can allocate.
 
 This is why most recommendation state that Xmx should be set to ~80% of the total amount of memory available on the machine.(or in kubernetes, the request and limits)
 
-Please find here the default Sonarqube Xmx parameter to setup the memory requests and limits accordingly.
+Please find here the default SonarQube Xmx parameter to setup the memory requests and limits accordingly.
 
 |Edition|Sum of Xmx|
 |---|---|
