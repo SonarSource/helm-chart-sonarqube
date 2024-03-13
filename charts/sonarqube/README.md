@@ -317,23 +317,23 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                           | Description                                               | Default                                                                |
 | ----------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `initContainers.image`              | Change init container image                               | `{{ .Values.image.repository }}:{{ .Values.image.tag }}`               |
+| `initContainers.image`              | Change init container image                               | `"image.repository":"image.tag"`                                       |
 | `initContainers.securityContext`    | SecurityContext for init containers                       | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `initContainers.resources`          | Resources for init containers                             | `{}`                                                                   |
 | `extraInitContainers`               | Extra init containers to e.g. download required artifacts | `{}`                                                                   |
 | `caCerts.enabled`                   | Flag for enabling additional CA certificates              | `false`                                                                |
-| `caCerts.image`                     | Change init CA certificates container image               | `{{ .Values.image.repository }}:{{ .Values.image.tag }}`               |
+| `caCerts.image`                     | Change init CA certificates container image               | `"image.repository":"image.tag"`                                       |
 | `caCerts.secret`                    | Name of the secret containing additional CA certificates  | `None`                                                                 |
 | `initSysctl.enabled`                | Modify k8s worker to conform to system requirements       | `true`                                                                 |
 | `initSysctl.vmMaxMapCount`          | Set init sysctl container vm.max_map_count                | `524288`                                                               |
 | `initSysctl.fsFileMax`              | Set init sysctl container fs.file-max                     | `131072`                                                               |
 | `initSysctl.nofile`                 | Set init sysctl container open file descriptors limit     | `131072`                                                               |
 | `initSysctl.nproc`                  | Set init sysctl container open threads limit              | `8192 `                                                                |
-| `initSysctl.image`                  | Change init sysctl container image                        | `{{ .Values.image.repository }}:{{ .Values.image.tag }}`               |
+| `initSysctl.image`                  | Change init sysctl container image                        | `"image.repository":"image.tag"`                                       |
 | `initSysctl.securityContext`        | InitSysctl container security context                     | `{privileged: true}`                                                   |
 | `initSysctl.resources`              | InitSysctl container resource requests & limits           | `{}`                                                                   |
 | `initFs.enabled`                    | Enable file permission change with init container         | `true`                                                                 |
-| `initFs.image`                      | InitFS container image                                    | `{{ .Values.image.repository }}:{{ .Values.image.tag }}`               |
+| `initFs.image`                      | InitFS container image                                    | `"image.repository":"image.tag"`                                       |
 | `initFs.securityContext.privileged` | InitFS container needs to run privileged                  | `true`                                                                 |
 
 ### Monitoring (Prometheus Exporter)
@@ -465,10 +465,12 @@ The bundled PostgreSQL Chart is deprecated. Please see https://artifacthub.io/pa
 
 ### Tests
 
-| Parameter       | Description                                                   | Default |
-| --------------- | ------------------------------------------------------------- | ------- |
-| `tests.enabled` | Flag that allows tests to be excluded from the generated yaml | `true`  |
-| `tests.image`   | Change test container image                                   | ``      |
+| Parameter                       | Description                                                   | Default                                                   |
+| --------------------------------| ------------------------------------------------------------- | --------------------------------------------------------- |
+| `tests.enabled`                 | Flag that allows tests to be excluded from the generated yaml | `true`                                                    |
+| `tests.image`                   | Set the test container image                                  | `"image.repository":"image.tag"`                          |
+| `tests.resources.limits.cpu`    | CPU limit for test container                                  | `500m`                                                    |
+| `tests.resources.limits.memory` | Memory limit for test container                               | `200M`                                                    | 
 
 ### ServiceAccount
 
@@ -499,7 +501,7 @@ The bundled PostgreSQL Chart is deprecated. Please see https://artifacthub.io/pa
 | `account.resources.limits.cpu`      | CPU limit for Admin hook                                                                                     | `100m`                                                                 |
 | `account.sonarWebContext`           | (DEPRECATED) SonarQube web context for Admin hook. please use sonarWebContext at the value top level instead | `nil`                                                                  |
 | `account.securityContext`           | SecurityContext for change-password-hook                                                                     | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
-| `curlContainerImage`                | Curl container image                                                                                         | `{{ .Values.image.repository }}:{{ .Values.image.tag }}`               |
+| `curlContainerImage`                | Curl container image                                                                                         | `"image.repository":"image.tag"`               |
 | `adminJobAnnotations`               | Custom annotations for admin hook Job                                                                        | `{}`                                                                   |
 | `terminationGracePeriodSeconds`     | Configuration of `terminationGracePeriodSeconds`                                                             | `60`                                                                   |
 

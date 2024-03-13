@@ -111,7 +111,7 @@ searchNodes:
     limits:
       cpu: 800m
       memory: 3072M
-      ephemeral-storage: 500Gi
+      ephemeral-storage: 512000M
     requests:
       cpu: 400m
       memory: 3072M
@@ -328,7 +328,7 @@ ApplicationNodes:
     limits:
       cpu: 800m
       memory: 4096M
-      ephemeral-storage: 500Gi
+      ephemeral-storage: 512000M
     requests:
       cpu: 400m
       memory: 4096M
@@ -629,7 +629,10 @@ logging:
 tests:
   image: ""
   enabled: true
-  resources: {}
+  resources:
+    limits:
+      cpu: 500m
+      memory: 200M
 
 serviceAccount:
   create: false
