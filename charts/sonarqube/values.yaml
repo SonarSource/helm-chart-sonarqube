@@ -368,7 +368,7 @@ resources:
   limits:
     cpu: 800m
     memory: 6144M
-    ephemeral-storage: 500Gi
+    ephemeral-storage: 512000M
   requests:
     cpu: 400m
     memory: 2048M
@@ -522,7 +522,10 @@ sonarqubeFolder: /opt/sonarqube
 tests:
   image: ""
   enabled: true
-  resources: {}
+  resources:
+    limits:
+      cpu: 500m
+      memory: 200M
 
 # For OpenShift set create=true to ensure service account is created.
 serviceAccount:

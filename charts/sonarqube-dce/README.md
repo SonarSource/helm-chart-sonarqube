@@ -238,7 +238,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.resources.requests.ephemeral-storage`        | storage request for Search Nodes                                                        | `1536M`                                                                |
 | `searchNodes.resources.limits.memory`                     | memory limit for Search Nodes. should not be under 3G                                 | `3072M`                                                                |
 | `searchNodes.resources.limits.cpu`                        | cpu limit for Search Nodes                                                            | `800m`                                                                 |
-| `searchNodes.resources.limits.ephemeral-storage`          | storage limit for Search Nodes                                                        | `500Gi`                                                                |
+| `searchNodes.resources.limits.ephemeral-storage`          | storage limit for Search Nodes                                                        | `512000M`                                                                |
 | `searchNodes.persistence.enabled`                         | enabled or disables the creation of VPCs for the Search Nodes                         | `true`                                                                 |
 | `searchNodes.persistence.annotations`                     | PVC annotations for the Search Nodes                                                  | `{}`                                                                   |
 | `searchNodes.persistence.storageClass`                    | Storage class to be used                                                              | `""`                                                                   |
@@ -288,7 +288,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.resources.requests.ephemeral-storage`                          | storage request for app Nodes                                                                                                                                                                                        | `1536M`                                                               |
 | `ApplicationNodes.resources.limits.memory`                       | memory limit for app Nodes. should not be under 4G                                                                                                                                                             | `4096M`                                                                |
 | `ApplicationNodes.resources.limits.cpu`                          | cpu limit for app Nodes                                                                                                                                                                                        | `800m`                                                                |
-| `ApplicationNodes.resources.limits.ephemeral-storage`                          | storage limit for app Nodes                                                                                                                                                                                        | `500Gi`                                                               |
+| `ApplicationNodes.resources.limits.ephemeral-storage`                          | storage limit for app Nodes                                                                                                                                                                                        | `512000M`                                                               |
 | `ApplicationNodes.prometheusExporter.enabled`                    | Use the Prometheus JMX exporter                                                                                                                                                                                | `false`                                                                |
 | `ApplicationNodes.prometheusExporter.version`                    | jmx_prometheus_javaagent version to download from Maven Central                                                                                                                                                | `0.17.2`                                                               |
 | `ApplicationNodes.prometheusExporter.noCheckCertificate`         | Flag to not check server's certificate when downloading jmx_prometheus_javaagent                                                                                                                               | `false`                                                                |
@@ -473,10 +473,12 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 
 ### Tests
 
-| Parameter       | Description                                                   | Default |
-| --------------- | ------------------------------------------------------------- | ------- |
-| `tests.enabled` | Flag that allows tests to be excluded from the generated yaml | `true`  |
-| `tests.image`   | Change test container image                                   | ``      |
+| Parameter                       | Description                                                   | Default                                                            |
+| --------------------------------| ------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `tests.enabled`                 | Flag that allows tests to be excluded from the generated yaml | `true`                                                             |
+| `tests.image`                   | Set the test container image                                  | `"ApplicationNodes.image.repository":"ApplicationNodes.image.tag"` |
+| `tests.resources.limits.cpu`    | CPU limit for test container                                  | `500m`                                                             |
+| `tests.resources.limits.memory` | Memory limit for test container                               | `200M`                                                             | 
 
 ### ServiceAccount
 
