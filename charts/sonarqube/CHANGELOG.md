@@ -5,6 +5,7 @@ All changes to this chart will be documented in this file.
 * Update Chart's version to 10.5.0
 * Update nginx-ingress-controller dependency to version 4.9.1
 * Set `automountServiceAccountToken` to false in pod's specifications
+* Update default `resources` values matching better default Xmx and Xms of the SonarQube processes.
 
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0
