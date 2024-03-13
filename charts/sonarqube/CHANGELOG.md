@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Update nginx-ingress-controller dependency to version 4.9.1
 * Set `automountServiceAccountToken` to false in pod's specifications
 * Update default `resources` values matching better default Xmx and Xms of the SonarQube processes.
+* Make `ephemeral-storage` resource's limits and requests configurable for the SonarQube container
 
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0

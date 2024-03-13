@@ -398,12 +398,14 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Resources
 
-| Parameter                   | Description              | Default |
-| --------------------------- | ------------------------ | ------- |
-| `resources.requests.memory` | SonarQube memory request | `2048M` |
-| `resources.requests.cpu`    | SonarQube cpu request    | `400m`  |
-| `resources.limits.memory`   | SonarQube memory limit   | `6144M` |
-| `resources.limits.cpu`      | SonarQube cpu limit      | `800m`  |
+| Parameter                              | Description                | Default |
+| -------------------------------------- | -------------------------- | ------- |
+| `resources.requests.memory`            | SonarQube memory request   | `2048M` |
+| `resources.requests.cpu`               | SonarQube cpu request      | `400m`  |
+| `resources.requests.ephemeral-storage` | SonarQube storage request  | `1536M` |
+| `resources.limits.memory`              | SonarQube memory limit     | `6144M` |
+| `resources.limits.cpu`                 | SonarQube cpu limit        | `800m`  |
+| `resources.limits.ephemeral-storage`   | SonarQube storage limit    | `500Gi` |
 
 ### Persistence
 
