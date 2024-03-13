@@ -10,6 +10,7 @@ All changes to this chart will be documented in this file.
 * Add `gcp_marketplace` value, implementing compatibility with google cloud marketplace app
 * Set `automountServiceAccountToken` to false in pod's specifications
 * Update default `ApplicationNodes.resources` and `searchNodes.resources` to values matching better default Xmx and Xms of the SonarQube processes.
+* Make `ephemeral-storage` resource's limits and requests configurable for the SonarQube App and Search containers
 
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0

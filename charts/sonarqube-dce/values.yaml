@@ -111,9 +111,11 @@ searchNodes:
     limits:
       cpu: 800m
       memory: 3072M
+      ephemeral-storage: 500Gi
     requests:
       cpu: 400m
       memory: 3072M
+      ephemeral-storage: 1536M
   persistence:
     enabled: true
     ## Set annotations on pvc
@@ -319,16 +321,18 @@ ApplicationNodes:
 
 
   ## We usually don't make specific resource recommendations, as they are heavily dependent on
-  ## The usage of SonarQube and the surrounding infrastructure.
+  ## the usage of SonarQube and the surrounding infrastructure.
   ## Those default are based on the default Web -Xmx1G -Xms128m and CE -Xmx2G -Xms128m settings of applicationNode sub processes.
   ## Adjust these values to your needs, you can find more details on the main README of the chart.
   resources:
     limits:
       cpu: 800m
       memory: 4096M
+      ephemeral-storage: 500Gi
     requests:
       cpu: 400m
       memory: 4096M
+      ephemeral-storage: 1536M
 
   ## Array of extra containers to run alongside the sonarqube search container
   ##

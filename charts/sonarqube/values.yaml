@@ -360,17 +360,19 @@ monitoringPasscode: "define_it"
 # Set annotations for pods
 annotations: {}
 
-## We usually don't make specific ressource recommandations, as they are heavily dependend on
-## The usage of SonarQube and the surrounding infrastructure.
+## We usually don't make specific resource recommendations, as they are heavily dependend on
+## the usage of SonarQube and the surrounding infrastructure.
 ## Those default are based on the default Web -Xmx1G -Xms128m and CE -Xmx2G -Xms128m and Search -Xmx2G -Xms2G settings of SQ sub processes
 ## Adjust these values to your needs, you can find more details on the main README of the chart.
 resources:
   limits:
     cpu: 800m
     memory: 6144M
+    ephemeral-storage: 500Gi
   requests:
     cpu: 400m
     memory: 2048M
+    ephemeral-storage: 1536M
 
 persistence:
   enabled: false
