@@ -5,8 +5,8 @@ ENV WAIT_FOR_READY_TIMEOUT 1200
 ENV TESTER_TIMEOUT 1200
 
 COPY charts/sonarqube-dce /tmp/chart.tmp/sonarqube-dce
-RUN cd /tmp \
-        && mv chart.tmp/* chart \
+WORKDIR /tmp
+RUN mv chart.tmp/* chart \
         && tar -czvf /tmp/chart.tar.gz chart \
         && mkdir -p /data/chart \
         && mv chart.tar.gz /data/chart/ \
