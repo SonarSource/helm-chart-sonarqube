@@ -166,10 +166,10 @@ func CheckPodsInContainersReadyState(t *testing.T, kubectlOptions *k8s.KubectlOp
 func CheckSonarQubeUpAndRunning(t *testing.T, kubectlOptions *k8s.KubectlOptions, chartName string) {
 
 	// open a tunnel to the running sonarqube instance using a random port
-	pod_name := k8s.ListPods(t, kubectlOptions, v1.ListOptions{LabelSelector: "app=" + chartName + ",release=" + chartName})[0].Name
-	fmt.Printf("Opening a tunnel to %v\n", pod_name)
+	podName := k8s.ListPods(t, kubectlOptions, v1.ListOptions{LabelSelector: "app=" + chartName + ",release=" + chartName})[0].Name
+	fmt.Printf("Opening a tunnel to %v\n", podName)
 	tunnel := k8s.NewTunnel(
-		kubectlOptions, k8s.ResourceTypePod, pod_name, 0, 9000)
+		kubectlOptions, k8s.ResourceTypePod, podName, 0, 9000)
 	defer tunnel.Close()
 	tunnel.ForwardPort(t)
 
