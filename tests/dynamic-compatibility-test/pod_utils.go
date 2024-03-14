@@ -38,7 +38,7 @@ func WaitUntilPodContainersReadyE(t *testing.T, options *k8s.KubectlOptions, pod
 				if condition.Type == "ContainersReady" {
 					//fmt.Printf("condition: %v\n", condition.Status)
 					if condition.Status == "False" {
-						return "", k8s.NewPodNotAvailableError(pod) // TODO: Raise an ad-hoc condition here
+						return "", k8s.NewPodNotAvailableError(pod)
 					}
 				}
 			}
