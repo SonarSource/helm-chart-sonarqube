@@ -154,7 +154,7 @@ To get some guidance when setting the Xmx and Xms values, please refer to this [
 
 ### Upgrade from the old sonarqube-lts to this chart
 
-Please refer to the Helm upgrade section accessible [here](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/upgrade-the-server/roadmap/)
+Please refer to the Helm upgrade section accessible [here](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/upgrade-the-server/upgrade/#upgrade-from-89x-lts-to-99x-lts).
 
 ## Ingress
 
@@ -182,7 +182,7 @@ ingress:
 
 ## Monitoring
 
-This Helm chart offers the possibility to monitor SonarQube with Prometheus.
+This Helm chart offers the possibility to monitor SonarQube with Prometheus. You can find an [Introduction to the SonarQube monitoring on Kubernetes](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/set-up-monitoring/introduction/) in the SonarQube documentation.
 
 ### Export JMX metrics
 
