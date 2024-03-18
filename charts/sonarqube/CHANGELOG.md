@@ -1,6 +1,12 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.5.1]
+* Update Chart's version to 10.5.1
+* enable extra podLabels and annotations to be added to deployment and statefulset
+* use PVC templates in sonarqube-sts statefulset
+
+
 ## [10.5.0]
 * Update Chart's version to 10.5.0
 * Update nginx-ingress-controller dependency to version 4.9.1
