@@ -1,0 +1,16 @@
+---
+exclude: '^gradlew*|^gradle/'
+repos:
+  - repo: local
+    hooks:
+      - id: cirrus-test
+        name: Cirrus Test
+        entry: >-
+          sh -c "
+          if ! cirrus internal test -e CIRRUS_REPO_CLONE_TOKEN=$(gh auth token); then
+            echo \"Fixing $@\";
+            cirrus internal test -e CIRRUS_REPO_CLONE_TOKEN=$(gh auth token) --update >/dev/null;
+            false;
+          fi"
+        language: system
+        files: "(.star|.cirrus/)"

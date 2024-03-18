@@ -54,8 +54,7 @@ clone_script_template: &CLONE_SCRIPT_TEMPLATE
       git reset --hard $CIRRUS_CHANGE_IN_REPO
     fi
 
-build_gcp_staging_app_task: &BUILD_GCP_STAGING_APP_TASK
-  only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $BRANCH == "master"
+build_gcp_app_template: &BUILD_GCP_APP_TEMPLATE
   ec2_instance:
     <<: *VM_TEMPLATE
   login_to_gcr_script:
@@ -78,7 +77,13 @@ build_gcp_staging_app_task: &BUILD_GCP_STAGING_APP_TASK
     - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${GCLOUD_TAG}
     - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION}
 
-verify_gcp_staging_app_task: &VERIFY_GCP_STAGING_APP_TASK
+build_gcp_staging_app_task:
+  <<: *BUILD_GCP_APP_TEMPLATE
+  only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $TRIGGER == "PUSH_PROD_DEPLOYER" || $BRANCH == "master"
+  env:
+    GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
+
+verify_gcp_app_template: &VERIFY_GCP_APP_TEMPLATE
   only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $BRANCH == "master"
   env:
     BASE_FOLDER: "/root/.gcp/cache"
@@ -100,6 +105,14 @@ verify_gcp_staging_app_task: &VERIFY_GCP_STAGING_APP_TASK
   verify_script:
     - kubectl get pods
     - mpdev verify --deployer=$GCLOUD_REGISTRY/$GCLOUD_PRODUCT_NAME/deployer:$GCLOUD_TAG --wait_timeout=1200 --parameters='{"name":"${GCLOUD_PRODUCT_NAME}-cirrus-test", "namespace":"test-cirrus","ApplicationNodes.jwtSecret":"dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=", "postgresql.enabled":true, "jdbcOverwrite.enable":false }'
+  depends_on:
+    - build_gcp_staging_app
+
+verify_gcp_staging_app_task:
+  <<: *VERIFY_GCP_APP_TEMPLATE
+  only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $TRIGGER == "PUSH_PROD_DEPLOYER" || $BRANCH == "master"
+  env:
+    GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
   depends_on:
     - build_gcp_staging_app
 
@@ -232,25 +245,11 @@ trigger_release_task:
     slack_notification_script:
       - ./.cirrus/slack-notification.sh
 
-build_gcp_prod_app_task:
-  <<: *BUILD_GCP_STAGING_APP_TASK
-  only_if: $TRIGGER == "PUSH_PROD_DEPLOYER"
-  env:
-    GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
-
-verify_gcp_prod_app_task:
-  <<: *VERIFY_GCP_STAGING_APP_TASK
-  only_if: $TRIGGER == "PUSH_PROD_DEPLOYER"
-  env:
-    GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
-  depends_on:
-    - build_gcp_prod_app
-
 release_gcp_prod_app_task:
-  <<: *BUILD_GCP_STAGING_APP_TASK
+  <<: *BUILD_GCP_APP_TEMPLATE
   only_if: $TRIGGER == "PUSH_PROD_DEPLOYER"
   env:
     GCLOUD_REGISTRY: gcr.io/sonarsource-public
     GCLOUD_PRODUCT_NAME: official-sonarqube-data-center-edition
   depends_on:
-    - verify_gcp_prod_app
+    - verify_gcp_staging_app
