@@ -407,20 +407,6 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `initFs.image`                      | InitFS container image                                    | `ApplicationNodes.image`                                               |
 | `initFs.securityContext.privileged` | InitFS container needs to run privileged                  | `true`                                                                 |
 
-### Persistence
-
-| Parameter                   | Description                                                                  | Default         |
-| --------------------------- | ---------------------------------------------------------------------------- | --------------- |
-| `persistence.enabled`       | Flag for enabling persistent storage                                         | `false`         |
-| `persistence.annotations`   | Kubernetes pvc annotations                                                   | `{}`            |
-| `persistence.existingClaim` | Do not create a new PVC but use this one                                     | `None`          |
-| `persistence.storageClass`  | Storage class to be used                                                     | `""`            |
-| `persistence.accessMode`    | Volumes access mode to be set                                                | `ReadWriteOnce` |
-| `persistence.size`          | Size of the volume                                                           | `5Gi`           |
-| `persistence.volumes`       | Specify extra volumes. Refer to ".spec.volumes" specification                | `[]`            |
-| `persistence.mounts`        | Specify extra mounts. Refer to ".spec.containers.volumeMounts" specification | `[]`            |
-| `emptyDir`                  | Configuration of resources for `emptyDir`                                    | `{}`            |
-
 ### SonarQube Specific
 
 | Parameter                      | Description                                                                             | Default          |
