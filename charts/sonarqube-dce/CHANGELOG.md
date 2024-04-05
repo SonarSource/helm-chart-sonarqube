@@ -13,6 +13,7 @@ All changes to this chart will be documented in this file.
 * Make `ephemeral-storage` resource's limits and requests configurable for the SonarQube App and Search containers
 * Set memory and cpu limits for the test container
 * Fix `searchAuthentication` probes failure by enforcing basic auth on wget
+* Remove outdated doc about persistency
 
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0
