@@ -40,6 +40,7 @@ The version of the chart for the SonarQube 9.9 LTA is being distributed as the `
 In order to use it, please set the version constraint `~8`, which is equivalent to `>=8.0.0 && <= 9.0.0`. That version parameter **must** be used in every helm related command including `install`, `upgrade`, `template`, and `diff` (don't treat this as an exhaustive list).
 
 Example:
+
 ```
 helm upgrade --install -n sonarqube --version ~8 sonarqube sonarqube/sonarqube
 ```
@@ -80,6 +81,7 @@ Here is the list of containers that are compatible with the [Pod Security levels
   * postgresql containers.
 
 This is achieved by setting this SecurityContext as default on **most** containers:
+
 ```
 allowPrivilegeEscalation: false
 runAsNonRoot: true
@@ -105,8 +107,8 @@ Because of such constraints, even when running in Docker containers, SonarQube r
 
 Please carefully read the following and make sure these configurations are set up at the host level:
 
-- [vm.max_map_count](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html#vm-max-map-count)
-- [seccomp filter should be available](https://github.com/SonarSource/docker-sonarqube/issues/614)
+* [vm.max_map_count](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html#vm-max-map-count)
+* [seccomp filter should be available](https://github.com/SonarSource/docker-sonarqube/issues/614)
 
 In general, please carefully read the Elasticsearch's [documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/system-config.html).
 
@@ -116,10 +118,10 @@ The SonarQube helm chart is packed with multiple features enabling users to inst
 
 Nonetheless, if you intend to run a production-grade SonarQube please follow these recommendations.
 
-- Set `nginx.enabled` to **false**. This parameter would run the nginx chart. This is useful for testing purposes only. Ingress controllers are critical Kubernetes components, we advise users to install their own.
-- Set `postgresql.enabled` to **false**. This parameter would run the postgresql pre-2022 bitnami chart. That is useful for testing purposes, however, given that the database is at the hearth of SonarQube, we advise users to be careful with it and use a well-maintained database as a service or deploy their own database on top of Kubernetes.
-- Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
-- Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
+* Set `ingress-nginx.enabled` to **false**. This parameter would run the nginx chart. This is useful for testing purposes only. Ingress controllers are critical Kubernetes components, we advise users to install their own.
+* Set `postgresql.enabled` to **false**. This parameter would run the postgresql pre-2022 bitnami chart. That is useful for testing purposes, however, given that the database is at the hearth of SonarQube, we advise users to be careful with it and use a well-maintained database as a service or deploy their own database on top of Kubernetes.
+* Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
+* Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
 
 #### Cpu and memory settings
 
@@ -143,13 +145,12 @@ Please feel free to adjust those values to your needs. However, given that memor
 
 To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/configure-and-operate-a-server/environment-variables/) and set the environment variables or sonar.properties accordingly.
 
-
 ## Upgrade
 
 1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/upgrade-the-server/roadmap/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
 2. Change the SonarQube version on `values.yaml`
 3. Redeploy SonarQube with the same helm chart (see [Install instructions](#installing-the-chart))
-4. Browse to http://yourSonarQubeServerURL/setup and follow the setup instructions
+4. Browse to <http://yourSonarQubeServerURL/setup> and follow the setup instructions
 5. Reanalyze your projects to get fresh data
 
 ### Upgrade from the old sonarqube-lts to this chart
@@ -272,8 +273,8 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                      | Description                                                  | Default                                                                        |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| `nginx.enabled`                | Also install Nginx Ingress Helm                              | `false`                                                                        |
-| `ingress.enabled`              | Flag to enable Ingress                                       | `false`                                                                        |
+| `ingress-nginx.enabled`        | Install Nginx Ingress Helm                                   | `false`                                                                        |
+| `nginx.enabled`                | (DEPRECATED) please use `ingress-nginx.enabled`              | `false`                                                                        |
 | `ingress.labels`               | Ingress additional labels                                    | `{}`                                                                           |
 | `ingress.hosts[0].name`        | Hostname to your SonarQube installation                      | `sonarqube.your-org.com`                                                       |
 | `ingress.hosts[0].path`        | Path within the URL structure                                | `/`                                                                            |
@@ -281,7 +282,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | `None`                                                                         |
 | `ingress.tls`                  | Ingress secrets for TLS certificates                         | `[]`                                                                           |
 | `ingress.ingressClassName`     | Optional field to configure ingress class name               | `None`                                                                         |
-| `ingress.annotations`          | Field to add extra annotations to the ingress                | {`nginx.ingress.kubernetes.io/proxy-body-size: "64m"`} if `nginx.enabled=true` |
+| `ingress.annotations`          | Field to add extra annotations to the ingress                | {`nginx.ingress.kubernetes.io/proxy-body-size: "64m"`} if `ingress-nginx.enabled=true or nginx.enabled=true` |
 
 ### Route
 
@@ -328,7 +329,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `initSysctl.vmMaxMapCount`          | Set init sysctl container vm.max_map_count                | `524288`                                                               |
 | `initSysctl.fsFileMax`              | Set init sysctl container fs.file-max                     | `131072`                                                               |
 | `initSysctl.nofile`                 | Set init sysctl container open file descriptors limit     | `131072`                                                               |
-| `initSysctl.nproc`                  | Set init sysctl container open threads limit              | `8192 `                                                                |
+| `initSysctl.nproc`                  | Set init sysctl container open threads limit              | `8192`                                                                |
 | `initSysctl.image`                  | Change init sysctl container image                        | `"image.repository":"image.tag"`                                       |
 | `initSysctl.securityContext`        | InitSysctl container security context                     | `{privileged: true}`                                                   |
 | `initSysctl.resources`              | InitSysctl container resource requests & limits           | `{}`                                                                   |
@@ -362,7 +363,6 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `prometheusMonitoring.podMonitor.interval`      | Specify the interval how often metrics should be scraped              | `30s`     |
 | `prometheusMonitoring.podMonitor.scrapeTimeout` | Specify the timeout after a scrape is ended                           | `None`    |
 | `prometheusMonitoring.podMonitor.jobLabel`      | Name of the label on target services that prometheus uses as job name | `None`    |
-
 
 ### Plugins
 
@@ -436,7 +436,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Bundled PostgreSQL Chart (DEPRECATED)
 
-The bundled PostgreSQL Chart is deprecated. Please see https://artifacthub.io/packages/helm/sonarqube/sonarqube#production-use-case for more information.
+The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/packages/helm/sonarqube/sonarqube#production-use-case> for more information.
 
 | Parameter                                                | Description                                                            | Default                                                                |
 | -------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
@@ -470,7 +470,7 @@ The bundled PostgreSQL Chart is deprecated. Please see https://artifacthub.io/pa
 | `tests.enabled`                 | Flag that allows tests to be excluded from the generated yaml | `true`                                                    |
 | `tests.image`                   | Set the test container image                                  | `"image.repository":"image.tag"`                          |
 | `tests.resources.limits.cpu`    | CPU limit for test container                                  | `500m`                                                    |
-| `tests.resources.limits.memory` | Memory limit for test container                               | `200M`                                                    | 
+| `tests.resources.limits.memory` | Memory limit for test container                               | `200M`                                                    |
 
 ### ServiceAccount
 

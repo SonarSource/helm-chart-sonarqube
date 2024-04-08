@@ -24,7 +24,7 @@ WARNING:
 WARNING: The embedded PostgreSQL is intended for evaluation only, it is DEPRECATED, and it will be REMOVED in a future release.
          Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube#production-use-case for more information.
 {{- end }}
-{{ if .Values.nginx.enabled }}
+{{ if or (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled") }}
 WARNING: The ingress nginx controller dependency has been upgraded to a major version (4.x), please carefully read the changelogs at https://github.com/kubernetes/ingress-nginx/releases and refer to the documentation at https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/.
          Please also visit https://artifacthub.io/packages/helm/sonarqube/sonarqube#production-use-case for more information.
 {{- end }}

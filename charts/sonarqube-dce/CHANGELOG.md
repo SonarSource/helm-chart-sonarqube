@@ -14,6 +14,7 @@ All changes to this chart will be documented in this file.
 * Set memory and cpu limits for the test container
 * Fix `searchAuthentication` probes failure by enforcing basic auth on wget
 * Remove outdated doc about persistency
+* Deprecate nginx.enabled in favor of ingress-nginx.enabled, to match with subchart config block
 
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0
