@@ -125,7 +125,7 @@ The SonarQube helm chart is packed with multiple features enabling users to inst
 
 Nonetheless, if you intend to run a production-grade SonarQube please follow these recommendations.
 
-* Set `nginx.enabled` to **false**. This parameter would run the nginx chart. This is useful for testing purposes only. Ingress controllers are critical Kubernetes components, we advise users to install their own.
+* Set `ingress-nginx.enabled` to **false**. This parameter would run the nginx chart. This is useful for testing purposes only. Ingress controllers are critical Kubernetes components, we advise users to install their own.
 * Set `postgresql.enabled` to **false**. This parameter would run the postgresql pre-2022 bitnami chart. That is useful for testing purposes, however, given that the database is at the hearth of SonarQube, we advise users to be careful with it and use a well-maintained database as a service or deploy their own database on top of Kubernetes.
 * Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
 * Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
@@ -147,10 +147,10 @@ Please find here the default SonarQube Xmx parameters to setup the memory reques
 
 To comply with the 80% rule mentioned above, we set the following default values:
 
-- searchNodes.resources.memory.request/limit=3072M
-- ApplicationNodes.resources.memory.request/limit=4096M
+* searchNodes.resources.memory.request/limit=3072M
+* ApplicationNodes.resources.memory.request/limit=4096M
 
-Please feel free to adjust those values to your needs. However, given that memory is a “non-compressible” resource, we advise you to set the memory requests and limits to the **same**, making memory a guaranteed resource. This is needed especially for production use cases. 
+Please feel free to adjust those values to your needs. However, given that memory is a “non-compressible” resource, we advise you to set the memory requests and limits to the **same**, making memory a guaranteed resource. This is needed especially for production use cases.
 
 To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/configure-and-operate-a-server/environment-variables/) and set the environment variables or sonar.properties accordingly.
 
@@ -373,7 +373,8 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                      | Description                                                  | Default                                                                        |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| `nginx.enabled`                | Also install Nginx Ingress Helm                              | `false`                                                                        |
+| `ingress-nginx.enabled`        | Install Nginx Ingress Helm                                   | `false`                                                                        |
+| `nginx.enabled`                | (DEPRECATED) please use `ingress-nginx.enabled`              | `false`                                                                        |
 | `ingress.enabled`              | Flag to enable Ingress                                       | `false`                                                                        |
 | `ingress.labels`               | Ingress additional labels                                    | `{}`                                                                           |
 | `ingress.hosts[0].name`        | Hostname to your SonarQube installation                      | `sonarqube.your-org.com`                                                       |
@@ -382,7 +383,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | `None`                                                                         |
 | `ingress.tls`                  | Ingress secrets for TLS certificates                         | `[]`                                                                           |
 | `ingress.ingressClassName`     | Optional field to configure ingress class name               | `None`                                                                         |
-| `ingress.annotations`          | Field to add extra annotations to the ingress                | {`nginx.ingress.kubernetes.io/proxy-body-size: "64m"`} if `nginx.enabled=true` |
+| `ingress.annotations`          | Field to add extra annotations to the ingress                | {`nginx.ingress.kubernetes.io/proxy-body-size: "64m"`} if `ingress-nginx.enabled=true or nginx.enabled=true` |
 
 ### InitContainers
 
@@ -464,7 +465,7 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `tests.enabled`                 | Flag that allows tests to be excluded from the generated yaml | `true`                                                             |
 | `tests.image`                   | Set the test container image                                  | `"ApplicationNodes.image.repository":"ApplicationNodes.image.tag"` |
 | `tests.resources.limits.cpu`    | CPU limit for test container                                  | `500m`                                                             |
-| `tests.resources.limits.memory` | Memory limit for test container                               | `200M`                                                             | 
+| `tests.resources.limits.memory` | Memory limit for test container                               | `200M`                                                             |
 
 ### ServiceAccount
 

@@ -51,6 +51,8 @@ annotations:
       description: "Fix `searchAuthentication` probes failure by enforcing basic auth on wget"
     - kind: removed
       description: "Remove outdated doc about persistency"
+    - kind: deprecated
+      description: "Deprecate nginx.enabled in favor of ingress-nginx.enabled, to match with subchart config block"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/
@@ -70,4 +72,4 @@ dependencies:
   - name: ingress-nginx
     version: 4.9.1
     repository: https://kubernetes.github.io/ingress-nginx
-    condition: nginx.enabled
+    condition: nginx.enabled,ingress-nginx.enabled

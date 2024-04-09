@@ -13,12 +13,12 @@ metadata:
 {{- if .Values.ingress.labels }}
 {{ .Values.ingress.labels | toYaml | trimSuffix "\n"| indent 4 -}}
 {{- end}}
-{{- if or .Values.ingress.annotations .Values.nginx.enabled}}
+{{- if or .Values.ingress.annotations (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled")}}
   annotations:
     {{- range $key, $value := .Values.ingress.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
-    {{- if and .Values.nginx.enabled (not (hasKey (.Values.ingress.annotations) "nginx.ingress.kubernetes.io/proxy-body-size")) }}
+    {{- if and (or (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled")) (not (hasKey (.Values.ingress.annotations) "nginx.ingress.kubernetes.io/proxy-body-size")) }}
     nginx.ingress.kubernetes.io/proxy-body-size: "64m"
     {{- end -}}
 {{- end }}

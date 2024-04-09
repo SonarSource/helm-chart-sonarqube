@@ -87,9 +87,17 @@ networkPolicy:
 # if .Values.env.SONAR_WEB_CONTEXT is set, this value will be ignored
 sonarWebContext: ""
 
-# also install the nginx ingress helm chart
-nginx:
+# (DEPRECATED) please use ingress-nginx instead
+# nginx:
+#   enabled: false
+
+# Install the nginx ingress helm chart
+ingress-nginx:
   enabled: false
+
+  # You can add here any values from the official nginx ingress chart
+  # controller:
+  #   replicaCount: 3
 
 ingress:
   enabled: false
