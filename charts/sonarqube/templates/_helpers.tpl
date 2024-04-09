@@ -204,3 +204,20 @@ Set sonarqube.webcontext, ensuring it starts and ends with a slash, in order to 
 {{- end -}}
 {{ printf "%s" $tempWebcontext }}
 {{- end -}}
+
+
+{{/*
+Set combined_env, ensuring we dont have any duplicates with our features and some of the user provided env vars
+*/}}
+{{- define "sonarqube.combined_env" -}}
+{{- $filteredEnv := list -}}
+{{- range $index,$val := .Values.env -}}
+  {{- if not (has $val.name (list "SONAR_WEB_CONTEXT" "SONAR_WEB_JAVAOPTS" "SONAR_CE_JAVAOPTS")) -}}
+    {{- $filteredEnv = append $filteredEnv $val -}}
+  {{- end -}}
+{{- end -}}
+{{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_WEB_CONTEXT" "value" (include "sonarqube.webcontext" .)) -}}
+{{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_WEB_JAVAOPTS" "value" (include "sonarqube.jvmOpts" .)) -}}
+{{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_CE_JAVAOPTS" "value" (include "sonarqube.jvmCEOpts" .)) -}}
+{{- toJson $filteredEnv -}}
+{{- end -}}

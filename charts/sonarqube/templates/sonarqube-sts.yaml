@@ -96,7 +96,7 @@ spec:
               subPath: certs
             - mountPath: /tmp/secrets/ca-certs
               name: ca-certs
-          {{- with .Values.env }}
+          {{- with include "sonarqube.combined_env" . | fromJsonArray }}
           env:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
@@ -117,7 +117,7 @@ spec:
           volumeMounts:
             - name: init-sysctl
               mountPath: /tmp/scripts/
-          {{- with .Values.env }}
+          {{- with include "sonarqube.combined_env" . | fromJsonArray }}
           env:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
@@ -160,7 +160,7 @@ spec:
           {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
-          {{- with .Values.env }}
+          {{- with include "sonarqube.combined_env" . | fromJsonArray }}
           env:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
@@ -189,7 +189,7 @@ spec:
               value: {{ default "" .Values.prometheusExporter.httpsProxy }}
             - name: no_proxy
               value: {{ default "" .Values.prometheusExporter.noProxy }}
-          {{- with .Values.env }}
+          {{- with include "sonarqube.combined_env" . | fromJsonArray }}
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
@@ -268,7 +268,7 @@ spec:
               value: {{ default "" .Values.plugins.httpsProxy }}
             - name: no_proxy
               value: {{ default "" .Values.plugins.noProxy }}
-          {{- with .Values.env }}
+          {{- with include "sonarqube.combined_env" . | fromJsonArray }}
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
@@ -294,17 +294,11 @@ spec:
           resources:
 {{ toYaml (default .Values.resources .Values.resource) | indent 12 }}
           env:
-            {{- with .Values.env }}
+            {{- with include "sonarqube.combined_env" . | fromJsonArray }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
             - name: SONAR_HELM_CHART_VERSION
               value: {{ .Chart.Version | replace "+" "_" }}
-            - name: SONAR_WEB_JAVAOPTS
-              value: {{ template "sonarqube.jvmOpts" . }}
-            - name: SONAR_WEB_CONTEXT
-              value: {{ include "sonarqube.webcontext" . }}
-            - name: SONAR_CE_JAVAOPTS
-              value: {{ template "sonarqube.jvmCEOpts" . }}
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
