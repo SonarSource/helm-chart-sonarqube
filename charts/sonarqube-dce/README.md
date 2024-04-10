@@ -51,7 +51,7 @@ In order to use it, please set the version constraint `~7`, which is equivalent 
 Example:
 
 ```Bash
-helm upgrade --install -n sonarqube-dce --version ~7 sonarqube sonarqube/sonarqube-dce --set ApplicationNodes.jwtSecret=$JWT_SECRET
+helm upgrade --install -n sonarqube-dce --version '~7' sonarqube sonarqube/sonarqube-dce --set ApplicationNodes.jwtSecret=$JWT_SECRET
 ```
 
 ## How to use it

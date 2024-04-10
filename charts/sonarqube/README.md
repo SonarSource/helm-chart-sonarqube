@@ -41,8 +41,8 @@ In order to use it, please set the version constraint `~8`, which is equivalent 
 
 Example:
 
-```
-helm upgrade --install -n sonarqube --version ~8 sonarqube sonarqube/sonarqube
+```Bash
+helm upgrade --install -n sonarqube --version '~8' sonarqube sonarqube/sonarqube
 ```
 
 To upgrade from the old and unmaintained [sonarqube-lts chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube-lts), please follow the steps described [in this section](#upgrade-from-the-old-sonarqube-lts-to-this-chart).
