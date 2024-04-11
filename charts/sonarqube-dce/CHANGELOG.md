@@ -16,6 +16,7 @@ All changes to this chart will be documented in this file.
 * Remove outdated doc about persistency
 * Deprecate nginx.enabled in favor of ingress-nginx.enabled, to match with subchart config block
 * Deprecate `ApplicationNodes.prometheusMonitoring.podMonitor.namespace`
+* Instantiate `monitoring-web` and `monitoring-ce` endpoints when the `ApplicationNodes.prometheusExporter` is enabled
 
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0
