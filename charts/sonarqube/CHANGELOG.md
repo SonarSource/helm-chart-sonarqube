@@ -10,6 +10,13 @@ All changes to this chart will be documented in this file.
 ## [10.5.0]
 * Update Chart's version to 10.5.0
 * Update nginx-ingress-controller dependency to version 4.9.1
+* Set `automountServiceAccountToken` to false in pod's specifications
+* Update default `resources` values matching better default Xmx and Xms of the SonarQube processes.
+* Make `ephemeral-storage` resource's limits and requests configurable for the SonarQube container
+* Set memory and cpu limits for the test container
+* Deprecate nginx.enabled in favor of ingress-nginx.enabled, to match with subchart config block
+* Deprecate `prometheusMonitoring.podMonitor.namespace`
+* Instantiate `monitoring-web` and `monitoring-ce` endpoints when the `prometheusExporter` is enabled
 
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0
@@ -19,6 +26,7 @@ All changes to this chart will be documented in this file.
 * Add revisionHistoryLimit configuration for SonarQube application Deployment ReplicaSets & StatefulSets
 * Update the security contexts to use root as group ID
 * Fix empty ingress annotations in values
+* Add support for dual stack and IPv6 single stack clusters in readiness/liveness probes
 
 ## [10.3.0]
 * Upgrade SonarQube to 10.3.0

@@ -36,6 +36,22 @@ annotations:
       description: "Update Chart's version to 10.5.0"
     - kind: changed
       description: "Update nginx-ingress-controller dependency to version 4.9.1"
+    - kind: fixed
+      description: "Set 'automountServiceAccountToken' to false in pod's specifications"
+    - kind: changed
+      description: "Update default `resources` values matching better default Xmx and Xms of the SonarQube processes."
+    - kind: changed
+      description: "Make 'ephemeral-storage' resource's limits and requests configurable for the SonarQube container"
+    - kind: changed
+      description: "Set memory and cpu limits for the test container"
+    - kind: fixed
+      description: "Add support for dual stack and IPv6 single stack clusters in readiness/liveness probes"
+    - kind: deprecated
+      description: "Deprecate nginx.enabled in favor of ingress-nginx.enabled, to match with subchart config block"
+    - kind: deprecated
+      description: "Deprecate prometheusMonitoring.podMonitor.namespace"
+    - kind: changed
+      description: "Instantiate monitoring-web and monitoring-ce endpoints when the prometheusExporter is enabled"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube
@@ -48,4 +64,4 @@ dependencies:
   - name: ingress-nginx
     version: 4.9.1
     repository: https://kubernetes.github.io/ingress-nginx
-    condition: nginx.enabled
+    condition: nginx.enabled,ingress-nginx.enabled

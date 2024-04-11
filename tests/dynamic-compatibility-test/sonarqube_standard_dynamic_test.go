@@ -16,6 +16,8 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const TESTS_ENABLING_ACTION = "tests.enabled"
+
 // Teardown resources after test execution: namespace deleted
 func SetupTest(t *testing.T, options *k8s.KubectlOptions, namespaceName string) func(t *testing.T, options *k8s.KubectlOptions, namespaceName string) {
 	log.Println("setup test: Remove leftovers from previous deployments in the same namespace")
@@ -57,27 +59,27 @@ func TestSonarQubeChartDynamicCompatibility(t *testing.T) {
 		values           map[string]string
 		valuesFilesPaths []string
 	}{
-		{"standard-chart-default-values-deployment", "sonarqube", 2, map[string]string{"tests.enabled": "false",
+		{"standard-chart-default-values-deployment", "sonarqube", 2, map[string]string{TESTS_ENABLING_ACTION: "false",
 			"deploymentType":             "Deployment",
 			"prometheusExporter.enabled": "false", // only for deployment
 		}, []string{"../../charts/sonarqube/values.yaml"}},
 
-		{"standard-chart-default-values-sts", "sonarqube", 2, map[string]string{"tests.enabled": "false"},
+		{"standard-chart-default-values-sts", "sonarqube", 2, map[string]string{TESTS_ENABLING_ACTION: "false"},
 			[]string{"../../charts/sonarqube/values.yaml"}},
 
-		{"standard-chart-all-values-deployment", "sonarqube", 2, map[string]string{"tests.enabled": "false",
+		{"standard-chart-all-values-deployment", "sonarqube", 2, map[string]string{TESTS_ENABLING_ACTION: "false",
 			"deploymentType":             "Deployment",
 			"prometheusExporter.enabled": "false", // only for deployment
 		}, []string{"sonarqube/all-values.yaml"}},
 
-		{"standard-chart-all-values-sts", "sonarqube", 2, map[string]string{"tests.enabled": "false"},
+		{"standard-chart-all-values-sts", "sonarqube", 2, map[string]string{TESTS_ENABLING_ACTION: "false"},
 			[]string{"sonarqube/all-values.yaml"}},
 
-		{"dce-chart-default-values", "sonarqube-dce", 6, map[string]string{"tests.enabled": "false",
+		{"dce-chart-default-values", "sonarqube-dce", 6, map[string]string{TESTS_ENABLING_ACTION: "false",
 			"ApplicationNodes.jwtSecret": "dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=",
 		}, []string{"../../charts/sonarqube-dce/values.yaml"}},
 
-		{"dce-chart-all-values", "sonarqube-dce", 6, map[string]string{"tests.enabled": "false",
+		{"dce-chart-all-values", "sonarqube-dce", 6, map[string]string{TESTS_ENABLING_ACTION: "false",
 			"ApplicationNodes.jwtSecret": "dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=",
 		}, []string{"sonarqube-dce/all-values.yaml"}},
 	}
@@ -164,10 +166,10 @@ func CheckPodsInContainersReadyState(t *testing.T, kubectlOptions *k8s.KubectlOp
 func CheckSonarQubeUpAndRunning(t *testing.T, kubectlOptions *k8s.KubectlOptions, chartName string) {
 
 	// open a tunnel to the running sonarqube instance using a random port
-	pod_name := k8s.ListPods(t, kubectlOptions, v1.ListOptions{LabelSelector: "app=" + chartName + ",release=" + chartName})[0].Name
-	fmt.Printf("Opening a tunnel to %v\n", pod_name)
+	podName := k8s.ListPods(t, kubectlOptions, v1.ListOptions{LabelSelector: "app=" + chartName + ",release=" + chartName})[0].Name
+	fmt.Printf("Opening a tunnel to %v\n", podName)
 	tunnel := k8s.NewTunnel(
-		kubectlOptions, k8s.ResourceTypePod, pod_name, 0, 9000)
+		kubectlOptions, k8s.ResourceTypePod, podName, 0, 9000)
 	defer tunnel.Close()
 	tunnel.ForwardPort(t)
 

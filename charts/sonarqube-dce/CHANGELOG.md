@@ -6,6 +6,17 @@ All changes to this chart will be documented in this file.
 * Update nginx-ingress-controller dependency to version 4.9.1
 * Fix the ingress.ingressClassName not being evaluated
 * Fix searchNodes.securityContext and ApplicationNodes.securityContext not being evaluated
+* Fix duplicated `ApplicationNodes.resources` parameters in the README
+* Add `gcp_marketplace` value, implementing compatibility with google cloud marketplace app
+* Set `automountServiceAccountToken` to false in pod's specifications
+* Update default `ApplicationNodes.resources` and `searchNodes.resources` to values matching better default Xmx and Xms of the SonarQube processes.
+* Make `ephemeral-storage` resource's limits and requests configurable for the SonarQube App and Search containers
+* Set memory and cpu limits for the test container
+* Fix `searchAuthentication` probes failure by enforcing basic auth on wget
+* Remove outdated doc about persistency
+* Deprecate nginx.enabled in favor of ingress-nginx.enabled, to match with subchart config block
+* Deprecate `ApplicationNodes.prometheusMonitoring.podMonitor.namespace`
+* Instantiate `monitoring-web` and `monitoring-ce` endpoints when the `ApplicationNodes.prometheusExporter` is enabled
 
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0

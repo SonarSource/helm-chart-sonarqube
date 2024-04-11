@@ -1,0 +1,96 @@
+x-google-marketplace:
+  clusterConstraints:
+    istio:
+      type: UNSUPPORTED
+  schemaVersion: v2
+  applicationApiVersion: v1beta1
+  publishedVersion: "$TAG"
+  publishedVersionMetadata:
+    releaseNote: >-
+      Releasing SonarQube 10.4.x as a google cloud k8s marketplace application
+      Please find the release note here: https://www.sonarsource.com/blog/sonarqube-10-4-release-announcement
+  images:
+    '':
+      properties:
+        ApplicationNodes.image.repository:
+          type: REPO_WITH_REGISTRY
+        ApplicationNodes.image.tag:
+          type: TAG
+    sonarqube-dce-search:
+      properties:
+        searchNodes.image.repository:
+          type: REPO_WITH_REGISTRY
+        searchNodes.image.tag:
+          type: TAG
+
+properties:
+  name:
+    type: string
+    x-google-marketplace:
+      type: NAME
+  namespace:
+    type: string
+    x-google-marketplace:
+      type: NAMESPACE
+  ApplicationNodes.jwtSecret:
+    title: Application authentication JWT Token
+    description: A HS256 key encoded with base64. Please refer to docs.sonarsource.com for more details.
+    type: string
+    x-google-marketplace:
+      type: MASKED_FIELD
+  jdbcOverwrite.enable:
+    title: Connection to a database - Recommended
+    description: Connect SonarQube to your PostgreSQL database. The connection parameters JDBC URL, username, and password will be used. Make sure that the Embedded database option is disabled.
+    type: boolean
+    default: true
+  jdbcOverwrite.jdbcUrl:
+    title: JDBC URL
+    description: The JDBC URL to connect to the database
+    type: string
+    default: ''
+  jdbcOverwrite.jdbcUsername:
+    title: JDBC Username
+    description: The username to connect to the database
+    type: string
+    default: ''
+  jdbcOverwrite.jdbcPassword:
+    title: JDBC Password
+    description: The password to connect to the database
+    type: string
+    default: ''
+  ApplicationNodes.replicaCount:
+    title: Application nodes replicas
+    description: Number of replicas for the Application nodes
+    type: integer
+    default: 2
+  searchNodes.replicaCount:
+    title: Search nodes replicas
+    description: Number of replicas for the Search nodes
+    type: integer
+    default: 3
+  initSysctl.enabled:
+    title: Enable initSysctl privileged initContainer to setup elasticearch kernel parameters.
+    description: please read docs.sonarsource.com related to elasticsearch prerequisites, this should be disabled and setup by your cluster admin in most case.
+    type: boolean
+    default: true
+  initFs.enabled:
+    title: Enable initFs root initContainer to setup filesystem parameters.
+    description: please read docs.sonarsource.com kubernetes section, this should not be required on google kubernetes clusters
+    type: boolean
+    default: false
+  gcp_marketplace:
+    title: GCP Marketplace application
+    description: This flag is required to indicate that the chart runs as a GCP marketplace application.
+    type: string
+    default: 'true'
+    enum:
+      - 'true'
+  postgresql.enabled:
+    title: Embedded database - For testing purposes only
+    description: Not recommended for production, a test PostgreSQL database will be installed.
+    type: boolean
+    default: false
+required:
+- name
+- namespace
+- ApplicationNodes.jwtSecret

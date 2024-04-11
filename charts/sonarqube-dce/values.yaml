@@ -105,14 +105,17 @@ searchNodes:
 
   ## We usually don't make specific resource recommendations, as they are heavily dependent on
   ## The usage of SonarQube and the surrounding infrastructure.
-  ## Adjust these values to your needs, but make sure that the memory limit is never under 4 GB
+  ## Those default are based on the default -Xmx2G -Xms2G settings of searchNodes sub processes.
+  ## Adjust these values to your needs, you can find more details on the main README of the chart.
   resources:
     limits:
       cpu: 800m
-      memory: 4096M
+      memory: 3072M
+      ephemeral-storage: 512000M
     requests:
       cpu: 400m
-      memory: 2Gi
+      memory: 3072M
+      ephemeral-storage: 1536M
   persistence:
     enabled: true
     ## Set annotations on pvc
@@ -270,8 +273,9 @@ ApplicationNodes:
     podMonitor:
       # Create PodMonitor Resource for Prometheus scraping
       enabled: false
-      # Specify a custom namespace where the PodMonitor will be created
-      namespace: "default"
+      # (DEPRECATED) Specify a custom namespace where the PodMonitor will be created.
+      # This value should not be set, as the PodMonitor's namespace has to match the Release Namespace.
+      # namespace: "default"
       # Specify the interval how often metrics should be scraped
       interval: 30s
       # Specify the timeout after a scrape is ended
@@ -318,15 +322,18 @@ ApplicationNodes:
 
 
   ## We usually don't make specific resource recommendations, as they are heavily dependent on
-  ## The usage of SonarQube and the surrounding infrastructure.
-  ## Adjust these values to your needs, but make sure that the memory limit is never under 4 GB
+  ## the usage of SonarQube and the surrounding infrastructure.
+  ## Those default are based on the default Web -Xmx1G -Xms128m and CE -Xmx2G -Xms128m settings of applicationNode sub processes.
+  ## Adjust these values to your needs, you can find more details on the main README of the chart.
   resources:
     limits:
       cpu: 800m
       memory: 4096M
+      ephemeral-storage: 512000M
     requests:
       cpu: 400m
-      memory: 2Gi
+      memory: 4096M
+      ephemeral-storage: 1536M
 
   ## Array of extra containers to run alongside the sonarqube search container
   ##
@@ -346,9 +353,17 @@ OpenShift:
 # if .Values.ApplicationNodes.env.SONAR_WEB_CONTEXT is set, this value will be ignored
 sonarWebContext: ""
 
-# also install the nginx ingress helm chart
-nginx:
+# (DEPRECATED) please use ingress-nginx instead
+# nginx:
+#   enabled: false
+
+# Install the nginx ingress helm chart
+ingress-nginx:
   enabled: false
+
+  # You can add here any values from the official nginx ingress chart
+  # controller:
+  #   replicaCount: 3
 
 service:
   type: ClusterIP
@@ -623,7 +638,10 @@ logging:
 tests:
   image: ""
   enabled: true
-  resources: {}
+  resources:
+    limits:
+      cpu: 500m
+      memory: 200M
 
 serviceAccount:
   create: false

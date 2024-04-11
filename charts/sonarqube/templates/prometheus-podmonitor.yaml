@@ -3,7 +3,11 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: {{ template "sonarqube.name" . }}
+{{- if .Values.prometheusMonitoring.podMonitor.namespace }}
   namespace: {{ .Values.prometheusMonitoring.podMonitor.namespace | quote }}
+{{- else }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
   labels:
     app: {{ template "sonarqube.name" . }}
 spec:
@@ -34,4 +38,28 @@ spec:
       name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
       key: SONAR_WEB_SYSTEMPASSCODE
     {{- end }}
+{{- if .Values.prometheusExporter.enabled}}
+{{- if .Values.prometheusExporter.ceBeanPort}}
+  - port: monitoring-ce
+    path: /
+    scheme: http
+    {{- if .Values.prometheusMonitoring.podMonitor.interval }}
+    interval: {{ .Values.prometheusMonitoring.podMonitor.interval }}
+    {{- end }}
+    {{- if .Values.prometheusMonitoring.podMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ .Values.prometheusMonitoring.podMonitor.scrapeTimeout }}
+    {{- end }}
+{{- end }}
+{{- if .Values.prometheusExporter.webBeanPort}}
+  - port: monitoring-web
+    path: /
+    scheme: http
+    {{- if .Values.prometheusMonitoring.podMonitor.interval }}
+    interval: {{ .Values.prometheusMonitoring.podMonitor.interval }}
+    {{- end }}
+    {{- if .Values.prometheusMonitoring.podMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ .Values.prometheusMonitoring.podMonitor.scrapeTimeout }}
+    {{- end }}
+{{- end }}
+{{- end }}
 {{- end }}

@@ -86,7 +86,8 @@ RUN set -eux; \
     tar -xf ah_${AH_VERSION}_linux_amd64.tar.gz ; \
     chmod +x ./ah ; \
     mv ./ah /usr/bin/ah ; \
-    rm LICENSE
+    rm LICENSE; \
+    rm -rf ah_${AH_VERSION}_linux_amd64.tar.gz
 
 RUN set -eux; \
     curl -LO https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64 ; \
@@ -104,4 +105,4 @@ RUN set -eux; \
 
 COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
 COPY --from=tools /usr/local/bin/gh /usr/local/bin/gh
-COPY --from=tools /home/sonarsource/.m2/settings-public.xml /root/.m2/settings-public.xml
+COPY --from=tools /home/sonarsource/.m2/settings-public-auth.xml /root/.m2/settings-public.xml

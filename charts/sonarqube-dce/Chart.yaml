@@ -35,6 +35,28 @@ annotations:
       description: "Fix the ingress.ingressClassName not being evaluated"
     - kind: fixed
       description: "Fix searchNodes.securityContext and ApplicationNodes.securityContext not being evaluated"
+    - kind: fixed
+      description: "Fix duplicated ApplicationNodes.resources parameters in the README"
+    - kind: added
+      description: "Add `gcp_marketplace` value, implementing compatibility with google cloud marketplace app"
+    - kind: fixed
+      description: "Set 'automountServiceAccountToken' to false in pod's specifications"
+    - kind: changed
+      description: "Update default `ApplicationNodes.resources` and `searchNodes.resources` to values matching better default Xmx and Xms of the SonarQube processes."
+    - kind: changed
+      description: "Make 'ephemeral-storage' resource's limits and requests configurable for the SonarQube App and Search containers"
+    - kind: changed
+      description: "Set memory and cpu limits for the test container"
+    - kind: fixed
+      description: "Fix `searchAuthentication` probes failure by enforcing basic auth on wget"
+    - kind: removed
+      description: "Remove outdated doc about persistency"
+    - kind: deprecated
+      description: "Deprecate nginx.enabled in favor of ingress-nginx.enabled, to match with subchart config block"
+    - kind: deprecated
+      description: "Deprecate ApplicationNodes.prometheusMonitoring.podMonitor.namespace"
+    - kind: changed
+      description: "Instantiate monitoring-web and monitoring-ce endpoints when the ApplicationNodes.prometheusExporter is enabled"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/
@@ -54,4 +76,4 @@ dependencies:
   - name: ingress-nginx
     version: 4.9.1
     repository: https://kubernetes.github.io/ingress-nginx
-    condition: nginx.enabled
+    condition: nginx.enabled,ingress-nginx.enabled

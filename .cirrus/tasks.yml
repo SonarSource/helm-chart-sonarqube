@@ -4,6 +4,10 @@ env:
   DOCKER_USERNAME: VAULT[development/kv/data/docker/sonardockerrw data.username]
   DOCKER_PASSWORD: VAULT[development/kv/data/docker/sonardockerrw data.access_token_rwd]
   KUBE_VERSION: 1.29.0
+  DOCKER_GCLOUD_SA_KEY: VAULT[development/team/sonarqube/kv/data/gcp-marketplace-registry-staging data.key]
+  GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider # This is the staging registry
+  GCLOUD_PRODUCT_NAME: sonarqube-dce-staging # This is the staging product name
+  GCLOUD_TAG: 10.5.0
 
 except_nightly_cron: &EXCEPT_ON_NIGHTLY_CRON
   only_if: $CIRRUS_CRON != $NIGHTLY_CRON
@@ -33,6 +37,12 @@ container_template: &STD_CONTAINER_TEMPLATE
   cpu: 1
   memory: 1Gb
 
+vm_instance_template: &VM_TEMPLATE
+  image: docker-builder-v*
+  type: t2.small
+  region: eu-central-1
+  subnet_id: ${CIRRUS_AWS_SUBNET}
+
 clone_script_template: &CLONE_SCRIPT_TEMPLATE
   clone_script: |
     if [ -z "$CIRRUS_PR" ]; then
@@ -43,6 +53,68 @@ clone_script_template: &CLONE_SCRIPT_TEMPLATE
       git fetch origin pull/$CIRRUS_PR/head:pull/$CIRRUS_PR
       git reset --hard $CIRRUS_CHANGE_IN_REPO
     fi
+
+build_gcp_app_template: &BUILD_GCP_APP_TEMPLATE
+  ec2_instance:
+    <<: *VM_TEMPLATE
+  login_to_gcr_script:
+    - export DOCKER_GCLOUD_PASSWORD=$(echo ${DOCKER_GCLOUD_SA_KEY} | base64 -d)
+    - docker login -u _json_key -p "$DOCKER_GCLOUD_PASSWORD" https://${GCLOUD_REGISTRY}
+  install_helm_script:
+    - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+    - chmod 700 get_helm.sh
+    - ./get_helm.sh
+  helm_dependency_build_script:
+    - cd charts/sonarqube-dce
+    - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+    - helm repo add bitnami https://charts.bitnami.com/bitnami
+    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+    - helm dependency build
+  tag_and_promote_script:
+    - export CURRENT_MINOR_VERSION=$(echo ${GCLOUD_TAG} | cut -d '.' -f 1,2)
+    - docker build -f google-cloud-marketplace-k8s-app/Dockerfile --build-arg REGISTRY=${GCLOUD_REGISTRY} --build-arg TAG=${GCLOUD_TAG} --tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} .
+    - docker tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${GCLOUD_TAG}
+    - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${GCLOUD_TAG}
+    - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION}
+
+build_gcp_staging_app_task:
+  <<: *BUILD_GCP_APP_TEMPLATE
+  only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $TRIGGER == "PUSH_PROD_DEPLOYER" || $BRANCH == "master"
+  env:
+    GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
+
+verify_gcp_app_template: &VERIFY_GCP_APP_TEMPLATE
+  only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $BRANCH == "master"
+  env:
+    BASE_FOLDER: "/root/.gcp/cache"
+    PATH: "${BASE_FOLDER}/bin:${BASE_FOLDER}/google-cloud-sdk/bin:${PATH}"
+    KUBE_CONFIG: "/tmp/kubeconfig"
+    KUBECONFIG: "${KUBE_CONFIG}"
+    HOME: "/tmp"
+  gcp_cache:
+    folder: ${BASE_FOLDER}
+    fingerprint_script: grep "gcloud" .tool-versions | awk '{print $NF}'
+    populate_script: 
+      - ./.cirrus/setup.sh
+  ec2_instance:
+    <<: *VM_TEMPLATE
+  login_script:
+    - echo ${DOCKER_GCLOUD_SA_KEY} | base64 -d > /tmp/key.json
+    - gcloud auth activate-service-account cirrusciservice@sonarqube-marketplace-provider.iam.gserviceaccount.com --key-file /tmp/key.json --project=sonarqube-marketplace-provider
+    - gcloud container clusters get-credentials sonarqube-marketplace-staging-standard --zone=europe-west1-b --project=sonarqube-marketplace-provider
+  verify_script:
+    - kubectl get pods
+    - mpdev verify --deployer=$GCLOUD_REGISTRY/$GCLOUD_PRODUCT_NAME/deployer:$GCLOUD_TAG --wait_timeout=1200 --parameters='{"name":"${GCLOUD_PRODUCT_NAME}-cirrus-test", "namespace":"test-cirrus","ApplicationNodes.jwtSecret":"dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=", "postgresql.enabled":true, "jdbcOverwrite.enable":false }'
+  depends_on:
+    - build_gcp_staging_app
+
+verify_gcp_staging_app_task:
+  <<: *VERIFY_GCP_APP_TEMPLATE
+  only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $TRIGGER == "PUSH_PROD_DEPLOYER" || $BRANCH == "master"
+  env:
+    GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
+  depends_on:
+    - build_gcp_staging_app
 
 chart_static_compatibility_test_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
@@ -172,3 +244,12 @@ trigger_release_task:
   on_failure:
     slack_notification_script:
       - ./.cirrus/slack-notification.sh
+
+release_gcp_prod_app_task:
+  <<: *BUILD_GCP_APP_TEMPLATE
+  only_if: $TRIGGER == "PUSH_PROD_DEPLOYER"
+  env:
+    GCLOUD_REGISTRY: gcr.io/sonarsource-public
+    GCLOUD_PRODUCT_NAME: official-sonarqube-data-center-edition
+  depends_on:
+    - verify_gcp_staging_app

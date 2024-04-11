@@ -11,6 +11,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
+  automountServiceAccountToken: false
   {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret }}
   imagePullSecrets:
     {{- if .Values.ApplicationNodes.image.pullSecret }}
@@ -30,7 +31,7 @@ spec:
         '--waitretry=1',
         '--timeout=5',
         '-t',
-        '12',
+        '1200',
         '-qO-',
         '{{ template "sonarqube.fullname" . }}:{{ .Values.service.internalPort }}/api/system/status'
         ]
