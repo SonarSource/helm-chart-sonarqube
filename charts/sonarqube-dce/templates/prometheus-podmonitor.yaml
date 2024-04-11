@@ -3,7 +3,11 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: {{ template "sonarqube.name" . }}
+{{- if .Values.ApplicationNodes.prometheusMonitoring.podMonitor.namespace }}
   namespace: {{ .Values.ApplicationNodes.prometheusMonitoring.podMonitor.namespace | quote }}
+{{- else }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
   labels:
     app: {{ template "sonarqube.name" . }}
 spec:

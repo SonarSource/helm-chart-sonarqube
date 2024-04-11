@@ -9,6 +9,7 @@ All changes to this chart will be documented in this file.
 * Make `ephemeral-storage` resource's limits and requests configurable for the SonarQube container
 * Set memory and cpu limits for the test container
 * Deprecate nginx.enabled in favor of ingress-nginx.enabled, to match with subchart config block
+* Deprecate `prometheusMonitoring.podMonitor.namespace`
 
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0

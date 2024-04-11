@@ -356,13 +356,13 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Monitoring (Prometheus PodMonitor)
 
-| Parameter                                       | Description                                                           | Default   |
-| ----------------------------------------------- | --------------------------------------------------------------------- | --------- |
-| `prometheusMonitoring.podMonitor.enabled`       | Enable Prometheus PodMonitor                                          | `false`   |
-| `prometheusMonitoring.podMonitor.namespace`     | Specify a custom namespace where the PodMonitor will be created       | `default` |
-| `prometheusMonitoring.podMonitor.interval`      | Specify the interval how often metrics should be scraped              | `30s`     |
-| `prometheusMonitoring.podMonitor.scrapeTimeout` | Specify the timeout after a scrape is ended                           | `None`    |
-| `prometheusMonitoring.podMonitor.jobLabel`      | Name of the label on target services that prometheus uses as job name | `None`    |
+| Parameter                                       | Description                                                                                                 | Default                    |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `prometheusMonitoring.podMonitor.enabled`       | Enable Prometheus PodMonitor                                                                                | `false`                    |
+| `prometheusMonitoring.podMonitor.namespace`     | (DEPRECATED) This value should not be set, as the PodMonitor's namespace has to match the Release Namespace | `{{ .Release.Namespace }}` |
+| `prometheusMonitoring.podMonitor.interval`      | Specify the interval how often metrics should be scraped                                                    | `30s`                      |
+| `prometheusMonitoring.podMonitor.scrapeTimeout` | Specify the timeout after a scrape is ended                                                                 | `None`                     |
+| `prometheusMonitoring.podMonitor.jobLabel`      | Name of the label on target services that prometheus uses as job name                                       | `None`                     |
 
 ### Plugins
 
