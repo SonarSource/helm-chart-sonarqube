@@ -273,8 +273,9 @@ ApplicationNodes:
     podMonitor:
       # Create PodMonitor Resource for Prometheus scraping
       enabled: false
-      # Specify a custom namespace where the PodMonitor will be created
-      namespace: "default"
+      # (DEPRECATED) Specify a custom namespace where the PodMonitor will be created.
+      # This value should not be set, as the PodMonitor's namespace has to match the Release Namespace.
+      # namespace: "default"
       # Specify the interval how often metrics should be scraped
       interval: 30s
       # Specify the timeout after a scrape is ended

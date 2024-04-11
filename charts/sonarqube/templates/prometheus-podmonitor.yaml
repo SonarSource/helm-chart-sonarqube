@@ -3,7 +3,11 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: {{ template "sonarqube.name" . }}
+{{- if .Values.prometheusMonitoring.podMonitor.namespace }}
   namespace: {{ .Values.prometheusMonitoring.podMonitor.namespace | quote }}
+{{- else }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
   labels:
     app: {{ template "sonarqube.name" . }}
 spec:
@@ -34,4 +38,12 @@ spec:
       name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
       key: SONAR_WEB_SYSTEMPASSCODE
     {{- end }}
+  - interval: 30s
+    path: /
+    scheme: http
+    port: monitoring-ce
+  - interval: 30s
+    path: /
+    scheme: http
+    port: monitoring-web
 {{- end }}
