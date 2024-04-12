@@ -22,7 +22,7 @@ spec:
       app: {{ template "sonarqube.name" . }}
   podMetricsEndpoints:
   - port: http
-    path: /api/monitoring/metrics
+    path: {{ include "sonarqube.webcontext" . }}api/monitoring/metrics
     scheme: http
     {{- if .Values.prometheusMonitoring.podMonitor.interval }}
     interval: {{ .Values.prometheusMonitoring.podMonitor.interval }}
