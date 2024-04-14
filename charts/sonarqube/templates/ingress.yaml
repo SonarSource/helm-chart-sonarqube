@@ -6,13 +6,10 @@ kind: Ingress
 metadata:
   name: {{ template "sonarqube.fullname" . }}
   labels:
-    app: {{ template "sonarqube.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-{{- if .Values.ingress.labels }}
-{{ .Values.ingress.labels | toYaml | trimSuffix "\n"| indent 4 -}}
-{{- end}}
+    {{- include "sonarqube.labels" . | nindent 4 }}
+    {{- with .Values.ingress.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 {{- if or .Values.ingress.annotations (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled")}}
   annotations:
     {{- range $key, $value := .Values.ingress.annotations }}

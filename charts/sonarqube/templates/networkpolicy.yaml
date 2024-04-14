@@ -4,11 +4,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: {{ template "sonarqube.fullname" . }}-network-policy
-  labels:
-    app: {{ template "sonarqube.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
@@ -66,11 +62,7 @@ kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
   name: {{ template "sonarqube.fullname" . }}-database
-  labels:
-    app: {{ template "sonarqube.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
@@ -102,11 +94,7 @@ kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
   name: {{ template "sonarqube.fullname" . }}-additional-network-policy
-  labels:
-    app: {{ template "sonarqube.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
 {{- with .Values.networkPolicy.additionalNetworkPolicys -}}
 {{ toYaml . | nindent 2 }}

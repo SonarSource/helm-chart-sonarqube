@@ -5,13 +5,10 @@ apiVersion: route.openshift.io/v1
 metadata:
   name: {{ template "sonarqube.fullname" . }}
   labels:
-    app: {{ template "sonarqube.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-{{- if .Values.route.labels }}
-{{ .Values.route.labels | toYaml | trimSuffix "\n"| indent 4 -}}
-{{- end}}
+    {{- include "sonarqube.labels" . | nindent 4 }}
+    {{- with .Values.route.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 {{- if .Values.route.annotations}}
   annotations:
     {{- range $key, $value := .Values.route.annotations }}

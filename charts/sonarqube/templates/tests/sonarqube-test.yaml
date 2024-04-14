@@ -5,11 +5,7 @@ metadata:
   name: "{{ .Release.Name }}-ui-test"
   annotations:
     "helm.sh/hook": test-success
-  labels:
-    app: {{ template "sonarqube.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
   automountServiceAccountToken: false
   {{- if or .Values.image.pullSecrets .Values.image.pullSecret }}

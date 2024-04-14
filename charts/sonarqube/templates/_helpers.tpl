@@ -19,6 +19,37 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{/*
+Common labels
+*/}}
+{{- define "sonarqube.labels" -}}
+app: {{ include "sonarqube.name" . }}
+chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" }}
+release: {{ .Release.Name }}
+heritage: {{ .Release.Service }}
+{{- end -}}
+
+{{/*
+Selector labels
+*/}}
+{{- define "sonarqube.selectorLabels" -}}
+app: {{ include "sonarqube.name" . }}
+release: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Workload labels (Deployment or StatefulSet)
+*/}}
+{{- define "sonarqube.workloadLabels" -}}
+{{- include "sonarqube.labels" . }}
+app.kubernetes.io/name: {{ include "sonarqube.name" . }}-{{ include "sonarqube.fullname" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: sonarqube
+app.kubernetes.io/component: {{ include "sonarqube.fullname" . }}
+app.kubernetes.io/version: {{ tpl .Values.image.tag . | quote }}
+{{- end -}}
+
+{{/*
 Expand the Application Image name.
 */}}
 {{- define "sonarqube.image" -}}
@@ -204,7 +235,6 @@ Set sonarqube.webcontext, ensuring it starts and ends with a slash, in order to 
 {{- end -}}
 {{ printf "%s" $tempWebcontext }}
 {{- end -}}
-
 
 {{/*
 Set combined_env, ensuring we dont have any duplicates with our features and some of the user provided env vars
