@@ -303,7 +303,7 @@ Set combined_app_env, ensuring we dont have any duplicates with our features and
 {{- define "sonarqube.combined_app_env" -}}
 {{- $filteredEnv := list -}}
 {{- range $index,$val := .Values.ApplicationNodes.env -}}
-  {{- if not has $val.name (list "SONAR_WEB_CONTEXT" "SONAR_WEB_JAVAOPTS" "SONAR_CE_JAVAOPTS") -}}
+  {{- if not (has $val.name (list "SONAR_WEB_CONTEXT" "SONAR_WEB_JAVAOPTS" "SONAR_CE_JAVAOPTS")) -}}
     {{- $filteredEnv = append $filteredEnv $val -}}
   {{- end -}}
 {{- end -}}
