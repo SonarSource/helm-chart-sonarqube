@@ -230,9 +230,10 @@ spec:
           resources:
 {{ toYaml (default .Values.ApplicationNodes.resources .Values.resource) | indent 12 }}
           env:
-            {{- with .Values.ApplicationNodes.env }}
-            {{- . | toYaml | trim | nindent 12 }}
-            {{- end }}
+          {{- range (include "sonarqube.combined_app_env" . | fromJsonArray)  }}
+            - name: {{ .name }}
+              value: {{ .value | quote}}
+          {{- end }}
             - name: SONAR_HELM_CHART_VERSION
               value: {{ .Chart.Version | replace "+" "_" }}
             - name: SONAR_LOG_JSONOUTPUT
@@ -252,12 +253,6 @@ spec:
                 secretKeyRef:
                   name: "{{ template "jwtSecret" . }}"
                   key: SONAR_AUTH_JWTBASE64HS256SECRET
-            - name: SONAR_WEB_JAVAOPTS
-              value: {{ template "sonarqube.jvmOpts" . }}
-            - name: SONAR_CE_JAVAOPTS
-              value: {{ template "sonarqube.jvmCEOpts" . }}
-            - name: SONAR_WEB_CONTEXT
-              value: {{ include "sonarqube.webcontext" . }}
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:

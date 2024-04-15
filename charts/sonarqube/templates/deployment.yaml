@@ -97,9 +97,10 @@ spec:
               subPath: certs
             - mountPath: /tmp/secrets/ca-certs
               name: ca-certs
-          {{- with .Values.env }}
           env:
-            {{- . | toYaml | trim | nindent 12 }}
+          {{- range (include "sonarqube.combined_env" . | fromJsonArray)  }}
+            - name: {{ .name }}
+              value: {{ .value | quote}}
           {{- end }}
       {{- end }}
       {{- if or .Values.initSysctl.enabled .Values.elasticsearch.configureNode }}
@@ -118,9 +119,10 @@ spec:
           volumeMounts:
             - name: init-sysctl
               mountPath: /tmp/scripts/
-          {{- with .Values.env }}
           env:
-            {{- . | toYaml | trim | nindent 12 }}
+          {{- range (include "sonarqube.combined_env" . | fromJsonArray)  }}
+            - name: {{ .name }}
+              value: {{ .value | quote}}
           {{- end }}
       {{- end }}
 
@@ -161,10 +163,11 @@ spec:
           {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
-          {{- with .Values.env }}
           env:
-            {{- . | toYaml | trim | nindent 12 }}
-          {{- end }}
+          {{- range (include "sonarqube.combined_env" . | fromJsonArray)  }}
+            - name: {{ .name }}
+              value: {{ .value | quote}}
+          {{- end }}  
       {{- end }}
 
       {{- if .Values.prometheusExporter.enabled }}
@@ -190,8 +193,9 @@ spec:
               value: {{ default "" .Values.prometheusExporter.httpsProxy }}
             - name: no_proxy
               value: {{ default "" .Values.prometheusExporter.noProxy }}
-          {{- with .Values.env }}
-            {{- . | toYaml | trim | nindent 12 }}
+          {{- range (include "sonarqube.combined_env" . | fromJsonArray)  }}
+            - name: {{ .name }}
+              value: {{ .value | quote}}
           {{- end }}
       {{- end }}
       {{- if .Values.plugins.install }}
@@ -224,9 +228,10 @@ spec:
               value: {{ default "" .Values.plugins.httpsProxy }}
             - name: no_proxy
               value: {{ default "" .Values.plugins.noProxy }}
-          {{- with .Values.env }}
-            {{- . | toYaml | trim | nindent 12 }}
-    {{- end }}
+          {{- range (include "sonarqube.combined_env" . | fromJsonArray)  }}
+            - name: {{ .name }}
+              value: {{ .value | quote}}
+          {{- end }}
     {{- end }}
       containers:
       {{- if .Values.extraContainers }}
@@ -250,17 +255,12 @@ spec:
           resources:
 {{ toYaml (default .Values.resources .Values.resource) | indent 12 }}
           env:
-            {{- with .Values.env }}
-            {{- . | toYaml | trim | nindent 12 }}
-            {{- end }}
+          {{- range (include "sonarqube.combined_env" . | fromJsonArray)  }}
+            - name: {{ .name }}
+              value: {{ .value | quote}}
+          {{- end }}
             - name: SONAR_HELM_CHART_VERSION
               value: {{ .Chart.Version | replace "+" "_" }}
-            - name: SONAR_WEB_JAVAOPTS
-              value: {{ template "sonarqube.jvmOpts" . }}
-            - name: SONAR_CE_JAVAOPTS
-              value: {{ template "sonarqube.jvmCEOpts" . }}
-            - name: SONAR_WEB_CONTEXT
-              value: {{ include "sonarqube.webcontext" . }}
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:

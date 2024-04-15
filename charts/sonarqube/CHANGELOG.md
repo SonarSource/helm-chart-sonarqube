@@ -12,6 +12,7 @@ All changes to this chart will be documented in this file.
 * Deprecate `prometheusMonitoring.podMonitor.namespace`
 * Instantiate `monitoring-web` and `monitoring-ce` endpoints when the `prometheusExporter` is enabled
 * Take `sonarWebContext` into account for the `PodMonitor` path
+* Fix duplicated env_var in Pods causing deployment issue (`SONAR_WEB_CONTEXT`,`SONAR_WEB_JAVAOPTS`,`SONAR_CE_JAVAOPTS`)
 
 ## [10.4.0]
 * Upgrade SonarQube to 10.4.0

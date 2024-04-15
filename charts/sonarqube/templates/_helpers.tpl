@@ -125,11 +125,11 @@ Set sonarqube.jvmOpts
 {{- end -}}
 {{- end -}}
 {{- if and .Values.caCerts.enabled .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder $tempJvm | trim | quote }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder $tempJvm | trim }}
 {{- else if .Values.caCerts.enabled -}}
-{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder $tempJvm | trim | quote }}
+{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder $tempJvm | trim }}
 {{- else if .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder $tempJvm | trim | quote }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder $tempJvm | trim }}
 {{- else -}}
 {{ printf "%s" $tempJvm }}
 {{- end -}}
@@ -150,11 +150,11 @@ Set sonarqube.jvmCEOpts
 {{- end -}}
 {{- end -}}
 {{- if and .Values.caCerts.enabled .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder $tempJvm | trim | quote }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder $tempJvm | trim }}
 {{- else if .Values.caCerts.enabled -}}
-{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder $tempJvm | trim | quote }}
+{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder $tempJvm | trim }}
 {{- else if .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder $tempJvm | trim | quote }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder $tempJvm | trim }}
 {{- else -}}
 {{ printf "%s" $tempJvm }}
 {{- end -}}
@@ -203,4 +203,21 @@ Set sonarqube.webcontext, ensuring it starts and ends with a slash, in order to 
 {{- $tempWebcontext = print $tempWebcontext "/" -}}
 {{- end -}}
 {{ printf "%s" $tempWebcontext }}
+{{- end -}}
+
+
+{{/*
+Set combined_env, ensuring we dont have any duplicates with our features and some of the user provided env vars
+*/}}
+{{- define "sonarqube.combined_env" -}}
+{{- $filteredEnv := list -}}
+{{- range $index,$val := .Values.env -}}
+  {{- if not (has $val.name (list "SONAR_WEB_CONTEXT" "SONAR_WEB_JAVAOPTS" "SONAR_CE_JAVAOPTS")) -}}
+    {{- $filteredEnv = append $filteredEnv $val -}}
+  {{- end -}}
+{{- end -}}
+{{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_WEB_CONTEXT" "value" (include "sonarqube.webcontext" .)) -}}
+{{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_WEB_JAVAOPTS" "value" (include "sonarqube.jvmOpts" .)) -}}
+{{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_CE_JAVAOPTS" "value" (include "sonarqube.jvmCEOpts" .)) -}}
+{{- toJson $filteredEnv -}}
 {{- end -}}
