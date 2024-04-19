@@ -20,7 +20,7 @@ spec:
               release: {{ .Release.Name }}
       ports:
         - port: {{ .Values.service.internalPort }}
-{{ if .Values.prometheusExporter.enabled }}
+    {{ if .Values.prometheusExporter.enabled }}
     - from:
         - namespaceSelector:
             matchLabels:
@@ -30,7 +30,7 @@ spec:
           protocol: TCP
         - port: {{ .Values.prometheusExporter.webBeanPort }}
           protocol: TCP
-{{ end }}
+    {{ end }}
   egress:
     - to:
         - namespaceSelector:
@@ -42,7 +42,7 @@ spec:
       ports:
         - port: 53
           protocol: UDP
-{{- if .Values.postgresql.enabled }}
+    {{- if .Values.postgresql.enabled }}
     - to:
         - podSelector:
             matchLabels:
@@ -50,7 +50,7 @@ spec:
       ports:
         - port: 5432
           protocol: TCP
-{{- end }}
+    {{- end }}
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0

@@ -6,5 +6,5 @@ metadata:
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 data:
   prometheus-config.yaml: |-
-{{ toYaml .Values.prometheusExporter.config | indent 8 }}
+    {{- toYaml .Values.prometheusExporter.config | nindent 4 }}
 {{- end }}
