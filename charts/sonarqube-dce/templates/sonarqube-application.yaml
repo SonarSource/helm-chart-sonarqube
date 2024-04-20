@@ -230,10 +230,7 @@ spec:
           resources:
 {{ toYaml (default .Values.ApplicationNodes.resources .Values.resource) | indent 12 }}
           env:
-          {{- range (include "sonarqube.combined_app_env" . | fromJsonArray)  }}
-            - name: {{ .name }}
-              value: {{ .value | quote}}
-          {{- end }}
+          {{- (include "sonarqube.combined_app_env" . | fromJsonArray) | toYaml | trim | nindent 12 }}
             - name: SONAR_HELM_CHART_VERSION
               value: {{ .Chart.Version | replace "+" "_" }}
             - name: SONAR_LOG_JSONOUTPUT
