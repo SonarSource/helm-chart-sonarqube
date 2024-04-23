@@ -265,13 +265,13 @@ spec:
                   name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
                 {{- end }}
-            {{ if .Values.searchNodes.searchAuthentication.enabled }}
+            {{- if .Values.searchNodes.searchAuthentication.enabled }}
             - name: SONAR_CLUSTER_SEARCH_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: "{{ template "search.userPassword" . }}" 
                   key: SONAR_CLUSTER_SEARCH_PASSWORD
-            {{ end }}
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ template "sonarqube.fullname" . }}-jdbc-config
