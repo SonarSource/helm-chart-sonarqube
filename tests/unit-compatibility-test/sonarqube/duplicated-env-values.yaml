@@ -1,0 +1,14 @@
+env:
+  - name: SONAR_WEB_CONTEXT
+    value: some/context
+  - name: SONAR_CE_JAVAOPTS
+    value: -Xms2G -Xmx2G -DsomeOption=some/Value
+  - name: SONAR_WEB_JAVAOPTS
+    value: -Xmx1g
+  - name: FOOBAR
+    valueFrom:
+      secretKeyRef:
+        name: "sonarqube-ldap"
+        key: BARFOO
+prometheusExporter:
+    enabled: true
