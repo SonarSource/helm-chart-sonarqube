@@ -8,13 +8,13 @@ This helm chart bootstraps a SonarQube Data Center Edition cluster with a Postgr
 
 The latest version of the chart installs the latest SonarQube version.
 
-To install the version of the chart for SonarQube 9.9 LTS, please read the section [below](#installing-the-lts-chart). Deciding between LTS and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/)
+To install the version of the chart for SonarQube 9.9 LTA, please read the section [below](#installing-the-lts-chart). Deciding between LTA and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/)
 
 Please note that this chart does NOT support SonarQube Community, Developer, and Enterprise Editions.
 
 ## Compatibility
 
-Compatible SonarQube Version: `9.9.4`
+Compatible SonarQube Version: `9.9.5`
 
 Supported Kubernetes Versions: From `1.23` to `1.26`
 
@@ -41,9 +41,9 @@ The above command deploys SonarQube on the Kubernetes cluster in the default con
 
 The default login is admin/admin.
 
-## Installing the SonarQube 9.9 LTS chart
+## Installing the SonarQube 9.9 LTA chart
 
-The version of the chart for the SonarQube 9.9 LTS is being distributed as the `7.x.x` version of this chart.
+The version of the chart for the SonarQube 9.9 LTA is being distributed as the `7.x.x` version of this chart.
 
 In order to use it, please set the version constraint `~7`, which is equivalent to `>=7.0.0 && <= 8.0.0`. That version parameter **must** be used in every helm related command including `install`, `upgrade`, `template`, and `diff` (don't treat this as an exhaustive list).
 
@@ -133,7 +133,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter | Description | Default                   |
 | --------- | ----------- |---------------------------|
 | `searchNodes.image.repository` | search image repository | `sonarqube`               |
-| `searchNodes.image.tag` | search image tag | `9.9.4-datacenter-search` |
+| `searchNodes.image.tag` | search image tag | `9.9.5-datacenter-search` |
 | `searchNodes.image.pullPolicy` | search image pull policy | `IfNotPresent`            |
 | `searchNodes.image.pullSecret` | (DEPRECATED) search imagePullSecret to use for private repository | `nil`                     |
 | `searchNodes.image.pullSecrets` | search imagePullSecrets to use for private repository | `nil`                     |
@@ -176,7 +176,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter | Description | Default                |
 | --------- | ----------- |------------------------|
 | `ApplicationNodes.image.repository` | app image repository | `sonarqube`            |
-| `ApplicationNodes.image.tag` | app image tag | `9.9.4-datacenter-app` |
+| `ApplicationNodes.image.tag` | app image tag | `9.9.5-datacenter-app` |
 | `ApplicationNodes.image.pullPolicy` | app image pull policy | `IfNotPresent`         |
 | `ApplicationNodes.image.pullSecret` | (DEPRECATED) app imagePullSecret to use for private repository | `nil`                  |
 | `ApplicationNodes.image.pullSecrets` | app imagePullSecrets to use for private repository | `nil`                  |

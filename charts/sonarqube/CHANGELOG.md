@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [8.0.5]
+* Update SonarQube to 9.9.5
+
 ## [8.0.4]
 * Update SonarQube to 9.9.4
 
