@@ -8,13 +8,13 @@ This chart bootstraps an instance of the latest SonarQube version with a Postgre
 
 The latest version of the chart installs the latest SonarQube version.
 
-To install the version of the chart for SonarQube 9.9 LTS, please read the section [below](#installing-the-sonarqube-99-lts-chart). Deciding between LTS and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/)
+To install the version of the chart for SonarQube 9.9 LTA, please read the section [below](#installing-the-sonarqube-99-lts-chart). Deciding between LTA and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/)
 
 Please note that this chart only supports SonarQube Community, Developer, and Enterprise editions.
 
 ## Compatibility
 
-Compatible SonarQube Version: `9.9.4`
+Compatible SonarQube Version: `9.9.5`
 
 Supported Kubernetes Versions: From `1.23` to `1.26`
 
@@ -33,9 +33,9 @@ The above command deploys SonarQube on the Kubernetes cluster in the default con
 
 The default login is admin/admin.
 
-## Installing the SonarQube 9.9 LTS chart
+## Installing the SonarQube 9.9 LTA chart
 
-The version of the chart for the SonarQube 9.9 LTS is being distributed as the `8.x.x` version of this chart.
+The version of the chart for the SonarQube 9.9 LTA is being distributed as the `8.x.x` version of this chart.
 
 In order to use it, please set the version constraint `~8`, which is equivalent to `>=8.0.0 && <= 9.0.0`. That version parameter **must** be used in every helm related command including `install`, `upgrade`, `template`, and `diff` (don't treat this as an exhaustive list).
 
@@ -172,7 +172,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter | Description | Default                       |
 | --------- | ----------- |-------------------------------|
 | `image.repository` | image repository | `sonarqube`                   |
-| `image.tag` | `sonarqube` image tag. | `9.9.4-{{ .Values.edition }}` |
+| `image.tag` | `sonarqube` image tag. | `9.9.5-{{ .Values.edition }}` |
 | `image.pullPolicy` | Image pull policy  | `IfNotPresent`                |
 | `image.pullSecret` | (DEPRECATED) imagePullSecret to use for private repository | `None`                        |
 | `image.pullSecrets` | imagePullSecrets to use for private repository | `None`                        |
