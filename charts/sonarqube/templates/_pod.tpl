@@ -68,11 +68,7 @@ spec:
           subPath: certs
         - mountPath: /tmp/secrets/ca-certs
           name: ca-certs
-      env:
-        {{- range (include "sonarqube.combined_env" . | fromJsonArray)  }}
-        - name: {{ .name }}
-          value: {{ .value | quote }}
-        {{- end }}
+      env: {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
     {{- if or .Values.initSysctl.enabled .Values.elasticsearch.configureNode }}
     - name: init-sysctl
@@ -88,11 +84,7 @@ spec:
       volumeMounts:
         - name: init-sysctl
           mountPath: /tmp/scripts/
-      env:
-        {{- range (include "sonarqube.combined_env" . | fromJsonArray)  }}
-        - name: {{ .name }}
-          value: {{ .value | quote }}
-        {{- end }}
+      env: {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
     {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
     - name: concat-properties
@@ -131,11 +123,7 @@ spec:
       {{- with .Values.initContainers.resources }}
       resources: {{- toYaml . | nindent 8 }}
       {{- end }}
-      env:
-        {{- range (include "sonarqube.combined_env" . | fromJsonArray)  }}
-        - name: {{ .name }}
-          value: {{ .value | quote }}
-        {{- end }}
+      env: {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
     {{- if .Values.prometheusExporter.enabled }}
     - name: inject-prometheus-exporter
@@ -160,10 +148,7 @@ spec:
           value: {{ default "" .Values.prometheusExporter.httpsProxy }}
         - name: no_proxy
           value: {{ default "" .Values.prometheusExporter.noProxy }}
-        {{- range (include "sonarqube.combined_env" . | fromJsonArray)  }}
-        - name: {{ .name }}
-          value: {{ .value | quote }}
-        {{- end }}
+        {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
     {{- if and .Values.persistence.enabled .Values.initFs.enabled }}
     - name: init-fs
@@ -236,10 +221,7 @@ spec:
           value: {{ default "" .Values.plugins.httpsProxy }}
         - name: no_proxy
           value: {{ default "" .Values.plugins.noProxy }}
-        {{- range (include "sonarqube.combined_env" . | fromJsonArray)  }}
-        - name: {{ .name }}
-          value: {{ .value | quote }}
-        {{- end }}
+        {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
   containers:
     {{- with .Values.extraContainers }}
