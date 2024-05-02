@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [10.5.1]
 * Update Chart's version to 10.5.1
+* Update SonarQube's version to 10.5.1
 * Fix the env-var templating when sourcing from secrets
 
 ## [10.5.0]

@@ -7,7 +7,7 @@ env:
   DOCKER_GCLOUD_SA_KEY: VAULT[development/team/sonarqube/kv/data/gcp-marketplace-registry-staging data.key]
   GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider # This is the staging registry
   GCLOUD_PRODUCT_NAME: sonarqube-dce-staging # This is the staging product name
-  GCLOUD_TAG: 10.5.0
+  GCLOUD_TAG: 10.5.1
 
 except_nightly_cron: &EXCEPT_ON_NIGHTLY_CRON
   only_if: $CIRRUS_CRON != $NIGHTLY_CRON
@@ -68,7 +68,7 @@ build_gcp_app_template: &BUILD_GCP_APP_TEMPLATE
     - cd charts/sonarqube-dce
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
     - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
     - helm dependency build
   tag_and_promote_script:
     - export CURRENT_MINOR_VERSION=$(echo ${GCLOUD_TAG} | cut -d '.' -f 1,2)
@@ -127,7 +127,7 @@ chart_static_compatibility_test_task:
   script:
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
     - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
     - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube
     - helm dependency build
     - ../../.cirrus/unit_helm_compatibility_test.sh
@@ -189,7 +189,7 @@ chart_packaging_task:
     - source cirrus-env BUILD
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
     - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
     - helm repo update
     - ./.cirrus/package.sh
     - ./.cirrus/sign_chart.sh

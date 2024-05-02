@@ -3,7 +3,7 @@ name: sonarqube-dce
 description: SonarQube is a self-managed, automatic code review tool that systematically helps you deliver clean code. As a core element of our Sonar solution, SonarQube integrates into your existing workflow and detects issues in your code to help you perform continuous code inspections of your projects. The tool analyses 30+ different programming languages and integrates into your CI pipeline and DevOps platform to ensure that your code meets high-quality standards.
 type: application
 version: 10.5.1
-appVersion: 10.5.0
+appVersion: 10.5.1
 keywords:
   - coverage
   - security
@@ -29,6 +29,8 @@ annotations:
   artifacthub.io/changes: |
     - kind: changed
       description: "Update Chart's version to 10.5.1"
+    - kind: changed
+      description: "Update SonarQube's version to 10.5.1"
     - kind: fixed
       description: "Fix the env-var templating when sourcing from secrets"
   artifacthub.io/links: |
@@ -39,13 +41,13 @@ annotations:
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-app
-      image: sonarqube:10.5.0-datacenter-app
+      image: sonarqube:10.5.1-datacenter-app
     - name: sonarqube-search
-      image: sonarqube:10.5.0-datacenter-search
+      image: sonarqube:10.5.1-datacenter-search
 dependencies:
   - name: postgresql
     version: 10.15.0
-    repository: https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+    repository: https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
     condition: postgresql.enabled
   - name: ingress-nginx
     version: 4.9.1
