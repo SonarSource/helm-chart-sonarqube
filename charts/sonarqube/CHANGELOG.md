@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [10.6.0]
 * Update Chart's version to 10.6.0
 * Fix the env-var templating when sourcing from secrets
+* Fix the postgresql chart's repository link
 
 ## [10.5.0]
 * Upgrade SonarQube to 10.5.0
