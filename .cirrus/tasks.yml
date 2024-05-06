@@ -67,8 +67,7 @@ build_gcp_app_template: &BUILD_GCP_APP_TEMPLATE
   helm_dependency_build_script:
     - cd charts/sonarqube-dce
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
     - helm dependency build
   tag_and_promote_script:
     - export CURRENT_MINOR_VERSION=$(echo ${GCLOUD_TAG} | cut -d '.' -f 1,2)
@@ -126,8 +125,7 @@ chart_static_compatibility_test_task:
   <<: *CLONE_SCRIPT_TEMPLATE
   script:
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
     - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube
     - helm dependency build
     - ../../.cirrus/unit_helm_compatibility_test.sh
@@ -188,8 +186,7 @@ chart_packaging_task:
   script:
     - source cirrus-env BUILD
     - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-    - helm repo add bitnami https://charts.bitnami.com/bitnami
-    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+    - helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
     - helm repo update
     - ./.cirrus/package.sh
     - ./.cirrus/sign_chart.sh
