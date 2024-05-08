@@ -313,6 +313,10 @@ spec:
             - configMapRef:
                 name: {{ . }}
 {{- end }}
+{{- if .Values.livenessProbe }}
+          livenessProbe:
+{{ toYaml .Values.livenessProbe | indent 12 }}
+{{- else }}
           livenessProbe:
             exec:
               command:
@@ -324,6 +328,11 @@ spec:
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
             timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+{{- end }}
+{{- if .Values.readinessProbe }}
+          readinessProbe:
+{{ toYaml .Values.readinessProbe | indent 12 }}
+{{- else}}
           readinessProbe:
             exec:
               command:
@@ -334,13 +343,18 @@ spec:
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
                 if wget --no-proxy -qO- http://localhost:{{ .Values.service.internalPort }}{{ .Values.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
-                	exit 0
+                       exit 0
                 fi
                 exit 1
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
             timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+{{- end }}
+{{- if .Values.startupProbe }}
+          startupProbe:
+{{ toYaml .Values.startupProbe | indent 12 }}
+{{- else }}
           startupProbe:
             httpGet:
               scheme: HTTP
@@ -350,6 +364,8 @@ spec:
             periodSeconds: {{ .Values.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.startupProbe.failureThreshold }}
             timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+{{- end }}
+
           {{- if .Values.containerSecurityContext }}
           securityContext:
 {{- toYaml .Values.containerSecurityContext | nindent 12 }}
