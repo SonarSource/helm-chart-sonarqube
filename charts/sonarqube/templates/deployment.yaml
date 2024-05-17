@@ -273,10 +273,6 @@ spec:
 {{ tpl (toYaml .Values.livenessProbe | indent 12) . }}
           readinessProbe:
 {{ tpl (toYaml .Values.readinessProbe | indent 12) . }}
-            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
-            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
-            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
-            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
           startupProbe:
             httpGet:
               scheme: HTTP
