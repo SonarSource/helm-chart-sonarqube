@@ -270,9 +270,9 @@ spec:
                 name: {{ . }}
 {{- end }}
           livenessProbe:
-{{ tpl (toYaml .Values.livenessProbe | indent 12) . }}
+{{ tpl (omit .Values.livenessProbe "sonarWebContext" | toYaml | indent 12) . }}
           readinessProbe:
-{{ tpl (toYaml .Values.readinessProbe | indent 12) . }}
+{{ tpl (omit .Values.readinessProbe "sonarWebContext" | toYaml | indent 12) . }}
           startupProbe:
             httpGet:
               scheme: HTTP
