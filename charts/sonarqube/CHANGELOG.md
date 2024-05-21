@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [8.0.6]
+* Fix the postgresql chart's repository link
+
 ## [8.0.5]
 * Update SonarQube to 9.9.5
 
