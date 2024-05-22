@@ -164,8 +164,11 @@ ApplicationNodes:
 
   ## Labels to add to the application pods
   ##
-  # podLabels:
-  #   key: value
+  podLabels:
+    tags.datadoghq.com/env: kind-kind
+    tags.datadoghq.com/service: kind-kind
+    tags.datadoghq.com/version: latest
+    admission.datadoghq.com/enabled: "true"
 
   # A custom sonar.properties file can be provided via dictionary.
   # For example:
@@ -239,13 +242,13 @@ ApplicationNodes:
     # sonarWebContext: /
 
   prometheusExporter:
-    enabled: false
+    enabled: true
     # jmx_prometheus_javaagent version to download from Maven Central
     version: "0.17.2"
     # Alternative full download URL for the jmx_prometheus_javaagent.jar (overrides prometheusExporter.version)
     # downloadURL: ""
     # if you need to ignore TLS certificates for whatever reason enable the following flag
-    noCheckCertificate: false
+    noCheckCertificate: true
 
     # Ports for the jmx prometheus agent to export metrics at
     webBeanPort: 8000
@@ -316,7 +319,7 @@ ApplicationNodes:
   jvmCeOpts: ""
 
   # Set this value with a HS256 key encoded with base64. You can generate a key using the following command on a Unix system: echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64
-  jwtSecret: ""
+  jwtSecret: "#TODO"
   # can use existing secret with SONAR_AUTH_JWTBASE64HS256SECRET as key
   # existingJwtSecret: ""
 
@@ -520,7 +523,72 @@ monitoringPasscode: "define_it"
 #     value: my-value
 
 # Set annotations for pods
-annotations: {}
+annotations:
+  ad.datadoghq.com/sonarqube-dce-kind.logs: '[{"source":"kind-kind","service":"sonarqube-dce-kind"}]'
+  #ad.datadoghq.com/<EXPECTED_POD_NAME>.checks
+  #the reader part is mounted from ../monitoring/production.yml
+  ad.datadoghq.com/sonarqube-dce-kind.checks: |
+    {
+      "openmetrics": {
+        "init_config": {},
+        "instances": [
+          {
+            "openmetrics_endpoint": "http://%%host%%:9000/api/monitoring/metrics",
+            "metrics": [".*"],
+            "auth_token":
+            {
+              "reader":
+              {
+                "type": "file",
+                "path": "/etc/secret-volume/passcode"
+              },
+              "writer":
+              {
+                "type": "header",
+                "name": "Authorization",
+                "value": "Bearer <TOKEN>"
+              }
+            }
+          },
+          {
+            "openmetrics_endpoint": "http://%%host%%:8000",
+            "metrics": [".*"],
+            "auth_token":
+            {
+              "reader":
+              {
+                "type": "file",
+                "path": "/etc/secret-volume/passcode"
+              },
+              "writer":
+              {
+                "type": "header",
+                "name": "Authorization",
+                "value": "Bearer <TOKEN>"
+              }
+            }
+          },
+          {
+            "openmetrics_endpoint": "http://%%host%%:8001",
+            "metrics": [".*"],
+            "auth_token":
+            {
+              "reader":
+              {
+                "type": "file",
+                "path": "/etc/secret-volume/passcode"
+              },
+              "writer":
+              {
+                "type": "header",
+                "name": "Authorization",
+                "value": "Bearer <TOKEN>"
+              }
+            }
+          }
+        ]
+      }
+    }
 
 # In case you want to specify different resources for emptyDir than {}
 emptyDir: {}

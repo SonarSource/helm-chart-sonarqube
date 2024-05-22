@@ -1,0 +1,47 @@
+agents:
+  volumes:
+  - name: secret-volume
+    secret:
+      secretName: datadog-api-secret
+      items:
+      - key: passcode
+        path: passcode
+  - name: tls-certificates
+    secret:
+      secretName: datadog-api-secret
+      items:
+      - key: tls.cer
+        path: custom-cert.crt
+  volumeMounts:
+  - name: secret-volume
+    mountPath: /etc/secret-volume
+  - name: tls-certificates
+    mountPath: /etc/ssl/certs
+targetSystem: linux
+clusterAgent:
+  volumes:
+  - name: tls-certificates
+    secret:
+      secretName: datadog-api-secret
+      items:
+      - key: tls.cer
+        path: custom-cert.crt
+  volumeMounts:
+  - name: tls-certificates
+    mountPath: /etc/ssl/certs
+  createPodDisruptionBudget: true
+  replicas: 3
+  admissionController:
+    port: 9443
+datadog:
+  kubelet:
+    tlsVerify: "false"
+  prometheusScrape:
+    enabled: true
+    serviceEndpoints: true
+  apiKeyExistingSecret: datadog-api-secret
+  clusterName: kind-kind
+  site: datadoghq.eu
+  logs:
+    enabled: true
+    containerCollectAll: true
