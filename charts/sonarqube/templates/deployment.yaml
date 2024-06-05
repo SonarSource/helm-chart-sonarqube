@@ -270,33 +270,9 @@ spec:
                 name: {{ . }}
 {{- end }}
           livenessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - |
-                wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:{{ .Values.service.internalPort }}{{ .Values.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
-            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
-            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
-            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
-            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+{{ tpl (omit .Values.livenessProbe "sonarWebContext" | toYaml | indent 12) . }}
           readinessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - |
-                #!/bin/bash
-                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
-                if wget --no-proxy -qO- http://localhost:{{ .Values.service.internalPort }}{{ .Values.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
-                	exit 0
-                fi
-                exit 1
-            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
-            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
-            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
-            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+{{ tpl (omit .Values.readinessProbe "sonarWebContext" | toYaml | indent 12) . }}
           startupProbe:
             httpGet:
               scheme: HTTP
