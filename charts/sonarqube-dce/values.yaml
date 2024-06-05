@@ -85,19 +85,19 @@ searchNodes:
 
   # Probe threshold configuration for the search nodes
   readinessProbe:
-    initialDelaySeconds: 60
+    initialDelaySeconds: 0
     periodSeconds: 30
     failureThreshold: 6
     # Note that timeoutSeconds was not respected before Kubernetes 1.20 for exec probes
     timeoutSeconds: 1
   livenessProbe:
-    initialDelaySeconds: 60
+    initialDelaySeconds: 0
     periodSeconds: 30
     failureThreshold: 6
     # Note that timeoutSeconds was not respected before Kubernetes 1.20 for exec probes
     timeoutSeconds: 1
   startupProbe:
-    initialDelaySeconds: 30
+    initialDelaySeconds: 20
     periodSeconds: 10
     failureThreshold: 24
     # Note that timeoutSeconds was not respected before Kubernetes 1.20 for exec probes
@@ -208,7 +208,7 @@ ApplicationNodes:
       drop: ["ALL"]
 
   readinessProbe:
-    initialDelaySeconds: 120
+    initialDelaySeconds: 0
     periodSeconds: 30
     failureThreshold: 8
     # Note that timeoutSeconds was not respected before Kubernetes 1.20 for exec probes
@@ -218,7 +218,7 @@ ApplicationNodes:
     # deprecated please use sonarWebContext at the value top level
     # sonarWebContext: /
   livenessProbe:
-    initialDelaySeconds: 180
+    initialDelaySeconds: 0
     periodSeconds: 30
     failureThreshold: 6
     # Note that timeoutSeconds was not respected before Kubernetes 1.20 for exec probes
@@ -228,7 +228,7 @@ ApplicationNodes:
     # deprecated please use sonarWebContext at the value top level
     # sonarWebContext: /
   startupProbe:
-    initialDelaySeconds: 100
+    initialDelaySeconds: 45
     periodSeconds: 10
     failureThreshold: 32
     # Note that timeoutSeconds was not respected before Kubernetes 1.20 for exec probes
