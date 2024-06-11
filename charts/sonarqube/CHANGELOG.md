@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Fix the env-var templating when sourcing from secrets
 * Fix the postgresql chart's repository link
 * Add support for overriding liveness/readiness probe logic
+* Use a common template for Deployment and StatefulSet
 
 ## [10.5.0]
 * Upgrade SonarQube to 10.5.0

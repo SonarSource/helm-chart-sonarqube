@@ -1,34 +1,26 @@
 {{- if .Values.route.enabled -}}
-{{- $serviceName := include "sonarqube.fullname" . -}}
 kind: Route
 apiVersion: route.openshift.io/v1
 metadata:
   name: {{ template "sonarqube.fullname" . }}
   labels:
-    app: {{ template "sonarqube.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-{{- if .Values.route.labels }}
-{{ .Values.route.labels | toYaml | trimSuffix "\n"| indent 4 -}}
-{{- end}}
-{{- if .Values.route.annotations}}
-  annotations:
-    {{- range $key, $value := .Values.route.annotations }}
-    {{ $key }}: {{ $value | quote }}
+    {{- include "sonarqube.labels" . | nindent 4 }}
+    {{- with .Values.route.labels }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
-{{- end }}
+  {{- with .Values.route.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
-{{- if .Values.route.host }}
-  host: {{ .Values.route.host }}
-{{- end }}
+  {{- with .Values.route.host }}
+  host: {{ . }}
+  {{- end }}
   to:
     kind: Service
-    name: {{ default $serviceName .serviceName }}
+    name: {{ include "sonarqube.fullname" . }}
   port:
     targetPort: http
-  {{- if .Values.route.tls }}
-  tls:
-{{ toYaml .Values.route.tls | indent 4 }}
+  {{- with .Values.route.tls }}
+  tls: {{- toYaml . | nindent 4 }}
   {{- end -}}
 {{- end -}}
