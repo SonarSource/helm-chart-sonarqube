@@ -192,6 +192,17 @@ Per default the JMX metrics for the Web Bean and the CE Bean are exposed on port
 
 If a Prometheus Operator is deployed in your cluster, you can enable a PodMonitor resource with `ApplicationNodes.prometheusMonitoring.podMonitor.enabled`. It scrapes the Prometheus endpoint `/api/monitoring/metrics` exposed by the SonarQube application.
 
+## Autoscaling
+
+The SonarQube applications nodes can be set to automally scale up and down based on their average CPU utilization. This is particularly useful when scanning new projects or evaluating Pull Requests with SonarQube. In order to enable the autoscaling, you can rely on the `ApplicationNodes.hpa` parameters.
+
+Please ensure the [Metrics Server](https://github.com/kubernetes-sigs/metrics-server) is installed in your cluster to provide resource usage metrics. You can deploy it using: 
+
+```
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+```
+
 ## Configuration
 
 The following table lists the configurable parameters of the SonarQube chart and their default values.
@@ -321,6 +332,11 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.jwtSecret`                                     | A HS256 key encoded with base64 (_This value must be set before installing the chart, see [the documentation](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/)_) | `""`                                                                   |
 | `ApplicationNodes.existingJwtSecret`                             | secret that contains the `jwtSecret`                                                                                                                                                                           | `nil`                                                                  |
 | `ApplicationNodes.extraContainers`                               | Array of extra containers to run alongside                                                                                                                                                                     | `[]`                                                                   |
+| `ApplicationNodes.hpa.enabled`                               | Enable the HorizontalPodAutoscaler (HPA) for the app deployment                                                                                                                                                                | `false`                                                                   |
+| `ApplicationNodes.hpa.minReplicas`                               | Minimum number of replicas for the HPA                                                                                                                                                                | `2`                                                                   |
+| `ApplicationNodes.hpa.maxReplicas`                               | Maximum number of replicas for the HPA                                                                                                                                                                | `10`                                                                   |
+| `ApplicationNodes.hpa.metrics`                               | The metrics to use for scaling                                                                                                                                                                | see `values.yaml`                                                                   |
+| `ApplicationNodes.hpa.behavior`                               | The scaling behavior                                                                                                                                                                | see `values.yaml`                                                                   |
 
 ### Generic Configuration
 

@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Fix the env-var templating when sourcing from secrets
 * Fix the postgresql chart's repository link
 * Calibrate probes' initialDelaySeconds
+* Define HorizontalPodAutoscaler for the app deployment
 
 ## [10.5.0]
 * Upgrade SonarQube to 10.5.0
