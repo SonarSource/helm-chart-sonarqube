@@ -6,14 +6,11 @@ kind: Ingress
 metadata:
   name: {{ template "sonarqube.fullname" . }}
   labels:
-    app: {{ template "sonarqube.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-{{- if .Values.ingress.labels }}
-{{ .Values.ingress.labels | toYaml | trimSuffix "\n"| indent 4 -}}
-{{- end}}
-{{- if or .Values.ingress.annotations (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled")}}
+    {{- include "sonarqube.labels" . | nindent 4 }}
+    {{- with .Values.ingress.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- if or .Values.ingress.annotations (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled")}}
   annotations:
     {{- range $key, $value := .Values.ingress.annotations }}
     {{ $key }}: {{ $value | quote }}
@@ -21,7 +18,7 @@ metadata:
     {{- if and (or (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled")) (not (hasKey (.Values.ingress.annotations) "nginx.ingress.kubernetes.io/proxy-body-size")) }}
     nginx.ingress.kubernetes.io/proxy-body-size: "64m"
     {{- end -}}
-{{- end }}
+  {{- end }}
 spec:
   {{- if .Values.ingress.ingressClassName }}
   ingressClassName: {{ .Values.ingress.ingressClassName }}
@@ -39,8 +36,7 @@ spec:
         path: {{ .path | default (include "sonarqube.webcontext" $) }}
         pathType: {{ default "ImplementationSpecific" .pathType }}
   {{- end }}
-  {{- if .Values.ingress.tls }}
-  tls:
-{{ toYaml .Values.ingress.tls | indent 4 }}
+  {{- with .Values.ingress.tls }}
+  tls: {{- toYaml . | nindent 4 }}
   {{- end -}}
 {{- end }}

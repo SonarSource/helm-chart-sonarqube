@@ -3,19 +3,16 @@ kind: Service
 metadata:
   name: {{ template "sonarqube.fullname" . }}
   labels:
-    app: {{ template "sonarqube.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-  {{- range $key, $value := .Values.service.labels }}
+    {{- include "sonarqube.labels" . | nindent 4 }}
+    {{- range $key, $value := .Values.service.labels }}
     {{ $key }}: {{ $value | quote }}
-  {{- end }}
-{{ if .Values.service.annotations}}
+    {{- end }}
+  {{- if .Values.service.annotations }}
   annotations:
     {{- range $key, $value := .Values.service.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
-{{- end }}
+  {{- end }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -36,7 +33,7 @@ spec:
   - {{ . }}
   {{- end }}
   {{- end -}}
-  {{- if .Values.service.loadBalancerIP}}
-  loadBalancerIP: {{.Values.service.loadBalancerIP}}
+  {{- if .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{.Values.service.loadBalancerIP }}
   {{- end }}
   {{- end }}
