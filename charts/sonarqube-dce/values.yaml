@@ -362,13 +362,13 @@ ApplicationNodes:
         policies:
           - type: Pods
             value: 1
-            periodSeconds: 1
+            periodSeconds: 20
       scaleUp:
-        stabilizationWindowSeconds: 60
+        stabilizationWindowSeconds: 0
         policies:
-          - type: Pods
-            value: 1
-            periodSeconds: 1
+          - type: Percent
+            value: 100
+            periodSeconds: 600
 
 ## Is this deployment for OpenShift? If so, we help with SCCs
 OpenShift:
