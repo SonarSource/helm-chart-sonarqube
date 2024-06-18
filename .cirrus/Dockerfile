@@ -25,6 +25,7 @@ ENV HELM_TAR_FILE="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
 ENV HELM_HASH_SUM_FILE="helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum"
 
 RUN apk add --update --no-cache \
+    aws-cli \
     ca-certificates \
     bash \
     jq \

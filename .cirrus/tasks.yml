@@ -140,25 +140,16 @@ chart_testing_task:
     <<: *CONTAINER_TEMPLATE
     cpu: 2
     memory: 4Gb
-    additional_containers:
-      - name: dockerdaemon
-        privileged: true
-        cpu: 4
-        memory: 16Gb
-        image: public.ecr.aws/docker/library/docker:dind
-        port: 2375
-        env:
-          DOCKER_DRIVER: overlay2
-          DOCKER_TLS_CERTDIR: ""
   <<: *CLONE_SCRIPT_TEMPLATE
-  start_kind_script:
-    - export DOCKER_HOST=tcp://localhost:2375
-    - ./.cirrus/wait_for_kind.sh
+  authenticate_to_eks_script:
+    - ./.cirrus/eks.sh
+    - kubectl get nodes
   script:
     - kubectl create namespace test
     - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD}
     - ct lint --config test.yaml --all
     - ct install --namespace test --config test.yaml --all
+    - kubectl delete namespace test
   artifacthub_lint_script:
     - ah lint
   depends_on:
