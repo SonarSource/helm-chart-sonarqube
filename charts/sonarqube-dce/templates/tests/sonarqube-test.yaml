@@ -23,7 +23,7 @@ spec:
         '-t',
         '1200',
         '-qO-',
-        '{{ template "sonarqube.fullname" . }}:{{ .Values.service.internalPort }}/api/system/status'
+        '{{ include "sonarqube.fullname" . }}:{{ .Values.service.internalPort }}/api/system/status'
         ]
       {{- with .Values.tests.resources }}
       resources: {{- toYaml . | nindent 8 }}

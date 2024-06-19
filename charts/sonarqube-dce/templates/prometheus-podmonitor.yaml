@@ -2,12 +2,12 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: {{ template "sonarqube.name" . }}
+  name: {{ include "sonarqube.name" . }}
   {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.namespace }}
   namespace: {{ . | quote }}
   {{- end }}
   labels:
-    app: {{ template "sonarqube.name" . }}
+    app: {{ include "sonarqube.name" . }}
 spec:
    {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.jobLabel }}
   jobLabel: {{ . | quote }}
@@ -17,7 +17,7 @@ spec:
     - {{ .Release.Namespace }}
   selector:
     matchLabels:
-      app: {{ template "sonarqube.name" . }}
+      app: {{ include "sonarqube.name" . }}
   podMetricsEndpoints:
   - port: http
     path: {{ include "sonarqube.webcontext" . }}api/monitoring/metrics
@@ -33,7 +33,7 @@ spec:
       name: {{ .Values.monitoringPasscodeSecretName }}
       key: {{ .Values.monitoringPasscodeSecretKey }}
       {{- else }}
-      name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
+      name: {{ include "sonarqube.fullname" . }}-monitoring-passcode
       key: SONAR_WEB_SYSTEMPASSCODE
       {{- end }}
   {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}

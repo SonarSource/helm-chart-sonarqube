@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "sonarqube.fullname" . }}-init-fs
+  name: {{ include "sonarqube.fullname" . }}-init-fs
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 data:
   init_fs.sh: |-

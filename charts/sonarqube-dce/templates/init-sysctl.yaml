@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "sonarqube.fullname" . }}-init-sysctl
+  name: {{ include "sonarqube.fullname" . }}-init-sysctl
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 data:
   init_sysctl.sh: |-

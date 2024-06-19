@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "sonarqube.fullname" . }}-install-plugins
+  name: {{ include "sonarqube.fullname" . }}-install-plugins
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 data:
   install_plugins.sh: |-

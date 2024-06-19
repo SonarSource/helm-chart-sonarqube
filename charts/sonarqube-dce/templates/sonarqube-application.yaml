@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "sonarqube.fullname" . }}-app
+  name: {{ include "sonarqube.fullname" . }}-app
   labels:
     {{- include "sonarqube.workloadLabels" . | nindent 4 }}
     app.kubernetes.io/version: {{ .Values.ApplicationNodes.image.tag | quote }}
@@ -136,7 +136,7 @@ spec:
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           command: ["/bin/sh","-c"]
-          args: ["curl -s '{{ template "prometheusExporter.downloadURL" . }}' {{ if $.Values.ApplicationNodes.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v"]
+          args: ["curl -s '{{ include "prometheusExporter.downloadURL" . }}' {{ if $.Values.ApplicationNodes.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v"]
           volumeMounts:
             - mountPath: /data
               name: sonarqube
@@ -215,9 +215,9 @@ spec:
             - name: SONAR_HELM_CHART_VERSION
               value: {{ .Chart.Version | replace "+" "_" }}
             - name: SONAR_LOG_JSONOUTPUT
-              value: "{{ .Values.logging.jsonOutput }}"
+              value: {{ .Values.logging.jsonOutput | quote }}
             - name: SONAR_CLUSTER_SEARCH_HOSTS
-              value: "{{ template "sonarqube.fullname" . }}-search"
+              value: {{ include "sonarqube.fullname" . }}-search
             - name: SONAR_CLUSTER_KUBERNETES
               value: "true"
             - name: SONAR_CLUSTER_NODE_NAME
@@ -225,17 +225,17 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: SONAR_CLUSTER_HOSTS
-              value: "{{ template "sonarqube.fullname" . }}-headless"
+              value: {{ include "sonarqube.fullname" . }}-headless
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "jwtSecret" . }}"
+                  name: {{ include "jwtSecret" . }}
                   key: SONAR_AUTH_JWTBASE64HS256SECRET
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ template "jdbc.secret" . }}
-                  key: {{ template "jdbc.secretPasswordKey" . }}
+                  name: {{ include "jdbc.secret" . }}
+                  key: {{ include "jdbc.secretPasswordKey" . }}
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -243,19 +243,19 @@ spec:
                   name: {{ .Values.monitoringPasscodeSecretName }}
                   key: {{ .Values.monitoringPasscodeSecretKey }}
                   {{- else }}
-                  name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
+                  name: {{ include "sonarqube.fullname" . }}-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
                   {{- end }}
             {{- if .Values.searchNodes.searchAuthentication.enabled }}
             - name: SONAR_CLUSTER_SEARCH_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "search.userPassword" . }}"
+                  name: {{ include "search.userPassword" . }}
                   key: SONAR_CLUSTER_SEARCH_PASSWORD
             {{- end }}
           envFrom:
             - configMapRef:
-                name: {{ template "sonarqube.fullname" . }}-jdbc-config
+                name: {{ include "sonarqube.fullname" . }}-jdbc-config
             {{- range .Values.extraConfig.secrets }}
             - secretRef:
                 name: {{ . }}
@@ -329,12 +329,12 @@ spec:
       {{- with (default .Values.ApplicationNodes.affinity .Values.affinity) }}
       affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
+      serviceAccountName: {{ include "sonarqube.serviceAccountName" . }}
       volumes:
         {{- if or .Values.ApplicationNodes.sonarProperties .Values.sonarSecretKey }}
         - name: config
           configMap:
-            name: {{ template "sonarqube.fullname" . }}-app-config
+            name: {{ include "sonarqube.fullname" . }}-app-config
             items:
             - key: sonar.properties
               path: sonar.properties
@@ -370,20 +370,20 @@ spec:
         {{- end }}
         - name: install-plugins
           configMap:
-            name: {{ template "sonarqube.fullname" . }}-install-plugins
+            name: {{ include "sonarqube.fullname" . }}-install-plugins
             items:
               - key: install_plugins.sh
                 path: install_plugins.sh
         {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
         - name: prometheus-config
           configMap:
-            name: {{ template "sonarqube.fullname" . }}-prometheus-config
+            name: {{ include "sonarqube.fullname" . }}-prometheus-config
             items:
               - key: prometheus-config.yaml
                 path: prometheus-config.yaml
         - name: prometheus-ce-config
           configMap:
-            name: {{ template "sonarqube.fullname" . }}-prometheus-ce-config
+            name: {{ include "sonarqube.fullname" . }}-prometheus-ce-config
             items:
               - key: prometheus-ce-config.yaml
                 path: prometheus-ce-config.yaml

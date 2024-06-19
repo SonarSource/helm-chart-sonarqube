@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ template "sonarqube.fullname" . }}-search
+  name: {{ include "sonarqube.fullname" . }}-search
   labels:
     {{- include "sonarqube.workloadLabels" . | nindent 4 }}
     app.kubernetes.io/version: {{ .Values.searchNodes.image.tag | quote }}
@@ -9,17 +9,17 @@ metadata:
 spec:
   podManagementPolicy: Parallel
   replicas: {{ .Values.searchNodes.replicaCount }}
-  serviceName: {{ template "sonarqube.fullname" . }}-search
+  serviceName: {{ include "sonarqube.fullname" . }}-search
   selector:
     matchLabels: {{- include "sonarqube.selectorLabels.search" . | nindent 6 }}
   {{- if .Values.searchNodes.persistence.enabled }}
   volumeClaimTemplates:
     - metadata:
-        name: {{ template "sonarqube.fullname" . }}
+        name: {{ include "sonarqube.fullname" . }}
         labels:
           release: {{ .Release.Name }}
           chart: "{{ .Chart.Name }}"
-          app: "{{ template "sonarqube.fullname" . }}"
+          app: "{{ include "sonarqube.fullname" . }}"
         {{- with .Values.searchNodes.persistence.annotations }}
         annotations: {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -102,7 +102,7 @@ spec:
           {{- end }}
           volumeMounts:
             - mountPath: /tmp/certs
-              name: "{{ template "sonarqube.fullname" . }}"
+              name: "{{ include "sonarqube.fullname" . }}"
               subPath: certs
             - mountPath: /tmp/secrets/ca-certs
               name: ca-certs
@@ -172,17 +172,17 @@ spec:
             {{- end }}
             {{- if .Values.caCerts }}
             - mountPath: {{ .Values.sonarqubeFolder }}/certs
-              name: "{{ template "sonarqube.fullname" . }}"
+              name: "{{ include "sonarqube.fullname" . }}"
               subPath: certs
             {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/data
-              name: "{{ template "sonarqube.fullname" . }}"
+              name: "{{ include "sonarqube.fullname" . }}"
               subPath: data
             - mountPath: {{ .Values.sonarqubeFolder }}/temp
-              name: "{{ template "sonarqube.fullname" . }}"
+              name: "{{ include "sonarqube.fullname" . }}"
               subPath: temp
             - mountPath: {{ .Values.sonarqubeFolder }}/logs
-              name: "{{ template "sonarqube.fullname" . }}"
+              name: "{{ include "sonarqube.fullname" . }}"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -205,11 +205,11 @@ spec:
           resources: {{- toYaml .Values.searchNodes.resources | nindent 12 }}
           env:
             - name: SONAR_LOG_JSONOUTPUT
-              value: "{{ .Values.logging.jsonOutput }}"
+              value: {{ .Values.logging.jsonOutput | quote }}
             - name: SONAR_CLUSTER_ES_HOSTS
-              value: "{{ template "searchNodes.endpoints" . }}"
+              value: {{ include "searchNodes.endpoints" . }}
             - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
-              value: "{{ template "sonarqube.fullname" . }}-search-headless"
+              value: {{ include "sonarqube.fullname" . }}-search-headless
             - name: SONAR_CLUSTER_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -218,7 +218,7 @@ spec:
             - name: SONAR_CLUSTER_SEARCH_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "search.userPassword" . }}"
+                  name: {{ include "search.userPassword" . }}
                   key: SONAR_CLUSTER_SEARCH_PASSWORD
             - name: SONAR_CLUSTER_ES_SSL_KEYSTORE
               value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
@@ -227,12 +227,12 @@ spec:
             - name: SONAR_CLUSTER_ES_SSL_KEYSTOREPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "search.ksPassword" . }}"
+                  name: {{ include "search.ksPassword" . }}
                   key: SONAR_CLUSTER_ES_SSL_KEYSTOREPASSWORD
             - name: SONAR_CLUSTER_ES_SSL_TRUSTSTOREPASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "search.ksPassword" . }}"
+                  name: {{ include "search.ksPassword" . }}
                   key: SONAR_CLUSTER_ES_SSL_TRUSTSTOREPASSWORD
             {{- end }}
             {{- with .Values.searchNodes.env }}
@@ -354,18 +354,18 @@ spec:
             {{- end }}
             {{- if .Values.caCerts }}
             - mountPath: {{ .Values.sonarqubeFolder }}/certs
-              name: "{{ template "sonarqube.fullname" . }}"
+              name: {{ include "sonarqube.fullname" . }}
               subPath: certs
               readOnly: true
             {{- end }}
             - mountPath: {{ .Values.sonarqubeFolder }}/data
-              name: "{{ template "sonarqube.fullname" . }}"
+              name: {{ include "sonarqube.fullname" . }}
               subPath: data
             - mountPath: {{ .Values.sonarqubeFolder }}/temp
-              name: "{{ template "sonarqube.fullname" . }}"
+              name: {{ include "sonarqube.fullname" . }}
               subPath: temp
             - mountPath: {{ .Values.sonarqubeFolder }}/logs
-              name: "{{ template "sonarqube.fullname" . }}"
+              name: {{ include "sonarqube.fullname" . }}
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -381,7 +381,7 @@ spec:
       {{- with (default .Values.searchNodes.affinity .Values.affinity) }}
       affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
+      serviceAccountName: {{ include "sonarqube.serviceAccountName" . }}
       volumes:
         {{- with .Values.searchNodes.persistence.volumes }}
         {{- tpl (toYaml . | nindent 8) . }}
@@ -397,7 +397,7 @@ spec:
         {{- if or .Values.searchNodes.sonarProperties .Values.sonarSecretKey }}
         - name: config
           configMap:
-            name: {{ template "sonarqube.fullname" . }}-search-config
+            name: {{ include "sonarqube.fullname" . }}-search-config
             items:
             - key: sonar.properties
               path: sonar.properties
@@ -422,20 +422,20 @@ spec:
         {{- end }}
         - name: init-sysctl
           configMap:
-            name: {{ template "sonarqube.fullname" . }}-init-sysctl
+            name: {{ include "sonarqube.fullname" . }}-init-sysctl
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
         - name: init-fs
           configMap:
-            name: {{ template "sonarqube.fullname" . }}-init-fs
+            name: {{ include "sonarqube.fullname" . }}-init-fs
             items:
               - key: init_fs.sh
                 path: init_fs.sh
         {{- if .Values.searchNodes.persistence.enabled }}
-        - name: "{{ template "sonarqube.fullname" . }}"
+        - name: {{ include "sonarqube.fullname" . }}
         {{- else }}
-        - name: "{{ template "sonarqube.fullname" . }}"
+        - name: {{ include "sonarqube.fullname" . }}
           emptyDir: {{- toYaml .Values.emptyDir | nindent 12 }}
         {{- end }}
         - name: tmp-dir

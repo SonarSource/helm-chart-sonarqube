@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "sonarqube.fullname" . }}-prometheus-ce-config
+  name: {{ include "sonarqube.fullname" . }}-prometheus-ce-config
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 data:
   prometheus-ce-config.yaml: |-

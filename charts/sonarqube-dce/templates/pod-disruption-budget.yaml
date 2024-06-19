@@ -1,7 +1,7 @@
 apiVersion: {{ include "common.capabilities.policy.apiVersion" . }}
 kind: PodDisruptionBudget
 metadata:
-  name: {{ template "sonarqube.fullname" . }}-search
+  name: {{ include "sonarqube.fullname" . }}-search
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
   {{- with (default .Values.searchNodes.podDisruptionBudget .Values.searchNodes.podDistributionBudget) -}}
@@ -14,7 +14,7 @@ spec:
 apiVersion: {{ include "common.capabilities.policy.apiVersion" . }}
 kind: PodDisruptionBudget
 metadata:
-  name: {{ template "sonarqube.fullname" . }}-app
+  name: {{ include "sonarqube.fullname" . }}-app
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
   {{- with (default .Values.ApplicationNodes.podDisruptionBudget .Values.ApplicationNodes.podDistributionBudget) -}}

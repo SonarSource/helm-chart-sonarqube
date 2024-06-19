@@ -2,12 +2,12 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ template "sonarqube.fullname" . }}-app
+  name: {{ include "sonarqube.fullname" . }}-app
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      app: {{ template "sonarqube.name" . }}
+      app: {{ include "sonarqube.name" . }}
       sonarqube.datacenter/type: app
   policyTypes:
     - Ingress
@@ -16,7 +16,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: {{ template "sonarqube.name" . }}
+              app: {{ include "sonarqube.name" . }}
               release: {{ .Release.Name }}
               sonarqube.datacenter/type: app
     {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
@@ -72,12 +72,12 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ template "sonarqube.fullname" . }}-search
+  name: {{ include "sonarqube.fullname" . }}-search
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      app: {{ template "sonarqube.name" . }}
+      app: {{ include "sonarqube.name" . }}
       sonarqube.datacenter/type: search
   policyTypes:
     - Ingress
@@ -123,7 +123,7 @@ spec:
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: {{ template "sonarqube.fullname" . }}-database
+  name: {{ include "sonarqube.fullname" . }}-database
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
   podSelector:
@@ -137,7 +137,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: {{ template "sonarqube.name" . }}
+              app: {{ include "sonarqube.name" . }}
               sonarqube.datacenter/type: "app"
       ports:
         - port: 5432
@@ -159,7 +159,7 @@ spec:
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: {{ template "sonarqube.fullname" . }}-additional-network-policy
+  name: {{ include "sonarqube.fullname" . }}-additional-network-policy
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
 {{- with .Values.networkPolicy.additionalNetworkPolicys }}

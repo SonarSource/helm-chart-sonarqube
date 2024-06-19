@@ -3,12 +3,12 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ template "sonarqube.fullname" $ }}-app-hpa
+  name: {{ include "sonarqube.fullname" $ }}-app-hpa
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ template "sonarqube.fullname" $ }}-app
+    name: {{ include "sonarqube.fullname" $ }}-app
   minReplicas: {{ .minReplicas }}
   maxReplicas: {{ .maxReplicas }}
   metrics: {{- toYaml .metrics | nindent 4 }}

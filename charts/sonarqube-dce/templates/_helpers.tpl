@@ -98,16 +98,16 @@ Determine the k8s secret containing the JDBC credentials
   {{- if .Values.postgresql.existingSecret -}}
   {{- .Values.postgresql.existingSecret -}}
   {{- else -}}
-  {{- template "postgresql.fullname" . -}}
+  {{ include "postgresql.fullname" . }}
   {{- end -}}
 {{- else if .Values.jdbcOverwrite.enable -}}
   {{- if .Values.jdbcOverwrite.jdbcSecretName -}}
   {{- .Values.jdbcOverwrite.jdbcSecretName -}}
   {{- else -}}
-  {{- template "sonarqube.fullname" . -}}
+  {{ include "sonarqube.fullname" . }}
   {{- end -}}
 {{- else -}}
-  {{- template "sonarqube.fullname" . -}}
+  {{ include "sonarqube.fullname" . }}
 {{- end -}}
 {{- end -}}
 
@@ -224,7 +224,7 @@ Set jwtSecret
 {{- if .Values.ApplicationNodes.existingJwtSecret -}}
 {{- .Values.ApplicationNodes.existingJwtSecret -}}
 {{- else -}}
-{{- template "sonarqube.fullname" . -}}-jwt
+{{ include "sonarqube.fullname" . }}-jwt
 {{- end -}}
 {{- end -}}
 
@@ -268,7 +268,7 @@ Set search.userPassword
 {{- if .Values.searchNodes.searchAuthentication.userPasswordSecret -}}
 {{- .Values.searchNodes.searchAuthentication.userPasswordSecret -}}
 {{- else -}}
-{{- template "sonarqube.fullname" . -}}-user-pass
+{{ include "sonarqube.fullname" . }}-user-pass
 {{- end -}}
 {{- end -}}
 
@@ -290,7 +290,7 @@ set search.ksPassword
 {{- if .Values.searchNodes.searchAuthentication.keyStorePasswordSecret -}}
 {{- .Values.searchNodes.searchAuthentication.keyStorePasswordSecret -}}
 {{- else -}}
-{{- template "sonarqube.fullname" . -}}-keystore-pass
+{{ include "sonarqube.fullname" . }}-keystore-pass
 {{- end -}}
 {{- end -}}
 
