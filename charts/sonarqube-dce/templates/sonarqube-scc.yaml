@@ -1,5 +1,4 @@
 {{- if and (.Values.OpenShift.enabled) (.Values.OpenShift.createSCC) }}
-
 # This SCC allows any user ID but restricts capabilties and host access
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
@@ -51,13 +50,8 @@ volumes:
 # If you want a priority on your SCC -- set for a value more than 0
 priority: 11
 users:
-{{- if .Values.serviceAccount.name }}
-- system:serviceaccount:{{ .Release.Namespace }}:{{ .Values.serviceAccount.name }}
-{{- else  }}
-- system:serviceaccount:{{ .Release.Namespace }}:{{ .Release.Name }}-sonarqube
-{{- end }}
+- system:serviceaccount:{{ .Release.Namespace }}:{{ include "sonarqube.serviceAccountName" . }}
 {{- if .Values.postgresql.securityContext.enabled }}
 - system:serviceaccount:{{ .Release.Namespace }}:{{ .Release.Name }}-postgresql
-{{- end }}
-
-{{- end }}
+{{- end -}}
+{{- end -}}

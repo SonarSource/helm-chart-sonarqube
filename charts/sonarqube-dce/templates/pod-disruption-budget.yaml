@@ -1,23 +1,12 @@
----
 apiVersion: {{ include "common.capabilities.policy.apiVersion" . }}
 kind: PodDisruptionBudget
 metadata:
   name: {{ template "sonarqube.fullname" . }}-search
-  labels:
-    app: {{ template "sonarqube.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
-{{ if .Values.searchNodes.podDistributionBudget }}
-  {{- with .Values.searchNodes.podDistributionBudget -}}
-    {{ toYaml .  | indent 2 -}}
-  {{ end -}} 
-{{ else }}
-  {{- with .Values.searchNodes.podDisruptionBudget -}}
-    {{ toYaml .  | indent 2 -}}
-  {{ end }}
-{{ end }}
+  {{- with (default .Values.searchNodes.podDisruptionBudget .Values.searchNodes.podDistributionBudget) -}}
+    {{- toYaml . | nindent 2 }}
+  {{- end }}
   selector:
     matchLabels:
       sonarqube.datacenter/type: "search"
@@ -26,21 +15,11 @@ apiVersion: {{ include "common.capabilities.policy.apiVersion" . }}
 kind: PodDisruptionBudget
 metadata:
   name: {{ template "sonarqube.fullname" . }}-app
-  labels:
-    app: {{ template "sonarqube.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
-{{ if .Values.ApplicationNodes.podDistributionBudget }}
-  {{- with .Values.ApplicationNodes.podDistributionBudget -}}
-    {{ toYaml .  | indent 2 -}}
-  {{ end -}}
-{{ else }}
-  {{- with .Values.ApplicationNodes.podDisruptionBudget -}}
-    {{ toYaml .  | indent 2 -}}
-  {{ end }}
-{{ end }}
+  {{- with (default .Values.ApplicationNodes.podDisruptionBudget .Values.ApplicationNodes.podDistributionBudget) -}}
+    {{- toYaml . | nindent 2 }}
+  {{- end }}
   selector:
     matchLabels:
       sonarqube.datacenter/type: "app"

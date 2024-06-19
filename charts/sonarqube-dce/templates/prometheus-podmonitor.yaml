@@ -1,18 +1,16 @@
-{{- if .Values.ApplicationNodes.prometheusMonitoring.podMonitor.enabled }}
+{{- if .Values.ApplicationNodes.prometheusMonitoring.podMonitor.enabled -}}
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: {{ template "sonarqube.name" . }}
-{{- if .Values.ApplicationNodes.prometheusMonitoring.podMonitor.namespace }}
-  namespace: {{ .Values.ApplicationNodes.prometheusMonitoring.podMonitor.namespace | quote }}
-{{- else }}
-  namespace: {{ .Release.Namespace }}
-{{- end }}
+  {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.namespace }}
+  namespace: {{ . | quote }}
+  {{- end }}
   labels:
     app: {{ template "sonarqube.name" . }}
 spec:
-   {{- if .Values.ApplicationNodes.prometheusMonitoring.podMonitor.jobLabel }}
-  jobLabel: {{ .Values.ApplicationNodes.prometheusMonitoring.podMonitor.jobLabel | quote }}
+   {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.jobLabel }}
+  jobLabel: {{ . | quote }}
   {{- end }}
   namespaceSelector:
     matchNames:
@@ -24,42 +22,42 @@ spec:
   - port: http
     path: {{ include "sonarqube.webcontext" . }}api/monitoring/metrics
     scheme: http
-    {{- if .Values.ApplicationNodes.prometheusMonitoring.podMonitor.interval }}
-    interval: {{ .Values.ApplicationNodes.prometheusMonitoring.podMonitor.interval }}
+    {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.interval }}
+    interval: {{ . }}
     {{- end }}
-    {{- if .Values.ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout }}
-    scrapeTimeout: {{ .Values.ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout }}
+    {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ . }}
     {{- end }}
     bearerTokenSecret:
-    {{- if and .Values.monitoringPasscodeSecretName .Values.monitoringPasscodeSecretKey }}
+      {{- if and .Values.monitoringPasscodeSecretName .Values.monitoringPasscodeSecretKey }}
       name: {{ .Values.monitoringPasscodeSecretName }}
       key: {{ .Values.monitoringPasscodeSecretKey }}
-    {{- else }}
+      {{- else }}
       name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
       key: SONAR_WEB_SYSTEMPASSCODE
-    {{- end }}
-{{- if .Values.ApplicationNodes.prometheusExporter.enabled}}
-{{- if .Values.ApplicationNodes.prometheusExporter.ceBeanPort}}
+      {{- end }}
+  {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
+  {{- if .Values.ApplicationNodes.prometheusExporter.ceBeanPort }}
   - port: monitoring-ce
     path: /
     scheme: http
-    {{- if .Values.ApplicationNodes.prometheusMonitoring.podMonitor.interval }}
-    interval: {{ .Values.ApplicationNodes.prometheusMonitoring.podMonitor.interval }}
+    {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.interval }}
+    interval: {{ . }}
     {{- end }}
-    {{- if .Values.ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout }}
-    scrapeTimeout: {{ .Values.ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout }}
+    {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ . }}
     {{- end }}
-{{- end }}
-{{- if .Values.ApplicationNodes.prometheusExporter.webBeanPort}}
+  {{- end }}
+  {{- if .Values.ApplicationNodes.prometheusExporter.webBeanPort }}
   - port: monitoring-web
     path: /
     scheme: http
-    {{- if .Values.ApplicationNodes.prometheusMonitoring.podMonitor.interval }}
-    interval: {{ .Values.ApplicationNodes.prometheusMonitoring.podMonitor.interval }}
+    {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.interval }}
+    interval: {{ . }}
     {{- end }}
-    {{- if .Values.ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout }}
-    scrapeTimeout: {{ .Values.ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout }}
+    {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ . }}
     {{- end }}
-{{- end }}
-{{- end }}
-{{- end }}
+  {{- end }}
+  {{- end }}
+{{- end -}}

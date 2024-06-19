@@ -3,17 +3,9 @@ kind: Deployment
 metadata:
   name: {{ template "sonarqube.fullname" . }}-app
   labels:
-    app: {{ template "sonarqube.name" . }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ .Release.Name }}
-    sonarqube.datacenter/type: "app"
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: {{ template "sonarqube.fullname" . }}
+    {{- include "sonarqube.workloadLabels" . | nindent 4 }}
     app.kubernetes.io/version: {{ .Values.ApplicationNodes.image.tag | quote }}
+    sonarqube.datacenter/type: "app"
 spec:
   {{- if not .Values.ApplicationNodes.hpa.enabled }}
   replicas: {{ .Values.ApplicationNodes.replicaCount }}
@@ -22,75 +14,72 @@ spec:
   strategy:
     type: Recreate
   selector:
-    matchLabels:
-      app: {{ template "sonarqube.name" . }}
-      release: {{ .Release.Name }}
+    matchLabels: {{- include "sonarqube.selectorLabels.app" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: {{ template "sonarqube.name" . }}
-        release: {{ .Release.Name }}
+        {{- include "sonarqube.selectorLabels.app" . | nindent 8 }}
         sonarqube.datacenter/type: "app"
-{{- with .Values.podLabels }}
-{{ toYaml . | indent 8 }}
-{{- end }}
-{{- with .Values.ApplicationNodes.podLabels }}
-{{ toYaml . | indent 8 }}
-{{- end }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.ApplicationNodes.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       annotations:
         checksum/plugins: {{ include (print $.Template.BasePath "/install-plugins.yaml") . | sha256sum }}
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
-{{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
+        {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
         checksum/prometheus-config: {{ include (print $.Template.BasePath "/prometheus-config.yaml") . | sha256sum }}
         checksum/prometheus-ce-config: {{ include (print $.Template.BasePath "/prometheus-ce-config.yaml") . | sha256sum }}
-{{- end }}
-{{- with .Values.annotations }}
-{{ toYaml . | indent 8 }}
-{{- end }}
-{{- with .Values.ApplicationNodes.annotations }}
-{{ toYaml . | indent 8 }}
-{{- end }}
+        {{- end }}
+        {{- with .Values.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.ApplicationNodes.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       automountServiceAccountToken: false
       {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret }}
       imagePullSecrets:
-        {{- if .Values.ApplicationNodes.image.pullSecret }}
-        - name: {{ .Values.ApplicationNodes.image.pullSecret }}
+        {{- with .Values.ApplicationNodes.image.pullSecret }}
+        - name: {{ . }}
         {{- end }}
-        {{- if .Values.ApplicationNodes.image.pullSecrets }}
-{{ toYaml .Values.ApplicationNodes.image.pullSecrets | indent 8 }}
+        {{- with .Values.ApplicationNodes.image.pullSecrets }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
       initContainers:
-      {{- if .Values.extraInitContainers }}
-{{ toYaml .Values.extraInitContainers | indent 8 }}
-      {{- end }}
-      {{- if .Values.postgresql.enabled }}
+        {{- with .Values.extraInitContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.postgresql.enabled }}
         - name: "wait-for-db"
-          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
+          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image | quote }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
-          {{- if $securityContext := .Values.initContainers.securityContext }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with .Values.initContainers.securityContext }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
-          resources:
-{{ toYaml .Values.initContainers.resources | indent 12 }}
+          {{- with .Values.initContainers.resources }}
+          resources: {{- . | nindent 12 }}
+          {{- end }}
           command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/{{.Release.Name}}-postgresql/5432) && exit 0; sleep 2;done; exit 1']
-      {{- end }}
-      {{- if .Values.caCerts.enabled }}
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/{{ .Release.Name }}-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+        {{- end }}
+        {{- if .Values.caCerts.enabled }}
         - name: ca-certs
-          image: {{ default (include "sonarqube.image" $) .Values.caCerts.image }}
+          image: {{ default (include "sonarqube.image" $) .Values.caCerts.image | quote }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
-          {{- if $securityContext := .Values.initContainers.securityContext }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with .Values.initContainers.securityContext }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
-          resources:
-{{ toYaml .Values.initContainers.resources | indent 12 }}
+          {{- with .Values.initContainers.resources }}
+          resources: {{- . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - mountPath: /tmp/certs
               name: sonarqube
@@ -98,62 +87,60 @@ spec:
             - mountPath: /tmp/secrets/ca-certs
               name: ca-certs
           {{- with .Values.env }}
-          env:
-            {{- . | toYaml | trim | nindent 12 }}
+          env: {{- toYaml . | trim | nindent 12 }}
           {{- end }}
-      {{- end }}
-      {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
+        {{- end }}
+        {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
-          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
+          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image | quote }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command:
-          - sh
-          - -c
-          - |
-            #!/bin/sh
-            if [ -f /tmp/props/sonar.properties ]; then
-              cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
-            fi
-            if [ -f /tmp/props/secret.properties ]; then
-              cat /tmp/props/secret.properties > /tmp/result/sonar.properties
-            fi
-            if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
-              awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
-            fi
+            - sh
+            - -c
+            - |
+              #!/bin/sh
+              if [ -f /tmp/props/sonar.properties ]; then
+                cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
+              fi
+              if [ -f /tmp/props/secret.properties ]; then
+                cat /tmp/props/secret.properties > /tmp/result/sonar.properties
+              fi
+              if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
+                awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+              fi
           volumeMounts:
-          {{- if or .Values.ApplicationNodes.sonarProperties .Values.sonarSecretKey}}
+            {{- if or .Values.ApplicationNodes.sonarProperties .Values.sonarSecretKey }}
             - mountPath: /tmp/props/sonar.properties
               name: config
               subPath: sonar.properties
-          {{- end }}
-          {{- if .Values.ApplicationNodes.sonarSecretProperties }}
+            {{- end }}
+            {{- if .Values.ApplicationNodes.sonarSecretProperties }}
             - mountPath: /tmp/props/secret.properties
               name: secret-config
               subPath: secret.properties
-          {{- end }}
+            {{- end }}
             - mountPath: /tmp/result
               name: concat-dir
-          {{- if $securityContext := .Values.initContainers.securityContext }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with .Values.initContainers.securityContext }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
-          resources:
-{{ toYaml .Values.initContainers.resources | indent 12 }}
+          {{- with .Values.initContainers.resources }}
+          resources: {{- . | nindent 12 }}
+          {{- end }}
           {{- with .Values.env }}
-          env:
-            {{- . | toYaml | trim | nindent 12 }}
+          env: {{- toYaml . | trim | nindent 12 }}
           {{- end }}
-      {{- end }}
-      {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
+        {{- end }}
+        {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
         - name: inject-prometheus-exporter
-          image: {{ default (include "sonarqube.image" $) .Values.ApplicationNodes.prometheusExporter.image }}
+          image: {{ default (include "sonarqube.image" $) .Values.ApplicationNodes.prometheusExporter.image | quote }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
-          {{- if $securityContext := (default .Values.initContainers.securityContext .Values.ApplicationNodes.prometheusExporter.securityContext) }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (default .Values.initContainers.securityContext .Values.ApplicationNodes.prometheusExporter.securityContext) }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
-          resources:
-{{ toYaml (default .Values.initContainers.resources .Values.ApplicationNodes.prometheusExporter.resources) | indent 12 }}
+          {{- with (default .Values.initContainers.resources .Values.ApplicationNodes.prometheusExporter.resources) }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
           command: ["/bin/sh","-c"]
           args: ["curl -s '{{ template "prometheusExporter.downloadURL" . }}' {{ if $.Values.ApplicationNodes.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v"]
           volumeMounts:
@@ -167,13 +154,13 @@ spec:
               value: {{ default "" .Values.ApplicationNodes.prometheusExporter.httpsProxy }}
             - name: no_proxy
               value: {{ default "" .Values.ApplicationNodes.prometheusExporter.noProxy }}
-          {{- with .Values.env }}
-            {{- . | toYaml | trim | nindent 12 }}
-          {{- end }}
-      {{- end }}
-      {{- if .Values.ApplicationNodes.plugins.install }}
+            {{- with .Values.env }}
+            {{- toYaml . | trim | nindent 12 }}
+            {{- end }}
+        {{- end }}
+        {{- if .Values.ApplicationNodes.plugins.install }}
         - name: install-plugins
-          image: {{ default (include "sonarqube.image" $) .Values.ApplicationNodes.plugins.image }}
+          image: {{ default (include "sonarqube.image" $) .Values.ApplicationNodes.plugins.image | quote }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh",
             "-e",
@@ -188,12 +175,12 @@ spec:
             - name: plugins-netrc-file
               mountPath: /root
             {{- end }}
-          {{- if $securityContext := (default .Values.initContainers.securityContext .Values.ApplicationNodes.plugins.securityContext) }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (default .Values.initContainers.securityContext .Values.ApplicationNodes.plugins.securityContext) }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
-          resources:
-{{ toYaml (default .Values.initContainers.resources .Values.ApplicationNodes.plugins.resource) | indent 12 }}
+          {{- with (default .Values.initContainers.resources .Values.ApplicationNodes.plugins.resource) }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
             - name: http_proxy
               value: {{ default "" .Values.ApplicationNodes.plugins.httpProxy }}
@@ -201,18 +188,17 @@ spec:
               value: {{ default "" .Values.ApplicationNodes.plugins.httpsProxy }}
             - name: no_proxy
               value: {{ default "" .Values.ApplicationNodes.plugins.noProxy }}
-          {{- with .Values.env }}
-            {{- . | toYaml | trim | nindent 12 }}
-          {{- end }}
-      {{- end }}
-      securityContext:
-        {{- toYaml .Values.ApplicationNodes.securityContext | nindent 8 }}
+            {{- with .Values.env }}
+            {{- toYaml . | trim | nindent 12 }}
+            {{- end }}
+        {{- end }}
+      securityContext: {{- toYaml .Values.ApplicationNodes.securityContext | nindent 8 }}
       containers:
-      {{- if .Values.ApplicationNodes.extraContainers }}
-        {{- toYaml .Values.ApplicationNodes.extraContainers | nindent 8 }}
-      {{- end }}
+        {{- with .Values.ApplicationNodes.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
         - name: {{ .Chart.Name }}
-          image: {{ template "sonarqube.image" . }}
+          image: {{ include "sonarqube.image" $ | quote }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}
           ports:
             - name: http
@@ -229,10 +215,9 @@ spec:
             - name: hazelcast
               containerPort: 9003
               protocol: TCP
-          resources:
-{{ toYaml (default .Values.ApplicationNodes.resources .Values.resource) | indent 12 }}
+          resources: {{- toYaml .Values.ApplicationNodes.resources | nindent 12 }}
           env:
-          {{- (include "sonarqube.combined_app_env" . | fromJsonArray) | toYaml | trim | nindent 12 }}
+            {{- (include "sonarqube.combined_app_env" . | fromJsonArray) | toYaml | trim | nindent 12 }}
             - name: SONAR_HELM_CHART_VERSION
               value: {{ .Chart.Version | replace "+" "_" }}
             - name: SONAR_LOG_JSONOUTPUT
@@ -260,13 +245,13 @@ spec:
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                {{- if and .Values.monitoringPasscodeSecretName .Values.monitoringPasscodeSecretKey }}
+                  {{- if and .Values.monitoringPasscodeSecretName .Values.monitoringPasscodeSecretKey }}
                   name: {{ .Values.monitoringPasscodeSecretName }}
                   key: {{ .Values.monitoringPasscodeSecretKey }}
-                {{- else }}
+                  {{- else }}
                   name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
-                {{- end }}
+                  {{- end }}
             {{- if .Values.searchNodes.searchAuthentication.enabled }}
             - name: SONAR_CLUSTER_SEARCH_PASSWORD
               valueFrom:
@@ -277,18 +262,16 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ template "sonarqube.fullname" . }}-jdbc-config
-{{- range .Values.extraConfig.secrets }}
+            {{- range .Values.extraConfig.secrets }}
             - secretRef:
                 name: {{ . }}
-{{- end }}
-{{- range .Values.extraConfig.configmaps }}
+            {{- end }}
+            {{- range .Values.extraConfig.configmaps }}
             - configMapRef:
                 name: {{ . }}
-{{- end }}
-          livenessProbe:
-{{ tpl (omit .Values.ApplicationNodes.livenessProbe "sonarWebContext" | toYaml | indent 12) . }}
-          readinessProbe:
-{{ tpl (omit .Values.ApplicationNodes.readinessProbe "sonarWebContext" | toYaml | indent 12) . }}
+            {{- end }}
+          livenessProbe: {{- tpl (omit .Values.ApplicationNodes.livenessProbe "sonarWebContext" | toYaml | nindent 12) . }}
+          readinessProbe: {{- tpl (omit .Values.ApplicationNodes.readinessProbe "sonarWebContext" | toYaml | nindent 12) . }}
           startupProbe:
             httpGet:
               scheme: HTTP
@@ -298,12 +281,11 @@ spec:
             periodSeconds: {{ .Values.ApplicationNodes.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.ApplicationNodes.startupProbe.failureThreshold }}
             timeoutSeconds: {{ .Values.ApplicationNodes.startupProbe.timeoutSeconds }}
-          {{- if .Values.ApplicationNodes.containerSecurityContext }}
-          securityContext:
-{{- toYaml .Values.ApplicationNodes.containerSecurityContext | nindent 12 }}
+          {{- with .Values.ApplicationNodes.containerSecurityContext }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey}}
+            {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
               subPath: sonar.properties
               name: concat-dir
@@ -341,94 +323,82 @@ spec:
               subPath: prometheus-ce-config.yaml
               name: prometheus-ce-config
             {{- end }}
-    {{- if .Values.priorityClassName }}
-      priorityClassName: {{ .Values.priorityClassName }}
-    {{- end }}
-    {{- if .Values.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.nodeSelector | indent 8 }}
-    {{- else if .Values.ApplicationNodes.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.ApplicationNodes.nodeSelector | indent 8 }}
-    {{- end }}
-    {{- if .Values.tolerations }}
-      tolerations:
-{{ toYaml .Values.tolerations | indent 8 }}
-    {{- else if .Values.ApplicationNodes.tolerations }}
-      tolerations:
-{{ toYaml .Values.ApplicationNodes.tolerations | indent 8 }}
-    {{- end }}
-    {{- if .Values.affinity }}
-      affinity:
-{{ toYaml .Values.affinity | indent 8 }}
-    {{- else if .Values.ApplicationNodes.affinity }}
-      affinity:
-{{ toYaml .Values.ApplicationNodes.affinity | indent 8 }}
-    {{- end }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with (default .Values.ApplicationNodes.nodeSelector .Values.nodeSelector) }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.ApplicationNodes.tolerations .Values.tolerations) }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default .Values.ApplicationNodes.affinity .Values.affinity) }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
       serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
       volumes:
-      {{- if or .Values.ApplicationNodes.sonarProperties .Values.sonarSecretKey }}
-      - name: config
-        configMap:
-          name: {{ template "sonarqube.fullname" . }}-app-config
-          items:
-          - key: sonar.properties
-            path: sonar.properties
-      {{- end }}
-      {{- if .Values.ApplicationNodes.sonarSecretProperties }}
-      - name: secret-config
-        secret:
-          secretName: {{ .Values.ApplicationNodes.sonarSecretProperties }}
-          items:
-          - key: secret.properties
-            path: secret.properties
-      {{- end }}
-      {{- if .Values.sonarSecretKey }}
-      - name: secret
-        secret:
-          secretName: {{ .Values.sonarSecretKey }}
-          items:
-          - key: sonar-secret.txt
-            path: sonar-secret.txt
-      {{- end }}
-      {{- if .Values.caCerts.enabled }}
-      - name: ca-certs
-        secret:
-          secretName: {{ .Values.caCerts.secret }}
-      {{- end }}
-      {{- if .Values.ApplicationNodes.plugins.netrcCreds }}
-      - name: plugins-netrc-file
-        secret:
-          secretName: {{ .Values.ApplicationNodes.plugins.netrcCreds }}
-          items:
-          - key: netrc
-            path: .netrc
-      {{- end }}
-      - name: install-plugins
-        configMap:
-          name: {{ template "sonarqube.fullname" . }}-install-plugins
-          items:
-            - key: install_plugins.sh
-              path: install_plugins.sh
-      {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
-      - name: prometheus-config
-        configMap:
-          name: {{ template "sonarqube.fullname" . }}-prometheus-config
-          items:
-            - key: prometheus-config.yaml
-              path: prometheus-config.yaml
-      - name: prometheus-ce-config
-        configMap:
-          name: {{ template "sonarqube.fullname" . }}-prometheus-ce-config
-          items:
-            - key: prometheus-ce-config.yaml
-              path: prometheus-ce-config.yaml
-      {{- end }}
-      - name: sonarqube
-        emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
-      - name: tmp-dir
-        emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
-        {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
-      - name: concat-dir
-        emptyDir: {{- toYaml .Values.emptyDir | nindent 10 -}}
+        {{- if or .Values.ApplicationNodes.sonarProperties .Values.sonarSecretKey }}
+        - name: config
+          configMap:
+            name: {{ template "sonarqube.fullname" . }}-app-config
+            items:
+            - key: sonar.properties
+              path: sonar.properties
         {{- end }}
+        {{- if .Values.ApplicationNodes.sonarSecretProperties }}
+        - name: secret-config
+          secret:
+            secretName: {{ .Values.ApplicationNodes.sonarSecretProperties }}
+            items:
+            - key: secret.properties
+              path: secret.properties
+        {{- end }}
+        {{- if .Values.sonarSecretKey }}
+        - name: secret
+          secret:
+            secretName: {{ .Values.sonarSecretKey }}
+            items:
+            - key: sonar-secret.txt
+              path: sonar-secret.txt
+        {{- end }}
+        {{- if .Values.caCerts.enabled }}
+        - name: ca-certs
+          secret:
+            secretName: {{ .Values.caCerts.secret }}
+        {{- end }}
+        {{- if .Values.ApplicationNodes.plugins.netrcCreds }}
+        - name: plugins-netrc-file
+          secret:
+            secretName: {{ .Values.ApplicationNodes.plugins.netrcCreds }}
+            items:
+            - key: netrc
+              path: .netrc
+        {{- end }}
+        - name: install-plugins
+          configMap:
+            name: {{ template "sonarqube.fullname" . }}-install-plugins
+            items:
+              - key: install_plugins.sh
+                path: install_plugins.sh
+        {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
+        - name: prometheus-config
+          configMap:
+            name: {{ template "sonarqube.fullname" . }}-prometheus-config
+            items:
+              - key: prometheus-config.yaml
+                path: prometheus-config.yaml
+        - name: prometheus-ce-config
+          configMap:
+            name: {{ template "sonarqube.fullname" . }}-prometheus-ce-config
+            items:
+              - key: prometheus-ce-config.yaml
+                path: prometheus-ce-config.yaml
+        {{- end }}
+        - name: sonarqube
+          emptyDir: {{- toYaml .Values.emptyDir | nindent 12 }}
+        - name: tmp-dir
+          emptyDir: {{- toYaml .Values.emptyDir | nindent 12 }}
+          {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
+        - name: concat-dir
+          emptyDir: {{- toYaml .Values.emptyDir | nindent 12 -}}
+          {{- end }}

@@ -19,6 +19,44 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{/*
+Common labels
+*/}}
+{{- define "sonarqube.labels" -}}
+app: {{ include "sonarqube.name" . }}
+chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" }}
+release: {{ .Release.Name }}
+heritage: {{ .Release.Service }}
+{{- end -}}
+
+{{/*
+App Selector labels
+*/}}
+{{- define "sonarqube.selectorLabels.app" -}}
+app: {{ include "sonarqube.name" . }}
+release: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Search Selector labels
+*/}}
+{{- define "sonarqube.selectorLabels.search" -}}
+app: {{ include "sonarqube.name" . }}-search
+release: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Workload labels (Deployment or StatefulSet)
+*/}}
+{{- define "sonarqube.workloadLabels" -}}
+{{- include "sonarqube.labels" . }}
+app.kubernetes.io/name: {{ .Release.Name }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: sonarqube
+app.kubernetes.io/component: {{ include "sonarqube.fullname" . }}
+{{- end -}}
+
+{{/*
 Expand the Application Image name.
 */}}
 {{- define "sonarqube.image" -}}
@@ -29,7 +67,7 @@ Expand the Application Image name.
   {{- $replicas := int (toString (.Values.searchNodes.replicaCount)) }}
   {{- $uname := (include "sonarqube.fullname" .) }}
   {{- range $i, $e := untilStep 0 $replicas 1 -}}
-    {{ $uname}}-search-{{ $i }},
+    {{ $uname }}-search-{{ $i }},
   {{- end -}}
 {{- end -}}
 
@@ -123,7 +161,7 @@ Set sonarqube.jvmOpts
 */}}
 {{- define "sonarqube.jvmOpts" -}}
 {{- $tempJvm := .Values.ApplicationNodes.jvmOpts -}}
-{{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.web.javaOpts")}}
+{{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.web.javaOpts") }}
 {{- $tempJvm = (get .Values.ApplicationNodes.sonarProperties "sonar.web.javaOpts") -}}
 {{- else if .Values.ApplicationNodes.env -}}
 {{- range $index, $val := .Values.ApplicationNodes.env -}}
@@ -148,7 +186,7 @@ Set sonarqube.jvmCEOpts
 */}}
 {{- define "sonarqube.jvmCEOpts" -}}
 {{- $tempJvm := .Values.ApplicationNodes.jvmCeOpts -}}
-{{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.ce.javaOpts")}}
+{{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.ce.javaOpts") }}
 {{- $tempJvm = (get .Values.ApplicationNodes.sonarProperties "sonar.ce.javaOpts") -}}
 {{- else if .Values.ApplicationNodes.env -}}
 {{- range $index, $val := .Values.ApplicationNodes.env -}}
