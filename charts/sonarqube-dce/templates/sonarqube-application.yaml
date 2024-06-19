@@ -15,7 +15,9 @@ metadata:
     app.kubernetes.io/component: {{ template "sonarqube.fullname" . }}
     app.kubernetes.io/version: {{ .Values.ApplicationNodes.image.tag | quote }}
 spec:
+  {{- if not .Values.ApplicationNodes.hpa.enabled }}
   replicas: {{ .Values.ApplicationNodes.replicaCount }}
+  {{- end }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   strategy:
     type: Recreate

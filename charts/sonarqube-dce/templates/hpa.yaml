@@ -1,0 +1,17 @@
+{{- if .Values.ApplicationNodes.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ template "sonarqube.fullname" . }}-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ template "sonarqube.fullname" . }}-app
+  minReplicas: {{ .Values.ApplicationNodes.hpa.minReplicas }}
+  maxReplicas: {{ .Values.ApplicationNodes.hpa.maxReplicas }}
+  metrics:
+{{ toYaml .Values.ApplicationNodes.hpa.metrics | indent 2 }}
+  behavior:
+{{ toYaml .Values.ApplicationNodes.hpa.behavior | indent 4 }}
+{{- end }}
