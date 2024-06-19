@@ -18,7 +18,7 @@ spec:
   {{- if not .Values.ApplicationNodes.hpa.enabled }}
   replicas: {{ .Values.ApplicationNodes.replicaCount }}
   {{- end }}
-  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ .Values.ApplicationNodes.revisionHistoryLimit }}
   strategy:
     type: Recreate
   selector:
@@ -63,8 +63,8 @@ spec:
         {{- end }}
       {{- end }}
       initContainers:
-      {{- if .Values.ApplicationNodes.extraInitContainers }}
-{{ toYaml .Values.ApplicationNodes.extraInitContainers | indent 8 }}
+      {{- if .Values.extraInitContainers }}
+{{ toYaml .Values.extraInitContainers | indent 8 }}
       {{- end }}
       {{- if .Values.postgresql.enabled }}
         - name: "wait-for-db"
@@ -106,7 +106,7 @@ spec:
         - name: concat-properties
           image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
-          command: 
+          command:
           - sh
           - -c
           - |
@@ -271,7 +271,7 @@ spec:
             - name: SONAR_CLUSTER_SEARCH_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "search.userPassword" . }}" 
+                  name: "{{ template "search.userPassword" . }}"
                   key: SONAR_CLUSTER_SEARCH_PASSWORD
             {{- end }}
           envFrom:
@@ -426,9 +426,9 @@ spec:
       {{- end }}
       - name: sonarqube
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
-      - name : tmp-dir
+      - name: tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
         {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
-      - name : concat-dir
+      - name: concat-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 -}}
         {{- end }}

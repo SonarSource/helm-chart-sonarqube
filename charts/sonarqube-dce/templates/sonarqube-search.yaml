@@ -15,7 +15,7 @@ metadata:
     app.kubernetes.io/component: {{ template "sonarqube.fullname" . }}
     app.kubernetes.io/version: {{ .Values.searchNodes.image.tag | quote }}
 spec:
-  podManagementPolicy : Parallel
+  podManagementPolicy: Parallel
   replicas: {{ .Values.searchNodes.replicaCount }}
   serviceName: {{ template "sonarqube.fullname" . }}-search
   selector:
@@ -134,7 +134,7 @@ spec:
         - name: concat-properties
           image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
-          command: 
+          command:
           - sh
           - -c
           - |
@@ -241,7 +241,7 @@ spec:
             - name: SONAR_CLUSTER_SEARCH_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ template "search.userPassword" . }}" 
+                  name: "{{ template "search.userPassword" . }}"
                   key: SONAR_CLUSTER_SEARCH_PASSWORD
             - name: SONAR_CLUSTER_ES_SSL_KEYSTORE
               value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
@@ -474,9 +474,9 @@ spec:
       - name: "{{ template "sonarqube.fullname" . }}"
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
       {{- end }}
-      - name : tmp-dir
+      - name: tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
         {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
-      - name : concat-dir
+      - name: concat-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 -}}
         {{- end }}
