@@ -12,31 +12,6 @@ spec:
   serviceName: {{ include "sonarqube.fullname" . }}-search
   selector:
     matchLabels: {{- include "sonarqube.selectorLabels.search" . | nindent 6 }}
-  {{- if .Values.searchNodes.persistence.enabled }}
-  volumeClaimTemplates:
-    - metadata:
-        name: {{ include "sonarqube.fullname" . }}
-        labels:
-          release: {{ .Release.Name }}
-          chart: "{{ .Chart.Name }}"
-          app: "{{ include "sonarqube.fullname" . }}"
-        {{- with .Values.searchNodes.persistence.annotations }}
-        annotations: {{- toYaml . | nindent 8 }}
-        {{- end }}
-      spec:
-        accessModes:
-          - {{ .Values.searchNodes.persistence.accessMode | quote }}
-        resources:
-          requests:
-            storage: {{ .Values.searchNodes.persistence.size | quote }}
-        {{- if .Values.searchNodes.persistence.storageClass }}
-        {{- if (eq "-" .Values.searchNodes.persistence.storageClass) }}
-        storageClassName: ""
-        {{- else }}
-        storageClassName: "{{ .Values.searchNodes.persistence.storageClass }}"
-        {{- end }}
-        {{- end }}
-  {{- end }}
   template:
     metadata:
       labels:
@@ -68,6 +43,12 @@ spec:
         {{- with .Values.extraInitContainers }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        {{- if .Values.caCerts.enabled }}
+        {{- include "sonarqube.init.ca-certs" . | nindent 8 }}
+        {{- end }}
+        {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
+        {{- include "sonarqube.init.properties" (dict "context" $ "scope" .Values.searchNodes) | nindent 8 }}
+        {{- end }}
         {{- if .Values.initSysctl.enabled }}
         - name: init-sysctl
           image: {{ default (include "sonarqube.image" $) .Values.initSysctl.image | quote }}
@@ -78,77 +59,12 @@ spec:
           {{- with (default .Values.initContainers.resources .Values.initSysctl.resources) }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
-          command: ["/bin/bash",
-            "-e",
-            "/tmp/scripts/init_sysctl.sh"]
+          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
           volumeMounts:
             - name: init-sysctl
               mountPath: /tmp/scripts/
           {{- with .Values.env }}
           env: {{- toYaml . | trim | nindent 12 }}
-          {{- end }}
-        {{- end }}
-        {{- if .Values.caCerts.enabled }}
-        - name: ca-certs
-          image: {{ default (include "sonarqube.image" $) .Values.caCerts.image | quote }}
-          imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
-          command: ["sh"]
-          args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
-          {{- with .Values.initContainers.securityContext }}
-          securityContext: {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.initContainers.resources }}
-          resources: {{- toYaml . | indent 12 }}
-          {{- end }}
-          volumeMounts:
-            - mountPath: /tmp/certs
-              name: "{{ include "sonarqube.fullname" . }}"
-              subPath: certs
-            - mountPath: /tmp/secrets/ca-certs
-              name: ca-certs
-          {{- with .Values.env }}
-          env: {{- toYaml . | trim | nindent 12 }}
-          {{- end }}
-        {{- end }}
-        {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
-        - name: concat-properties
-          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image | quote }}
-          imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
-          command:
-            - sh
-            - -c
-            - |
-              #!/bin/sh
-              if [ -f /tmp/props/sonar.properties ]; then
-                cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
-              fi
-              if [ -f /tmp/props/secret.properties ]; then
-                cat /tmp/props/secret.properties > /tmp/result/sonar.properties
-              fi
-              if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
-                awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
-              fi
-          volumeMounts:
-            {{- if or .Values.searchNodes.sonarProperties .Values.sonarSecretKey }}
-            - mountPath: /tmp/props/sonar.properties
-              name: config
-              subPath: sonar.properties
-            {{- end }}
-            {{- if .Values.searchNodes.sonarSecretProperties }}
-            - mountPath: /tmp/props/secret.properties
-              name: secret-config
-              subPath: secret.properties
-            {{- end }}
-            - mountPath: /tmp/result
-              name: concat-dir
-          {{- with .Values.initContainers.securityContext }}
-          securityContext: {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.initContainers.resources }}
-          resources: {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.env }}
-          env: {{-  toYaml . | trim | nindent 12 }}
           {{- end }}
         {{- end }}
         {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled }}
@@ -161,9 +77,7 @@ spec:
           {{- with (default .Values.initContainers.resources .Values.initFs.resources) }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
-          command: ["sh",
-            "-ex",
-            "/tmp/scripts/init_fs.sh"]
+          command: ["sh", "-ex", "/tmp/scripts/init_fs.sh"]
           volumeMounts:
             - name: init-fs
               mountPath: /tmp/scripts/
@@ -187,7 +101,6 @@ spec:
             - mountPath: /tmp
               name: tmp-dir
         {{- end }}
-      securityContext: {{- toYaml .Values.searchNodes.securityContext | nindent 8 }}
       containers:
         {{- with .Values.searchNodes.extraContainers }}
         {{- toYaml . | nindent 8 }}
@@ -381,6 +294,7 @@ spec:
       {{- with (default .Values.searchNodes.affinity .Values.affinity) }}
       affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
+      securityContext: {{- toYaml .Values.searchNodes.securityContext | nindent 8 }}
       serviceAccountName: {{ include "sonarqube.serviceAccountName" . }}
       volumes:
         {{- with .Values.searchNodes.persistence.volumes }}
@@ -432,15 +346,38 @@ spec:
             items:
               - key: init_fs.sh
                 path: init_fs.sh
-        {{- if .Values.searchNodes.persistence.enabled }}
         - name: {{ include "sonarqube.fullname" . }}
-        {{- else }}
-        - name: {{ include "sonarqube.fullname" . }}
+        {{- if not .Values.searchNodes.persistence.enabled }}
           emptyDir: {{- toYaml .Values.emptyDir | nindent 12 }}
         {{- end }}
         - name: tmp-dir
           emptyDir: {{- toYaml .Values.emptyDir | nindent 12 }}
         {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-dir
-          emptyDir: {{- toYaml .Values.emptyDir | nindent 12 -}}
+          emptyDir: {{- toYaml .Values.emptyDir | nindent 12 }}
         {{- end }}
+  {{- if .Values.searchNodes.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ include "sonarqube.fullname" . }}
+        labels:
+          release: {{ .Release.Name }}
+          chart: "{{ .Chart.Name }}"
+          app: "{{ include "sonarqube.fullname" . }}"
+        {{- with .Values.searchNodes.persistence.annotations }}
+        annotations: {{- toYaml . | nindent 8 }}
+        {{- end }}
+      spec:
+        accessModes:
+          - {{ .Values.searchNodes.persistence.accessMode | quote }}
+        resources:
+          requests:
+            storage: {{ .Values.searchNodes.persistence.size | quote }}
+        {{- if .Values.searchNodes.persistence.storageClass }}
+        {{- if (eq "-" .Values.searchNodes.persistence.storageClass) }}
+        storageClassName: ""
+        {{- else }}
+        storageClassName: "{{ .Values.searchNodes.persistence.storageClass }}"
+        {{- end }}
+        {{- end }}
+  {{- end -}}
