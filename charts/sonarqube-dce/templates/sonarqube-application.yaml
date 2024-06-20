@@ -347,14 +347,23 @@ spec:
     {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- else if .Values.ApplicationNodes.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.ApplicationNodes.nodeSelector | indent 8 }}
     {{- end }}
     {{- if .Values.tolerations }}
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}
+    {{- else if .Values.ApplicationNodes.tolerations }}
+      tolerations:
+{{ toYaml .Values.ApplicationNodes.tolerations | indent 8 }}
     {{- end }}
     {{- if .Values.affinity }}
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
+    {{- else if .Values.ApplicationNodes.affinity }}
+      affinity:
+{{ toYaml .Values.ApplicationNodes.affinity | indent 8 }}
     {{- end }}
       serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
       volumes:

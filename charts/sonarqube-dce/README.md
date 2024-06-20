@@ -257,7 +257,11 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.persistence.size`                            | Size of the PVC                                                                       | `5G`                                                                   |
 | `searchNodes.persistence.uid`                             | UID used for init-fs container                                                        | `1000`                                                                 |
 | `searchNodes.persistence.guid`                            | GUID used for init-fs container                                                       | `0`                                                                    |
-| `searchNodes.extraContainers`                             | Array of extra containers to run alongside                                            | `[]`                                                                   |
+| `searchNodes.extraContainers`                             | Array of extra containers to run alongside                                            | `[]`                                                                      |
+| `searchNodes.nodeSelector`                                | Node labels for pod assignment for searchNodes, global nodeSelector take precedance                                                                                                                                          | `{}` |
+| `searchNodes.affinity`                                    | Node / Pod affinities for searchNodes, global affinity take precedance                                                                                                                                          | `{}` |
+| `searchNodes.tolerations`                                 | List of node taints to tolerate  for searchNodes, global tolerations take precedance                                                                                                                                          | `[]` |
+
 
 ### App Nodes Configuration
 
@@ -331,6 +335,10 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.hpa.maxReplicas`                               | Maximum number of replicas for the HPA                                                                                                                                                                | `10`                                                                   |
 | `ApplicationNodes.hpa.metrics`                               | The metrics to use for scaling                                                                                                                                                                | see `values.yaml`                                                                   |
 | `ApplicationNodes.hpa.behavior`                               | The scaling behavior                                                                                                                                                                | see `values.yaml`                                                                   |
+| `ApplicationNodes.nodeSelector`                                | Node labels for pod assignment for ApplicationNodes, global nodeSelector take precedance                                                                                                                                          | `{}` |
+| `ApplicationNodes.affinity`                                    | Node / Pod affinities for ApplicationNodes, global affinity take precedance                                                                                                                                          | `{}` |
+| `ApplicationNodes.tolerations`                                 | List of node taints to tolerate  for ApplicationNodes, global tolerations take precedance                                                                                                                                          | `[]` |
+
 
 ### Generic Configuration
 

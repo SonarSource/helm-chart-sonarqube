@@ -1,0 +1,33 @@
+ApplicationNodes:
+  tolerations:
+    - key: "AppTopology"
+      operator: "Exists"
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: env
+                operator: In
+                values:
+                - AppTopology
+  nodeSelector:
+    AppTopology: "true"
+
+searchNodes:
+  tolerations:
+    - key: "searchTopology"
+      operator: "Exists"
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: env
+                operator: In
+                values:
+                - searchTopology
+  nodeSelector:
+    searchTopology: "true"

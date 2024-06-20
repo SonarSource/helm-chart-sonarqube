@@ -141,6 +141,12 @@ searchNodes:
   ##   command: ['sh', '-c', 'echo Hello && sleep 3600']
   ##
   extraContainers: []
+  # if the global .Values.nodeSelector is set, the following one will be ignored
+  nodeSelector: {}
+  # if the global .Values.affinity is set, the following one will be ignored
+  affinity: {}
+  # if the global .Values.tolerations is set, the following one will be ignored
+  tolerations: []
 
 ApplicationNodes:
   image:
@@ -389,6 +395,12 @@ ApplicationNodes:
           - type: Percent
             value: 100
             periodSeconds: 600
+    # if the global .Values.nodeSelector is set, the following one will be ignored
+    nodeSelector: {}
+    # if the global .Values.affinity is set, the following one will be ignored
+    affinity: {}
+    # if the global .Values.tolerations is set, the following one will be ignored
+    tolerations: []
 
 ## Is this deployment for OpenShift? If so, we help with SCCs
 OpenShift:
