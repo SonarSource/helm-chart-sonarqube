@@ -1,0 +1,107 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "sonarqube.fullname" . }}-app
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}
+      sonarqube.datacenter/type: app
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ include "sonarqube.name" . }}
+              release: {{ .Release.Name }}
+              sonarqube.datacenter/type: app
+    {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              networking/namespace: {{ .Values.networkPolicy.prometheusNamespace }}
+      ports:
+        - port: 8001
+          protocol: TCP
+        - port: 8000
+          protocol: TCP
+        - port: 9000
+          protocol: TCP
+    {{- end }}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              sonarqube.datacenter/type: search
+      ports:
+        - port: 9001
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - port: 9000
+          protocol: TCP
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+    {{- if .Values.postgresql.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - port: 5432
+          protocol: TCP
+    {{- end }}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - port: 9000
+          protocol: TCP
+
+{{- if .Values.postgresql.enabled }}
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ include "sonarqube.fullname" . }}-database
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      release: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ include "sonarqube.name" . }}
+              sonarqube.datacenter/type: "app"
+      ports:
+        - port: 5432
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              networking/namespace: "kube-system"
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+{{- end -}}
+{{- end -}}

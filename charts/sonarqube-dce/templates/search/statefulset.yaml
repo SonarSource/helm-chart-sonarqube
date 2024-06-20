@@ -24,9 +24,9 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       annotations:
-        checksum/init-sysctl: {{ include (print $.Template.BasePath "/init-sysctl.yaml") . | sha256sum }}
-        checksum/init-fs: {{ include (print $.Template.BasePath "/init-fs.yaml") . | sha256sum }}
-        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        checksum/init-sysctl: {{ include (print $.Template.BasePath "/search/init-sysctl.yaml") . | sha256sum }}
+        checksum/init-fs: {{ include (print $.Template.BasePath "/search/init-fs.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/search/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- with .Values.annotations }}
         {{- toYaml . | nindent 8 }}
@@ -120,7 +120,7 @@ spec:
             - name: SONAR_LOG_JSONOUTPUT
               value: {{ .Values.logging.jsonOutput | quote }}
             - name: SONAR_CLUSTER_ES_HOSTS
-              value: {{ include "searchNodes.endpoints" . }}
+              value: {{ include "searchNodes.endpoints" . | quote }}
             - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
               value: {{ include "sonarqube.fullname" . }}-search-headless
             - name: SONAR_CLUSTER_NODE_NAME
@@ -347,9 +347,9 @@ spec:
               - key: init_fs.sh
                 path: init_fs.sh
         - name: {{ include "sonarqube.fullname" . }}
-        {{- if not .Values.searchNodes.persistence.enabled }}
+          {{- if not .Values.searchNodes.persistence.enabled }}
           emptyDir: {{- toYaml .Values.emptyDir | nindent 12 }}
-        {{- end }}
+          {{- end }}
         - name: tmp-dir
           emptyDir: {{- toYaml .Values.emptyDir | nindent 12 }}
         {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}

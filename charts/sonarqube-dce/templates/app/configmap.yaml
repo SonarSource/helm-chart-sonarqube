@@ -13,20 +13,3 @@ data:
     sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
     {{- end }}
 {{- end -}}
-
-{{- if or .Values.searchNodes.sonarProperties .Values.sonarSecretKey }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ include "sonarqube.fullname" . }}-search-config
-  labels: {{- include "sonarqube.labels" . | nindent 4 }}
-data:
-  sonar.properties: |
-    {{- range $key, $val := .Values.searchNodes.sonarProperties }}
-    {{ $key }}={{ $val }}
-    {{- end }}
-    {{- if .Values.sonarSecretKey }}
-    sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
-    {{- end }}
-{{- end -}}
