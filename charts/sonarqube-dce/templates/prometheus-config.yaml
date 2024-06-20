@@ -7,4 +7,6 @@ metadata:
 data:
   prometheus-config.yaml: |-
     {{- toYaml .Values.ApplicationNodes.prometheusExporter.config | nindent 4 }}
+  prometheus-ce-config.yaml: |-
+    {{- default .Values.ApplicationNodes.prometheusExporter.config .Values.ApplicationNodes.prometheusExporter.ceConfig | toYaml | nindent 4 }}
 {{- end -}}

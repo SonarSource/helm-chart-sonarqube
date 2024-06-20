@@ -32,7 +32,6 @@ spec:
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
         checksum/prometheus-config: {{ include (print $.Template.BasePath "/prometheus-config.yaml") . | sha256sum }}
-        checksum/prometheus-ce-config: {{ include (print $.Template.BasePath "/prometheus-ce-config.yaml") . | sha256sum }}
         {{- end }}
         {{- with .Values.annotations }}
         {{- toYaml . | nindent 8 }}
@@ -255,7 +254,7 @@ spec:
               name: prometheus-config
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/prometheus-ce-config.yaml
               subPath: prometheus-ce-config.yaml
-              name: prometheus-ce-config
+              name: prometheus-config
             {{- end }}
       {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}
@@ -321,15 +320,6 @@ spec:
         - name: prometheus-config
           configMap:
             name: {{ include "sonarqube.fullname" . }}-prometheus-config
-            items:
-              - key: prometheus-config.yaml
-                path: prometheus-config.yaml
-        - name: prometheus-ce-config
-          configMap:
-            name: {{ include "sonarqube.fullname" . }}-prometheus-ce-config
-            items:
-              - key: prometheus-ce-config.yaml
-                path: prometheus-ce-config.yaml
         {{- end }}
         - name: sonarqube
           emptyDir: {{- toYaml .Values.emptyDir | nindent 12 }}
