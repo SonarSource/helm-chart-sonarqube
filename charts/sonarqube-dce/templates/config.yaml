@@ -1,3 +1,4 @@
+{{- if or .Values.ApplicationNodes.sonarProperties .Values.sonarSecretKey }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,6 +12,9 @@ data:
     {{- if .Values.sonarSecretKey }}
     sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
     {{- end }}
+{{- end -}}
+
+{{- if or .Values.searchNodes.sonarProperties .Values.sonarSecretKey }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -25,3 +29,4 @@ data:
     {{- if .Values.sonarSecretKey }}
     sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
     {{- end }}
+{{- end -}}

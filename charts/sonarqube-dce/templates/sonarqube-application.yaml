@@ -368,12 +368,14 @@ spec:
             - key: netrc
               path: .netrc
         {{- end }}
+        {{- if .Values.ApplicationNodes.plugins.install }}
         - name: install-plugins
           configMap:
             name: {{ include "sonarqube.fullname" . }}-install-plugins
             items:
               - key: install_plugins.sh
                 path: install_plugins.sh
+        {{- end }}
         {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
         - name: prometheus-config
           configMap:
