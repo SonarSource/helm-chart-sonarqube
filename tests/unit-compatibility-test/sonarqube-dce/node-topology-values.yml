@@ -1,0 +1,50 @@
+tolerations:
+  - key: "precedence"
+    operator: "Exists"
+    effect: "NoSchedule"
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: env
+              operator: In
+              values:
+              - precedence
+nodeSelector:
+  precedence: "true"
+
+
+ApplicationNodes:
+  tolerations:
+    - key: "topology"
+      operator: "Exists"
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: env
+                operator: In
+                values:
+                - some-key
+  nodeSelector:
+    key1: value1
+
+searchNodes:
+  tolerations:
+    - key: "some-key"
+      operator: "Exists"
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: env
+                operator: In
+                values:
+                - some-key
+  nodeSelector:
+    key1: value1

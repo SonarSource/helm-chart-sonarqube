@@ -8,6 +8,8 @@ All changes to this chart will be documented in this file.
 * Calibrate probes' initialDelaySeconds
 * Define HorizontalPodAutoscaler for the app deployment
 * Add support for overriding liveness/readiness probe logic in the app nodes
+* Add ApplicationNodes.affinity, ApplicationNodes.tolerations, searchNodes.affinity, searchNode.tolerations, ApplicationNodes.nodeSelector, searchNodes.nodeSelector
+* Define affinity, tolerations, and nodeSelector parameters for App and Search nodes
 
 ## [10.5.0]
 * Upgrade SonarQube to 10.5.0
