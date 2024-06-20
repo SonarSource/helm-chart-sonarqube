@@ -7,6 +7,7 @@ All changes to this chart will be documented in this file.
 * Fix the postgresql chart's repository link
 * Calibrate probes' initialDelaySeconds
 * Define HorizontalPodAutoscaler for the app deployment
+* Add support for overriding liveness/readiness probe logic in the app nodes
 
 ## [10.5.0]
 * Upgrade SonarQube to 10.5.0

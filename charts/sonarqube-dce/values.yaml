@@ -208,6 +208,19 @@ ApplicationNodes:
       drop: ["ALL"]
 
   readinessProbe:
+    exec:
+      command:
+      - sh
+      - -c
+      - |
+        #!/bin/bash
+        # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+        # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
+        host="$(hostname -i || echo '127.0.0.1')"
+        if wget --no-proxy -qO- http://${host}:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+          exit 0
+        fi
+        exit 1
     initialDelaySeconds: 0
     periodSeconds: 30
     failureThreshold: 8
@@ -218,6 +231,13 @@ ApplicationNodes:
     # deprecated please use sonarWebContext at the value top level
     # sonarWebContext: /
   livenessProbe:
+    exec:
+      command:
+      - sh
+      - -c
+      - |
+        host="$(hostname -i || echo '127.0.0.1')"
+        wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.ApplicationNodes.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
     initialDelaySeconds: 0
     periodSeconds: 30
     failureThreshold: 6
