@@ -63,20 +63,15 @@ Expand the Application Image name.
 {{- printf "%s:%s" .Values.ApplicationNodes.image.repository .Values.ApplicationNodes.image.tag }}
 {{- end -}}
 
+{{/*
+Search nodes endpoints
+*/}}
 {{- define "searchNodes.endpoints" -}}
   {{- $replicas := int (toString (.Values.searchNodes.replicaCount)) }}
   {{- $uname := (include "sonarqube.fullname" .) }}
   {{- range $i, $e := untilStep 0 $replicas 1 -}}
     {{ $uname }}-search-{{ $i }},
   {{- end -}}
-{{- end -}}
-
-{{/*
-  Create a default fully qualified mysql/postgresql name.
-  We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-*/}}
-{{- define "postgresql.fullname" -}}
-{{- printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
@@ -94,18 +89,10 @@ Expand the Application Image name.
 Determine the k8s secret containing the JDBC credentials
 */}}
 {{- define "jdbc.secret" -}}
-{{- if .Values.postgresql.enabled -}}
-  {{- if .Values.postgresql.existingSecret -}}
+{{- if and .Values.postgresql.enabled .Values.postgresql.existingSecret -}}
   {{- .Values.postgresql.existingSecret -}}
-  {{- else -}}
-  {{ include "postgresql.fullname" . }}
-  {{- end -}}
-{{- else if .Values.jdbcOverwrite.enable -}}
-  {{- if .Values.jdbcOverwrite.jdbcSecretName -}}
+{{- else if and .Values.jdbcOverwrite.enable .Values.jdbcOverwrite.jdbcSecretName -}}
   {{- .Values.jdbcOverwrite.jdbcSecretName -}}
-  {{- else -}}
-  {{ include "sonarqube.fullname" . }}
-  {{- end -}}
 {{- else -}}
   {{ include "sonarqube.fullname" . }}
 {{- end -}}
@@ -295,24 +282,6 @@ set search.ksPassword
 {{- end -}}
 
 {{/*
-Return the target Kubernetes version
-*/}}
-{{- define "common.capabilities.kubeVersion" -}}
-{{- print .Capabilities.KubeVersion.Version -}}
-{{- end -}}
-
-{{/*
-Return the appropriate apiVersion for poddisruptionbudget.
-*/}}
-{{- define "common.capabilities.policy.apiVersion" -}}
-{{- if semverCompare "<1.21-0" (include "common.capabilities.kubeVersion" .) -}}
-{{- print "policy/v1beta1" -}}
-{{- else -}}
-{{- print "policy/v1" -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
 Set sonarqube.webcontext, ensuring it starts and ends with a slash, in order to ease probes url template
 */}}
 {{- define "sonarqube.webcontext" -}}
@@ -333,7 +302,6 @@ Set sonarqube.webcontext, ensuring it starts and ends with a slash, in order to 
 {{- end -}}
 {{ printf "%s" $tempWebcontext }}
 {{- end -}}
-
 
 {{/*
 Set combined_app_env, ensuring we dont have any duplicates with our features and some of the user provided env vars

@@ -1,4 +1,4 @@
-apiVersion: {{ include "common.capabilities.policy.apiVersion" . }}
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: {{ include "sonarqube.fullname" . }}-search
@@ -11,7 +11,7 @@ spec:
     matchLabels:
       sonarqube.datacenter/type: "search"
 ---
-apiVersion: {{ include "common.capabilities.policy.apiVersion" . }}
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: {{ include "sonarqube.fullname" . }}-app
