@@ -286,35 +286,9 @@ spec:
                 name: {{ . }}
 {{- end }}
           livenessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - |
-                host="$(hostname -i || echo '127.0.0.1')"
-                wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.ApplicationNodes.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
-            initialDelaySeconds: {{ .Values.ApplicationNodes.livenessProbe.initialDelaySeconds }}
-            periodSeconds: {{ .Values.ApplicationNodes.livenessProbe.periodSeconds }}
-            failureThreshold: {{ .Values.ApplicationNodes.livenessProbe.failureThreshold }}
-            timeoutSeconds: {{ .Values.ApplicationNodes.livenessProbe.timeoutSeconds }}
+{{ tpl (omit .Values.ApplicationNodes.livenessProbe "sonarWebContext" | toYaml | indent 12) . }}
           readinessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - |
-                #!/bin/bash
-                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
-                host="$(hostname -i || echo '127.0.0.1')"
-                if wget --no-proxy -qO- http://${host}:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
-                	exit 0
-                fi
-                exit 1
-            initialDelaySeconds: {{ .Values.ApplicationNodes.readinessProbe.initialDelaySeconds }}
-            periodSeconds: {{ .Values.ApplicationNodes.readinessProbe.periodSeconds }}
-            failureThreshold: {{ .Values.ApplicationNodes.readinessProbe.failureThreshold }}
-            timeoutSeconds: {{ .Values.ApplicationNodes.readinessProbe.timeoutSeconds }}
+{{ tpl (omit .Values.ApplicationNodes.readinessProbe "sonarWebContext" | toYaml | indent 12) . }}
           startupProbe:
             httpGet:
               scheme: HTTP
