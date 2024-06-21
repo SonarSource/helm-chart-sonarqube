@@ -227,6 +227,7 @@ Set sonarqube.webcontext, ensuring it starts and ends with a slash, in order to 
 {{- $tempWebcontext = $val.value -}}
 {{- end -}}
 {{- end -}}
+{{- $tempWebcontext = default "" $tempWebcontext -}}
 {{- if not (hasPrefix "/" $tempWebcontext) -}}
 {{- $tempWebcontext = print "/" $tempWebcontext -}}
 {{- end -}}
