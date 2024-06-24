@@ -142,11 +142,13 @@ chart_testing_task:
   authenticate_to_eks_script:
     - ./.cirrus/eks.sh
     - kubectl get nodes
-  script:
+  setup_script:
     - kubectl create namespace test
     - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD}
+  script:
     - ct lint --config test.yaml --all
     - ct install --namespace test --config test.yaml --all
+  teardown_script:
     - kubectl delete namespace test
   artifacthub_lint_script:
     - ah lint
