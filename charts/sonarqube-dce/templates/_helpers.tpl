@@ -62,7 +62,7 @@ Determine the k8s secret containing the JDBC credentials
   {{- else -}}
   {{- template "postgresql.fullname" . -}}
   {{- end -}}
-{{- else if .Values.jdbcOverwrite.enable -}}
+{{- else if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
   {{- if .Values.jdbcOverwrite.jdbcSecretName -}}
   {{- .Values.jdbcOverwrite.jdbcSecretName -}}
   {{- else -}}
@@ -79,7 +79,7 @@ Determine JDBC username
 {{- define "jdbc.username" -}}
 {{- if and .Values.postgresql.enabled .Values.postgresql.postgresqlUsername -}}
   {{- .Values.postgresql.postgresqlUsername | quote -}}
-{{- else if and .Values.jdbcOverwrite.enable .Values.jdbcOverwrite.jdbcUsername -}}
+{{- else if and (or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable) .Values.jdbcOverwrite.jdbcUsername -}}
   {{- .Values.jdbcOverwrite.jdbcUsername | quote -}}
 {{- else -}}
   {{- .Values.postgresql.postgresqlUsername -}}
@@ -96,7 +96,7 @@ Determine the k8s secretKey contrining the JDBC password
   {{- else -}}
   {{- "postgresql-password" -}}
   {{- end -}}
-{{- else if .Values.jdbcOverwrite.enable -}}
+{{- else if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
   {{- if and .Values.jdbcOverwrite.jdbcSecretName .Values.jdbcOverwrite.jdbcSecretPasswordKey -}}
   {{- .Values.jdbcOverwrite.jdbcSecretPasswordKey -}}
   {{- else -}}
@@ -111,7 +111,7 @@ Determine the k8s secretKey contrining the JDBC password
 Determine JDBC password if internal secret is used
 */}}
 {{- define "jdbc.internalSecretPasswd" -}}
-{{- if .Values.jdbcOverwrite.enable -}}
+{{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
   {{- .Values.jdbcOverwrite.jdbcPassword | b64enc | quote -}}
 {{- else -}}
   {{- .Values.postgresql.postgresqlPassword | b64enc | quote -}}
