@@ -23,7 +23,6 @@ docker_build_container_template: &CONTAINER_TEMPLATE
   builder_role: cirrus-builder
   builder_image: docker-builder-v*
   builder_instance_type: t2.small
-  builder_subnet_id: ${CIRRUS_AWS_SUBNET}
   region: eu-central-1
   namespace: default
   cpu: 1
@@ -41,7 +40,6 @@ vm_instance_template: &VM_TEMPLATE
   image: docker-builder-v*
   type: t2.small
   region: eu-central-1
-  subnet_id: ${CIRRUS_AWS_SUBNET}
 
 clone_script_template: &CLONE_SCRIPT_TEMPLATE
   clone_script: |
