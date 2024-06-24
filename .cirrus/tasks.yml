@@ -144,7 +144,7 @@ chart_testing_task:
     - kubectl get nodes
   setup_script:
     - kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
-    - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD}
+    - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
   script:
     - ct lint --config test.yaml --all
     - ct install --namespace test --config test.yaml --all
