@@ -4,6 +4,74 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
+          description: "Update SonarQube's version to 10.6.0"
+        - kind: changed
+          description: "Update Chart's version to 10.6.0"
+        - kind: fixed
+          description: "Fix the env-var templating when sourcing from secrets"
+        - kind: fixed
+          description: "Fix the postgresql chart's repository link"
+        - kind: changed
+          description: "Add support for overriding liveness/readiness probe logic"
+        - kind: changed
+          description: "Use a common template for Deployment and StatefulSet"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube
+          image: sonarqube:10.6.0-community
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
+    apiVersion: v2
+    appVersion: 10.6.0
+    created: "2024-06-26T15:03:02.344792788Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
+      version: 10.15.0
+    - condition: nginx.enabled,ingress-nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.9.1
+    description: SonarQube is a self-managed, automatic code review tool that systematically
+      helps you deliver clean code. As a core element of our Sonar solution, SonarQube
+      integrates into your existing workflow and detects issues in your code to help
+      you perform continuous code inspections of your projects. The tool analyses
+      30+ different programming languages and integrates into your CI pipeline and
+      DevOps platform to ensure that your code meets high-quality standards.
+    digest: 71d06d02999be1ba96fcae7cca5c70899aa4ff4c3d9b58ed2a949d756c7c0557
+    home: https://www.sonarqube.org/
+    icon: https://raw.githubusercontent.com/SonarSource/sonarqube-static-resources/master/helm/SonarQubeLogo.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: leo.geoffroy+helm@sonarsource.com
+      name: leo-geoffroy-sonarsource
+    - email: carmine.vassallo@sonarsource.com
+      name: carminevassallo
+    - email: jeremy.cotineau@sonarsource.com
+      name: jCOTINEAU
+    - email: davi.koscianski-vidal@sonarsource.com
+      name: davividal
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/helm-chart-sonarqube
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-10.6.0-sonarqube-dce-10.6.0/sonarqube-10.6.0+3033.tgz
+    version: 10.6.0+3033
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
           description: "Update Chart's version to 10.5.1"
         - kind: changed
           description: "Update SonarQube's version to 10.5.1"
@@ -2064,6 +2132,80 @@ entries:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-1.1.1+98.tgz
     version: 1.1.1+98
   sonarqube-dce:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "Update SonarQube's version to 10.6.0"
+        - kind: changed
+          description: "Update Chart's version to 10.6.0"
+        - kind: fixed
+          description: "Fix the env-var templating when sourcing from secrets"
+        - kind: fixed
+          description: "Fix the postgresql chart's repository link"
+        - kind: changed
+          description: "Calibrate probes' initialDelaySeconds"
+        - kind: added
+          description: "Define HorizontalPodAutoscaler for the app deployment"
+        - kind: changed
+          description: "Add support for overriding liveness/readiness probe logic in the app nodes"
+        - kind: added
+          description: "Define affinity, tolerations, and nodeSelector parameters for App and Search nodes"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube-app
+          image: sonarqube:10.6.0-datacenter-app
+        - name: sonarqube-search
+          image: sonarqube:10.6.0-datacenter-search
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
+    apiVersion: v2
+    appVersion: 10.6.0
+    created: "2024-06-26T15:03:02.355059263Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
+      version: 10.15.0
+    - condition: nginx.enabled,ingress-nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.9.1
+    description: SonarQube is a self-managed, automatic code review tool that systematically
+      helps you deliver clean code. As a core element of our Sonar solution, SonarQube
+      integrates into your existing workflow and detects issues in your code to help
+      you perform continuous code inspections of your projects. The tool analyses
+      30+ different programming languages and integrates into your CI pipeline and
+      DevOps platform to ensure that your code meets high-quality standards.
+    digest: 218ce69cc8ec5c8c700877fb09cfbc3f8c443fa4f0ca3886f84fd7ff71d7d5f5
+    home: https://www.sonarqube.org/
+    icon: https://raw.githubusercontent.com/SonarSource/sonarqube-static-resources/master/helm/SonarQubeLogo.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: leo.geoffroy+helm@sonarsource.com
+      name: leo-geoffroy-sonarsource
+    - email: carmine.vassallo@sonarsource.com
+      name: carminevassallo
+    - email: jeremy.cotineau@sonarsource.com
+      name: jCOTINEAU
+    - email: davi.koscianski-vidal@sonarsource.com
+      name: davividal
+    name: sonarqube-dce
+    sources:
+    - https://github.com/SonarSource/helm-chart-sonarqube
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-10.6.0-sonarqube-dce-10.6.0/sonarqube-dce-10.6.0+3033.tgz
+    version: 10.6.0+3033
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
@@ -4786,4 +4928,4 @@ entries:
     urls:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-lts-1.0.16+98.tgz
     version: 1.0.16+98
-generated: "2024-06-25T14:13:18.334695762Z"
+generated: "2024-06-26T15:03:02.334478262Z"
