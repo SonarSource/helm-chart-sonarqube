@@ -1,19 +1,21 @@
 #!/bin/bash
 
-set -eo pipefail
+set -xeo pipefail
 
 VERSION_SEPERATOR="-"
 [[ ${CIRRUS_RELEASE:-} != "" ]] && VERSION_SEPERATOR="+"
 
-LAST_TAG=$(gh api "/repos/{owner}/{repo}/releases?per_page=2" --jq ".[1].tag_name")
+PREVIOUS_RELEASE=$(gh api "/repos/{owner}/{repo}/releases" --jq "[.[] | select(.target_commitish==\"${CIRRUS_BRANCH}\")][1].tag_name")
 
-[ -z "$LAST_TAG" ] && LAST_TAG="HEAD" || echo $LAST_TAG
+# There MIGHT be a some edge case where PREVIOUS_RELEASE shouldn't be HEAD,
+# for example, releasing a patch for non-LTA. To be investigated.
+[[ -z "${PREVIOUS_RELEASE}" ]] && PREVIOUS_RELEASE="HEAD" || echo "${PREVIOUS_RELEASE}"
 
-echo $(ct list-changed --since $LAST_TAG)
+echo $(ct list-changed --since "${PREVIOUS_RELEASE}" --target-branch "${CIRRUS_BRANCH}")
 
-for chart in $(ct list-changed --since $LAST_TAG); do
+for chart in $(ct list-changed --since "${PREVIOUS_RELEASE}" --target-branch "${CIRRUS_BRANCH}"); do
     _original_version=$(cat $chart/Chart.yaml | yq '.version' -)
-    _new_version="$_original_version$VERSION_SEPERATOR$BUILD_NUMBER"
-    helm dependency build $chart
-    helm package --version $_new_version $chart
+    _new_version="${_original_version}${VERSION_SEPERATOR}${BUILD_NUMBER}"
+    helm dependency build "${chart}"
+    helm package --version "${_new_version}" "${chart}"
 done
