@@ -33,7 +33,7 @@ With the deployer being built, one can deploy the app as is, with
 # make sure the namespace has been created already.
 mpdev install \
   --deployer="${REGISTRY}/${APP_NAME}/deployer:${MINOR_VERSION}" \
-  --parameters='{"name": "sonarqube-dce-gcapp-test", "namespace": "test-ns","ApplicationNodes.jwtSecret": "dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=", "postgresql.enabled": true, "jdbcOverwrite.enable": false }'
+  --parameters='{"name": "sonarqube-dce-gcapp-test", "namespace": "test-ns","ApplicationNodes.jwtSecret": "dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=", "postgresql.enabled": true, "jdbcOverwrite.enabled": false }'
 ```
 
 ### App verify
@@ -45,5 +45,5 @@ complies with the requirements.
 mpdev verify \
   --deployer="${REGISTRY}/${APP_NAME}/deployer:${MINOR_VERSION}" \
   --wait_timeout=1200 \
-  --parameters='{"name": "sonarqube-dce-gcapp-test", "namespace": "test-ns","ApplicationNodes.jwtSecret": "dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=", "postgresql.enabled": true, "jdbcOverwrite.enable": false }'
+  --parameters='{"name": "sonarqube-dce-gcapp-test", "namespace": "test-ns","ApplicationNodes.jwtSecret": "dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=", "postgresql.enabled": true, "jdbcOverwrite.enabled": false }'
 ```
