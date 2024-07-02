@@ -1,0 +1,15 @@
+{{- if or .Values.ApplicationNodes.sonarProperties .Values.sonarSecretKey }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sonarqube.fullname" . }}-app-config
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+data:
+  sonar.properties: |
+    {{- range $key, $val := .Values.ApplicationNodes.sonarProperties }}
+    {{ $key }}={{ $val }}
+    {{- end }}
+    {{- if .Values.sonarSecretKey }}
+    sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
+    {{- end }}
+{{- end -}}

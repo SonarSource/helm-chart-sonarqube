@@ -1,0 +1,63 @@
+{{- if .Values.ApplicationNodes.prometheusMonitoring.podMonitor.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "sonarqube.name" . }}
+  {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.namespace }}
+  namespace: {{ . | quote }}
+  {{- end }}
+  labels:
+    app: {{ include "sonarqube.name" . }}
+spec:
+   {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.jobLabel }}
+  jobLabel: {{ . | quote }}
+  {{- end }}
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}
+  podMetricsEndpoints:
+  - port: http
+    path: {{ include "sonarqube.webcontext" . }}api/monitoring/metrics
+    scheme: http
+    {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.interval }}
+    interval: {{ . }}
+    {{- end }}
+    {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ . }}
+    {{- end }}
+    bearerTokenSecret:
+      {{- if and .Values.monitoringPasscodeSecretName .Values.monitoringPasscodeSecretKey }}
+      name: {{ .Values.monitoringPasscodeSecretName }}
+      key: {{ .Values.monitoringPasscodeSecretKey }}
+      {{- else }}
+      name: {{ include "sonarqube.fullname" . }}-monitoring-passcode
+      key: SONAR_WEB_SYSTEMPASSCODE
+      {{- end }}
+  {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
+  {{- if .Values.ApplicationNodes.prometheusExporter.ceBeanPort }}
+  - port: monitoring-ce
+    path: /
+    scheme: http
+    {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.interval }}
+    interval: {{ . }}
+    {{- end }}
+    {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ . }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.ApplicationNodes.prometheusExporter.webBeanPort }}
+  - port: monitoring-web
+    path: /
+    scheme: http
+    {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.interval }}
+    interval: {{ . }}
+    {{- end }}
+    {{- with .Values.ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ . }}
+    {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end -}}

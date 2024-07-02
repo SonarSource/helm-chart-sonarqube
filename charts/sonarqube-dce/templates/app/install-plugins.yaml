@@ -1,0 +1,14 @@
+{{- if .Values.ApplicationNodes.plugins.install }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sonarqube.fullname" . }}-install-plugins
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+data:
+  install_plugins.sh: |-
+    rm -f {{ .Values.sonarqubeFolder }}/extensions/plugins/*
+    cd {{ .Values.sonarqubeFolder }}/extensions/plugins
+    {{- range $index, $val := .Values.ApplicationNodes.plugins.install }}
+    curl {{ if $.Values.ApplicationNodes.plugins.noCheckCertificate }}--insecure{{ end }} {{ if $.Values.ApplicationNodes.plugins.netrcCreds }}--netrc-file /root/.netrc{{ end }} -fsSLO {{ $val | quote }}
+    {{- end }}
+{{- end -}}

@@ -19,26 +19,59 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{/*
+Common labels
+*/}}
+{{- define "sonarqube.labels" -}}
+app: {{ include "sonarqube.name" . }}
+chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" }}
+release: {{ .Release.Name }}
+heritage: {{ .Release.Service }}
+{{- end -}}
+
+{{/*
+App Selector labels
+*/}}
+{{- define "sonarqube.selectorLabels.app" -}}
+app: {{ include "sonarqube.name" . }}
+release: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Search Selector labels
+*/}}
+{{- define "sonarqube.selectorLabels.search" -}}
+app: {{ include "sonarqube.name" . }}-search
+release: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Workload labels (Deployment or StatefulSet)
+*/}}
+{{- define "sonarqube.workloadLabels" -}}
+{{- include "sonarqube.labels" . }}
+app.kubernetes.io/name: {{ .Release.Name }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: sonarqube
+app.kubernetes.io/component: {{ include "sonarqube.fullname" . }}
+{{- end -}}
+
+{{/*
 Expand the Application Image name.
 */}}
 {{- define "sonarqube.image" -}}
 {{- printf "%s:%s" .Values.ApplicationNodes.image.repository .Values.ApplicationNodes.image.tag }}
 {{- end -}}
 
+{{/*
+Search nodes endpoints
+*/}}
 {{- define "searchNodes.endpoints" -}}
   {{- $replicas := int (toString (.Values.searchNodes.replicaCount)) }}
   {{- $uname := (include "sonarqube.fullname" .) }}
   {{- range $i, $e := untilStep 0 $replicas 1 -}}
-    {{ $uname}}-search-{{ $i }},
+    {{ $uname }}-search-{{ $i }},
   {{- end -}}
-{{- end -}}
-
-{{/*
-  Create a default fully qualified mysql/postgresql name.
-  We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-*/}}
-{{- define "postgresql.fullname" -}}
-{{- printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
@@ -56,20 +89,12 @@ Expand the Application Image name.
 Determine the k8s secret containing the JDBC credentials
 */}}
 {{- define "jdbc.secret" -}}
-{{- if .Values.postgresql.enabled -}}
-  {{- if .Values.postgresql.existingSecret -}}
+{{- if and .Values.postgresql.enabled .Values.postgresql.existingSecret -}}
   {{- .Values.postgresql.existingSecret -}}
-  {{- else -}}
-  {{- template "postgresql.fullname" . -}}
-  {{- end -}}
-{{- else if .Values.jdbcOverwrite.enable -}}
-  {{- if .Values.jdbcOverwrite.jdbcSecretName -}}
+{{- else if and .Values.jdbcOverwrite.enable .Values.jdbcOverwrite.jdbcSecretName -}}
   {{- .Values.jdbcOverwrite.jdbcSecretName -}}
-  {{- else -}}
-  {{- template "sonarqube.fullname" . -}}
-  {{- end -}}
 {{- else -}}
-  {{- template "sonarqube.fullname" . -}}
+  {{ include "sonarqube.fullname" . }}
 {{- end -}}
 {{- end -}}
 
@@ -123,7 +148,7 @@ Set sonarqube.jvmOpts
 */}}
 {{- define "sonarqube.jvmOpts" -}}
 {{- $tempJvm := .Values.ApplicationNodes.jvmOpts -}}
-{{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.web.javaOpts")}}
+{{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.web.javaOpts") }}
 {{- $tempJvm = (get .Values.ApplicationNodes.sonarProperties "sonar.web.javaOpts") -}}
 {{- else if .Values.ApplicationNodes.env -}}
 {{- range $index, $val := .Values.ApplicationNodes.env -}}
@@ -148,7 +173,7 @@ Set sonarqube.jvmCEOpts
 */}}
 {{- define "sonarqube.jvmCEOpts" -}}
 {{- $tempJvm := .Values.ApplicationNodes.jvmCeOpts -}}
-{{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.ce.javaOpts")}}
+{{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.ce.javaOpts") }}
 {{- $tempJvm = (get .Values.ApplicationNodes.sonarProperties "sonar.ce.javaOpts") -}}
 {{- else if .Values.ApplicationNodes.env -}}
 {{- range $index, $val := .Values.ApplicationNodes.env -}}
@@ -186,7 +211,7 @@ Set jwtSecret
 {{- if .Values.ApplicationNodes.existingJwtSecret -}}
 {{- .Values.ApplicationNodes.existingJwtSecret -}}
 {{- else -}}
-{{- template "sonarqube.fullname" . -}}-jwt
+{{ include "sonarqube.fullname" . }}-jwt
 {{- end -}}
 {{- end -}}
 
@@ -230,7 +255,7 @@ Set search.userPassword
 {{- if .Values.searchNodes.searchAuthentication.userPasswordSecret -}}
 {{- .Values.searchNodes.searchAuthentication.userPasswordSecret -}}
 {{- else -}}
-{{- template "sonarqube.fullname" . -}}-user-pass
+{{ include "sonarqube.fullname" . }}-user-pass
 {{- end -}}
 {{- end -}}
 
@@ -252,25 +277,7 @@ set search.ksPassword
 {{- if .Values.searchNodes.searchAuthentication.keyStorePasswordSecret -}}
 {{- .Values.searchNodes.searchAuthentication.keyStorePasswordSecret -}}
 {{- else -}}
-{{- template "sonarqube.fullname" . -}}-keystore-pass
-{{- end -}}
-{{- end -}}
-
-{{/*
-Return the target Kubernetes version
-*/}}
-{{- define "common.capabilities.kubeVersion" -}}
-{{- print .Capabilities.KubeVersion.Version -}}
-{{- end -}}
-
-{{/*
-Return the appropriate apiVersion for poddisruptionbudget.
-*/}}
-{{- define "common.capabilities.policy.apiVersion" -}}
-{{- if semverCompare "<1.21-0" (include "common.capabilities.kubeVersion" .) -}}
-{{- print "policy/v1beta1" -}}
-{{- else -}}
-{{- print "policy/v1" -}}
+{{ include "sonarqube.fullname" . }}-keystore-pass
 {{- end -}}
 {{- end -}}
 
@@ -295,7 +302,6 @@ Set sonarqube.webcontext, ensuring it starts and ends with a slash, in order to 
 {{- end -}}
 {{ printf "%s" $tempWebcontext }}
 {{- end -}}
-
 
 {{/*
 Set combined_app_env, ensuring we dont have any duplicates with our features and some of the user provided env vars

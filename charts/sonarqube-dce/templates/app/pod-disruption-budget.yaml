@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "sonarqube.fullname" . }}-app
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  {{- with (default .Values.ApplicationNodes.podDisruptionBudget .Values.ApplicationNodes.podDistributionBudget) -}}
+    {{- toYaml . | nindent 2 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      sonarqube.datacenter/type: "app"
