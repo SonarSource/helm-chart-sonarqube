@@ -12,6 +12,9 @@ env:
 except_nightly_cron: &EXCEPT_ON_NIGHTLY_CRON
   only_if: $CIRRUS_CRON != $NIGHTLY_CRON
 
+except_external_pr_or_cron: &EXCEPT_ON_PR_OR_CRON
+  only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_PR == "" && $CIRRUS_CRON != $NIGHTLY_CRON
+
 only_on_non_release_draft_template: &ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   only_if: $CIRRUS_PRERELEASE != "true"
 
@@ -185,8 +188,7 @@ chart_packaging_task:
     - chart_testing
 
 push_to_repox_task:
-  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-  <<: *EXCEPT_ON_NIGHTLY_CRON
+  <<: *EXCEPT_ON_PR_OR_CRON
   timeout_in: 15m
   eks_container:
     <<: *STD_CONTAINER_TEMPLATE
