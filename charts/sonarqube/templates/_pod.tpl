@@ -16,7 +16,7 @@ metadata:
   labels:
     {{- include "sonarqube.selectorLabels" . | nindent 4 }}
     {{- with .Values.podLabels }}
-    {{- toYaml . | nindent 8 }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
   automountServiceAccountToken: false
@@ -172,7 +172,7 @@ spec:
       {{- with (default .Values.initContainers.securityContext .Values.initFs.securityContext) }}
       securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (default .Values.initContainers.resources .Values.initFs.resources) -}}
+      {{- with (default .Values.initContainers.resources .Values.initFs.resources) }}
       resources: {{- toYaml . | nindent 8 }}
       {{- end }}
       command: ["sh", "-e", "/tmp/scripts/init_fs.sh"]
