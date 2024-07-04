@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [10.6.1]
 * Update Chart's version to 10.6.1
+* Fix a typo in the new common STS template
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0
