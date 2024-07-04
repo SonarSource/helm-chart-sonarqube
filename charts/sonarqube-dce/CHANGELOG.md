@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0
+* Support Kubernetes v1.30
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0
