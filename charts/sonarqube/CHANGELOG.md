@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [10.7.0]
 * Update Chart's version to 10.7.0
 * Support Kubernetes v1.30
+* Upgrade ingress-nginx dependency to 4.10.1
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0
