@@ -16,7 +16,7 @@ metadata:
   labels:
     {{- include "sonarqube.selectorLabels" . | nindent 4 }}
     {{- with .Values.podLabels }}
-    {{- toYaml . | nindent 8 }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
   automountServiceAccountToken: false
