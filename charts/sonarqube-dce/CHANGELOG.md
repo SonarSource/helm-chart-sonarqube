@@ -17,7 +17,6 @@ All changes to this chart will be documented in this file.
 * Add support for overriding liveness/readiness probe logic in the app nodes
 * Add ApplicationNodes.affinity, ApplicationNodes.tolerations, searchNodes.affinity, searchNode.tolerations, ApplicationNodes.nodeSelector, searchNodes.nodeSelector
 * Define affinity, tolerations, and nodeSelector parameters for App and Search nodes
-* Deprecate `jdbcOverwrite.enable` in favor of `jdbcOverwrite.enabled`
 
 ## [10.5.0]
 * Upgrade SonarQube to 10.5.0
