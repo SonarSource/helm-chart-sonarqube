@@ -24,7 +24,7 @@ spec:
               release: networkpolicy-values.yaml
       ports:
         - port: 9000
-    
+
   egress:
     - to:
         - namespaceSelector:
@@ -300,6 +300,7 @@ metadata:
     chart: sonarqube-10.7.0
     release: networkpolicy-values.yaml
     heritage: Helm
+
 spec:
   type: ClusterIP
   ports:
@@ -498,17 +499,17 @@ spec:
       release: networkpolicy-values.yaml
   template:
     metadata:
-      annotations:
-        checksum/config: 25232f5eb15d5810b7180dd6a86917265059a5821f6c68b63f1ae0525e251e28
-        checksum/init-fs: f431c3bf13dd3189cf1ad8a73eaadd1b8916275b814ad9cbfa7cff57953d3aeb
-        checksum/init-sysctl: 8a3de2c57de7b5a26bfa7ecd0d916b4e7293451ff4f20c565d8a318e6acd4884
-        checksum/plugins: bc40b3263443a5f55bbc2860487389bd4054fb2293d2268738e5855050669e2f
-        checksum/secret: bd3798a4c3328ad8f59b14f4b0967155f040df09a59b5ea601ff3221321ed0c9
       labels:
         app: sonarqube
         release: networkpolicy-values.yaml
+      annotations:
+        checksum/init-sysctl: 8a3de2c57de7b5a26bfa7ecd0d916b4e7293451ff4f20c565d8a318e6acd4884
+        checksum/init-fs: f431c3bf13dd3189cf1ad8a73eaadd1b8916275b814ad9cbfa7cff57953d3aeb
+        checksum/plugins: bc40b3263443a5f55bbc2860487389bd4054fb2293d2268738e5855050669e2f
+        checksum/config: 25232f5eb15d5810b7180dd6a86917265059a5821f6c68b63f1ae0525e251e28
+        checksum/secret: bd3798a4c3328ad8f59b14f4b0967155f040df09a59b5ea601ff3221321ed0c9
     spec:
-      automountServiceAccountToken: false
+      automountServiceAccountToken: false      
       securityContext:
         fsGroup: 0
       initContainers:
@@ -525,6 +526,8 @@ spec:
             runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
+          resources:
+            {}
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/networkpolicy-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
@@ -533,13 +536,17 @@ spec:
           securityContext:
             privileged: true
             runAsUser: 0
-          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
+          resources:
+            {}
+          command: ["/bin/bash",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
           volumeMounts:
             - name: init-sysctl
               mountPath: /tmp/scripts/
           env:
             - name: SONAR_WEB_CONTEXT
-              value: "/"
+              value: /
             - name: SONAR_WEB_JAVAOPTS
               value: ""
             - name: SONAR_CE_JAVAOPTS
@@ -562,6 +569,12 @@ spec:
               ephemeral-storage: 1536M
               memory: 2048M
           env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
             - name: SONAR_HELM_CHART_VERSION
               value: 10.7.0
             - name: SONAR_JDBC_PASSWORD
@@ -574,12 +587,6 @@ spec:
                 secretKeyRef:
                   name: networkpolicy-values.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
-            - name: SONAR_WEB_CONTEXT
-              value: "/"
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
           envFrom:
             - configMapRef:
                 name: networkpolicy-values.yaml-sonarqube-jdbc-config
@@ -644,24 +651,30 @@ spec:
               name: tmp-dir
       serviceAccountName: default
       volumes:
-        - name: init-sysctl
-          configMap:
-            name: networkpolicy-values.yaml-sonarqube-init-sysctl
-            items:
-              - key: init_sysctl.sh
-                path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: networkpolicy-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
-        - name: sonarqube
-          emptyDir:
-            {}
-        - name : tmp-dir
-          emptyDir:
-            {}
+      - name: init-sysctl
+        configMap:
+          name: networkpolicy-values.yaml-sonarqube-init-sysctl
+          items:
+            - key: init_sysctl.sh
+              path: init_sysctl.sh
+      - name: init-fs
+        configMap:
+          name: networkpolicy-values.yaml-sonarqube-init-fs
+          items:
+            - key: init_fs.sh
+              path: init_fs.sh
+      - name: install-plugins
+        configMap:
+          name: networkpolicy-values.yaml-sonarqube-install-plugins
+          items:
+            - key: install_plugins.sh
+              path: install_plugins.sh
+      - name: sonarqube
+        emptyDir:
+          {}
+      - name : tmp-dir
+        emptyDir:
+          {}
 ---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1

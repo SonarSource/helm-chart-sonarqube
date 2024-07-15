@@ -182,6 +182,7 @@ metadata:
     chart: sonarqube-10.7.0
     release: config-values.yaml
     heritage: Helm
+
 spec:
   type: ClusterIP
   ports:
@@ -380,17 +381,17 @@ spec:
       release: config-values.yaml
   template:
     metadata:
-      annotations:
-        checksum/config: eb74fa30554948839b7eaf519fe3e50dbac09cb217e71eb6e8575a5133a6a7a7
-        checksum/init-fs: 75d2ee1d2c8fc58530c2256161493fe94817395a57d63ef4726fac7c36be8128
-        checksum/init-sysctl: e521f73abbeb6587af52c173a8072a53a55465681289bdcb1cc2ca7ef0d7a048
-        checksum/plugins: 9ba8d218eaefb996735ba43bbc0d96da6a0942e1e9b04ee67150135cd627cd6c
-        checksum/secret: be732435e69fe4e65dbd8130619ae76f900a2350026396c7fa59af59ffdc364b
       labels:
         app: sonarqube
         release: config-values.yaml
+      annotations:
+        checksum/init-sysctl: e521f73abbeb6587af52c173a8072a53a55465681289bdcb1cc2ca7ef0d7a048
+        checksum/init-fs: 75d2ee1d2c8fc58530c2256161493fe94817395a57d63ef4726fac7c36be8128
+        checksum/plugins: 9ba8d218eaefb996735ba43bbc0d96da6a0942e1e9b04ee67150135cd627cd6c
+        checksum/config: eb74fa30554948839b7eaf519fe3e50dbac09cb217e71eb6e8575a5133a6a7a7
+        checksum/secret: be732435e69fe4e65dbd8130619ae76f900a2350026396c7fa59af59ffdc364b
     spec:
-      automountServiceAccountToken: false
+      automountServiceAccountToken: false      
       securityContext:
         fsGroup: 0
       initContainers:
@@ -407,6 +408,8 @@ spec:
             runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
+          resources:
+            {}
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/config-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
@@ -415,13 +418,17 @@ spec:
           securityContext:
             privileged: true
             runAsUser: 0
-          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
+          resources:
+            {}
+          command: ["/bin/bash",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
           volumeMounts:
             - name: init-sysctl
               mountPath: /tmp/scripts/
           env:
             - name: SONAR_WEB_CONTEXT
-              value: "/"
+              value: /
             - name: SONAR_WEB_JAVAOPTS
               value: ""
             - name: SONAR_CE_JAVAOPTS
@@ -430,28 +437,28 @@ spec:
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
           command:
-            - sh
-            - -c
-            - |
-              #!/bin/sh
-              if [ -f /tmp/props/sonar.properties ]; then
-                cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
-              fi
-              if [ -f /tmp/props/secret.properties ]; then
-                cat /tmp/props/secret.properties > /tmp/result/sonar.properties
-              fi
-              if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
-                awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
-              fi
+          - sh
+          - -c
+          - |
+            #!/bin/sh
+            if [ -f /tmp/props/sonar.properties ]; then
+              cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/secret.properties ]; then
+              cat /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
+              awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
           volumeMounts:
-            - mountPath: /tmp/result
-              name: concat-dir
             - mountPath: /tmp/props/sonar.properties
               name: config
               subPath: sonar.properties
             - mountPath: /tmp/props/secret.properties
               name: secret-config
               subPath: secret.properties
+            - mountPath: /tmp/result
+              name: concat-dir
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -462,9 +469,11 @@ spec:
             runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
+          resources:
+            {}
           env:
             - name: SONAR_WEB_CONTEXT
-              value: "/"
+              value: /
             - name: SONAR_WEB_JAVAOPTS
               value: ""
             - name: SONAR_CE_JAVAOPTS
@@ -487,6 +496,12 @@ spec:
               ephemeral-storage: 1536M
               memory: 2048M
           env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
             - name: SONAR_HELM_CHART_VERSION
               value: 10.7.0
             - name: SONAR_JDBC_PASSWORD
@@ -499,12 +514,6 @@ spec:
                 secretKeyRef:
                   name: config-values.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
-            - name: SONAR_WEB_CONTEXT
-              value: "/"
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
           envFrom:
             - configMapRef:
                 name: config-values.yaml-sonarqube-jdbc-config
@@ -556,6 +565,10 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
+            - mountPath: /opt/sonarqube/conf/
+              name: concat-dir
+            - mountPath: /opt/sonarqube/secret/
+              name: secret
             - mountPath: /opt/sonarqube/data
               name: sonarqube
               subPath: data
@@ -567,51 +580,53 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-            - mountPath: /opt/sonarqube/conf/
-              name: concat-dir
-            - mountPath: /opt/sonarqube/secret/
-              name: secret
       serviceAccountName: default
       volumes:
-        - name: config
-          configMap:
-            name: config-values.yaml-sonarqube-config
-            items:
-            - key: sonar.properties
-              path: sonar.properties
-        - name: secret-config
-          secret:
-            secretName: some-secret
-            items:
-            - key: secret.properties
-              path: secret.properties
-        - name: secret
-          secret:
-            secretName: settings-encryption-secret
-            items:
-            - key: sonar-secret.txt
-              path: sonar-secret.txt
-        - name: init-sysctl
-          configMap:
-            name: config-values.yaml-sonarqube-init-sysctl
-            items:
-              - key: init_sysctl.sh
-                path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: config-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
-        - name: sonarqube
-          emptyDir:
-            {}
-        - name : tmp-dir
-          emptyDir:
-            {}
-        - name : concat-dir
-          emptyDir:
-            {}
+      - name: config
+        configMap:
+          name: config-values.yaml-sonarqube-config
+          items:
+          - key: sonar.properties
+            path: sonar.properties
+      - name: secret-config
+        secret:
+          secretName: some-secret
+          items:
+          - key: secret.properties
+            path: secret.properties
+      - name: secret
+        secret:
+          secretName: settings-encryption-secret
+          items:
+          - key: sonar-secret.txt
+            path: sonar-secret.txt
+      - name: init-sysctl
+        configMap:
+          name: config-values.yaml-sonarqube-init-sysctl
+          items:
+            - key: init_sysctl.sh
+              path: init_sysctl.sh
+      - name: init-fs
+        configMap:
+          name: config-values.yaml-sonarqube-init-fs
+          items:
+            - key: init_fs.sh
+              path: init_fs.sh
+      - name: install-plugins
+        configMap:
+          name: config-values.yaml-sonarqube-install-plugins
+          items:
+            - key: install_plugins.sh
+              path: install_plugins.sh
+      - name: sonarqube
+        emptyDir:
+          {}
+      - name : tmp-dir
+        emptyDir:
+          {}
+      - name : concat-dir
+        emptyDir:
+          {}
 ---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1

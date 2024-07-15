@@ -179,6 +179,7 @@ metadata:
     release: service-values.yaml
     heritage: Helm
     mylabel: "tutu"
+
   annotations:
     myAnnotation: "toto"
 spec:
@@ -383,17 +384,17 @@ spec:
       release: service-values.yaml
   template:
     metadata:
-      annotations:
-        checksum/config: 6fa738338b35e53213427eae2158d2c4de5d8e47890490f7be196f7a54f6cc5b
-        checksum/init-fs: 7ff93015c5332f2efc6fe2e2061b2946063babc27918e1268931295f973e8baf
-        checksum/init-sysctl: 74e9302fa54b82580820ce5149f4f7c04c314ffdc35e91967fc794671cb85021
-        checksum/plugins: e9585aecdf08c9411f416b650045e893bfb2bb15f00de0d9e90e0073b10ee646
-        checksum/secret: f5c3ca9a2da92fc5c5bed2c3673bbde84b0ad33cb76302cccdbc564a8605cafc
       labels:
         app: sonarqube
         release: service-values.yaml
+      annotations:
+        checksum/init-sysctl: 74e9302fa54b82580820ce5149f4f7c04c314ffdc35e91967fc794671cb85021
+        checksum/init-fs: 7ff93015c5332f2efc6fe2e2061b2946063babc27918e1268931295f973e8baf
+        checksum/plugins: e9585aecdf08c9411f416b650045e893bfb2bb15f00de0d9e90e0073b10ee646
+        checksum/config: 6fa738338b35e53213427eae2158d2c4de5d8e47890490f7be196f7a54f6cc5b
+        checksum/secret: f5c3ca9a2da92fc5c5bed2c3673bbde84b0ad33cb76302cccdbc564a8605cafc
     spec:
-      automountServiceAccountToken: false
+      automountServiceAccountToken: false      
       securityContext:
         fsGroup: 0
       initContainers:
@@ -410,6 +411,8 @@ spec:
             runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
+          resources:
+            {}
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/service-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
@@ -418,13 +421,17 @@ spec:
           securityContext:
             privileged: true
             runAsUser: 0
-          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
+          resources:
+            {}
+          command: ["/bin/bash",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
           volumeMounts:
             - name: init-sysctl
               mountPath: /tmp/scripts/
           env:
             - name: SONAR_WEB_CONTEXT
-              value: "/"
+              value: /
             - name: SONAR_WEB_JAVAOPTS
               value: ""
             - name: SONAR_CE_JAVAOPTS
@@ -447,6 +454,12 @@ spec:
               ephemeral-storage: 1536M
               memory: 2048M
           env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
             - name: SONAR_HELM_CHART_VERSION
               value: 10.7.0
             - name: SONAR_JDBC_PASSWORD
@@ -459,12 +472,6 @@ spec:
                 secretKeyRef:
                   name: service-values.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
-            - name: SONAR_WEB_CONTEXT
-              value: "/"
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
           envFrom:
             - configMapRef:
                 name: service-values.yaml-sonarqube-jdbc-config
@@ -529,24 +536,30 @@ spec:
               name: tmp-dir
       serviceAccountName: default
       volumes:
-        - name: init-sysctl
-          configMap:
-            name: service-values.yaml-sonarqube-init-sysctl
-            items:
-              - key: init_sysctl.sh
-                path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: service-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
-        - name: sonarqube
-          emptyDir:
-            {}
-        - name : tmp-dir
-          emptyDir:
-            {}
+      - name: init-sysctl
+        configMap:
+          name: service-values.yaml-sonarqube-init-sysctl
+          items:
+            - key: init_sysctl.sh
+              path: init_sysctl.sh
+      - name: init-fs
+        configMap:
+          name: service-values.yaml-sonarqube-init-fs
+          items:
+            - key: init_fs.sh
+              path: init_fs.sh
+      - name: install-plugins
+        configMap:
+          name: service-values.yaml-sonarqube-install-plugins
+          items:
+            - key: install_plugins.sh
+              path: install_plugins.sh
+      - name: sonarqube
+        emptyDir:
+          {}
+      - name : tmp-dir
+        emptyDir:
+          {}
 ---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1

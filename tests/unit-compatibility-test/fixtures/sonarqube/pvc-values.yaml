@@ -122,9 +122,10 @@ metadata:
   name: pvc-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-10.7.0
-    release: pvc-values.yaml
-    heritage: Helm
+    chart: "sonarqube-10.7.0"
+    release: "pvc-values.yaml"
+    heritage: "Helm"
+
   annotations:
     someAnnotations: "toto"
 spec:
@@ -198,6 +199,7 @@ metadata:
     chart: sonarqube-10.7.0
     release: pvc-values.yaml
     heritage: Helm
+
 spec:
   type: ClusterIP
   ports:
@@ -396,17 +398,17 @@ spec:
       release: pvc-values.yaml
   template:
     metadata:
-      annotations:
-        checksum/config: e9899c1e4753e74241b8aa378766064651dc86c9a85d35730507a573db6a526f
-        checksum/init-fs: 416594a83fc0f9882009bad6ff4c17f50716bd7afb2fa07da47f7a3f4e5dc404
-        checksum/init-sysctl: aa217652630f95b93ed32da24157047e913ecb0354d3bc2801506f59f2bb23b2
-        checksum/plugins: 192ab79caaa940637e137aa30435dcc9e9b505a1a79366c337cfd57f4ae1cb9d
-        checksum/secret: 1fed7a8b027cc35db3adb5132039e50bd6b7cc3148c12a3a6717fce192529f1c
       labels:
         app: sonarqube
         release: pvc-values.yaml
+      annotations:
+        checksum/init-sysctl: aa217652630f95b93ed32da24157047e913ecb0354d3bc2801506f59f2bb23b2
+        checksum/init-fs: 416594a83fc0f9882009bad6ff4c17f50716bd7afb2fa07da47f7a3f4e5dc404
+        checksum/plugins: 192ab79caaa940637e137aa30435dcc9e9b505a1a79366c337cfd57f4ae1cb9d
+        checksum/config: e9899c1e4753e74241b8aa378766064651dc86c9a85d35730507a573db6a526f
+        checksum/secret: 1fed7a8b027cc35db3adb5132039e50bd6b7cc3148c12a3a6717fce192529f1c
     spec:
-      automountServiceAccountToken: false
+      automountServiceAccountToken: false      
       securityContext:
         fsGroup: 0
       initContainers:
@@ -423,6 +425,8 @@ spec:
             runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
+          resources:
+            {}
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/pvc-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
@@ -431,13 +435,17 @@ spec:
           securityContext:
             privileged: true
             runAsUser: 0
-          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
+          resources:
+            {}
+          command: ["/bin/bash",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
           volumeMounts:
             - name: init-sysctl
               mountPath: /tmp/scripts/
           env:
             - name: SONAR_WEB_CONTEXT
-              value: "/"
+              value: /
             - name: SONAR_WEB_JAVAOPTS
               value: ""
             - name: SONAR_CE_JAVAOPTS
@@ -457,13 +465,20 @@ spec:
             runAsUser: 0
             seccompProfile:
               type: RuntimeDefault
-          command: ["sh", "-e", "/tmp/scripts/init_fs.sh"]
+          resources:
+            {}
+          command: ["sh",
+            "-e",
+            "/tmp/scripts/init_fs.sh"]
           volumeMounts:
             - name: init-fs
               mountPath: /tmp/scripts/
             - mountPath: /opt/sonarqube/data
               name: sonarqube
               subPath: data
+            - mountPath: /opt/sonarqube/extensions
+              name: sonarqube
+              subPath: extensions
             - mountPath: /opt/sonarqube/temp
               name: sonarqube
               subPath: temp
@@ -472,9 +487,6 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-            - mountPath: /opt/sonarqube/extensions
-              name: sonarqube
-              subPath: extensions
       containers:
         - name: sonarqube
           image: sonarqube:10.6.0-community
@@ -493,6 +505,12 @@ spec:
               ephemeral-storage: 1536M
               memory: 2048M
           env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
             - name: SONAR_HELM_CHART_VERSION
               value: 10.7.0
             - name: SONAR_JDBC_PASSWORD
@@ -505,12 +523,6 @@ spec:
                 secretKeyRef:
                   name: pvc-values.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
-            - name: SONAR_WEB_CONTEXT
-              value: "/"
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
           envFrom:
             - configMapRef:
                 name: pvc-values.yaml-sonarqube-jdbc-config
@@ -565,6 +577,9 @@ spec:
             - mountPath: /opt/sonarqube/data
               name: sonarqube
               subPath: data
+            - mountPath: /opt/sonarqube/extensions
+              name: sonarqube
+              subPath: extensions
             - mountPath: /opt/sonarqube/temp
               name: sonarqube
               subPath: temp
@@ -573,29 +588,32 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-            - mountPath: /opt/sonarqube/extensions
-              name: sonarqube
-              subPath: extensions
       serviceAccountName: default
       volumes:
-        - name: init-sysctl
-          configMap:
-            name: pvc-values.yaml-sonarqube-init-sysctl
-            items:
-              - key: init_sysctl.sh
-                path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: pvc-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
-        - name: sonarqube
-          persistentVolumeClaim:
-            claimName: pvc-values.yaml-sonarqube
-        - name : tmp-dir
-          emptyDir:
-            {}
+      - name: init-sysctl
+        configMap:
+          name: pvc-values.yaml-sonarqube-init-sysctl
+          items:
+            - key: init_sysctl.sh
+              path: init_sysctl.sh
+      - name: init-fs
+        configMap:
+          name: pvc-values.yaml-sonarqube-init-fs
+          items:
+            - key: init_fs.sh
+              path: init_fs.sh
+      - name: install-plugins
+        configMap:
+          name: pvc-values.yaml-sonarqube-install-plugins
+          items:
+            - key: install_plugins.sh
+              path: install_plugins.sh
+      - name: sonarqube
+        persistentVolumeClaim:
+          claimName: pvc-values.yaml-sonarqube
+      - name : tmp-dir
+        emptyDir:
+          {}
 ---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1

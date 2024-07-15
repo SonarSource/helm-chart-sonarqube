@@ -181,6 +181,7 @@ metadata:
     chart: sonarqube-10.7.0
     release: install-plugins-values.yaml
     heritage: Helm
+
 spec:
   type: ClusterIP
   ports:
@@ -379,17 +380,17 @@ spec:
       release: install-plugins-values.yaml
   template:
     metadata:
-      annotations:
-        checksum/config: 58530d7310cfd0b9e68641a7a65cf4f36e759c03135ce0cdfa737b46495858e1
-        checksum/init-fs: 54cfe707d72307d7d0c10ad2775f8ad7f116d93816fe8332ba3f61ad4ee50d1a
-        checksum/init-sysctl: 6c5b33c8909edd64442f7cc75b154892b633305fa3356a340e36742a5e44cae3
-        checksum/plugins: fdca4d6a713b0c0bcfcfe63f752091f6eb3192f27117c67505c1f9d45a997c1e
-        checksum/secret: b569e6e1647cb4631a90705275947d2e886aa37fdf1877bd8834bc6ce117e3b5
       labels:
         app: sonarqube
         release: install-plugins-values.yaml
+      annotations:
+        checksum/init-sysctl: 6c5b33c8909edd64442f7cc75b154892b633305fa3356a340e36742a5e44cae3
+        checksum/init-fs: 54cfe707d72307d7d0c10ad2775f8ad7f116d93816fe8332ba3f61ad4ee50d1a
+        checksum/plugins: fdca4d6a713b0c0bcfcfe63f752091f6eb3192f27117c67505c1f9d45a997c1e
+        checksum/config: 58530d7310cfd0b9e68641a7a65cf4f36e759c03135ce0cdfa737b46495858e1
+        checksum/secret: b569e6e1647cb4631a90705275947d2e886aa37fdf1877bd8834bc6ce117e3b5
     spec:
-      automountServiceAccountToken: false
+      automountServiceAccountToken: false      
       securityContext:
         fsGroup: 0
       initContainers:
@@ -406,6 +407,8 @@ spec:
             runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
+          resources:
+            {}
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/install-plugins-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
@@ -414,13 +417,17 @@ spec:
           securityContext:
             privileged: true
             runAsUser: 0
-          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
+          resources:
+            {}
+          command: ["/bin/bash",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
           volumeMounts:
             - name: init-sysctl
               mountPath: /tmp/scripts/
           env:
             - name: SONAR_WEB_CONTEXT
-              value: "/"
+              value: /
             - name: SONAR_WEB_JAVAOPTS
               value: ""
             - name: SONAR_CE_JAVAOPTS
@@ -428,7 +435,15 @@ spec:
         - name: install-plugins
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
-          command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
+          command: ["sh",
+            "-e",
+            "/tmp/scripts/install_plugins.sh"]
+          volumeMounts:
+            - mountPath: /opt/sonarqube/extensions/plugins
+              name: sonarqube
+              subPath: extensions/plugins
+            - name: install-plugins
+              mountPath: /tmp/scripts/
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -439,12 +454,8 @@ spec:
             runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
-          volumeMounts:
-            - mountPath: /opt/sonarqube/extensions/plugins
-              name: sonarqube
-              subPath: extensions/plugins
-            - name: install-plugins
-              mountPath: /tmp/scripts/
+          resources:
+            {}
           env:
             - name: http_proxy
               value: 
@@ -453,7 +464,7 @@ spec:
             - name: no_proxy
               value: 
             - name: SONAR_WEB_CONTEXT
-              value: "/"
+              value: /
             - name: SONAR_WEB_JAVAOPTS
               value: ""
             - name: SONAR_CE_JAVAOPTS
@@ -476,6 +487,12 @@ spec:
               ephemeral-storage: 1536M
               memory: 2048M
           env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
             - name: SONAR_HELM_CHART_VERSION
               value: 10.7.0
             - name: SONAR_JDBC_PASSWORD
@@ -488,12 +505,6 @@ spec:
                 secretKeyRef:
                   name: install-plugins-values.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
-            - name: SONAR_WEB_CONTEXT
-              value: "/"
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
           envFrom:
             - configMapRef:
                 name: install-plugins-values.yaml-sonarqube-jdbc-config
@@ -548,6 +559,9 @@ spec:
             - mountPath: /opt/sonarqube/data
               name: sonarqube
               subPath: data
+            - mountPath: /opt/sonarqube/extensions/plugins
+              name: sonarqube
+              subPath: extensions/plugins
             - mountPath: /opt/sonarqube/temp
               name: sonarqube
               subPath: temp
@@ -556,35 +570,32 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-            - mountPath: /opt/sonarqube/extensions/plugins
-              name: sonarqube
-              subPath: extensions/plugins
       serviceAccountName: default
       volumes:
-        - name: init-sysctl
-          configMap:
-            name: install-plugins-values.yaml-sonarqube-init-sysctl
-            items:
-              - key: init_sysctl.sh
-                path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: install-plugins-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
-        - name: install-plugins
-          configMap:
-            name: install-plugins-values.yaml-sonarqube-install-plugins
-            items:
-              - key: install_plugins.sh
-                path: install_plugins.sh
-        - name: sonarqube
-          emptyDir:
-            {}
-        - name : tmp-dir
-          emptyDir:
-            {}
+      - name: init-sysctl
+        configMap:
+          name: install-plugins-values.yaml-sonarqube-init-sysctl
+          items:
+            - key: init_sysctl.sh
+              path: init_sysctl.sh
+      - name: init-fs
+        configMap:
+          name: install-plugins-values.yaml-sonarqube-init-fs
+          items:
+            - key: init_fs.sh
+              path: init_fs.sh
+      - name: install-plugins
+        configMap:
+          name: install-plugins-values.yaml-sonarqube-install-plugins
+          items:
+            - key: install_plugins.sh
+              path: install_plugins.sh
+      - name: sonarqube
+        emptyDir:
+          {}
+      - name : tmp-dir
+        emptyDir:
+          {}
 ---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1

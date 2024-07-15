@@ -193,6 +193,7 @@ metadata:
     chart: sonarqube-10.7.0
     release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
+
 spec:
   type: ClusterIP
   ports:
@@ -229,17 +230,15 @@ spec:
       release: sonar-web-context-deployment-deprecated-values.yaml
   template:
     metadata:
-      annotations:
-        checksum/config: 32fd179507e07249327e7b9cf79296db2010f5ed218fe2502582db3fe6139227
-        checksum/init-fs: 3baade0c10beb2247a353f9f2b22076c50fc9ab937c406214c1a8d41f8168786
-        checksum/init-sysctl: 7852551c0bfc6cfa258758590cd78c92f97514584ca3f00e7a6ac786738cae98
-        checksum/plugins: 1fead84328fff11dbf3a9a8a39586d4ed64dc3beb775f0769d1c66a7cc41c54a
-        checksum/secret: c76c4c14c0497541d15af68963e5f4680380dc8e61ed8d73457d81895908a2c3
       labels:
         app: sonarqube
         release: sonar-web-context-deployment-deprecated-values.yaml
+      annotations:
+        checksum/init-sysctl: 7852551c0bfc6cfa258758590cd78c92f97514584ca3f00e7a6ac786738cae98
+        checksum/plugins: 1fead84328fff11dbf3a9a8a39586d4ed64dc3beb775f0769d1c66a7cc41c54a
+        checksum/config: 32fd179507e07249327e7b9cf79296db2010f5ed218fe2502582db3fe6139227
+        checksum/secret: c76c4c14c0497541d15af68963e5f4680380dc8e61ed8d73457d81895908a2c3
     spec:
-      automountServiceAccountToken: false
       securityContext:
         fsGroup: 0
       initContainers:
@@ -256,6 +255,8 @@ spec:
             runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
+          resources:
+            {}
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/sonar-web-context-deployment-deprecated-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
@@ -264,13 +265,17 @@ spec:
           securityContext:
             privileged: true
             runAsUser: 0
-          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
+          resources:
+            {}
+          command: ["/bin/bash",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
           volumeMounts:
             - name: init-sysctl
               mountPath: /tmp/scripts/
           env:
             - name: SONAR_WEB_CONTEXT
-              value: "/"
+              value: /
             - name: SONAR_WEB_JAVAOPTS
               value: ""
             - name: SONAR_CE_JAVAOPTS
@@ -293,6 +298,12 @@ spec:
               ephemeral-storage: 1536M
               memory: 2048M
           env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
             - name: SONAR_HELM_CHART_VERSION
               value: 10.7.0
             - name: SONAR_JDBC_PASSWORD
@@ -305,12 +316,6 @@ spec:
                 secretKeyRef:
                   name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
-            - name: SONAR_WEB_CONTEXT
-              value: "/"
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
           envFrom:
             - configMapRef:
                 name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-jdbc-config
@@ -375,24 +380,24 @@ spec:
               name: tmp-dir
       serviceAccountName: default
       volumes:
-        - name: init-sysctl
-          configMap:
-            name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-init-sysctl
-            items:
-              - key: init_sysctl.sh
-                path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
-        - name: sonarqube
-          emptyDir:
-            {}
-        - name : tmp-dir
-          emptyDir:
-            {}
+      - name: init-sysctl
+        configMap:
+          name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-init-sysctl
+          items:
+            - key: init_sysctl.sh
+              path: init_sysctl.sh
+      - name: install-plugins
+        configMap:
+          name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-install-plugins
+          items:
+            - key: install_plugins.sh
+              path: install_plugins.sh
+      - name: sonarqube
+        emptyDir:
+          {}
+      - name : tmp-dir
+        emptyDir:
+          {}
 ---
 # Source: sonarqube/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
@@ -624,9 +629,9 @@ metadata:
   name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-change-admin-password-hook
   labels:
     app: sonarqube
-    chart: sonarqube-10.7.0
-    release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
+    release: sonar-web-context-deployment-deprecated-values.yaml
+    helm.sh/chart: "sonarqube-10.7.0"
   annotations:
     "helm.sh/hook": post-install, post-upgrade
     "helm.sh/hook-delete-policy": hook-succeeded
@@ -636,9 +641,8 @@ spec:
       name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-change-admin-password-hook
       labels:
         app: sonarqube
-        chart: sonarqube-10.7.0
-        release: sonar-web-context-deployment-deprecated-values.yaml
         heritage: Helm
+        release: sonar-web-context-deployment-deprecated-values.yaml
     spec:
       restartPolicy: OnFailure
       serviceAccountName: default
@@ -646,15 +650,15 @@ spec:
       - name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-change-default-admin-password
         image: sonarqube:10.6.0-community
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          runAsGroup: 0
-          runAsNonRoot: true
-          runAsUser: 1000
-          seccompProfile:
-            type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
         command: ["sh", "-c", 'until curl -v --connect-timeout 100 sonar-web-context-deployment-deprecated-values.yaml-sonarqube:9000/sonarqube-account/api/system/status | grep -w UP; do sleep 10; done; curl -v --connect-timeout 100 -u admin:$CURRENT_ADMIN_PASSWORD -X POST "sonar-web-context-deployment-deprecated-values.yaml-sonarqube:9000/sonarqube-account/api/users/change_password?login=admin&previousPassword=$CURRENT_ADMIN_PASSWORD&password=$ADMIN_PASSWORD"']
         env:
         - name: ADMIN_PASSWORD

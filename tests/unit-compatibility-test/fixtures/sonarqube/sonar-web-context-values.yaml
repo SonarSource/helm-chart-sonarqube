@@ -193,6 +193,7 @@ metadata:
     chart: sonarqube-10.7.0
     release: sonar-web-context-values.yaml
     heritage: Helm
+
 spec:
   type: ClusterIP
   ports:
@@ -391,17 +392,17 @@ spec:
       release: sonar-web-context-values.yaml
   template:
     metadata:
-      annotations:
-        checksum/config: 2cc9770b80ec0a3b0a401373c2906fc2815dc6fb0005429950fe204f7e7011eb
-        checksum/init-fs: 2219ef73b7defb1bd8664621b43e0fa65407ae50616cef13e5690339ad8dc305
-        checksum/init-sysctl: 03d0086f96a27c841e65f7be3fefd707990d0086e83e2c254f64226e4684d9c7
-        checksum/plugins: f5f32668c3f1944cbfd662c29991a200a505f387b4a609ade855ebd1041624ec
-        checksum/secret: 35f21ea2d7f92ff17ca578fa78f8ff7fe52c31fd97cbde470bc2f72bfb5fa781
       labels:
         app: sonarqube
         release: sonar-web-context-values.yaml
+      annotations:
+        checksum/init-sysctl: 03d0086f96a27c841e65f7be3fefd707990d0086e83e2c254f64226e4684d9c7
+        checksum/init-fs: 2219ef73b7defb1bd8664621b43e0fa65407ae50616cef13e5690339ad8dc305
+        checksum/plugins: f5f32668c3f1944cbfd662c29991a200a505f387b4a609ade855ebd1041624ec
+        checksum/config: 2cc9770b80ec0a3b0a401373c2906fc2815dc6fb0005429950fe204f7e7011eb
+        checksum/secret: 35f21ea2d7f92ff17ca578fa78f8ff7fe52c31fd97cbde470bc2f72bfb5fa781
     spec:
-      automountServiceAccountToken: false
+      automountServiceAccountToken: false      
       securityContext:
         fsGroup: 0
       initContainers:
@@ -418,6 +419,8 @@ spec:
             runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
+          resources:
+            {}
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/sonar-web-context-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
@@ -426,13 +429,17 @@ spec:
           securityContext:
             privileged: true
             runAsUser: 0
-          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
+          resources:
+            {}
+          command: ["/bin/bash",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
           volumeMounts:
             - name: init-sysctl
               mountPath: /tmp/scripts/
           env:
             - name: SONAR_WEB_CONTEXT
-              value: "/sonarqube-web-context/"
+              value: /sonarqube-web-context/
             - name: SONAR_WEB_JAVAOPTS
               value: ""
             - name: SONAR_CE_JAVAOPTS
@@ -455,6 +462,12 @@ spec:
               ephemeral-storage: 1536M
               memory: 2048M
           env:
+            - name: SONAR_WEB_CONTEXT
+              value: /sonarqube-web-context/
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
             - name: SONAR_HELM_CHART_VERSION
               value: 10.7.0
             - name: SONAR_JDBC_PASSWORD
@@ -467,12 +480,6 @@ spec:
                 secretKeyRef:
                   name: sonar-web-context-values.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
-            - name: SONAR_WEB_CONTEXT
-              value: "/sonarqube-web-context/"
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
           envFrom:
             - configMapRef:
                 name: sonar-web-context-values.yaml-sonarqube-jdbc-config
@@ -537,24 +544,30 @@ spec:
               name: tmp-dir
       serviceAccountName: default
       volumes:
-        - name: init-sysctl
-          configMap:
-            name: sonar-web-context-values.yaml-sonarqube-init-sysctl
-            items:
-              - key: init_sysctl.sh
-                path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: sonar-web-context-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
-        - name: sonarqube
-          emptyDir:
-            {}
-        - name : tmp-dir
-          emptyDir:
-            {}
+      - name: init-sysctl
+        configMap:
+          name: sonar-web-context-values.yaml-sonarqube-init-sysctl
+          items:
+            - key: init_sysctl.sh
+              path: init_sysctl.sh
+      - name: init-fs
+        configMap:
+          name: sonar-web-context-values.yaml-sonarqube-init-fs
+          items:
+            - key: init_fs.sh
+              path: init_fs.sh
+      - name: install-plugins
+        configMap:
+          name: sonar-web-context-values.yaml-sonarqube-install-plugins
+          items:
+            - key: install_plugins.sh
+              path: install_plugins.sh
+      - name: sonarqube
+        emptyDir:
+          {}
+      - name : tmp-dir
+        emptyDir:
+          {}
 ---
 # Source: sonarqube/templates/ingress.yaml
 apiVersion: networking.k8s.io/v1
@@ -625,9 +638,9 @@ metadata:
   name: sonar-web-context-values.yaml-sonarqube-change-admin-password-hook
   labels:
     app: sonarqube
-    chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
     heritage: Helm
+    release: sonar-web-context-values.yaml
+    helm.sh/chart: "sonarqube-10.7.0"
   annotations:
     "helm.sh/hook": post-install, post-upgrade
     "helm.sh/hook-delete-policy": hook-succeeded
@@ -637,9 +650,8 @@ spec:
       name: sonar-web-context-values.yaml-sonarqube-change-admin-password-hook
       labels:
         app: sonarqube
-        chart: sonarqube-10.7.0
-        release: sonar-web-context-values.yaml
         heritage: Helm
+        release: sonar-web-context-values.yaml
     spec:
       restartPolicy: OnFailure
       serviceAccountName: default
@@ -647,15 +659,15 @@ spec:
       - name: sonar-web-context-values.yaml-sonarqube-change-default-admin-password
         image: sonarqube:10.6.0-community
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          runAsGroup: 0
-          runAsNonRoot: true
-          runAsUser: 1000
-          seccompProfile:
-            type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
         command: ["sh", "-c", 'until curl -v --connect-timeout 100 sonar-web-context-values.yaml-sonarqube:9000/sonarqube-web-context/api/system/status | grep -w UP; do sleep 10; done; curl -v --connect-timeout 100 -u admin:$CURRENT_ADMIN_PASSWORD -X POST "sonar-web-context-values.yaml-sonarqube:9000/sonarqube-web-context/api/users/change_password?login=admin&previousPassword=$CURRENT_ADMIN_PASSWORD&password=$ADMIN_PASSWORD"']
         env:
         - name: ADMIN_PASSWORD
