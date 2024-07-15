@@ -1,0 +1,1017 @@
+---
+# Source: sonarqube-dce/templates/pod-disruption-budget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: application-values.yaml-sonarqube-dce-search
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+spec:
+  minAvailable: 2
+
+  selector:
+    matchLabels:
+      sonarqube.datacenter/type: "search"
+---
+# Source: sonarqube-dce/templates/pod-disruption-budget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: application-values.yaml-sonarqube-dce-app
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+spec:
+  minAvailable: 1
+
+  selector:
+    matchLabels:
+      sonarqube.datacenter/type: "app"
+---
+# Source: sonarqube-dce/charts/postgresql/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: application-values.yaml-postgresql
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-10.15.0
+    app.kubernetes.io/instance: application-values.yaml
+    app.kubernetes.io/managed-by: Helm
+  namespace: default
+type: Opaque
+data:
+  postgresql-postgres-password: "dEFLSE9hMjdRTA=="
+  postgresql-password: "c29uYXJQYXNz"
+---
+# Source: sonarqube-dce/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: application-values.yaml-sonarqube-dce-monitoring-passcode
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+type: Opaque
+data:
+  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+---
+# Source: sonarqube-dce/templates/secret.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: application-values.yaml-sonarqube-dce-jwt
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+type: Opaque
+data:
+  SONAR_AUTH_JWTBASE64HS256SECRET: ""
+---
+# Source: sonarqube-dce/templates/config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: application-values.yaml-sonarqube-dce-app-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+data:
+  sonar.properties: |
+---
+# Source: sonarqube-dce/templates/config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: application-values.yaml-sonarqube-dce-search-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+data:
+  sonar.properties: |
+---
+# Source: sonarqube-dce/templates/init-fs.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: application-values.yaml-sonarqube-dce-init-fs
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+data:
+  init_fs.sh: |-
+    chown -R 1000:0 /opt/sonarqube
+---
+# Source: sonarqube-dce/templates/init-sysctl.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: application-values.yaml-sonarqube-dce-init-sysctl
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+data:
+  init_sysctl.sh: |-
+    if [[ "$(sysctl -n vm.max_map_count)" -lt 524288 ]]; then
+      sysctl -w vm.max_map_count=524288
+    fi
+    if [[ "$(sysctl -n fs.file-max)" -lt 131072 ]]; then
+      sysctl -w fs.file-max=131072
+    fi
+    if [[ "$(ulimit -n)" != "unlimited" ]]; then
+      if [[ "$(ulimit -n)" -lt 131072 ]]; then
+        echo "ulimit -n 131072"
+        ulimit -n 131072
+      fi
+    fi
+    if [[ "$(ulimit -u)" != "unlimited" ]]; then
+      if [[ "$(ulimit -u)" -lt 8192 ]]; then
+        echo "ulimit -u 8192"
+        ulimit -u 8192
+      fi
+    fi
+---
+# Source: sonarqube-dce/templates/install-plugins.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: application-values.yaml-sonarqube-dce-install-plugins
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+data:
+  install_plugins.sh: |-
+---
+# Source: sonarqube-dce/templates/jdbc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: application-values.yaml-sonarqube-dce-jdbc-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+data:
+  SONAR_JDBC_USERNAME: "sonarUser"
+  SONAR_JDBC_URL: "jdbc:postgresql://application-values.yaml-postgresql:5432/sonarDB"
+---
+# Source: sonarqube-dce/charts/postgresql/templates/svc-headless.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: application-values.yaml-postgresql-headless
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-10.15.0
+    app.kubernetes.io/instance: application-values.yaml
+    app.kubernetes.io/managed-by: Helm
+    # Use this annotation in addition to the actual publishNotReadyAddresses
+    # field below because the annotation will stop being respected soon but the
+    # field is broken in some versions of Kubernetes:
+    # https://github.com/kubernetes/kubernetes/issues/58662
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+  namespace: default
+spec:
+  type: ClusterIP
+  clusterIP: None
+  # We want all pods in the StatefulSet to have their addresses published for
+  # the sake of the other Postgresql pods even before they're ready, since they
+  # have to be able to talk to each other in order to become ready.
+  publishNotReadyAddresses: true
+  ports:
+    - name: tcp-postgresql
+      port: 5432
+      targetPort: tcp-postgresql
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: application-values.yaml
+---
+# Source: sonarqube-dce/charts/postgresql/templates/svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: application-values.yaml-postgresql
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-10.15.0
+    app.kubernetes.io/instance: application-values.yaml
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+    - name: tcp-postgresql
+      port: 5432
+      targetPort: tcp-postgresql
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: application-values.yaml
+    role: primary
+---
+# Source: sonarqube-dce/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: application-values.yaml-sonarqube-dce
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: sonarqube-dce
+    release: application-values.yaml
+---
+# Source: sonarqube-dce/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: application-values.yaml-sonarqube-dce-headless
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: 9003
+      targetPort: hazelcast
+      protocol: TCP
+      name: hazelcast
+  selector:
+    app: sonarqube-dce
+    release: application-values.yaml
+---
+# Source: sonarqube-dce/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: application-values.yaml-sonarqube-dce-search
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9001
+      targetPort: search-port
+      protocol: TCP
+      name: search
+    - port: 9002
+      targetPort: es-port
+      protocol: TCP
+      name: es
+  selector:
+    app: sonarqube-dce-search
+    release: application-values.yaml
+---
+# Source: sonarqube-dce/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: application-values.yaml-sonarqube-dce-search-headless
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: 9001
+      targetPort: search-port
+      protocol: TCP
+      name: search
+    - port: 9002
+      targetPort: es-port
+      protocol: TCP
+      name: es
+  selector:
+    app: sonarqube-dce-search
+    release: application-values.yaml
+---
+# Source: sonarqube-dce/templates/sonarqube-application.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: application-values.yaml-sonarqube-dce-app
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+    app.kubernetes.io/name: application-values.yaml
+    sonarqube.datacenter/type: "app"
+    app.kubernetes.io/instance: application-values.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: application-values.yaml-sonarqube-dce
+    app.kubernetes.io/version: "10.6.0-datacenter-app"
+spec:
+  replicas: 2
+  revisionHistoryLimit: 
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sonarqube-dce
+      release: application-values.yaml
+  template:
+    metadata:
+      labels:
+        app: sonarqube-dce
+        release: application-values.yaml
+        sonarqube.datacenter/type: "app"
+      annotations:
+        checksum/plugins: 846d73de2332eeec144b8837da0c3bbd0645e0fd8a38c7f137cca47158137e78
+        checksum/config: 2232afe69062e3f825baba9a7886b54fdab8c62e98e344bffa77b2e3cac3bee8
+        checksum/secret: 4dc01a32c6d05afa4722f809bbebf4628fe36829609e5755d4a3b6dd90e04995
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: "wait-for-db"
+          image: sonarqube:10.6.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
+          command: ["/bin/bash", "-c"]
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/application-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+      securityContext:
+        fsGroup: 0
+      containers:
+        - name: sonarqube-dce
+          image: sonarqube:10.6.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+            - name: hazelcast
+              containerPort: 9003
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              ephemeral-storage: 512000M
+              memory: 4096M
+            requests:
+              cpu: 400m
+              ephemeral-storage: 1536M
+              memory: 4096M
+          env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+            - name: SONAR_HELM_CHART_VERSION
+              value: 10.7.0
+            - name: SONAR_LOG_JSONOUTPUT
+              value: "false"
+            - name: SONAR_CLUSTER_SEARCH_HOSTS
+              value: "application-values.yaml-sonarqube-dce-search"
+            - name: SONAR_CLUSTER_KUBERNETES
+              value: "true"
+            - name: SONAR_CLUSTER_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SONAR_CLUSTER_HOSTS
+              value: "application-values.yaml-sonarqube-dce-headless"
+            - name: SONAR_AUTH_JWTBASE64HS256SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "application-values.yaml-sonarqube-dce-jwt"
+                  key: SONAR_AUTH_JWTBASE64HS256SECRET
+            - name: SONAR_JDBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: application-values.yaml-postgresql
+                  key: postgresql-password
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: application-values.yaml-sonarqube-dce-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
+          envFrom:
+            - configMapRef:
+                name: application-values.yaml-sonarqube-dce-jdbc-config
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                host="$(hostname -i || echo '127.0.0.1')"
+                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
+            failureThreshold: 6
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --no-proxy -qO- http://${host}:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                  exit 0
+                fi
+                exit 1
+            failureThreshold: 8
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              scheme: HTTP
+              path: /api/system/status
+              port: http
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            failureThreshold: 32
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+      serviceAccountName: default
+      volumes:
+      - name: install-plugins
+        configMap:
+          name: application-values.yaml-sonarqube-dce-install-plugins
+          items:
+            - key: install_plugins.sh
+              path: install_plugins.sh
+      - name: sonarqube
+        emptyDir:
+          {}
+      - name : tmp-dir
+        emptyDir:
+          {}
+---
+# Source: sonarqube-dce/charts/postgresql/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: application-values.yaml-postgresql
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-10.15.0
+    app.kubernetes.io/instance: application-values.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: primary
+  annotations:
+  namespace: default
+spec:
+  serviceName: application-values.yaml-postgresql-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: application-values.yaml
+      role: primary
+  template:
+    metadata:
+      name: application-values.yaml-postgresql
+      labels:
+        app.kubernetes.io/name: postgresql
+        helm.sh/chart: postgresql-10.15.0
+        app.kubernetes.io/instance: application-values.yaml
+        app.kubernetes.io/managed-by: Helm
+        role: primary
+        app.kubernetes.io/component: primary
+    spec:      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: postgresql
+                    app.kubernetes.io/instance: application-values.yaml
+                    app.kubernetes.io/component: primary
+                namespaces:
+                  - "default"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+      automountServiceAccountToken: false
+      containers:
+        - name: application-values.yaml-postgresql
+          image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
+          imagePullPolicy: "IfNotPresent"
+          resources:
+            limits:
+              cpu: 2
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
+            runAsUser: 1001
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+            - name: POSTGRESQL_PORT_NUMBER
+              value: "5432"
+            - name: POSTGRESQL_VOLUME_DIR
+              value: "/bitnami/postgresql"
+            - name: PGDATA
+              value: "/bitnami/postgresql/data"
+            - name: POSTGRES_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: application-values.yaml-postgresql
+                  key: postgresql-postgres-password
+            - name: POSTGRES_USER
+              value: "sonarUser"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: application-values.yaml-postgresql
+                  key: postgresql-password
+            - name: POSTGRES_DB
+              value: "sonarDB"
+            - name: POSTGRESQL_ENABLE_LDAP
+              value: "no"
+            - name: POSTGRESQL_ENABLE_TLS
+              value: "no"
+            - name: POSTGRESQL_LOG_HOSTNAME
+              value: "false"
+            - name: POSTGRESQL_LOG_CONNECTIONS
+              value: "false"
+            - name: POSTGRESQL_LOG_DISCONNECTIONS
+              value: "false"
+            - name: POSTGRESQL_PGAUDIT_LOG_CATALOG
+              value: "off"
+            - name: POSTGRESQL_CLIENT_MIN_MESSAGES
+              value: "error"
+            - name: POSTGRESQL_SHARED_PRELOAD_LIBRARIES
+              value: "pgaudit"
+          ports:
+            - name: tcp-postgresql
+              containerPort: 5432
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - -e
+                - |
+                  exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
+                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+            - name: data
+              mountPath: /bitnami/postgresql
+              subPath: 
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "20Gi"
+---
+# Source: sonarqube-dce/templates/sonarqube-search.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: application-values.yaml-sonarqube-dce-search
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+    app.kubernetes.io/name: "application-values.yaml"
+    sonarqube.datacenter/type: "search"
+    app.kubernetes.io/instance: application-values.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: application-values.yaml-sonarqube-dce
+    app.kubernetes.io/version: "10.6.0-datacenter-search"
+spec:
+  podManagementPolicy : Parallel
+  replicas: 3
+  serviceName: application-values.yaml-sonarqube-dce-search
+  selector:
+    matchLabels:
+      app: sonarqube-dce-search
+      release: application-values.yaml
+  volumeClaimTemplates:
+  - metadata:
+      name: application-values.yaml-sonarqube-dce
+      labels:
+        release: application-values.yaml
+        chart: "sonarqube-dce"
+        app: "application-values.yaml-sonarqube-dce"
+    spec:
+      accessModes:
+        - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: "5Gi"
+  template:
+    metadata:
+      labels:
+        app: sonarqube-dce-search
+        release: application-values.yaml
+        sonarqube.datacenter/type: "search"
+      annotations:
+        checksum/init-sysctl: 98c7ef6039142f6fb26c28f465a52aa6c3b766af07720d9160f166c66de94548
+        checksum/init-fs: 16599725ba4b6fe84ad25a1f6e62978734d7be1d522701ea423d45fe39f87ce2
+        checksum/config: 2232afe69062e3f825baba9a7886b54fdab8c62e98e344bffa77b2e3cac3bee8
+        checksum/secret: 4dc01a32c6d05afa4722f809bbebf4628fe36829609e5755d4a3b6dd90e04995
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: init-sysctl
+          image: sonarqube:10.6.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          resources:
+            {}
+          command: ["/bin/bash",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
+          volumeMounts:
+            - name: init-sysctl
+              mountPath: /tmp/scripts/
+        - name: init-fs
+          image: sonarqube:10.6.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add:
+              - CHOWN
+              drop:
+              - ALL
+            privileged: false
+            runAsGroup: 0
+            runAsNonRoot: false
+            runAsUser: 0
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
+          command: ["sh",
+            "-ex",
+            "/tmp/scripts/init_fs.sh"]
+          volumeMounts:
+            - name: init-fs
+              mountPath: /tmp/scripts/
+            - mountPath: /opt/sonarqube/certs
+              name: "application-values.yaml-sonarqube-dce"
+              subPath: certs
+            - mountPath: /opt/sonarqube/data
+              name: "application-values.yaml-sonarqube-dce"
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: "application-values.yaml-sonarqube-dce"
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: "application-values.yaml-sonarqube-dce"
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+      securityContext:
+        fsGroup: 0
+      containers:
+        - name: sonarqube-dce-search
+          image: "sonarqube:10.6.0-datacenter-search"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: search-port
+              containerPort: 9001
+              protocol: TCP
+            - name: es-port
+              containerPort: 9002
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              ephemeral-storage: 512000M
+              memory: 3072M
+            requests:
+              cpu: 400m
+              ephemeral-storage: 1536M
+              memory: 3072M
+          env:
+            - name: SONAR_LOG_JSONOUTPUT
+              value: "false"
+            - name: SONAR_CLUSTER_ES_HOSTS
+              value: "application-values.yaml-sonarqube-dce-search-0,application-values.yaml-sonarqube-dce-search-1,application-values.yaml-sonarqube-dce-search-2,"
+            - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
+              value: "application-values.yaml-sonarqube-dce-search-headless"
+            - name: SONAR_CLUSTER_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered live if http call returns 200
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-proxy -qO- "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-proxy -qO- "http://${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          startupProbe:
+            exec:
+             command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered started if http call returns 200
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-proxy -qO- "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 24
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/certs
+              name: "application-values.yaml-sonarqube-dce"
+              subPath: certs
+              readOnly: true
+            - mountPath: /opt/sonarqube/data
+              name: "application-values.yaml-sonarqube-dce"
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: "application-values.yaml-sonarqube-dce"
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: "application-values.yaml-sonarqube-dce"
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+      serviceAccountName: default
+      volumes:
+      - name: ca-certs
+        secret:
+          secretName: your-secret
+      - name: init-sysctl
+        configMap:
+          name: application-values.yaml-sonarqube-dce-init-sysctl
+          items:
+            - key: init_sysctl.sh
+              path: init_sysctl.sh
+      - name: init-fs
+        configMap:
+          name: application-values.yaml-sonarqube-dce-init-fs
+          items:
+            - key: init_fs.sh
+              path: init_fs.sh
+      - name: "application-values.yaml-sonarqube-dce"
+      - name : tmp-dir
+        emptyDir:
+          {}
+---
+# Source: sonarqube-dce/templates/application.yml
+# declared in google-cloud-marketplace-k8s-app value folder
+apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+  name: "application-values.yaml"
+  namespace: "default"
+  labels:
+    app.kubernetes.io/name: "application-values.yaml"
+  annotations:
+    #to update with partner metadata
+    marketplace.cloud.google.com/deploy-info: '{"partner_id": "sonarsource-public", "product_id": "official-sonarqube-data-center-edition", "partner_name": "SonarSource SA"}'
+    kubernetes-engine.cloud.google.com/icon: data:image/png;base64,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
+spec:
+  descriptor:
+    type: sonarqube-dce
+    version: "10.6.0-datacenter-app"
+    description: |-
+        [SonarQube](https://www.sonarsource.com/products/sonarqube/) is a self-managed, automatic code review tool that systematically helps you deliver Clean Code.
+        As a core element of our [Sonar solution](https://www.sonarsource.com/), SonarQube integrates into your existing workflow and detects issues in your code to help you perform continuous code inspections of your projects.
+        The product analyses [30+ different programming languages](https://rules.sonarsource.com/) and integrates into your [Continuous Integration (CI)](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/ci-integration/) pipeline of [DevOps platforms](https://docs.sonarsource.com/sonarqube/latest/devops-platform-integration/github-integration/) to ensure that your code meets high-quality standards.
+    maintainers:
+    - name: SonarSource SA
+      url: https://github.com/SonarSource/helm-chart-sonarqube/blob/master/charts/sonarqube-dce/Chart.yaml
+    links:
+    - description: 'User Guide: main SonarQube documentation'
+      url: https://docs.sonarsource.com/sonarqube/latest/
+    - description: 'SonarQube Google marketplace k8s app sources'
+      url: https://github.com/SonarSource/helm-chart-sonarqube
+    - description: 'Deploying a SonarQube cluster on Kubernetes'
+      url: https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/
+    notes: |-
+        # Notes
+
+        This SonarQube Google marketplace k8s app is derived from the official SonarQube helm chart.
+
+        For extended documentation on how to configure this app, please refer to the [official SonarQube helm chart documentation](https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce) and the main [README](https://github.com/SonarSource/helm-chart-sonarqube/blob/master/README.md)
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "application-values.yaml" 
+  addOwnerRef: true
+  componentKinds:
+  - group: v1
+    kind: PersistentVolumeClaim
+  - group: v1
+    kind: Secret
+  - group: v1
+    kind: ConfigMap
+  - group: v1
+    kind: Service
+  - group: apps/v1
+    kind: Deployment
+  - group: apps/v1
+    kind: StatefulSet
+  - group: batch/v1
+    kind: Job
+  - group: policy/v1
+    kind: PodDisruptionBudget
+---
+# Source: sonarqube-dce/templates/tests/sonarqube-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "application-values.yaml-ui-test"
+  annotations:
+    "helm.sh/hook": test-success
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: application-values.yaml
+    heritage: Helm
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: application-values.yaml-ui-test
+      image: "sonarqube:10.6.0-datacenter-app"
+      imagePullPolicy: IfNotPresent
+      command: ['wget']
+      args: [
+        '--retry-connrefused',
+        '--waitretry=1',
+        '--timeout=5',
+        '-t',
+        '1200',
+        '-qO-',
+        'application-values.yaml-sonarqube-dce:9000/api/system/status'
+        ]
+      resources:
+        limits:
+          cpu: 500m
+          ephemeral-storage: 1000M
+          memory: 200M
+        requests:
+          cpu: 500m
+          ephemeral-storage: 100M
+          memory: 200M
+  restartPolicy: Never
