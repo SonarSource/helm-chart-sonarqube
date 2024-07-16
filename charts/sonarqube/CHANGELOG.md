@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Support Kubernetes v1.30
 * Upgrade ingress-nginx dependency to 4.10.1
 * Deprecate `jdbcOverwrite.enable` in favor of `jdbcOverwrite.enabled`
+* Fix regression on env valuesFrom in the new STS template
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0
