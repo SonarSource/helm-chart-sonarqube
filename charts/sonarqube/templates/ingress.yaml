@@ -10,7 +10,7 @@ metadata:
     {{- with .Values.ingress.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- if or .Values.ingress.annotations (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled")}}
+  {{- if or .Values.ingress.annotations (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled") }}
   annotations:
     {{- range $key, $value := .Values.ingress.annotations }}
     {{ $key }}: {{ $value | quote }}

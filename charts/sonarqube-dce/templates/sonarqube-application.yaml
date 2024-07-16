@@ -77,7 +77,7 @@ spec:
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
           command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/{{.Release.Name}}-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/{{ .Release.Name }}-postgresql/5432) && exit 0; sleep 2;done; exit 1']
       {{- end }}
       {{- if .Values.caCerts.enabled }}
         - name: ca-certs
@@ -121,7 +121,7 @@ spec:
               awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
             fi
           volumeMounts:
-          {{- if or .Values.ApplicationNodes.sonarProperties .Values.sonarSecretKey}}
+          {{- if or .Values.ApplicationNodes.sonarProperties .Values.sonarSecretKey }}
             - mountPath: /tmp/props/sonar.properties
               name: config
               subPath: sonar.properties
@@ -303,7 +303,7 @@ spec:
 {{- toYaml .Values.ApplicationNodes.containerSecurityContext | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey}}
+            {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
               subPath: sonar.properties
               name: concat-dir
