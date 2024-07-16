@@ -13,7 +13,7 @@ PREVIOUS_RELEASE=$(gh api "/repos/{owner}/{repo}/releases" --jq "[.[] | select(.
 
 echo $(ct list-changed --since "${PREVIOUS_RELEASE}" --target-branch "${CIRRUS_BRANCH}")
 
-for chart in $(ct list-changed --since "${PREVIOUS_RELEASE}" --target-branch "${CIRRUS_BRANCH}"); do
+for chart in $(ct list-changed --since "sonarqube-10.6.0-sonarqube-dce-10.6.0" --target-branch "${CIRRUS_BRANCH}"); do
     _original_version=$(cat $chart/Chart.yaml | yq '.version' -)
     _new_version="${_original_version}${VERSION_SEPERATOR}${BUILD_NUMBER}"
     helm dependency build "${chart}"
