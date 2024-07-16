@@ -449,13 +449,18 @@ spec:
               mountPath: /tmp/scripts/
           env:
             - name: FOOBAR
-              value: 
+              valueFrom:
+                secretKeyRef:
+                  key: BARFOO
+                  name: sonarqube-ldap
             - name: SONAR_WEB_CONTEXT
-              value: "/some/context/"
+              value: /some/context/
             - name: SONAR_WEB_JAVAOPTS
-              value: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml -Xmx1g"
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml
+                -Xmx1g
             - name: SONAR_CE_JAVAOPTS
-              value: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml -Xms2G -Xmx2G -DsomeOption=some/Value"
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
+                -Xms2G -Xmx2G -DsomeOption=some/Value
         - name: inject-prometheus-exporter
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
@@ -483,13 +488,18 @@ spec:
             - name: no_proxy
               value: 
             - name: FOOBAR
-              value: 
+              valueFrom:
+                secretKeyRef:
+                  key: BARFOO
+                  name: sonarqube-ldap
             - name: SONAR_WEB_CONTEXT
-              value: "/some/context/"
+              value: /some/context/
             - name: SONAR_WEB_JAVAOPTS
-              value: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml -Xmx1g"
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml
+                -Xmx1g
             - name: SONAR_CE_JAVAOPTS
-              value: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml -Xms2G -Xmx2G -DsomeOption=some/Value"
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
+                -Xms2G -Xmx2G -DsomeOption=some/Value
       containers:
         - name: sonarqube
           image: sonarqube:10.6.0-community
@@ -527,13 +537,18 @@ spec:
                   name: duplicated-env-values.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
             - name: FOOBAR
-              value: 
+              valueFrom:
+                secretKeyRef:
+                  key: BARFOO
+                  name: sonarqube-ldap
             - name: SONAR_WEB_CONTEXT
-              value: "/some/context/"
+              value: /some/context/
             - name: SONAR_WEB_JAVAOPTS
-              value: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml -Xmx1g"
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml
+                -Xmx1g
             - name: SONAR_CE_JAVAOPTS
-              value: "-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml -Xms2G -Xmx2G -DsomeOption=some/Value"
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
+                -Xms2G -Xmx2G -DsomeOption=some/Value
           envFrom:
             - configMapRef:
                 name: duplicated-env-values.yaml-sonarqube-jdbc-config

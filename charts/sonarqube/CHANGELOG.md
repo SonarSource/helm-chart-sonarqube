@@ -6,6 +6,8 @@ All changes to this chart will be documented in this file.
 * Support Kubernetes v1.30
 * Upgrade ingress-nginx dependency to 4.10.1
 * Deprecate `jdbcOverwrite.enable` in favor of `jdbcOverwrite.enabled`
+* Fix regression on env valuesFrom in the new STS template
+* Fix a typo in the new common STS template
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0
@@ -14,7 +16,6 @@ All changes to this chart will be documented in this file.
 * Fix the postgresql chart's repository link
 * Add support for overriding liveness/readiness probe logic
 * Use a common template for Deployment and StatefulSet
-* Fix a typo in the new common STS template
 
 ## [10.5.0]
 * Upgrade SonarQube to 10.5.0
