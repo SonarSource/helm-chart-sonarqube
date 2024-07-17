@@ -38,8 +38,8 @@ spec:
       name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
       key: SONAR_WEB_SYSTEMPASSCODE
     {{- end }}
-{{- if .Values.ApplicationNodes.prometheusExporter.enabled}}
-{{- if .Values.ApplicationNodes.prometheusExporter.ceBeanPort}}
+{{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
+{{- if .Values.ApplicationNodes.prometheusExporter.ceBeanPort }}
   - port: monitoring-ce
     path: /
     scheme: http
@@ -50,7 +50,7 @@ spec:
     scrapeTimeout: {{ .Values.ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout }}
     {{- end }}
 {{- end }}
-{{- if .Values.ApplicationNodes.prometheusExporter.webBeanPort}}
+{{- if .Values.ApplicationNodes.prometheusExporter.webBeanPort }}
   - port: monitoring-web
     path: /
     scheme: http
