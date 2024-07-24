@@ -8,6 +8,7 @@ All changes to this chart will be documented in this file.
 * Deprecate `jdbcOverwrite.enable` in favor of `jdbcOverwrite.enabled`
 * Fix regression on env valuesFrom in the new STS template
 * Fix a typo in the new common STS template
+* Update helm chart repo path in sources for each Chart
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0
