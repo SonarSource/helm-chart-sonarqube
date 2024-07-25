@@ -115,7 +115,10 @@ metadata:
     heritage: Helm
 data:
   init_fs.sh: |-
-    chown -R 1000:0 /opt/sonarqube
+    chown -R 1000:0 /opt/sonarqube/data
+    chown -R 1000:0 /opt/sonarqube/temp
+    chown -R 1000:0 /opt/sonarqube/logs
+    chown -R 1000:0 /opt/sonarqube/extensions
 ---
 # Source: sonarqube-dce/templates/init-sysctl.yaml
 apiVersion: v1
@@ -341,6 +344,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000
@@ -453,6 +457,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000
@@ -543,7 +548,7 @@ spec:
         sonarqube.datacenter/type: "search"
       annotations:
         checksum/init-sysctl: e8b4c659d05b5840b3580bea39cdae6e137bef82be2195bac8ea5a621f3ccafe
-        checksum/init-fs: 31e86dc16fe160d726582a6ac064bd24ee5bdbe53c2b78c840abc1bd2d4eb317
+        checksum/init-fs: 96373417e00ad8760ac9cf249a203d88f9f3f533d5a5f912c0908436b33100c6
         checksum/config: 9231c48dc02cf800250e9feaf16196b7db7d344dd53d3a9318fd11e1519de2f9
         checksum/secret: e0986a4ac02aa71d5827d307afa675becbde00a9c45e405cba3d31ded094bd2e
     spec:
@@ -577,6 +582,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000
@@ -673,6 +679,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             seccompProfile:

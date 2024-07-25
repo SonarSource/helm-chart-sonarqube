@@ -309,7 +309,10 @@ metadata:
     heritage: Helm
 data:
   init_fs.sh: |-
-    chown -R 1000:0 /opt/sonarqube
+    chown -R 1000:0 /opt/sonarqube/data
+    chown -R 1000:0 /opt/sonarqube/temp
+    chown -R 1000:0 /opt/sonarqube/logs
+    chown -R 1000:0 /opt/sonarqube/extensions
 ---
 # Source: sonarqube-dce/templates/init-sysctl.yaml
 apiVersion: v1
@@ -569,6 +572,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000
@@ -683,6 +687,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000
@@ -922,7 +927,7 @@ spec:
         sonarqube.datacenter/type: "search"
       annotations:
         checksum/init-sysctl: 2b16dac7d2cdb96ab2a67cca7826c3635eb14810fff5d0eea8a07840a35e1b50
-        checksum/init-fs: 9b302ad57304ce949e6f5b2899d27ef533fc1231164bda25b4edb3b792775101
+        checksum/init-fs: 279cfbbbfc9e46816e3a844e556aa5e9aae853f4a70ea40dbdb58a1c5d7535da
         checksum/config: ad8b690c0a3ed493190109b212d0ac1f57c6d17470ac9019388d8746832a347d
         checksum/secret: 347b8ba58778a653135260f6d921d0d6c4f429bee2a52b9f8e39b09599a33ebb
     spec:
@@ -933,6 +938,7 @@ spec:
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
+            readOnlyRootFilesystem: true
             runAsUser: 0
           resources:
             {}
@@ -952,6 +958,7 @@ spec:
               drop:
               - ALL
             privileged: false
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: false
             runAsUser: 0
@@ -1068,6 +1075,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000

@@ -402,6 +402,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000
@@ -414,6 +415,7 @@ spec:
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
+            readOnlyRootFilesystem: true
             runAsUser: 0
           command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
           volumeMounts:
@@ -457,6 +459,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000
@@ -550,6 +553,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000
@@ -571,6 +575,9 @@ spec:
               name: concat-dir
             - mountPath: /opt/sonarqube/secret/
               name: secret
+            - mountPath: /opt/sonarqube/extensions
+              name: sonarqube
+              subPath: extensions
       serviceAccountName: default
       volumes:
         - name: config

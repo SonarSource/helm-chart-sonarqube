@@ -47,6 +47,7 @@ containerSecurityContext:
   allowPrivilegeEscalation: false
   runAsNonRoot: true
   runAsUser: 1000
+  readOnlyRootFilesystem: true
   runAsGroup: 0
   seccompProfile:
     type: RuntimeDefault
@@ -234,6 +235,7 @@ initContainers:
     runAsNonRoot: true
     runAsUser: 1000
     runAsGroup: 0
+    readOnlyRootFilesystem: true
     seccompProfile:
       type: RuntimeDefault
     capabilities:
@@ -274,6 +276,7 @@ initSysctl:
     privileged: true
     # if run without root permissions, error "sysctl: permission denied on key xxx, ignoring"
     runAsUser: 0
+    readOnlyRootFilesystem: true
   # resources: {}
 
 # This should not be required anymore, used to chown/chmod folder created by faulty CSI driver that are not applying properly POSIX fsgroup.
@@ -286,6 +289,7 @@ initFs:
     runAsNonRoot: false
     runAsUser: 0
     runAsGroup: 0
+    readOnlyRootFilesystem: true
     seccompProfile:
       type: RuntimeDefault
     capabilities:

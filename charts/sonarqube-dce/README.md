@@ -98,6 +98,7 @@ seccompProfile:
   type: RuntimeDefault
 capabilities:
   drop: ["ALL"]
+readOnlyRootFilesystem: true
 ```
 
 Based on that, one can run the SQ helm chart in a full restricted namespace, by deactivating the `initSysctl.enabled` and `initFs.enabled` parameters, which require root access.

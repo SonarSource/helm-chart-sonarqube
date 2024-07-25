@@ -183,15 +183,9 @@ spec:
           name: sonarqube
           subPath: certs
         {{- end }}
-        {{- if .Values.persistence.enabled }}
         - mountPath: {{ .Values.sonarqubeFolder }}/extensions
           name: sonarqube
           subPath: extensions
-        {{- else if .Values.plugins.install }}
-        - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins
-          name: sonarqube
-          subPath: extensions/plugins
-        {{- end }}
         {{- with .Values.persistence.mounts }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -317,15 +311,9 @@ spec:
           name: sonarqube
           subPath: certs
         {{- end }}
-        {{- if .Values.persistence.enabled }}
         - mountPath: {{ .Values.sonarqubeFolder }}/extensions
           name: sonarqube
           subPath: extensions
-        {{- else if .Values.plugins.install }}
-        - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins
-          name: sonarqube
-          subPath: extensions/plugins
-        {{- end }}
         {{- if .Values.prometheusExporter.enabled }}
         - mountPath: {{ .Values.sonarqubeFolder }}/conf/prometheus-config.yaml
           subPath: prometheus-config.yaml

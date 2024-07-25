@@ -116,7 +116,10 @@ metadata:
     heritage: Helm
 data:
   init_fs.sh: |-
-    chown -R 1000:0 /opt/sonarqube
+    chown -R 1000:0 /opt/sonarqube/data
+    chown -R 1000:0 /opt/sonarqube/temp
+    chown -R 1000:0 /opt/sonarqube/logs
+    chown -R 1000:0 /opt/sonarqube/extensions
 ---
 # Source: sonarqube-dce/templates/init-sysctl.yaml
 apiVersion: v1
@@ -379,6 +382,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000
@@ -405,6 +409,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000
@@ -524,6 +529,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000
@@ -766,7 +772,7 @@ spec:
         sonarqube.datacenter/type: "search"
       annotations:
         checksum/init-sysctl: fb79394c1f97f50170f836ca6779455ce5cefb3c70937314cf8cb0b0679e9c17
-        checksum/init-fs: b0082db522e7255ab4f3164892dae4385a19fabc80c11a828b418bf02d85c4f7
+        checksum/init-fs: 653cd7c0ec15fc1d5be0a3cddd94853c8797478800d9560a92de277f9224ca34
         checksum/config: 2f074050d01f83464023fca457ffb6468f67ee7ad6b8ec7ed2a2fb1dd0bfb5ac
         checksum/secret: bc3616ce0ddab07fe459f37e7a3700b76c15fdef36ee3e460d9c716b83bb497c
     spec:
@@ -777,6 +783,7 @@ spec:
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
+            readOnlyRootFilesystem: true
             runAsUser: 0
           resources:
             {}
@@ -796,6 +803,7 @@ spec:
               drop:
               - ALL
             privileged: false
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: false
             runAsUser: 0
@@ -912,6 +920,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000
