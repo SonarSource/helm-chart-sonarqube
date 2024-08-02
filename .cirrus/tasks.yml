@@ -116,6 +116,37 @@ verify_gcp_staging_app_task:
   depends_on:
     - build_gcp_staging_app
 
+verify_openshift_task:
+  # only_if: $TRIGGER == "VERIFY_OPENSHIFT" || $BRANCH == "master"
+  eks_container:
+    <<: *CONTAINER_TEMPLATE
+    cpu: 2
+    memory: 4Gb
+  authenticate_to_eks_script:
+    - ./.cirrus/eks.sh
+  matrix:
+    - name: verify_openshift_sonarqube
+      env:
+        - VERIFYING_CHART: sonarqube
+    - name: verify_openshift_sonarqube_dce
+      env:
+        - VERIFYING_CHART: sonarqube-dce
+  setup_script:
+    - kubectl create namespace "${VERIFYING_CHART}" --dry-run=client -o yaml | kubectl apply -f -
+    - kubectl create secret docker-registry pullsecret --namespace "${VERIFYING_CHART}" --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
+    - ./.cirrus/build_chart_dependencies.sh charts/"${VERIFYING_CHART}"
+    - chart-verifier version
+  script:
+    - mkdir -p "$(pwd)/report-${VERIFYING_CHART}"
+    - chart-verifier verify charts/"${VERIFYING_CHART}" --helm-install-timeout 20m -F charts/"${VERIFYING_CHART}"/ci/openshift-verifier-values.yaml -n "${VERIFYING_CHART}" --openshift-version 4.16 > "$(pwd)/report-${VERIFYING_CHART}/report.yaml"
+  verifier_report_artifacts:
+    path: "report-*/*.yaml"
+  check_violations_script:
+    - cat "report-${VERIFYING_CHART}/report.yaml" | ./.cirrus/verify_openshift.sh
+  always:
+    cleanup_script:
+      - kubectl delete namespace "${VERIFYING_CHART}" --ignore-not-found
+
 chart_static_compatibility_test_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   timeout_in: 30m
@@ -176,6 +207,8 @@ chart_testing_task:
     - ah lint
   depends_on:
     - chart_static_compatibility_test
+    - verify_openshift_sonarqube
+    - verify_openshift_sonarqube_dce
 
 chart_packaging_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE

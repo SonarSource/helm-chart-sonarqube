@@ -3,8 +3,9 @@
 set -xeuo pipefail
 
 CIRRUS_OIDC_TOKEN=${CIRRUS_OIDC_TOKEN:?}
+CIRRUS_CLUSTER_NAME=${CIRRUS_CLUSTER_NAME:?}
+CIRRUS_BRANCH=${CIRRUS_BRANCH:?}
 AWS_IAM_ROLE=HelmChartSonarQubeCICDRole
-
 
 if [[ "${CIRRUS_BRANCH}" == "master" ]]; then
   # This is the production account

@@ -17,6 +17,8 @@ ARG YQ_VERSION=4.44.2
 ARG YQ_CHECKSUM="246b781828353a59fb04ffaada241f78a8f3f25c623047b40306def1f6806e71"
 ARG KUBECONFORM_VERSION=0.6.6
 ARG KUBECONFORM_CHECKSUM="2ff56999a6ed9e96fe5ab9ee52271f2db5335baf7f17789035b9561970cdd3eb"
+ARG CHART_VERIFIER_VERSION=1.13.7
+ARG CHART_VERIFIER_CHECKSUM="100e65d46627c005cf0edf5e645aca3d0acaf6371c1870609dcbfa3135b88484"
 
 ENV HELM_BASE_URL="https://get.helm.sh"
 ENV HELM_TAR_FILE="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
@@ -94,6 +96,19 @@ RUN set -eux; \
     chmod +x ./kubeconform ; \
     mv ./kubeconform /usr/bin/kubeconform ; \
     rm kubeconform-linux-amd64.tar.gz
+
+RUN set -eux; \
+    curl -LO https://github.com/redhat-certification/chart-verifier/releases/download/${CHART_VERIFIER_VERSION}/chart-verifier-${CHART_VERIFIER_VERSION}.tgz ; \
+    echo "${CHART_VERIFIER_CHECKSUM}  chart-verifier-${CHART_VERIFIER_VERSION}.tgz" | sha256sum -c ; \
+    tar -xf chart-verifier-${CHART_VERIFIER_VERSION}.tgz ; \
+    chmod +x ./chart-verifier ; \
+    mv ./chart-verifier /usr/bin/chart-verifier ; \
+    rm chart-verifier-${CHART_VERIFIER_VERSION}.tgz
+
+RUN curl -LO https://github.com/derailed/k9s/releases/download/v0.32.5/k9s_Linux_amd64.tar.gz && \
+    tar -xvf k9s_Linux_amd64.tar.gz && \
+    mv k9s /usr/bin/k9s && \
+    rm k9s_Linux_amd64.tar.gz
 
 COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
 COPY --from=tools /usr/local/bin/gh /usr/local/bin/gh
