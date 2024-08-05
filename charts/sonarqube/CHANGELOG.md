@@ -9,6 +9,7 @@ All changes to this chart will be documented in this file.
 * Fix regression on env valuesFrom in the new STS template
 * Fix a typo in the new common STS template
 * Enable ReadOnlyRootFilesystem by default
+* Support basic chart installation on Openshift  
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0

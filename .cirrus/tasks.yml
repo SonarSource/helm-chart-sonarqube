@@ -169,7 +169,7 @@ chart_testing_task:
     - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
   script:
     - ct lint --config test.yaml --all
-    - ct install --namespace test --config test.yaml --all
+    - ct install --namespace test --config test.yaml --all --debug
   teardown_script:
     - kubectl delete namespace test
   artifacthub_lint_script:

@@ -248,7 +248,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                  | Description                                    | Default                                                                |
 | -------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
-| `securityContext.fsGroup`  | Group applied to mounted directories/files     | `0`                                                                    |
+| `securityContext`  | SecurityContext for the pod     | [Restricted podSecurityStandard](#kubernetes---pod-security-standards)                                       |
 | `containerSecurityContext` | SecurityContext for container in sonarqube pod | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 
 ### Elasticsearch
@@ -451,7 +451,7 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `postgresql.persistence.accessMode`                      | PostgreSQL persistence accessMode                                      | `ReadWriteOnce`                                                        |
 | `postgresql.persistence.size`                            | PostgreSQL persistence size                                            | `20Gi`                                                                 |
 | `postgresql.persistence.storageClass`                    | PostgreSQL persistence storageClass                                    | `""`                                                                   |
-| `postgresql.securityContext.enabled`                     | PostgreSQL securityContext en/disabled                                 | `true`                                                                 |
+| `postgresql.securityContext.enabled`                     | PostgreSQL securityContext en/disabled                                 | `false`                                                                 |
 | `postgresql.securityContext`                             | PostgreSQL securityContext                                             | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `postgresql.volumePermissions.enabled`                   | PostgreSQL vol permissions en/disabled                                 | `false`                                                                |
 | `postgresql.volumePermissions.securityContext.runAsUser` | PostgreSQL vol permissions secContext runAsUser                        | `0`                                                                    |
