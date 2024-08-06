@@ -452,7 +452,7 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `postgresql.persistence.size`                            | PostgreSQL persistence size                                            | `20Gi`                                                                 |
 | `postgresql.persistence.storageClass`                    | PostgreSQL persistence storageClass                                    | `""`                                                                   |
 | `postgresql.securityContext.enabled`                     | PostgreSQL securityContext en/disabled                                 | `false`                                                                 |
-| `postgresql.securityContext`                             | PostgreSQL securityContext                                             | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
+| `postgresql.securityContext`                             | PostgreSQL securityContext                                             | `false` |
 | `postgresql.volumePermissions.enabled`                   | PostgreSQL vol permissions en/disabled                                 | `false`                                                                |
 | `postgresql.volumePermissions.securityContext.runAsUser` | PostgreSQL vol permissions secContext runAsUser                        | `0`                                                                    |
 | `postgresql.shmVolume.chmod.enabled`                     | PostgreSQL shared memory vol en/disabled                               | `false`                                                                |

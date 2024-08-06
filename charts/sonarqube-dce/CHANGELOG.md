@@ -7,6 +7,7 @@ All changes to this chart will be documented in this file.
 * Upgrade ingress-nginx dependency to 4.10.1
 * Deprecate `jdbcOverwrite.enable` in favor of `jdbcOverwrite.enabled`
 * Enable ReadOnlyRootFilesystem by default
+* Support basic chart installation on Openshift
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0

@@ -17,3 +17,11 @@ ApplicationNodes:
     tag: "10.7.0-datacenter-app"
     pullSecrets:
       - name: pullsecret
+
+postgresql:
+  securityContext:
+    # On Cirrus, we have permissions issue if the fsGroup is not set to 1001 explicitly
+    enabled: true
+    # fsGroup and runAsUser specifications below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
+    # postgresql dockerfile sets user as 1001
+    fsGroup: 1001

@@ -37,9 +37,9 @@ image:
   #   - name: my-repo-secret
 
 # Set security context for sonarqube pod.
-# # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific fsGroup.
+# The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific fsGroup.
 # securityContext:
-#   fsGroup: null
+#   fsGroup: 0
 
 # Set security context for sonarqube container.
 # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
@@ -514,7 +514,7 @@ postgresql:
     size: 20Gi
     storageClass:
   securityContext:
-    enabled: true
+    enabled: false
     # fsGroup specification below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
     # postgresql dockerfile sets user as 1001
     fsGroup: 1001
@@ -601,8 +601,8 @@ extraConfig:
 # The above values can be also provided by a secret that contains "password" and "currentPassword" as keys. You can generate such a secret in your cluster
 # using "kubectl create secret generic admin-password-secret-name --from-literal=password=admin --from-literal=currentPassword=admin"
 #   adminPasswordSecretName: ""
-# # Reuse default initcontainers.securityContext that match restricted pod security standard
-# #   securityContext: {}
+# Reuse default initcontainers.securityContext that match restricted pod security standard
+#   securityContext: {}
 #   resources:
 #     limits:
 #       cpu: 100m
