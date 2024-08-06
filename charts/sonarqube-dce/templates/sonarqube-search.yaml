@@ -64,7 +64,7 @@ spec:
         {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
         checksum/init-sysctl: {{ include (print $.Template.BasePath "/init-sysctl.yaml") . | sha256sum }}
         {{- end }}
-        {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled)}}
+        {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
         checksum/init-fs: {{ include (print $.Template.BasePath "/init-fs.yaml") . | sha256sum }}
         {{- end }}
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
@@ -176,7 +176,7 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled)}}
+      {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
         - name: init-fs
           image: {{ default (include "sonarqube.image" $) .Values.initFs.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
@@ -468,7 +468,7 @@ spec:
             - key: init_sysctl.sh
               path: init_sysctl.sh
       {{- end }}
-      {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled)}}
+      {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
       - name: init-fs
         configMap:
           name: {{ template "sonarqube.fullname" . }}-init-fs
