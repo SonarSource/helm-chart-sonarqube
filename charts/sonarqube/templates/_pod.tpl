@@ -27,7 +27,9 @@ spec:
   {{- with .Values.schedulerName }}
   schedulerName: {{ . }}
   {{- end }}
-  securityContext: {{- toYaml .Values.securityContext | nindent 4 }}
+  {{- with .Values.securityContext }}
+  securityContext: {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- if or .Values.image.pullSecrets .Values.image.pullSecret }}
   imagePullSecrets:
     {{- if .Values.image.pullSecret }}
