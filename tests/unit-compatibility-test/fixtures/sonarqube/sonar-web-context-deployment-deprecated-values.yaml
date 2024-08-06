@@ -9,7 +9,7 @@ metadata:
     helm.sh/chart: postgresql-10.15.0
     app.kubernetes.io/instance: sonar-web-context-deployment-deprecated-values.yaml
     app.kubernetes.io/managed-by: Helm
-  namespace: default
+  namespace: sq
 type: Opaque
 data:
   postgresql-postgres-password: "dG90bw=="
@@ -144,7 +144,7 @@ metadata:
     # field is broken in some versions of Kubernetes:
     # https://github.com/kubernetes/kubernetes/issues/58662
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-  namespace: default
+  namespace: sq
 spec:
   type: ClusterIP
   clusterIP: None
@@ -171,7 +171,7 @@ metadata:
     app.kubernetes.io/instance: sonar-web-context-deployment-deprecated-values.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
-  namespace: default
+  namespace: sq
 spec:
   type: ClusterIP
   ports:
@@ -231,7 +231,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 32fd179507e07249327e7b9cf79296db2010f5ed218fe2502582db3fe6139227
-        checksum/init-fs: 3baade0c10beb2247a353f9f2b22076c50fc9ab937c406214c1a8d41f8168786
         checksum/init-sysctl: 7852551c0bfc6cfa258758590cd78c92f97514584ca3f00e7a6ac786738cae98
         checksum/plugins: 1fead84328fff11dbf3a9a8a39586d4ed64dc3beb775f0769d1c66a7cc41c54a
         checksum/secret: c76c4c14c0497541d15af68963e5f4680380dc8e61ed8d73457d81895908a2c3
@@ -240,8 +239,6 @@ spec:
         release: sonar-web-context-deployment-deprecated-values.yaml
     spec:
       automountServiceAccountToken: false
-      securityContext:
-        fsGroup: 0
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-community
@@ -252,9 +249,7 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
-            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           command: ["/bin/bash", "-c"]
@@ -359,9 +354,7 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
-            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
@@ -387,12 +380,6 @@ spec:
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
         - name: sonarqube
           emptyDir:
             {}
@@ -412,7 +399,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
-  namespace: default
+  namespace: sq
 spec:
   serviceName: sonar-web-context-deployment-deprecated-values.yaml-postgresql-headless
   replicas: 1
@@ -446,13 +433,11 @@ spec:
                     app.kubernetes.io/instance: sonar-web-context-deployment-deprecated-values.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
-                  - "default"
+                  - "sq"
                 topologyKey: kubernetes.io/hostname
               weight: 1
         nodeAffinity:
           
-      securityContext:
-        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: sonar-web-context-deployment-deprecated-values.yaml-postgresql
@@ -465,15 +450,6 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -657,9 +633,7 @@ spec:
             drop:
             - ALL
           readOnlyRootFilesystem: true
-          runAsGroup: 0
           runAsNonRoot: true
-          runAsUser: 1000
           seccompProfile:
             type: RuntimeDefault
         command: ["sh", "-c", 'until curl -v --connect-timeout 100 sonar-web-context-deployment-deprecated-values.yaml-sonarqube:9000/sonarqube-account/api/system/status | grep -w UP; do sleep 10; done; curl -v --connect-timeout 100 -u admin:$CURRENT_ADMIN_PASSWORD -X POST "sonar-web-context-deployment-deprecated-values.yaml-sonarqube:9000/sonarqube-account/api/users/change_password?login=admin&previousPassword=$CURRENT_ADMIN_PASSWORD&password=$ADMIN_PASSWORD"']

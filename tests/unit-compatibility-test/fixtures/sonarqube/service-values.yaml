@@ -9,7 +9,7 @@ metadata:
     helm.sh/chart: postgresql-10.15.0
     app.kubernetes.io/instance: service-values.yaml
     app.kubernetes.io/managed-by: Helm
-  namespace: default
+  namespace: sq
 type: Opaque
 data:
   postgresql-postgres-password: "dG90bw=="
@@ -129,7 +129,7 @@ metadata:
     # field is broken in some versions of Kubernetes:
     # https://github.com/kubernetes/kubernetes/issues/58662
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-  namespace: default
+  namespace: sq
 spec:
   type: ClusterIP
   clusterIP: None
@@ -156,7 +156,7 @@ metadata:
     app.kubernetes.io/instance: service-values.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
-  namespace: default
+  namespace: sq
 spec:
   type: ClusterIP
   ports:
@@ -208,7 +208,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
-  namespace: default
+  namespace: sq
 spec:
   serviceName: service-values.yaml-postgresql-headless
   replicas: 1
@@ -242,13 +242,11 @@ spec:
                     app.kubernetes.io/instance: service-values.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
-                  - "default"
+                  - "sq"
                 topologyKey: kubernetes.io/hostname
               weight: 1
         nodeAffinity:
           
-      securityContext:
-        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: service-values.yaml-postgresql
@@ -261,15 +259,6 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -385,7 +374,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 6fa738338b35e53213427eae2158d2c4de5d8e47890490f7be196f7a54f6cc5b
-        checksum/init-fs: 7ff93015c5332f2efc6fe2e2061b2946063babc27918e1268931295f973e8baf
         checksum/init-sysctl: 74e9302fa54b82580820ce5149f4f7c04c314ffdc35e91967fc794671cb85021
         checksum/plugins: e9585aecdf08c9411f416b650045e893bfb2bb15f00de0d9e90e0073b10ee646
         checksum/secret: f5c3ca9a2da92fc5c5bed2c3673bbde84b0ad33cb76302cccdbc564a8605cafc
@@ -394,8 +382,6 @@ spec:
         release: service-values.yaml
     spec:
       automountServiceAccountToken: false
-      securityContext:
-        fsGroup: 0
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-community
@@ -406,9 +392,7 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
-            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           command: ["/bin/bash", "-c"]
@@ -513,9 +497,7 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
-            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
@@ -541,12 +523,6 @@ spec:
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: service-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
         - name: sonarqube
           emptyDir:
             {}

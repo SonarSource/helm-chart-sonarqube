@@ -9,7 +9,7 @@ metadata:
     helm.sh/chart: postgresql-10.15.0
     app.kubernetes.io/instance: ingress-values.yaml
     app.kubernetes.io/managed-by: Helm
-  namespace: default
+  namespace: sq
 type: Opaque
 data:
   postgresql-postgres-password: "dG90bw=="
@@ -129,7 +129,7 @@ metadata:
     # field is broken in some versions of Kubernetes:
     # https://github.com/kubernetes/kubernetes/issues/58662
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-  namespace: default
+  namespace: sq
 spec:
   type: ClusterIP
   clusterIP: None
@@ -156,7 +156,7 @@ metadata:
     app.kubernetes.io/instance: ingress-values.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
-  namespace: default
+  namespace: sq
 spec:
   type: ClusterIP
   ports:
@@ -201,7 +201,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
-  namespace: default
+  namespace: sq
 spec:
   serviceName: ingress-values.yaml-postgresql-headless
   replicas: 1
@@ -235,13 +235,11 @@ spec:
                     app.kubernetes.io/instance: ingress-values.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
-                  - "default"
+                  - "sq"
                 topologyKey: kubernetes.io/hostname
               weight: 1
         nodeAffinity:
           
-      securityContext:
-        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: ingress-values.yaml-postgresql
@@ -254,15 +252,6 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -378,7 +367,6 @@ spec:
     metadata:
       annotations:
         checksum/config: c74eb97b641f379bb078d7eb2298eb43efb63662fad44f0a9baefaed39e147dd
-        checksum/init-fs: a756cecb1e4d92402e933467b50ce4be489de344224d28102b660153ac472717
         checksum/init-sysctl: c55082c34b2f43bf9dc0044c0aee0b1fa1d0571ac9a8e66b0419bac46011e153
         checksum/plugins: 39387c81bbadfd8c293fb8928bbcd175999243e59520125c939a859fa1f05b84
         checksum/secret: cb50d0d5146ec05cbad42c6738edf1c34dbe6777029dd87138bf4ace5b50a751
@@ -387,8 +375,6 @@ spec:
         release: ingress-values.yaml
     spec:
       automountServiceAccountToken: false
-      securityContext:
-        fsGroup: 0
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-community
@@ -399,9 +385,7 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
-            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           command: ["/bin/bash", "-c"]
@@ -506,9 +490,7 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
-            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
@@ -534,12 +516,6 @@ spec:
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: ingress-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
         - name: sonarqube
           emptyDir:
             {}

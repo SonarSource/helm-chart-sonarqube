@@ -9,7 +9,7 @@ metadata:
     helm.sh/chart: postgresql-10.15.0
     app.kubernetes.io/instance: duplicated-env-values.yaml
     app.kubernetes.io/managed-by: Helm
-  namespace: default
+  namespace: sq
 type: Opaque
 data:
   postgresql-postgres-password: "dG90bw=="
@@ -159,7 +159,7 @@ metadata:
     # field is broken in some versions of Kubernetes:
     # https://github.com/kubernetes/kubernetes/issues/58662
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-  namespace: default
+  namespace: sq
 spec:
   type: ClusterIP
   clusterIP: None
@@ -186,7 +186,7 @@ metadata:
     app.kubernetes.io/instance: duplicated-env-values.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
-  namespace: default
+  namespace: sq
 spec:
   type: ClusterIP
   ports:
@@ -231,7 +231,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
-  namespace: default
+  namespace: sq
 spec:
   serviceName: duplicated-env-values.yaml-postgresql-headless
   replicas: 1
@@ -265,13 +265,11 @@ spec:
                     app.kubernetes.io/instance: duplicated-env-values.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
-                  - "default"
+                  - "sq"
                 topologyKey: kubernetes.io/hostname
               weight: 1
         nodeAffinity:
           
-      securityContext:
-        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: duplicated-env-values.yaml-postgresql
@@ -284,15 +282,6 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -408,7 +397,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 46f04b3075c2e49dd33a5993228aeaa845eb43690b5ac51d025c1b975e2aeeb3
-        checksum/init-fs: faeaa1cc52be7b390e65660b667fa73dc72c31c732ce5c1924d2a09e3c956229
         checksum/init-sysctl: 982db19257d047e9da82d3a96c2c105cb48f00095509be960b6795dc24990741
         checksum/plugins: 7ff1f7a4428c5a17276e3c2d0be09b80c55e5713ab4dbba6bc2b12152709a54a
         checksum/secret: 40503c1dae70b14e1dd0751e0c809ba83fd4270b73cf278857725b4ab8eba66f
@@ -419,8 +407,6 @@ spec:
         release: duplicated-env-values.yaml
     spec:
       automountServiceAccountToken: false
-      securityContext:
-        fsGroup: 0
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-community
@@ -431,9 +417,7 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
-            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           command: ["/bin/bash", "-c"]
@@ -472,9 +456,7 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
-            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           command: ["/bin/sh", "-c"]
@@ -598,9 +580,7 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
-            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
@@ -632,12 +612,6 @@ spec:
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: duplicated-env-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
         - name: prometheus-config
           configMap:
             name: duplicated-env-values.yaml-sonarqube-prometheus-config
