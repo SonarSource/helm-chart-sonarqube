@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.7.1]
+* Update _pod.tpl to make automountServiceAccountToken configurable
+
 ## [10.7.0]
 * Update Chart's version to 10.7.0
 * Support Kubernetes v1.30
