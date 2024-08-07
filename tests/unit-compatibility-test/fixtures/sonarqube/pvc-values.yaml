@@ -55,7 +55,10 @@ metadata:
     heritage: Helm
 data:
   init_fs.sh: |-
-    chown -R 1000:0 /opt/sonarqube
+    chown -R 1000:0 /opt/sonarqube/data
+    chown -R 1000:0 /opt/sonarqube/temp
+    chown -R 1000:0 /opt/sonarqube/logs
+    chown -R 1000:0 /opt/sonarqube/extensions
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
@@ -398,7 +401,7 @@ spec:
     metadata:
       annotations:
         checksum/config: e9899c1e4753e74241b8aa378766064651dc86c9a85d35730507a573db6a526f
-        checksum/init-fs: 416594a83fc0f9882009bad6ff4c17f50716bd7afb2fa07da47f7a3f4e5dc404
+        checksum/init-fs: 0cf2d4fc828ea15d8bf85c990c2699374285ba8f2104f0be583de079962f77ec
         checksum/init-sysctl: aa217652630f95b93ed32da24157047e913ecb0354d3bc2801506f59f2bb23b2
         checksum/plugins: 192ab79caaa940637e137aa30435dcc9e9b505a1a79366c337cfd57f4ae1cb9d
         checksum/secret: 1fed7a8b027cc35db3adb5132039e50bd6b7cc3148c12a3a6717fce192529f1c
@@ -418,6 +421,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000
@@ -430,6 +434,7 @@ spec:
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
+            readOnlyRootFilesystem: true
             runAsUser: 0
           command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
           volumeMounts:
@@ -452,6 +457,7 @@ spec:
               drop:
               - ALL
             privileged: false
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: false
             runAsUser: 0
@@ -556,6 +562,7 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsGroup: 0
             runAsNonRoot: true
             runAsUser: 1000

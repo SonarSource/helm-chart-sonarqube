@@ -82,6 +82,7 @@ searchNodes:
       type: RuntimeDefault
     capabilities:
       drop: ["ALL"]
+    readOnlyRootFilesystem: true
 
   # Probe threshold configuration for the search nodes
   readinessProbe:
@@ -212,6 +213,7 @@ ApplicationNodes:
       type: RuntimeDefault
     capabilities:
       drop: ["ALL"]
+    readOnlyRootFilesystem: true
 
   readinessProbe:
     exec:
@@ -520,6 +522,7 @@ initContainers:
       type: RuntimeDefault
     capabilities:
       drop: ["ALL"]
+    readOnlyRootFilesystem: true
   # We allow the init containers to have a separate resources declaration because
   # the initContainer does not take as much resources.
   resources: {}
@@ -547,6 +550,7 @@ initSysctl:
     privileged: true
     # if run without root permissions, error "sysctl: permission denied on key xxx, ignoring"
     runAsUser: 0
+    readOnlyRootFilesystem: true
   # resources: {}
 
 initFs:
@@ -563,6 +567,7 @@ initFs:
     capabilities:
       drop: ["ALL"]
       add: ["CHOWN"]
+    readOnlyRootFilesystem: true
 
 # a monitoring passcode needs to be defined in order to get reasonable probe results
 # not setting the monitoring passcode will result in a deployment that will never be ready
