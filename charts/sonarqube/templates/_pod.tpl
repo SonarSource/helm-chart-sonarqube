@@ -19,7 +19,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
-  automountServiceAccountToken: false
+  automountServiceAccountToken: {{ .Values.podSpec.automountServiceAccountToken }}
   {{- with .Values.schedulerName }}
   schedulerName: {{ . }}
   {{- end }}
