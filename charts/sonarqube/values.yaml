@@ -132,17 +132,20 @@ ingress:
 
 route:
   enabled: false
-  host: ""
-  # Add tls section to secure traffic. TODO: extend this section with other secure route settings
-  # Comment this out if you want plain http route created.
+  host: "sonarqube.your-org.com"
+  path: "/"
+  # Add tls section to secure traffic.
   tls:
     termination: edge
-
+    # certificate:
+    # key:
+    # caCertificate:
+    # insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
   annotations: {}
   # See Openshift/OKD route annotation
   # https://docs.openshift.com/container-platform/4.10/networking/routes/route-configuration.html#nw-route-specific-annotations_route-configuration
   # haproxy.router.openshift.io/timeout: 1m
-
   # Additional labels for Route manifest file
   # labels:
   #  external: 'true'
