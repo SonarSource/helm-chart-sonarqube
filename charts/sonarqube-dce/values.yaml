@@ -73,18 +73,18 @@ searchNodes:
 
   # Set security context for sonarqube search container
   # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
-  containerSecurityContext:
-    # Sonarqube dockerfile creates sonarqube user as UID 1000 and GID 0
-    # Those default are used to match pod security standard restricted as least privileged approach
-    allowPrivilegeEscalation: false
-    runAsNonRoot: true
-    # runAsUser: 1000
-    # runAsGroup: 0
-    seccompProfile:
-      type: RuntimeDefault
-    capabilities:
-      drop: ["ALL"]
-    readOnlyRootFilesystem: false
+  # containerSecurityContext:
+  #   # Sonarqube dockerfile creates sonarqube user as UID 1000 and GID 0
+  #   # Those default are used to match pod security standard restricted as least privileged approach
+  #   allowPrivilegeEscalation: false
+  #   runAsNonRoot: true
+  #   runAsUser: 1000
+  #   runAsGroup: 0
+  #   seccompProfile:
+  #     type: RuntimeDefault
+  #   capabilities:
+  #     drop: ["ALL"]
+  #   readOnlyRootFilesystem: true
 
   # Probe threshold configuration for the search nodes
   readinessProbe:
@@ -206,18 +206,18 @@ ApplicationNodes:
 
   # Set security context for sonarqube app container
   # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
-  containerSecurityContext:
-    # Sonarqube dockerfile creates sonarqube user as UID 1000 and GID 0
-    # Those default are used to match pod security standard restricted as least privileged approach
-    allowPrivilegeEscalation: false
-    runAsNonRoot: true
-    # runAsUser: 1000
-    # runAsGroup: 0
-    seccompProfile:
-      type: RuntimeDefault
-    capabilities:
-      drop: ["ALL"]
-    readOnlyRootFilesystem: false
+  # containerSecurityContext:
+  #   # Sonarqube dockerfile creates sonarqube user as UID 1000 and GID 0
+  #   # Those default are used to match pod security standard restricted as least privileged approach
+  #   allowPrivilegeEscalation: false
+  #   runAsNonRoot: true
+  #   runAsUser: 1000
+  #   runAsGroup: 0
+  #   seccompProfile:
+  #     type: RuntimeDefault
+  #   capabilities:
+  #     drop: ["ALL"]
+  #   readOnlyRootFilesystem: true
 
   readinessProbe:
     exec:
@@ -518,17 +518,17 @@ initContainers:
   # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
   # We allow the init containers to have a separate security context declaration because
   # the initContainer may not require the same as SonarQube.
-  securityContext:
-    # Those default are used to match pod security standard restricted as least privileged approach
-    allowPrivilegeEscalation: false
-    runAsNonRoot: true
-    # runAsUser: 1000
-    # runAsGroup: 0
-    seccompProfile:
-      type: RuntimeDefault
-    capabilities:
-      drop: ["ALL"]
-    readOnlyRootFilesystem: true
+  # securityContext:
+  #   # Those default are used to match pod security standard restricted as least privileged approach
+  #   allowPrivilegeEscalation: false
+  #   runAsNonRoot: true
+  #   runAsUser: 1000
+  #   runAsGroup: 0
+  #   seccompProfile:
+  #     type: RuntimeDefault
+  #   capabilities:
+  #     drop: ["ALL"]
+  #   readOnlyRootFilesystem: true
   # We allow the init containers to have a separate resources declaration because
   # the initContainer does not take as much resources.
   resources: {}

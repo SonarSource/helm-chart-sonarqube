@@ -43,18 +43,18 @@ image:
 
 # Set security context for sonarqube container.
 # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
-containerSecurityContext:
-# Sonarqube dockerfile creates sonarqube user as UID and GID 0
-# Those default are used to match pod security standard restricted as least privileged approach
-  allowPrivilegeEscalation: false
-  runAsNonRoot: true
-  # runAsUser: 1000
-  # runAsGroup: 0
-  seccompProfile:
-    type: RuntimeDefault
-  capabilities:
-    drop: ["ALL"]
-  readOnlyRootFilesystem: false
+# containerSecurityContext:
+# # Sonarqube dockerfile creates sonarqube user as UID and GID 0
+# # Those default are used to match pod security standard restricted as least privileged approach
+#   allowPrivilegeEscalation: false
+#   runAsNonRoot: true
+#   runAsUser: 1000
+#   runAsGroup: 0
+#   seccompProfile:
+#     type: RuntimeDefault
+#   capabilities:
+#     drop: ["ALL"]
+#   readOnlyRootFilesystem: true
 
 # Settings to configure elasticsearch host requirements
 elasticsearch:
@@ -234,16 +234,16 @@ initContainers:
   # We allow the init containers to have a separate security context declaration because
   # the initContainer may not require the same as SonarQube.
   # Those default are used to match pod security standard restricted as least privileged approach
-  securityContext:
-    allowPrivilegeEscalation: false
-    runAsNonRoot: true
-    # runAsUser: 1000
-    # runAsGroup: 0
-    seccompProfile:
-      type: RuntimeDefault
-    capabilities:
-      drop: ["ALL"]
-    readOnlyRootFilesystem: false
+  # securityContext:
+  #   allowPrivilegeEscalation: false
+  #   runAsNonRoot: true
+  #   runAsUser: 1000
+  #   runAsGroup: 0
+  #   seccompProfile:
+  #     type: RuntimeDefault
+  #   capabilities:
+  #     drop: ["ALL"]
+  #   readOnlyRootFilesystem: true
   # We allow the init containers to have a separate resources declaration because
   # the initContainer does not take as much resources.
   resources: {}
@@ -280,7 +280,7 @@ initSysctl:
     privileged: true
     # if run without root permissions, error "sysctl: permission denied on key xxx, ignoring"
     runAsUser: 0
-    readOnlyRootFilesystem: false
+    readOnlyRootFilesystem: true
   # resources: {}
 
 # This should not be required anymore, used to chown/chmod folder created by faulty CSI driver that are not applying properly POSIX fsgroup.
@@ -298,7 +298,7 @@ initFs:
     capabilities:
       drop: ["ALL"]
       add: ["CHOWN"]
-    readOnlyRootFilesystem: false
+    readOnlyRootFilesystem: true
 
 prometheusExporter:
   enabled: false
