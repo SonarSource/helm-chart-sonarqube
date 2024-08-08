@@ -116,6 +116,27 @@ verify_gcp_staging_app_task:
   depends_on:
     - build_gcp_staging_app
 
+verify_openshift_task:
+  # only_if: $TRIGGER == "VERIFY_OPENSHIFT" || $BRANCH == "master"
+  ec2_instance:
+    <<: *VM_TEMPLATE
+  authenticate_to_eks_script:
+    - ./.cirrus/eks.sh
+  matrix:
+    - name: verify_openshift_sonarqube
+      env:
+        - VERIFYING_CHART: sonarqube
+    - name: verify_openshift_sonarqube_dce
+      env:
+        - VERIFYING_CHART: sonarqube-dce
+  script:
+    - mkdir -p "$(pwd)/report-${VERIFYING_CHART}"
+    - docker run --rm -e KUBECONFIG=/.kube/config -v "${HOME}/.kube/":/.kube/ -v "$(pwd)/charts":/charts:z "quay.io/redhat-certification/chart-verifier" verify /charts/"${VERIFYING_CHART}" > "$(pwd)/report-${VERIFYING_CHART}/report.yaml" 2>/dev/null
+  verifier_report_artifacts:
+    path: "report-*/*.yaml"
+  check_violations_script:
+    - cat "report-${VERIFYING_CHART}/report.yaml" | ./.cirrus/verify_openshift.sh
+
 chart_static_compatibility_test_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   timeout_in: 30m
