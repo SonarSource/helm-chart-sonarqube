@@ -243,7 +243,7 @@ initContainers:
       type: RuntimeDefault
     capabilities:
       drop: ["ALL"]
-    readOnlyRootFilesystem: true
+    readOnlyRootFilesystem: false
   # We allow the init containers to have a separate resources declaration because
   # the initContainer does not take as much resources.
   resources: {}
@@ -280,7 +280,7 @@ initSysctl:
     privileged: true
     # if run without root permissions, error "sysctl: permission denied on key xxx, ignoring"
     runAsUser: 0
-    readOnlyRootFilesystem: true
+    readOnlyRootFilesystem: false
   # resources: {}
 
 # This should not be required anymore, used to chown/chmod folder created by faulty CSI driver that are not applying properly POSIX fsgroup.
@@ -298,7 +298,7 @@ initFs:
     capabilities:
       drop: ["ALL"]
       add: ["CHOWN"]
-    readOnlyRootFilesystem: true
+    readOnlyRootFilesystem: false
 
 prometheusExporter:
   enabled: false
