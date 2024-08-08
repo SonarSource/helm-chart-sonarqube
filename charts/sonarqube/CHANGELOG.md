@@ -8,7 +8,7 @@ All changes to this chart will be documented in this file.
 * Deprecate `jdbcOverwrite.enable` in favor of `jdbcOverwrite.enabled`
 * Fix regression on env valuesFrom in the new STS template
 * Fix a typo in the new common STS template
-* Enable ReadOnlyRootFilesystem by default
+* Enable the setup of ReadOnlyRootFilesystem in the security contexts
 * Support basic chart installation on Openshift  
 
 ## [10.6.0]

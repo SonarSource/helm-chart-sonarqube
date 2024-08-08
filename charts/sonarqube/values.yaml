@@ -50,11 +50,11 @@ containerSecurityContext:
   runAsNonRoot: true
   # runAsUser: 1000
   # runAsGroup: 0
-  readOnlyRootFilesystem: true
   seccompProfile:
     type: RuntimeDefault
   capabilities:
     drop: ["ALL"]
+  readOnlyRootFilesystem: false
 
 # Settings to configure elasticsearch host requirements
 elasticsearch:
@@ -239,11 +239,11 @@ initContainers:
     runAsNonRoot: true
     # runAsUser: 1000
     # runAsGroup: 0
-    readOnlyRootFilesystem: true
     seccompProfile:
       type: RuntimeDefault
     capabilities:
       drop: ["ALL"]
+    readOnlyRootFilesystem: true
   # We allow the init containers to have a separate resources declaration because
   # the initContainer does not take as much resources.
   resources: {}
@@ -293,12 +293,12 @@ initFs:
     runAsNonRoot: false
     runAsUser: 0
     runAsGroup: 0
-    readOnlyRootFilesystem: true
     seccompProfile:
       type: RuntimeDefault
     capabilities:
       drop: ["ALL"]
       add: ["CHOWN"]
+    readOnlyRootFilesystem: true
 
 prometheusExporter:
   enabled: false

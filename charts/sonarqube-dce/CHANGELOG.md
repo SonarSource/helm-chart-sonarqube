@@ -6,7 +6,7 @@ All changes to this chart will be documented in this file.
 * Support Kubernetes v1.30
 * Upgrade ingress-nginx dependency to 4.10.1
 * Deprecate `jdbcOverwrite.enable` in favor of `jdbcOverwrite.enabled`
-* Enable ReadOnlyRootFilesystem by default
+* Enable the setup of ReadOnlyRootFilesystem in the security contexts
 * Support basic chart installation on Openshift
 
 ## [10.6.0]

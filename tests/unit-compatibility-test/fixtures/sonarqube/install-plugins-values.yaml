@@ -9,7 +9,7 @@ metadata:
     helm.sh/chart: postgresql-10.15.0
     app.kubernetes.io/instance: install-plugins-values.yaml
     app.kubernetes.io/managed-by: Helm
-  namespace: sq
+  namespace: default
 type: Opaque
 data:
   postgresql-postgres-password: "dG90bw=="
@@ -132,7 +132,7 @@ metadata:
     # field is broken in some versions of Kubernetes:
     # https://github.com/kubernetes/kubernetes/issues/58662
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-  namespace: sq
+  namespace: default
 spec:
   type: ClusterIP
   clusterIP: None
@@ -159,7 +159,7 @@ metadata:
     app.kubernetes.io/instance: install-plugins-values.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
-  namespace: sq
+  namespace: default
 spec:
   type: ClusterIP
   ports:
@@ -204,7 +204,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
-  namespace: sq
+  namespace: default
 spec:
   serviceName: install-plugins-values.yaml-postgresql-headless
   replicas: 1
@@ -238,7 +238,7 @@ spec:
                     app.kubernetes.io/instance: install-plugins-values.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
-                  - "sq"
+                  - "default"
                 topologyKey: kubernetes.io/hostname
               weight: 1
         nodeAffinity:
@@ -524,7 +524,7 @@ spec:
             capabilities:
               drop:
               - ALL
-            readOnlyRootFilesystem: true
+            readOnlyRootFilesystem: false
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
