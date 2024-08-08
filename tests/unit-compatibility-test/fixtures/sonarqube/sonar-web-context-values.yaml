@@ -255,8 +255,6 @@ spec:
               weight: 1
         nodeAffinity:
           
-      securityContext:
-        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: sonar-web-context-values.yaml-postgresql
@@ -269,15 +267,6 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -393,7 +382,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 2cc9770b80ec0a3b0a401373c2906fc2815dc6fb0005429950fe204f7e7011eb
-        checksum/init-fs: 2219ef73b7defb1bd8664621b43e0fa65407ae50616cef13e5690339ad8dc305
         checksum/init-sysctl: 03d0086f96a27c841e65f7be3fefd707990d0086e83e2c254f64226e4684d9c7
         checksum/plugins: f5f32668c3f1944cbfd662c29991a200a505f387b4a609ade855ebd1041624ec
         checksum/secret: 35f21ea2d7f92ff17ca578fa78f8ff7fe52c31fd97cbde470bc2f72bfb5fa781
@@ -402,23 +390,10 @@ spec:
         release: sonar-web-context-values.yaml
     spec:
       automountServiceAccountToken: false
-      securityContext:
-        fsGroup: 0
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/sonar-web-context-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
@@ -515,17 +490,6 @@ spec:
             periodSeconds: 10
             failureThreshold: 24
             timeoutSeconds: 1
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/data
               name: sonarqube
@@ -549,12 +513,6 @@ spec:
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: sonar-web-context-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
         - name: sonarqube
           emptyDir:
             {}
@@ -652,17 +610,6 @@ spec:
       containers:
       - name: sonar-web-context-values.yaml-sonarqube-change-default-admin-password
         image: sonarqube:10.6.0-community
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-          runAsGroup: 0
-          runAsNonRoot: true
-          runAsUser: 1000
-          seccompProfile:
-            type: RuntimeDefault
         command: ["sh", "-c", 'until curl -v --connect-timeout 100 sonar-web-context-values.yaml-sonarqube:9000/sonarqube-web-context/api/system/status | grep -w UP; do sleep 10; done; curl -v --connect-timeout 100 -u admin:$CURRENT_ADMIN_PASSWORD -X POST "sonar-web-context-values.yaml-sonarqube:9000/sonarqube-web-context/api/users/change_password?login=admin&previousPassword=$CURRENT_ADMIN_PASSWORD&password=$ADMIN_PASSWORD"']
         env:
         - name: ADMIN_PASSWORD

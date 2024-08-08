@@ -255,8 +255,6 @@ spec:
               weight: 1
         nodeAffinity:
           
-      securityContext:
-        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: sonar-web-context-sts-deprecated-values.yaml-postgresql
@@ -269,15 +267,6 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -393,7 +382,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 3b27097dd54b93f2e57492d7d1054097ea742ca436468451c09859de7ee4b3b3
-        checksum/init-fs: 4450fd71650e79436b068c100abaa30d8f8f32f5943099832c20fe43f8ab7e7e
         checksum/init-sysctl: 70246d21fdc2601dcce417705cad495f77662f6e2e17eeccf5f6635957144161
         checksum/plugins: 7cd307cee7375cd35f5cc60a126d59732ec9de4a5825083feef6d2f685fafc47
         checksum/secret: 115853198f18af3f38718b49c785d56e5160d64a831c1148dfee352241c5bd8e
@@ -402,23 +390,10 @@ spec:
         release: sonar-web-context-sts-deprecated-values.yaml
     spec:
       automountServiceAccountToken: false
-      securityContext:
-        fsGroup: 0
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/sonar-web-context-sts-deprecated-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
@@ -515,17 +490,6 @@ spec:
             periodSeconds: 10
             failureThreshold: 24
             timeoutSeconds: 1
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/data
               name: sonarqube
@@ -549,12 +513,6 @@ spec:
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
         - name: sonarqube
           emptyDir:
             {}
@@ -652,17 +610,6 @@ spec:
       containers:
       - name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-change-default-admin-password
         image: sonarqube:10.6.0-community
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-          runAsGroup: 0
-          runAsNonRoot: true
-          runAsUser: 1000
-          seccompProfile:
-            type: RuntimeDefault
         command: ["sh", "-c", 'until curl -v --connect-timeout 100 sonar-web-context-sts-deprecated-values.yaml-sonarqube:9000/sonarqube-account/api/system/status | grep -w UP; do sleep 10; done; curl -v --connect-timeout 100 -u admin:$CURRENT_ADMIN_PASSWORD -X POST "sonar-web-context-sts-deprecated-values.yaml-sonarqube:9000/sonarqube-account/api/users/change_password?login=admin&previousPassword=$CURRENT_ADMIN_PASSWORD&password=$ADMIN_PASSWORD"']
         env:
         - name: ADMIN_PASSWORD

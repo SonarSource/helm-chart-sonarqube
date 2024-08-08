@@ -2,8 +2,12 @@
 metadata:
   annotations:
     checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+    {{- if and .Values.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
     checksum/init-fs: {{ include (print $.Template.BasePath "/init-fs.yaml") . | sha256sum }}
+    {{- end }}
+    {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
     checksum/init-sysctl: {{ include (print $.Template.BasePath "/init-sysctl.yaml") . | sha256sum }}
+    {{- end }}
     checksum/plugins: {{ include (print $.Template.BasePath "/install-plugins.yaml") . | sha256sum }}
     checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     {{- if .Values.prometheusExporter.enabled }}
@@ -23,7 +27,9 @@ spec:
   {{- with .Values.schedulerName }}
   schedulerName: {{ . }}
   {{- end }}
-  securityContext: {{- toYaml .Values.securityContext | nindent 4 }}
+  {{- with .Values.securityContext }}
+  securityContext: {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- if or .Values.image.pullSecrets .Values.image.pullSecret }}
   imagePullSecrets:
     {{- if .Values.image.pullSecret }}
@@ -71,7 +77,7 @@ spec:
       env:
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
-    {{- if or .Values.initSysctl.enabled .Values.elasticsearch.configureNode }}
+    {{- if and (or .Values.initSysctl.enabled .Values.elasticsearch.configureNode) (not .Values.OpenShift.enabled) }}
     - name: init-sysctl
       image: {{ default (include "sonarqube.image" $) .Values.initSysctl.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -153,7 +159,7 @@ spec:
           value: {{ default "" .Values.prometheusExporter.noProxy }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
-    {{- if and .Values.persistence.enabled .Values.initFs.enabled }}
+    {{- if and .Values.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
     - name: init-fs
       image: {{ default (include "sonarqube.image" $) .Values.initFs.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -388,7 +394,7 @@ spec:
         - key: netrc
           path: .netrc
     {{- end }}
-    {{- if .Values.initSysctl.enabled }}
+    {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
     - name: init-sysctl
       configMap:
         name: {{ include "sonarqube.fullname" . }}-init-sysctl
@@ -396,7 +402,7 @@ spec:
           - key: init_sysctl.sh
             path: init_sysctl.sh
     {{- end }}
-    {{- if .Values.initFs.enabled }}
+    {{- if and .Values.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
     - name: init-fs
       configMap:
         name: {{ include "sonarqube.fullname" . }}-init-fs

@@ -240,8 +240,6 @@ spec:
               weight: 1
         nodeAffinity:
           
-      securityContext:
-        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: jdbc-config-values.yaml-postgresql
@@ -254,15 +252,6 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -378,7 +367,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 4a1d1ff525247d1ca7f3da44c8f911b1d8014c9b0f718ee98692af0c886a8479
-        checksum/init-fs: 9823a7a1450e293b4e9e0719f9b0a720c825f9b8e3e96f6889cba8fd83c483d7
         checksum/init-sysctl: 1ac00515c1ce589c419495368faaa937d898c30d9ee69b2ea3ff4cc7d68d2149
         checksum/plugins: 491250710f49fddbb23736ff397ea5520a312cdba9465f86928d6b5c9d1e2517
         checksum/secret: 6a855c38da4d626493c3d98d0b9a61bfa40cb7029e07d5ea9f6a138baafe3969
@@ -387,23 +375,10 @@ spec:
         release: jdbc-config-values.yaml
     spec:
       automountServiceAccountToken: false
-      securityContext:
-        fsGroup: 0
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/jdbc-config-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
@@ -500,17 +475,6 @@ spec:
             periodSeconds: 10
             failureThreshold: 24
             timeoutSeconds: 1
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/data
               name: sonarqube
@@ -534,12 +498,6 @@ spec:
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: jdbc-config-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
         - name: sonarqube
           emptyDir:
             {}

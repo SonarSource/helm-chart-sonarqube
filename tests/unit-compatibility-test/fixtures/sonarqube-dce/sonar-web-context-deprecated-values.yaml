@@ -390,17 +390,6 @@ spec:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-datacenter-app
           imagePullPolicy: IfNotPresent
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           resources:
             {}
           command: ["/bin/bash", "-c"]
@@ -428,21 +417,8 @@ spec:
               subPath: sonar.properties
             - mountPath: /tmp/result
               name: concat-dir
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           resources:
             {}
-      securityContext:
-        fsGroup: 0
       containers:
         - name: sonarqube-dce
           image: sonarqube:10.6.0-datacenter-app
@@ -541,17 +517,6 @@ spec:
             periodSeconds: 10
             failureThreshold: 32
             timeoutSeconds: 1
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/conf/sonar.properties
               subPath: sonar.properties
@@ -642,8 +607,6 @@ spec:
               weight: 1
         nodeAffinity:
           
-      securityContext:
-        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: sonar-web-context-deprecated-values.yaml-postgresql
@@ -656,15 +619,6 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -857,8 +811,6 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-      securityContext:
-        fsGroup: 0
       containers:
         - name: sonarqube-dce-search
           image: "sonarqube:10.6.0-datacenter-search"
@@ -941,17 +893,6 @@ spec:
             periodSeconds: 10
             failureThreshold: 24
             timeoutSeconds: 1
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/certs
               name: "sonar-web-context-deprecated-values.yaml-sonarqube-dce"
@@ -1079,17 +1020,6 @@ spec:
       containers:
       - name: sonar-web-context-deprecated-values.yaml-sonarqube-dce-change-default-admin-password
         image: sonarqube:10.6.0-datacenter-app
-        securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
         command: ["sh", "-c", 'until curl -v --connect-timeout 100 sonar-web-context-deprecated-values.yaml-sonarqube-dce:9000/sonarqube-account/api/system/status | grep -w UP; do sleep 10; done; curl -v --connect-timeout 100 -u admin:$CURRENT_ADMIN_PASSWORD -X POST "sonar-web-context-deprecated-values.yaml-sonarqube-dce:9000/sonarqube-account/api/users/change_password?login=admin&previousPassword=$CURRENT_ADMIN_PASSWORD&password=$ADMIN_PASSWORD"']
         env:
         - name: ADMIN_PASSWORD

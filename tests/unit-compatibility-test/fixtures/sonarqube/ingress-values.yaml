@@ -240,8 +240,6 @@ spec:
               weight: 1
         nodeAffinity:
           
-      securityContext:
-        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: ingress-values.yaml-postgresql
@@ -254,15 +252,6 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -378,7 +367,6 @@ spec:
     metadata:
       annotations:
         checksum/config: c74eb97b641f379bb078d7eb2298eb43efb63662fad44f0a9baefaed39e147dd
-        checksum/init-fs: a756cecb1e4d92402e933467b50ce4be489de344224d28102b660153ac472717
         checksum/init-sysctl: c55082c34b2f43bf9dc0044c0aee0b1fa1d0571ac9a8e66b0419bac46011e153
         checksum/plugins: 39387c81bbadfd8c293fb8928bbcd175999243e59520125c939a859fa1f05b84
         checksum/secret: cb50d0d5146ec05cbad42c6738edf1c34dbe6777029dd87138bf4ace5b50a751
@@ -387,23 +375,10 @@ spec:
         release: ingress-values.yaml
     spec:
       automountServiceAccountToken: false
-      securityContext:
-        fsGroup: 0
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/ingress-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
@@ -500,17 +475,6 @@ spec:
             periodSeconds: 10
             failureThreshold: 24
             timeoutSeconds: 1
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/data
               name: sonarqube
@@ -534,12 +498,6 @@ spec:
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: ingress-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
         - name: sonarqube
           emptyDir:
             {}

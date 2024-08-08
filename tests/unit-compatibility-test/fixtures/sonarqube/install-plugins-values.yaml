@@ -243,8 +243,6 @@ spec:
               weight: 1
         nodeAffinity:
           
-      securityContext:
-        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: install-plugins-values.yaml-postgresql
@@ -257,15 +255,6 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -381,7 +370,6 @@ spec:
     metadata:
       annotations:
         checksum/config: 58530d7310cfd0b9e68641a7a65cf4f36e759c03135ce0cdfa737b46495858e1
-        checksum/init-fs: 54cfe707d72307d7d0c10ad2775f8ad7f116d93816fe8332ba3f61ad4ee50d1a
         checksum/init-sysctl: 6c5b33c8909edd64442f7cc75b154892b633305fa3356a340e36742a5e44cae3
         checksum/plugins: fdca4d6a713b0c0bcfcfe63f752091f6eb3192f27117c67505c1f9d45a997c1e
         checksum/secret: b569e6e1647cb4631a90705275947d2e886aa37fdf1877bd8834bc6ce117e3b5
@@ -390,23 +378,10 @@ spec:
         release: install-plugins-values.yaml
     spec:
       automountServiceAccountToken: false
-      securityContext:
-        fsGroup: 0
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/install-plugins-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
@@ -431,17 +406,6 @@ spec:
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/extensions/plugins
               name: sonarqube
@@ -537,17 +501,6 @@ spec:
             periodSeconds: 10
             failureThreshold: 24
             timeoutSeconds: 1
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/data
               name: sonarqube
@@ -571,12 +524,6 @@ spec:
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: install-plugins-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
         - name: install-plugins
           configMap:
             name: install-plugins-values.yaml-sonarqube-install-plugins

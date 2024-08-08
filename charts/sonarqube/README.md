@@ -134,11 +134,11 @@ For this reason, it is recommended to set Xmx to the ~80% of the total amount of
 
 Please find here the default SonarQube Xmx parameters to setup the memory requests and limits accordingly.
 
-|Edition|Sum of Xmx|
-|---|---|
-|community edition|1536M|
-|developer edition|1536M|
-|enterprise edition|5G|
+| Edition            | Sum of Xmx |
+| ------------------ | ---------- |
+| community edition  | 1536M      |
+| developer edition  | 1536M      |
+| enterprise edition | 5G         |
 
 The default request and limit for this chart are set to 2048M and 6144M, to comply with the 3 editions and the 80% rule mentioned above.
 
@@ -248,7 +248,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                  | Description                                    | Default                                                                |
 | -------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
-| `securityContext.fsGroup`  | Group applied to mounted directories/files     | `0`                                                                    |
+| `securityContext`          | SecurityContext for the pod                    | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `containerSecurityContext` | SecurityContext for container in sonarqube pod | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 
 ### Elasticsearch
@@ -272,17 +272,17 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Ingress
 
-| Parameter                      | Description                                                  | Default                                                                        |
-| ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| `ingress-nginx.enabled`        | Install Nginx Ingress Helm                                   | `false`                                                                        |
-| `nginx.enabled`                | (DEPRECATED) please use `ingress-nginx.enabled`              | `false`                                                                        |
-| `ingress.labels`               | Ingress additional labels                                    | `{}`                                                                           |
-| `ingress.hosts[0].name`        | Hostname to your SonarQube installation                      | `sonarqube.your-org.com`                                                       |
-| `ingress.hosts[0].path`        | Path within the URL structure                                | `/`                                                                            |
-| `ingress.hosts[0].serviceName` | Optional field to override the default serviceName of a path | `None`                                                                         |
-| `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | `None`                                                                         |
-| `ingress.tls`                  | Ingress secrets for TLS certificates                         | `[]`                                                                           |
-| `ingress.ingressClassName`     | Optional field to configure ingress class name               | `None`                                                                         |
+| Parameter                      | Description                                                  | Default                                                                                                      |
+| ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `ingress-nginx.enabled`        | Install Nginx Ingress Helm                                   | `false`                                                                                                      |
+| `nginx.enabled`                | (DEPRECATED) please use `ingress-nginx.enabled`              | `false`                                                                                                      |
+| `ingress.labels`               | Ingress additional labels                                    | `{}`                                                                                                         |
+| `ingress.hosts[0].name`        | Hostname to your SonarQube installation                      | `sonarqube.your-org.com`                                                                                     |
+| `ingress.hosts[0].path`        | Path within the URL structure                                | `/`                                                                                                          |
+| `ingress.hosts[0].serviceName` | Optional field to override the default serviceName of a path | `None`                                                                                                       |
+| `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | `None`                                                                                                       |
+| `ingress.tls`                  | Ingress secrets for TLS certificates                         | `[]`                                                                                                         |
+| `ingress.ingressClassName`     | Optional field to configure ingress class name               | `None`                                                                                                       |
 | `ingress.annotations`          | Field to add extra annotations to the ingress                | {`nginx.ingress.kubernetes.io/proxy-body-size: "64m"`} if `ingress-nginx.enabled=true or nginx.enabled=true` |
 
 ### Route
@@ -297,17 +297,17 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Probes
 
-| Parameter                            | Description                                                                                                      | Default           |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ----------------- |
-| `readinessProbe`                     | ReadinessProbe for SonarQube                                                                                     | see `values.yaml` |
-| `readinessProbe.sonarWebContext`     | (DEPRECATED) SonarQube web context for readinessProbe, please use sonarWebContext at the value top level instead | `/`               |
-| `livenessProbe`                      | LivenessProbe for SonarQube                                                                                      | see `values.yaml` |
-| `livenessProbe.sonarWebContext`      | (DEPRECATED) SonarQube web context for LivenessProbe, please use sonarWebContext at the value top level instead  | `/`               |
-| `startupProbe.initialDelaySeconds`   | StartupProbe initial delay for SonarQube checking                                                                | `30`              |
-| `startupProbe.periodSeconds`         | StartupProbe period between checking SonarQube                                                                   | `10`              |
-| `startupProbe.sonarWebContext`       | (DEPRECATED) SonarQube web context for StartupProbe, please use sonarWebContext at the value top level instead   | `/`               |
-| `startupProbe.failureThreshold`      | StartupProbe threshold for marking as failed                                                                     | `24`              |
-| `startupProbe.timeoutSeconds`        | StartupProbe timeout delay                                                                                       | `1`               |
+| Parameter                          | Description                                                                                                      | Default           |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `readinessProbe`                   | ReadinessProbe for SonarQube                                                                                     | see `values.yaml` |
+| `readinessProbe.sonarWebContext`   | (DEPRECATED) SonarQube web context for readinessProbe, please use sonarWebContext at the value top level instead | `/`               |
+| `livenessProbe`                    | LivenessProbe for SonarQube                                                                                      | see `values.yaml` |
+| `livenessProbe.sonarWebContext`    | (DEPRECATED) SonarQube web context for LivenessProbe, please use sonarWebContext at the value top level instead  | `/`               |
+| `startupProbe.initialDelaySeconds` | StartupProbe initial delay for SonarQube checking                                                                | `30`              |
+| `startupProbe.periodSeconds`       | StartupProbe period between checking SonarQube                                                                   | `10`              |
+| `startupProbe.sonarWebContext`     | (DEPRECATED) SonarQube web context for StartupProbe, please use sonarWebContext at the value top level instead   | `/`               |
+| `startupProbe.failureThreshold`    | StartupProbe threshold for marking as failed                                                                     | `24`              |
+| `startupProbe.timeoutSeconds`      | StartupProbe timeout delay                                                                                       | `1`               |
 
 ### InitContainers
 
@@ -324,7 +324,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `initSysctl.vmMaxMapCount`          | Set init sysctl container vm.max_map_count                | `524288`                                                               |
 | `initSysctl.fsFileMax`              | Set init sysctl container fs.file-max                     | `131072`                                                               |
 | `initSysctl.nofile`                 | Set init sysctl container open file descriptors limit     | `131072`                                                               |
-| `initSysctl.nproc`                  | Set init sysctl container open threads limit              | `8192`                                                                |
+| `initSysctl.nproc`                  | Set init sysctl container open threads limit              | `8192`                                                                 |
 | `initSysctl.image`                  | Change init sysctl container image                        | `"image.repository":"image.tag"`                                       |
 | `initSysctl.securityContext`        | InitSysctl container security context                     | `{privileged: true}`                                                   |
 | `initSysctl.resources`              | InitSysctl container resource requests & limits           | `{}`                                                                   |
@@ -393,14 +393,14 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Resources
 
-| Parameter                              | Description                | Default |
-| -------------------------------------- | -------------------------- | ------- |
-| `resources.requests.memory`            | SonarQube memory request   | `2048M` |
-| `resources.requests.cpu`               | SonarQube cpu request      | `400m`  |
-| `resources.requests.ephemeral-storage` | SonarQube storage request  | `1536M` |
-| `resources.limits.memory`              | SonarQube memory limit     | `6144M` |
-| `resources.limits.cpu`                 | SonarQube cpu limit        | `800m`  |
-| `resources.limits.ephemeral-storage`   | SonarQube storage limit    | `500Gi` |
+| Parameter                              | Description               | Default |
+| -------------------------------------- | ------------------------- | ------- |
+| `resources.requests.memory`            | SonarQube memory request  | `2048M` |
+| `resources.requests.cpu`               | SonarQube cpu request     | `400m`  |
+| `resources.requests.ephemeral-storage` | SonarQube storage request | `1536M` |
+| `resources.limits.memory`              | SonarQube memory limit    | `6144M` |
+| `resources.limits.cpu`                 | SonarQube cpu limit       | `800m`  |
+| `resources.limits.ephemeral-storage`   | SonarQube storage limit   | `500Gi` |
 
 ### Persistence
 
@@ -434,39 +434,39 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/packages/helm/sonarqube/sonarqube#production-use-case> for more information.
 
-| Parameter                                                | Description                                                            | Default                                                                |
-| -------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `postgresql.enabled`                                     | Set to `false` to use external server                                  | `true`                                                                 |
-| `postgresql.existingSecret`                              | existingSecret Name of existing secret to use for PostgreSQL passwords | `nil`                                                                  |
-| `postgresql.postgresqlServer`                            | (DEPRECATED) Hostname of the external PostgreSQL server                | `nil`                                                                  |
-| `postgresql.postgresqlUsername`                          | PostgreSQL database user                                               | `sonarUser`                                                            |
-| `postgresql.postgresqlPassword`                          | PostgreSQL database password                                           | `sonarPass`                                                            |
-| `postgresql.postgresqlDatabase`                          | PostgreSQL database name                                               | `sonarDB`                                                              |
-| `postgresql.service.port`                                | PostgreSQL port                                                        | `5432`                                                                 |
-| `postgresql.resources.requests.memory`                   | PostgreSQL memory request                                              | `256Mi`                                                                |
-| `postgresql.resources.requests.cpu`                      | PostgreSQL cpu request                                                 | `250m`                                                                 |
-| `postgresql.resources.limits.memory`                     | PostgreSQL memory limit                                                | `2Gi`                                                                  |
-| `postgresql.resources.limits.cpu`                        | PostgreSQL cpu limit                                                   | `2`                                                                    |
-| `postgresql.persistence.enabled`                         | PostgreSQL persistence en/disabled                                     | `true`                                                                 |
-| `postgresql.persistence.accessMode`                      | PostgreSQL persistence accessMode                                      | `ReadWriteOnce`                                                        |
-| `postgresql.persistence.size`                            | PostgreSQL persistence size                                            | `20Gi`                                                                 |
-| `postgresql.persistence.storageClass`                    | PostgreSQL persistence storageClass                                    | `""`                                                                   |
-| `postgresql.securityContext.enabled`                     | PostgreSQL securityContext en/disabled                                 | `true`                                                                 |
-| `postgresql.securityContext`                             | PostgreSQL securityContext                                             | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
-| `postgresql.volumePermissions.enabled`                   | PostgreSQL vol permissions en/disabled                                 | `false`                                                                |
-| `postgresql.volumePermissions.securityContext.runAsUser` | PostgreSQL vol permissions secContext runAsUser                        | `0`                                                                    |
-| `postgresql.shmVolume.chmod.enabled`                     | PostgreSQL shared memory vol en/disabled                               | `false`                                                                |
-| `postgresql.serivceAccount.enabled`                      | PostgreSQL service Account creation en/disabled                        | `false`                                                                |
-| `postgresql.serivceAccount.name`                         | PostgreSQL service Account name                                        | `""`                                                                   |
+| Parameter                                                | Description                                                            | Default         |
+| -------------------------------------------------------- | ---------------------------------------------------------------------- | --------------- |
+| `postgresql.enabled`                                     | Set to `false` to use external server                                  | `true`          |
+| `postgresql.existingSecret`                              | existingSecret Name of existing secret to use for PostgreSQL passwords | `nil`           |
+| `postgresql.postgresqlServer`                            | (DEPRECATED) Hostname of the external PostgreSQL server                | `nil`           |
+| `postgresql.postgresqlUsername`                          | PostgreSQL database user                                               | `sonarUser`     |
+| `postgresql.postgresqlPassword`                          | PostgreSQL database password                                           | `sonarPass`     |
+| `postgresql.postgresqlDatabase`                          | PostgreSQL database name                                               | `sonarDB`       |
+| `postgresql.service.port`                                | PostgreSQL port                                                        | `5432`          |
+| `postgresql.resources.requests.memory`                   | PostgreSQL memory request                                              | `256Mi`         |
+| `postgresql.resources.requests.cpu`                      | PostgreSQL cpu request                                                 | `250m`          |
+| `postgresql.resources.limits.memory`                     | PostgreSQL memory limit                                                | `2Gi`           |
+| `postgresql.resources.limits.cpu`                        | PostgreSQL cpu limit                                                   | `2`             |
+| `postgresql.persistence.enabled`                         | PostgreSQL persistence en/disabled                                     | `true`          |
+| `postgresql.persistence.accessMode`                      | PostgreSQL persistence accessMode                                      | `ReadWriteOnce` |
+| `postgresql.persistence.size`                            | PostgreSQL persistence size                                            | `20Gi`          |
+| `postgresql.persistence.storageClass`                    | PostgreSQL persistence storageClass                                    | `""`            |
+| `postgresql.securityContext.enabled`                     | PostgreSQL securityContext en/disabled                                 | `false`         |
+| `postgresql.securityContext`                             | PostgreSQL securityContext                                             | `false`         |
+| `postgresql.volumePermissions.enabled`                   | PostgreSQL vol permissions en/disabled                                 | `false`         |
+| `postgresql.volumePermissions.securityContext.runAsUser` | PostgreSQL vol permissions secContext runAsUser                        | `0`             |
+| `postgresql.shmVolume.chmod.enabled`                     | PostgreSQL shared memory vol en/disabled                               | `false`         |
+| `postgresql.serivceAccount.enabled`                      | PostgreSQL service Account creation en/disabled                        | `false`         |
+| `postgresql.serivceAccount.name`                         | PostgreSQL service Account name                                        | `""`            |
 
 ### Tests
 
-| Parameter                       | Description                                                   | Default                                                   |
-| --------------------------------| ------------------------------------------------------------- | --------------------------------------------------------- |
-| `tests.enabled`                 | Flag that allows tests to be excluded from the generated yaml | `true`                                                    |
-| `tests.image`                   | Set the test container image                                  | `"image.repository":"image.tag"`                          |
-| `tests.resources.limits.cpu`    | CPU limit for test container                                  | `500m`                                                    |
-| `tests.resources.limits.memory` | Memory limit for test container                               | `200M`                                                    |
+| Parameter                       | Description                                                   | Default                          |
+| ------------------------------- | ------------------------------------------------------------- | -------------------------------- |
+| `tests.enabled`                 | Flag that allows tests to be excluded from the generated yaml | `true`                           |
+| `tests.image`                   | Set the test container image                                  | `"image.repository":"image.tag"` |
+| `tests.resources.limits.cpu`    | CPU limit for test container                                  | `500m`                           |
+| `tests.resources.limits.memory` | Memory limit for test container                               | `200M`                           |
 
 ### ServiceAccount
 
@@ -497,7 +497,7 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `account.resources.limits.cpu`      | CPU limit for Admin hook                                                                                     | `100m`                                                                 |
 | `account.sonarWebContext`           | (DEPRECATED) SonarQube web context for Admin hook. please use sonarWebContext at the value top level instead | `nil`                                                                  |
 | `account.securityContext`           | SecurityContext for change-password-hook                                                                     | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
-| `curlContainerImage`                | Curl container image                                                                                         | `"image.repository":"image.tag"`               |
+| `curlContainerImage`                | Curl container image                                                                                         | `"image.repository":"image.tag"`                                       |
 | `adminJobAnnotations`               | Custom annotations for admin hook Job                                                                        | `{}`                                                                   |
 | `terminationGracePeriodSeconds`     | Configuration of `terminationGracePeriodSeconds`                                                             | `60`                                                                   |
 

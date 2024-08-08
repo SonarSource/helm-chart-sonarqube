@@ -61,8 +61,12 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
       annotations:
+        {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
         checksum/init-sysctl: {{ include (print $.Template.BasePath "/init-sysctl.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
         checksum/init-fs: {{ include (print $.Template.BasePath "/init-fs.yaml") . | sha256sum }}
+        {{- end }}
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
 {{- with .Values.annotations }}
@@ -86,7 +90,7 @@ spec:
       {{- if .Values.extraInitContainers }}
 {{ toYaml .Values.extraInitContainers | indent 8 }}
       {{- end }}
-      {{- if .Values.initSysctl.enabled }}
+      {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
         - name: init-sysctl
           image: {{ default (include "sonarqube.image" $) .Values.initSysctl.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
@@ -172,7 +176,7 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled }}
+      {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
         - name: init-fs
           image: {{ default (include "sonarqube.image" $) .Values.initFs.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
@@ -208,8 +212,10 @@ spec:
             - mountPath: /tmp
               name: tmp-dir
       {{- end }}
+      {{- if .Values.searchNodes.securityContext }}
       securityContext:
         {{- toYaml .Values.searchNodes.securityContext | nindent 8 }}
+      {{- end }}
       containers:
       {{- if .Values.searchNodes.extraContainers }}
         {{- toYaml .Values.searchNodes.extraContainers | nindent 8 }}
@@ -456,18 +462,22 @@ spec:
         secret:
           secretName: {{ .Values.caCerts.secret }}
       {{- end }}
+      {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
       - name: init-sysctl
         configMap:
           name: {{ template "sonarqube.fullname" . }}-init-sysctl
           items:
             - key: init_sysctl.sh
               path: init_sysctl.sh
+      {{- end }}
+      {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
       - name: init-fs
         configMap:
           name: {{ template "sonarqube.fullname" . }}-init-fs
           items:
             - key: init_fs.sh
               path: init_fs.sh
+      {{- end }}
       {{- if .Values.searchNodes.persistence.enabled }}
       - name: "{{ template "sonarqube.fullname" . }}"
       {{- else }}
