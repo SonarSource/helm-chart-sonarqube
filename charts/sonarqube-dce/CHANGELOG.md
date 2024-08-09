@@ -8,6 +8,7 @@ All changes to this chart will be documented in this file.
 * Deprecate `jdbcOverwrite.enable` in favor of `jdbcOverwrite.enabled`
 * Enable the setup of ReadOnlyRootFilesystem in the security contexts
 * Support basic chart installation on Openshift
+* Support Openshift Route
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0
