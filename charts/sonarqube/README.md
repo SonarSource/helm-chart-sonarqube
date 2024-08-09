@@ -29,7 +29,10 @@ kubectl create namespace sonarqube
 helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube
 ```
 
-The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace. 
+If you are interested in deploying SonarQube on Openshift, please check the [dedicated section](#openshift).
+
+The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 The default login is admin/admin.
 
@@ -195,6 +198,14 @@ Per default the JMX metrics for the Web Bean and the CE Bean are exposed on port
 ### PodMonitor
 
 If a Prometheus Operator is deployed in your cluster, you can enable a PodMonitor resource with `prometheusMonitoring.podMonitor.enabled`. It scrapes the Prometheus endpoint `/api/monitoring/metrics` exposed by the SonarQube application.
+
+## OpenShift
+
+The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).
+
+### Route definition
+
+If you want to make your application publicly visible with Routes, you can set `route.enabled` to true. Please check the [configuration details](#route) to customize the Route base on your needs.
 
 ## Configuration
 
