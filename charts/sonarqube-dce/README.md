@@ -370,6 +370,18 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `OpenShift.enabled`   | Define if this deployment is for OpenShift                                             | `false` |
 | `OpenShift.createSCC` | If this deployment is for OpenShift, define if SCC should be created for sonarqube pod | `true`  |
 
+### Route
+
+| Parameter              | Description                                                                   | Default                    |
+| ---------------------- | ----------------------------------------------------------------------------- | -------------------------- |
+| `route.enabled`        | Flag to enable OpenShift Route                                                | `false`                    |
+| `route.host`           | Host that points to the service                                               | `"sonarqube.your-org.com"` |
+| `route.path`           | Path that the router watches for, to route traffic for to the service         | `"/"`                      |
+| `route.tls`            | TLS settings including termination type, certificates, insecure traffic, etc. | see `values.yaml`          |
+| `route.wildcardPolicy` | The wildcard policy that is allowed where this route is exposed               | `None`                     |
+| `route.annotations`    | Optional field to add extra annotations to the route                          | `None`                     |
+| `route.labels`         | Route additional labels                                                       | `{}`                       |
+
 ### Elasticsearch
 
 | Parameter                       | Description                                     | Default |
