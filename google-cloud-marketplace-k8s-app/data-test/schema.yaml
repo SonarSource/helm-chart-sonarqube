@@ -49,6 +49,21 @@ properties:
     description: Connect SonarQube to your PostgreSQL database. The connection parameters JDBC URL, username, and password will be used. Make sure that the Embedded database option is disabled.
     type: boolean
     default: false
+  postgresql.securityContext.enabled:
+    title: Enable security context for PostgreSQL
+    description: If true, a security context will be added to the PostgreSQL pod
+    type: boolean
+    default: true
+  postgresql.containerSecurityContext.enabled:
+    title: Enable container security context for PostgreSQL
+    description: If true, a container security context will be added to the PostgreSQL pod
+    type: boolean
+    default: true
+  initFs.enabled:
+    title: Enable initFs root initContainer to setup filesystem parameters.
+    description: please read docs.sonarsource.com kubernetes section, this should not be required on google kubernetes clusters
+    type: boolean
+    default: true
 required:
 - name
 - namespace
