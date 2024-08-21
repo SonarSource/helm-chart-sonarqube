@@ -392,4 +392,60 @@ Set combined_app_env, ensuring we dont have any duplicates with our features and
       name: {{ template "sonarqube.fullname" . }}-http-proxies
       key: PLUGINS-NO-PROXY
 {{- end -}}
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.ApplicationNodes.securityContext" -}}
+{{- $adaptedApplicationNodesSecurityContext := .Values.ApplicationNodes.securityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedApplicationNodesSecurityContext = omit $adaptedApplicationNodesSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+  {{- toYaml $adaptedApplicationNodesSecurityContext -}}
+{{- end -}}
+
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.ApplicationNodes.containerSecurityContext" -}}
+{{- $adaptedApplicationNodesContainerSecurityContext := .Values.ApplicationNodes.containerSecurityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedApplicationNodesContainerSecurityContext = omit $adaptedApplicationNodesContainerSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedApplicationNodesContainerSecurityContext -}}
+{{- end -}}
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.searchNodes.securityContext" -}}
+{{- $adaptedsearchNodesSecurityContext := .Values.searchNodes.securityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedsearchNodesSecurityContext = omit $adaptedsearchNodesSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+  {{- toYaml $adaptedsearchNodesSecurityContext -}}
+{{- end -}}
+
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.searchNodes.containerSecurityContext" -}}
+{{- $adaptedsearchNodesContainerSecurityContext := .Values.searchNodes.containerSecurityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedsearchNodesContainerSecurityContext = omit $adaptedsearchNodesContainerSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedsearchNodesContainerSecurityContext -}}
+{{- end -}}
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.initContainersSecurityContext" -}}
+{{- $adaptedinitContainersSecurityContext := .Values.initContainers.securityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedinitContainersSecurityContext = omit $adaptedinitContainersSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedinitContainersSecurityContext -}}
 {{- end -}}

@@ -203,6 +203,10 @@ If a Prometheus Operator is deployed in your cluster, you can enable a PodMonito
 
 The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).
 
+`Openshift.createSCC` is deprecated and should be set to `false`, the default securityContext plus the production config described [above](#production-use-case) are compatible with restricted SCCv2.
+
+If you want to try out this chart on Openshift, and use our default embedded postgresql chart please set `postgresql.securityContext.enabled=true` and `postgresql.containerSecurityContext.enabled=true`
+
 ### Route definition
 
 If you want to make your application publicly visible with Routes, you can set `route.enabled` to true. Please check the [configuration details](#route) to customize the Route base on your needs.

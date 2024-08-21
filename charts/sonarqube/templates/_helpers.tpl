@@ -322,4 +322,36 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
       name: {{ template "sonarqube.fullname" . }}-http-proxies
       key: PLUGINS-NO-PROXY
 {{- end -}}
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.securityContext" -}}
+{{- $adaptedSecurityContext := .Values.securityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedSecurityContext = omit $adaptedSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+  {{- toYaml $adaptedSecurityContext -}}
+{{- end -}}
+
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.containerSecurityContext" -}}
+{{- $adaptedContainerSecurityContext := .Values.containerSecurityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedContainerSecurityContext = omit $adaptedContainerSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedContainerSecurityContext -}}
+{{- end -}}
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.initContainerSecurityContext" -}}
+{{- $adaptedInitContainerSecurityContext := .Values.initContainers.securityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedInitContainerSecurityContext = omit $adaptedInitContainerSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedInitContainerSecurityContext -}}
 {{- end -}}

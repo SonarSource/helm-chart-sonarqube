@@ -27,8 +27,8 @@ spec:
   {{- with .Values.schedulerName }}
   schedulerName: {{ . }}
   {{- end }}
-  {{- with .Values.securityContext }}
-  securityContext: {{- toYaml . | nindent 4 }}
+  {{- with (include "sonarqube.securityContext" .) }}
+  securityContext: {{- . | nindent 4 }}
   {{- end }}
   {{- if or .Values.image.pullSecrets .Values.image.pullSecret }}
   imagePullSecrets:
@@ -47,8 +47,8 @@ spec:
     - name: "wait-for-db"
       image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
-      {{- with .Values.initContainers.securityContext }}
-      securityContext: {{- toYaml . | nindent 8 }}
+      {{- with (include "sonarqube.initContainerSecurityContext" .) }}
+      securityContext: {{- . | nindent 8 }}
       {{- end }}
       {{- with .Values.initContainers.resources }}
       resources: {{- toYaml . | nindent 8 }}
@@ -62,8 +62,8 @@ spec:
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
       command: ["sh"]
       args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
-      {{- with .Values.initContainers.securityContext }}
-      securityContext: {{- toYaml . | nindent 8 }}
+      {{- with (include "sonarqube.initContainerSecurityContext" .) }}
+      securityContext: {{- . | nindent 8 }}
       {{- end }}
       {{- with .Values.initContainers.resources }}
       resources: {{- toYaml . | nindent 8 }}
@@ -81,7 +81,7 @@ spec:
     - name: init-sysctl
       image: {{ default (include "sonarqube.image" $) .Values.initSysctl.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
-      {{- with (default .Values.initContainers.securityContext .Values.initSysctl.securityContext) }}
+      {{- with (default (fromYaml (include "sonarqube.initContainerSecurityContext" .)) (.Values.initSysctl.securityContext )) }}
       securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with (default .Values.initContainers.resources .Values.initSysctl.resources) }}
@@ -125,8 +125,8 @@ spec:
           name: secret-config
           subPath: secret.properties
         {{- end }}
-      {{- with .Values.initContainers.securityContext }}
-      securityContext: {{- toYaml . | nindent 8 }}
+      {{- with (include "sonarqube.initContainerSecurityContext" .) }}
+      securityContext: {{- . | nindent 8 }}
       {{- end }}
       {{- with .Values.initContainers.resources }}
       resources: {{- toYaml . | nindent 8 }}
@@ -138,7 +138,7 @@ spec:
     - name: inject-prometheus-exporter
       image: {{ default (include "sonarqube.image" $) .Values.prometheusExporter.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
-      {{- with (default .Values.initContainers.securityContext .Values.prometheusExporter.securityContext) }}
+      {{- with (default (fromYaml (include "sonarqube.initContainerSecurityContext" .)) .Values.prometheusExporter.securityContext) }}
       securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with (default .Values.initContainers.resources .Values.prometheusExporter.resources)}}
@@ -160,7 +160,7 @@ spec:
     - name: init-fs
       image: {{ default (include "sonarqube.image" $) .Values.initFs.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
-      {{- with (default .Values.initContainers.securityContext .Values.initFs.securityContext) }}
+      {{- with (default (fromYaml (include "sonarqube.initContainerSecurityContext" .)) .Values.initFs.securityContext) }}
       securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with (default .Values.initContainers.resources .Values.initFs.resources) }}
@@ -198,7 +198,7 @@ spec:
       image: {{ default (include "sonarqube.image" $) .Values.plugins.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
       command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
-      {{- with (default .Values.initContainers.securityContext .Values.plugins.securityContext) }}
+      {{- with (default (fromYaml (include "sonarqube.initContainerSecurityContext" .)) .Values.plugins.securityContext) }}
       securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with (default .Values.initContainers.resources .Values.plugins.resource) }}
@@ -283,8 +283,8 @@ spec:
         periodSeconds: {{ .Values.startupProbe.periodSeconds }}
         failureThreshold: {{ .Values.startupProbe.failureThreshold }}
         timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
-      {{- with .Values.containerSecurityContext }}
-      securityContext: {{- toYaml . | nindent 8 }}
+      {{- with (include "sonarqube.containerSecurityContext" .) }}
+      securityContext: {{- . | nindent 8 }}
       {{- end }}
       volumeMounts:
         - mountPath: {{ .Values.sonarqubeFolder }}/data

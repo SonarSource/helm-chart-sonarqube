@@ -3,11 +3,11 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: change-admin-password-hook-values.yaml-postgresql
+  name: openshift-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: openshift-values.yaml
     app.kubernetes.io/managed-by: Helm
   namespace: default
 type: Opaque
@@ -20,59 +20,25 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-monitoring-passcode
+  name: openshift-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
 ---
-# Source: sonarqube/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-admin-password
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.7.0
-    release: change-admin-password-hook-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  password: "%21new+compl%26x+password%25"
-  currentPassword: "admin"
----
-# Source: sonarqube/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.7.0
-    release: change-admin-password-hook-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-config
+  name: openshift-values.yaml-sonarqube-config
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -81,11 +47,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-init-fs
+  name: openshift-values.yaml-sonarqube-init-fs
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 data:
   init_fs.sh: |-
@@ -94,11 +60,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-init-sysctl
+  name: openshift-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -125,11 +91,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-install-plugins
+  name: openshift-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
@@ -138,25 +104,25 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-jdbc-config
+  name: openshift-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
-  SONAR_JDBC_URL: "jdbc:postgresql://change-admin-password-hook-values.yaml-postgresql:5432/sonarDB"
+  SONAR_JDBC_URL: "jdbc:postgresql://openshift-values.yaml-postgresql:5432/sonarDB"
 ---
 # Source: sonarqube/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: change-admin-password-hook-values.yaml-postgresql-headless
+  name: openshift-values.yaml-postgresql-headless
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: openshift-values.yaml
     app.kubernetes.io/managed-by: Helm
     # Use this annotation in addition to the actual publishNotReadyAddresses
     # field below because the annotation will stop being respected soon but the
@@ -177,17 +143,17 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: openshift-values.yaml
 ---
 # Source: sonarqube/charts/postgresql/templates/svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: change-admin-password-hook-values.yaml-postgresql
+  name: openshift-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: openshift-values.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
   namespace: default
@@ -199,18 +165,18 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: openshift-values.yaml
     role: primary
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube
+  name: openshift-values.yaml-sonarqube
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 spec:
   type: ClusterIP
@@ -221,38 +187,38 @@ spec:
       name: http
   selector:
     app: sonarqube
-    release: change-admin-password-hook-values.yaml
+    release: openshift-values.yaml
 ---
 # Source: sonarqube/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: change-admin-password-hook-values.yaml-postgresql
+  name: openshift-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: openshift-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
   namespace: default
 spec:
-  serviceName: change-admin-password-hook-values.yaml-postgresql-headless
+  serviceName: openshift-values.yaml-postgresql-headless
   replicas: 1
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+      app.kubernetes.io/instance: openshift-values.yaml
       role: primary
   template:
     metadata:
-      name: change-admin-password-hook-values.yaml-postgresql
+      name: openshift-values.yaml-postgresql
       labels:
         app.kubernetes.io/name: postgresql
         helm.sh/chart: postgresql-10.15.0
-        app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+        app.kubernetes.io/instance: openshift-values.yaml
         app.kubernetes.io/managed-by: Helm
         role: primary
         app.kubernetes.io/component: primary
@@ -266,7 +232,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: postgresql
-                    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+                    app.kubernetes.io/instance: openshift-values.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
                   - "default"
@@ -278,7 +244,7 @@ spec:
         fsGroup: 1001
       automountServiceAccountToken: false
       containers:
-        - name: change-admin-password-hook-values.yaml-postgresql
+        - name: openshift-values.yaml-postgresql
           image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
@@ -309,14 +275,14 @@ spec:
             - name: POSTGRES_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: change-admin-password-hook-values.yaml-postgresql
+                  name: openshift-values.yaml-postgresql
                   key: postgresql-postgres-password
             - name: POSTGRES_USER
               value: "sonarUser"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: change-admin-password-hook-values.yaml-postgresql
+                  name: openshift-values.yaml-postgresql
                   key: postgresql-password
             - name: POSTGRES_DB
               value: "sonarDB"
@@ -388,40 +354,39 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube
+  name: openshift-values.yaml-sonarqube
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: sonarqube-change-admin-password-hook-values.yaml-sonarqube
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/name: sonarqube-openshift-values.yaml-sonarqube
+    app.kubernetes.io/instance: openshift-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: change-admin-password-hook-values.yaml-sonarqube
+    app.kubernetes.io/component: openshift-values.yaml-sonarqube
     app.kubernetes.io/version: "10.6.0-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
-  serviceName: change-admin-password-hook-values.yaml-sonarqube
+  serviceName: openshift-values.yaml-sonarqube
   selector:
     matchLabels:
       app: sonarqube
-      release: change-admin-password-hook-values.yaml
+      release: openshift-values.yaml
   template:
     metadata:
       annotations:
-        checksum/config: e6d4530abeaa63af974cbbb5585db576a24c0f5655d0b8d78a25ebea018e0132
-        checksum/init-sysctl: 6611c795cb12ac2872446fe6e3a932462efe7969609f8994f92035fc993f95cd
-        checksum/plugins: 7486d556dd2382bc9a64203a6212235dc99aeb58191a42049fef2c590e677641
-        checksum/secret: caceafc4bf2248218df790b18dd6ec8d8d61e5c4c14bdfaaf8a76b5235b51e72
+        checksum/config: 28d5746576d595b17d1cb250d747672c0f4c497f3d6035600a76c0b7082a0ee7
+        checksum/plugins: d1f1cf36d5bfefe1bddd5fe82764db3b1a27d042453feafa7c51ad198f6aa6c4
+        checksum/secret: 0a905f343ae3ce56c36b0a0d71adb05000817e7191fd1129dc9408a1d293e569
       labels:
         app: sonarqube
-        release: change-admin-password-hook-values.yaml
+        release: openshift-values.yaml
     spec:
       automountServiceAccountToken: false
       securityContext:
-        fsGroup: 0
+        {}
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-community
@@ -432,31 +397,11 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
-            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/change-admin-password-hook-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
-        - name: init-sysctl
-          image: sonarqube:10.6.0-community
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-            readOnlyRootFilesystem: true
-            runAsUser: 0
-          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
-          volumeMounts:
-            - name: init-sysctl
-              mountPath: /tmp/scripts/
-          env:
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/openshift-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
       containers:
         - name: sonarqube
           image: sonarqube:10.6.0-community
@@ -480,12 +425,12 @@ spec:
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: change-admin-password-hook-values.yaml-postgresql
+                  name: openshift-values.yaml-postgresql
                   key: postgresql-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: change-admin-password-hook-values.yaml-sonarqube-monitoring-passcode
+                  name: openshift-values.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
             - name: SONAR_WEB_CONTEXT
               value: /
@@ -495,7 +440,7 @@ spec:
               value: ""
           envFrom:
             - configMapRef:
-                name: change-admin-password-hook-values.yaml-sonarqube-jdbc-config
+                name: openshift-values.yaml-sonarqube-jdbc-config
           livenessProbe:
             exec:
               command:
@@ -538,9 +483,7 @@ spec:
             capabilities:
               drop:
               - ALL
-            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
@@ -560,12 +503,6 @@ spec:
               subPath: extensions
       serviceAccountName: default
       volumes:
-        - name: init-sysctl
-          configMap:
-            name: change-admin-password-hook-values.yaml-sonarqube-init-sysctl
-            items:
-              - key: init_sysctl.sh
-                path: init_sysctl.sh
         - name: sonarqube
           emptyDir:
             {}
@@ -577,18 +514,18 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "change-admin-password-hook-values.yaml-ui-test"
+  name: "openshift-values.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: change-admin-password-hook-values.yaml-ui-test
+    - name: openshift-values.yaml-ui-test
       image: "sonarqube:10.6.0-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
@@ -599,7 +536,7 @@ spec:
         '-t',
         '12',
         '-qO-',
-        'change-admin-password-hook-values.yaml-sonarqube:9000/api/system/status'
+        'openshift-values.yaml-sonarqube:9000/api/system/status'
         ]
       resources:
         limits:
@@ -611,65 +548,3 @@ spec:
           ephemeral-storage: 100M
           memory: 200M
   restartPolicy: Never
----
-# Source: sonarqube/templates/change-admin-password-hook.yml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-change-admin-password-hook
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.7.0
-    release: change-admin-password-hook-values.yaml
-    heritage: Helm
-  annotations:
-    "helm.sh/hook": post-install, post-upgrade
-    "helm.sh/hook-delete-policy": hook-succeeded
-    someAnnotaion: "toto"
-spec:
-  template:
-    metadata:
-      name: change-admin-password-hook-values.yaml-sonarqube-change-admin-password-hook
-      labels:
-        app: sonarqube
-        chart: sonarqube-10.7.0
-        release: change-admin-password-hook-values.yaml
-        heritage: Helm
-    spec:
-      restartPolicy: OnFailure
-      serviceAccountName: default
-      containers:
-      - name: change-admin-password-hook-values.yaml-sonarqube-change-default-admin-password
-        image: curlimages/curl:8.2.0
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-          runAsGroup: 0
-          runAsNonRoot: true
-          runAsUser: 1000
-          seccompProfile:
-            type: RuntimeDefault
-        command: ["sh", "-c", 'until curl -v --connect-timeout 100 change-admin-password-hook-values.yaml-sonarqube:9000/api/system/status | grep -w UP; do sleep 10; done; curl -v --connect-timeout 100 -u admin:$CURRENT_ADMIN_PASSWORD -X POST "change-admin-password-hook-values.yaml-sonarqube:9000/api/users/change_password?login=admin&previousPassword=$CURRENT_ADMIN_PASSWORD&password=$ADMIN_PASSWORD"']
-        env:
-        - name: ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: change-admin-password-hook-values.yaml-sonarqube-admin-password
-              key: password
-        - name: CURRENT_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: change-admin-password-hook-values.yaml-sonarqube-admin-password
-              key: currentPassword
-        resources:
-          limits:
-            cpu: 800m
-            ephemeral-storage: 512000M
-            memory: 6144M
-          requests:
-            cpu: 400m
-            ephemeral-storage: 1536M
-            memory: 2048M
