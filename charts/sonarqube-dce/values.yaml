@@ -68,22 +68,22 @@ searchNodes:
 
   # Set security context for sonarqube search pods
   # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific fsGroup.
-  # securityContext:
-  #   fsGroup: 0
+  securityContext:
+    fsGroup: 0
 
   # Set security context for sonarqube search container
   # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
-  # containerSecurityContext:
-  #   # Sonarqube dockerfile creates sonarqube user as UID 1000 and GID 0
-  #   # Those default are used to match pod security standard restricted as least privileged approach
-  #   allowPrivilegeEscalation: false
-  #   runAsNonRoot: true
-  #   runAsUser: 1000
-  #   runAsGroup: 0
-  #   seccompProfile:
-  #     type: RuntimeDefault
-  #   capabilities:
-  #     drop: ["ALL"]
+  containerSecurityContext:
+    # Sonarqube dockerfile creates sonarqube user as UID 1000 and GID 0
+    # Those default are used to match pod security standard restricted as least privileged approach
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 0
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
   #   readOnlyRootFilesystem: true
 
   # Probe threshold configuration for the search nodes
@@ -201,22 +201,22 @@ ApplicationNodes:
 
   # Set security context for sonarqube app pods
   # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific fsGroup.
-  # securityContext:
-  #   fsGroup: 0
+  securityContext:
+    fsGroup: 0
 
   # Set security context for sonarqube app container
   # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
-  # containerSecurityContext:
-  #   # Sonarqube dockerfile creates sonarqube user as UID 1000 and GID 0
-  #   # Those default are used to match pod security standard restricted as least privileged approach
-  #   allowPrivilegeEscalation: false
-  #   runAsNonRoot: true
-  #   runAsUser: 1000
-  #   runAsGroup: 0
-  #   seccompProfile:
-  #     type: RuntimeDefault
-  #   capabilities:
-  #     drop: ["ALL"]
+  containerSecurityContext:
+    # Sonarqube dockerfile creates sonarqube user as UID 1000 and GID 0
+    # Those default are used to match pod security standard restricted as least privileged approach
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 0
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
   #   readOnlyRootFilesystem: true
 
   readinessProbe:
@@ -568,17 +568,17 @@ initContainers:
   # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
   # We allow the init containers to have a separate security context declaration because
   # the initContainer may not require the same as SonarQube.
-  # securityContext:
-  #   # Those default are used to match pod security standard restricted as least privileged approach
-  #   allowPrivilegeEscalation: false
-  #   runAsNonRoot: true
-  #   runAsUser: 1000
-  #   runAsGroup: 0
-  #   seccompProfile:
-  #     type: RuntimeDefault
-  #   capabilities:
-  #     drop: ["ALL"]
-  #   readOnlyRootFilesystem: true
+  securityContext:
+    # Those default are used to match pod security standard restricted as least privileged approach
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 0
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
+    readOnlyRootFilesystem: true
   # We allow the init containers to have a separate resources declaration because
   # the initContainer does not take as much resources.
   resources: {}
@@ -712,14 +712,14 @@ postgresql:
   securityContext:
     # For standard Kubernetes deployment, set enabled=true
     # If using OpenShift, enabled=false for restricted SCC and enabled=true for anyuid/nonroot SCC
-    enabled: false
+    enabled: true
     # fsGroup and runAsUser specifications below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
     # postgresql dockerfile sets user as 1001
     fsGroup: 1001
   containerSecurityContext:
     # For standard Kubernetes deployment, set enabled=true
     # If using OpenShift, enabled=false for restricted SCC and enabled=true for anyuid/nonroot SCC
-    enabled: false
+    enabled: true
     # runAsUser specification below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
     # postgresql dockerfile sets user as 1001, the rest aim at making it compatible with restricted pod security standard.
     runAsUser: 1001

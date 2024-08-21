@@ -363,11 +363,16 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
             runAsNonRoot: true
+            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           resources:
             {}
+      securityContext:
+        fsGroup: 0
       containers:
         - name: sonarqube-dce
           image: sonarqube:9.9.0-datacenter-app
@@ -471,7 +476,9 @@ spec:
             capabilities:
               drop:
               - ALL
+            runAsGroup: 0
             runAsNonRoot: true
+            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
@@ -591,11 +598,16 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
             runAsNonRoot: true
+            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           resources:
             {}
+      securityContext:
+        fsGroup: 0
       containers:
         - name: sonarqube-dce-search
           image: "sonarqube:9.9.0-datacenter-search"
@@ -683,8 +695,8 @@ spec:
             capabilities:
               drop:
               - ALL
+            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: null
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:

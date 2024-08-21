@@ -393,10 +393,23 @@ spec:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-datacenter-app
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             {}
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/application-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+      securityContext:
+        fsGroup: 0
       containers:
         - name: sonarqube-dce
           image: sonarqube:10.6.0-datacenter-app
@@ -495,6 +508,16 @@ spec:
             periodSeconds: 10
             failureThreshold: 32
             timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/data
               name: sonarqube
@@ -573,6 +596,8 @@ spec:
               weight: 1
         nodeAffinity:
           
+      securityContext:
+        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: application-values.yaml-postgresql
@@ -585,6 +610,15 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
+            runAsUser: 1001
+            seccompProfile:
+              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -777,6 +811,8 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
+      securityContext:
+        fsGroup: 0
       containers:
         - name: sonarqube-dce-search
           image: "sonarqube:10.6.0-datacenter-search"
@@ -859,6 +895,16 @@ spec:
             periodSeconds: 10
             failureThreshold: 24
             timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/certs
               name: "application-values.yaml-sonarqube-dce"
