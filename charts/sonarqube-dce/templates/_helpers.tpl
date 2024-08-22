@@ -322,3 +322,74 @@ Set combined_app_env, ensuring we dont have any duplicates with our features and
 {{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_CE_JAVAOPTS" "value" (include "sonarqube.jvmCEOpts" .)) -}}
 {{- toJson $filteredEnv -}}
 {{- end -}}
+
+{{/*
+  generate Proxy env var from httpProxySecret
+*/}}
+{{- define "sonarqube.proxyFromSecret" -}}
+- name: http_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.httpProxySecret }}
+      key: http_proxy
+- name: https_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.httpProxySecret }}
+      key: https_proxy
+- name: no_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.httpProxySecret }}
+      key: no_proxy
+{{- end -}}
+
+{{/*
+  generate prometheusExporter proxy env var
+*/}}
+{{- define "sonarqube.prometheusExporterProxy.env" -}}
+{{- if .Values.httpProxySecret -}}
+{{- include "sonarqube.proxyFromSecret" . }}
+{{- else -}}
+- name: http_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PROMETHEUS-EXPORTER-HTTP-PROXY
+- name: https_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PROMETHEUS-EXPORTER-HTTPS-PROXY
+- name: no_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PROMETHEUS-EXPORTER-NO-PROXY
+{{- end -}}
+{{- end -}}
+
+{{/*
+  generate install-plugins proxy env var
+*/}}
+{{- define "sonarqube.install-plugins-proxy.env" -}}
+{{- if .Values.httpProxySecret -}}
+{{- include "sonarqube.proxyFromSecret" . }}
+{{- else -}}
+- name: http_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PLUGINS-HTTP-PROXY
+- name: https_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PLUGINS-HTTPS-PROXY
+- name: no_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PLUGINS-NO-PROXY
+{{- end -}}
+{{- end -}}

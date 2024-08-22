@@ -11,6 +11,7 @@ All changes to this chart will be documented in this file.
 * Enable the setup of ReadOnlyRootFilesystem in the security contexts
 * Support basic chart installation on Openshift
 * Include remaining Route settings
+* Support install-plugin and prometheusExporter proxy variables in secret
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0

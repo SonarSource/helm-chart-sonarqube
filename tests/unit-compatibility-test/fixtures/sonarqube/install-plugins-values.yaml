@@ -30,6 +30,26 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
 ---
+# Source: sonarqube/templates/secret.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: install-plugins-values.yaml-sonarqube-http-proxies
+  labels:
+    app: sonarqube
+    chart: sonarqube-10.7.0
+    release: install-plugins-values.yaml
+    heritage: Helm
+type: Opaque
+stringData:
+  PLUGINS-HTTP-PROXY: "http://someProxy"
+  PLUGINS-HTTPS-PROXY: "https://someProxy"
+  PLUGINS-NO-PROXY: "https://someUrl"
+  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
+  PROMETHEUS-EXPORTER-NO-PROXY: ""
+---
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -372,7 +392,7 @@ spec:
         checksum/config: 58530d7310cfd0b9e68641a7a65cf4f36e759c03135ce0cdfa737b46495858e1
         checksum/init-sysctl: 6c5b33c8909edd64442f7cc75b154892b633305fa3356a340e36742a5e44cae3
         checksum/plugins: fdca4d6a713b0c0bcfcfe63f752091f6eb3192f27117c67505c1f9d45a997c1e
-        checksum/secret: b569e6e1647cb4631a90705275947d2e886aa37fdf1877bd8834bc6ce117e3b5
+        checksum/secret: 49938b294ccb6bdf01549cb011c69737b2b170cc66bc354b7205c9fef35b50c1
       labels:
         app: sonarqube
         release: install-plugins-values.yaml
@@ -414,11 +434,20 @@ spec:
               mountPath: /tmp/scripts/
           env:
             - name: http_proxy
-              value: 
+              valueFrom:
+                secretKeyRef:
+                  name: install-plugins-values.yaml-sonarqube-http-proxies
+                  key: PLUGINS-HTTP-PROXY
             - name: https_proxy
-              value: 
+              valueFrom:
+                secretKeyRef:
+                  name: install-plugins-values.yaml-sonarqube-http-proxies
+                  key: PLUGINS-HTTPS-PROXY
             - name: no_proxy
-              value: 
+              valueFrom:
+                secretKeyRef:
+                  name: install-plugins-values.yaml-sonarqube-http-proxies
+                  key: PLUGINS-NO-PROXY
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS
