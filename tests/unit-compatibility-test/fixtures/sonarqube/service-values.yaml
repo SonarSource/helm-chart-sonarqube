@@ -30,6 +30,26 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
 ---
+# Source: sonarqube/templates/secret.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: service-values.yaml-sonarqube-http-proxies
+  labels:
+    app: sonarqube
+    chart: sonarqube-10.7.0
+    release: service-values.yaml
+    heritage: Helm
+type: Opaque
+stringData:
+  PLUGINS-HTTP-PROXY: ""
+  PLUGINS-HTTPS-PROXY: ""
+  PLUGINS-NO-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
+  PROMETHEUS-EXPORTER-NO-PROXY: ""
+---
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -376,7 +396,7 @@ spec:
         checksum/config: 6fa738338b35e53213427eae2158d2c4de5d8e47890490f7be196f7a54f6cc5b
         checksum/init-sysctl: 74e9302fa54b82580820ce5149f4f7c04c314ffdc35e91967fc794671cb85021
         checksum/plugins: e9585aecdf08c9411f416b650045e893bfb2bb15f00de0d9e90e0073b10ee646
-        checksum/secret: f5c3ca9a2da92fc5c5bed2c3673bbde84b0ad33cb76302cccdbc564a8605cafc
+        checksum/secret: 4aff41ce75334103fcc447a857e8f51ce1240c5bce799d1a586c9d04502a61b0
       labels:
         app: sonarqube
         release: service-values.yaml

@@ -161,12 +161,9 @@ spec:
               name: sonarqube
               subPath: data
           env:
-            - name: http_proxy
-              value: {{ default "" .Values.ApplicationNodes.prometheusExporter.httpProxy }}
-            - name: https_proxy
-              value: {{ default "" .Values.ApplicationNodes.prometheusExporter.httpsProxy }}
-            - name: no_proxy
-              value: {{ default "" .Values.ApplicationNodes.prometheusExporter.noProxy }}
+          {{- with (include "sonarqube.prometheusExporterProxy.env" .) }}
+          {{- . | nindent 12 }}
+          {{- end }}
           {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
@@ -195,12 +192,9 @@ spec:
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.ApplicationNodes.plugins.resource) | indent 12 }}
           env:
-            - name: http_proxy
-              value: {{ default "" .Values.ApplicationNodes.plugins.httpProxy }}
-            - name: https_proxy
-              value: {{ default "" .Values.ApplicationNodes.plugins.httpsProxy }}
-            - name: no_proxy
-              value: {{ default "" .Values.ApplicationNodes.plugins.noProxy }}
+          {{- with (include "sonarqube.install-plugins-proxy.env" .) }}
+          {{- . | nindent 12 }}
+          {{- end }}
           {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}

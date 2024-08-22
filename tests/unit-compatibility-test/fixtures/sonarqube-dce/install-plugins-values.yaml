@@ -78,6 +78,26 @@ type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: ""
 ---
+# Source: sonarqube-dce/templates/secret.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: install-plugins-values.yaml-sonarqube-dce-http-proxies
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: install-plugins-values.yaml
+    heritage: Helm
+type: Opaque
+stringData:
+  PLUGINS-HTTP-PROXY: "http://someProxy"
+  PLUGINS-HTTPS-PROXY: "https://someProxy"
+  PLUGINS-NO-PROXY: "https://someUrl"
+  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
+  PROMETHEUS-EXPORTER-NO-PROXY: ""
+---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -370,7 +390,7 @@ spec:
       annotations:
         checksum/plugins: b70db304fc36ab1832eb6a4088f2f65f798317825ecec9980dd5f135543e8af6
         checksum/config: 2f074050d01f83464023fca457ffb6468f67ee7ad6b8ec7ed2a2fb1dd0bfb5ac
-        checksum/secret: bc3616ce0ddab07fe459f37e7a3700b76c15fdef36ee3e460d9c716b83bb497c
+        checksum/secret: 1184d5c45f7a1621d9da37b7cd376eeaf6395b1627072fca63dc61ae8338c5ba
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -397,11 +417,20 @@ spec:
             {}
           env:
             - name: http_proxy
-              value: 
+              valueFrom:
+                secretKeyRef:
+                  name: install-plugins-values.yaml-sonarqube-dce-http-proxies
+                  key: PLUGINS-HTTP-PROXY
             - name: https_proxy
-              value: 
+              valueFrom:
+                secretKeyRef:
+                  name: install-plugins-values.yaml-sonarqube-dce-http-proxies
+                  key: PLUGINS-HTTPS-PROXY
             - name: no_proxy
-              value: 
+              valueFrom:
+                secretKeyRef:
+                  name: install-plugins-values.yaml-sonarqube-dce-http-proxies
+                  key: PLUGINS-NO-PROXY
       containers:
         - name: sonarqube-dce
           image: sonarqube:10.6.0-datacenter-app
@@ -728,7 +757,7 @@ spec:
         checksum/init-sysctl: fb79394c1f97f50170f836ca6779455ce5cefb3c70937314cf8cb0b0679e9c17
         checksum/init-fs: 653cd7c0ec15fc1d5be0a3cddd94853c8797478800d9560a92de277f9224ca34
         checksum/config: 2f074050d01f83464023fca457ffb6468f67ee7ad6b8ec7ed2a2fb1dd0bfb5ac
-        checksum/secret: bc3616ce0ddab07fe459f37e7a3700b76c15fdef36ee3e460d9c716b83bb497c
+        checksum/secret: 1184d5c45f7a1621d9da37b7cd376eeaf6395b1627072fca63dc61ae8338c5ba
     spec:
       automountServiceAccountToken: false
       initContainers:
