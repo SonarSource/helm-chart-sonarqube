@@ -169,7 +169,7 @@ spec:
           protocol: UDP
 {{- end }}
 
-{{- if and .Values.networkPolicy.enabled .Values.networkPolicy.additionalNetworkPolicys }}
+{{- if and .Values.networkPolicy.enabled (or .Values.networkPolicy.additionalNetworkPolicies .Values.networkPolicy.additionalNetworkPolicys) }}
 ---
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -182,6 +182,9 @@ metadata:
     heritage: {{ .Release.Service }}
 spec:
 {{- with .Values.networkPolicy.additionalNetworkPolicys -}}
+{{ toYaml . | nindent 2 }}
+{{- end }}
+{{- with .Values.networkPolicy.additionalNetworkPolicies -}}
 {{ toYaml . | nindent 2 }}
 {{- end }}
 {{- end -}}
