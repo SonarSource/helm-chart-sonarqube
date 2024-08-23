@@ -13,6 +13,7 @@ All changes to this chart will be documented in this file.
 * Include remaining Route settings
 * Fix networkPolicy.additionalPolicys typo
 * Support install-plugin and prometheusExporter proxy variables in secret
+* Support GatewayAPI HttpRoute
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0

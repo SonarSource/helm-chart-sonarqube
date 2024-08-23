@@ -398,6 +398,16 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `route.annotations`    | Optional field to add extra annotations to the route                          | `None`                     |
 | `route.labels`         | Route additional labels                                                       | `{}`                       |
 
+### HttpRoute
+
+| Parameter              | Description                                                                                                   | Default |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------- | --------|
+| `httproute.enabled`    | Flag to enable GatewayAPI HttpRoute                                                                           | `False` |
+| `httproute.gateway`    | Name of the gateway located in the same namespace                                                             | `None`  |
+| `httproute.hostnames`  | List of hostnames to match the HttpRoute against                                                              | `None`  |
+| `httproute.labels`     | (Optional) List of extra labels to add to the HttpRoute                                                       | `None`  |
+| `httproute.rules`      | (Optional) Extra Rules block of the HttpRoute. A default one is created with SonarWebContext and service port | `None`  |
+
 ### Elasticsearch
 
 | Parameter                       | Description                                     | Default |
