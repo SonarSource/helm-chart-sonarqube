@@ -181,10 +181,13 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
+{{- if.Values.networkPolicy.additionalNetworkPolicys -}}
 {{- with .Values.networkPolicy.additionalNetworkPolicys -}}
 {{ toYaml . | nindent 2 }}
-{{- end }}
+{{- end -}}
+{{- else -}}
 {{- with .Values.networkPolicy.additionalNetworkPolicies -}}
 {{ toYaml . | nindent 2 }}
-{{- end }}
+{{- end -}}
+{{- end -}}
 {{- end -}}
