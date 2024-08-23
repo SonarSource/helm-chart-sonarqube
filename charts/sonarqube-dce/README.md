@@ -368,11 +368,12 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### NetworkPolicies
 
-| Parameter                                | Description                                                    | Default |
-| ---------------------------------------- | -------------------------------------------------------------- | ------- |
-| `networkPolicy.enabled`                  | Create NetworkPolicies                                         | `false` |
-| `networkPolicy.prometheusNamespace`      | Allow incoming traffic to monitoring ports from this namespace | `nil`   |
-| `networkPolicy.additionalNetworkPolicys` | User defined NetworkPolicies (usefull for external database)   | `nil`   |
+| Parameter                                | Description                                                               | Default |
+| ---------------------------------------- | --------------------------------------------------------------------------| ------- |
+| `networkPolicy.enabled`                  | Create NetworkPolicies                                                    | `false` |
+| `networkPolicy.prometheusNamespace`      | Allow incoming traffic to monitoring ports from this namespace            | `nil`   |
+| `networkPolicy.additionalNetworkPolicys` | (DEPRECATED) Please use `networkPolicy.additionalNetworkPolicies` instead | `nil`   |
+| `networkPolicy.additionalNetworkPolicies`| User defined NetworkPolicies (usefull for external database)              | `nil`   |
 
 ### OpenShift
 

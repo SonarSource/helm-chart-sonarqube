@@ -88,7 +88,7 @@ spec:
           protocol: UDP
 {{- end }}
 
-{{- if and .Values.networkPolicy.enabled .Values.networkPolicy.additionalNetworkPolicys }}
+{{- if and .Values.networkPolicy.enabled (or .Values.networkPolicy.additionalNetworkPolicies .Values.networkPolicy.additionalNetworkPolicys) }}
 ---
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -96,7 +96,13 @@ metadata:
   name: {{ template "sonarqube.fullname" . }}-additional-network-policy
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
+{{- if.Values.networkPolicy.additionalNetworkPolicys -}}
 {{- with .Values.networkPolicy.additionalNetworkPolicys -}}
 {{ toYaml . | nindent 2 }}
-{{- end }}
+{{- end -}}
+{{- else -}}
+{{- with .Values.networkPolicy.additionalNetworkPolicies -}}
+{{ toYaml . | nindent 2 }}
+{{- end -}}
+{{- end -}}
 {{- end -}}
