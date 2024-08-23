@@ -45,8 +45,6 @@ searchNodes:
     enabled: false
 
     # Existing Keystore/Truststore to be used
-    # See https://www.elastic.co/guide/en/elasticsearch/reference/current/security-basic-setup.html#generate-certificates how to generate them. 
-    # Please follow all the steps and use the resulting `elastic-certificates.p12` file as the secret.
     keyStoreSecret: ""
 
     # Password to said Keystore/Truststore if set (optional)
@@ -410,6 +408,10 @@ ApplicationNodes:
   affinity: {}
   # if the global .Values.tolerations is set, the following one will be ignored
   tolerations: []
+
+## This sets the TLS encryption between application and search nodes
+nodeEncryption:
+  enabled: false
 
 ## Is this deployment for OpenShift? If so, we help with SCCs
 OpenShift:

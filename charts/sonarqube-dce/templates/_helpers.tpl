@@ -223,10 +223,10 @@ Create the name of the service account to use
 {{- end -}}
 
 {{/*
-Set search.useInternalKeystoreSecret
+Set searchAuthentication.useInternalKeystoreSecret when the searchNodes.searchAuthentication.keyStorePassword is provided instead of relying on an external secret (searchNodes.searchAuthentication.keyStorePasswordSecret)
 */}}
-{{- define "search.useInternalKeystoreSecret" -}}
-{{- if .Values.searchNodes.searchAuthentication.keyStorePasswordSecret -}}
+{{- define "searchAuthentication.useInternalKeystoreSecret" -}}
+{{- if and .Values.searchNodes.searchAuthentication.keyStorePasswordSecret (not .Values.searchNodes.searchAuthentication.keyStorePassword) -}}
 false
 {{- else -}}
 true

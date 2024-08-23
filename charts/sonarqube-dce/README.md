@@ -231,64 +231,85 @@ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/late
 
 ```
 
+## Secure the communication within the cluster
+
+In order to secure the communication between Application and Search nodes, you need to set both `nodeEncryption.enabled` and `searchNodes.searchAuthentication.enabled` to `true`.
+
+In a secured cluster, Elasticsearch nodes use certificates to identify themselves when communicating with other nodes. You need to generate a Certificate Authority (CA) together with a certificate and private key for the nodes in your cluster. Furthemore, you need to specify the Search nodes' hostnames that will be added as DNS names in the Subject Alternative Name (SAN).
+
+As an example, let's assume that your cluster has three search nodes with the release's name set to "sq", the chart's name set to "sonarqube-dce", and the namespace set to "sonar". You will need to add the following DNS names in the SAN.
+
+```
+sq-sonarqube-dce-search-0.sq-sonarqube-dce-search.sonar.svc.cluster.local
+sq-sonarqube-dce-search-1.sq-sonarqube-dce-search.sonar.svc.cluster.local
+sq-sonarqube-dce-search-2.sq-sonarqube-dce-search.sonar.svc.cluster.local
+sq-sonarqube-dce-search
+```
+
+Please do not forget to add the service name in the list (in this case, `sq-sonarqube-dce-search`). Also note that you can retrieve the search nodes' FQDN running `hostname -f` within one of the pods.
+
+You can generate the required certificate, create a secret, and add it to `searchNodes.searchAuthentication.keyStoreSecret` (specifying any password using the `keyStorePassword` or `keyStorePasswordSecret` values). To do so, you might want to use the `elasticsearch-certutil` to generate the [certificate authority](https://www.elastic.co/guide/en/elasticsearch/reference/current/security-basic-setup.html#generate-certificates) and the [certificate](https://www.elastic.co/guide/en/elasticsearch/reference/current/security-basic-setup-https.html#encrypt-http-communication) to be added (when creating the last certificate, please generate only one valid for all the nodes and add the required hostnames as specified above). As a result of this process, you should get a file called `http.p12`. Please rename it to `elastic-stack-ca.p12` and create the secret whose name should be assigned to the `searchNodes.searchAuthentication.keyStoreSecret` parameter.
+
+Finally, do not forget to set the `searchNodes.searchAuthentication.userPassword`.
+
 ## Configuration
 
 The following table lists the configurable parameters of the SonarQube chart and their default values.
 
 ### Search Nodes Configuration
 
-| Parameter                                                 | Description                                                                           | Default                                                                |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `searchNodes.image.repository`                            | search image repository                                                               | `sonarqube`                                                            |
-| `searchNodes.image.tag`                                   | search image tag                                                                      | `10.6.0-datacenter-search`                                             |
-| `searchNodes.image.pullPolicy`                            | search image pull policy                                                              | `IfNotPresent`                                                         |
-| `searchNodes.image.pullSecret`                            | (DEPRECATED) search imagePullSecret to use for private repository                     | `nil`                                                                  |
-| `searchNodes.image.pullSecrets`                           | search imagePullSecrets to use for private repository                                 | `nil`                                                                  |
-| `searchNodes.annotations`                                 | Map of annotations to add to the search pods                                          | `{}`                                                                   |
-| `searchNodes.env`                                         | Environment variables to attach to the search pods                                    | `nil`                                                                  |
-| `searchNodes.podLabels`                                   | Map of labels to add to the search pods                                               | `{}`                                                                   |
-| `searchNodes.sonarProperties`                             | Custom `sonar.properties` file for Search Nodes                                       | `None`                                                                 |
-| `searchNodes.sonarSecretProperties`                       | Additional `sonar.properties` file for Search Nodes to load from a secret             | `None`                                                                 |
-| `searchNodes.sonarSecretKey`                              | Name of existing secret used for settings encryption                                  | `None`                                                                 |
-| `searchNodes.searchAuthentication.enabled`                | Securing the Search Cluster with basic authentication and TLS in between search nodes | `false`                                                                |
-| `searchNodes.searchAuthentication.keyStoreSecret`         | Existing PKCS#12 Container as Keystore/Truststore to be used                          | `""`                                                                   |
-| `searchNodes.searchAuthentication.keyStorePassword`       | Password to Keystore/Truststore used in search nodes (optional)                       | `""`                                                                   |
-| `searchNodes.searchAuthentication.keyStorePasswordSecret` | Existing secret for Password to Keystore/Truststore used in search nodes (optional)   | `nil`                                                                  |
-| `searchNodes.searchAuthentication.userPassword`           | A User Password that will be used to authenticate against the Search Cluster          | `""`                                                                   |
-| `searchNodes.replicaCount`                                | Replica count of the Search Nodes                                                     | `3`                                                                    |
-| `searchNodes.podDisruptionBudget`                         | PodDisruptionBudget for the Search Nodes                                              | `minAvailable: 2`                                                      |
-| `searchNodes.podDistributionBudget`                       | (DEPRECATED typo) PodDisruptionBudget for the Search Nodes                            | `minAvailable: 2`                                                      |
-| `searchNodes.securityContext`                             | SecurityContext for the pod search nodes                                              | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
-| `searchNodes.containerSecurityContext`                    | SecurityContext for search container in sonarqube pod                                 | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
-| `searchNodes.readinessProbe.initialDelaySeconds`          | ReadinessProbe initial delay for Search Node checking                                 | `0`                                                                    |
-| `searchNodes.readinessProbe.periodSeconds`                | ReadinessProbe period between checking Search Node                                    | `30`                                                                   |
-| `searchNodes.readinessProbe.failureThreshold`             | ReadinessProbe threshold for marking as failed                                        | `6`                                                                    |
-| `searchNodes.readinessProbe.timeoutSeconds`               | ReadinessProbe timeout delay                                                          | `1`                                                                    |
-| `searchNodes.livenessProbe.initialDelaySeconds`           | LivenessProbe initial delay for Search Node checking                                  | `0`                                                                    |
-| `searchNodes.livenessProbe.periodSeconds`                 | LivenessProbe period between checking Search Node                                     | `30`                                                                   |
-| `searchNodes.livenessProbe.failureThreshold`              | LivenessProbe threshold for marking as dead                                           | `6`                                                                    |
-| `searchNodes.livenessProbe.timeoutSeconds`                | LivenessProbe timeout delay                                                           | `1`                                                                    |
-| `searchNodes.startupProbe.initialDelaySeconds`            | StartupProbe initial delay for Search Node checking                                   | `20`                                                                   |
-| `searchNodes.startupProbe.periodSeconds`                  | StartupProbe period between checking Search Node                                      | `10`                                                                   |
-| `searchNodes.startupProbe.failureThreshold`               | StartupProbe threshold for marking as failed                                          | `24`                                                                   |
-| `searchNodes.startupProbe.timeoutSeconds`                 | StartupProbe timeout delay                                                            | `1`                                                                    |
-| `searchNodes.resources.requests.memory`                   | memory request for Search Nodes                                                       | `3072M`                                                                |
-| `searchNodes.resources.requests.cpu`                      | cpu request for Search Nodes                                                          | `400m`                                                                 |
-| `searchNodes.resources.requests.ephemeral-storage`        | storage request for Search Nodes                                                      | `1536M`                                                                |
-| `searchNodes.resources.limits.memory`                     | memory limit for Search Nodes. should not be under 3G                                 | `3072M`                                                                |
-| `searchNodes.resources.limits.cpu`                        | cpu limit for Search Nodes                                                            | `800m`                                                                 |
-| `searchNodes.resources.limits.ephemeral-storage`          | storage limit for Search Nodes                                                        | `512000M`                                                              |
-| `searchNodes.persistence.enabled`                         | enabled or disables the creation of VPCs for the Search Nodes                         | `true`                                                                 |
-| `searchNodes.persistence.annotations`                     | PVC annotations for the Search Nodes                                                  | `{}`                                                                   |
-| `searchNodes.persistence.storageClass`                    | Storage class to be used                                                              | `""`                                                                   |
-| `searchNodes.persistence.accessMode`                      | Volumes access mode to be set                                                         | `ReadWriteOnce`                                                        |
-| `searchNodes.persistence.size`                            | Size of the PVC                                                                       | `5G`                                                                   |
-| `searchNodes.persistence.uid`                             | UID used for init-fs container                                                        | `1000`                                                                 |
-| `searchNodes.persistence.guid`                            | GUID used for init-fs container                                                       | `0`                                                                    |
-| `searchNodes.extraContainers`                             | Array of extra containers to run alongside                                            | `[]`                                                                   |
-| `searchNodes.nodeSelector`                                | Node labels for search nodes' pods assignment, global nodeSelector takes precedence   | `{}`                                                                   |
-| `searchNodes.affinity`                                    | Node / Pod affinities for searchNodes, global affinity takes precedence               | `{}`                                                                   |
-| `searchNodes.tolerations`                                 | List of node taints to tolerate for searchNodes, global tolerations take precedence   | `[]`                                                                   |
+| Parameter                                                 | Description                                                                                | Default                                                                |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `searchNodes.image.repository`                            | search image repository                                                                    | `sonarqube`                                                            |
+| `searchNodes.image.tag`                                   | search image tag                                                                           | `10.6.0-datacenter-search`                                             |
+| `searchNodes.image.pullPolicy`                            | search image pull policy                                                                   | `IfNotPresent`                                                         |
+| `searchNodes.image.pullSecret`                            | (DEPRECATED) search imagePullSecret to use for private repository                          | `nil`                                                                  |
+| `searchNodes.image.pullSecrets`                           | search imagePullSecrets to use for private repository                                      | `nil`                                                                  |
+| `searchNodes.annotations`                                 | Map of annotations to add to the search pods                                               | `{}`                                                                   |
+| `searchNodes.env`                                         | Environment variables to attach to the search pods                                         | `nil`                                                                  |
+| `searchNodes.podLabels`                                   | Map of labels to add to the search pods                                                    | `{}`                                                                   |
+| `searchNodes.sonarProperties`                             | Custom `sonar.properties` file for Search Nodes                                            | `None`                                                                 |
+| `searchNodes.sonarSecretProperties`                       | Additional `sonar.properties` file for Search Nodes to load from a secret                  | `None`                                                                 |
+| `searchNodes.sonarSecretKey`                              | Name of existing secret used for settings encryption                                       | `None`                                                                 |
+| `searchNodes.searchAuthentication.enabled`                | Securing the Search Cluster with basic authentication and TLS in between search nodes      | `false`                                                                |
+| `searchNodes.searchAuthentication.keyStoreSecret`         | Existing PKCS#12 certificate (named `elastic-stack-ca.p12`) to be used Keystore/Truststore | `""`                                                                   |
+| `searchNodes.searchAuthentication.keyStorePassword`       | Password to Keystore/Truststore used in search nodes (optional)                            | `""`                                                                   |
+| `searchNodes.searchAuthentication.keyStorePasswordSecret` | Existing secret for Password to Keystore/Truststore used in search nodes (optional)        | `nil`                                                                  |
+| `searchNodes.searchAuthentication.userPassword`           | A User Password that will be used to authenticate against the Search Cluster               | `""`                                                                   |
+| `searchNodes.replicaCount`                                | Replica count of the Search Nodes                                                          | `3`                                                                    |
+| `searchNodes.podDisruptionBudget`                         | PodDisruptionBudget for the Search Nodes                                                   | `minAvailable: 2`                                                      |
+| `searchNodes.podDistributionBudget`                       | (DEPRECATED typo) PodDisruptionBudget for the Search Nodes                                 | `minAvailable: 2`                                                      |
+| `searchNodes.securityContext`                             | SecurityContext for the pod search nodes                                                   | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
+| `searchNodes.containerSecurityContext`                    | SecurityContext for search container in sonarqube pod                                      | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
+| `searchNodes.readinessProbe.initialDelaySeconds`          | ReadinessProbe initial delay for Search Node checking                                      | `0`                                                                    |
+| `searchNodes.readinessProbe.periodSeconds`                | ReadinessProbe period between checking Search Node                                         | `30`                                                                   |
+| `searchNodes.readinessProbe.failureThreshold`             | ReadinessProbe threshold for marking as failed                                             | `6`                                                                    |
+| `searchNodes.readinessProbe.timeoutSeconds`               | ReadinessProbe timeout delay                                                               | `1`                                                                    |
+| `searchNodes.livenessProbe.initialDelaySeconds`           | LivenessProbe initial delay for Search Node checking                                       | `0`                                                                    |
+| `searchNodes.livenessProbe.periodSeconds`                 | LivenessProbe period between checking Search Node                                          | `30`                                                                   |
+| `searchNodes.livenessProbe.failureThreshold`              | LivenessProbe threshold for marking as dead                                                | `6`                                                                    |
+| `searchNodes.livenessProbe.timeoutSeconds`                | LivenessProbe timeout delay                                                                | `1`                                                                    |
+| `searchNodes.startupProbe.initialDelaySeconds`            | StartupProbe initial delay for Search Node checking                                        | `20`                                                                   |
+| `searchNodes.startupProbe.periodSeconds`                  | StartupProbe period between checking Search Node                                           | `10`                                                                   |
+| `searchNodes.startupProbe.failureThreshold`               | StartupProbe threshold for marking as failed                                               | `24`                                                                   |
+| `searchNodes.startupProbe.timeoutSeconds`                 | StartupProbe timeout delay                                                                 | `1`                                                                    |
+| `searchNodes.resources.requests.memory`                   | memory request for Search Nodes                                                            | `3072M`                                                                |
+| `searchNodes.resources.requests.cpu`                      | cpu request for Search Nodes                                                               | `400m`                                                                 |
+| `searchNodes.resources.requests.ephemeral-storage`        | storage request for Search Nodes                                                           | `1536M`                                                                |
+| `searchNodes.resources.limits.memory`                     | memory limit for Search Nodes. should not be under 3G                                      | `3072M`                                                                |
+| `searchNodes.resources.limits.cpu`                        | cpu limit for Search Nodes                                                                 | `800m`                                                                 |
+| `searchNodes.resources.limits.ephemeral-storage`          | storage limit for Search Nodes                                                             | `512000M`                                                              |
+| `searchNodes.persistence.enabled`                         | enabled or disables the creation of VPCs for the Search Nodes                              | `true`                                                                 |
+| `searchNodes.persistence.annotations`                     | PVC annotations for the Search Nodes                                                       | `{}`                                                                   |
+| `searchNodes.persistence.storageClass`                    | Storage class to be used                                                                   | `""`                                                                   |
+| `searchNodes.persistence.accessMode`                      | Volumes access mode to be set                                                              | `ReadWriteOnce`                                                        |
+| `searchNodes.persistence.size`                            | Size of the PVC                                                                            | `5G`                                                                   |
+| `searchNodes.persistence.uid`                             | UID used for init-fs container                                                             | `1000`                                                                 |
+| `searchNodes.persistence.guid`                            | GUID used for init-fs container                                                            | `0`                                                                    |
+| `searchNodes.extraContainers`                             | Array of extra containers to run alongside                                                 | `[]`                                                                   |
+| `searchNodes.nodeSelector`                                | Node labels for search nodes' pods assignment, global nodeSelector takes precedence        | `{}`                                                                   |
+| `searchNodes.affinity`                                    | Node / Pod affinities for searchNodes, global affinity takes precedence                    | `{}`                                                                   |
+| `searchNodes.tolerations`                                 | List of node taints to tolerate for searchNodes, global tolerations take precedence        | `[]`                                                                   |
 
 
 ### App Nodes Configuration
@@ -371,21 +392,22 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Generic Configuration
 
-| Parameter           | Description                                                                                                              | Default |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------- |
-| `affinity`          | Node / Pod affinities                                                                                                    | `{}`    |
-| `tolerations`       | List of node taints to tolerate                                                                                          | `[]`    |
-| `priorityClassName` | Schedule pods on priority (e.g. `high-priority`)                                                                         | `None`  |
-| `nodeSelector`      | Node labels for pod assignment                                                                                           | `{}`    |
-| `hostAliases`       | Aliases for IPs in /etc/hosts                                                                                            | `[]`    |
-| `podLabels`         | Map of labels to add to the pods                                                                                         | `{}`    |
-| `env`               | Environment variables to attach to the pods                                                                              | `{}`    |
-| `annotations`       | Map of annotations to add to the pods                                                                                    | `{}`    |
-| `sonarWebContext`   | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.        | ``      |
+| Parameter                | Description                                                                                                              | Default |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ------- |
+| `affinity`               | Node / Pod affinities                                                                                                    | `{}`    |
+| `tolerations`            | List of node taints to tolerate                                                                                          | `[]`    |
+| `priorityClassName`      | Schedule pods on priority (e.g. `high-priority`)                                                                         | `None`  |
+| `nodeSelector`           | Node labels for pod assignment                                                                                           | `{}`    |
+| `hostAliases`            | Aliases for IPs in /etc/hosts                                                                                            | `[]`    |
+| `podLabels`              | Map of labels to add to the pods                                                                                         | `{}`    |
+| `env`                    | Environment variables to attach to the pods                                                                              | `{}`    |
+| `annotations`            | Map of annotations to add to the pods                                                                                    | `{}`    |
+| `sonarWebContext`        | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.        | ``      |
 | `httpProxySecret`    | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will superseed every other proxy variables              | ``      |
 | `httpProxy`          | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables    | ``      |
 | `httpsProxy`         | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable   | ``      |
 | `noProxy`            |  No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables       | ``      |
+| `nodeEncryption.enabled` | Secure the communication between Application and Search nodes using TLS                                           | `false` |
 
 ### NetworkPolicies
 

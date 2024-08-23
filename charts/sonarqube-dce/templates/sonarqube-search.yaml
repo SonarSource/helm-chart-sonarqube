@@ -245,9 +245,9 @@ spec:
                   name: "{{ template "search.userPassword" . }}" 
                   key: SONAR_CLUSTER_SEARCH_PASSWORD
             - name: SONAR_CLUSTER_ES_SSL_KEYSTORE
-              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-certificates.p12"
+              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
             - name: SONAR_CLUSTER_ES_SSL_TRUSTSTORE
-              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-certificates.p12"
+              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
             - name: SONAR_CLUSTER_ES_SSL_KEYSTOREPASSWORD
               valueFrom:
                 secretKeyRef:
@@ -258,6 +258,15 @@ spec:
                 secretKeyRef:
                   name: "{{ template "search.ksPassword" . }}"
                   key: SONAR_CLUSTER_ES_SSL_TRUSTSTOREPASSWORD
+            {{- if .Values.nodeEncryption.enabled }}
+            - name: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTORE
+              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
+            - name: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ template "search.ksPassword" . }}"
+                  key: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
+            {{- end }}
             {{- end }}
             {{- with .Values.searchNodes.env }}
             {{- . | toYaml | trim | nindent 12 }}
@@ -275,12 +284,21 @@ spec:
               command:
               - sh
               - -c
-              {{ if .Values.searchNodes.searchAuthentication.enabled }}
+              {{ if and .Values.searchNodes.searchAuthentication.enabled (not .Values.nodeEncryption.enabled) }}
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered live if http call returns 200
                 host="$(hostname -i || echo '127.0.0.1')"
                 if wget --auth-no-challenge --no-proxy -qO- "http://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+              {{ else if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered live if http call returns 200
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-check-certificate --no-proxy -qO- "https://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
@@ -303,12 +321,21 @@ spec:
               command:
               - sh
               - -c
-              {{ if .Values.searchNodes.searchAuthentication.enabled }}
+              {{ if and .Values.searchNodes.searchAuthentication.enabled (not .Values.nodeEncryption.enabled) }}
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
                 host="$(hostname -i || echo '127.0.0.1')"
                 if wget --auth-no-challenge --no-proxy -qO- "http://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+              {{ else if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-check-certificate --no-proxy -qO- "https://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
@@ -331,12 +358,21 @@ spec:
              command:
               - sh
               - -c
-              {{ if .Values.searchNodes.searchAuthentication.enabled }}
+              {{ if and .Values.searchNodes.searchAuthentication.enabled (not .Values.nodeEncryption.enabled) }}
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered started if http call returns 200
                 host="$(hostname -i || echo '127.0.0.1')"
                 if wget --auth-no-challenge --no-proxy -qO- "http://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+              {{ else if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered started if http call returns 200
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-check-certificate --no-proxy -qO- "https://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
