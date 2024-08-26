@@ -376,6 +376,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `prometheusMonitoring.podMonitor.interval`      | Specify the interval how often metrics should be scraped                                                    | `30s`                      |
 | `prometheusMonitoring.podMonitor.scrapeTimeout` | Specify the timeout after a scrape is ended                                                                 | `None`                     |
 | `prometheusMonitoring.podMonitor.jobLabel`      | Name of the label on target services that prometheus uses as job name                                       | `None`                     |
+| `prometheusMonitoring.podMonitor.labels`        | Additional labels to add to the PodMonitor                                                                  | `{}`                       |
 
 ### Plugins
 
