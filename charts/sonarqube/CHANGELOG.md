@@ -14,6 +14,7 @@ All changes to this chart will be documented in this file.
 * Fix networkPolicy.additionalPolicys typo
 * Support install-plugin and prometheusExporter proxy variables in secret
 * Support GatewayAPI HttpRoute
+* Support additional labels in the PodMonitor
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0
