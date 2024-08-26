@@ -152,6 +152,26 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
 ---
+# Source: sonarqube/templates/secret.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: networkpolicy-new-values.yaml-sonarqube-http-proxies
+  labels:
+    app: sonarqube
+    chart: sonarqube-10.7.0
+    release: networkpolicy-new-values.yaml
+    heritage: Helm
+type: Opaque
+stringData:
+  PLUGINS-HTTP-PROXY: ""
+  PLUGINS-HTTPS-PROXY: ""
+  PLUGINS-NO-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
+  PROMETHEUS-EXPORTER-NO-PROXY: ""
+---
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -491,7 +511,7 @@ spec:
         checksum/config: d34a6b96dd89bafa3abe6e2f0c340c3735165370a6313006d9d119ba4c74b8b1
         checksum/init-sysctl: 6a78e354edc91967603c3451feb688640c2a96076fdadd56f4e8558c7cffc97e
         checksum/plugins: e8feb50a985ae352faa1f6d304a1f537f5dca190a35090c9493b888cad9f1e99
-        checksum/secret: f031dfc7a36a30b85307180df606dc6740bf82651e9063ed5b0dde74738982c6
+        checksum/secret: 6aef79add71419a6c493700522e898659900982ebce6bdd871788c2150adb06a
       labels:
         app: sonarqube
         release: networkpolicy-new-values.yaml

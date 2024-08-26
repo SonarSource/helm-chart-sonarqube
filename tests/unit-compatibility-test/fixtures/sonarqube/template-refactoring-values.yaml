@@ -30,6 +30,26 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
 ---
+# Source: sonarqube/templates/secret.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: template-refactoring-values.yaml-sonarqube-http-proxies
+  labels:
+    app: sonarqube
+    chart: sonarqube-10.7.0
+    release: template-refactoring-values.yaml
+    heritage: Helm
+type: Opaque
+stringData:
+  PLUGINS-HTTP-PROXY: ""
+  PLUGINS-HTTPS-PROXY: ""
+  PLUGINS-NO-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
+  PROMETHEUS-EXPORTER-NO-PROXY: ""
+---
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -391,7 +411,7 @@ spec:
         checksum/init-fs: d985b127f0be8dcb4d02bb39eb0818bab9fd2060fbded7a24fab52962411c064
         checksum/init-sysctl: 234c81d1d767e09a3d1e85bc670875912aa64b5be5cd04fa56e8803c9deea67e
         checksum/plugins: a751685df08a7a102c262cdc745593ebc43d052e269f02976cf33f5315d6fd74
-        checksum/secret: 7b25e271cd49e34066cbbea214871b53222587967b07ab29967f5e5c7c0da0d7
+        checksum/secret: b9a313ab1ae2b894481e5c0124bbaacc2340c5ef5a741c87b0d273b2308c15cf
       labels:
         app: sonarqube
         release: template-refactoring-values.yaml

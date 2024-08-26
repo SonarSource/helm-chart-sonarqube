@@ -151,12 +151,9 @@ spec:
           name: sonarqube
           subPath: data
       env:
-        - name: http_proxy
-          value: {{ default "" .Values.prometheusExporter.httpProxy }}
-        - name: https_proxy
-          value: {{ default "" .Values.prometheusExporter.httpsProxy }}
-        - name: no_proxy
-          value: {{ default "" .Values.prometheusExporter.noProxy }}
+        {{- with (include "sonarqube.prometheusExporterProxy.env" .) }}
+        {{- . | nindent 8 }}
+        {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
     {{- if and .Values.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
@@ -218,12 +215,9 @@ spec:
           mountPath: /root
         {{- end }}
       env:
-        - name: http_proxy
-          value: {{ default "" .Values.plugins.httpProxy }}
-        - name: https_proxy
-          value: {{ default "" .Values.plugins.httpsProxy }}
-        - name: no_proxy
-          value: {{ default "" .Values.plugins.noProxy }}
+        {{- with (include "sonarqube.install-plugins-proxy.env" .) }}
+        {{- . | nindent 8 }}
+        {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
   containers:
@@ -445,4 +439,5 @@ spec:
     - name : concat-dir
       emptyDir: {{- toYaml .Values.emptyDir | nindent 8 }}
       {{- end }}
+
 {{- end -}}

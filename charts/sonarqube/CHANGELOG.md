@@ -12,6 +12,7 @@ All changes to this chart will be documented in this file.
 * Support basic chart installation on Openshift
 * Include remaining Route settings
 * Fix networkPolicy.additionalPolicys typo
+* Support install-plugin and prometheusExporter proxy variables in secret
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0

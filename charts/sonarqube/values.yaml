@@ -74,6 +74,14 @@ service:
   #   - 0.0.0.0/0
   # loadBalancerIP: 1.2.3.4
 
+# Those proxy settings will be propagated to the install-plugin and prometheus-exporter init containers
+# if httpProxySecret is set the other one will be ignored
+# the secret should contain exactly the keys http_proxy, https_proxy and no_proxy
+httpProxySecret: ""
+httpProxy: ""
+httpsProxy: ""
+noProxy: ""
+
 # Optionally create Network Policies
 networkPolicy:
   enabled: false

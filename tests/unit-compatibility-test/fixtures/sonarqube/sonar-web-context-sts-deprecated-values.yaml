@@ -45,6 +45,25 @@ stringData:
   password: "admin1"
   currentPassword: "admin"
 ---
+# Source: sonarqube/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-http-proxies
+  labels:
+    app: sonarqube
+    chart: sonarqube-10.7.0
+    release: sonar-web-context-sts-deprecated-values.yaml
+    heritage: Helm
+type: Opaque
+stringData:
+  PLUGINS-HTTP-PROXY: ""
+  PLUGINS-HTTPS-PROXY: ""
+  PLUGINS-NO-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
+  PROMETHEUS-EXPORTER-NO-PROXY: ""
+---
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -384,7 +403,7 @@ spec:
         checksum/config: 3b27097dd54b93f2e57492d7d1054097ea742ca436468451c09859de7ee4b3b3
         checksum/init-sysctl: 70246d21fdc2601dcce417705cad495f77662f6e2e17eeccf5f6635957144161
         checksum/plugins: 7cd307cee7375cd35f5cc60a126d59732ec9de4a5825083feef6d2f685fafc47
-        checksum/secret: 115853198f18af3f38718b49c785d56e5160d64a831c1148dfee352241c5bd8e
+        checksum/secret: 0a80a6bad1a50d26738adf044d5e7bd23baec2a319fee0975b22a9ea78369eb3
       labels:
         app: sonarqube
         release: sonar-web-context-sts-deprecated-values.yaml

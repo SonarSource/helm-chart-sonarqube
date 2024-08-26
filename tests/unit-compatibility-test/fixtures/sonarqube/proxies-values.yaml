@@ -3,11 +3,11 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sonar-web-context-values.yaml-postgresql
+  name: proxies-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
     app.kubernetes.io/managed-by: Helm
   namespace: default
 type: Opaque
@@ -20,59 +20,45 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-monitoring-passcode
+  name: proxies-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
 ---
 # Source: sonarqube/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sonar-web-context-values.yaml-sonarqube-admin-password
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  password: "admin1"
-  currentPassword: "admin"
 ---
-# Source: sonarqube/templates/secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-http-proxies
+  name: proxies-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 type: Opaque
 stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
+  PLUGINS-HTTP-PROXY: "http://someProxy"
+  PLUGINS-HTTPS-PROXY: "https://someProxy"
+  PLUGINS-NO-PROXY: "https://someUrl"
+  PROMETHEUS-EXPORTER-HTTP-PROXY: "http://someProxy"
+  PROMETHEUS-EXPORTER-HTTPS-PROXY: "https://someProxy"
+  PROMETHEUS-EXPORTER-NO-PROXY: "https://someUrl"
 ---
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-config
+  name: proxies-values.yaml-sonarqube-config
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -81,11 +67,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-init-fs
+  name: proxies-values.yaml-sonarqube-init-fs
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 data:
   init_fs.sh: |-
@@ -94,11 +80,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-init-sysctl
+  name: proxies-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -125,38 +111,71 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-install-plugins
+  name: proxies-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
+      rm -f /opt/sonarqube/extensions/plugins/*
+      cd /opt/sonarqube/extensions/plugins
+      curl   -fsSLO "https://github.com/sbaudoin/sonar-yaml/releases/download/v1.7.0/sonar-yaml-plugin-1.7.0.jar"
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-jdbc-config
+  name: proxies-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
-  SONAR_JDBC_URL: "jdbc:postgresql://sonar-web-context-values.yaml-postgresql:5432/sonarDB"
+  SONAR_JDBC_URL: "jdbc:postgresql://proxies-values.yaml-postgresql:5432/sonarDB"
+---
+# Source: sonarqube/templates/prometheus-ce-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proxies-values.yaml-sonarqube-prometheus-ce-config
+  labels:
+    app: sonarqube
+    chart: sonarqube-10.7.0
+    release: proxies-values.yaml
+    heritage: Helm
+data:
+  prometheus-ce-config.yaml: |-
+    rules:
+    - pattern: .*
+---
+# Source: sonarqube/templates/prometheus-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proxies-values.yaml-sonarqube-prometheus-config
+  labels:
+    app: sonarqube
+    chart: sonarqube-10.7.0
+    release: proxies-values.yaml
+    heritage: Helm
+data:
+  prometheus-config.yaml: |-
+    rules:
+    - pattern: .*
 ---
 # Source: sonarqube/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonar-web-context-values.yaml-postgresql-headless
+  name: proxies-values.yaml-postgresql-headless
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
     app.kubernetes.io/managed-by: Helm
     # Use this annotation in addition to the actual publishNotReadyAddresses
     # field below because the annotation will stop being respected soon but the
@@ -177,17 +196,17 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
 ---
 # Source: sonarqube/charts/postgresql/templates/svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonar-web-context-values.yaml-postgresql
+  name: proxies-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
   namespace: default
@@ -199,18 +218,18 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
     role: primary
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube
+  name: proxies-values.yaml-sonarqube
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 spec:
   type: ClusterIP
@@ -221,38 +240,38 @@ spec:
       name: http
   selector:
     app: sonarqube
-    release: sonar-web-context-values.yaml
+    release: proxies-values.yaml
 ---
 # Source: sonarqube/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: sonar-web-context-values.yaml-postgresql
+  name: proxies-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
   namespace: default
 spec:
-  serviceName: sonar-web-context-values.yaml-postgresql-headless
+  serviceName: proxies-values.yaml-postgresql-headless
   replicas: 1
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: sonar-web-context-values.yaml
+      app.kubernetes.io/instance: proxies-values.yaml
       role: primary
   template:
     metadata:
-      name: sonar-web-context-values.yaml-postgresql
+      name: proxies-values.yaml-postgresql
       labels:
         app.kubernetes.io/name: postgresql
         helm.sh/chart: postgresql-10.15.0
-        app.kubernetes.io/instance: sonar-web-context-values.yaml
+        app.kubernetes.io/instance: proxies-values.yaml
         app.kubernetes.io/managed-by: Helm
         role: primary
         app.kubernetes.io/component: primary
@@ -266,7 +285,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: postgresql
-                    app.kubernetes.io/instance: sonar-web-context-values.yaml
+                    app.kubernetes.io/instance: proxies-values.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
                   - "default"
@@ -276,7 +295,7 @@ spec:
           
       automountServiceAccountToken: false
       containers:
-        - name: sonar-web-context-values.yaml-postgresql
+        - name: proxies-values.yaml-postgresql
           image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
@@ -298,14 +317,14 @@ spec:
             - name: POSTGRES_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: sonar-web-context-values.yaml-postgresql
+                  name: proxies-values.yaml-postgresql
                   key: postgresql-postgres-password
             - name: POSTGRES_USER
               value: "sonarUser"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: sonar-web-context-values.yaml-postgresql
+                  name: proxies-values.yaml-postgresql
                   key: postgresql-password
             - name: POSTGRES_DB
               value: "sonarDB"
@@ -377,36 +396,38 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube
+  name: proxies-values.yaml-sonarqube
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: sonarqube-sonar-web-context-values.yaml-sonarqube
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/name: sonarqube-proxies-values.yaml-sonarqube
+    app.kubernetes.io/instance: proxies-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: sonar-web-context-values.yaml-sonarqube
+    app.kubernetes.io/component: proxies-values.yaml-sonarqube
     app.kubernetes.io/version: "10.6.0-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
-  serviceName: sonar-web-context-values.yaml-sonarqube
+  serviceName: proxies-values.yaml-sonarqube
   selector:
     matchLabels:
       app: sonarqube
-      release: sonar-web-context-values.yaml
+      release: proxies-values.yaml
   template:
     metadata:
       annotations:
-        checksum/config: 2cc9770b80ec0a3b0a401373c2906fc2815dc6fb0005429950fe204f7e7011eb
-        checksum/init-sysctl: 03d0086f96a27c841e65f7be3fefd707990d0086e83e2c254f64226e4684d9c7
-        checksum/plugins: f5f32668c3f1944cbfd662c29991a200a505f387b4a609ade855ebd1041624ec
-        checksum/secret: f08b9c31a36199a2351f214a588c9d6d5879dabfdc9f3c106d5d5c4439de0f33
+        checksum/config: 0dfd1fb98b319236e875fe4b7d0a1be4bd2453c6a55817067d5cce0a5db49d85
+        checksum/init-sysctl: 3205db8b4058bc854494ca9a7ab60f95439720d76bd4f21e19d7f9dfafbadc06
+        checksum/plugins: 74419f73dd55a0e0fbe84b04efe800259ba90eb4a0aeaf58d4c9c950cf14c3f5
+        checksum/secret: bdee9aaee828638cc946154fc37a13ac1a168c309422d374f3a297a6f37151f7
+        checksum/prometheus-config: 02c3468131d3096b7c3a9e72ba3caefb016165593f292feaf2f0e862fb99d2c6
+        checksum/prometheus-ce-config: 69f079397af23227c19342f2614df9c28b1ce25673decbc40fa1d7b5f1747948
       labels:
         app: sonarqube
-        release: sonar-web-context-values.yaml
+        release: proxies-values.yaml
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -414,7 +435,7 @@ spec:
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/sonar-web-context-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/proxies-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
@@ -428,11 +449,74 @@ spec:
               mountPath: /tmp/scripts/
           env:
             - name: SONAR_WEB_CONTEXT
-              value: /sonarqube-web-context/
+              value: /
             - name: SONAR_WEB_JAVAOPTS
-              value: ""
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml
             - name: SONAR_CE_JAVAOPTS
-              value: ""
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
+        - name: inject-prometheus-exporter
+          image: sonarqube:10.6.0-community
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args: ["curl -s 'https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.17.2/jmx_prometheus_javaagent-0.17.2.jar'  --output /data/jmx_prometheus_javaagent.jar -v"]
+          volumeMounts:
+            - mountPath: /data
+              name: sonarqube
+              subPath: data
+          env:
+            - name: http_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: proxies-values.yaml-sonarqube-http-proxies
+                  key: PROMETHEUS-EXPORTER-HTTP-PROXY
+            - name: https_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: proxies-values.yaml-sonarqube-http-proxies
+                  key: PROMETHEUS-EXPORTER-HTTPS-PROXY
+            - name: no_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: proxies-values.yaml-sonarqube-http-proxies
+                  key: PROMETHEUS-EXPORTER-NO-PROXY
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml
+            - name: SONAR_CE_JAVAOPTS
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
+        - name: install-plugins
+          image: sonarqube:10.6.0-community
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
+          volumeMounts:
+            - mountPath: /opt/sonarqube/extensions/plugins
+              name: sonarqube
+              subPath: extensions/plugins
+            - name: install-plugins
+              mountPath: /tmp/scripts/
+          env:
+            - name: http_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: proxies-values.yaml-sonarqube-http-proxies
+                  key: PLUGINS-HTTP-PROXY
+            - name: https_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: proxies-values.yaml-sonarqube-http-proxies
+                  key: PLUGINS-HTTPS-PROXY
+            - name: no_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: proxies-values.yaml-sonarqube-http-proxies
+                  key: PLUGINS-NO-PROXY
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml
+            - name: SONAR_CE_JAVAOPTS
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
       containers:
         - name: sonarqube
           image: sonarqube:10.6.0-community
@@ -440,6 +524,12 @@ spec:
           ports:
             - name: http
               containerPort: 9000
+              protocol: TCP
+            - name: monitoring-web
+              containerPort: 8000
+              protocol: TCP
+            - name: monitoring-ce
+              containerPort: 8001
               protocol: TCP
           resources:
             limits:
@@ -456,29 +546,29 @@ spec:
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: sonar-web-context-values.yaml-postgresql
+                  name: proxies-values.yaml-postgresql
                   key: postgresql-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: sonar-web-context-values.yaml-sonarqube-monitoring-passcode
+                  name: proxies-values.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
             - name: SONAR_WEB_CONTEXT
-              value: /sonarqube-web-context/
+              value: /
             - name: SONAR_WEB_JAVAOPTS
-              value: ""
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml
             - name: SONAR_CE_JAVAOPTS
-              value: ""
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
           envFrom:
             - configMapRef:
-                name: sonar-web-context-values.yaml-sonarqube-jdbc-config
+                name: proxies-values.yaml-sonarqube-jdbc-config
           livenessProbe:
             exec:
               command:
               - sh
               - -c
               - |
-                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/sonarqube-web-context/api/system/liveness"
+                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/api/system/liveness"
             failureThreshold: 6
             initialDelaySeconds: 60
             periodSeconds: 30
@@ -492,7 +582,7 @@ spec:
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
-                if wget --no-proxy -qO- http://localhost:9000/sonarqube-web-context/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                if wget --no-proxy -qO- http://localhost:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
                   exit 0
                 fi
                 exit 1
@@ -503,7 +593,7 @@ spec:
           startupProbe:
             httpGet:
               scheme: HTTP
-              path: /sonarqube-web-context/api/system/status
+              path: /api/system/status
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
@@ -524,14 +614,38 @@ spec:
             - mountPath: /opt/sonarqube/extensions
               name: sonarqube
               subPath: extensions
+            - mountPath: /opt/sonarqube/conf/prometheus-config.yaml
+              subPath: prometheus-config.yaml
+              name: prometheus-config
+            - mountPath: /opt/sonarqube/conf/prometheus-ce-config.yaml
+              subPath: prometheus-ce-config.yaml
+              name: prometheus-ce-config
       serviceAccountName: default
       volumes:
         - name: init-sysctl
           configMap:
-            name: sonar-web-context-values.yaml-sonarqube-init-sysctl
+            name: proxies-values.yaml-sonarqube-init-sysctl
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
+        - name: install-plugins
+          configMap:
+            name: proxies-values.yaml-sonarqube-install-plugins
+            items:
+              - key: install_plugins.sh
+                path: install_plugins.sh
+        - name: prometheus-config
+          configMap:
+            name: proxies-values.yaml-sonarqube-prometheus-config
+            items:
+              - key: prometheus-config.yaml
+                path: prometheus-config.yaml
+        - name: prometheus-ce-config
+          configMap:
+            name: proxies-values.yaml-sonarqube-prometheus-ce-config
+            items:
+              - key: prometheus-ce-config.yaml
+                path: prometheus-ce-config.yaml
         - name: sonarqube
           emptyDir:
             {}
@@ -539,45 +653,22 @@ spec:
           emptyDir:
             {}
 ---
-# Source: sonarqube/templates/ingress.yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: sonar-web-context-values.yaml-sonarqube
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
-    heritage: Helm
-spec:
-  rules:
-  - host: sonarqube.your-org.com
-    http:
-      paths:
-      - backend:
-          service:
-            name: sonar-web-context-values.yaml-sonarqube
-            port:
-              number: 9000
-        path: /sonarqube-web-context/
-        pathType: ImplementationSpecific
----
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "sonar-web-context-values.yaml-ui-test"
+  name: "proxies-values.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: sonar-web-context-values.yaml-ui-test
+    - name: proxies-values.yaml-ui-test
       image: "sonarqube:10.6.0-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
@@ -588,7 +679,7 @@ spec:
         '-t',
         '12',
         '-qO-',
-        'sonar-web-context-values.yaml-sonarqube:9000/api/system/status'
+        'proxies-values.yaml-sonarqube:9000/api/system/status'
         ]
       resources:
         limits:
@@ -600,53 +691,3 @@ spec:
           ephemeral-storage: 100M
           memory: 200M
   restartPolicy: Never
----
-# Source: sonarqube/templates/change-admin-password-hook.yml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: sonar-web-context-values.yaml-sonarqube-change-admin-password-hook
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.7.0
-    release: sonar-web-context-values.yaml
-    heritage: Helm
-  annotations:
-    "helm.sh/hook": post-install, post-upgrade
-    "helm.sh/hook-delete-policy": hook-succeeded
-spec:
-  template:
-    metadata:
-      name: sonar-web-context-values.yaml-sonarqube-change-admin-password-hook
-      labels:
-        app: sonarqube
-        chart: sonarqube-10.7.0
-        release: sonar-web-context-values.yaml
-        heritage: Helm
-    spec:
-      restartPolicy: OnFailure
-      serviceAccountName: default
-      containers:
-      - name: sonar-web-context-values.yaml-sonarqube-change-default-admin-password
-        image: sonarqube:10.6.0-community
-        command: ["sh", "-c", 'until curl -v --connect-timeout 100 sonar-web-context-values.yaml-sonarqube:9000/sonarqube-web-context/api/system/status | grep -w UP; do sleep 10; done; curl -v --connect-timeout 100 -u admin:$CURRENT_ADMIN_PASSWORD -X POST "sonar-web-context-values.yaml-sonarqube:9000/sonarqube-web-context/api/users/change_password?login=admin&previousPassword=$CURRENT_ADMIN_PASSWORD&password=$ADMIN_PASSWORD"']
-        env:
-        - name: ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: sonar-web-context-values.yaml-sonarqube-admin-password
-              key: password
-        - name: CURRENT_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: sonar-web-context-values.yaml-sonarqube-admin-password
-              key: currentPassword
-        resources:
-          limits:
-            cpu: 800m
-            ephemeral-storage: 512000M
-            memory: 6144M
-          requests:
-            cpu: 400m
-            ephemeral-storage: 1536M
-            memory: 2048M

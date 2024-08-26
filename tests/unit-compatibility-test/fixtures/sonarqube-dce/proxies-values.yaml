@@ -3,11 +3,11 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-search
+  name: proxies-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 spec:
   minAvailable: 2
@@ -20,11 +20,11 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-app
+  name: proxies-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 spec:
   minAvailable: 1
@@ -37,11 +37,11 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: change-admin-password-hook-values.yaml-postgresql
+  name: proxies-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
     app.kubernetes.io/managed-by: Helm
   namespace: default
 type: Opaque
@@ -53,11 +53,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-monitoring-passcode
+  name: proxies-values.yaml-sonarqube-dce-monitoring-passcode
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -68,59 +68,45 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-jwt
+  name: proxies-values.yaml-sonarqube-dce-jwt
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: ""
 ---
 # Source: sonarqube-dce/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-admin-password
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  password: "admin1"
-  currentPassword: "admin"
 ---
-# Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-http-proxies
+  name: proxies-values.yaml-sonarqube-dce-http-proxies
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 type: Opaque
 stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
+  PLUGINS-HTTP-PROXY: "http://someProxy"
+  PLUGINS-HTTPS-PROXY: "https://someProxy"
+  PLUGINS-NO-PROXY: "https://someUrl"
+  PROMETHEUS-EXPORTER-HTTP-PROXY: "http://someProxy"
+  PROMETHEUS-EXPORTER-HTTPS-PROXY: "https://someProxy"
+  PROMETHEUS-EXPORTER-NO-PROXY: "https://someUrl"
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-app-config
+  name: proxies-values.yaml-sonarqube-dce-app-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -129,11 +115,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-search-config
+  name: proxies-values.yaml-sonarqube-dce-search-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -142,11 +128,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-init-fs
+  name: proxies-values.yaml-sonarqube-dce-init-fs
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 data:
   init_fs.sh: |-
@@ -159,11 +145,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-init-sysctl
+  name: proxies-values.yaml-sonarqube-dce-init-sysctl
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -190,38 +176,71 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-install-plugins
+  name: proxies-values.yaml-sonarqube-dce-install-plugins
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
+      rm -f /opt/sonarqube/extensions/plugins/*
+      cd /opt/sonarqube/extensions/plugins
+      curl   -fsSLO "https://github.com/sbaudoin/sonar-yaml/releases/download/v1.7.0/sonar-yaml-plugin-1.7.0.jar"
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-jdbc-config
+  name: proxies-values.yaml-sonarqube-dce-jdbc-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
-  SONAR_JDBC_URL: "jdbc:postgresql://change-admin-password-hook-values.yaml-postgresql:5432/sonarDB"
+  SONAR_JDBC_URL: "jdbc:postgresql://proxies-values.yaml-postgresql:5432/sonarDB"
+---
+# Source: sonarqube-dce/templates/prometheus-ce-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proxies-values.yaml-sonarqube-dce-prometheus-ce-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: proxies-values.yaml
+    heritage: Helm
+data:
+  prometheus-ce-config.yaml: |-
+        rules:
+        - pattern: .*
+---
+# Source: sonarqube-dce/templates/prometheus-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proxies-values.yaml-sonarqube-dce-prometheus-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: proxies-values.yaml
+    heritage: Helm
+data:
+  prometheus-config.yaml: |-
+        rules:
+        - pattern: .*
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: change-admin-password-hook-values.yaml-postgresql-headless
+  name: proxies-values.yaml-postgresql-headless
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
     app.kubernetes.io/managed-by: Helm
     # Use this annotation in addition to the actual publishNotReadyAddresses
     # field below because the annotation will stop being respected soon but the
@@ -242,17 +261,17 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: change-admin-password-hook-values.yaml-postgresql
+  name: proxies-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
   namespace: default
@@ -264,18 +283,18 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
     role: primary
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce
+  name: proxies-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 
 spec:
@@ -287,17 +306,17 @@ spec:
       name: http
   selector:
     app: sonarqube-dce
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-headless
+  name: proxies-values.yaml-sonarqube-dce-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 
 spec:
@@ -311,17 +330,17 @@ spec:
       name: hazelcast
   selector:
     app: sonarqube-dce
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-search
+  name: proxies-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 
 spec:
@@ -337,17 +356,17 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-search-headless
+  name: proxies-values.yaml-sonarqube-dce-search-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 
 spec:
@@ -364,24 +383,24 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-app
+  name: proxies-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: change-admin-password-hook-values.yaml
+    app.kubernetes.io/name: proxies-values.yaml
     sonarqube.datacenter/type: "app"
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: change-admin-password-hook-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: proxies-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "10.6.0-datacenter-app"
 spec:
   replicas: 2
@@ -391,17 +410,19 @@ spec:
   selector:
     matchLabels:
       app: sonarqube-dce
-      release: change-admin-password-hook-values.yaml
+      release: proxies-values.yaml
   template:
     metadata:
       labels:
         app: sonarqube-dce
-        release: change-admin-password-hook-values.yaml
+        release: proxies-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: edfa93d7f48617c1b8e4e86d99e69ab05f26003c0053769fca1ca05da0d6c5aa
-        checksum/config: f692feb736104766279363945cf3028743dbf5fe0fd2f3c0edfa5ef6a35cbd51
-        checksum/secret: a72adb8fbdb459628f1ae4afe96bf76f1b6426ca9d73e4358dcadb0639ef75f9
+        checksum/plugins: 1017afc6785fab1a356bc036a3923cc53b670cc6bd2c8c2e91ed6ef1c190b23e
+        checksum/config: 354e5ed5b5401e2899ba8366d52000f183b90151f71fea9f224a940c4e3b7ae8
+        checksum/secret: 5faa320e8fff5c5dce527a61a1d32d4fc8135da7f4f39f2075dda1226b0af5bf
+        checksum/prometheus-config: f3d95e36fe8697c320eaccab2854639b928c91dd51e9ccd5f6c86253418b9b3a
+        checksum/prometheus-ce-config: cf905fd5bea338c53c5f26d27dcba70cae89deb82283b37585c1970aadb61ec9
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -411,7 +432,64 @@ spec:
           resources:
             {}
           command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/change-admin-password-hook-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/proxies-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+        - name: inject-prometheus-exporter
+          image: sonarqube:10.6.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          resources:
+            {}
+          command: ["/bin/sh","-c"]
+          args: ["curl -s 'https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.17.2/jmx_prometheus_javaagent-0.17.2.jar'  --output /data/jmx_prometheus_javaagent.jar -v"]
+          volumeMounts:
+            - mountPath: /data
+              name: sonarqube
+              subPath: data
+          env:
+            - name: http_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: proxies-values.yaml-sonarqube-dce-http-proxies
+                  key: PROMETHEUS-EXPORTER-HTTP-PROXY
+            - name: https_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: proxies-values.yaml-sonarqube-dce-http-proxies
+                  key: PROMETHEUS-EXPORTER-HTTPS-PROXY
+            - name: no_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: proxies-values.yaml-sonarqube-dce-http-proxies
+                  key: PROMETHEUS-EXPORTER-NO-PROXY
+        - name: install-plugins
+          image: sonarqube:10.6.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          command: ["sh",
+            "-e",
+            "/tmp/scripts/install_plugins.sh"]
+          volumeMounts:
+            - mountPath: /opt/sonarqube/extensions/plugins
+              name: sonarqube
+              subPath: extensions/plugins
+            - name: install-plugins
+              mountPath: /tmp/scripts/
+          resources:
+            {}
+          env:
+            - name: http_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: proxies-values.yaml-sonarqube-dce-http-proxies
+                  key: PLUGINS-HTTP-PROXY
+            - name: https_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: proxies-values.yaml-sonarqube-dce-http-proxies
+                  key: PLUGINS-HTTPS-PROXY
+            - name: no_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: proxies-values.yaml-sonarqube-dce-http-proxies
+                  key: PLUGINS-NO-PROXY
       containers:
         - name: sonarqube-dce
           image: sonarqube:10.6.0-datacenter-app
@@ -419,6 +497,12 @@ spec:
           ports:
             - name: http
               containerPort: 9000
+              protocol: TCP
+            - name: monitoring-web
+              containerPort: 8000
+              protocol: TCP
+            - name: monitoring-ce
+              containerPort: 8001
               protocol: TCP
             - name: hazelcast
               containerPort: 9003
@@ -436,15 +520,15 @@ spec:
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS
-              value: ""
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml
             - name: SONAR_CE_JAVAOPTS
-              value: ""
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
             - name: SONAR_HELM_CHART_VERSION
               value: 10.7.0
             - name: SONAR_LOG_JSONOUTPUT
               value: "false"
             - name: SONAR_CLUSTER_SEARCH_HOSTS
-              value: "change-admin-password-hook-values.yaml-sonarqube-dce-search"
+              value: "proxies-values.yaml-sonarqube-dce-search"
             - name: SONAR_CLUSTER_KUBERNETES
               value: "true"
             - name: SONAR_CLUSTER_NODE_NAME
@@ -452,25 +536,25 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: SONAR_CLUSTER_HOSTS
-              value: "change-admin-password-hook-values.yaml-sonarqube-dce-headless"
+              value: "proxies-values.yaml-sonarqube-dce-headless"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
               valueFrom:
                 secretKeyRef:
-                  name: "change-admin-password-hook-values.yaml-sonarqube-dce-jwt"
+                  name: "proxies-values.yaml-sonarqube-dce-jwt"
                   key: SONAR_AUTH_JWTBASE64HS256SECRET
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: change-admin-password-hook-values.yaml-postgresql
+                  name: proxies-values.yaml-postgresql
                   key: postgresql-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: change-admin-password-hook-values.yaml-sonarqube-dce-monitoring-passcode
+                  name: proxies-values.yaml-sonarqube-dce-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
           envFrom:
             - configMapRef:
-                name: change-admin-password-hook-values.yaml-sonarqube-dce-jdbc-config
+                name: proxies-values.yaml-sonarqube-dce-jdbc-config
           livenessProbe:
             exec:
               command:
@@ -514,6 +598,9 @@ spec:
             - mountPath: /opt/sonarqube/data
               name: sonarqube
               subPath: data
+            - mountPath: /opt/sonarqube/extensions/plugins
+              name: sonarqube
+              subPath: extensions/plugins
             - mountPath: /opt/sonarqube/temp
               name: sonarqube
               subPath: temp
@@ -522,14 +609,32 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
+            - mountPath: /opt/sonarqube/conf/prometheus-config.yaml
+              subPath: prometheus-config.yaml
+              name: prometheus-config
+            - mountPath: /opt/sonarqube/conf/prometheus-ce-config.yaml
+              subPath: prometheus-ce-config.yaml
+              name: prometheus-ce-config
       serviceAccountName: default
       volumes:
       - name: install-plugins
         configMap:
-          name: change-admin-password-hook-values.yaml-sonarqube-dce-install-plugins
+          name: proxies-values.yaml-sonarqube-dce-install-plugins
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
+      - name: prometheus-config
+        configMap:
+          name: proxies-values.yaml-sonarqube-dce-prometheus-config
+          items:
+            - key: prometheus-config.yaml
+              path: prometheus-config.yaml
+      - name: prometheus-ce-config
+        configMap:
+          name: proxies-values.yaml-sonarqube-dce-prometheus-ce-config
+          items:
+            - key: prometheus-ce-config.yaml
+              path: prometheus-ce-config.yaml
       - name: sonarqube
         emptyDir:
           {}
@@ -541,32 +646,32 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: change-admin-password-hook-values.yaml-postgresql
+  name: proxies-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
   namespace: default
 spec:
-  serviceName: change-admin-password-hook-values.yaml-postgresql-headless
+  serviceName: proxies-values.yaml-postgresql-headless
   replicas: 1
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+      app.kubernetes.io/instance: proxies-values.yaml
       role: primary
   template:
     metadata:
-      name: change-admin-password-hook-values.yaml-postgresql
+      name: proxies-values.yaml-postgresql
       labels:
         app.kubernetes.io/name: postgresql
         helm.sh/chart: postgresql-10.15.0
-        app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+        app.kubernetes.io/instance: proxies-values.yaml
         app.kubernetes.io/managed-by: Helm
         role: primary
         app.kubernetes.io/component: primary
@@ -580,7 +685,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: postgresql
-                    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+                    app.kubernetes.io/instance: proxies-values.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
                   - "default"
@@ -590,7 +695,7 @@ spec:
           
       automountServiceAccountToken: false
       containers:
-        - name: change-admin-password-hook-values.yaml-postgresql
+        - name: proxies-values.yaml-postgresql
           image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
@@ -612,14 +717,14 @@ spec:
             - name: POSTGRES_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: change-admin-password-hook-values.yaml-postgresql
+                  name: proxies-values.yaml-postgresql
                   key: postgresql-postgres-password
             - name: POSTGRES_USER
               value: "sonarUser"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: change-admin-password-hook-values.yaml-postgresql
+                  name: proxies-values.yaml-postgresql
                   key: postgresql-password
             - name: POSTGRES_DB
               value: "sonarDB"
@@ -691,34 +796,34 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-search
+  name: proxies-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: "change-admin-password-hook-values.yaml"
+    app.kubernetes.io/name: "proxies-values.yaml"
     sonarqube.datacenter/type: "search"
-    app.kubernetes.io/instance: change-admin-password-hook-values.yaml
+    app.kubernetes.io/instance: proxies-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: change-admin-password-hook-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: proxies-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "10.6.0-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
-  serviceName: change-admin-password-hook-values.yaml-sonarqube-dce-search
+  serviceName: proxies-values.yaml-sonarqube-dce-search
   selector:
     matchLabels:
       app: sonarqube-dce-search
-      release: change-admin-password-hook-values.yaml
+      release: proxies-values.yaml
   volumeClaimTemplates:
   - metadata:
-      name: change-admin-password-hook-values.yaml-sonarqube-dce
+      name: proxies-values.yaml-sonarqube-dce
       labels:
-        release: change-admin-password-hook-values.yaml
+        release: proxies-values.yaml
         chart: "sonarqube-dce"
-        app: "change-admin-password-hook-values.yaml-sonarqube-dce"
+        app: "proxies-values.yaml-sonarqube-dce"
     spec:
       accessModes:
         - "ReadWriteOnce"
@@ -729,13 +834,13 @@ spec:
     metadata:
       labels:
         app: sonarqube-dce-search
-        release: change-admin-password-hook-values.yaml
+        release: proxies-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: 383c44ffc78a4e4f7ff58376c17d359abe3fba00d5467fde23ad6baff31988a1
-        checksum/init-fs: 4eab788bc0c9cf7ee8685e39cb0435951ffc132bc2b2e701aa8116d59aa8f99b
-        checksum/config: f692feb736104766279363945cf3028743dbf5fe0fd2f3c0edfa5ef6a35cbd51
-        checksum/secret: a72adb8fbdb459628f1ae4afe96bf76f1b6426ca9d73e4358dcadb0639ef75f9
+        checksum/init-sysctl: b978f8db9c6417a64915108107a480bf70a32dcaa864172497ea2b92d2b5d378
+        checksum/init-fs: b5fc9fe1788a8af70b5ee073f2436f1d04964e8c4ea8202fee9ffe96cb2ca4a5
+        checksum/config: 354e5ed5b5401e2899ba8366d52000f183b90151f71fea9f224a940c4e3b7ae8
+        checksum/secret: 5faa320e8fff5c5dce527a61a1d32d4fc8135da7f4f39f2075dda1226b0af5bf
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -779,16 +884,16 @@ spec:
             - name: init-fs
               mountPath: /tmp/scripts/
             - mountPath: /opt/sonarqube/certs
-              name: "change-admin-password-hook-values.yaml-sonarqube-dce"
+              name: "proxies-values.yaml-sonarqube-dce"
               subPath: certs
             - mountPath: /opt/sonarqube/data
-              name: "change-admin-password-hook-values.yaml-sonarqube-dce"
+              name: "proxies-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "change-admin-password-hook-values.yaml-sonarqube-dce"
+              name: "proxies-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "change-admin-password-hook-values.yaml-sonarqube-dce"
+              name: "proxies-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -816,9 +921,9 @@ spec:
             - name: SONAR_LOG_JSONOUTPUT
               value: "false"
             - name: SONAR_CLUSTER_ES_HOSTS
-              value: "change-admin-password-hook-values.yaml-sonarqube-dce-search-0,change-admin-password-hook-values.yaml-sonarqube-dce-search-1,change-admin-password-hook-values.yaml-sonarqube-dce-search-2,"
+              value: "proxies-values.yaml-sonarqube-dce-search-0,proxies-values.yaml-sonarqube-dce-search-1,proxies-values.yaml-sonarqube-dce-search-2,"
             - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
-              value: "change-admin-password-hook-values.yaml-sonarqube-dce-search-headless"
+              value: "proxies-values.yaml-sonarqube-dce-search-headless"
             - name: SONAR_CLUSTER_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -876,17 +981,17 @@ spec:
             timeoutSeconds: 1
           volumeMounts:
             - mountPath: /opt/sonarqube/certs
-              name: "change-admin-password-hook-values.yaml-sonarqube-dce"
+              name: "proxies-values.yaml-sonarqube-dce"
               subPath: certs
               readOnly: true
             - mountPath: /opt/sonarqube/data
-              name: "change-admin-password-hook-values.yaml-sonarqube-dce"
+              name: "proxies-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "change-admin-password-hook-values.yaml-sonarqube-dce"
+              name: "proxies-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "change-admin-password-hook-values.yaml-sonarqube-dce"
+              name: "proxies-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -897,17 +1002,17 @@ spec:
           secretName: your-secret
       - name: init-sysctl
         configMap:
-          name: change-admin-password-hook-values.yaml-sonarqube-dce-init-sysctl
+          name: proxies-values.yaml-sonarqube-dce-init-sysctl
           items:
             - key: init_sysctl.sh
               path: init_sysctl.sh
       - name: init-fs
         configMap:
-          name: change-admin-password-hook-values.yaml-sonarqube-dce-init-fs
+          name: proxies-values.yaml-sonarqube-dce-init-fs
           items:
             - key: init_fs.sh
               path: init_fs.sh
-      - name: "change-admin-password-hook-values.yaml-sonarqube-dce"
+      - name: "proxies-values.yaml-sonarqube-dce"
       - name : tmp-dir
         emptyDir:
           {}
@@ -916,18 +1021,18 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "change-admin-password-hook-values.yaml-ui-test"
+  name: "proxies-values.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: change-admin-password-hook-values.yaml
+    release: proxies-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: change-admin-password-hook-values.yaml-ui-test
+    - name: proxies-values.yaml-ui-test
       image: "sonarqube:10.6.0-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['wget']
@@ -938,7 +1043,7 @@ spec:
         '-t',
         '1200',
         '-qO-',
-        'change-admin-password-hook-values.yaml-sonarqube-dce:9000/api/system/status'
+        'proxies-values.yaml-sonarqube-dce:9000/api/system/status'
         ]
       resources:
         limits:
@@ -950,54 +1055,3 @@ spec:
           ephemeral-storage: 100M
           memory: 200M
   restartPolicy: Never
----
-# Source: sonarqube-dce/templates/change-admin-password-hook.yml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: change-admin-password-hook-values.yaml-sonarqube-dce-change-admin-password-hook
-  labels:
-    app: sonarqube-dce
-    heritage: Helm
-    release: change-admin-password-hook-values.yaml
-    helm.sh/chart: "sonarqube-dce-10.7.0"
-  annotations:
-    "helm.sh/hook": post-install, post-upgrade
-    "helm.sh/hook-delete-policy": hook-succeeded
-    someAnnotaion: "toto"
-spec:
-  template:
-    metadata:
-      name: change-admin-password-hook-values.yaml-sonarqube-dce-change-admin-password-hook
-      labels:
-        app: sonarqube-dce
-        heritage: Helm
-        release: change-admin-password-hook-values.yaml
-    spec:
-      restartPolicy: OnFailure
-      serviceAccountName: default
-      containers:
-      - name: change-admin-password-hook-values.yaml-sonarqube-dce-change-default-admin-password
-        image: curlimages/curl:8.2.0
-        securityContext:
-            runAsGroup: 1001
-            runAsUser: 1001
-        command: ["sh", "-c", 'until curl -v --connect-timeout 100 change-admin-password-hook-values.yaml-sonarqube-dce:9000/api/system/status | grep -w UP; do sleep 10; done; curl -v --connect-timeout 100 -u admin:$CURRENT_ADMIN_PASSWORD -X POST "change-admin-password-hook-values.yaml-sonarqube-dce:9000/api/users/change_password?login=admin&previousPassword=$CURRENT_ADMIN_PASSWORD&password=$ADMIN_PASSWORD"']
-        env:
-        - name: ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: change-admin-password-hook-values.yaml-sonarqube-dce-admin-password
-              key: password
-        - name: CURRENT_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: change-admin-password-hook-values.yaml-sonarqube-dce-admin-password
-              key: currentPassword
-        resources:
-          limits:
-            cpu: 100m
-            memory: 128Mi
-          requests:
-            cpu: 100m
-            memory: 128Mi
