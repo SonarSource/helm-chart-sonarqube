@@ -20,6 +20,8 @@ Supported Kubernetes Versions: From `1.24` to `1.30`
 
 ## Installing the chart
 
+### Prerequisites
+
 > **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/) for further information on how to install and tune the helm chart specifications.
 
 Prior to installing the chart, please ensure that the `ApplicationNodes.jwtSecret` value is set properly with a HS256 key encoded with base64. In the following, an example on how to generate this key on a Unix system:
@@ -28,7 +30,7 @@ Prior to installing the chart, please ensure that the `ApplicationNodes.jwtSecre
 echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64
 ```
 
-To install the chart:
+### Installing the chart on standard kubernetes flavor
 
 ```bash
 helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
@@ -38,12 +40,29 @@ export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key
 helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set ApplicationNodes.jwtSecret=$JWT_SECRET
 ```
 
-The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace. 
-If you are interested in deploying SonarQube on Openshift, please check the [dedicated section](#openshift).
+The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace.
 
 The [configuration](#configuration) section lists the parameters that can be configured during installation. 
 
 The default login is admin/admin.
+
+### Installing the chart on Openshift
+
+```bash
+helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
+helm repo update
+kubectl create namespace sonarqube-dce # If you dont have permissions to create the namespace, skip this step and replace all -n with an existing namespace name.
+export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64)
+helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce \
+  --set ApplicationNodes.jwtSecret=$JWT_SECRET \
+  --set OpenShift.enabled=true \
+  --set postgresql.securityContext.enabled=false \
+  --set postgresql.containerSecurityContext.enabled=false
+```
+
+This will install the chart with the embedded postgresql database, while this is great for evaluation purpose, we do not recommend it for production use case.
+
+> **_NOTE:_** Please check the [dedicated Openshift section](#openshift) as well as the [production use case section](#production-use-case), it explains the specific part of OpenShift that requires attention and might help to solve issues if the above commands does not work.
 
 ## Installing the SonarQube 9.9 LTA chart
 
@@ -200,9 +219,9 @@ If a Prometheus Operator is deployed in your cluster, you can enable a PodMonito
 
 The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).
 
-`Openshift.createSCC` is deprecated and should be set to `false`, the default securityContext plus the production config described [above](#production-use-case) are compatible with restricted SCCv2.
+`Openshift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
 
-If you want to try out this chart on Openshift, and use our default embedded postgresql chart please set `postgresql.securityContext.enabled=true` and `postgresql.containerSecurityContext.enabled=true`
+If you want to try out this chart on Openshift, and use our default embedded postgresql chart please set `postgresql.securityContext.enabled=false` and `postgresql.containerSecurityContext.enabled=false`
 
 ### Route definition
 
