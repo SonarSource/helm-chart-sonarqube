@@ -36,24 +36,6 @@ The [configuration](#configuration) section lists the parameters that can be con
 
 The default login is admin/admin.
 
-## Installing the chart on Openshift
-
-If you are interested in deploying SonarQube on Openshift, please follow those steps to install the chart:
-
-```bash
-helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
-helm repo update
-kubectl create namespace sonarqube # If you dont have permissions to create the namespace, skip this step and replace all -n with an existing namespace name.
-helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce \
-  --set OpenShift.enabled=true \
-  --set postgresql.securityContext.enabled=false \
-  --set postgresql.containerSecurityContext.enabled=false \
-```
-
-This will install the chart with the embedded postgresql database, while this is great for evaluation purpose, we do not recommend it for production use case.
-
-> **_NOTE:_** Please check the [dedicated Openshift section](#openshift) as well as the [production use case section](#production-use-case), it explains the specific part of OpenShift that requires attention and might help to solve issues if the above commands does not work.
-
 ## Installing the SonarQube 9.9 LTA chart
 
 The version of the chart for the SonarQube 9.9 LTA is being distributed as the `8.x.x` version of this chart.
@@ -222,6 +204,18 @@ If a Prometheus Operator is deployed in your cluster, you can enable a PodMonito
 The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).
 
 `Openshift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
+
+The below command will deploy SonarQube on the Openshift Kubernetes cluster. Please note this will use the embedded postgresql database and is not recommended for production
+
+```bash
+helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
+helm repo update
+kubectl create namespace sonarqube # If you dont have permissions to create the namespace, skip this step and replace all -n with an existing namespace name.
+helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube \
+  --set OpenShift.enabled=true \
+  --set postgresql.securityContext.enabled=false \
+  --set postgresql.containerSecurityContext.enabled=false
+```
 
 ### Route definition
 

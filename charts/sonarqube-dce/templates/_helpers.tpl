@@ -392,6 +392,7 @@ Set combined_app_env, ensuring we dont have any duplicates with our features and
       name: {{ template "sonarqube.fullname" . }}-http-proxies
       key: PLUGINS-NO-PROXY
 {{- end -}}
+{{- end -}}
 
 {{/*
 Remove incompatible user/group values that do not work in Openshift out of the box
