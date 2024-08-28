@@ -14,6 +14,7 @@ All changes to this chart will be documented in this file.
 * Support GatewayAPI HttpRoute
 * Support Openshift SCCv2 by default when Openshift.enabled=true
 * Deprecate Openshift.createSCC
+* Support the TLS communication between App and Search nodes
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0

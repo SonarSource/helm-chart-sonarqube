@@ -264,6 +264,15 @@ spec:
                   name: "{{ template "search.userPassword" . }}" 
                   key: SONAR_CLUSTER_SEARCH_PASSWORD
             {{- end }}
+            {{- if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
+            - name: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTORE
+              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
+            - name: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ template "search.ksPassword" . }}"
+                  key: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ template "sonarqube.fullname" . }}-jdbc-config
@@ -329,6 +338,11 @@ spec:
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/prometheus-ce-config.yaml
               subPath: prometheus-ce-config.yaml
               name: prometheus-ce-config
+            {{- end }}
+            {{- if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
+            - mountPath: {{ .Values.sonarqubeFolder }}/es-secret/
+              name: es-secret
+              readOnly: true
             {{- end }}
     {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
@@ -412,6 +426,11 @@ spec:
           items:
             - key: prometheus-ce-config.yaml
               path: prometheus-ce-config.yaml
+      {{- end }}
+      {{- if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
+      - name: es-secret
+        secret:
+          secretName: {{ .Values.searchNodes.searchAuthentication.keyStoreSecret }}
       {{- end }}
       - name: sonarqube
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
