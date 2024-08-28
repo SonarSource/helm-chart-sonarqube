@@ -375,11 +375,7 @@ spec:
         - key: sonar-secret.txt
           path: sonar-secret.txt
     {{- end }}
-    {{- if .Values.caCerts.enabled }}
-    - name: ca-certs
-      secret:
-        secretName: {{ .Values.caCerts.secret }}
-    {{- end }}
+    {{- include "sonarqube.volumes.caCerts" . | nindent 4 }}
     {{- if .Values.plugins.netrcCreds }}
     - name: plugins-netrc-file
       secret:

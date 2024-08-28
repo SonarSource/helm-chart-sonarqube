@@ -3,11 +3,11 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-search
+  name: ca-certificate-configmap.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 spec:
   minAvailable: 2
@@ -20,11 +20,11 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-app
+  name: ca-certificate-configmap.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 spec:
   minAvailable: 1
@@ -37,11 +37,11 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: duplicated-env-values.yaml-postgresql
+  name: ca-certificate-configmap.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: duplicated-env-values.yaml
+    app.kubernetes.io/instance: ca-certificate-configmap.yaml
     app.kubernetes.io/managed-by: Helm
   namespace: default
 type: Opaque
@@ -53,11 +53,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-monitoring-passcode
+  name: ca-certificate-configmap.yaml-sonarqube-dce-monitoring-passcode
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -68,11 +68,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-jwt
+  name: ca-certificate-configmap.yaml-sonarqube-dce-jwt
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -83,11 +83,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-http-proxies
+  name: ca-certificate-configmap.yaml-sonarqube-dce-http-proxies
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 type: Opaque
 stringData:
@@ -102,11 +102,11 @@ stringData:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-app-config
+  name: ca-certificate-configmap.yaml-sonarqube-dce-app-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -115,11 +115,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-search-config
+  name: ca-certificate-configmap.yaml-sonarqube-dce-search-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -128,27 +128,28 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-init-fs
+  name: ca-certificate-configmap.yaml-sonarqube-dce-init-fs
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 data:
   init_fs.sh: |-
     chown -R 1000:0 /opt/sonarqube/data
     chown -R 1000:0 /opt/sonarqube/temp
     chown -R 1000:0 /opt/sonarqube/logs
+    chown -R 1000:0 /opt/sonarqube/certs
 ---
 # Source: sonarqube-dce/templates/init-sysctl.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-init-sysctl
+  name: ca-certificate-configmap.yaml-sonarqube-dce-init-sysctl
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -175,11 +176,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-install-plugins
+  name: ca-certificate-configmap.yaml-sonarqube-dce-install-plugins
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
@@ -188,25 +189,25 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-jdbc-config
+  name: ca-certificate-configmap.yaml-sonarqube-dce-jdbc-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
-  SONAR_JDBC_URL: "jdbc:postgresql://duplicated-env-values.yaml-postgresql:5432/sonarDB"
+  SONAR_JDBC_URL: "jdbc:postgresql://ca-certificate-configmap.yaml-postgresql:5432/sonarDB"
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: duplicated-env-values.yaml-postgresql-headless
+  name: ca-certificate-configmap.yaml-postgresql-headless
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: duplicated-env-values.yaml
+    app.kubernetes.io/instance: ca-certificate-configmap.yaml
     app.kubernetes.io/managed-by: Helm
     # Use this annotation in addition to the actual publishNotReadyAddresses
     # field below because the annotation will stop being respected soon but the
@@ -227,17 +228,17 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: duplicated-env-values.yaml
+    app.kubernetes.io/instance: ca-certificate-configmap.yaml
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: duplicated-env-values.yaml-postgresql
+  name: ca-certificate-configmap.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: duplicated-env-values.yaml
+    app.kubernetes.io/instance: ca-certificate-configmap.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
   namespace: default
@@ -249,18 +250,18 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: duplicated-env-values.yaml
+    app.kubernetes.io/instance: ca-certificate-configmap.yaml
     role: primary
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce
+  name: ca-certificate-configmap.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 
 spec:
@@ -272,17 +273,17 @@ spec:
       name: http
   selector:
     app: sonarqube-dce
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-headless
+  name: ca-certificate-configmap.yaml-sonarqube-dce-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 
 spec:
@@ -296,17 +297,17 @@ spec:
       name: hazelcast
   selector:
     app: sonarqube-dce
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-search
+  name: ca-certificate-configmap.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 
 spec:
@@ -322,17 +323,17 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-search-headless
+  name: ca-certificate-configmap.yaml-sonarqube-dce-search-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 
 spec:
@@ -349,24 +350,24 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-app
+  name: ca-certificate-configmap.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
-    app.kubernetes.io/name: duplicated-env-values.yaml
+    app.kubernetes.io/name: ca-certificate-configmap.yaml
     sonarqube.datacenter/type: "app"
-    app.kubernetes.io/instance: duplicated-env-values.yaml
+    app.kubernetes.io/instance: ca-certificate-configmap.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: duplicated-env-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: ca-certificate-configmap.yaml-sonarqube-dce
     app.kubernetes.io/version: "10.6.0-datacenter-app"
 spec:
   replicas: 2
@@ -376,17 +377,17 @@ spec:
   selector:
     matchLabels:
       app: sonarqube-dce
-      release: duplicated-env-values.yaml
+      release: ca-certificate-configmap.yaml
   template:
     metadata:
       labels:
         app: sonarqube-dce
-        release: duplicated-env-values.yaml
+        release: ca-certificate-configmap.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 503a6aba9f735b6947fb539fc1964941517b0f68df768976a39a5e8a09db35de
-        checksum/config: 82b4f85925a8e74b9fe7244b8c8b941739e13db5bf2d129bff0308925cf6531e
-        checksum/secret: 7b383c17d6ef96d772322aa23be38e3f14d70e41101148a8d0c47c4dcd3cc40c
+        checksum/plugins: 325811e683e73fcc6ce7062187aa3ea0f4d466e03053539a9a61fb055f0dc85c
+        checksum/config: c62ed112d12d04452814e8a4ee9a18dcbfdada923c8a941031b0162d5f43b3da
+        checksum/secret: e991b13c4bd20bea75f229cc5b587b842ed4f5adc8e88d3cf899595c8d088394
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -407,7 +408,31 @@ spec:
           resources:
             {}
           command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/duplicated-env-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/ca-certificate-configmap.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+        - name: ca-certs
+          image: sonarqube:10.6.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          command: ["sh"]
+          args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
+          volumeMounts:
+            - mountPath: /tmp/certs
+              name: sonarqube
+              subPath: certs
+            - mountPath: /tmp/secrets/ca-certs
+              name: ca-certs
       securityContext:
         fsGroup: 0
       containers:
@@ -431,23 +456,18 @@ spec:
               ephemeral-storage: 1536M
               memory: 4096M
           env:
-            - name: FOOBAR
-              valueFrom:
-                secretKeyRef:
-                  key: BARFOO
-                  name: sonarqube-ldap
             - name: SONAR_WEB_CONTEXT
-              value: /some/context/
+              value: /
             - name: SONAR_WEB_JAVAOPTS
-              value: -Xmx1g
+              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
             - name: SONAR_CE_JAVAOPTS
-              value: -Xms2G -Xmx2G -DsomeOption=some/Value
+              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
             - name: SONAR_HELM_CHART_VERSION
               value: 10.7.0
             - name: SONAR_LOG_JSONOUTPUT
               value: "false"
             - name: SONAR_CLUSTER_SEARCH_HOSTS
-              value: "duplicated-env-values.yaml-sonarqube-dce-search"
+              value: "ca-certificate-configmap.yaml-sonarqube-dce-search"
             - name: SONAR_CLUSTER_KUBERNETES
               value: "true"
             - name: SONAR_CLUSTER_NODE_NAME
@@ -455,25 +475,25 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: SONAR_CLUSTER_HOSTS
-              value: "duplicated-env-values.yaml-sonarqube-dce-headless"
+              value: "ca-certificate-configmap.yaml-sonarqube-dce-headless"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
               valueFrom:
                 secretKeyRef:
-                  name: "duplicated-env-values.yaml-sonarqube-dce-jwt"
+                  name: "ca-certificate-configmap.yaml-sonarqube-dce-jwt"
                   key: SONAR_AUTH_JWTBASE64HS256SECRET
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: duplicated-env-values.yaml-postgresql
+                  name: ca-certificate-configmap.yaml-postgresql
                   key: postgresql-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: duplicated-env-values.yaml-sonarqube-dce-monitoring-passcode
+                  name: ca-certificate-configmap.yaml-sonarqube-dce-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
           envFrom:
             - configMapRef:
-                name: duplicated-env-values.yaml-sonarqube-dce-jdbc-config
+                name: ca-certificate-configmap.yaml-sonarqube-dce-jdbc-config
           livenessProbe:
             exec:
               command:
@@ -481,7 +501,7 @@ spec:
               - -c
               - |
                 host="$(hostname -i || echo '127.0.0.1')"
-                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/some/context/api/system/liveness"
+                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
             failureThreshold: 6
             initialDelaySeconds: 0
             periodSeconds: 30
@@ -496,7 +516,7 @@ spec:
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
                 host="$(hostname -i || echo '127.0.0.1')"
-                if wget --no-proxy -qO- http://${host}:9000/some/context/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                if wget --no-proxy -qO- http://${host}:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
                   exit 0
                 fi
                 exit 1
@@ -507,7 +527,7 @@ spec:
           startupProbe:
             httpGet:
               scheme: HTTP
-              path: /some/context/api/system/status
+              path: /api/system/status
               port: http
             initialDelaySeconds: 45
             periodSeconds: 10
@@ -524,6 +544,9 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
+            - mountPath: /opt/sonarqube/certs
+              name: sonarqube
+              subPath: certs
             - mountPath: /opt/sonarqube/data
               name: sonarqube
               subPath: data
@@ -537,10 +560,15 @@ spec:
               name: tmp-dir
       serviceAccountName: default
       volumes:
-      
+      - name: ca-certs
+        configMap:
+          name: my-custom-cacerts-certificate
+          items:
+            - key: forticlient.crt
+              path: forticlient.crt
       - name: install-plugins
         configMap:
-          name: duplicated-env-values.yaml-sonarqube-dce-install-plugins
+          name: ca-certificate-configmap.yaml-sonarqube-dce-install-plugins
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
@@ -555,32 +583,32 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: duplicated-env-values.yaml-postgresql
+  name: ca-certificate-configmap.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: duplicated-env-values.yaml
+    app.kubernetes.io/instance: ca-certificate-configmap.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
   namespace: default
 spec:
-  serviceName: duplicated-env-values.yaml-postgresql-headless
+  serviceName: ca-certificate-configmap.yaml-postgresql-headless
   replicas: 1
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: duplicated-env-values.yaml
+      app.kubernetes.io/instance: ca-certificate-configmap.yaml
       role: primary
   template:
     metadata:
-      name: duplicated-env-values.yaml-postgresql
+      name: ca-certificate-configmap.yaml-postgresql
       labels:
         app.kubernetes.io/name: postgresql
         helm.sh/chart: postgresql-10.15.0
-        app.kubernetes.io/instance: duplicated-env-values.yaml
+        app.kubernetes.io/instance: ca-certificate-configmap.yaml
         app.kubernetes.io/managed-by: Helm
         role: primary
         app.kubernetes.io/component: primary
@@ -594,7 +622,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: postgresql
-                    app.kubernetes.io/instance: duplicated-env-values.yaml
+                    app.kubernetes.io/instance: ca-certificate-configmap.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
                   - "default"
@@ -606,7 +634,7 @@ spec:
         fsGroup: 1001
       automountServiceAccountToken: false
       containers:
-        - name: duplicated-env-values.yaml-postgresql
+        - name: ca-certificate-configmap.yaml-postgresql
           image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
@@ -637,14 +665,14 @@ spec:
             - name: POSTGRES_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: duplicated-env-values.yaml-postgresql
+                  name: ca-certificate-configmap.yaml-postgresql
                   key: postgresql-postgres-password
             - name: POSTGRES_USER
               value: "sonarUser"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: duplicated-env-values.yaml-postgresql
+                  name: ca-certificate-configmap.yaml-postgresql
                   key: postgresql-password
             - name: POSTGRES_DB
               value: "sonarDB"
@@ -716,34 +744,34 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: duplicated-env-values.yaml-sonarqube-dce-search
+  name: ca-certificate-configmap.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
-    app.kubernetes.io/name: "duplicated-env-values.yaml"
+    app.kubernetes.io/name: "ca-certificate-configmap.yaml"
     sonarqube.datacenter/type: "search"
-    app.kubernetes.io/instance: duplicated-env-values.yaml
+    app.kubernetes.io/instance: ca-certificate-configmap.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: duplicated-env-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: ca-certificate-configmap.yaml-sonarqube-dce
     app.kubernetes.io/version: "10.6.0-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
-  serviceName: duplicated-env-values.yaml-sonarqube-dce-search
+  serviceName: ca-certificate-configmap.yaml-sonarqube-dce-search
   selector:
     matchLabels:
       app: sonarqube-dce-search
-      release: duplicated-env-values.yaml
+      release: ca-certificate-configmap.yaml
   volumeClaimTemplates:
   - metadata:
-      name: duplicated-env-values.yaml-sonarqube-dce
+      name: ca-certificate-configmap.yaml-sonarqube-dce
       labels:
-        release: duplicated-env-values.yaml
+        release: ca-certificate-configmap.yaml
         chart: "sonarqube-dce"
-        app: "duplicated-env-values.yaml-sonarqube-dce"
+        app: "ca-certificate-configmap.yaml-sonarqube-dce"
     spec:
       accessModes:
         - "ReadWriteOnce"
@@ -754,13 +782,13 @@ spec:
     metadata:
       labels:
         app: sonarqube-dce-search
-        release: duplicated-env-values.yaml
+        release: ca-certificate-configmap.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: 68f161181ab60dfd9db5542d0f45404b172ab1f605de03fc4d31538ac26590f2
-        checksum/init-fs: 06f6db9b953a5d30a374f87e8dbcbb54596abbfed63bac657b2d1b2c1ef696cd
-        checksum/config: 82b4f85925a8e74b9fe7244b8c8b941739e13db5bf2d129bff0308925cf6531e
-        checksum/secret: 7b383c17d6ef96d772322aa23be38e3f14d70e41101148a8d0c47c4dcd3cc40c
+        checksum/init-sysctl: 564cfc6488e9f0e48188f6cca795224761fddc00ec57b8e13500f915c45f2a54
+        checksum/init-fs: 2032b1b9fa3a25809ef26af0092c0d006250281a78edb4373130c305d56f3322
+        checksum/config: c62ed112d12d04452814e8a4ee9a18dcbfdada923c8a941031b0162d5f43b3da
+        checksum/secret: e991b13c4bd20bea75f229cc5b587b842ed4f5adc8e88d3cf899595c8d088394
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -779,6 +807,30 @@ spec:
           volumeMounts:
             - name: init-sysctl
               mountPath: /tmp/scripts/
+        - name: ca-certs
+          image: sonarqube:10.6.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          command: ["sh"]
+          args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
+          volumeMounts:
+            - mountPath: /tmp/certs
+              name: "ca-certificate-configmap.yaml-sonarqube-dce"
+              subPath: certs
+            - mountPath: /tmp/secrets/ca-certs
+              name: ca-certs
         - name: init-fs
           image: sonarqube:10.6.0-datacenter-app
           imagePullPolicy: IfNotPresent
@@ -804,16 +856,16 @@ spec:
             - name: init-fs
               mountPath: /tmp/scripts/
             - mountPath: /opt/sonarqube/certs
-              name: "duplicated-env-values.yaml-sonarqube-dce"
+              name: "ca-certificate-configmap.yaml-sonarqube-dce"
               subPath: certs
             - mountPath: /opt/sonarqube/data
-              name: "duplicated-env-values.yaml-sonarqube-dce"
+              name: "ca-certificate-configmap.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "duplicated-env-values.yaml-sonarqube-dce"
+              name: "ca-certificate-configmap.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "duplicated-env-values.yaml-sonarqube-dce"
+              name: "ca-certificate-configmap.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -843,9 +895,9 @@ spec:
             - name: SONAR_LOG_JSONOUTPUT
               value: "false"
             - name: SONAR_CLUSTER_ES_HOSTS
-              value: "duplicated-env-values.yaml-sonarqube-dce-search-0,duplicated-env-values.yaml-sonarqube-dce-search-1,duplicated-env-values.yaml-sonarqube-dce-search-2,"
+              value: "ca-certificate-configmap.yaml-sonarqube-dce-search-0,ca-certificate-configmap.yaml-sonarqube-dce-search-1,ca-certificate-configmap.yaml-sonarqube-dce-search-2,"
             - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
-              value: "duplicated-env-values.yaml-sonarqube-dce-search-headless"
+              value: "ca-certificate-configmap.yaml-sonarqube-dce-search-headless"
             - name: SONAR_CLUSTER_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -913,36 +965,41 @@ spec:
               type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/certs
-              name: "duplicated-env-values.yaml-sonarqube-dce"
+              name: "ca-certificate-configmap.yaml-sonarqube-dce"
               subPath: certs
               readOnly: true
             - mountPath: /opt/sonarqube/data
-              name: "duplicated-env-values.yaml-sonarqube-dce"
+              name: "ca-certificate-configmap.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "duplicated-env-values.yaml-sonarqube-dce"
+              name: "ca-certificate-configmap.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "duplicated-env-values.yaml-sonarqube-dce"
+              name: "ca-certificate-configmap.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
       serviceAccountName: default
       volumes:
-      
+      - name: ca-certs
+        configMap:
+          name: my-custom-cacerts-certificate
+          items:
+            - key: forticlient.crt
+              path: forticlient.crt
       - name: init-sysctl
         configMap:
-          name: duplicated-env-values.yaml-sonarqube-dce-init-sysctl
+          name: ca-certificate-configmap.yaml-sonarqube-dce-init-sysctl
           items:
             - key: init_sysctl.sh
               path: init_sysctl.sh
       - name: init-fs
         configMap:
-          name: duplicated-env-values.yaml-sonarqube-dce-init-fs
+          name: ca-certificate-configmap.yaml-sonarqube-dce-init-fs
           items:
             - key: init_fs.sh
               path: init_fs.sh
-      - name: "duplicated-env-values.yaml-sonarqube-dce"
+      - name: "ca-certificate-configmap.yaml-sonarqube-dce"
       - name : tmp-dir
         emptyDir:
           {}
@@ -951,18 +1008,18 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "duplicated-env-values.yaml-ui-test"
+  name: "ca-certificate-configmap.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.7.0
-    release: duplicated-env-values.yaml
+    release: ca-certificate-configmap.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: duplicated-env-values.yaml-ui-test
+    - name: ca-certificate-configmap.yaml-ui-test
       image: "sonarqube:10.6.0-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['wget']
@@ -973,7 +1030,7 @@ spec:
         '-t',
         '1200',
         '-qO-',
-        'duplicated-env-values.yaml-sonarqube-dce:9000/api/system/status'
+        'ca-certificate-configmap.yaml-sonarqube-dce:9000/api/system/status'
         ]
       resources:
         limits:

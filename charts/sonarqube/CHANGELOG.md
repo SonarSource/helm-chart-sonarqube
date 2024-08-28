@@ -17,6 +17,7 @@ All changes to this chart will be documented in this file.
 * Support additional labels in the PodMonitor
 * Support Openshift SCCv2 by default when Openshift.enabled=true
 * Deprecate Openshift.createSCC
+* Support additional CA Certificate as ConfigMap instead of only Secret
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0
