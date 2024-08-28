@@ -202,7 +202,7 @@ The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Amo
 
 `Openshift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
 
-The below command will deploy SonarQube on the Openshift Kubernetes cluster. Please note this will use the embedded postgresql database and is not recommended for production
+The below command will deploy SonarQube on the Openshift Kubernetes cluster. Please note this will use the embedded postgresql database and is not recommended for production.
 
 ```bash
 helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
