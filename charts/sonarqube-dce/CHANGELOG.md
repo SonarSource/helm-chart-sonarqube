@@ -11,6 +11,7 @@ All changes to this chart will be documented in this file.
 * Support Openshift Route
 * Fix networkPolicy.additionalPolicys typo
 * Support install-plugin and prometheusExporter proxy variables in secret
+* Support GatewayAPI HttpRoute
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0
