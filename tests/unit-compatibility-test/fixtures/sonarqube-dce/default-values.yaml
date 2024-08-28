@@ -139,7 +139,6 @@ data:
     chown -R 1000:0 /opt/sonarqube/data
     chown -R 1000:0 /opt/sonarqube/temp
     chown -R 1000:0 /opt/sonarqube/logs
-    chown -R 1000:0 /opt/sonarqube/extensions
 ---
 # Source: sonarqube-dce/templates/init-sysctl.yaml
 apiVersion: v1
@@ -394,10 +393,23 @@ spec:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-datacenter-app
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             {}
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/default-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+      securityContext:
+        fsGroup: 0
       containers:
         - name: sonarqube-dce
           image: sonarqube:10.6.0-datacenter-app
@@ -496,6 +508,16 @@ spec:
             periodSeconds: 10
             failureThreshold: 32
             timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/data
               name: sonarqube
@@ -574,6 +596,8 @@ spec:
               weight: 1
         nodeAffinity:
           
+      securityContext:
+        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: default-values.yaml-postgresql
@@ -586,6 +610,15 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
+            runAsUser: 1001
+            seccompProfile:
+              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -719,7 +752,7 @@ spec:
         sonarqube.datacenter/type: "search"
       annotations:
         checksum/init-sysctl: 73da91b96a45298b103dfd121321b18ab3ddd9e82841c856dfb18d0742688fa3
-        checksum/init-fs: adcc1c8886f72a87fed13b7c1903c2e2677f4a70eeaef6d2802927d989447593
+        checksum/init-fs: c3d451dd2edc3da41174c5a7a72651de54f93cfe5709d21692e97839d81c1476
         checksum/config: e309561f175d6f23239f2d1be6f04012ff93830265b8228d54e9ab4903732a96
         checksum/secret: 6f79a8ce1db48a85cd32c6a6857df87ff1a07484915218eb08e2ca6fd96cbff5
     spec:
@@ -778,6 +811,8 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
+      securityContext:
+        fsGroup: 0
       containers:
         - name: sonarqube-dce-search
           image: "sonarqube:10.6.0-datacenter-search"
@@ -860,6 +895,16 @@ spec:
             periodSeconds: 10
             failureThreshold: 24
             timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/certs
               name: "default-values.yaml-sonarqube-dce"

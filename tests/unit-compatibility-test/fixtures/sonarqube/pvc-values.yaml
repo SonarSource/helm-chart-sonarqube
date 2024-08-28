@@ -78,7 +78,6 @@ data:
     chown -R 1000:0 /opt/sonarqube/data
     chown -R 1000:0 /opt/sonarqube/temp
     chown -R 1000:0 /opt/sonarqube/logs
-    chown -R 1000:0 /opt/sonarqube/extensions
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
@@ -283,6 +282,8 @@ spec:
               weight: 1
         nodeAffinity:
           
+      securityContext:
+        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: pvc-values.yaml-postgresql
@@ -295,6 +296,15 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
+            runAsUser: 1001
+            seccompProfile:
+              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -410,7 +420,7 @@ spec:
     metadata:
       annotations:
         checksum/config: e9899c1e4753e74241b8aa378766064651dc86c9a85d35730507a573db6a526f
-        checksum/init-fs: 0cf2d4fc828ea15d8bf85c990c2699374285ba8f2104f0be583de079962f77ec
+        checksum/init-fs: 524d1b0e3068117c2d44ebf1c4a7ca7372373e172c63e77a514236a58f6a657f
         checksum/init-sysctl: aa217652630f95b93ed32da24157047e913ecb0354d3bc2801506f59f2bb23b2
         checksum/plugins: 192ab79caaa940637e137aa30435dcc9e9b505a1a79366c337cfd57f4ae1cb9d
         checksum/secret: de7d1a54d1ebafa4a4c1b45b7d138ab59fdf72d1e2d5f62abd42d4a29d22c86a
@@ -419,10 +429,23 @@ spec:
         release: pvc-values.yaml
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 0
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/pvc-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
@@ -553,6 +576,16 @@ spec:
             periodSeconds: 10
             failureThreshold: 24
             timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/data
               name: sonarqube

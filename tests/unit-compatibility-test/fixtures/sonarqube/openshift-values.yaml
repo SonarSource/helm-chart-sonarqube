@@ -3,11 +3,11 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-postgresql
+  name: openshift-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: sonar-web-context-sts-deprecated-values.yaml
+    app.kubernetes.io/instance: openshift-values.yaml
     app.kubernetes.io/managed-by: Helm
   namespace: default
 type: Opaque
@@ -20,40 +20,26 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-monitoring-passcode
+  name: openshift-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-sts-deprecated-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
 ---
 # Source: sonarqube/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-admin-password
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.7.0
-    release: sonar-web-context-sts-deprecated-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  password: "admin1"
-  currentPassword: "admin"
 ---
-# Source: sonarqube/templates/secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-http-proxies
+  name: openshift-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-sts-deprecated-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 type: Opaque
 stringData:
@@ -68,11 +54,11 @@ stringData:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-config
+  name: openshift-values.yaml-sonarqube-config
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-sts-deprecated-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -81,11 +67,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-init-fs
+  name: openshift-values.yaml-sonarqube-init-fs
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-sts-deprecated-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 data:
   init_fs.sh: |-
@@ -94,11 +80,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-init-sysctl
+  name: openshift-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-sts-deprecated-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -125,11 +111,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-install-plugins
+  name: openshift-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-sts-deprecated-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
@@ -138,25 +124,25 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-jdbc-config
+  name: openshift-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-sts-deprecated-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
-  SONAR_JDBC_URL: "jdbc:postgresql://sonar-web-context-sts-deprecated-values.yaml-postgresql:5432/sonarDB"
+  SONAR_JDBC_URL: "jdbc:postgresql://openshift-values.yaml-postgresql:5432/sonarDB"
 ---
 # Source: sonarqube/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-postgresql-headless
+  name: openshift-values.yaml-postgresql-headless
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: sonar-web-context-sts-deprecated-values.yaml
+    app.kubernetes.io/instance: openshift-values.yaml
     app.kubernetes.io/managed-by: Helm
     # Use this annotation in addition to the actual publishNotReadyAddresses
     # field below because the annotation will stop being respected soon but the
@@ -177,17 +163,17 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: sonar-web-context-sts-deprecated-values.yaml
+    app.kubernetes.io/instance: openshift-values.yaml
 ---
 # Source: sonarqube/charts/postgresql/templates/svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-postgresql
+  name: openshift-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: sonar-web-context-sts-deprecated-values.yaml
+    app.kubernetes.io/instance: openshift-values.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
   namespace: default
@@ -199,18 +185,18 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: sonar-web-context-sts-deprecated-values.yaml
+    app.kubernetes.io/instance: openshift-values.yaml
     role: primary
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube
+  name: openshift-values.yaml-sonarqube
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-sts-deprecated-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 spec:
   type: ClusterIP
@@ -221,38 +207,38 @@ spec:
       name: http
   selector:
     app: sonarqube
-    release: sonar-web-context-sts-deprecated-values.yaml
+    release: openshift-values.yaml
 ---
 # Source: sonarqube/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-postgresql
+  name: openshift-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: sonar-web-context-sts-deprecated-values.yaml
+    app.kubernetes.io/instance: openshift-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
   namespace: default
 spec:
-  serviceName: sonar-web-context-sts-deprecated-values.yaml-postgresql-headless
+  serviceName: openshift-values.yaml-postgresql-headless
   replicas: 1
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: sonar-web-context-sts-deprecated-values.yaml
+      app.kubernetes.io/instance: openshift-values.yaml
       role: primary
   template:
     metadata:
-      name: sonar-web-context-sts-deprecated-values.yaml-postgresql
+      name: openshift-values.yaml-postgresql
       labels:
         app.kubernetes.io/name: postgresql
         helm.sh/chart: postgresql-10.15.0
-        app.kubernetes.io/instance: sonar-web-context-sts-deprecated-values.yaml
+        app.kubernetes.io/instance: openshift-values.yaml
         app.kubernetes.io/managed-by: Helm
         role: primary
         app.kubernetes.io/component: primary
@@ -266,7 +252,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: postgresql
-                    app.kubernetes.io/instance: sonar-web-context-sts-deprecated-values.yaml
+                    app.kubernetes.io/instance: openshift-values.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
                   - "default"
@@ -278,7 +264,7 @@ spec:
         fsGroup: 1001
       automountServiceAccountToken: false
       containers:
-        - name: sonar-web-context-sts-deprecated-values.yaml-postgresql
+        - name: openshift-values.yaml-postgresql
           image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
@@ -309,14 +295,14 @@ spec:
             - name: POSTGRES_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: sonar-web-context-sts-deprecated-values.yaml-postgresql
+                  name: openshift-values.yaml-postgresql
                   key: postgresql-postgres-password
             - name: POSTGRES_USER
               value: "sonarUser"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: sonar-web-context-sts-deprecated-values.yaml-postgresql
+                  name: openshift-values.yaml-postgresql
                   key: postgresql-password
             - name: POSTGRES_DB
               value: "sonarDB"
@@ -388,40 +374,39 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube
+  name: openshift-values.yaml-sonarqube
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-sts-deprecated-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: sonarqube-sonar-web-context-sts-deprecated-values.yaml-sonarqube
-    app.kubernetes.io/instance: sonar-web-context-sts-deprecated-values.yaml
+    app.kubernetes.io/name: sonarqube-openshift-values.yaml-sonarqube
+    app.kubernetes.io/instance: openshift-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: sonar-web-context-sts-deprecated-values.yaml-sonarqube
+    app.kubernetes.io/component: openshift-values.yaml-sonarqube
     app.kubernetes.io/version: "10.6.0-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
-  serviceName: sonar-web-context-sts-deprecated-values.yaml-sonarqube
+  serviceName: openshift-values.yaml-sonarqube
   selector:
     matchLabels:
       app: sonarqube
-      release: sonar-web-context-sts-deprecated-values.yaml
+      release: openshift-values.yaml
   template:
     metadata:
       annotations:
-        checksum/config: 3b27097dd54b93f2e57492d7d1054097ea742ca436468451c09859de7ee4b3b3
-        checksum/init-sysctl: 70246d21fdc2601dcce417705cad495f77662f6e2e17eeccf5f6635957144161
-        checksum/plugins: 7cd307cee7375cd35f5cc60a126d59732ec9de4a5825083feef6d2f685fafc47
-        checksum/secret: 0a80a6bad1a50d26738adf044d5e7bd23baec2a319fee0975b22a9ea78369eb3
+        checksum/config: 28d5746576d595b17d1cb250d747672c0f4c497f3d6035600a76c0b7082a0ee7
+        checksum/plugins: d1f1cf36d5bfefe1bddd5fe82764db3b1a27d042453feafa7c51ad198f6aa6c4
+        checksum/secret: 8fa0885d9a9423c3b4031d41ce4057dec35311fe30bd00b6a380bd3b20c69050
       labels:
         app: sonarqube
-        release: sonar-web-context-sts-deprecated-values.yaml
+        release: openshift-values.yaml
     spec:
       automountServiceAccountToken: false
       securityContext:
-        fsGroup: 0
+        {}
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-community
@@ -432,31 +417,11 @@ spec:
               drop:
               - ALL
             readOnlyRootFilesystem: true
-            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/sonar-web-context-sts-deprecated-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
-        - name: init-sysctl
-          image: sonarqube:10.6.0-community
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-            readOnlyRootFilesystem: true
-            runAsUser: 0
-          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
-          volumeMounts:
-            - name: init-sysctl
-              mountPath: /tmp/scripts/
-          env:
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/openshift-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
       containers:
         - name: sonarqube
           image: sonarqube:10.6.0-community
@@ -480,12 +445,12 @@ spec:
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: sonar-web-context-sts-deprecated-values.yaml-postgresql
+                  name: openshift-values.yaml-postgresql
                   key: postgresql-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-monitoring-passcode
+                  name: openshift-values.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
             - name: SONAR_WEB_CONTEXT
               value: /
@@ -495,14 +460,14 @@ spec:
               value: ""
           envFrom:
             - configMapRef:
-                name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-jdbc-config
+                name: openshift-values.yaml-sonarqube-jdbc-config
           livenessProbe:
             exec:
               command:
               - sh
               - -c
               - |
-                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/sonarqube-liveness/api/system/liveness"
+                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/api/system/liveness"
             failureThreshold: 6
             initialDelaySeconds: 60
             periodSeconds: 30
@@ -516,7 +481,7 @@ spec:
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
-                if wget --no-proxy -qO- http://localhost:9000/sonarqube-readiness/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                if wget --no-proxy -qO- http://localhost:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
                   exit 0
                 fi
                 exit 1
@@ -527,7 +492,7 @@ spec:
           startupProbe:
             httpGet:
               scheme: HTTP
-              path: /sonarqube-startup/api/system/status
+              path: /api/system/status
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
@@ -538,9 +503,7 @@ spec:
             capabilities:
               drop:
               - ALL
-            runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
@@ -560,12 +523,6 @@ spec:
               subPath: extensions
       serviceAccountName: default
       volumes:
-        - name: init-sysctl
-          configMap:
-            name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-init-sysctl
-            items:
-              - key: init_sysctl.sh
-                path: init_sysctl.sh
         - name: sonarqube
           emptyDir:
             {}
@@ -573,45 +530,22 @@ spec:
           emptyDir:
             {}
 ---
-# Source: sonarqube/templates/ingress.yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.7.0
-    release: sonar-web-context-sts-deprecated-values.yaml
-    heritage: Helm
-spec:
-  rules:
-  - host: sonarqube.your-org.com
-    http:
-      paths:
-      - backend:
-          service:
-            name: sonar-web-context-sts-deprecated-values.yaml-sonarqube
-            port:
-              number: 9000
-        path: /sonarqube-ingress/
-        pathType: ImplementationSpecific
----
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "sonar-web-context-sts-deprecated-values.yaml-ui-test"
+  name: "openshift-values.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: sonar-web-context-sts-deprecated-values.yaml
+    release: openshift-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: sonar-web-context-sts-deprecated-values.yaml-ui-test
+    - name: openshift-values.yaml-ui-test
       image: "sonarqube:10.6.0-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
@@ -622,7 +556,7 @@ spec:
         '-t',
         '12',
         '-qO-',
-        'sonar-web-context-sts-deprecated-values.yaml-sonarqube:9000/api/system/status'
+        'openshift-values.yaml-sonarqube:9000/api/system/status'
         ]
       resources:
         limits:
@@ -634,64 +568,3 @@ spec:
           ephemeral-storage: 100M
           memory: 200M
   restartPolicy: Never
----
-# Source: sonarqube/templates/change-admin-password-hook.yml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-change-admin-password-hook
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.7.0
-    release: sonar-web-context-sts-deprecated-values.yaml
-    heritage: Helm
-  annotations:
-    "helm.sh/hook": post-install, post-upgrade
-    "helm.sh/hook-delete-policy": hook-succeeded
-spec:
-  template:
-    metadata:
-      name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-change-admin-password-hook
-      labels:
-        app: sonarqube
-        chart: sonarqube-10.7.0
-        release: sonar-web-context-sts-deprecated-values.yaml
-        heritage: Helm
-    spec:
-      restartPolicy: OnFailure
-      serviceAccountName: default
-      containers:
-      - name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-change-default-admin-password
-        image: sonarqube:10.6.0-community
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-          runAsGroup: 0
-          runAsNonRoot: true
-          runAsUser: 1000
-          seccompProfile:
-            type: RuntimeDefault
-        command: ["sh", "-c", 'until curl -v --connect-timeout 100 sonar-web-context-sts-deprecated-values.yaml-sonarqube:9000/sonarqube-account/api/system/status | grep -w UP; do sleep 10; done; curl -v --connect-timeout 100 -u admin:$CURRENT_ADMIN_PASSWORD -X POST "sonar-web-context-sts-deprecated-values.yaml-sonarqube:9000/sonarqube-account/api/users/change_password?login=admin&previousPassword=$CURRENT_ADMIN_PASSWORD&password=$ADMIN_PASSWORD"']
-        env:
-        - name: ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-admin-password
-              key: password
-        - name: CURRENT_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-admin-password
-              key: currentPassword
-        resources:
-          limits:
-            cpu: 800m
-            ephemeral-storage: 512000M
-            memory: 6144M
-          requests:
-            cpu: 400m
-            ephemeral-storage: 1536M
-            memory: 2048M

@@ -203,6 +203,20 @@ If a Prometheus Operator is deployed in your cluster, you can enable a PodMonito
 
 The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).
 
+`Openshift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
+
+The below command will deploy SonarQube on the Openshift Kubernetes cluster. Please note this will use the embedded postgresql database and is not recommended for production.
+
+```bash
+helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
+helm repo update
+kubectl create namespace sonarqube # If you dont have permissions to create the namespace, skip this step and replace all -n with an existing namespace name.
+helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube \
+  --set OpenShift.enabled=true \
+  --set postgresql.securityContext.enabled=false \
+  --set postgresql.containerSecurityContext.enabled=false
+```
+
 ### Route definition
 
 If you want to make your application publicly visible with Routes, you can set `route.enabled` to true. Please check the [configuration details](#route) to customize the Route base on your needs.

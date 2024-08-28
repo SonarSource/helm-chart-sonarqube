@@ -78,7 +78,6 @@ data:
     chown -R 1000:0 /opt/sonarqube/data
     chown -R 1000:0 /opt/sonarqube/temp
     chown -R 1000:0 /opt/sonarqube/logs
-    chown -R 1000:0 /opt/sonarqube/extensions
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
@@ -281,6 +280,8 @@ spec:
               weight: 1
         nodeAffinity:
           
+      securityContext:
+        fsGroup: 1001
       automountServiceAccountToken: false
       containers:
         - name: template-refactoring-values.yaml-postgresql
@@ -293,6 +294,15 @@ spec:
             requests:
               cpu: 100m
               memory: 200Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
+            runAsUser: 1001
+            seccompProfile:
+              type: RuntimeDefault
           env:
             - name: BITNAMI_DEBUG
               value: "false"
@@ -408,7 +418,7 @@ spec:
     metadata:
       annotations:
         checksum/config: 3354e4e432ff6416c624a9c9509724f17515c63dfc77d98901766d034ab656b6
-        checksum/init-fs: d985b127f0be8dcb4d02bb39eb0818bab9fd2060fbded7a24fab52962411c064
+        checksum/init-fs: 44d650ca62e406666588560fa2519a59faa29b9692d6598212b268a31bbebb94
         checksum/init-sysctl: 234c81d1d767e09a3d1e85bc670875912aa64b5be5cd04fa56e8803c9deea67e
         checksum/plugins: a751685df08a7a102c262cdc745593ebc43d052e269f02976cf33f5315d6fd74
         checksum/secret: b9a313ab1ae2b894481e5c0124bbaacc2340c5ef5a741c87b0d273b2308c15cf
@@ -418,10 +428,23 @@ spec:
         azure.workload.identity/use: "true"
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 0
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             limits:
               cpu: 50m
@@ -564,6 +587,16 @@ spec:
             periodSeconds: 10
             failureThreshold: 24
             timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/data
               name: sonarqube

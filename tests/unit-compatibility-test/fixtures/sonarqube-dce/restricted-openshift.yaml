@@ -138,7 +138,6 @@ data:
     chown -R 1000:0 /opt/sonarqube/data
     chown -R 1000:0 /opt/sonarqube/temp
     chown -R 1000:0 /opt/sonarqube/logs
-    chown -R 1000:0 /opt/sonarqube/extensions
 ---
 # Source: sonarqube-dce/templates/init-sysctl.yaml
 apiVersion: v1
@@ -364,11 +363,14 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
           resources:
             {}
+      securityContext:
+        {}
       containers:
         - name: sonarqube-dce
           image: sonarqube:9.9.0-datacenter-app
@@ -592,11 +594,14 @@ spec:
             capabilities:
               drop:
               - ALL
+            readOnlyRootFilesystem: true
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
           resources:
             {}
+      securityContext:
+        {}
       containers:
         - name: sonarqube-dce-search
           image: "sonarqube:9.9.0-datacenter-search"
@@ -685,7 +690,6 @@ spec:
               drop:
               - ALL
             runAsNonRoot: true
-            runAsUser: null
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:

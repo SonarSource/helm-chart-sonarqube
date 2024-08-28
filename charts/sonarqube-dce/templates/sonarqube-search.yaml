@@ -94,9 +94,8 @@ spec:
         - name: init-sysctl
           image: {{ default (include "sonarqube.image" $) .Values.initSysctl.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
-          {{- if $securityContext := (default .Values.initContainers.securityContext .Values.initSysctl.securityContext) }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) (.Values.initSysctl.securityContext )) }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.initSysctl.resources) | indent 12 }}
@@ -117,9 +116,8 @@ spec:
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
-          {{- if $securityContext := .Values.initContainers.securityContext }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (include "sonarqube.initContainersSecurityContext" .) }}
+          securityContext: {{- . | nindent 12 }}
           {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
@@ -165,9 +163,8 @@ spec:
           {{- end }}
             - mountPath: /tmp/result
               name: concat-dir
-          {{- if $securityContext := .Values.initContainers.securityContext }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (include "sonarqube.initContainersSecurityContext" .) }}
+          securityContext: {{- . | nindent 12 }}
           {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
@@ -180,9 +177,8 @@ spec:
         - name: init-fs
           image: {{ default (include "sonarqube.image" $) .Values.initFs.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
-          {{- if $securityContext := (default .Values.initContainers.securityContext .Values.initFs.securityContext) }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) .Values.initFs.securityContext) }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.initFs.resources) | indent 12 }}
@@ -212,9 +208,8 @@ spec:
             - mountPath: /tmp
               name: tmp-dir
       {{- end }}
-      {{- if .Values.searchNodes.securityContext }}
-      securityContext:
-        {{- toYaml .Values.searchNodes.securityContext | nindent 8 }}
+      {{- with (include "sonarqube.searchNodes.securityContext" .) }}
+      securityContext: {{- . | nindent 8 }}
       {{- end }}
       containers:
       {{- if .Values.searchNodes.extraContainers }}
@@ -359,9 +354,8 @@ spec:
             periodSeconds: {{ .Values.searchNodes.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.searchNodes.startupProbe.failureThreshold }}
             timeoutSeconds: {{ .Values.searchNodes.startupProbe.timeoutSeconds }}
-          {{- if .Values.searchNodes.containerSecurityContext }}
-          securityContext:
-{{- toYaml .Values.searchNodes.containerSecurityContext | nindent 12 }}
+          {{- with (include "sonarqube.searchNodes.containerSecurityContext" .) }}
+          securityContext: {{- . | nindent 12 }}
           {{- end }}
           volumeMounts:
 {{- if .Values.searchNodes.persistence.mounts }}

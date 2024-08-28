@@ -38,7 +38,7 @@ export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key
 helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set ApplicationNodes.jwtSecret=$JWT_SECRET
 ```
 
-The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace. 
+The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace.
 If you are interested in deploying SonarQube on Openshift, please check the [dedicated section](#openshift).
 
 The [configuration](#configuration) section lists the parameters that can be configured during installation. 
@@ -199,6 +199,22 @@ If a Prometheus Operator is deployed in your cluster, you can enable a PodMonito
 ## OpenShift
 
 The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).
+
+`Openshift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
+
+The below command will deploy SonarQube on the Openshift Kubernetes cluster. Please note this will use the embedded postgresql database and is not recommended for production.
+
+```bash
+helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
+helm repo update
+kubectl create namespace sonarqube-dce # If you dont have permissions to create the namespace, skip this step and replace all -n with an existing namespace name.
+export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64) # Please take a look at the official documentation https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/
+helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce \
+  --set ApplicationNodes.jwtSecret=$JWT_SECRET \
+  --set OpenShift.enabled=true \
+  --set postgresql.securityContext.enabled=false \
+  --set postgresql.containerSecurityContext.enabled=false
+```
 
 ### Route definition
 
