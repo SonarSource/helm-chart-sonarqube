@@ -3,11 +3,11 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ca-certificate-configmap.yaml-postgresql
+  name: ca-certificates-configmap.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: ca-certificate-configmap.yaml
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
     app.kubernetes.io/managed-by: Helm
   namespace: default
 type: Opaque
@@ -20,11 +20,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ca-certificate-configmap.yaml-sonarqube-monitoring-passcode
+  name: ca-certificates-configmap.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: ca-certificate-configmap.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -35,11 +35,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ca-certificate-configmap.yaml-sonarqube-http-proxies
+  name: ca-certificates-configmap.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: ca-certificate-configmap.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 type: Opaque
 stringData:
@@ -54,11 +54,11 @@ stringData:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ca-certificate-configmap.yaml-sonarqube-config
+  name: ca-certificates-configmap.yaml-sonarqube-config
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: ca-certificate-configmap.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -67,11 +67,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ca-certificate-configmap.yaml-sonarqube-init-fs
+  name: ca-certificates-configmap.yaml-sonarqube-init-fs
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: ca-certificate-configmap.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
   init_fs.sh: |-
@@ -80,11 +80,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ca-certificate-configmap.yaml-sonarqube-init-sysctl
+  name: ca-certificates-configmap.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: ca-certificate-configmap.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -111,11 +111,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ca-certificate-configmap.yaml-sonarqube-install-plugins
+  name: ca-certificates-configmap.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: ca-certificate-configmap.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
@@ -124,25 +124,25 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ca-certificate-configmap.yaml-sonarqube-jdbc-config
+  name: ca-certificates-configmap.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: ca-certificate-configmap.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
-  SONAR_JDBC_URL: "jdbc:postgresql://ca-certificate-configmap.yaml-postgresql:5432/sonarDB"
+  SONAR_JDBC_URL: "jdbc:postgresql://ca-certificates-configmap.yaml-postgresql:5432/sonarDB"
 ---
 # Source: sonarqube/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: ca-certificate-configmap.yaml-postgresql-headless
+  name: ca-certificates-configmap.yaml-postgresql-headless
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: ca-certificate-configmap.yaml
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
     app.kubernetes.io/managed-by: Helm
     # Use this annotation in addition to the actual publishNotReadyAddresses
     # field below because the annotation will stop being respected soon but the
@@ -163,17 +163,17 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: ca-certificate-configmap.yaml
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
 ---
 # Source: sonarqube/charts/postgresql/templates/svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: ca-certificate-configmap.yaml-postgresql
+  name: ca-certificates-configmap.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: ca-certificate-configmap.yaml
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
   namespace: default
@@ -185,18 +185,18 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: ca-certificate-configmap.yaml
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
     role: primary
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: ca-certificate-configmap.yaml-sonarqube
+  name: ca-certificates-configmap.yaml-sonarqube
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: ca-certificate-configmap.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 spec:
   type: ClusterIP
@@ -207,38 +207,38 @@ spec:
       name: http
   selector:
     app: sonarqube
-    release: ca-certificate-configmap.yaml
+    release: ca-certificates-configmap.yaml
 ---
 # Source: sonarqube/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: ca-certificate-configmap.yaml-postgresql
+  name: ca-certificates-configmap.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: ca-certificate-configmap.yaml
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
   namespace: default
 spec:
-  serviceName: ca-certificate-configmap.yaml-postgresql-headless
+  serviceName: ca-certificates-configmap.yaml-postgresql-headless
   replicas: 1
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: ca-certificate-configmap.yaml
+      app.kubernetes.io/instance: ca-certificates-configmap.yaml
       role: primary
   template:
     metadata:
-      name: ca-certificate-configmap.yaml-postgresql
+      name: ca-certificates-configmap.yaml-postgresql
       labels:
         app.kubernetes.io/name: postgresql
         helm.sh/chart: postgresql-10.15.0
-        app.kubernetes.io/instance: ca-certificate-configmap.yaml
+        app.kubernetes.io/instance: ca-certificates-configmap.yaml
         app.kubernetes.io/managed-by: Helm
         role: primary
         app.kubernetes.io/component: primary
@@ -252,7 +252,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: postgresql
-                    app.kubernetes.io/instance: ca-certificate-configmap.yaml
+                    app.kubernetes.io/instance: ca-certificates-configmap.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
                   - "default"
@@ -264,7 +264,7 @@ spec:
         fsGroup: 1001
       automountServiceAccountToken: false
       containers:
-        - name: ca-certificate-configmap.yaml-postgresql
+        - name: ca-certificates-configmap.yaml-postgresql
           image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
@@ -295,14 +295,14 @@ spec:
             - name: POSTGRES_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: ca-certificate-configmap.yaml-postgresql
+                  name: ca-certificates-configmap.yaml-postgresql
                   key: postgresql-postgres-password
             - name: POSTGRES_USER
               value: "sonarUser"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: ca-certificate-configmap.yaml-postgresql
+                  name: ca-certificates-configmap.yaml-postgresql
                   key: postgresql-password
             - name: POSTGRES_DB
               value: "sonarDB"
@@ -374,36 +374,36 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: ca-certificate-configmap.yaml-sonarqube
+  name: ca-certificates-configmap.yaml-sonarqube
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: ca-certificate-configmap.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
-    app.kubernetes.io/name: sonarqube-ca-certificate-configmap.yaml-sonarqube
-    app.kubernetes.io/instance: ca-certificate-configmap.yaml
+    app.kubernetes.io/name: sonarqube-ca-certificates-configmap.yaml-sonarqube
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: ca-certificate-configmap.yaml-sonarqube
+    app.kubernetes.io/component: ca-certificates-configmap.yaml-sonarqube
     app.kubernetes.io/version: "10.6.0-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
-  serviceName: ca-certificate-configmap.yaml-sonarqube
+  serviceName: ca-certificates-configmap.yaml-sonarqube
   selector:
     matchLabels:
       app: sonarqube
-      release: ca-certificate-configmap.yaml
+      release: ca-certificates-configmap.yaml
   template:
     metadata:
       annotations:
-        checksum/config: 4808ecb22544254ec4a958fa89627fca393f56c132afb528ecda7494a7fc2ce8
-        checksum/init-sysctl: 69f2bfed424d45c0ce1259df29ea1f13092ce3e02aa3749896a2c3b55e706949
-        checksum/plugins: b29d0d669dc458d36ae7ae6e0fd8ccbfa0d43147500fbbff11e01b68cad7d7cc
-        checksum/secret: a0776d08844f72a304ca44d3b046bcff62dbf4ce7975b379166205126797cf61
+        checksum/config: fa73d4580aa00802938632282d4c83deff2f50debf203d0a2db35a879d91e208
+        checksum/init-sysctl: 8ae342f771213d3f144f2a636ec1d002a04b0b59ec8dc08c52424a0e6a161ea1
+        checksum/plugins: d5487bd07e51ec16aed800b9a0be311f3d9675f76529aee3fd41b0d7ef53c8ca
+        checksum/secret: b5a838fcc9694ee40bbe464f3147c85e9c9f2e059894f43aa2006d579374f605
       labels:
         app: sonarqube
-        release: ca-certificate-configmap.yaml
+        release: ca-certificates-configmap.yaml
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -424,7 +424,7 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/ca-certificate-configmap.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/ca-certificates-configmap.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: ca-certs
           image: adoptopenjdk/openjdk11:alpine
           imagePullPolicy: IfNotPresent
@@ -495,12 +495,12 @@ spec:
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: ca-certificate-configmap.yaml-postgresql
+                  name: ca-certificates-configmap.yaml-postgresql
                   key: postgresql-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: ca-certificate-configmap.yaml-sonarqube-monitoring-passcode
+                  name: ca-certificates-configmap.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
             - name: SONAR_WEB_CONTEXT
               value: /
@@ -510,7 +510,7 @@ spec:
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
           envFrom:
             - configMapRef:
-                name: ca-certificate-configmap.yaml-sonarqube-jdbc-config
+                name: ca-certificates-configmap.yaml-sonarqube-jdbc-config
           livenessProbe:
             exec:
               command:
@@ -586,7 +586,7 @@ spec:
                 path: forticlient.crt
         - name: init-sysctl
           configMap:
-            name: ca-certificate-configmap.yaml-sonarqube-init-sysctl
+            name: ca-certificates-configmap.yaml-sonarqube-init-sysctl
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
@@ -601,18 +601,18 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "ca-certificate-configmap.yaml-ui-test"
+  name: "ca-certificates-configmap.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: ca-certificate-configmap.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: ca-certificate-configmap.yaml-ui-test
+    - name: ca-certificates-configmap.yaml-ui-test
       image: "sonarqube:10.6.0-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
@@ -623,7 +623,7 @@ spec:
         '-t',
         '12',
         '-qO-',
-        'ca-certificate-configmap.yaml-sonarqube:9000/api/system/status'
+        'ca-certificates-configmap.yaml-sonarqube:9000/api/system/status'
         ]
       resources:
         limits:
