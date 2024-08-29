@@ -487,11 +487,7 @@ spec:
         secret:
           secretName: {{ .Values.searchNodes.searchAuthentication.keyStoreSecret }}
       {{- end }}
-      {{- if .Values.caCerts }}
-      - name: ca-certs
-        secret:
-          secretName: {{ .Values.caCerts.secret }}
-      {{- end }}
+      {{- include "sonarqube.volumes.caCerts" . | nindent 6 }}
       {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
       - name: init-sysctl
         configMap:

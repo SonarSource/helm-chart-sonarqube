@@ -15,6 +15,7 @@ All changes to this chart will be documented in this file.
 * Support Openshift SCCv2 by default when Openshift.enabled=true
 * Deprecate Openshift.createSCC
 * Support the TLS communication between App and Search nodes
+* Support additional CA Certificate as ConfigMap instead of Secret only
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0

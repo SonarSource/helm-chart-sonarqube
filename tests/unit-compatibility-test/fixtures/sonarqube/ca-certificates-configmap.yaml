@@ -3,11 +3,11 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: proxies-values.yaml-postgresql
+  name: ca-certificates-configmap.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: proxies-values.yaml
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
     app.kubernetes.io/managed-by: Helm
   namespace: default
 type: Opaque
@@ -20,11 +20,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: proxies-values.yaml-sonarqube-monitoring-passcode
+  name: ca-certificates-configmap.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: proxies-values.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -35,30 +35,30 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: proxies-values.yaml-sonarqube-http-proxies
+  name: ca-certificates-configmap.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: proxies-values.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 type: Opaque
 stringData:
-  PLUGINS-HTTP-PROXY: "http://someProxy"
-  PLUGINS-HTTPS-PROXY: "https://someProxy"
-  PLUGINS-NO-PROXY: "https://someUrl"
-  PROMETHEUS-EXPORTER-HTTP-PROXY: "http://someProxy"
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: "https://someProxy"
-  PROMETHEUS-EXPORTER-NO-PROXY: "https://someUrl"
+  PLUGINS-HTTP-PROXY: ""
+  PLUGINS-HTTPS-PROXY: ""
+  PLUGINS-NO-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
+  PROMETHEUS-EXPORTER-NO-PROXY: ""
 ---
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: proxies-values.yaml-sonarqube-config
+  name: ca-certificates-configmap.yaml-sonarqube-config
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: proxies-values.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -67,11 +67,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: proxies-values.yaml-sonarqube-init-fs
+  name: ca-certificates-configmap.yaml-sonarqube-init-fs
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: proxies-values.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
   init_fs.sh: |-
@@ -80,11 +80,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: proxies-values.yaml-sonarqube-init-sysctl
+  name: ca-certificates-configmap.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: proxies-values.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -111,71 +111,38 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: proxies-values.yaml-sonarqube-install-plugins
+  name: ca-certificates-configmap.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: proxies-values.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
-      rm -f /opt/sonarqube/extensions/plugins/*
-      cd /opt/sonarqube/extensions/plugins
-      curl   -fsSLO "https://github.com/sbaudoin/sonar-yaml/releases/download/v1.7.0/sonar-yaml-plugin-1.7.0.jar"
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: proxies-values.yaml-sonarqube-jdbc-config
+  name: ca-certificates-configmap.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: proxies-values.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
-  SONAR_JDBC_URL: "jdbc:postgresql://proxies-values.yaml-postgresql:5432/sonarDB"
----
-# Source: sonarqube/templates/prometheus-ce-config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: proxies-values.yaml-sonarqube-prometheus-ce-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.7.0
-    release: proxies-values.yaml
-    heritage: Helm
-data:
-  prometheus-ce-config.yaml: |-
-    rules:
-    - pattern: .*
----
-# Source: sonarqube/templates/prometheus-config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: proxies-values.yaml-sonarqube-prometheus-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.7.0
-    release: proxies-values.yaml
-    heritage: Helm
-data:
-  prometheus-config.yaml: |-
-    rules:
-    - pattern: .*
+  SONAR_JDBC_URL: "jdbc:postgresql://ca-certificates-configmap.yaml-postgresql:5432/sonarDB"
 ---
 # Source: sonarqube/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: proxies-values.yaml-postgresql-headless
+  name: ca-certificates-configmap.yaml-postgresql-headless
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: proxies-values.yaml
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
     app.kubernetes.io/managed-by: Helm
     # Use this annotation in addition to the actual publishNotReadyAddresses
     # field below because the annotation will stop being respected soon but the
@@ -196,17 +163,17 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: proxies-values.yaml
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
 ---
 # Source: sonarqube/charts/postgresql/templates/svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: proxies-values.yaml-postgresql
+  name: ca-certificates-configmap.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: proxies-values.yaml
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
   namespace: default
@@ -218,18 +185,18 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: proxies-values.yaml
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
     role: primary
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: proxies-values.yaml-sonarqube
+  name: ca-certificates-configmap.yaml-sonarqube
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: proxies-values.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 spec:
   type: ClusterIP
@@ -240,38 +207,38 @@ spec:
       name: http
   selector:
     app: sonarqube
-    release: proxies-values.yaml
+    release: ca-certificates-configmap.yaml
 ---
 # Source: sonarqube/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: proxies-values.yaml-postgresql
+  name: ca-certificates-configmap.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: proxies-values.yaml
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
   namespace: default
 spec:
-  serviceName: proxies-values.yaml-postgresql-headless
+  serviceName: ca-certificates-configmap.yaml-postgresql-headless
   replicas: 1
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: proxies-values.yaml
+      app.kubernetes.io/instance: ca-certificates-configmap.yaml
       role: primary
   template:
     metadata:
-      name: proxies-values.yaml-postgresql
+      name: ca-certificates-configmap.yaml-postgresql
       labels:
         app.kubernetes.io/name: postgresql
         helm.sh/chart: postgresql-10.15.0
-        app.kubernetes.io/instance: proxies-values.yaml
+        app.kubernetes.io/instance: ca-certificates-configmap.yaml
         app.kubernetes.io/managed-by: Helm
         role: primary
         app.kubernetes.io/component: primary
@@ -285,7 +252,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: postgresql
-                    app.kubernetes.io/instance: proxies-values.yaml
+                    app.kubernetes.io/instance: ca-certificates-configmap.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
                   - "default"
@@ -297,7 +264,7 @@ spec:
         fsGroup: 1001
       automountServiceAccountToken: false
       containers:
-        - name: proxies-values.yaml-postgresql
+        - name: ca-certificates-configmap.yaml-postgresql
           image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
@@ -328,14 +295,14 @@ spec:
             - name: POSTGRES_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: proxies-values.yaml-postgresql
+                  name: ca-certificates-configmap.yaml-postgresql
                   key: postgresql-postgres-password
             - name: POSTGRES_USER
               value: "sonarUser"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: proxies-values.yaml-postgresql
+                  name: ca-certificates-configmap.yaml-postgresql
                   key: postgresql-password
             - name: POSTGRES_DB
               value: "sonarDB"
@@ -407,38 +374,36 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: proxies-values.yaml-sonarqube
+  name: ca-certificates-configmap.yaml-sonarqube
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: proxies-values.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
-    app.kubernetes.io/name: sonarqube-proxies-values.yaml-sonarqube
-    app.kubernetes.io/instance: proxies-values.yaml
+    app.kubernetes.io/name: sonarqube-ca-certificates-configmap.yaml-sonarqube
+    app.kubernetes.io/instance: ca-certificates-configmap.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: proxies-values.yaml-sonarqube
+    app.kubernetes.io/component: ca-certificates-configmap.yaml-sonarqube
     app.kubernetes.io/version: "10.6.0-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
-  serviceName: proxies-values.yaml-sonarqube
+  serviceName: ca-certificates-configmap.yaml-sonarqube
   selector:
     matchLabels:
       app: sonarqube
-      release: proxies-values.yaml
+      release: ca-certificates-configmap.yaml
   template:
     metadata:
       annotations:
-        checksum/config: 0dfd1fb98b319236e875fe4b7d0a1be4bd2453c6a55817067d5cce0a5db49d85
-        checksum/init-sysctl: 3205db8b4058bc854494ca9a7ab60f95439720d76bd4f21e19d7f9dfafbadc06
-        checksum/plugins: 74419f73dd55a0e0fbe84b04efe800259ba90eb4a0aeaf58d4c9c950cf14c3f5
-        checksum/secret: bdee9aaee828638cc946154fc37a13ac1a168c309422d374f3a297a6f37151f7
-        checksum/prometheus-config: 02c3468131d3096b7c3a9e72ba3caefb016165593f292feaf2f0e862fb99d2c6
-        checksum/prometheus-ce-config: 69f079397af23227c19342f2614df9c28b1ce25673decbc40fa1d7b5f1747948
+        checksum/config: fa73d4580aa00802938632282d4c83deff2f50debf203d0a2db35a879d91e208
+        checksum/init-sysctl: 8ae342f771213d3f144f2a636ec1d002a04b0b59ec8dc08c52424a0e6a161ea1
+        checksum/plugins: d5487bd07e51ec16aed800b9a0be311f3d9675f76529aee3fd41b0d7ef53c8ca
+        checksum/secret: b5a838fcc9694ee40bbe464f3147c85e9c9f2e059894f43aa2006d579374f605
       labels:
         app: sonarqube
-        release: proxies-values.yaml
+        release: ca-certificates-configmap.yaml
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -459,7 +424,36 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/proxies-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/ca-certificates-configmap.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+        - name: ca-certs
+          image: adoptopenjdk/openjdk11:alpine
+          imagePullPolicy: IfNotPresent
+          command: ["sh"]
+          args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /tmp/certs
+              name: sonarqube
+              subPath: certs
+            - mountPath: /tmp/secrets/ca-certs
+              name: ca-certs
+          env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
+            - name: SONAR_CE_JAVAOPTS
+              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: init-sysctl
           image: sonarqube:10.6.0-community
           imagePullPolicy: IfNotPresent
@@ -475,94 +469,9 @@ spec:
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS
-              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml
+              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
             - name: SONAR_CE_JAVAOPTS
-              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
-        - name: inject-prometheus-exporter
-          image: sonarqube:10.6.0-community
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          command: ["/bin/sh", "-c"]
-          args: ["curl -s 'https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.17.2/jmx_prometheus_javaagent-0.17.2.jar'  --output /data/jmx_prometheus_javaagent.jar -v"]
-          volumeMounts:
-            - mountPath: /data
-              name: sonarqube
-              subPath: data
-          env:
-            - name: http_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: proxies-values.yaml-sonarqube-http-proxies
-                  key: PROMETHEUS-EXPORTER-HTTP-PROXY
-            - name: https_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: proxies-values.yaml-sonarqube-http-proxies
-                  key: PROMETHEUS-EXPORTER-HTTPS-PROXY
-            - name: no_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: proxies-values.yaml-sonarqube-http-proxies
-                  key: PROMETHEUS-EXPORTER-NO-PROXY
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml
-            - name: SONAR_CE_JAVAOPTS
-              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
-        - name: install-plugins
-          image: sonarqube:10.6.0-community
-          imagePullPolicy: IfNotPresent
-          command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          volumeMounts:
-            - mountPath: /opt/sonarqube/extensions/plugins
-              name: sonarqube
-              subPath: extensions/plugins
-            - name: install-plugins
-              mountPath: /tmp/scripts/
-          env:
-            - name: http_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: proxies-values.yaml-sonarqube-http-proxies
-                  key: PLUGINS-HTTP-PROXY
-            - name: https_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: proxies-values.yaml-sonarqube-http-proxies
-                  key: PLUGINS-HTTPS-PROXY
-            - name: no_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: proxies-values.yaml-sonarqube-http-proxies
-                  key: PLUGINS-NO-PROXY
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml
-            - name: SONAR_CE_JAVAOPTS
-              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
+              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
       containers:
         - name: sonarqube
           image: sonarqube:10.6.0-community
@@ -570,12 +479,6 @@ spec:
           ports:
             - name: http
               containerPort: 9000
-              protocol: TCP
-            - name: monitoring-web
-              containerPort: 8000
-              protocol: TCP
-            - name: monitoring-ce
-              containerPort: 8001
               protocol: TCP
           resources:
             limits:
@@ -592,22 +495,22 @@ spec:
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: proxies-values.yaml-postgresql
+                  name: ca-certificates-configmap.yaml-postgresql
                   key: postgresql-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: proxies-values.yaml-sonarqube-monitoring-passcode
+                  name: ca-certificates-configmap.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS
-              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml
+              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
             - name: SONAR_CE_JAVAOPTS
-              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
+              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
           envFrom:
             - configMapRef:
-                name: proxies-values.yaml-sonarqube-jdbc-config
+                name: ca-certificates-configmap.yaml-sonarqube-jdbc-config
           livenessProbe:
             exec:
               command:
@@ -667,42 +570,26 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
+            - mountPath: /opt/sonarqube/certs
+              name: sonarqube
+              subPath: certs
             - mountPath: /opt/sonarqube/extensions
               name: sonarqube
               subPath: extensions
-            - mountPath: /opt/sonarqube/conf/prometheus-config.yaml
-              subPath: prometheus-config.yaml
-              name: prometheus-config
-            - mountPath: /opt/sonarqube/conf/prometheus-ce-config.yaml
-              subPath: prometheus-ce-config.yaml
-              name: prometheus-ce-config
       serviceAccountName: default
       volumes:
-        
+        - name: ca-certs
+          configMap:
+            name: my-custom-cacerts-certificate
+            items:
+              - key: forticlient.crt
+                path: forticlient.crt
         - name: init-sysctl
           configMap:
-            name: proxies-values.yaml-sonarqube-init-sysctl
+            name: ca-certificates-configmap.yaml-sonarqube-init-sysctl
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
-        - name: install-plugins
-          configMap:
-            name: proxies-values.yaml-sonarqube-install-plugins
-            items:
-              - key: install_plugins.sh
-                path: install_plugins.sh
-        - name: prometheus-config
-          configMap:
-            name: proxies-values.yaml-sonarqube-prometheus-config
-            items:
-              - key: prometheus-config.yaml
-                path: prometheus-config.yaml
-        - name: prometheus-ce-config
-          configMap:
-            name: proxies-values.yaml-sonarqube-prometheus-ce-config
-            items:
-              - key: prometheus-ce-config.yaml
-                path: prometheus-ce-config.yaml
         - name: sonarqube
           emptyDir:
             {}
@@ -714,18 +601,18 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "proxies-values.yaml-ui-test"
+  name: "ca-certificates-configmap.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
     chart: sonarqube-10.7.0
-    release: proxies-values.yaml
+    release: ca-certificates-configmap.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: proxies-values.yaml-ui-test
+    - name: ca-certificates-configmap.yaml-ui-test
       image: "sonarqube:10.6.0-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
@@ -736,7 +623,7 @@ spec:
         '-t',
         '12',
         '-qO-',
-        'proxies-values.yaml-sonarqube:9000/api/system/status'
+        'ca-certificates-configmap.yaml-sonarqube:9000/api/system/status'
         ]
       resources:
         limits:

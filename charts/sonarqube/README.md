@@ -227,35 +227,35 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Global
 
-| Parameter            | Description                                                                                                             | Default       |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `deploymentType`     | Deployment Type (supported values are `StatefulSet` or `Deployment`)                                                    | `StatefulSet` |
-| `replicaCount`       | Number of replicas deployed (supported values are 0 and 1)                                                              | `1`           |
-| `deploymentStrategy` | Deployment strategy                                                                                                     | `{}`          |
-| `priorityClassName`  | Schedule pods on priority (e.g. `high-priority`)                                                                        | `None`        |
-| `schedulerName`      | Kubernetes scheduler name                                                                                               | `None`        |
-| `affinity`           | Node / Pod affinities                                                                                                   | `{}`          |
-| `tolerations`        | List of node taints to tolerate                                                                                         | `[]`          |
-| `nodeSelector`       | Node labels for pod assignment                                                                                          | `{}`          |
-| `hostAliases`        | Aliases for IPs in /etc/hosts                                                                                           | `[]`          |
-| `podLabels`          | Map of labels to add to the pods                                                                                        | `{}`          |
-| `env`                | Environment variables to attach to the pods                                                                             | `{}`          |
-| `annotations`        | SonarQube Pod annotations                                                                                               | `{}`          |
-| `edition`            | SonarQube Edition to use (e.g. `community`, `developer` or `enterprise`)                                                | `community`   |
-| `sonarWebContext`    | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.       | ``            |
-| `httpProxySecret`    | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will superseed every other proxy variables              | ``            |
-| `httpProxy`          | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables    | ``            |
-| `httpsProxy`         | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable   | ``            |
-| `noProxy`            |  No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables       | ``            |
+| Parameter            | Description                                                                                                           | Default       |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `deploymentType`     | Deployment Type (supported values are `StatefulSet` or `Deployment`)                                                  | `StatefulSet` |
+| `replicaCount`       | Number of replicas deployed (supported values are 0 and 1)                                                            | `1`           |
+| `deploymentStrategy` | Deployment strategy                                                                                                   | `{}`          |
+| `priorityClassName`  | Schedule pods on priority (e.g. `high-priority`)                                                                      | `None`        |
+| `schedulerName`      | Kubernetes scheduler name                                                                                             | `None`        |
+| `affinity`           | Node / Pod affinities                                                                                                 | `{}`          |
+| `tolerations`        | List of node taints to tolerate                                                                                       | `[]`          |
+| `nodeSelector`       | Node labels for pod assignment                                                                                        | `{}`          |
+| `hostAliases`        | Aliases for IPs in /etc/hosts                                                                                         | `[]`          |
+| `podLabels`          | Map of labels to add to the pods                                                                                      | `{}`          |
+| `env`                | Environment variables to attach to the pods                                                                           | `{}`          |
+| `annotations`        | SonarQube Pod annotations                                                                                             | `{}`          |
+| `edition`            | SonarQube Edition to use (e.g. `community`, `developer` or `enterprise`)                                              | `community`   |
+| `sonarWebContext`    | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.     | ``            |
+| `httpProxySecret`    | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will superseed every other proxy variables            | ``            |
+| `httpProxy`          | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables  | ``            |
+| `httpsProxy`         | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable | ``            |
+| `noProxy`            | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables      | ``            |
 
 ### NetworkPolicies
 
-| Parameter                                | Description                                                               | Default |
-| ---------------------------------------- | --------------------------------------------------------------------------| ------- |
-| `networkPolicy.enabled`                  | Create NetworkPolicies                                                    | `false` |
-| `networkPolicy.prometheusNamespace`      | Allow incoming traffic to monitoring ports from this namespace            | `nil`   |
-| `networkPolicy.additionalNetworkPolicys` | (DEPRECATED) Please use `networkPolicy.additionalNetworkPolicies` instead | `nil`   |
-| `networkPolicy.additionalNetworkPolicies`| User defined NetworkPolicies (usefull for external database)              | `nil`   |
+| Parameter                                 | Description                                                               | Default |
+| ----------------------------------------- | ------------------------------------------------------------------------- | ------- |
+| `networkPolicy.enabled`                   | Create NetworkPolicies                                                    | `false` |
+| `networkPolicy.prometheusNamespace`       | Allow incoming traffic to monitoring ports from this namespace            | `nil`   |
+| `networkPolicy.additionalNetworkPolicys`  | (DEPRECATED) Please use `networkPolicy.additionalNetworkPolicies` instead | `nil`   |
+| `networkPolicy.additionalNetworkPolicies` | User defined NetworkPolicies (usefull for external database)              | `nil`   |
 
 ### OpenShift
 
@@ -329,13 +329,13 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### HttpRoute
 
-| Parameter              | Description                                                                                                   | Default |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------- | --------|
-| `httproute.enabled`    | Flag to enable GatewayAPI HttpRoute                                                                           | `False` |
-| `httproute.gateway`    | Name of the gateway located in the same namespace                                                             | `None`  |
-| `httproute.hostnames`  | List of hostnames to match the HttpRoute against                                                              | `None`  |
-| `httproute.labels`     | (Optional) List of extra labels to add to the HttpRoute                                                       | `None`  |
-| `httproute.rules`      | (Optional) Extra Rules block of the HttpRoute. A default one is created with SonarWebContext and service port | `None`  |
+| Parameter             | Description                                                                                                   | Default |
+| --------------------- | ------------------------------------------------------------------------------------------------------------- | ------- |
+| `httproute.enabled`   | Flag to enable GatewayAPI HttpRoute                                                                           | `False` |
+| `httproute.gateway`   | Name of the gateway located in the same namespace                                                             | `None`  |
+| `httproute.hostnames` | List of hostnames to match the HttpRoute against                                                              | `None`  |
+| `httproute.labels`    | (Optional) List of extra labels to add to the HttpRoute                                                       | `None`  |
+| `httproute.rules`     | (Optional) Extra Rules block of the HttpRoute. A default one is created with SonarWebContext and service port | `None`  |
 
 ### Probes
 
@@ -353,26 +353,29 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### InitContainers
 
-| Parameter                           | Description                                               | Default                                                                |
-| ----------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `initContainers.image`              | Change init container image                               | `"image.repository":"image.tag"`                                       |
-| `initContainers.securityContext`    | SecurityContext for init containers                       | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
-| `initContainers.resources`          | Resources for init containers                             | `{}`                                                                   |
-| `extraInitContainers`               | Extra init containers to e.g. download required artifacts | `{}`                                                                   |
-| `caCerts.enabled`                   | Flag for enabling additional CA certificates              | `false`                                                                |
-| `caCerts.image`                     | Change init CA certificates container image               | `"image.repository":"image.tag"`                                       |
-| `caCerts.secret`                    | Name of the secret containing additional CA certificates  | `None`                                                                 |
-| `initSysctl.enabled`                | Modify k8s worker to conform to system requirements       | `true`                                                                 |
-| `initSysctl.vmMaxMapCount`          | Set init sysctl container vm.max_map_count                | `524288`                                                               |
-| `initSysctl.fsFileMax`              | Set init sysctl container fs.file-max                     | `131072`                                                               |
-| `initSysctl.nofile`                 | Set init sysctl container open file descriptors limit     | `131072`                                                               |
-| `initSysctl.nproc`                  | Set init sysctl container open threads limit              | `8192`                                                                 |
-| `initSysctl.image`                  | Change init sysctl container image                        | `"image.repository":"image.tag"`                                       |
-| `initSysctl.securityContext`        | InitSysctl container security context                     | `{privileged: true}`                                                   |
-| `initSysctl.resources`              | InitSysctl container resource requests & limits           | `{}`                                                                   |
-| `initFs.enabled`                    | Enable file permission change with init container         | `true`                                                                 |
-| `initFs.image`                      | InitFS container image                                    | `"image.repository":"image.tag"`                                       |
-| `initFs.securityContext.privileged` | InitFS container needs to run privileged                  | `true`                                                                 |
+| Parameter                           | Description                                                                                                                           | Default                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `initContainers.image`              | Change init container image                                                                                                           | `"image.repository":"image.tag"`                                       |
+| `initContainers.securityContext`    | SecurityContext for init containers                                                                                                   | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
+| `initContainers.resources`          | Resources for init containers                                                                                                         | `{}`                                                                   |
+| `extraInitContainers`               | Extra init containers to e.g. download required artifacts                                                                             | `{}`                                                                   |
+| `caCerts.enabled`                   | Flag for enabling additional CA certificates                                                                                          | `false`                                                                |
+| `caCerts.image`                     | Change init CA certificates container image                                                                                           | `"image.repository":"image.tag"`                                       |
+| `caCerts.secret`                    | Name of the secret containing additional CA certificates. If defined, only secrets are going to be used.                              | `None`                                                                 |
+| `caCerts.configMap.name`            | Name of the ConfigMap containing additional CA certificate. Ensure that `caCerts.secret` is not set if you want to use a `ConfigMap`. | `None`                                                                 |
+| `caCerts.configMap.key`             | Name of the key containing the additional CA certificate                                                                              | `None`                                                                 |
+| `caCerts.configMap.path`            | Filename that should be used for the given CA certificate                                                                             | `None`                                                                 |
+| `initSysctl.enabled`                | Modify k8s worker to conform to system requirements                                                                                   | `true`                                                                 |
+| `initSysctl.vmMaxMapCount`          | Set init sysctl container vm.max_map_count                                                                                            | `524288`                                                               |
+| `initSysctl.fsFileMax`              | Set init sysctl container fs.file-max                                                                                                 | `131072`                                                               |
+| `initSysctl.nofile`                 | Set init sysctl container open file descriptors limit                                                                                 | `131072`                                                               |
+| `initSysctl.nproc`                  | Set init sysctl container open threads limit                                                                                          | `8192`                                                                 |
+| `initSysctl.image`                  | Change init sysctl container image                                                                                                    | `"image.repository":"image.tag"`                                       |
+| `initSysctl.securityContext`        | InitSysctl container security context                                                                                                 | `{privileged: true}`                                                   |
+| `initSysctl.resources`              | InitSysctl container resource requests & limits                                                                                       | `{}`                                                                   |
+| `initFs.enabled`                    | Enable file permission change with init container                                                                                     | `true`                                                                 |
+| `initFs.image`                      | InitFS container image                                                                                                                | `"image.repository":"image.tag"`                                       |
+| `initFs.securityContext.privileged` | InitFS container needs to run privileged                                                                                              | `true`                                                                 |
 
 ### Monitoring (Prometheus Exporter)
 

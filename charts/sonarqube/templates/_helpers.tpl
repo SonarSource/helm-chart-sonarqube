@@ -357,3 +357,22 @@ Remove incompatible user/group values that do not work in Openshift out of the b
   {{- end -}}
 {{- toYaml $adaptedInitContainerSecurityContext -}}
 {{- end -}}
+
+{{/*
+  generate caCerts volume
+*/}}
+{{- define "sonarqube.volumes.caCerts" -}}
+{{- if .Values.caCerts.enabled -}}
+- name: ca-certs
+  {{- if .Values.caCerts.secret }}
+  secret:
+    secretName: {{ .Values.caCerts.secret }}
+  {{- else if .Values.caCerts.configMap }}
+  configMap:
+    name: {{ .Values.caCerts.configMap.name }}
+    items:
+      - key: {{ .Values.caCerts.configMap.key }}
+        path: {{ .Values.caCerts.configMap.path }}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
