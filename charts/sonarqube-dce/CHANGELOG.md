@@ -16,7 +16,7 @@ All changes to this chart will be documented in this file.
 * Deprecate Openshift.createSCC
 * Support the TLS communication between App and Search nodes
 * Support additional CA Certificate as ConfigMap instead of Secret only
-* Removes alpine image mention in values.yaml
+* Changed default value for caCerts.image
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0

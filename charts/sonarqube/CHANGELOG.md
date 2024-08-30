@@ -18,7 +18,7 @@ All changes to this chart will be documented in this file.
 * Support Openshift SCCv2 by default when Openshift.enabled=true
 * Deprecate Openshift.createSCC
 * Support additional CA Certificate as ConfigMap instead of Secret only
-* Removes alpine image mention in values.yaml
+* Changed default value for caCerts.image
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0
