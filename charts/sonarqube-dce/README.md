@@ -222,7 +222,7 @@ If you want to make your application publicly visible with Routes, you can set `
 
 ## Autoscaling
 
-The SonarQube applications nodes can be set to automally scale up and down based on their average CPU utilization. This is particularly useful when scanning new projects or evaluating Pull Requests with SonarQube. In order to enable the autoscaling, you can rely on the `ApplicationNodes.hpa` parameters.
+The SonarQube applications nodes can be set to automatically scale up and down based on their average CPU utilization. This is particularly useful when scanning new projects or evaluating Pull Requests with SonarQube. In order to enable the autoscaling, you can rely on the `ApplicationNodes.hpa` parameters.
 
 Please ensure the [Metrics Server](https://github.com/kubernetes-sigs/metrics-server) is installed in your cluster to provide resource usage metrics. You can deploy it using: 
 
@@ -230,6 +230,12 @@ Please ensure the [Metrics Server](https://github.com/kubernetes-sigs/metrics-se
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 
 ```
+
+### Upgrading the Helm chart
+
+When upgrading your SonarQube instance, due to high CPU usage, it is recommended to disable the autoscaling before the upgrade process, re-enabling it afterwards.
+
+You can achieve that by either setting `ApplicationNodes.hpa.enabled` to `false` or by setting `ApplicationNodes.hpa.maxReplicas` to be the same value as `ApplicationNodes.hpa.minReplicas`.
 
 ## Secure the communication within the cluster
 
@@ -373,7 +379,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.plugins.image`                                 | Image for plugins container                                                                                                                                                                                    | `""`                                                                   |
 | `ApplicationNodes.plugins.resources`                             | Resources for plugins container                                                                                                                                                                                | `""`                                                                   |
 | `ApplicationNodes.plugins.netrcCreds`                            | Name of the secret containing .netrc file to use creds when downloading plugins                                                                                                                                | `""`                                                                   |
-| `ApplicationNodes.plugins.noCheckCertificate`                    | Flag to not check server's certificate when downloading plugins                                                                                                                                                | `false                                                                 |
+| `ApplicationNodes.plugins.noCheckCertificate`                    | Flag to not check server's certificate when downloading plugins                                                                                                                                                | `false`                                                                |
 | `ApplicationNodes.plugins.securityContext`                       | Security context for the container to download plugins                                                                                                                                                         | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `ApplicationNodes.jvmOpts`                                       | (DEPRECATED) Values to add to `SONAR_WEB_JAVAOPTS`. Please set directly `SONAR_WEB_JAVAOPTS` or `sonar.web.javaOpts`                                                                                           | `""`                                                                   |
 | `ApplicationNodes.jvmCeOpts`                                     | (DEPRECATED) Values to add to `SONAR_CE_JAVAOPTS`. Please set directly `SONAR_CE_JAVAOPTS` or `sonar.ce.javaOpts`                                                                                              | `""`                                                                   |
