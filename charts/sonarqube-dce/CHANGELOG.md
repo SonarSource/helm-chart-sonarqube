@@ -18,6 +18,7 @@ All changes to this chart will be documented in this file.
 * Support additional CA Certificate as ConfigMap instead of Secret only
 * Changed default value for caCerts.image
 * Document the upgrade process when autoscaling is enabled
+* Fix openshift change-admin-password-hook Job SecurityContext failure
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0
