@@ -13,7 +13,7 @@ if [[ "${CIRRUS_BRANCH}" == "master" ]]; then
 else
   # This is the dev account
   ROLE_AWS_ACCOUNT="460386131003"
-  CLUSTER_NAME="CirrusCI-7-dev"
+  CLUSTER_NAME="CirrusCI-8-dev"
 fi
 
 echo "${CIRRUS_OIDC_TOKEN}" > /tmp/web_identity_token_file
