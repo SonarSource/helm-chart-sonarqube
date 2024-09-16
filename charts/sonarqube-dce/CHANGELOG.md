@@ -5,7 +5,6 @@ All changes to this chart will be documented in this file.
 * Update Chart's version to 10.7.0
 * Support Kubernetes v1.30
 * Upgrade ingress-nginx dependency to 4.10.1
-* Fix typo for Application Nodes `applicationNodes.podDisruptionBudget` instead of `searchNodes.podDisruptionBudget`
 * Deprecate `jdbcOverwrite.enable` in favor of `jdbcOverwrite.enabled`
 * Enable the setup of ReadOnlyRootFilesystem in the security contexts
 * Support basic chart installation on Openshift
