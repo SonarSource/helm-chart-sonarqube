@@ -197,6 +197,8 @@ Per default the JMX metrics for the Web Bean and the CE Bean are exposed on port
 
 If a Prometheus Operator is deployed in your cluster, you can enable a PodMonitor resource with `ApplicationNodes.prometheusMonitoring.podMonitor.enabled`. It scrapes the Prometheus endpoint `/api/monitoring/metrics` exposed by the SonarQube application.
 
+If running on OpenShift, make sure your account has permissions to create PodMonitor resources under the monitoring.coreos.com/v1 apiVersion.
+
 ## OpenShift
 
 The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).
@@ -213,6 +215,7 @@ export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key
 helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce \
   --set ApplicationNodes.jwtSecret=$JWT_SECRET \
   --set OpenShift.enabled=true \
+  --set OpenShift.createSCC=false \
   --set postgresql.securityContext.enabled=false \
   --set postgresql.containerSecurityContext.enabled=false
 ```
