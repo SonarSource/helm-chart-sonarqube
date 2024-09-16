@@ -19,6 +19,16 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- end -}}
 
 {{/*
+Common labels
+*/}}
+{{- define "sonarqube.labels" -}}
+app: {{ include "sonarqube.name" . }}
+chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" }}
+release: {{ .Release.Name }}
+heritage: {{ .Release.Service }}
+{{- end -}}
+
+{{/*
 Expand the Application Image name.
 */}}
 {{- define "sonarqube.image" -}}
@@ -62,7 +72,7 @@ Determine the k8s secret containing the JDBC credentials
   {{- else -}}
   {{- template "postgresql.fullname" . -}}
   {{- end -}}
-{{- else if .Values.jdbcOverwrite.enable -}}
+{{- else if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
   {{- if .Values.jdbcOverwrite.jdbcSecretName -}}
   {{- .Values.jdbcOverwrite.jdbcSecretName -}}
   {{- else -}}
@@ -79,7 +89,7 @@ Determine JDBC username
 {{- define "jdbc.username" -}}
 {{- if and .Values.postgresql.enabled .Values.postgresql.postgresqlUsername -}}
   {{- .Values.postgresql.postgresqlUsername | quote -}}
-{{- else if and .Values.jdbcOverwrite.enable .Values.jdbcOverwrite.jdbcUsername -}}
+{{- else if and (or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable) .Values.jdbcOverwrite.jdbcUsername -}}
   {{- .Values.jdbcOverwrite.jdbcUsername | quote -}}
 {{- else -}}
   {{- .Values.postgresql.postgresqlUsername -}}
@@ -96,7 +106,7 @@ Determine the k8s secretKey contrining the JDBC password
   {{- else -}}
   {{- "postgresql-password" -}}
   {{- end -}}
-{{- else if .Values.jdbcOverwrite.enable -}}
+{{- else if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
   {{- if and .Values.jdbcOverwrite.jdbcSecretName .Values.jdbcOverwrite.jdbcSecretPasswordKey -}}
   {{- .Values.jdbcOverwrite.jdbcSecretPasswordKey -}}
   {{- else -}}
@@ -111,7 +121,7 @@ Determine the k8s secretKey contrining the JDBC password
 Determine JDBC password if internal secret is used
 */}}
 {{- define "jdbc.internalSecretPasswd" -}}
-{{- if .Values.jdbcOverwrite.enable -}}
+{{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
   {{- .Values.jdbcOverwrite.jdbcPassword | b64enc | quote -}}
 {{- else -}}
   {{- .Values.postgresql.postgresqlPassword | b64enc | quote -}}
@@ -213,10 +223,10 @@ Create the name of the service account to use
 {{- end -}}
 
 {{/*
-Set search.useInternalKeystoreSecret
+Set searchAuthentication.useInternalKeystoreSecret when the searchNodes.searchAuthentication.keyStorePassword is provided instead of relying on an external secret (searchNodes.searchAuthentication.keyStorePasswordSecret)
 */}}
-{{- define "search.useInternalKeystoreSecret" -}}
-{{- if .Values.searchNodes.searchAuthentication.keyStorePasswordSecret -}}
+{{- define "searchAuthentication.useInternalKeystoreSecret" -}}
+{{- if and .Values.searchNodes.searchAuthentication.keyStorePasswordSecret (not .Values.searchNodes.searchAuthentication.keyStorePassword) -}}
 false
 {{- else -}}
 true
@@ -311,4 +321,151 @@ Set combined_app_env, ensuring we dont have any duplicates with our features and
 {{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_WEB_JAVAOPTS" "value" (include "sonarqube.jvmOpts" .)) -}}
 {{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_CE_JAVAOPTS" "value" (include "sonarqube.jvmCEOpts" .)) -}}
 {{- toJson $filteredEnv -}}
+{{- end -}}
+
+{{/*
+  generate Proxy env var from httpProxySecret
+*/}}
+{{- define "sonarqube.proxyFromSecret" -}}
+- name: http_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.httpProxySecret }}
+      key: http_proxy
+- name: https_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.httpProxySecret }}
+      key: https_proxy
+- name: no_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.httpProxySecret }}
+      key: no_proxy
+{{- end -}}
+
+{{/*
+  generate prometheusExporter proxy env var
+*/}}
+{{- define "sonarqube.prometheusExporterProxy.env" -}}
+{{- if .Values.httpProxySecret -}}
+{{- include "sonarqube.proxyFromSecret" . }}
+{{- else -}}
+- name: http_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PROMETHEUS-EXPORTER-HTTP-PROXY
+- name: https_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PROMETHEUS-EXPORTER-HTTPS-PROXY
+- name: no_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PROMETHEUS-EXPORTER-NO-PROXY
+{{- end -}}
+{{- end -}}
+
+{{/*
+  generate install-plugins proxy env var
+*/}}
+{{- define "sonarqube.install-plugins-proxy.env" -}}
+{{- if .Values.httpProxySecret -}}
+{{- include "sonarqube.proxyFromSecret" . }}
+{{- else -}}
+- name: http_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PLUGINS-HTTP-PROXY
+- name: https_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PLUGINS-HTTPS-PROXY
+- name: no_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PLUGINS-NO-PROXY
+{{- end -}}
+{{- end -}}
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.ApplicationNodes.securityContext" -}}
+{{- $adaptedApplicationNodesSecurityContext := .Values.ApplicationNodes.securityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedApplicationNodesSecurityContext = omit $adaptedApplicationNodesSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+  {{- toYaml $adaptedApplicationNodesSecurityContext -}}
+{{- end -}}
+
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.ApplicationNodes.containerSecurityContext" -}}
+{{- $adaptedApplicationNodesContainerSecurityContext := .Values.ApplicationNodes.containerSecurityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedApplicationNodesContainerSecurityContext = omit $adaptedApplicationNodesContainerSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedApplicationNodesContainerSecurityContext -}}
+{{- end -}}
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.searchNodes.securityContext" -}}
+{{- $adaptedsearchNodesSecurityContext := .Values.searchNodes.securityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedsearchNodesSecurityContext = omit $adaptedsearchNodesSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+  {{- toYaml $adaptedsearchNodesSecurityContext -}}
+{{- end -}}
+
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.searchNodes.containerSecurityContext" -}}
+{{- $adaptedsearchNodesContainerSecurityContext := .Values.searchNodes.containerSecurityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedsearchNodesContainerSecurityContext = omit $adaptedsearchNodesContainerSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedsearchNodesContainerSecurityContext -}}
+{{- end -}}
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.initContainersSecurityContext" -}}
+{{- $adaptedinitContainersSecurityContext := .Values.initContainers.securityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedinitContainersSecurityContext = omit $adaptedinitContainersSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedinitContainersSecurityContext -}}
+{{- end -}}
+
+{{/*
+  generate caCerts volume
+*/}}
+{{- define "sonarqube.volumes.caCerts" -}}
+{{- if .Values.caCerts.enabled -}}
+- name: ca-certs
+  {{- if .Values.caCerts.secret }}
+  secret:
+    secretName: {{ .Values.caCerts.secret }}
+  {{- else if .Values.caCerts.configMap }}
+  configMap:
+    name: {{ .Values.caCerts.configMap.name }}
+    items:
+      - key: {{ .Values.caCerts.configMap.key }}
+        path: {{ .Values.caCerts.configMap.path }}
+  {{- end -}}
+{{- end -}}
 {{- end -}}

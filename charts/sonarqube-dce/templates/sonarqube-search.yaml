@@ -61,8 +61,12 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
       annotations:
+        {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
         checksum/init-sysctl: {{ include (print $.Template.BasePath "/init-sysctl.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
         checksum/init-fs: {{ include (print $.Template.BasePath "/init-fs.yaml") . | sha256sum }}
+        {{- end }}
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
 {{- with .Values.annotations }}
@@ -86,13 +90,12 @@ spec:
       {{- if .Values.extraInitContainers }}
 {{ toYaml .Values.extraInitContainers | indent 8 }}
       {{- end }}
-      {{- if .Values.initSysctl.enabled }}
+      {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
         - name: init-sysctl
           image: {{ default (include "sonarqube.image" $) .Values.initSysctl.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
-          {{- if $securityContext := (default .Values.initContainers.securityContext .Values.initSysctl.securityContext) }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) (.Values.initSysctl.securityContext )) }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.initSysctl.resources) | indent 12 }}
@@ -113,9 +116,8 @@ spec:
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
-          {{- if $securityContext := .Values.initContainers.securityContext }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (include "sonarqube.initContainersSecurityContext" .) }}
+          securityContext: {{- . | nindent 12 }}
           {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
@@ -161,9 +163,8 @@ spec:
           {{- end }}
             - mountPath: /tmp/result
               name: concat-dir
-          {{- if $securityContext := .Values.initContainers.securityContext }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (include "sonarqube.initContainersSecurityContext" .) }}
+          securityContext: {{- . | nindent 12 }}
           {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
@@ -172,13 +173,12 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled }}
+      {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
         - name: init-fs
           image: {{ default (include "sonarqube.image" $) .Values.initFs.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
-          {{- if $securityContext := (default .Values.initContainers.securityContext .Values.initFs.securityContext) }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) .Values.initFs.securityContext) }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.initFs.resources) | indent 12 }}
@@ -208,8 +208,9 @@ spec:
             - mountPath: /tmp
               name: tmp-dir
       {{- end }}
-      securityContext:
-        {{- toYaml .Values.searchNodes.securityContext | nindent 8 }}
+      {{- with (include "sonarqube.searchNodes.securityContext" .) }}
+      securityContext: {{- . | nindent 8 }}
+      {{- end }}
       containers:
       {{- if .Values.searchNodes.extraContainers }}
         {{- toYaml .Values.searchNodes.extraContainers | nindent 8 }}
@@ -257,6 +258,15 @@ spec:
                 secretKeyRef:
                   name: "{{ template "search.ksPassword" . }}"
                   key: SONAR_CLUSTER_ES_SSL_TRUSTSTOREPASSWORD
+            {{- if .Values.nodeEncryption.enabled }}
+            - name: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTORE
+              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
+            - name: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ template "search.ksPassword" . }}"
+                  key: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
+            {{- end }}
             {{- end }}
             {{- with .Values.searchNodes.env }}
             {{- . | toYaml | trim | nindent 12 }}
@@ -274,12 +284,21 @@ spec:
               command:
               - sh
               - -c
-              {{ if .Values.searchNodes.searchAuthentication.enabled }}
+              {{ if and .Values.searchNodes.searchAuthentication.enabled (not .Values.nodeEncryption.enabled) }}
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered live if http call returns 200
                 host="$(hostname -i || echo '127.0.0.1')"
                 if wget --auth-no-challenge --no-proxy -qO- "http://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+              {{ else if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered live if http call returns 200
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-check-certificate --no-proxy -qO- "https://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
@@ -302,12 +321,21 @@ spec:
               command:
               - sh
               - -c
-              {{ if .Values.searchNodes.searchAuthentication.enabled }}
+              {{ if and .Values.searchNodes.searchAuthentication.enabled (not .Values.nodeEncryption.enabled) }}
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
                 host="$(hostname -i || echo '127.0.0.1')"
                 if wget --auth-no-challenge --no-proxy -qO- "http://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+              {{ else if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-check-certificate --no-proxy -qO- "https://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
@@ -330,12 +358,21 @@ spec:
              command:
               - sh
               - -c
-              {{ if .Values.searchNodes.searchAuthentication.enabled }}
+              {{ if and .Values.searchNodes.searchAuthentication.enabled (not .Values.nodeEncryption.enabled) }}
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered started if http call returns 200
                 host="$(hostname -i || echo '127.0.0.1')"
                 if wget --auth-no-challenge --no-proxy -qO- "http://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+              {{ else if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered started if http call returns 200
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-check-certificate --no-proxy -qO- "https://elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}@${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
@@ -353,9 +390,8 @@ spec:
             periodSeconds: {{ .Values.searchNodes.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.searchNodes.startupProbe.failureThreshold }}
             timeoutSeconds: {{ .Values.searchNodes.startupProbe.timeoutSeconds }}
-          {{- if .Values.searchNodes.containerSecurityContext }}
-          securityContext:
-{{- toYaml .Values.searchNodes.containerSecurityContext | nindent 12 }}
+          {{- with (include "sonarqube.searchNodes.containerSecurityContext" .) }}
+          securityContext: {{- . | nindent 12 }}
           {{- end }}
           volumeMounts:
 {{- if .Values.searchNodes.persistence.mounts }}
@@ -451,23 +487,23 @@ spec:
         secret:
           secretName: {{ .Values.searchNodes.searchAuthentication.keyStoreSecret }}
       {{- end }}
-      {{- if .Values.caCerts }}
-      - name: ca-certs
-        secret:
-          secretName: {{ .Values.caCerts.secret }}
-      {{- end }}
+      {{- include "sonarqube.volumes.caCerts" . | nindent 6 }}
+      {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
       - name: init-sysctl
         configMap:
           name: {{ template "sonarqube.fullname" . }}-init-sysctl
           items:
             - key: init_sysctl.sh
               path: init_sysctl.sh
+      {{- end }}
+      {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
       - name: init-fs
         configMap:
           name: {{ template "sonarqube.fullname" . }}-init-fs
           items:
             - key: init_fs.sh
               path: init_fs.sh
+      {{- end }}
       {{- if .Values.searchNodes.persistence.enabled }}
       - name: "{{ template "sonarqube.fullname" . }}"
       {{- else }}

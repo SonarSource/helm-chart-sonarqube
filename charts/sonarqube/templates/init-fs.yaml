@@ -6,5 +6,16 @@ metadata:
 data:
   init_fs.sh: |-
     {{- if .Values.persistence.enabled }}
-    chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}
+    chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/data
+    chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/temp
+    chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/logs
+    {{- if .Values.plugins.install }}
+    chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/extensions/plugins
+    {{- end }}
+    {{- if .Values.caCerts.enabled }}
+    chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/certs
+    {{- end }}
+    {{- range .Values.persistence.mounts }}
+    chown -R {{ $.Values.persistence.uid }}:{{ $.Values.persistence.guid }} {{ .mountPath }}
+    {{- end }}
     {{- end }}

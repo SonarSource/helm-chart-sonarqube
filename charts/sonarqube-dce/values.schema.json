@@ -1,6 +1,27 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "properties": {
+        "networkPolicy": {
+            "type": "object",
+            "properties": {
+                "additionalNetworkPolicys": {
+                    "type": "object",
+                    "deprecated": true,
+                    "$comment": "(DEPRECATED) Please use `networkPolicy.additionalNetworkPolicies` instead"
+                }
+            }
+        },
+        "OpenShift":
+        {
+            "type": "object",
+            "properties": {
+                "createSCC": {
+                    "type": "boolean",
+                    "deprecated": true,
+                    "$comment": "(DEPRECATED) custom SCC are no longer required, the chart is compatible with default restricted SCCv2"
+                }
+            }
+        },
         "nginx": {
             "type": "object",
             "properties": {
@@ -15,6 +36,16 @@
             "type": "object",
             "deprecated": true,
             "$comment": "(DEPRECATED) Please use an external database instead of the embedded one. Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube#production-use-case for more information"
+        },
+        "jdbcOverwrite": {
+            "type": "object",
+            "properties": {
+                "enable": {
+                    "type": "boolean",
+                    "deprecated": true,
+                    "$comment": "(DEPRECATED) Please use `jdbcOverwrite.enabled` instead"
+                }
+            }
         },
         "account": {
             "type": "object",

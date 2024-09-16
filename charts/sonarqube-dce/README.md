@@ -38,7 +38,10 @@ export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key
 helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set ApplicationNodes.jwtSecret=$JWT_SECRET
 ```
 
-The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace.
+If you are interested in deploying SonarQube on Openshift, please check the [dedicated section](#openshift).
+
+The [configuration](#configuration) section lists the parameters that can be configured during installation. 
 
 The default login is admin/admin.
 
@@ -98,6 +101,7 @@ seccompProfile:
   type: RuntimeDefault
 capabilities:
   drop: ["ALL"]
+readOnlyRootFilesystem: true
 ```
 
 Based on that, one can run the SQ helm chart in a full restricted namespace, by deactivating the `initSysctl.enabled` and `initFs.enabled` parameters, which require root access.
@@ -140,10 +144,10 @@ For this reason, it is recommended to set Xmx to the ~80% of the total amount of
 
 Please find here the default SonarQube Xmx parameters to setup the memory requests and limits accordingly.
 
-|Edition|Sum of Xmx|
-|---|---|
-|datacenter edition searchNodes|2G|
-|datacenter edition ApplicationNodes|3G|
+| Edition                             | Sum of Xmx |
+| ----------------------------------- | ---------- |
+| datacenter edition searchNodes      | 2G         |
+| datacenter edition ApplicationNodes | 3G         |
 
 To comply with the 80% rule mentioned above, we set the following default values:
 
@@ -192,9 +196,33 @@ Per default the JMX metrics for the Web Bean and the CE Bean are exposed on port
 
 If a Prometheus Operator is deployed in your cluster, you can enable a PodMonitor resource with `ApplicationNodes.prometheusMonitoring.podMonitor.enabled`. It scrapes the Prometheus endpoint `/api/monitoring/metrics` exposed by the SonarQube application.
 
+## OpenShift
+
+The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).
+
+`Openshift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
+
+The below command will deploy SonarQube on the Openshift Kubernetes cluster. Please note this will use the embedded postgresql database and is not recommended for production.
+
+```bash
+helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
+helm repo update
+kubectl create namespace sonarqube-dce # If you dont have permissions to create the namespace, skip this step and replace all -n with an existing namespace name.
+export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64) # Please take a look at the official documentation https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/
+helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce \
+  --set ApplicationNodes.jwtSecret=$JWT_SECRET \
+  --set OpenShift.enabled=true \
+  --set postgresql.securityContext.enabled=false \
+  --set postgresql.containerSecurityContext.enabled=false
+```
+
+### Route definition
+
+If you want to make your application publicly visible with Routes, you can set `route.enabled` to true. Please check the [configuration details](#route) to customize the Route base on your needs.
+
 ## Autoscaling
 
-The SonarQube applications nodes can be set to automally scale up and down based on their average CPU utilization. This is particularly useful when scanning new projects or evaluating Pull Requests with SonarQube. In order to enable the autoscaling, you can rely on the `ApplicationNodes.hpa` parameters.
+The SonarQube applications nodes can be set to automatically scale up and down based on their average CPU utilization. This is particularly useful when scanning new projects or evaluating Pull Requests with SonarQube. In order to enable the autoscaling, you can rely on the `ApplicationNodes.hpa` parameters.
 
 Please ensure the [Metrics Server](https://github.com/kubernetes-sigs/metrics-server) is installed in your cluster to provide resource usage metrics. You can deploy it using: 
 
@@ -203,64 +231,91 @@ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/late
 
 ```
 
+### Upgrading the Helm chart
+
+When upgrading your SonarQube instance, due to high CPU usage, it is recommended to disable the autoscaling before the upgrade process, re-enabling it afterwards.
+
+You can achieve that by either setting `ApplicationNodes.hpa.enabled` to `false` or by setting `ApplicationNodes.hpa.maxReplicas` to be the same value as `ApplicationNodes.hpa.minReplicas`.
+
+## Secure the communication within the cluster
+
+In order to secure the communication between Application and Search nodes, you need to set both `nodeEncryption.enabled` and `searchNodes.searchAuthentication.enabled` to `true`.
+
+In a secured cluster, Elasticsearch nodes use certificates to identify themselves when communicating with other nodes. You need to generate a Certificate Authority (CA) together with a certificate and private key for the nodes in your cluster. Furthemore, you need to specify the Search nodes' hostnames that will be added as DNS names in the Subject Alternative Name (SAN).
+
+As an example, let's assume that your cluster has three search nodes with the release's name set to "sq", the chart's name set to "sonarqube-dce", and the namespace set to "sonar". You will need to add the following DNS names in the SAN.
+
+```
+sq-sonarqube-dce-search-0.sq-sonarqube-dce-search.sonar.svc.cluster.local
+sq-sonarqube-dce-search-1.sq-sonarqube-dce-search.sonar.svc.cluster.local
+sq-sonarqube-dce-search-2.sq-sonarqube-dce-search.sonar.svc.cluster.local
+sq-sonarqube-dce-search
+```
+
+Please do not forget to add the service name in the list (in this case, `sq-sonarqube-dce-search`). Also note that you can retrieve the search nodes' FQDN running `hostname -f` within one of the pods.
+
+You can generate the required certificate, create a secret, and add it to `searchNodes.searchAuthentication.keyStoreSecret` (specifying any password using the `keyStorePassword` or `keyStorePasswordSecret` values). To do so, you might want to use the `elasticsearch-certutil` to generate the [certificate authority](https://www.elastic.co/guide/en/elasticsearch/reference/current/security-basic-setup.html#generate-certificates) and the [certificate](https://www.elastic.co/guide/en/elasticsearch/reference/current/security-basic-setup-https.html#encrypt-http-communication) to be added (when creating the last certificate, please generate only one valid for all the nodes and add the required hostnames as specified above). As a result of this process, you should get a file called `http.p12`. Please rename it to `elastic-stack-ca.p12` and create the secret whose name should be assigned to the `searchNodes.searchAuthentication.keyStoreSecret` parameter.
+
+Finally, do not forget to set the `searchNodes.searchAuthentication.userPassword`.
+
 ## Configuration
 
 The following table lists the configurable parameters of the SonarQube chart and their default values.
 
 ### Search Nodes Configuration
 
-| Parameter                                                 | Description                                                                           | Default                                                                |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `searchNodes.image.repository`                            | search image repository                                                               | `sonarqube`                                                            |
-| `searchNodes.image.tag`                                   | search image tag                                                                      | `10.6.0-datacenter-search`                                             |
-| `searchNodes.image.pullPolicy`                            | search image pull policy                                                              | `IfNotPresent`                                                         |
-| `searchNodes.image.pullSecret`                            | (DEPRECATED) search imagePullSecret to use for private repository                     | `nil`                                                                  |
-| `searchNodes.image.pullSecrets`                           | search imagePullSecrets to use for private repository                                 | `nil`                                                                  |
-| `searchNodes.annotations`                                 | Map of annotations to add to the search pods                                          | `{}`                                                                   |
-| `searchNodes.env`                                         | Environment variables to attach to the search pods                                    | `nil`                                                                  |
-| `searchNodes.podLabels`                                   | Map of labels to add to the search pods                                               | `{}`                                                                   |
-| `searchNodes.sonarProperties`                             | Custom `sonar.properties` file for Search Nodes                                       | `None`                                                                 |
-| `searchNodes.sonarSecretProperties`                       | Additional `sonar.properties` file for Search Nodes to load from a secret             | `None`                                                                 |
-| `searchNodes.sonarSecretKey`                              | Name of existing secret used for settings encryption                                  | `None`                                                                 |
-| `searchNodes.searchAuthentication.enabled`                | Securing the Search Cluster with basic authentication and TLS in between search nodes | `false`                                                                |
-| `searchNodes.searchAuthentication.keyStoreSecret`         | Existing PKCS#12 Container as Keystore/Truststore to be used                          | `""`                                                                   |
-| `searchNodes.searchAuthentication.keyStorePassword`       | Password to Keystore/Truststore used in search nodes (optional)                       | `""`                                                                   |
-| `searchNodes.searchAuthentication.keyStorePasswordSecret` | Existing secret for Password to Keystore/Truststore used in search nodes (optional)   | `nil`                                                                  |
-| `searchNodes.searchAuthentication.userPassword`           | A User Password that will be used to authenticate against the Search Cluster          | `""`                                                                   |
-| `searchNodes.replicaCount`                                | Replica count of the Search Nodes                                                     | `3`                                                                    |
-| `searchNodes.podDisruptionBudget`                         | PodDisruptionBudget for the Search Nodes                                              | `minAvailable: 2`                                                      |
-| `searchNodes.podDistributionBudget`                       | (DEPRECATED typo) PodDisruptionBudget for the Search Nodes                            | `minAvailable: 2`                                                      |
-| `searchNodes.securityContext.fsGroup`                     | Group applied to mounted directories/files on search nodes                            | `0`                                                                    |
-| `searchNodes.containerSecurityContext`                    | SecurityContext for search container in sonarqube pod                                 | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
-| `searchNodes.readinessProbe.initialDelaySeconds`          | ReadinessProbe initial delay for Search Node checking                                 | `0`                                                                    |
-| `searchNodes.readinessProbe.periodSeconds`                | ReadinessProbe period between checking Search Node                                    | `30`                                                                   |
-| `searchNodes.readinessProbe.failureThreshold`             | ReadinessProbe threshold for marking as failed                                        | `6`                                                                    |
-| `searchNodes.readinessProbe.timeoutSeconds`               | ReadinessProbe timeout delay                                                          | `1`                                                                    |
-| `searchNodes.livenessProbe.initialDelaySeconds`           | LivenessProbe initial delay for Search Node checking                                  | `0`                                                                    |
-| `searchNodes.livenessProbe.periodSeconds`                 | LivenessProbe period between checking Search Node                                     | `30`                                                                   |
-| `searchNodes.livenessProbe.failureThreshold`              | LivenessProbe threshold for marking as dead                                           | `6`                                                                    |
-| `searchNodes.livenessProbe.timeoutSeconds`                | LivenessProbe timeout delay                                                           | `1`                                                                    |
-| `searchNodes.startupProbe.initialDelaySeconds`            | StartupProbe initial delay for Search Node checking                                   | `20`                                                                   |
-| `searchNodes.startupProbe.periodSeconds`                  | StartupProbe period between checking Search Node                                      | `10`                                                                   |
-| `searchNodes.startupProbe.failureThreshold`               | StartupProbe threshold for marking as failed                                          | `24`                                                                   |
-| `searchNodes.startupProbe.timeoutSeconds`                 | StartupProbe timeout delay                                                            | `1`                                                                    |
-| `searchNodes.resources.requests.memory`                   | memory request for Search Nodes                                                       | `3072M`                                                                |
-| `searchNodes.resources.requests.cpu`                      | cpu request for Search Nodes                                                          | `400m`                                                                 |
-| `searchNodes.resources.requests.ephemeral-storage`        | storage request for Search Nodes                                                      | `1536M`                                                                |
-| `searchNodes.resources.limits.memory`                     | memory limit for Search Nodes. should not be under 3G                                 | `3072M`                                                                |
-| `searchNodes.resources.limits.cpu`                        | cpu limit for Search Nodes                                                            | `800m`                                                                 |
-| `searchNodes.resources.limits.ephemeral-storage`          | storage limit for Search Nodes                                                        | `512000M`                                                              |
-| `searchNodes.persistence.enabled`                         | enabled or disables the creation of VPCs for the Search Nodes                         | `true`                                                                 |
-| `searchNodes.persistence.annotations`                     | PVC annotations for the Search Nodes                                                  | `{}`                                                                   |
-| `searchNodes.persistence.storageClass`                    | Storage class to be used                                                              | `""`                                                                   |
-| `searchNodes.persistence.accessMode`                      | Volumes access mode to be set                                                         | `ReadWriteOnce`                                                        |
-| `searchNodes.persistence.size`                            | Size of the PVC                                                                       | `5G`                                                                   |
-| `searchNodes.persistence.uid`                             | UID used for init-fs container                                                        | `1000`                                                                 |
-| `searchNodes.persistence.guid`                            | GUID used for init-fs container                                                       | `0`                                                                    |
-| `searchNodes.extraContainers`                             | Array of extra containers to run alongside                                            | `[]`                                                                   |
-| `searchNodes.nodeSelector`                                | Node labels for search nodes' pods assignment, global nodeSelector takes precedence   | `{}`                                                                   |
-| `searchNodes.affinity`                                    | Node / Pod affinities for searchNodes, global affinity takes precedence               | `{}`                                                                   |
-| `searchNodes.tolerations`                                 | List of node taints to tolerate for searchNodes, global tolerations take precedence   | `[]`                                                                   |
+| Parameter                                                 | Description                                                                                | Default                                                                |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `searchNodes.image.repository`                            | search image repository                                                                    | `sonarqube`                                                            |
+| `searchNodes.image.tag`                                   | search image tag                                                                           | `10.6.0-datacenter-search`                                             |
+| `searchNodes.image.pullPolicy`                            | search image pull policy                                                                   | `IfNotPresent`                                                         |
+| `searchNodes.image.pullSecret`                            | (DEPRECATED) search imagePullSecret to use for private repository                          | `nil`                                                                  |
+| `searchNodes.image.pullSecrets`                           | search imagePullSecrets to use for private repository                                      | `nil`                                                                  |
+| `searchNodes.annotations`                                 | Map of annotations to add to the search pods                                               | `{}`                                                                   |
+| `searchNodes.env`                                         | Environment variables to attach to the search pods                                         | `nil`                                                                  |
+| `searchNodes.podLabels`                                   | Map of labels to add to the search pods                                                    | `{}`                                                                   |
+| `searchNodes.sonarProperties`                             | Custom `sonar.properties` file for Search Nodes                                            | `None`                                                                 |
+| `searchNodes.sonarSecretProperties`                       | Additional `sonar.properties` file for Search Nodes to load from a secret                  | `None`                                                                 |
+| `searchNodes.sonarSecretKey`                              | Name of existing secret used for settings encryption                                       | `None`                                                                 |
+| `searchNodes.searchAuthentication.enabled`                | Securing the Search Cluster with basic authentication and TLS in between search nodes      | `false`                                                                |
+| `searchNodes.searchAuthentication.keyStoreSecret`         | Existing PKCS#12 certificate (named `elastic-stack-ca.p12`) to be used Keystore/Truststore | `""`                                                                   |
+| `searchNodes.searchAuthentication.keyStorePassword`       | Password to Keystore/Truststore used in search nodes (optional)                            | `""`                                                                   |
+| `searchNodes.searchAuthentication.keyStorePasswordSecret` | Existing secret for Password to Keystore/Truststore used in search nodes (optional)        | `nil`                                                                  |
+| `searchNodes.searchAuthentication.userPassword`           | A User Password that will be used to authenticate against the Search Cluster               | `""`                                                                   |
+| `searchNodes.replicaCount`                                | Replica count of the Search Nodes                                                          | `3`                                                                    |
+| `searchNodes.podDisruptionBudget`                         | PodDisruptionBudget for the Search Nodes                                                   | `minAvailable: 2`                                                      |
+| `searchNodes.podDistributionBudget`                       | (DEPRECATED typo) PodDisruptionBudget for the Search Nodes                                 | `minAvailable: 2`                                                      |
+| `searchNodes.securityContext`                             | SecurityContext for the pod search nodes                                                   | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
+| `searchNodes.containerSecurityContext`                    | SecurityContext for search container in sonarqube pod                                      | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
+| `searchNodes.readinessProbe.initialDelaySeconds`          | ReadinessProbe initial delay for Search Node checking                                      | `0`                                                                    |
+| `searchNodes.readinessProbe.periodSeconds`                | ReadinessProbe period between checking Search Node                                         | `30`                                                                   |
+| `searchNodes.readinessProbe.failureThreshold`             | ReadinessProbe threshold for marking as failed                                             | `6`                                                                    |
+| `searchNodes.readinessProbe.timeoutSeconds`               | ReadinessProbe timeout delay                                                               | `1`                                                                    |
+| `searchNodes.livenessProbe.initialDelaySeconds`           | LivenessProbe initial delay for Search Node checking                                       | `0`                                                                    |
+| `searchNodes.livenessProbe.periodSeconds`                 | LivenessProbe period between checking Search Node                                          | `30`                                                                   |
+| `searchNodes.livenessProbe.failureThreshold`              | LivenessProbe threshold for marking as dead                                                | `6`                                                                    |
+| `searchNodes.livenessProbe.timeoutSeconds`                | LivenessProbe timeout delay                                                                | `1`                                                                    |
+| `searchNodes.startupProbe.initialDelaySeconds`            | StartupProbe initial delay for Search Node checking                                        | `20`                                                                   |
+| `searchNodes.startupProbe.periodSeconds`                  | StartupProbe period between checking Search Node                                           | `10`                                                                   |
+| `searchNodes.startupProbe.failureThreshold`               | StartupProbe threshold for marking as failed                                               | `24`                                                                   |
+| `searchNodes.startupProbe.timeoutSeconds`                 | StartupProbe timeout delay                                                                 | `1`                                                                    |
+| `searchNodes.resources.requests.memory`                   | memory request for Search Nodes                                                            | `3072M`                                                                |
+| `searchNodes.resources.requests.cpu`                      | cpu request for Search Nodes                                                               | `400m`                                                                 |
+| `searchNodes.resources.requests.ephemeral-storage`        | storage request for Search Nodes                                                           | `1536M`                                                                |
+| `searchNodes.resources.limits.memory`                     | memory limit for Search Nodes. should not be under 3G                                      | `3072M`                                                                |
+| `searchNodes.resources.limits.cpu`                        | cpu limit for Search Nodes                                                                 | `800m`                                                                 |
+| `searchNodes.resources.limits.ephemeral-storage`          | storage limit for Search Nodes                                                             | `512000M`                                                              |
+| `searchNodes.persistence.enabled`                         | enabled or disables the creation of VPCs for the Search Nodes                              | `true`                                                                 |
+| `searchNodes.persistence.annotations`                     | PVC annotations for the Search Nodes                                                       | `{}`                                                                   |
+| `searchNodes.persistence.storageClass`                    | Storage class to be used                                                                   | `""`                                                                   |
+| `searchNodes.persistence.accessMode`                      | Volumes access mode to be set                                                              | `ReadWriteOnce`                                                        |
+| `searchNodes.persistence.size`                            | Size of the PVC                                                                            | `5G`                                                                   |
+| `searchNodes.persistence.uid`                             | UID used for init-fs container                                                             | `1000`                                                                 |
+| `searchNodes.persistence.guid`                            | GUID used for init-fs container                                                            | `0`                                                                    |
+| `searchNodes.extraContainers`                             | Array of extra containers to run alongside                                                 | `[]`                                                                   |
+| `searchNodes.nodeSelector`                                | Node labels for search nodes' pods assignment, global nodeSelector takes precedence        | `{}`                                                                   |
+| `searchNodes.affinity`                                    | Node / Pod affinities for searchNodes, global affinity takes precedence                    | `{}`                                                                   |
+| `searchNodes.tolerations`                                 | List of node taints to tolerate for searchNodes, global tolerations take precedence        | `[]`                                                                   |
 
 
 ### App Nodes Configuration
@@ -281,11 +336,11 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.replicaCount`                                  | Replica count of the app Nodes                                                                                                                                                                                 | `2`                                                                    |
 | `ApplicationNodes.podDisruptionBudget`                           | PodDisruptionBudget for the App Nodes                                                                                                                                                                          | `minAvailable: 1`                                                      |
 | `ApplicationNodes.podDistributionBudget`                         | (DEPRECATED typo) PodDisruptionBudget for the App Nodes                                                                                                                                                        | `minAvailable: 1`                                                      |
-| `ApplicationNodes.securityContext.fsGroup`                       | Group applied to mounted directories/files on app nodes                                                                                                                                                        | `0`                                                                    |
+| `ApplicationNodes.securityContext`                               | SecurityContext for the pod app nodes                                                                                                                                                                          | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `ApplicationNodes.containerSecurityContext`                      | SecurityContext for app container in sonarqube pod                                                                                                                                                             | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
-| `ApplicationNodes.readinessProbe`            | ReadinessProbe for the App                                                                                                                                                                                                         | see `values.yaml`                                                      |
+| `ApplicationNodes.readinessProbe`                                | ReadinessProbe for the App                                                                                                                                                                                     | see `values.yaml`                                                      |
 | `ApplicationNodes.readinessProbe.sonarWebContext`                | (DEPRECATED) SonarQube web context for readinessProbe, please use sonarWebContext at the value top level instead                                                                                               | `/`                                                                    |
-| `ApplicationNodes.livenessProbe`             | LivenessProbe for the App                                                                                                                                                                                                          | see `values.yaml`                                                      |
+| `ApplicationNodes.livenessProbe`                                 | LivenessProbe for the App                                                                                                                                                                                      | see `values.yaml`                                                      |
 | `ApplicationNodes.livenessProbe.sonarWebContext`                 | (DEPRECATED) SonarQube web context for livenessProbe, please use sonarWebContext at the value top level instead                                                                                                | `/`                                                                    |
 | `ApplicationNodes.startupProbe.initialDelaySeconds`              | StartupProbe initial delay for app Node checking                                                                                                                                                               | `45`                                                                   |
 | `ApplicationNodes.startupProbe.periodSeconds`                    | StartupProbe period between checking app Node                                                                                                                                                                  | `10`                                                                   |
@@ -294,10 +349,10 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.startupProbe.sonarWebContext`                  | (DEPRECATED) SonarQube web context for startupProbe, please use sonarWebContext at the value top level instead                                                                                                 | `/`                                                                    |
 | `ApplicationNodes.resources.requests.memory`                     | memory request for app Nodes                                                                                                                                                                                   | `4096M`                                                                |
 | `ApplicationNodes.resources.requests.cpu`                        | cpu request for app Nodes                                                                                                                                                                                      | `400m`                                                                 |
-| `ApplicationNodes.resources.requests.ephemeral-storage`                          | storage request for app Nodes                                                                                                                                                                  | `1536M`                                                                |
+| `ApplicationNodes.resources.requests.ephemeral-storage`          | storage request for app Nodes                                                                                                                                                                                  | `1536M`                                                                |
 | `ApplicationNodes.resources.limits.memory`                       | memory limit for app Nodes. should not be under 4G                                                                                                                                                             | `4096M`                                                                |
 | `ApplicationNodes.resources.limits.cpu`                          | cpu limit for app Nodes                                                                                                                                                                                        | `800m`                                                                 |
-| `ApplicationNodes.resources.limits.ephemeral-storage`                          | storage limit for app Nodes                                                                                                                                                                      | `512000M`                                                              |
+| `ApplicationNodes.resources.limits.ephemeral-storage`            | storage limit for app Nodes                                                                                                                                                                                    | `512000M`                                                              |
 | `ApplicationNodes.prometheusExporter.enabled`                    | Use the Prometheus JMX exporter                                                                                                                                                                                | `false`                                                                |
 | `ApplicationNodes.prometheusExporter.version`                    | jmx_prometheus_javaagent version to download from Maven Central                                                                                                                                                | `0.17.2`                                                               |
 | `ApplicationNodes.prometheusExporter.noCheckCertificate`         | Flag to not check server's certificate when downloading jmx_prometheus_javaagent                                                                                                                               | `false`                                                                |
@@ -315,6 +370,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.prometheusMonitoring.podMonitor.interval`      | Specify the interval how often metrics should be scraped                                                                                                                                                       | `30s`                                                                  |
 | `ApplicationNodes.prometheusMonitoring.podMonitor.scrapeTimeout` | Specify the timeout after a scrape is ended                                                                                                                                                                    | `None`                                                                 |
 | `ApplicationNodes.prometheusMonitoring.podMonitor.jobLabel`      | Name of the label on target services that prometheus uses as job name                                                                                                                                          | `None`                                                                 |
+| `ApplicationNodes.prometheusMonitoring.podMonitor.labels`        | Additional labels to add to the PodMonitor                                                                                                                                                                     | `{}`                                                                   |
 | `ApplicationNodes.plugins.install`                               | Link(s) to the plugin JARs to download and install                                                                                                                                                             | `[]`                                                                   |
 | `ApplicationNodes.plugins.resources`                             | Plugin Pod resource requests & limits                                                                                                                                                                          | `{}`                                                                   |
 | `ApplicationNodes.plugins.httpProxy`                             | For use behind a corporate proxy when downloading plugins                                                                                                                                                      | `""`                                                                   |
@@ -323,44 +379,50 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ApplicationNodes.plugins.image`                                 | Image for plugins container                                                                                                                                                                                    | `""`                                                                   |
 | `ApplicationNodes.plugins.resources`                             | Resources for plugins container                                                                                                                                                                                | `""`                                                                   |
 | `ApplicationNodes.plugins.netrcCreds`                            | Name of the secret containing .netrc file to use creds when downloading plugins                                                                                                                                | `""`                                                                   |
-| `ApplicationNodes.plugins.noCheckCertificate`                    | Flag to not check server's certificate when downloading plugins                                                                                                                                                | `false                                                                 |
+| `ApplicationNodes.plugins.noCheckCertificate`                    | Flag to not check server's certificate when downloading plugins                                                                                                                                                | `false`                                                                |
 | `ApplicationNodes.plugins.securityContext`                       | Security context for the container to download plugins                                                                                                                                                         | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `ApplicationNodes.jvmOpts`                                       | (DEPRECATED) Values to add to `SONAR_WEB_JAVAOPTS`. Please set directly `SONAR_WEB_JAVAOPTS` or `sonar.web.javaOpts`                                                                                           | `""`                                                                   |
 | `ApplicationNodes.jvmCeOpts`                                     | (DEPRECATED) Values to add to `SONAR_CE_JAVAOPTS`. Please set directly `SONAR_CE_JAVAOPTS` or `sonar.ce.javaOpts`                                                                                              | `""`                                                                   |
 | `ApplicationNodes.jwtSecret`                                     | A HS256 key encoded with base64 (_This value must be set before installing the chart, see [the documentation](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/)_) | `""`                                                                   |
 | `ApplicationNodes.existingJwtSecret`                             | secret that contains the `jwtSecret`                                                                                                                                                                           | `nil`                                                                  |
 | `ApplicationNodes.extraContainers`                               | Array of extra containers to run alongside                                                                                                                                                                     | `[]`                                                                   |
-| `ApplicationNodes.hpa.enabled`                               | Enable the HorizontalPodAutoscaler (HPA) for the app deployment                                                                                                                                                    | `false`                                                                |
+| `ApplicationNodes.hpa.enabled`                                   | Enable the HorizontalPodAutoscaler (HPA) for the app deployment                                                                                                                                                | `false`                                                                |
 | `ApplicationNodes.hpa.minReplicas`                               | Minimum number of replicas for the HPA                                                                                                                                                                         | `2`                                                                    |
 | `ApplicationNodes.hpa.maxReplicas`                               | Maximum number of replicas for the HPA                                                                                                                                                                         | `10`                                                                   |
-| `ApplicationNodes.hpa.metrics`                               | The metrics to use for scaling                                                                                                                                                                                     | see `values.yaml`                                                      |
-| `ApplicationNodes.hpa.behavior`                               | The scaling behavior                                                                                                                                                                                              | see `values.yaml`                                                      |
-| `ApplicationNodes.nodeSelector`                                | Node labels for application nodes' pods assignment, global nodeSelector takes precedence                                                                                                                         | `{}`                                                                   |
-| `ApplicationNodes.affinity`                                    | Node / Pod affinities for ApplicationNodes, global affinity takes precedence                                                                                                                                     | `{}`                                                                   |
-| `ApplicationNodes.tolerations`                                 | List of node taints to tolerate for ApplicationNodes, global tolerations take precedence                                                                                                                         | `[]`                                                                   |
+| `ApplicationNodes.hpa.metrics`                                   | The metrics to use for scaling                                                                                                                                                                                 | see `values.yaml`                                                      |
+| `ApplicationNodes.hpa.behavior`                                  | The scaling behavior                                                                                                                                                                                           | see `values.yaml`                                                      |
+| `ApplicationNodes.nodeSelector`                                  | Node labels for application nodes' pods assignment, global nodeSelector takes precedence                                                                                                                       | `{}`                                                                   |
+| `ApplicationNodes.affinity`                                      | Node / Pod affinities for ApplicationNodes, global affinity takes precedence                                                                                                                                   | `{}`                                                                   |
+| `ApplicationNodes.tolerations`                                   | List of node taints to tolerate for ApplicationNodes, global tolerations take precedence                                                                                                                       | `[]`                                                                   |
 
 
 ### Generic Configuration
 
-| Parameter           | Description                                                                                                       | Default |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------- | ------- |
-| `affinity`          | Node / Pod affinities                                                                                             | `{}`    |
-| `tolerations`       | List of node taints to tolerate                                                                                   | `[]`    |
-| `priorityClassName` | Schedule pods on priority (e.g. `high-priority`)                                                                  | `None`  |
-| `nodeSelector`      | Node labels for pod assignment                                                                                    | `{}`    |
-| `hostAliases`       | Aliases for IPs in /etc/hosts                                                                                     | `[]`    |
-| `podLabels`         | Map of labels to add to the pods                                                                                  | `{}`    |
-| `env`               | Environment variables to attach to the pods                                                                       | `{}`    |
-| `annotations`       | Map of annotations to add to the pods                                                                             | `{}`    |
-| `sonarWebContext`   | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path. | ``      |
+| Parameter                | Description                                                                                                           | Default |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------- |
+| `affinity`               | Node / Pod affinities                                                                                                 | `{}`    |
+| `tolerations`            | List of node taints to tolerate                                                                                       | `[]`    |
+| `priorityClassName`      | Schedule pods on priority (e.g. `high-priority`)                                                                      | `None`  |
+| `nodeSelector`           | Node labels for pod assignment                                                                                        | `{}`    |
+| `hostAliases`            | Aliases for IPs in /etc/hosts                                                                                         | `[]`    |
+| `podLabels`              | Map of labels to add to the pods                                                                                      | `{}`    |
+| `env`                    | Environment variables to attach to the pods                                                                           | `{}`    |
+| `annotations`            | Map of annotations to add to the pods                                                                                 | `{}`    |
+| `sonarWebContext`        | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.     | ``      |
+| `httpProxySecret`        | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will superseed every other proxy variables            | ``      |
+| `httpProxy`              | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables  | ``      |
+| `httpsProxy`             | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable | ``      |
+| `noProxy`                | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables      | ``      |
+| `nodeEncryption.enabled` | Secure the communication between Application and Search nodes using TLS                                               | `false` |
 
 ### NetworkPolicies
 
-| Parameter                                | Description                                                    | Default |
-| ---------------------------------------- | -------------------------------------------------------------- | ------- |
-| `networkPolicy.enabled`                  | Create NetworkPolicies                                         | `false` |
-| `networkPolicy.prometheusNamespace`      | Allow incoming traffic to monitoring ports from this namespace | `nil`   |
-| `networkPolicy.additionalNetworkPolicys` | User defined NetworkPolicies (usefull for external database)   | `nil`   |
+| Parameter                                 | Description                                                               | Default |
+| ----------------------------------------- | ------------------------------------------------------------------------- | ------- |
+| `networkPolicy.enabled`                   | Create NetworkPolicies                                                    | `false` |
+| `networkPolicy.prometheusNamespace`       | Allow incoming traffic to monitoring ports from this namespace            | `nil`   |
+| `networkPolicy.additionalNetworkPolicys`  | (DEPRECATED) Please use `networkPolicy.additionalNetworkPolicies` instead | `nil`   |
+| `networkPolicy.additionalNetworkPolicies` | User defined NetworkPolicies (usefull for external database)              | `nil`   |
 
 ### OpenShift
 
@@ -368,6 +430,28 @@ The following table lists the configurable parameters of the SonarQube chart and
 | --------------------- | -------------------------------------------------------------------------------------- | ------- |
 | `OpenShift.enabled`   | Define if this deployment is for OpenShift                                             | `false` |
 | `OpenShift.createSCC` | If this deployment is for OpenShift, define if SCC should be created for sonarqube pod | `true`  |
+
+### Route
+
+| Parameter              | Description                                                                   | Default                    |
+| ---------------------- | ----------------------------------------------------------------------------- | -------------------------- |
+| `route.enabled`        | Flag to enable OpenShift Route                                                | `false`                    |
+| `route.host`           | Host that points to the service                                               | `"sonarqube.your-org.com"` |
+| `route.path`           | Path that the router watches for, to route traffic for to the service         | `"/"`                      |
+| `route.tls`            | TLS settings including termination type, certificates, insecure traffic, etc. | see `values.yaml`          |
+| `route.wildcardPolicy` | The wildcard policy that is allowed where this route is exposed               | `None`                     |
+| `route.annotations`    | Optional field to add extra annotations to the route                          | `None`                     |
+| `route.labels`         | Route additional labels                                                       | `{}`                       |
+
+### HttpRoute
+
+| Parameter             | Description                                                                                                   | Default |
+| --------------------- | ------------------------------------------------------------------------------------------------------------- | ------- |
+| `httproute.enabled`   | Flag to enable GatewayAPI HttpRoute                                                                           | `False` |
+| `httproute.gateway`   | Name of the gateway located in the same namespace                                                             | `None`  |
+| `httproute.hostnames` | List of hostnames to match the HttpRoute against                                                              | `None`  |
+| `httproute.labels`    | (Optional) List of extra labels to add to the HttpRoute                                                       | `None`  |
+| `httproute.rules`     | (Optional) Extra Rules block of the HttpRoute. A default one is created with SonarWebContext and service port | `None`  |
 
 ### Elasticsearch
 
@@ -389,42 +473,45 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Ingress
 
-| Parameter                      | Description                                                  | Default                                                                        |
-| ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| `ingress-nginx.enabled`        | Install Nginx Ingress Helm                                   | `false`                                                                        |
-| `nginx.enabled`                | (DEPRECATED) please use `ingress-nginx.enabled`              | `false`                                                                        |
-| `ingress.enabled`              | Flag to enable Ingress                                       | `false`                                                                        |
-| `ingress.labels`               | Ingress additional labels                                    | `{}`                                                                           |
-| `ingress.hosts[0].name`        | Hostname to your SonarQube installation                      | `sonarqube.your-org.com`                                                       |
-| `ingress.hosts[0].path`        | Path within the URL structure                                | `/`                                                                            |
-| `ingress.hosts[0].serviceName` | Optional field to override the default serviceName of a path | `None`                                                                         |
-| `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | `None`                                                                         |
-| `ingress.tls`                  | Ingress secrets for TLS certificates                         | `[]`                                                                           |
-| `ingress.ingressClassName`     | Optional field to configure ingress class name               | `None`                                                                         |
+| Parameter                      | Description                                                  | Default                                                                                                      |
+| ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `ingress-nginx.enabled`        | Install Nginx Ingress Helm                                   | `false`                                                                                                      |
+| `nginx.enabled`                | (DEPRECATED) please use `ingress-nginx.enabled`              | `false`                                                                                                      |
+| `ingress.enabled`              | Flag to enable Ingress                                       | `false`                                                                                                      |
+| `ingress.labels`               | Ingress additional labels                                    | `{}`                                                                                                         |
+| `ingress.hosts[0].name`        | Hostname to your SonarQube installation                      | `sonarqube.your-org.com`                                                                                     |
+| `ingress.hosts[0].path`        | Path within the URL structure                                | `/`                                                                                                          |
+| `ingress.hosts[0].serviceName` | Optional field to override the default serviceName of a path | `None`                                                                                                       |
+| `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | `None`                                                                                                       |
+| `ingress.tls`                  | Ingress secrets for TLS certificates                         | `[]`                                                                                                         |
+| `ingress.ingressClassName`     | Optional field to configure ingress class name               | `None`                                                                                                       |
 | `ingress.annotations`          | Field to add extra annotations to the ingress                | {`nginx.ingress.kubernetes.io/proxy-body-size: "64m"`} if `ingress-nginx.enabled=true or nginx.enabled=true` |
 
 ### InitContainers
 
-| Parameter                           | Description                                               | Default                                                                |
-| ----------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `initContainers.image`              | Change init container image                               | `ApplicationNodes.image`                                               |
-| `initContainers.securityContext`    | SecurityContext for init containers                       | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
-| `initContainers.resources`          | Resources for init containers                             | `{}`                                                                   |
-| `extraInitContainers`               | Extra init containers to e.g. download required artifacts | `{}`                                                                   |
-| `caCerts.enabled`                   | Flag for enabling additional CA certificates              | `false`                                                                |
-| `caCerts.image`                     | Change init CA certificates container image               | `ApplicationNodes.image`                                               |
-| `caCerts.secret`                    | Name of the secret containing additional CA certificates  | `None`                                                                 |
-| `initSysctl.enabled`                | Modify k8s worker to conform to system requirements       | `true`                                                                 |
-| `initSysctl.vmMaxMapCount`          | Set init sysctl container vm.max_map_count                | `524288`                                                               |
-| `initSysctl.fsFileMax`              | Set init sysctl container fs.file-max                     | `131072`                                                               |
-| `initSysctl.nofile`                 | Set init sysctl container open file descriptors limit     | `131072`                                                               |
-| `initSysctl.nproc`                  | Set init sysctl container open threads limit              | `8192`                                                                 |
-| `initSysctl.image`                  | Change init sysctl container image                        | `ApplicationNodes.image`                                               |
-| `initSysctl.securityContext`        | InitSysctl container security context                     | `{privileged: true}`                                                   |
-| `initSysctl.resources`              | InitSysctl container resource requests & limits           | `{}`                                                                   |
-| `initFs.enabled`                    | Enable file permission change with init container         | `true`                                                                 |
-| `initFs.image`                      | InitFS container image                                    | `ApplicationNodes.image`                                               |
-| `initFs.securityContext.privileged` | InitFS container needs to run privileged                  | `true`                                                                 |
+| Parameter                           | Description                                                                                                                           | Default                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `initContainers.image`              | Change init container image                                                                                                           | `ApplicationNodes.image`                                               |
+| `initContainers.securityContext`    | SecurityContext for init containers                                                                                                   | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
+| `initContainers.resources`          | Resources for init containers                                                                                                         | `{}`                                                                   |
+| `extraInitContainers`               | Extra init containers to e.g. download required artifacts                                                                             | `{}`                                                                   |
+| `caCerts.enabled`                   | Flag for enabling additional CA certificates                                                                                          | `false`                                                                |
+| `caCerts.image`                     | Change init CA certificates container image                                                                                           | `ApplicationNodes.image`                                               |
+| `caCerts.secret`                    | Name of the secret containing additional CA certificates. If defined, only secrets are going to be used.                              | `None`                                                                 |
+| `caCerts.configMap.name`            | Name of the ConfigMap containing additional CA certificate. Ensure that `caCerts.secret` is not set if you want to use a `ConfigMap`. | `None`                                                                 |
+| `caCerts.configMap.key`             | Name of the key containing the additional CA certificate                                                                              | `None`                                                                 |
+| `caCerts.configMap.path`            | Filename that should be used for the given CA certificate                                                                             | `None`                                                                 |
+| `initSysctl.enabled`                | Modify k8s worker to conform to system requirements                                                                                   | `true`                                                                 |
+| `initSysctl.vmMaxMapCount`          | Set init sysctl container vm.max_map_count                                                                                            | `524288`                                                               |
+| `initSysctl.fsFileMax`              | Set init sysctl container fs.file-max                                                                                                 | `131072`                                                               |
+| `initSysctl.nofile`                 | Set init sysctl container open file descriptors limit                                                                                 | `131072`                                                               |
+| `initSysctl.nproc`                  | Set init sysctl container open threads limit                                                                                          | `8192`                                                                 |
+| `initSysctl.image`                  | Change init sysctl container image                                                                                                    | `ApplicationNodes.image`                                               |
+| `initSysctl.securityContext`        | InitSysctl container security context                                                                                                 | `{privileged: true}`                                                   |
+| `initSysctl.resources`              | InitSysctl container resource requests & limits                                                                                       | `{}`                                                                   |
+| `initFs.enabled`                    | Enable file permission change with init container                                                                                     | `true`                                                                 |
+| `initFs.image`                      | InitFS container image                                                                                                                | `ApplicationNodes.image`                                               |
+| `initFs.securityContext.privileged` | InitFS container needs to run privileged                                                                                              | `true`                                                                 |
 
 ### SonarQube Specific
 
@@ -440,7 +527,8 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                             | Description                                                                                                                                                  | Default                                                       |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| `jdbcOverwrite.enable`                | Enable JDBC overwrites for external Databases (disable `postgresql.enabled`)                                                                                 | `false`                                                       |
+| `jdbcOverwrite.enable`                | (DEPRECATED) Enable JDBC overwrites for external Databases (disables `postgresql.enabled`) ,Please use jdbcOverwrite.enabled instead                         | `false`                                                       |
+| `jdbcOverwrite.enabled`               | Enable JDBC overwrites for external Databases (disable `postgresql.enabled`)                                                                                 | `false`                                                       |
 | `jdbcOverwrite.jdbcUrl`               | The JDBC url to connect the external DB                                                                                                                      | `jdbc:postgresql://myPostgress/myDatabase?socketTimeout=1500` |
 | `jdbcOverwrite.jdbcUsername`          | The DB user that should be used for the JDBC connection                                                                                                      | `sonarUser`                                                   |
 | `jdbcOverwrite.jdbcPassword`          | The DB password that should be used for the JDBC connection (Use this if you don't mind the DB password getting stored in plain text within the values file) | `sonarPass`                                                   |
@@ -467,7 +555,7 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `postgresql.persistence.accessMode`                      | PostgreSQL persistence accessMode                                      | `ReadWriteOnce` |
 | `postgresql.persistence.size`                            | PostgreSQL persistence size                                            | `20Gi`          |
 | `postgresql.persistence.storageClass`                    | PostgreSQL persistence storageClass                                    | `""`            |
-| `postgresql.securityContext.enabled`                     | PostgreSQL securityContext en/disabled                                 | `true`          |
+| `postgresql.securityContext.enabled`                     | PostgreSQL securityContext en/disabled                                 | `false`         |
 | `postgresql.securityContext.fsGroup`                     | PostgreSQL securityContext fsGroup                                     | `1001`          |
 | `postgresql.securityContext.runAsUser`                   | PostgreSQL securityContext runAsUser                                   | `1001`          |
 | `postgresql.volumePermissions.enabled`                   | PostgreSQL vol permissions en/disabled                                 | `false`         |
@@ -479,7 +567,7 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 ### Tests
 
 | Parameter                       | Description                                                   | Default                                                            |
-| --------------------------------| ------------------------------------------------------------- | ------------------------------------------------------------------ |
+| ------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------ |
 | `tests.enabled`                 | Flag that allows tests to be excluded from the generated yaml | `true`                                                             |
 | `tests.image`                   | Set the test container image                                  | `"ApplicationNodes.image.repository":"ApplicationNodes.image.tag"` |
 | `tests.resources.limits.cpu`    | CPU limit for test container                                  | `500m`                                                             |

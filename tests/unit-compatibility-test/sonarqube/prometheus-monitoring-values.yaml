@@ -1,0 +1,18 @@
+prometheusMonitoring:
+  # Generate a Prometheus Pod Monitor (https://github.com/coreos/prometheus-operator)
+  #
+  podMonitor:
+    # Create PodMonitor Resource for Prometheus scraping
+    enabled: true
+    # (DEPRECATED) Specify a custom namespace where the PodMonitor will be created.
+    # This value should not be set, as the PodMonitor's namespace has to match the Release Namespace.
+    # namespace: "default"
+    # Specify the interval how often metrics should be scraped
+    interval: 30s
+    # Specify the timeout after a scrape is ended
+    scrapeTimeout: 30s
+    # Name of the label on target services that prometheus uses as job name
+    jobLabel: "something"
+    # Additional labels to add to the PodMonitor
+    labels:
+      toto: tutu

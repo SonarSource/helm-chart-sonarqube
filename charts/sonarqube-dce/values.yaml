@@ -45,7 +45,6 @@ searchNodes:
     enabled: false
 
     # Existing Keystore/Truststore to be used
-    # See https://www.elastic.co/guide/en/elasticsearch/reference/current/security-basic-setup.html#generate-certificates how to generate them
     keyStoreSecret: ""
 
     # Password to said Keystore/Truststore if set (optional)
@@ -67,10 +66,12 @@ searchNodes:
   #   minAvailable: 2
 
   # Set security context for sonarqube search pods
+  # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific fsGroup.
   securityContext:
     fsGroup: 0
 
   # Set security context for sonarqube search container
+  # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
   containerSecurityContext:
     # Sonarqube dockerfile creates sonarqube user as UID 1000 and GID 0
     # Those default are used to match pod security standard restricted as least privileged approach
@@ -82,6 +83,7 @@ searchNodes:
       type: RuntimeDefault
     capabilities:
       drop: ["ALL"]
+  #   readOnlyRootFilesystem: true
 
   # Probe threshold configuration for the search nodes
   readinessProbe:
@@ -197,10 +199,12 @@ ApplicationNodes:
   #   minAvailable: 2
 
   # Set security context for sonarqube app pods
+  # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific fsGroup.
   securityContext:
     fsGroup: 0
 
   # Set security context for sonarqube app container
+  # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
   containerSecurityContext:
     # Sonarqube dockerfile creates sonarqube user as UID 1000 and GID 0
     # Those default are used to match pod security standard restricted as least privileged approach
@@ -212,6 +216,7 @@ ApplicationNodes:
       type: RuntimeDefault
     capabilities:
       drop: ["ALL"]
+  #   readOnlyRootFilesystem: true
 
   readinessProbe:
     exec:
@@ -308,6 +313,8 @@ ApplicationNodes:
       # scrapeTimeout: ""
       # Name of the label on target services that prometheus uses as job name
       # jobLabel: ""
+      # Additional labels to add to the PodMonitor
+      # labels: {}
 
   # List of plugins to install.
   # For example:
@@ -402,9 +409,14 @@ ApplicationNodes:
   # if the global .Values.tolerations is set, the following one will be ignored
   tolerations: []
 
+## This sets the TLS encryption between application and search nodes
+nodeEncryption:
+  enabled: false
+
 ## Is this deployment for OpenShift? If so, we help with SCCs
 OpenShift:
   enabled: false
+  # (Deprecated) this parameter should not be needed anymore, we support Openshift SCCv2 by default when Openshift.enabled=true
   createSCC: true
 
 # will be used as default for ingress path and probes path, will be injected in .Values.env as SONAR_WEB_CONTEXT
@@ -423,6 +435,23 @@ ingress-nginx:
   # controller:
   #   replicaCount: 3
 
+httproute:
+  enabled: false
+  # gateway: my-gateway
+  # labels:
+  #   somelabel: somevalue
+  # hostnames:
+  #   - sonarqube.your-org.com
+  # The rules are optional, by default we will create one with the SonarWebContext prefix and the SonarQube service values
+  # rules:
+  # - matches:
+  #   - path:
+  #       type: PathPrefix
+  #       value: /bar
+  #   backendRefs:
+  #   - name: my-service1
+  #     port: 8080
+
 service:
   type: ClusterIP
   externalPort: 9000
@@ -434,6 +463,15 @@ service:
   # loadBalancerSourceRanges:
   #   - 0.0.0.0/0
   # loadBalancerIP: 1.2.3.4
+
+# Those proxy settings will be propagated to the install-plugin and prometheus-exporter init containers
+# if httpProxySecret is set the other one will be ignored
+# the secret should contain exactly the keys http_proxy, https_proxy and no_proxy
+httpProxySecret: ""
+httpProxy: ""
+httpsProxy: ""
+noProxy: ""
+
 ingress:
   enabled: false
   # Used to create an Ingress record.
@@ -461,6 +499,26 @@ ingress:
   # - secretName: chart-example-tls
   #   hosts:
   #     - chart-example.local
+
+route:
+  enabled: false
+  host: "sonarqube.your-org.com"
+  path: "/"
+  # Add tls section to secure traffic.
+  tls:
+    termination: edge
+    # certificate:
+    # key:
+    # caCertificate:
+    # insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
+  annotations: {}
+  # See Openshift/OKD route annotation
+  # https://docs.openshift.com/container-platform/4.10/networking/routes/route-configuration.html#nw-route-specific-annotations_route-configuration
+  # haproxy.router.openshift.io/timeout: 1m
+  # Additional labels for Route manifest file
+  # labels:
+  #  external: 'true'
 
 # Affinity for pod assignment
 # Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -503,11 +561,15 @@ networkPolicy:
 
   # If you are using a external database and enable network Policies to be created
   # you will need to explicitly allow egress traffic to your database
-  # expects https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#networkpolicyspec-v1-networking-k8s-io
+  # (DEPRECATED) please use additionalNetworkPolicies instead
   # additionalNetworkPolicys:
+  # expects https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#networkpolicyspec-v1-networking-k8s-io
+  # additionalNetworkPolicies:
 
 initContainers:
   # image: busybox:1.36
+  # Set the security context for the init containers
+  # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
   # We allow the init containers to have a separate security context declaration because
   # the initContainer may not require the same as SonarQube.
   securityContext:
@@ -520,6 +582,7 @@ initContainers:
       type: RuntimeDefault
     capabilities:
       drop: ["ALL"]
+    readOnlyRootFilesystem: true
   # We allow the init containers to have a separate resources declaration because
   # the initContainer does not take as much resources.
   resources: {}
@@ -532,8 +595,14 @@ extraInitContainers: {}
 ##
 caCerts:
   enabled: false
-  # image: adoptopenjdk/openjdk11:alpine
-  secret: your-secret
+  # image:
+  # secret: your-secret-name
+
+  # Optionally, you can store your certificate in a ConfigMap and use it as:
+  # configMap:
+  #   name: my-custom-cacerts-certificate
+  #   key: key
+  #   path: my-certificate.crt
 
 initSysctl:
   enabled: true
@@ -547,6 +616,7 @@ initSysctl:
     privileged: true
     # if run without root permissions, error "sysctl: permission denied on key xxx, ignoring"
     runAsUser: 0
+    readOnlyRootFilesystem: true
   # resources: {}
 
 initFs:
@@ -563,6 +633,7 @@ initFs:
     capabilities:
       drop: ["ALL"]
       add: ["CHOWN"]
+    readOnlyRootFilesystem: true
 
 # a monitoring passcode needs to be defined in order to get reasonable probe results
 # not setting the monitoring passcode will result in a deployment that will never be ready
@@ -594,8 +665,10 @@ emptyDir: {}
 ## Override JDBC values
 ## for external Databases
 jdbcOverwrite:
+  # (DEPRECATED) Please use jdbcOverwrite.enabled instead
+  # enable: false
   # If enable the JDBC Overwrite, make sure to set `postgresql.enabled=false`
-  enable: false
+  enabled: false
   # The JDBC url of the external DB
   jdbcUrl: "jdbc:postgresql://myPostgress/myDatabase?socketTimeout=1500"
   # The DB user that should be used for the JDBC connection

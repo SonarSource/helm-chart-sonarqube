@@ -1,0 +1,730 @@
+---
+# Source: sonarqube-dce/templates/pod-disruption-budget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-search
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+spec:
+  minAvailable: 2
+
+  selector:
+    matchLabels:
+      sonarqube.datacenter/type: "search"
+---
+# Source: sonarqube-dce/templates/pod-disruption-budget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-app
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+spec:
+  minAvailable: 1
+
+  selector:
+    matchLabels:
+      sonarqube.datacenter/type: "app"
+---
+# Source: sonarqube-dce/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-monitoring-passcode
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+type: Opaque
+data:
+  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+---
+# Source: sonarqube-dce/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+type: Opaque
+data:
+  jdbc-password: "c2FtZQ=="
+---
+# Source: sonarqube-dce/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-jwt
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+type: Opaque
+data:
+  SONAR_AUTH_JWTBASE64HS256SECRET: "ZFowRUIwS3huRisrbnI1KzR2ZlRDYXVuL2VXYnY2Z09vWG9kaUFNcWNGbz0="
+---
+# Source: sonarqube-dce/templates/secret.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-http-proxies
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+type: Opaque
+stringData:
+  PLUGINS-HTTP-PROXY: ""
+  PLUGINS-HTTPS-PROXY: ""
+  PLUGINS-NO-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
+  PROMETHEUS-EXPORTER-NO-PROXY: ""
+---
+# Source: sonarqube-dce/templates/config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-app-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+data:
+  sonar.properties: |
+    sonar.forceAuthentication=true
+---
+# Source: sonarqube-dce/templates/config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-search-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+data:
+  sonar.properties: |
+    sonar.forceAuthentication=true
+---
+# Source: sonarqube-dce/templates/init-fs.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-init-fs
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+data:
+  init_fs.sh: |-
+    chown -R 1000:0 /opt/sonarqube/data
+    chown -R 1000:0 /opt/sonarqube/temp
+    chown -R 1000:0 /opt/sonarqube/logs
+---
+# Source: sonarqube-dce/templates/init-sysctl.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-init-sysctl
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+data:
+  init_sysctl.sh: |-
+    if [[ "$(sysctl -n vm.max_map_count)" -lt 524288 ]]; then
+      sysctl -w vm.max_map_count=524288
+    fi
+    if [[ "$(sysctl -n fs.file-max)" -lt 131072 ]]; then
+      sysctl -w fs.file-max=131072
+    fi
+    if [[ "$(ulimit -n)" != "unlimited" ]]; then
+      if [[ "$(ulimit -n)" -lt 131072 ]]; then
+        echo "ulimit -n 131072"
+        ulimit -n 131072
+      fi
+    fi
+    if [[ "$(ulimit -u)" != "unlimited" ]]; then
+      if [[ "$(ulimit -u)" -lt 8192 ]]; then
+        echo "ulimit -u 8192"
+        ulimit -u 8192
+      fi
+    fi
+---
+# Source: sonarqube-dce/templates/install-plugins.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-install-plugins
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+data:
+  install_plugins.sh: |-
+---
+# Source: sonarqube-dce/templates/jdbc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-jdbc-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+data:
+  SONAR_JDBC_USERNAME: "same"
+  SONAR_JDBC_URL: "someUrl"
+---
+# Source: sonarqube-dce/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: sonarqube-dce
+    release: restricted-openshift.yaml
+---
+# Source: sonarqube-dce/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-headless
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: 9003
+      targetPort: hazelcast
+      protocol: TCP
+      name: hazelcast
+  selector:
+    app: sonarqube-dce
+    release: restricted-openshift.yaml
+---
+# Source: sonarqube-dce/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-search
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9001
+      targetPort: search-port
+      protocol: TCP
+      name: search
+    - port: 9002
+      targetPort: es-port
+      protocol: TCP
+      name: es
+  selector:
+    app: sonarqube-dce-search
+    release: restricted-openshift.yaml
+---
+# Source: sonarqube-dce/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-search-headless
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: 9001
+      targetPort: search-port
+      protocol: TCP
+      name: search
+    - port: 9002
+      targetPort: es-port
+      protocol: TCP
+      name: es
+  selector:
+    app: sonarqube-dce-search
+    release: restricted-openshift.yaml
+---
+# Source: sonarqube-dce/templates/sonarqube-application.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-app
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+    app.kubernetes.io/name: restricted-openshift.yaml
+    sonarqube.datacenter/type: "app"
+    app.kubernetes.io/instance: restricted-openshift.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: restricted-openshift.yaml-sonarqube-dce
+    app.kubernetes.io/version: "9.9.0-datacenter-app"
+spec:
+  replicas: 2
+  revisionHistoryLimit: 
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sonarqube-dce
+      release: restricted-openshift.yaml
+  template:
+    metadata:
+      labels:
+        app: sonarqube-dce
+        release: restricted-openshift.yaml
+        sonarqube.datacenter/type: "app"
+      annotations:
+        checksum/plugins: 22ec48435d827b7839d6bb932e667355dc5795438fd05a4b57f0d3bfdbac09d5
+        checksum/config: 9231c48dc02cf800250e9feaf16196b7db7d344dd53d3a9318fd11e1519de2f9
+        checksum/secret: 744fa40bde9b9a01438751b793ed25f094c15e2ddd326fd19bc59c2ec49b9efa
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: concat-properties
+          image: sonarqube:9.9.0-datacenter-search
+          imagePullPolicy: IfNotPresent
+          command: 
+          - sh
+          - -c
+          - |
+            #!/bin/sh
+            if [ -f /tmp/props/sonar.properties ]; then
+              cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/secret.properties ]; then
+              cat /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
+              awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+          volumeMounts:
+            - mountPath: /tmp/props/sonar.properties
+              name: config
+              subPath: sonar.properties
+            - mountPath: /tmp/result
+              name: concat-dir
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
+      securityContext:
+        {}
+      containers:
+        - name: sonarqube-dce
+          image: sonarqube:9.9.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+            - name: hazelcast
+              containerPort: 9003
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              ephemeral-storage: 512000M
+              memory: 4096M
+            requests:
+              cpu: 400m
+              ephemeral-storage: 1536M
+              memory: 4096M
+          env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+            - name: SONAR_HELM_CHART_VERSION
+              value: 10.7.0
+            - name: SONAR_LOG_JSONOUTPUT
+              value: "false"
+            - name: SONAR_CLUSTER_SEARCH_HOSTS
+              value: "restricted-openshift.yaml-sonarqube-dce-search"
+            - name: SONAR_CLUSTER_KUBERNETES
+              value: "true"
+            - name: SONAR_CLUSTER_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SONAR_CLUSTER_HOSTS
+              value: "restricted-openshift.yaml-sonarqube-dce-headless"
+            - name: SONAR_AUTH_JWTBASE64HS256SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "restricted-openshift.yaml-sonarqube-dce-jwt"
+                  key: SONAR_AUTH_JWTBASE64HS256SECRET
+            - name: SONAR_JDBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: restricted-openshift.yaml-sonarqube-dce
+                  key: jdbc-password
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: restricted-openshift.yaml-sonarqube-dce-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
+          envFrom:
+            - configMapRef:
+                name: restricted-openshift.yaml-sonarqube-dce-jdbc-config
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                host="$(hostname -i || echo '127.0.0.1')"
+                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
+            failureThreshold: 6
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --no-proxy -qO- http://${host}:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                  exit 0
+                fi
+                exit 1
+            failureThreshold: 8
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              scheme: HTTP
+              path: /api/system/status
+              port: http
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            failureThreshold: 32
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/conf/sonar.properties
+              subPath: sonar.properties
+              name: concat-dir
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+      serviceAccountName: default
+      volumes:
+      - name: config
+        configMap:
+          name: restricted-openshift.yaml-sonarqube-dce-app-config
+          items:
+          - key: sonar.properties
+            path: sonar.properties
+      
+      - name: install-plugins
+        configMap:
+          name: restricted-openshift.yaml-sonarqube-dce-install-plugins
+          items:
+            - key: install_plugins.sh
+              path: install_plugins.sh
+      - name: sonarqube
+        emptyDir:
+          {}
+      - name : tmp-dir
+        emptyDir:
+          {}
+      - name : concat-dir
+        emptyDir:
+          {}
+---
+# Source: sonarqube-dce/templates/sonarqube-search.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce-search
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+    app.kubernetes.io/name: "restricted-openshift.yaml"
+    sonarqube.datacenter/type: "search"
+    app.kubernetes.io/instance: restricted-openshift.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: restricted-openshift.yaml-sonarqube-dce
+    app.kubernetes.io/version: "9.9.0-datacenter-search"
+spec:
+  podManagementPolicy : Parallel
+  replicas: 3
+  serviceName: restricted-openshift.yaml-sonarqube-dce-search
+  selector:
+    matchLabels:
+      app: sonarqube-dce-search
+      release: restricted-openshift.yaml
+  volumeClaimTemplates:
+  - metadata:
+      name: restricted-openshift.yaml-sonarqube-dce
+      labels:
+        release: restricted-openshift.yaml
+        chart: "sonarqube-dce"
+        app: "restricted-openshift.yaml-sonarqube-dce"
+    spec:
+      accessModes:
+        - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: "5Gi"
+  template:
+    metadata:
+      labels:
+        app: sonarqube-dce-search
+        release: restricted-openshift.yaml
+        sonarqube.datacenter/type: "search"
+      annotations:
+        checksum/config: 9231c48dc02cf800250e9feaf16196b7db7d344dd53d3a9318fd11e1519de2f9
+        checksum/secret: 744fa40bde9b9a01438751b793ed25f094c15e2ddd326fd19bc59c2ec49b9efa
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: concat-properties
+          image: sonarqube:9.9.0-datacenter-search
+          imagePullPolicy: IfNotPresent
+          command: 
+          - sh
+          - -c
+          - |
+            #!/bin/sh
+            if [ -f /tmp/props/sonar.properties ]; then
+              cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/secret.properties ]; then
+              cat /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
+              awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+          volumeMounts:
+            - mountPath: /tmp/props/sonar.properties
+              name: config
+              subPath: sonar.properties
+            - mountPath: /tmp/result
+              name: concat-dir
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
+      securityContext:
+        {}
+      containers:
+        - name: sonarqube-dce-search
+          image: "sonarqube:9.9.0-datacenter-search"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: search-port
+              containerPort: 9001
+              protocol: TCP
+            - name: es-port
+              containerPort: 9002
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              ephemeral-storage: 512000M
+              memory: 3072M
+            requests:
+              cpu: 400m
+              ephemeral-storage: 1536M
+              memory: 3072M
+          env:
+            - name: SONAR_LOG_JSONOUTPUT
+              value: "false"
+            - name: SONAR_CLUSTER_ES_HOSTS
+              value: "restricted-openshift.yaml-sonarqube-dce-search-0,restricted-openshift.yaml-sonarqube-dce-search-1,restricted-openshift.yaml-sonarqube-dce-search-2,"
+            - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
+              value: "restricted-openshift.yaml-sonarqube-dce-search-headless"
+            - name: SONAR_CLUSTER_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered live if http call returns 200
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-proxy -qO- "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-proxy -qO- "http://${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          startupProbe:
+            exec:
+             command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered started if http call returns 200
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-proxy -qO- "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 24
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/conf/sonar.properties
+              subPath: sonar.properties
+              name: concat-dir
+            - mountPath: /opt/sonarqube/certs
+              name: "restricted-openshift.yaml-sonarqube-dce"
+              subPath: certs
+              readOnly: true
+            - mountPath: /opt/sonarqube/data
+              name: "restricted-openshift.yaml-sonarqube-dce"
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: "restricted-openshift.yaml-sonarqube-dce"
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: "restricted-openshift.yaml-sonarqube-dce"
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+      serviceAccountName: default
+      volumes:
+      - name: config
+        configMap:
+          name: restricted-openshift.yaml-sonarqube-dce-search-config
+          items:
+          - key: sonar.properties
+            path: sonar.properties
+      
+      - name: "restricted-openshift.yaml-sonarqube-dce"
+      - name : tmp-dir
+        emptyDir:
+          {}
+      - name : concat-dir
+        emptyDir:
+          {}
