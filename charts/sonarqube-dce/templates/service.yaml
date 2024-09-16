@@ -10,7 +10,7 @@ metadata:
   {{- range $key, $value := .Values.service.labels }}
     {{ $key }}: {{ $value | quote }}
   {{- end }}
-{{ if .Values.service.annotations}}
+{{ if .Values.service.annotations }}
   annotations:
     {{- range $key, $value := .Values.service.annotations }}
     {{ $key }}: {{ $value | quote }}
@@ -29,15 +29,15 @@ spec:
   selector:
     app: {{ template "sonarqube.name" . }}
     release: {{ .Release.Name }}
-  {{- if eq .Values.service.type "LoadBalancer"}}
+  {{- if eq .Values.service.type "LoadBalancer" }}
   {{- if .Values.service.loadBalancerSourceRanges }}
   loadBalancerSourceRanges:
   {{- range .Values.service.loadBalancerSourceRanges }}
   - {{ . }}
   {{- end }}
   {{- end -}}
-  {{- if .Values.service.loadBalancerIP}}
-  loadBalancerIP: {{.Values.service.loadBalancerIP}}
+  {{- if .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
   {{- end }}
   {{- end }}
 
@@ -54,7 +54,7 @@ metadata:
   {{- range $key, $value := .Values.service.labels }}
     {{ $key }}: {{ $value | quote }}
   {{- end }}
-{{ if .Values.service.annotations}}
+{{ if .Values.service.annotations }}
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
     {{- range $key, $value := .Values.service.annotations }}
@@ -88,7 +88,7 @@ metadata:
   {{- range $key, $value := .Values.service.labels }}
     {{ $key }}: {{ $value | quote }}
   {{- end }}
-{{ if .Values.service.annotations}}
+{{ if .Values.service.annotations }}
   annotations:
     {{- range $key, $value := .Values.service.annotations }}
     {{ $key }}: {{ $value | quote }}
@@ -122,7 +122,7 @@ metadata:
   {{- range $key, $value := .Values.service.labels }}
     {{ $key }}: {{ $value | quote }}
   {{- end }}
-{{ if .Values.service.annotations}}
+{{ if .Values.service.annotations }}
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
     {{- range $key, $value := .Values.service.annotations }}

@@ -70,14 +70,13 @@ spec:
         - name: "wait-for-db"
           image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
-          {{- if $securityContext := .Values.initContainers.securityContext }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (include "sonarqube.initContainersSecurityContext" .) }}
+          securityContext: {{- . | nindent 12 }}
           {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
           command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/{{.Release.Name}}-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/{{ .Release.Name }}-postgresql/5432) && exit 0; sleep 2;done; exit 1']
       {{- end }}
       {{- if .Values.caCerts.enabled }}
         - name: ca-certs
@@ -85,9 +84,8 @@ spec:
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
-          {{- if $securityContext := .Values.initContainers.securityContext }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (include "sonarqube.initContainersSecurityContext" .) }}
+          securityContext: {{- . | nindent 12 }}
           {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
@@ -121,7 +119,7 @@ spec:
               awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
             fi
           volumeMounts:
-          {{- if or .Values.ApplicationNodes.sonarProperties .Values.sonarSecretKey}}
+          {{- if or .Values.ApplicationNodes.sonarProperties .Values.sonarSecretKey }}
             - mountPath: /tmp/props/sonar.properties
               name: config
               subPath: sonar.properties
@@ -133,9 +131,8 @@ spec:
           {{- end }}
             - mountPath: /tmp/result
               name: concat-dir
-          {{- if $securityContext := .Values.initContainers.securityContext }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (include "sonarqube.initContainersSecurityContext" .) }}
+          securityContext: {{- . | nindent 12 }}
           {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
@@ -148,9 +145,8 @@ spec:
         - name: inject-prometheus-exporter
           image: {{ default (include "sonarqube.image" $) .Values.ApplicationNodes.prometheusExporter.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
-          {{- if $securityContext := (default .Values.initContainers.securityContext .Values.ApplicationNodes.prometheusExporter.securityContext) }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) .Values.ApplicationNodes.prometheusExporter.securityContext) }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.ApplicationNodes.prometheusExporter.resources) | indent 12 }}
@@ -161,12 +157,9 @@ spec:
               name: sonarqube
               subPath: data
           env:
-            - name: http_proxy
-              value: {{ default "" .Values.ApplicationNodes.prometheusExporter.httpProxy }}
-            - name: https_proxy
-              value: {{ default "" .Values.ApplicationNodes.prometheusExporter.httpsProxy }}
-            - name: no_proxy
-              value: {{ default "" .Values.ApplicationNodes.prometheusExporter.noProxy }}
+          {{- with (include "sonarqube.prometheusExporterProxy.env" .) }}
+          {{- . | nindent 12 }}
+          {{- end }}
           {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
@@ -188,25 +181,22 @@ spec:
             - name: plugins-netrc-file
               mountPath: /root
             {{- end }}
-          {{- if $securityContext := (default .Values.initContainers.securityContext .Values.ApplicationNodes.plugins.securityContext) }}
-          securityContext:
-{{ toYaml $securityContext | indent 12 }}
+          {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) .Values.ApplicationNodes.plugins.securityContext) }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.ApplicationNodes.plugins.resource) | indent 12 }}
           env:
-            - name: http_proxy
-              value: {{ default "" .Values.ApplicationNodes.plugins.httpProxy }}
-            - name: https_proxy
-              value: {{ default "" .Values.ApplicationNodes.plugins.httpsProxy }}
-            - name: no_proxy
-              value: {{ default "" .Values.ApplicationNodes.plugins.noProxy }}
+          {{- with (include "sonarqube.install-plugins-proxy.env" .) }}
+          {{- . | nindent 12 }}
+          {{- end }}
           {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      securityContext:
-        {{- toYaml .Values.ApplicationNodes.securityContext | nindent 8 }}
+      {{- with (include "sonarqube.ApplicationNodes.securityContext" .) }}
+      securityContext: {{- . | nindent 8 }}
+      {{- end }}
       containers:
       {{- if .Values.ApplicationNodes.extraContainers }}
         {{- toYaml .Values.ApplicationNodes.extraContainers | nindent 8 }}
@@ -274,6 +264,15 @@ spec:
                   name: "{{ template "search.userPassword" . }}" 
                   key: SONAR_CLUSTER_SEARCH_PASSWORD
             {{- end }}
+            {{- if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
+            - name: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTORE
+              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
+            - name: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ template "search.ksPassword" . }}"
+                  key: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ template "sonarqube.fullname" . }}-jdbc-config
@@ -298,12 +297,11 @@ spec:
             periodSeconds: {{ .Values.ApplicationNodes.startupProbe.periodSeconds }}
             failureThreshold: {{ .Values.ApplicationNodes.startupProbe.failureThreshold }}
             timeoutSeconds: {{ .Values.ApplicationNodes.startupProbe.timeoutSeconds }}
-          {{- if .Values.ApplicationNodes.containerSecurityContext }}
-          securityContext:
-{{- toYaml .Values.ApplicationNodes.containerSecurityContext | nindent 12 }}
+          {{- with (include "sonarqube.ApplicationNodes.containerSecurityContext" .) }}
+          securityContext: {{- . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey}}
+            {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
               subPath: sonar.properties
               name: concat-dir
@@ -340,6 +338,11 @@ spec:
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/prometheus-ce-config.yaml
               subPath: prometheus-ce-config.yaml
               name: prometheus-ce-config
+            {{- end }}
+            {{- if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
+            - mountPath: {{ .Values.sonarqubeFolder }}/es-secret/
+              name: es-secret
+              readOnly: true
             {{- end }}
     {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
@@ -391,11 +394,7 @@ spec:
           - key: sonar-secret.txt
             path: sonar-secret.txt
       {{- end }}
-      {{- if .Values.caCerts.enabled }}
-      - name: ca-certs
-        secret:
-          secretName: {{ .Values.caCerts.secret }}
-      {{- end }}
+      {{- include "sonarqube.volumes.caCerts" . | nindent 6 }}
       {{- if .Values.ApplicationNodes.plugins.netrcCreds }}
       - name: plugins-netrc-file
         secret:
@@ -423,6 +422,11 @@ spec:
           items:
             - key: prometheus-ce-config.yaml
               path: prometheus-ce-config.yaml
+      {{- end }}
+      {{- if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
+      - name: es-secret
+        secret:
+          secretName: {{ .Values.searchNodes.searchAuthentication.keyStoreSecret }}
       {{- end }}
       - name: sonarqube
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}

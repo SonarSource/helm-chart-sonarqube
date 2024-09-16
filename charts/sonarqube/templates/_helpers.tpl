@@ -85,7 +85,7 @@ Determine the k8s secret containing the JDBC credentials
   {{- else -}}
   {{- template "postgresql.fullname" . -}}
   {{- end -}}
-{{- else if .Values.jdbcOverwrite.enable -}}
+{{- else if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
   {{- if .Values.jdbcOverwrite.jdbcSecretName -}}
   {{- .Values.jdbcOverwrite.jdbcSecretName -}}
   {{- else -}}
@@ -102,7 +102,7 @@ Determine JDBC username
 {{- define "jdbc.username" -}}
 {{- if and .Values.postgresql.enabled .Values.postgresql.postgresqlUsername -}}
   {{- .Values.postgresql.postgresqlUsername | quote -}}
-{{- else if and .Values.jdbcOverwrite.enable .Values.jdbcOverwrite.jdbcUsername -}}
+{{- else if and (or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable) .Values.jdbcOverwrite.jdbcUsername -}}
   {{- .Values.jdbcOverwrite.jdbcUsername | quote -}}
 {{- else -}}
   {{- .Values.postgresql.postgresqlUsername -}}
@@ -119,7 +119,7 @@ Determine the k8s secretKey contrining the JDBC password
   {{- else -}}
   {{- "postgresql-password" -}}
   {{- end -}}
-{{- else if .Values.jdbcOverwrite.enable -}}
+{{- else if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
   {{- if and .Values.jdbcOverwrite.jdbcSecretName .Values.jdbcOverwrite.jdbcSecretPasswordKey -}}
   {{- .Values.jdbcOverwrite.jdbcSecretPasswordKey -}}
   {{- else -}}
@@ -134,7 +134,7 @@ Determine the k8s secretKey contrining the JDBC password
 Determine JDBC password if internal secret is used
 */}}
 {{- define "jdbc.internalSecretPasswd" -}}
-{{- if .Values.jdbcOverwrite.enable -}}
+{{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
   {{- .Values.jdbcOverwrite.jdbcPassword | b64enc | quote -}}
 {{- else -}}
   {{- .Values.postgresql.postgresqlPassword | b64enc | quote -}}
@@ -250,4 +250,129 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
 {{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_WEB_JAVAOPTS" "value" (include "sonarqube.jvmOpts" .)) -}}
 {{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_CE_JAVAOPTS" "value" (include "sonarqube.jvmCEOpts" .)) -}}
 {{- toJson $filteredEnv -}}
+{{- end -}}
+
+
+{{/*
+  generate Proxy env var from httpProxySecret
+*/}}
+{{- define "sonarqube.proxyFromSecret" -}}
+- name: http_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.httpProxySecret }}
+      key: http_proxy
+- name: https_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.httpProxySecret }}
+      key: https_proxy
+- name: no_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.httpProxySecret }}
+      key: no_proxy
+{{- end -}}
+
+{{/*
+  generate prometheusExporter proxy env var
+*/}}
+{{- define "sonarqube.prometheusExporterProxy.env" -}}
+{{- if .Values.httpProxySecret -}}
+{{- include "sonarqube.proxyFromSecret" . }}
+{{- else -}}
+- name: http_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PROMETHEUS-EXPORTER-HTTP-PROXY
+- name: https_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PROMETHEUS-EXPORTER-HTTPS-PROXY
+- name: no_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PROMETHEUS-EXPORTER-NO-PROXY
+{{- end -}}
+{{- end -}}
+
+{{/*
+  generate install-plugins proxy env var
+*/}}
+{{- define "sonarqube.install-plugins-proxy.env" -}}
+{{- if .Values.httpProxySecret -}}
+{{- include "sonarqube.proxyFromSecret" . }}
+{{- else -}}
+- name: http_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PLUGINS-HTTP-PROXY
+- name: https_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PLUGINS-HTTPS-PROXY
+- name: no_proxy
+  valueFrom:
+    secretKeyRef:
+      name: {{ template "sonarqube.fullname" . }}-http-proxies
+      key: PLUGINS-NO-PROXY
+{{- end -}}
+{{- end -}}
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.securityContext" -}}
+{{- $adaptedSecurityContext := .Values.securityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedSecurityContext = omit $adaptedSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+  {{- toYaml $adaptedSecurityContext -}}
+{{- end -}}
+
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.containerSecurityContext" -}}
+{{- $adaptedContainerSecurityContext := .Values.containerSecurityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedContainerSecurityContext = omit $adaptedContainerSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedContainerSecurityContext -}}
+{{- end -}}
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.initContainerSecurityContext" -}}
+{{- $adaptedInitContainerSecurityContext := .Values.initContainers.securityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedInitContainerSecurityContext = omit $adaptedInitContainerSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedInitContainerSecurityContext -}}
+{{- end -}}
+
+{{/*
+  generate caCerts volume
+*/}}
+{{- define "sonarqube.volumes.caCerts" -}}
+{{- if .Values.caCerts.enabled -}}
+- name: ca-certs
+  {{- if .Values.caCerts.secret }}
+  secret:
+    secretName: {{ .Values.caCerts.secret }}
+  {{- else if .Values.caCerts.configMap }}
+  configMap:
+    name: {{ .Values.caCerts.configMap.name }}
+    items:
+      - key: {{ .Values.caCerts.configMap.key }}
+        path: {{ .Values.caCerts.configMap.path }}
+  {{- end -}}
+{{- end -}}
 {{- end -}}

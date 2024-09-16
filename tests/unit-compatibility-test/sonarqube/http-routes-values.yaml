@@ -1,0 +1,13 @@
+httproute:
+  enabled: true
+  gateway: my-gateway
+  hostnames:
+    - sonarqube.your-org.com
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: http-routes-default-values.yaml-sonarqube
+      port: 9000
