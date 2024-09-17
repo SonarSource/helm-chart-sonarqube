@@ -221,7 +221,7 @@ chart_testing_on_openshift_task:
     cpu: 2
     memory: 4Gb
   <<: *CLONE_SCRIPT_TEMPLATE
-  authenticate_to_eks_script:
+  authenticate_to_openshift_script:
     - ./.cirrus/openshift_auth.sh
   setup_script:
     - oc new-project test --display-name="Test Project" --description="This is a test project for testing SQ from Cirrus" || oc project test

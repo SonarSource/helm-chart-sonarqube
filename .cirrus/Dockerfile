@@ -33,9 +33,11 @@ RUN apk add --update --no-cache \
     jq \
     moreutils \
     curl \
+    gcompat \
     git \
     gnupg \
     libc6-compat \
+    libstdc++ \
     openssh-client \
     py3-pip \
     py3-wheel \
@@ -113,7 +115,7 @@ RUN set -eux; \
     tar -xf openshift-client-linux.tar.gz ; \
     chmod +x ./oc ; \
     mv ./oc /usr/bin/oc ; \
-    rm openshift-client-linux.tar.gz
+    rm openshift-client-linux.tar.gz kubectl README.md
 
 
 COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
