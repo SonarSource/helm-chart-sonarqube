@@ -243,6 +243,10 @@ spec:
       env:
         - name: SONAR_HELM_CHART_VERSION
           value: {{ .Chart.Version | replace "+" "_" }}
+        {{- if .Values.OpenShift.enabled }}
+        - name: SONAR_OPENSHIFT
+          value: "true"
+        {{- end }}
         - name: SONAR_JDBC_PASSWORD
           valueFrom:
             secretKeyRef:

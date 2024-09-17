@@ -19,6 +19,7 @@ All changes to this chart will be documented in this file.
 * Changed default value for caCerts.image
 * Document the upgrade process when autoscaling is enabled
 * Fix openshift change-admin-password-hook Job SecurityContext failure
+* Support SONAR_OPENSHIFT telemetry env_var
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0

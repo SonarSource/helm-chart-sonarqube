@@ -225,6 +225,10 @@ spec:
           {{- (include "sonarqube.combined_app_env" . | fromJsonArray) | toYaml | trim | nindent 12 }}
             - name: SONAR_HELM_CHART_VERSION
               value: {{ .Chart.Version | replace "+" "_" }}
+            {{- if .Values.OpenShift.enabled }}
+            - name: SONAR_OPENSHIFT
+              value: "true"
+            {{- end }}
             - name: SONAR_LOG_JSONOUTPUT
               value: "{{ .Values.logging.jsonOutput }}"
             - name: SONAR_CLUSTER_SEARCH_HOSTS

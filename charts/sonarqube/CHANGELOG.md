@@ -20,6 +20,7 @@ All changes to this chart will be documented in this file.
 * Support additional CA Certificate as ConfigMap instead of Secret only
 * Changed default value for caCerts.image
 * Fix openshift change-admin-password-hook Job SecurityContext failure
+* Support SONAR_OPENSHIFT telemetry env_var
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0
