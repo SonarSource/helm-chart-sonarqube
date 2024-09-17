@@ -19,6 +19,8 @@ ARG KUBECONFORM_VERSION=0.6.6
 ARG KUBECONFORM_CHECKSUM="2ff56999a6ed9e96fe5ab9ee52271f2db5335baf7f17789035b9561970cdd3eb"
 ARG CHART_VERIFIER_VERSION=1.13.7
 ARG CHART_VERIFIER_CHECKSUM="100e65d46627c005cf0edf5e645aca3d0acaf6371c1870609dcbfa3135b88484"
+ARG OPENSHIFT_CLI_VERSION=4.16.13
+ARG OPENSHIFT_CLI_CHECKSUM="a384f1b748bef573d65f807e4dde749efc030d4483555d69041d504cb9d95474"
 
 ENV HELM_BASE_URL="https://get.helm.sh"
 ENV HELM_TAR_FILE="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
@@ -104,6 +106,15 @@ RUN set -eux; \
     chmod +x ./chart-verifier ; \
     mv ./chart-verifier /usr/bin/chart-verifier ; \
     rm chart-verifier-${CHART_VERIFIER_VERSION}.tgz
+
+RUN set -eux; \
+    curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${OPENSHIFT_CLI_VERSION}/openshift-client-linux.tar.gz ; \
+    echo "${OPENSHIFT_CLI_CHECKSUM}  openshift-client-linux.tar.gz" | sha256sum -c ; \
+    tar -xf openshift-client-linux.tar.gz ; \
+    chmod +x ./oc ; \
+    mv ./oc /usr/bin/oc ; \
+    rm openshift-client-linux.tar.gz
+
 
 COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
 COPY --from=tools /usr/local/bin/gh /usr/local/bin/gh

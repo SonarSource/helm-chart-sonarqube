@@ -8,6 +8,9 @@ env:
   GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider # This is the staging registry
   GCLOUD_PRODUCT_NAME: sonarqube-dce-staging # This is the staging product name
   GCLOUD_TAG: 10.6.0
+  ROSA_OPENSHIFT_URL: VAULT[development/team/sonarqube/kv/data/gcp-marketplace-registry-staging data.key]
+  ROSA_OPENSHIFT_USER: VAULT[development/team/sonarqube/kv/data/gcp-marketplace-registry-staging data.key]
+  ROSA_OPENSHIFT_PASSWORD: VAULT[development/team/sonarqube/kv/data/gcp-marketplace-registry-staging data.key]
 
 except_nightly_cron: &EXCEPT_ON_NIGHTLY_CRON
   only_if: $CIRRUS_CRON != $NIGHTLY_CRON
@@ -184,7 +187,7 @@ chart_fixture_test_task:
     - .cirrus/generate_helm_fixtures.sh
     - git diff --exit-code
 
-chart_testing_task:
+chart_testing_on_eks_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   timeout_in: 30m
   eks_container:
@@ -209,6 +212,26 @@ chart_testing_task:
     - chart_static_compatibility_test
     - verify_openshift_sonarqube
     - verify_openshift_sonarqube_dce
+
+chart_testing_on_openshift_task:
+  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
+  timeout_in: 30m
+  eks_container:
+    <<: *CONTAINER_TEMPLATE
+    cpu: 2
+    memory: 4Gb
+  <<: *CLONE_SCRIPT_TEMPLATE
+  authenticate_to_eks_script:
+    - ./.cirrus/openshift_auth.sh
+  setup_script:
+    - oc new-project test --display-name="Test Project" --description="This is a test project for testing SQ from Cirrus" || oc project test
+    - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
+  script:
+    - ct install --namespace test --config test.yaml --all --helm-extra-set-args "--set=OpenShift.enabled=true,OpenShift.createSCC=false,postgresql.securityContext.enabled=false,postgresql.containerSecurityContext.enabled=false" --debug
+  teardown_script:
+    - oc delete project test
+  depends_on:
+    - chart_static_compatibility_test
 
 chart_packaging_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
@@ -237,7 +260,8 @@ chart_packaging_task:
     - ./.cirrus/package.sh
     - ./.cirrus/sign_chart.sh
   depends_on:
-    - chart_testing
+    - chart_testing_on_eks
+    - chart_testing_on_openshift
 
 push_to_repox_task:
   <<: *EXCEPT_ON_PR_OR_CRON
@@ -257,7 +281,6 @@ push_to_repox_task:
     - source cirrus-env ""
     - ./.cirrus/upload_chart.sh
   depends_on:
-    - chart_testing
     - chart_packaging
 
 trigger_release_task:
