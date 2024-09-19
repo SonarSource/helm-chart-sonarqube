@@ -105,11 +105,6 @@ RUN set -eux; \
     mv ./chart-verifier /usr/bin/chart-verifier ; \
     rm chart-verifier-${CHART_VERIFIER_VERSION}.tgz
 
-RUN curl -LO https://github.com/derailed/k9s/releases/download/v0.32.5/k9s_Linux_amd64.tar.gz && \
-    tar -xvf k9s_Linux_amd64.tar.gz && \
-    mv k9s /usr/bin/k9s && \
-    rm k9s_Linux_amd64.tar.gz
-
 COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
 COPY --from=tools /usr/local/bin/gh /usr/local/bin/gh
 COPY --from=tools /home/sonarsource/.m2/settings-public-auth.xml /root/.m2/settings-public.xml
