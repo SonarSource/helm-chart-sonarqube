@@ -229,6 +229,10 @@ spec:
             - name: SONAR_OPENSHIFT
               value: "true"
             {{- end }}
+            {{- if .Values.ApplicationNodes.hpa.enabled }}
+            - name: SONAR_AUTOSCALING
+              value: "true"
+            {{- end }}
             - name: SONAR_LOG_JSONOUTPUT
               value: "{{ .Values.logging.jsonOutput }}"
             - name: SONAR_CLUSTER_SEARCH_HOSTS
