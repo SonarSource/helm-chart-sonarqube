@@ -127,8 +127,8 @@ verify_openshift_task:
     <<: *CONTAINER_TEMPLATE
     cpu: 2
     memory: 4Gb
-  authenticate_to_eks_script:
-    - ./.cirrus/eks.sh
+  authenticate_to_openshift_script:
+    - ./.cirrus/openshift_auth.sh
   matrix:
     - name: verify_openshift_sonarqube
       env:
@@ -137,7 +137,7 @@ verify_openshift_task:
       env:
         - VERIFYING_CHART: sonarqube-dce
   setup_script:
-    - kubectl create namespace "${VERIFYING_CHART}" --dry-run=client -o yaml | kubectl apply -f -
+    - oc new-project "${VERIFYING_CHART}" --display-name="Test Project" --description="This is a test project for testing ${VERIFYING_CHART} from Cirrus" || oc project "${VERIFYING_CHART}"
     - kubectl create secret docker-registry pullsecret --namespace "${VERIFYING_CHART}" --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
     - ./.cirrus/build_chart_dependencies.sh charts/"${VERIFYING_CHART}"
     - chart-verifier version
