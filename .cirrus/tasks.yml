@@ -134,10 +134,10 @@ chart_static_compatibility_test_task:
   script:
     - cd "${CIRRUS_WORKING_DIR}" && ./.cirrus/build_chart_dependencies.sh charts/sonarqube
     - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube
-    - "${CIRRUS_WORKING_DIR}"/.cirrus/unit_helm_compatibility_test.sh
+    - ./.cirrus/unit_helm_compatibility_test.sh
     - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube-dce
     - cd "${CIRRUS_WORKING_DIR}" && ./.cirrus/build_chart_dependencies.sh charts/sonarqube-dce
-    - "${CIRRUS_WORKING_DIR}"/.cirrus/unit_helm_compatibility_test.sh
+    - ./.cirrus/unit_helm_compatibility_test.sh
 
 chart_fixture_test_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
@@ -151,7 +151,7 @@ chart_fixture_test_task:
     - cd "${CIRRUS_WORKING_DIR}" && ./.cirrus/build_chart_dependencies.sh charts/sonarqube
     - cd "${CIRRUS_WORKING_DIR}" && ./.cirrus/build_chart_dependencies.sh charts/sonarqube-dce
     - cd ${CIRRUS_WORKING_DIR}
-    - .cirrus/generate_helm_fixtures.sh
+    - ./.cirrus/generate_helm_fixtures.sh
     - git diff --exit-code
 
 chart_testing_on_kind_task:
