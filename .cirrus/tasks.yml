@@ -148,9 +148,8 @@ chart_fixture_test_task:
     memory: 1Gb
   <<: *CLONE_SCRIPT_TEMPLATE
   script:
-    - cd "${CIRRUS_WORKING_DIR}" && ./.cirrus/build_chart_dependencies.sh charts/sonarqube
-    - cd "${CIRRUS_WORKING_DIR}" && ./.cirrus/build_chart_dependencies.sh charts/sonarqube-dce
-    - cd ${CIRRUS_WORKING_DIR}
+    - ./.cirrus/build_chart_dependencies.sh charts/sonarqube
+    - ./.cirrus/build_chart_dependencies.sh charts/sonarqube-dce
     - ./.cirrus/generate_helm_fixtures.sh
     - git diff --exit-code
 
