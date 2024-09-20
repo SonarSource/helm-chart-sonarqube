@@ -132,12 +132,10 @@ chart_static_compatibility_test_task:
     memory: 1Gb
   <<: *CLONE_SCRIPT_TEMPLATE
   script:
-    - cd "${CIRRUS_WORKING_DIR}" && ./.cirrus/build_chart_dependencies.sh charts/sonarqube
-    - cd "${CIRRUS_WORKING_DIR}"/charts/sonarqube
-    - "${CIRRUS_WORKING_DIR}/.cirrus/unit_helm_compatibility_test.sh"
-    - cd "${CIRRUS_WORKING_DIR}" && ./.cirrus/build_chart_dependencies.sh charts/sonarqube-dce
-    - cd ${CIRRUS_WORKING_DIR}/charts/sonarqube-dce
-    - "${CIRRUS_WORKING_DIR}/.cirrus/unit_helm_compatibility_test.sh"
+    - ./.cirrus/build_chart_dependencies.sh charts/sonarqube
+    - ./.cirrus/unit_helm_compatibility_test.sh sonarqube
+    - ./.cirrus/build_chart_dependencies.sh charts/sonarqube-dce
+    - ./.cirrus/unit_helm_compatibility_test.sh sonarqube-dce
 
 chart_fixture_test_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
