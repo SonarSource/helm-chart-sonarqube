@@ -21,6 +21,7 @@ All changes to this chart will be documented in this file.
 * Fix openshift change-admin-password-hook Job SecurityContext failure
 * Support SONAR_OPENSHIFT telemetry env_var
 * Update helm chart repo path in sources
+* Support IS_HELM_AUTOSCALING_ENABLED telemetry env_var and rename SONAR_OPENSHIFT to IS_HELM_OPENSHIFT_ENABLED
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0

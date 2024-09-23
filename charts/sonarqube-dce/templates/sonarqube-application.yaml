@@ -226,7 +226,11 @@ spec:
             - name: SONAR_HELM_CHART_VERSION
               value: {{ .Chart.Version | replace "+" "_" }}
             {{- if .Values.OpenShift.enabled }}
-            - name: SONAR_OPENSHIFT
+            - name: IS_HELM_OPENSHIFT_ENABLED
+              value: "true"
+            {{- end }}
+            {{- if .Values.ApplicationNodes.hpa.enabled }}
+            - name: IS_HELM_AUTOSCALING_ENABLED
               value: "true"
             {{- end }}
             - name: SONAR_LOG_JSONOUTPUT
