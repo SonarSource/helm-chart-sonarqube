@@ -20,6 +20,7 @@ All changes to this chart will be documented in this file.
 * Document the upgrade process when autoscaling is enabled
 * Fix openshift change-admin-password-hook Job SecurityContext failure
 * Support SONAR_OPENSHIFT telemetry env_var
+* Update helm chart repo path in sources
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0

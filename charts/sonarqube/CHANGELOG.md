@@ -21,6 +21,7 @@ All changes to this chart will be documented in this file.
 * Changed default value for caCerts.image
 * Fix openshift change-admin-password-hook Job SecurityContext failure
 * Support SONAR_OPENSHIFT telemetry env_var
+* Update helm chart repo path in sources
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0
