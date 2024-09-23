@@ -244,7 +244,7 @@ spec:
         - name: SONAR_HELM_CHART_VERSION
           value: {{ .Chart.Version | replace "+" "_" }}
         {{- if .Values.OpenShift.enabled }}
-        - name: SONAR_IS_HELM_OPENSHIFT_USED
+        - name: IS_HELM_OPENSHIFT_ENABLED
           value: "true"
         {{- end }}
         - name: SONAR_JDBC_PASSWORD
