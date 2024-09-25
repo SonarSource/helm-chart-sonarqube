@@ -203,7 +203,7 @@ If running on OpenShift, make sure your account has permissions to create PodMon
 
 The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).
 
-`Openshift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
+Please note that `Openshift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
 
 The below command will deploy SonarQube on the Openshift Kubernetes cluster. Please note this will use the embedded postgresql database and is not recommended for production.
 
@@ -215,14 +215,11 @@ export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key
 helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce \
   --set ApplicationNodes.jwtSecret=$JWT_SECRET \
   --set OpenShift.enabled=true \
-  --set OpenShift.createSCC=false \
   --set postgresql.securityContext.enabled=false \
   --set postgresql.containerSecurityContext.enabled=false
 ```
 
-### Route definition
-
-If you want to make your application publicly visible with Routes, you can set `route.enabled` to true. Please check the [configuration details](#route) to customize the Route base on your needs.
+If you want to make your application publicly visible with Routes, you can set `OpenShift.route.enabled` to true. Please check the [configuration details](#openshift-1) to customize the Route base on your needs.
 
 ## Autoscaling
 
@@ -430,22 +427,17 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### OpenShift
 
-| Parameter             | Description                                                                            | Default |
-| --------------------- | -------------------------------------------------------------------------------------- | ------- |
-| `OpenShift.enabled`   | Define if this deployment is for OpenShift                                             | `false` |
-| `OpenShift.createSCC` | If this deployment is for OpenShift, define if SCC should be created for sonarqube pod | `true`  |
-
-### Route
-
-| Parameter              | Description                                                                   | Default                    |
-| ---------------------- | ----------------------------------------------------------------------------- | -------------------------- |
-| `route.enabled`        | Flag to enable OpenShift Route                                                | `false`                    |
-| `route.host`           | Host that points to the service                                               | `"sonarqube.your-org.com"` |
-| `route.path`           | Path that the router watches for, to route traffic for to the service         | `"/"`                      |
-| `route.tls`            | TLS settings including termination type, certificates, insecure traffic, etc. | see `values.yaml`          |
-| `route.wildcardPolicy` | The wildcard policy that is allowed where this route is exposed               | `None`                     |
-| `route.annotations`    | Optional field to add extra annotations to the route                          | `None`                     |
-| `route.labels`         | Route additional labels                                                       | `{}`                       |
+| Parameter                        | Description                                                                                         | Default                    |
+| -------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------- |
+| `OpenShift.enabled`              | Define if this deployment is for OpenShift                                                          | `false`                    |
+| `OpenShift.createSCC`            | (DEPRECATED) If this deployment is for OpenShift, define if SCC should be created for sonarqube pod | `false`                    |
+| `OpenShift.route.enabled`        | Flag to enable OpenShift Route                                                                      | `false`                    |
+| `OpenShift.route.host`           | Host that points to the service                                                                     | `"sonarqube.your-org.com"` |
+| `OpenShift.route.path`           | Path that the router watches for, to route traffic for to the service                               | `"/"`                      |
+| `OpenShift.route.tls`            | TLS settings including termination type, certificates, insecure traffic, etc.                       | see `values.yaml`          |
+| `OpenShift.route.wildcardPolicy` | The wildcard policy that is allowed where this route is exposed                                     | `None`                     |
+| `OpenShift.route.annotations`    | Optional field to add extra annotations to the route                                                | `None`                     |
+| `OpenShift.route.labels`         | Route additional labels                                                                             | `{}`                       |
 
 ### HttpRoute
 
