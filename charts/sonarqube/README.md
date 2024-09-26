@@ -470,15 +470,15 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### JDBC Overwrite
 
-| Parameter                             | Description                                                                                                                                                  | Default                                                       |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| `jdbcOverwrite.enable`                | (DEPRECATED) Enable JDBC overwrites for external Databases (disables `postgresql.enabled`) ,Please use jdbcOverwrite.enabled instead                         | `false`                                                       |
-| `jdbcOverwrite.enabled`               | Enable JDBC overwrites for external Databases (disables `postgresql.enabled`)                                                                                | `false`                                                       |
-| `jdbcOverwrite.jdbcUrl`               | The JDBC url to connect the external DB                                                                                                                      | `jdbc:postgresql://myPostgress/myDatabase?socketTimeout=1500` |
-| `jdbcOverwrite.jdbcUsername`          | The DB user that should be used for the JDBC connection                                                                                                      | `sonarUser`                                                   |
-| `jdbcOverwrite.jdbcPassword`          | The DB password that should be used for the JDBC connection (Use this if you don't mind the DB password getting stored in plain text within the values file) | `sonarPass`                                                   |
-| `jdbcOverwrite.jdbcSecretName`        | Alternatively, use a pre-existing k8s secret containing the DB password                                                                                      | `None`                                                        |
-| `jdbcOverwrite.jdbcSecretPasswordKey` | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret                                    | `None`                                                        |
+| Parameter                             | Description                                                                                                                                                  | Default                                    |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
+| `jdbcOverwrite.enable`                | (DEPRECATED) Enable JDBC overwrites for external Databases (disables `postgresql.enabled`) ,Please use jdbcOverwrite.enabled instead                         | `false`                                    |
+| `jdbcOverwrite.enabled`               | Enable JDBC overwrites for external Databases (disables `postgresql.enabled`)                                                                                | `false`                                    |
+| `jdbcOverwrite.jdbcUrl`               | The JDBC url to connect the external DB                                                                                                                      | `jdbc:postgresql://myPostgress/myDatabase` |
+| `jdbcOverwrite.jdbcUsername`          | The DB user that should be used for the JDBC connection                                                                                                      | `sonarUser`                                |
+| `jdbcOverwrite.jdbcPassword`          | The DB password that should be used for the JDBC connection (Use this if you don't mind the DB password getting stored in plain text within the values file) | `sonarPass`                                |
+| `jdbcOverwrite.jdbcSecretName`        | Alternatively, use a pre-existing k8s secret containing the DB password                                                                                      | `None`                                     |
+| `jdbcOverwrite.jdbcSecretPasswordKey` | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret                                    | `None`                                     |
 
 ### Bundled PostgreSQL Chart (DEPRECATED)
 
