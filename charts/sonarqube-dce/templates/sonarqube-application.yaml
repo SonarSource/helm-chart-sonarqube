@@ -352,6 +352,9 @@ spec:
               name: es-secret
               readOnly: true
             {{- end }}
+            {{- with .Values.ApplicationNodes.extraVolumeMounts -}}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
     {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
     {{- end }}
@@ -444,3 +447,6 @@ spec:
       - name : concat-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 -}}
         {{- end }}
+      {{- with .Values.ApplicationNodes.extraVolumes -}}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}

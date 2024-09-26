@@ -25,6 +25,7 @@ All changes to this chart will be documented in this file.
 * Remove socketTimeout from jdbcOverwrite.jdbcUrl's default value
 * Refactor Route to be subparameter of OpenShift
 * Make OpenShift.createSCC false by default
+* Support ApplicationNodes.extraVolumes and ApplicationNodes.extraVolumeMounts
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0
