@@ -413,11 +413,30 @@ ApplicationNodes:
 nodeEncryption:
   enabled: false
 
-## Is this deployment for OpenShift? If so, we help with SCCs
+## OpenShift specific configuration
 OpenShift:
   enabled: false
   # (Deprecated) this parameter should not be needed anymore, we support Openshift SCCv2 by default when Openshift.enabled=true
-  createSCC: true
+  createSCC: false
+  route:
+    enabled: false
+    host: "sonarqube.your-org.com"
+    path: "/"
+    # Add tls section to secure traffic.
+    tls:
+      termination: edge
+      # certificate:
+      # key:
+      # caCertificate:
+      # insecureEdgeTerminationPolicy: Redirect
+    wildcardPolicy: None
+    annotations: {}
+    # See Openshift/OKD route annotation
+    # https://docs.openshift.com/container-platform/4.10/networking/routes/route-configuration.html#nw-route-specific-annotations_route-configuration
+    # haproxy.router.openshift.io/timeout: 1m
+    # Additional labels for Route manifest file
+    # labels:
+    #  external: 'true'
 
 # will be used as default for ingress path and probes path, will be injected in .Values.env as SONAR_WEB_CONTEXT
 # if .Values.ApplicationNodes.env.SONAR_WEB_CONTEXT is set, this value will be ignored
@@ -499,26 +518,6 @@ ingress:
   # - secretName: chart-example-tls
   #   hosts:
   #     - chart-example.local
-
-route:
-  enabled: false
-  host: "sonarqube.your-org.com"
-  path: "/"
-  # Add tls section to secure traffic.
-  tls:
-    termination: edge
-    # certificate:
-    # key:
-    # caCertificate:
-    # insecureEdgeTerminationPolicy: Redirect
-  wildcardPolicy: None
-  annotations: {}
-  # See Openshift/OKD route annotation
-  # https://docs.openshift.com/container-platform/4.10/networking/routes/route-configuration.html#nw-route-specific-annotations_route-configuration
-  # haproxy.router.openshift.io/timeout: 1m
-  # Additional labels for Route manifest file
-  # labels:
-  #  external: 'true'
 
 # Affinity for pod assignment
 # Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity

@@ -24,6 +24,8 @@ All changes to this chart will be documented in this file.
 * Update helm chart repo path in sources
 * Changed SONAR_OPENSHIFT to IS_HELM_OPENSHIFT_ENABLED
 * Remove socketTimeout from jdbcOverwrite.jdbcUrl's default value
+* Refactor Route to be subparameter of OpenShift
+* Make OpenShift.createSCC false by default
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0

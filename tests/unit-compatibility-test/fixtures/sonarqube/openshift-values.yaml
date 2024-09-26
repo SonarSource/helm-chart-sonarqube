@@ -533,6 +533,28 @@ spec:
           emptyDir:
             {}
 ---
+# Source: sonarqube/templates/route.yaml
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: openshift-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-10.7.0
+    release: openshift-values.yaml
+    heritage: Helm
+spec:
+  host: sonarqube.your-org.com
+  path: /
+  to:
+    kind: Service
+    name: openshift-values.yaml-sonarqube
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+  wildcardPolicy: None
+---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1
 kind: Pod
