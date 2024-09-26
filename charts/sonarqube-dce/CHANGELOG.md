@@ -26,6 +26,7 @@ All changes to this chart will be documented in this file.
 * Refactor Route to be subparameter of OpenShift
 * Make OpenShift.createSCC false by default
 * Support ApplicationNodes.extraVolumes and ApplicationNodes.extraVolumeMounts
+* Ensure kubernetes.io/version label is smaller than 63 chars
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0
