@@ -730,3 +730,25 @@ spec:
       - name : concat-dir
         emptyDir:
           {}
+---
+# Source: sonarqube-dce/templates/route.yaml
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: restricted-openshift.yaml-sonarqube-dce
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.7.0
+    release: restricted-openshift.yaml
+    heritage: Helm
+spec:
+  host: sonarqube.your-org.com
+  path: /
+  to:
+    kind: Service
+    name: restricted-openshift.yaml-sonarqube-dce
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+  wildcardPolicy: None
