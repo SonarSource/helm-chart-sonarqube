@@ -289,6 +289,8 @@ extraInitContainers: {}
 ##   command: ['sh', '-c', 'echo Hello && sleep 3600']
 ##
 extraContainers: []
+extraVolumes: []
+extraVolumeMounts: []
 
 ## Provide a secret containing one or more certificate files in the keys that will be added to cacerts
 ## The cacerts file will be set via SONARQUBE_WEB_JVM_OPTS and SONAR_CE_JAVAOPTS
@@ -468,8 +470,10 @@ persistence:
   uid: 1000
   guid: 0
 
+  ## DEPRECATED please use root level extraVolumes value
   ## Specify extra volumes. Refer to ".spec.volumes" specification : https://kubernetes.io/fr/docs/concepts/storage/volumes/
   volumes: []
+  ## DEPRECATED please use root level extraVolumeMounts value
   ## Specify extra mounts. Refer to ".spec.containers.volumeMounts" specification : https://kubernetes.io/fr/docs/concepts/storage/volumes/
   mounts: []
 

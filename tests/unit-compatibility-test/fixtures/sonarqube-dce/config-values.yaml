@@ -577,6 +577,9 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
+            - mountPath: /extra-volume-mount
+              name: extra-volume
+              readOnly: true
       serviceAccountName: default
       volumes:
       - name: config
@@ -607,6 +610,8 @@ spec:
       - name : concat-dir
         emptyDir:
           {}
+      - emptyDir: {}
+        name: extra-volume
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1

@@ -596,8 +596,13 @@ spec:
             - mountPath: /opt/sonarqube/extensions
               name: sonarqube
               subPath: extensions
+            - mountPath: /extra-volume-mount
+              name: extra-volume
+              readOnly: true
       serviceAccountName: default
       volumes:
+        - emptyDir: {}
+          name: extra-volume
         - name: config
           configMap:
             name: config-values.yaml-sonarqube-config

@@ -453,8 +453,8 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `persistence.storageClass`  | Storage class to be used                                                     | `""`            |
 | `persistence.accessMode`    | Volumes access mode to be set                                                | `ReadWriteOnce` |
 | `persistence.size`          | Size of the volume                                                           | `5Gi`           |
-| `persistence.volumes`       | Specify extra volumes. Refer to ".spec.volumes" specification                | `[]`            |
-| `persistence.mounts`        | Specify extra mounts. Refer to ".spec.containers.volumeMounts" specification | `[]`            |
+| `persistence.volumes`       | (DEPRECATED) Please use extraVolumes instead                                 | `[]`            |
+| `persistence.mounts`        | (DEPRECATED) Please use extraVolumeMounts instead                            | `[]`            |
 | `persistence.uid`           | UID used for init-fs container                                               | `1000`          |
 | `persistence.guid`          | GUID used for init-fs container                                              | `0`             |
 | `emptyDir`                  | Configuration of resources for `emptyDir`                                    | `{}`            |
