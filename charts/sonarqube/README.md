@@ -53,7 +53,7 @@ To upgrade from the old and unmaintained [sonarqube-lts chart](https://artifacth
 
 ## How to use it
 
-Take some time to read the Deploy on [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/sonarqube/) page.
+Take some time to read the Deploy on [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/server/introduction/) page.
 SonarQube deployment on Kubernetes has been tested with the recommendations and constraints documented there, and deployment has some limitations.
 
 ## Uninstalling the chart
@@ -188,7 +188,7 @@ ingress:
 
 ## Monitoring
 
-This Helm chart offers the possibility to monitor SonarQube with Prometheus. You can find an [Introduction to the SonarQube monitoring on Kubernetes](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/set-up-monitoring/introduction/) in the SonarQube documentation.
+This Helm chart offers the possibility to monitor SonarQube with Prometheus. You can find [Information on SonarQube monitoring on Kubernetes](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/set-up-monitoring/introduction/) in the SonarQube documentation.
 
 ### Export JMX metrics
 
