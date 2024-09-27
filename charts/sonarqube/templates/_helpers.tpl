@@ -99,7 +99,7 @@ Determine JDBC password if internal secret is used
 {{- if .Values.jdbcOverwrite.enable -}}
   {{- .Values.jdbcOverwrite.jdbcPassword | b64enc | quote -}}
 {{- else -}}
-  {{- .Values.postgresql.postgresqlPassword | b64enc | quote -}}
+  {{- .Values.postgresql.auth.postgresPassword | b64enc | quote -}}
 {{- end -}}
 {{- end -}}
 
