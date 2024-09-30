@@ -71,12 +71,12 @@ Determine the k8s secret containing the JDBC credentials
 Determine JDBC username
 */}}
 {{- define "jdbc.username" -}}
-{{- if and .Values.postgresql.enabled .Values.postgresql.postgresqlUsername -}}
-  {{- .Values.postgresql.postgresqlUsername | quote -}}
+{{- if and .Values.postgresql.enabled .Values.postgresql.auth.username -}}
+  {{- .Values.postgresql.auth.username | quote -}}
 {{- else if and .Values.jdbcOverwrite.enable .Values.jdbcOverwrite.jdbcUsername -}}
   {{- .Values.jdbcOverwrite.jdbcUsername | quote -}}
 {{- else -}}
-  {{- .Values.postgresql.postgresqlUsername -}}
+  {{- .Values.postgresql.auth.username -}}
 {{- end -}}
 {{- end -}}
 
@@ -108,7 +108,7 @@ Determine JDBC password if internal secret is used
 {{- if .Values.jdbcOverwrite.enable -}}
   {{- .Values.jdbcOverwrite.jdbcPassword | b64enc | quote -}}
 {{- else -}}
-  {{- .Values.postgresql.postgresqlPassword | b64enc | quote -}}
+  {{- .Values.postgresql.auth.password | b64enc | quote -}}
 {{- end -}}
 {{- end -}}
 
