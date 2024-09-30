@@ -449,7 +449,7 @@ spec:
           - key: install_plugins.sh
             path: install_plugins.sh
     {{- end }}
-        {{- if .Values.jdbcOverwrite.oracleJdbcDriverURL }}
+    {{- if .Values.jdbcOverwrite.oracleJdbcDriverURL }}
     - name: install-oracle-jdbc-driver
       configMap:
         name: {{ include "sonarqube.fullname" . }}-install-oracle-jdbc-driver
