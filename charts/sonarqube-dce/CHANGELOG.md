@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [7.0.7]
+* `bitnami/postgresql` from 10.15.0 to 15.5.x to fix [CVE-2024-7348: PostgreSQL relation replacement during pg_dump executes arbitrary SQL](https://www.postgresql.org/support/security/CVE-2024-7348/)
+
 ## [7.0.6]
 * Update SonarQube to 9.9.6
 
