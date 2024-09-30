@@ -8,5 +8,5 @@ data:
   install_oracle_jdbc_driver.sh: |-
       rm -f {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle/*
       cd {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
-      curl {{- if .Values.caCerts.enabled}} --cacert /tmp/certs/cacerts.pem {{- end}} -fsSLO {{ .Values.jdbcOverwrite.oracleJdbcDriverURL }}
+      curl {{- if .Values.caCerts.enabled}} --cacert /tmp/secrets/ca-certs/* {{- end}} -fsSLO {{ .Values.jdbcOverwrite.oracleJdbcDriverURL }}
 {{- end }}

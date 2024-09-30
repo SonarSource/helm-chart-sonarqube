@@ -121,7 +121,7 @@ data:
   install_oracle_jdbc_driver.sh: |-
       rm -f /opt/sonarqube/extensions/jdbc-driver/oracle/*
       cd /opt/sonarqube/extensions/jdbc-driver/oracle
-      curl --cacert /tmp/certs/cacerts.pem -fsSLO https://download.oracle.com/otn-pub/otn_software/jdbc/2113/ojdbc11.jar
+      curl --cacert /tmp/secrets/ca-certs/* -fsSLO https://download.oracle.com/otn-pub/otn_software/jdbc/2113/ojdbc11.jar
 ---
 # Source: sonarqube/templates/install-plugins.yaml
 apiVersion: v1
@@ -444,20 +444,8 @@ spec:
         - name: ca-certs
           image: sonarqube:10.7.0-community
           imagePullPolicy: IfNotPresent
-          command:
-            - sh
-            - -c
-            - |
-              #!/bin/sh
-              cp -f "${JAVA_HOME}/lib/security/cacerts" /tmp/certs/cacerts
-              if [ "$(ls /tmp/secrets/ca-certs)" ]; then
-                for f in /tmp/secrets/ca-certs/*; do
-                  keytool -importcert -file "${f}" -alias "$(basename "${f}")" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt
-                done
-              fi
-              keytool -importkeystore -srckeystore /tmp/certs/cacerts -destkeystore /tmp/certs/cacerts.p12 -deststoretype PKCS12 -srcstorepass changeit -deststorepass changeit
-              openssl pkcs12 -info -in /tmp/certs/cacerts.p12 -out /tmp/certs/cacerts.pem -nodes -passin pass:changeit
-              rm /tmp/certs/cacerts.p12
+          command: ["sh"]
+          args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -521,9 +509,8 @@ spec:
               subPath: extensions/jdbc-driver/oracle 
             - name: install-oracle-jdbc-driver
               mountPath: /tmp/scripts/ 
-            - mountPath: /tmp/certs
-              name: sonarqube
-              subPath: certs
+            - mountPath: /tmp/secrets/ca-certs
+              name: ca-certs
           env:
             - name: SONAR_WEB_CONTEXT
               value: /

@@ -60,20 +60,8 @@ spec:
     - name: ca-certs
       image: {{ default (include "sonarqube.image" $) .Values.caCerts.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
-      command:
-        - sh
-        - -c
-        - |
-          #!/bin/sh
-          cp -f "${JAVA_HOME}/lib/security/cacerts" /tmp/certs/cacerts
-          if [ "$(ls /tmp/secrets/ca-certs)" ]; then
-            for f in /tmp/secrets/ca-certs/*; do
-              keytool -importcert -file "${f}" -alias "$(basename "${f}")" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt
-            done
-          fi
-          keytool -importkeystore -srckeystore /tmp/certs/cacerts -destkeystore /tmp/certs/cacerts.p12 -deststoretype PKCS12 -srcstorepass changeit -deststorepass changeit
-          openssl pkcs12 -info -in /tmp/certs/cacerts.p12 -out /tmp/certs/cacerts.pem -nodes -passin pass:changeit
-          rm /tmp/certs/cacerts.p12
+      command: ["sh"]
+      args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
       {{- with (include "sonarqube.initContainerSecurityContext" .) }}
       securityContext: {{- . | nindent 8 }}
       {{- end }}
@@ -250,9 +238,8 @@ spec:
         - name: install-oracle-jdbc-driver
           mountPath: /tmp/scripts/
       {{- if .Values.caCerts.enabled }} 
-        - mountPath: /tmp/certs
-          name: sonarqube
-          subPath: certs
+        - mountPath: /tmp/secrets/ca-certs
+          name: ca-certs
       {{- end }}
       env:
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
