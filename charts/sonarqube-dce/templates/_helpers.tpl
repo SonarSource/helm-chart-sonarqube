@@ -88,7 +88,7 @@ Determine the k8s secretKey contrining the JDBC password
   {{- if and .Values.postgresql.existingSecret .Values.postgresql.existingSecretPasswordKey -}}
   {{- .Values.postgresql.existingSecretPasswordKey -}}
   {{- else -}}
-  {{- "postgres-password" -}}
+  {{- "password" -}}
   {{- end -}}
 {{- else if .Values.jdbcOverwrite.enable -}}
   {{- if and .Values.jdbcOverwrite.jdbcSecretName .Values.jdbcOverwrite.jdbcSecretPasswordKey -}}
