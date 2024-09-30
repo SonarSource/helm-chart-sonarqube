@@ -13,7 +13,7 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: {{ template "sonarqube.fullname" . }}
-    app.kubernetes.io/version: {{ .Values.searchNodes.image.tag | quote }}
+    app.kubernetes.io/version: {{ (tpl .Values.searchNodes.image.tag .) | trunc 63 | trimSuffix "-" | quote }}
 spec:
   podManagementPolicy : Parallel
   replicas: {{ .Values.searchNodes.replicaCount }}

@@ -46,7 +46,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/part-of: sonarqube
 app.kubernetes.io/component: {{ include "sonarqube.fullname" . }}
-app.kubernetes.io/version: {{ tpl .Values.image.tag . | quote }}
+app.kubernetes.io/version: {{ (tpl .Values.image.tag .) | trunc 63 | trimSuffix "-" | quote }}
 {{- end -}}
 
 {{/*
