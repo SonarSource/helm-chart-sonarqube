@@ -107,6 +107,22 @@ data:
       fi
     fi
 ---
+# Source: sonarqube/templates/install-oracle-jdbc-driver.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ca-certificates-configmap.yaml-sonarqube-install-oracle-jdbc-driver
+  labels:
+    app: sonarqube
+    chart: sonarqube-10.7.0
+    release: ca-certificates-configmap.yaml
+    heritage: Helm
+data:
+  install_oracle_jdbc_driver.sh: |-
+      rm -f /opt/sonarqube/extensions/jdbc-driver/oracle/*
+      cd /opt/sonarqube/extensions/jdbc-driver/oracle
+      curl --cacert /tmp/certs/cacerts.pem -fsSLO https://download.oracle.com/otn-pub/otn_software/jdbc/2113/ojdbc11.jar
+---
 # Source: sonarqube/templates/install-plugins.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -428,8 +444,20 @@ spec:
         - name: ca-certs
           image: sonarqube:10.7.0-community
           imagePullPolicy: IfNotPresent
-          command: ["sh"]
-          args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
+          command:
+            - sh
+            - -c
+            - |
+              #!/bin/sh
+              cp -f "${JAVA_HOME}/lib/security/cacerts" /tmp/certs/cacerts
+              if [ "$(ls /tmp/secrets/ca-certs)" ]; then
+                for f in /tmp/secrets/ca-certs/*; do
+                  keytool -importcert -file "${f}" -alias "$(basename "${f}")" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt
+                done
+              fi
+              keytool -importkeystore -srckeystore /tmp/certs/cacerts -destkeystore /tmp/certs/cacerts.p12 -deststoretype PKCS12 -srcstorepass changeit -deststorepass changeit
+              openssl pkcs12 -info -in /tmp/certs/cacerts.p12 -out /tmp/certs/cacerts.pem -nodes -passin pass:changeit
+              rm /tmp/certs/cacerts.p12
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -465,6 +493,37 @@ spec:
           volumeMounts:
             - name: init-sysctl
               mountPath: /tmp/scripts/
+          env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
+            - name: SONAR_CE_JAVAOPTS
+              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
+        - name: install-oracle-jdbc-driver
+          image: sonarqube:10.6.0-community
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/extensions/jdbc-driver/oracle
+              name: sonarqube
+              subPath: extensions/jdbc-driver/oracle 
+            - name: install-oracle-jdbc-driver
+              mountPath: /tmp/scripts/ 
+            - mountPath: /tmp/certs
+              name: sonarqube
+              subPath: certs
           env:
             - name: SONAR_WEB_CONTEXT
               value: /
@@ -590,6 +649,12 @@ spec:
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
+        - name: install-oracle-jdbc-driver
+          configMap:
+            name: ca-certificates-configmap.yaml-sonarqube-install-oracle-jdbc-driver
+            items:
+              - key: install_oracle_jdbc_driver.sh
+                path: install_oracle_jdbc_driver.sh
         - name: sonarqube
           emptyDir:
             {}

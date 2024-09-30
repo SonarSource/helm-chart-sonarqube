@@ -470,6 +470,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `jdbcOverwrite.jdbcPassword`          | The DB password that should be used for the JDBC connection (Use this if you don't mind the DB password getting stored in plain text within the values file) | `sonarPass`                                |
 | `jdbcOverwrite.jdbcSecretName`        | Alternatively, use a pre-existing k8s secret containing the DB password                                                                                      | `None`                                     |
 | `jdbcOverwrite.jdbcSecretPasswordKey` | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret                                    | `None`                                     |
+| `jdbcOverwrite.oracleJdbcDriverURL`   | The URL of the Oracle JDBC driver to be downloaded                                                                                                           | `None`                                     |
 
 ### Bundled PostgreSQL Chart (DEPRECATED)
 

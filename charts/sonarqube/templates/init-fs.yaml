@@ -12,6 +12,9 @@ data:
     {{- if .Values.plugins.install }}
     chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/extensions/plugins
     {{- end }}
+    {{- if .Values.jdbcOverwrite.oracleJdbcDriverURL }}
+    chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
+    {{- end }}
     {{- if .Values.caCerts.enabled }}
     chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/certs
     {{- end }}

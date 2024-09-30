@@ -60,8 +60,20 @@ spec:
     - name: ca-certs
       image: {{ default (include "sonarqube.image" $) .Values.caCerts.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
-      command: ["sh"]
-      args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
+      command:
+        - sh
+        - -c
+        - |
+          #!/bin/sh
+          cp -f "${JAVA_HOME}/lib/security/cacerts" /tmp/certs/cacerts
+          if [ "$(ls /tmp/secrets/ca-certs)" ]; then
+            for f in /tmp/secrets/ca-certs/*; do
+              keytool -importcert -file "${f}" -alias "$(basename "${f}")" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt
+            done
+          fi
+          keytool -importkeystore -srckeystore /tmp/certs/cacerts -destkeystore /tmp/certs/cacerts.p12 -deststoretype PKCS12 -srcstorepass changeit -deststorepass changeit
+          openssl pkcs12 -info -in /tmp/certs/cacerts.p12 -out /tmp/certs/cacerts.pem -nodes -passin pass:changeit
+          rm /tmp/certs/cacerts.p12
       {{- with (include "sonarqube.initContainerSecurityContext" .) }}
       securityContext: {{- . | nindent 8 }}
       {{- end }}
@@ -218,6 +230,31 @@ spec:
         {{- with (include "sonarqube.install-plugins-proxy.env" .) }}
         {{- . | nindent 8 }}
         {{- end }}
+        {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
+    {{- end }}
+    {{- if .Values.jdbcOverwrite.oracleJdbcDriverURL }}
+    - name: install-oracle-jdbc-driver
+      image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
+      imagePullPolicy: {{ .Values.image.pullPolicy  }}
+      command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
+      {{- with (default (fromYaml (include "sonarqube.initContainerSecurityContext" .)) .Values.initContainers.securityContext) }}
+      securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.initContainers.resources }}
+      resources: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumeMounts:
+        - mountPath: {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
+          name: sonarqube
+          subPath: extensions/jdbc-driver/oracle 
+        - name: install-oracle-jdbc-driver
+          mountPath: /tmp/scripts/
+      {{- if .Values.caCerts.enabled }} 
+        - mountPath: /tmp/certs
+          name: sonarqube
+          subPath: certs
+      {{- end }}
+      env:
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
   containers:
@@ -411,6 +448,14 @@ spec:
         items:
           - key: install_plugins.sh
             path: install_plugins.sh
+    {{- end }}
+        {{- if .Values.jdbcOverwrite.oracleJdbcDriverURL }}
+    - name: install-oracle-jdbc-driver
+      configMap:
+        name: {{ include "sonarqube.fullname" . }}-install-oracle-jdbc-driver
+        items:
+          - key: install_oracle_jdbc_driver.sh
+            path: install_oracle_jdbc_driver.sh
     {{- end }}
     {{- if .Values.prometheusExporter.enabled }}
     - name: prometheus-config

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "sonarqube.fullname" . }}-install-oracle-jdbc-driver
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+data:
+  install_oracle_jdbc_driver.sh: |-
+    {{- if .Values.jdbcOverwrite.oracleJdbcDriverURL }}
+      rm -f {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle/*
+      cd {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
+      curl {{- if .Values.caCerts.enabled}} --cacert /tmp/certs/cacerts.pem {{- end}} -fsSLO {{ .Values.jdbcOverwrite.oracleJdbcDriverURL }}
+    {{- end }}
