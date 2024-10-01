@@ -106,6 +106,7 @@ verify_gcp_app_template: &VERIFY_GCP_APP_TEMPLATE
   login_script:
     - echo ${DOCKER_GCLOUD_SA_KEY} | base64 -d > /tmp/key.json
     - gcloud auth activate-service-account cirrusciservice@sonarqube-marketplace-provider.iam.gserviceaccount.com --key-file /tmp/key.json --project=sonarqube-marketplace-provider
+    - gcloud auth configure-docker gcr.io --quiet
     - gcloud container clusters get-credentials sonarqube-marketplace-staging-standard --zone=europe-west1-b --project=sonarqube-marketplace-provider
   verify_script:
     - kubectl get pods
