@@ -14,7 +14,7 @@ Please note that this chart only supports SonarQube Community, Developer, and En
 
 ## Compatibility
 
-Compatible SonarQube Version: `10.6.0`
+Compatible SonarQube Version: `10.7.0`
 
 Supported Kubernetes Versions: From `1.24` to `1.30`
 Supported Openshift Versions: From `4.11` to `4.16`
@@ -276,7 +276,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter           | Description                                                | Default                        |
 | ------------------- | ---------------------------------------------------------- | ------------------------------ |
 | `image.repository`  | image repository                                           | `sonarqube`                    |
-| `image.tag`         | `sonarqube` image tag.                                     | `10.6.0-{{ .Values.edition }}` |
+| `image.tag`         | `sonarqube` image tag.                                     | `10.7.0-{{ .Values.edition }}` |
 | `image.pullPolicy`  | Image pull policy                                          | `IfNotPresent`                 |
 | `image.pullSecret`  | (DEPRECATED) imagePullSecret to use for private repository | `None`                         |
 | `image.pullSecrets` | imagePullSecrets to use for private repository             | `None`                         |

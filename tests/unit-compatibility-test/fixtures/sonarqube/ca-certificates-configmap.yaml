@@ -385,7 +385,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: ca-certificates-configmap.yaml-sonarqube
-    app.kubernetes.io/version: "10.6.0-community"
+    app.kubernetes.io/version: "10.7.0-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -410,7 +410,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.6.0-community
+          image: sonarqube:10.7.0-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -426,7 +426,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/ca-certificates-configmap.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: ca-certs
-          image: sonarqube:10.6.0-community
+          image: sonarqube:10.7.0-community
           imagePullPolicy: IfNotPresent
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
@@ -455,7 +455,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: init-sysctl
-          image: sonarqube:10.6.0-community
+          image: sonarqube:10.7.0-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -474,7 +474,7 @@ spec:
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
       containers:
         - name: sonarqube
-          image: sonarqube:10.6.0-community
+          image: sonarqube:10.7.0-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -613,7 +613,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: ca-certificates-configmap.yaml-ui-test
-      image: "sonarqube:10.6.0-community"
+      image: "sonarqube:10.7.0-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
