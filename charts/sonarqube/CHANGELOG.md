@@ -28,6 +28,7 @@ All changes to this chart will be documented in this file.
 * Make OpenShift.createSCC false by default
 * Deprecate peristence.volumes and persistence.mounts in favor or extraVolumes and extraVolumeMounts
 * Ensure kubernetes.io/version label is smaller than 63 chars
+* Upgrade SonarQube to 10.7.0
 
 ## [10.6.0]
 * Update SonarQube to 10.6.0

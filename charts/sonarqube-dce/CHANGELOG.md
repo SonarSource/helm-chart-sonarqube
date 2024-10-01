@@ -27,6 +27,7 @@ All changes to this chart will be documented in this file.
 * Make OpenShift.createSCC false by default
 * Support ApplicationNodes.extraVolumes and ApplicationNodes.extraVolumeMounts
 * Ensure kubernetes.io/version label is smaller than 63 chars
+* Upgrade SonarQube to 10.7.0
 
 ## [10.6.0]
 * Upgrade SonarQube to 10.6.0
