@@ -25,4 +25,3 @@ mv mpdev ${BASE_FOLDER}/bin
 gcloud components install gke-gcloud-auth-plugin
 gcloud components install kubectl
 gcloud --version
-mpdev
