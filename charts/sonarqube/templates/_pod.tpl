@@ -220,7 +220,7 @@ spec:
         {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
-    {{- if .Values.jdbcOverwrite.oracleJdbcDriver }}
+    {{- if and .Values.jdbcOverwrite.oracleJdbcDriver .Values.jdbcOverwrite.oracleJdbcDriver.url }}
     - name: install-oracle-jdbc-driver
       image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -448,7 +448,7 @@ spec:
           - key: install_plugins.sh
             path: install_plugins.sh
     {{- end }}
-    {{- if .Values.jdbcOverwrite.oracleJdbcDriver }}
+    {{- if and .Values.jdbcOverwrite.oracleJdbcDriver .Values.jdbcOverwrite.oracleJdbcDriver.url }}
     - name: install-oracle-jdbc-driver
       configMap:
         name: {{ include "sonarqube.fullname" . }}-install-oracle-jdbc-driver
