@@ -7,15 +7,9 @@ CIRRUS_CLUSTER_NAME=${CIRRUS_CLUSTER_NAME:?}
 CIRRUS_BRANCH=${CIRRUS_BRANCH:?}
 AWS_IAM_ROLE=HelmChartSonarQubeCICDRole
 
-if [[ "${CIRRUS_BRANCH}" == "master" ]]; then
-  # This is the production account
-  ROLE_AWS_ACCOUNT="275878209202"
-  CLUSTER_NAME="${CIRRUS_CLUSTER_NAME}"
-else
-  # This is the dev account
-  ROLE_AWS_ACCOUNT="460386131003"
-  CLUSTER_NAME="CirrusCI-8-dev"
-fi
+# This is the dev account
+ROLE_AWS_ACCOUNT="460386131003"
+CLUSTER_NAME="CirrusCI-8-dev"
 
 echo "${CIRRUS_OIDC_TOKEN}" > /tmp/web_identity_token_file
 
