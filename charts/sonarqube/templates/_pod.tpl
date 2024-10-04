@@ -220,7 +220,7 @@ spec:
         {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
-    {{- if .Values.jdbcOverwrite.oracleJdbcDriverURL }}
+    {{- if .Values.jdbcOverwrite.oracleJdbcDriver }}
     - name: install-oracle-jdbc-driver
       image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -237,6 +237,10 @@ spec:
           subPath: extensions/jdbc-driver/oracle 
         - name: install-oracle-jdbc-driver
           mountPath: /tmp/scripts/
+        {{- if .Values.jdbcOverwrite.oracleJdbcDriver.netrcCreds }}
+        - name: oracle-jdbc-driver-netrc-file
+          mountPath: /root
+        {{- end }}
       {{- if .Values.caCerts.enabled }} 
         - mountPath: /tmp/secrets/ca-certs
           name: ca-certs
@@ -412,6 +416,14 @@ spec:
         - key: netrc
           path: .netrc
     {{- end }}
+    {{- if and .Values.jdbcOverwrite.oracleJdbcDriver .Values.jdbcOverwrite.oracleJdbcDriver.netrcCreds }}
+    - name: oracle-jdbc-driver-netrc-file
+      secret:
+        secretName: {{ .Values.jdbcOverwrite.oracleJdbcDriver.netrcCreds }}
+        items:
+        - key: netrc
+          path: .netrc
+    {{- end }}
     {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
     - name: init-sysctl
       configMap:
@@ -436,7 +448,7 @@ spec:
           - key: install_plugins.sh
             path: install_plugins.sh
     {{- end }}
-    {{- if .Values.jdbcOverwrite.oracleJdbcDriverURL }}
+    {{- if .Values.jdbcOverwrite.oracleJdbcDriver }}
     - name: install-oracle-jdbc-driver
       configMap:
         name: {{ include "sonarqube.fullname" . }}-install-oracle-jdbc-driver

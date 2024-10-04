@@ -121,7 +121,7 @@ data:
   install_oracle_jdbc_driver.sh: |-
       rm -f /opt/sonarqube/extensions/jdbc-driver/oracle/*
       cd /opt/sonarqube/extensions/jdbc-driver/oracle
-      curl --cacert /tmp/secrets/ca-certs/* -fsSLO https://download.oracle.com/otn-pub/otn_software/jdbc/2113/ojdbc11.jar
+      curl --cacert /tmp/secrets/ca-certs/* --netrc-file /root/.netrc -fsSLO https://download.oracle.com/otn-pub/otn_software/jdbc/2113/ojdbc11.jar
 ---
 # Source: sonarqube/templates/install-plugins.yaml
 apiVersion: v1
@@ -508,7 +508,9 @@ spec:
               name: sonarqube
               subPath: extensions/jdbc-driver/oracle 
             - name: install-oracle-jdbc-driver
-              mountPath: /tmp/scripts/ 
+              mountPath: /tmp/scripts/
+            - name: oracle-jdbc-driver-netrc-file
+              mountPath: /root 
             - mountPath: /tmp/secrets/ca-certs
               name: ca-certs
           env:
@@ -630,6 +632,12 @@ spec:
             items:
               - key: forticlient.crt
                 path: forticlient.crt
+        - name: oracle-jdbc-driver-netrc-file
+          secret:
+            secretName: test
+            items:
+            - key: netrc
+              path: .netrc
         - name: init-sysctl
           configMap:
             name: ca-certificates-configmap.yaml-sonarqube-init-sysctl

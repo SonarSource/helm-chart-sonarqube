@@ -445,32 +445,33 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Persistence
 
-| Parameter                   | Description                                                                  | Default         |
-| --------------------------- | ---------------------------------------------------------------------------- | --------------- |
-| `persistence.enabled`       | Flag for enabling persistent storage                                         | `false`         |
-| `persistence.annotations`   | Kubernetes pvc annotations                                                   | `{}`            |
-| `persistence.existingClaim` | Do not create a new PVC but use this one                                     | `None`          |
-| `persistence.storageClass`  | Storage class to be used                                                     | `""`            |
-| `persistence.accessMode`    | Volumes access mode to be set                                                | `ReadWriteOnce` |
-| `persistence.size`          | Size of the volume                                                           | `5Gi`           |
-| `persistence.volumes`       | (DEPRECATED) Please use extraVolumes instead                                 | `[]`            |
-| `persistence.mounts`        | (DEPRECATED) Please use extraVolumeMounts instead                            | `[]`            |
-| `persistence.uid`           | UID used for init-fs container                                               | `1000`          |
-| `persistence.guid`          | GUID used for init-fs container                                              | `0`             |
-| `emptyDir`                  | Configuration of resources for `emptyDir`                                    | `{}`            |
+| Parameter                   | Description                                       | Default         |
+| --------------------------- | ------------------------------------------------- | --------------- |
+| `persistence.enabled`       | Flag for enabling persistent storage              | `false`         |
+| `persistence.annotations`   | Kubernetes pvc annotations                        | `{}`            |
+| `persistence.existingClaim` | Do not create a new PVC but use this one          | `None`          |
+| `persistence.storageClass`  | Storage class to be used                          | `""`            |
+| `persistence.accessMode`    | Volumes access mode to be set                     | `ReadWriteOnce` |
+| `persistence.size`          | Size of the volume                                | `5Gi`           |
+| `persistence.volumes`       | (DEPRECATED) Please use extraVolumes instead      | `[]`            |
+| `persistence.mounts`        | (DEPRECATED) Please use extraVolumeMounts instead | `[]`            |
+| `persistence.uid`           | UID used for init-fs container                    | `1000`          |
+| `persistence.guid`          | GUID used for init-fs container                   | `0`             |
+| `emptyDir`                  | Configuration of resources for `emptyDir`         | `{}`            |
 
 ### JDBC Overwrite
 
-| Parameter                             | Description                                                                                                                                                  | Default                                    |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
-| `jdbcOverwrite.enable`                | (DEPRECATED) Enable JDBC overwrites for external Databases (disables `postgresql.enabled`) ,Please use jdbcOverwrite.enabled instead                         | `false`                                    |
-| `jdbcOverwrite.enabled`               | Enable JDBC overwrites for external Databases (disables `postgresql.enabled`)                                                                                | `false`                                    |
-| `jdbcOverwrite.jdbcUrl`               | The JDBC url to connect the external DB                                                                                                                      | `jdbc:postgresql://myPostgress/myDatabase` |
-| `jdbcOverwrite.jdbcUsername`          | The DB user that should be used for the JDBC connection                                                                                                      | `sonarUser`                                |
-| `jdbcOverwrite.jdbcPassword`          | The DB password that should be used for the JDBC connection (Use this if you don't mind the DB password getting stored in plain text within the values file) | `sonarPass`                                |
-| `jdbcOverwrite.jdbcSecretName`        | Alternatively, use a pre-existing k8s secret containing the DB password                                                                                      | `None`                                     |
-| `jdbcOverwrite.jdbcSecretPasswordKey` | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret                                    | `None`                                     |
-| `jdbcOverwrite.oracleJdbcDriverURL`   | The URL of the Oracle JDBC driver to be downloaded                                                                                                           | `None`                                     |
+| Parameter                                   | Description                                                                                                                                                  | Default                                    |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
+| `jdbcOverwrite.enable`                      | (DEPRECATED) Enable JDBC overwrites for external Databases (disables `postgresql.enabled`) ,Please use jdbcOverwrite.enabled instead                         | `false`                                    |
+| `jdbcOverwrite.enabled`                     | Enable JDBC overwrites for external Databases (disables `postgresql.enabled`)                                                                                | `false`                                    |
+| `jdbcOverwrite.jdbcUrl`                     | The JDBC url to connect the external DB                                                                                                                      | `jdbc:postgresql://myPostgress/myDatabase` |
+| `jdbcOverwrite.jdbcUsername`                | The DB user that should be used for the JDBC connection                                                                                                      | `sonarUser`                                |
+| `jdbcOverwrite.jdbcPassword`                | The DB password that should be used for the JDBC connection (Use this if you don't mind the DB password getting stored in plain text within the values file) | `sonarPass`                                |
+| `jdbcOverwrite.jdbcSecretName`              | Alternatively, use a pre-existing k8s secret containing the DB password                                                                                      | `None`                                     |
+| `jdbcOverwrite.jdbcSecretPasswordKey`       | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret                                    | `None`                                     |
+| `jdbcOverwrite.oracleJdbcDriver.url`        | The URL of the Oracle JDBC driver to be downloaded                                                                                                           | `None`                                     |
+| `jdbcOverwrite.oracleJdbcDriver.netrcCreds` | Name of the secret containing .netrc file to use creds when downloading the Oracle JDBC driver                                                               | `None`                                     |
 
 ### Bundled PostgreSQL Chart (DEPRECATED)
 

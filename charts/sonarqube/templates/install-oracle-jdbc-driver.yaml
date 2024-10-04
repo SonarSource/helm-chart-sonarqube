@@ -1,4 +1,4 @@
-{{- if .Values.jdbcOverwrite.oracleJdbcDriverURL }}
+{{- if .Values.jdbcOverwrite.oracleJdbcDriver }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -8,5 +8,5 @@ data:
   install_oracle_jdbc_driver.sh: |-
       rm -f {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle/*
       cd {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
-      curl {{- if .Values.caCerts.enabled}} --cacert /tmp/secrets/ca-certs/* {{- end}} -fsSLO {{ .Values.jdbcOverwrite.oracleJdbcDriverURL }}
+      curl {{- if .Values.caCerts.enabled }} --cacert /tmp/secrets/ca-certs/* {{- end}} {{ if $.Values.jdbcOverwrite.oracleJdbcDriver.netrcCreds }}--netrc-file /root/.netrc{{ end }} -fsSLO {{ .Values.jdbcOverwrite.oracleJdbcDriver.url }}
 {{- end }}
