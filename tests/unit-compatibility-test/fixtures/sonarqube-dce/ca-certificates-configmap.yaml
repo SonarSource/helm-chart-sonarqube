@@ -179,7 +179,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-dce-install-oracle-jdbc-driver
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-10.7.0
+    chart: sonarqube-dce-10.8.0
     release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
@@ -450,7 +450,7 @@ spec:
             - mountPath: /tmp/secrets/ca-certs
               name: ca-certs
         - name: install-oracle-jdbc-driver
-          image: sonarqube:10.6.0-datacenter-app
+          image: sonarqube:10.7.0-datacenter-app
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
           securityContext:

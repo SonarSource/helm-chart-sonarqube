@@ -9,11 +9,8 @@ data:
     chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/data
     chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/temp
     chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/logs
-    {{- if .Values.plugins.install }}
-    chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/extensions/plugins
-    {{- end }}
-    {{- if .Values.jdbcOverwrite.oracleJdbcDriverURL }}
-    chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
+    {{- if or .Values.plugins.install .Values.jdbcOverwrite.oracleJdbcDriverURL }}
+    chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/extensions
     {{- end }}
     {{- if .Values.caCerts.enabled }}
     chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/certs
