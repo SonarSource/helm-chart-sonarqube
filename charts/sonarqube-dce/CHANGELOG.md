@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.7.1]
+* GatewayAPI HttpRoute support parent Gateway reference in different namespace
+
 ## [10.7.0]
 * Update Chart's version to 10.7.0
 * Upgrade SonarQube to 10.7.0
