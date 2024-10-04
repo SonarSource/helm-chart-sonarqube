@@ -8,6 +8,7 @@ All changes to this chart will be documented in this file.
 * Deprecate the `community` value for the `edition` parameter
 * Introduce the `community.enabled` and `community.buildNumber` parameters for SonarQube Community Build
 * Deprecate the default value of `image.tag` in favor of an empty string
+* Support Gateway on different namespace in HTTPRoute
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0
