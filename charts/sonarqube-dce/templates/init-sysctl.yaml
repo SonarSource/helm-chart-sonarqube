@@ -9,10 +9,8 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   init_sysctl.sh: |-
-    {{- if .Values.initSysctl.enabled }}
     set -o errexit
     set -o xtrace
-    {{- end }}
     {{- if .Values.initSysctl.vmMaxMapCount }}
     if [[ "$(sysctl -n vm.max_map_count)" -lt {{ .Values.initSysctl.vmMaxMapCount }} ]]; then
       sysctl -w vm.max_map_count={{ .Values.initSysctl.vmMaxMapCount }}
