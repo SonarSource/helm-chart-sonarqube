@@ -1,0 +1,16 @@
+{{- if and .Values.jdbcOverwrite.oracleJdbcDriver .Values.jdbcOverwrite.oracleJdbcDriver.url }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "sonarqube.fullname" . }}-install-oracle-jdbc-driver
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  install_oracle_jdbc_driver.sh: |-
+      rm -f {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle/*
+      cd {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
+      curl {{- if .Values.caCerts.enabled }} --cacert /tmp/secrets/ca-certs/* {{- end }} {{ if .Values.jdbcOverwrite.oracleJdbcDriver.netrcCreds }}--netrc-file /root/.netrc{{ end }} -fsSLO {{ .Values.jdbcOverwrite.oracleJdbcDriver.url }}
+{{- end }}

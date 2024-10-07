@@ -172,6 +172,22 @@ data:
       fi
     fi
 ---
+# Source: sonarqube-dce/templates/install-oracle-jdbc-driver.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ca-certificates-configmap.yaml-sonarqube-dce-install-oracle-jdbc-driver
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.8.0
+    release: ca-certificates-configmap.yaml
+    heritage: Helm
+data:
+  install_oracle_jdbc_driver.sh: |-
+      rm -f /opt/sonarqube/extensions/jdbc-driver/oracle/*
+      cd /opt/sonarqube/extensions/jdbc-driver/oracle
+      curl --cacert /tmp/secrets/ca-certs/* --netrc-file /root/.netrc -fsSLO https://download.oracle.com/otn-pub/otn_software/jdbc/2113/ojdbc11.jar
+---
 # Source: sonarqube-dce/templates/install-plugins.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -433,6 +449,31 @@ spec:
               subPath: certs
             - mountPath: /tmp/secrets/ca-certs
               name: ca-certs
+        - name: install-oracle-jdbc-driver
+          image: sonarqube:10.7.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/extensions/jdbc-driver/oracle
+              name: sonarqube
+              subPath: extensions/jdbc-driver/oracle 
+            - name: install-oracle-jdbc-driver
+              mountPath: /tmp/scripts/
+            - name: oracle-jdbc-driver-netrc-file
+              mountPath: /root 
+            - mountPath: /tmp/secrets/ca-certs
+              name: ca-certs
       securityContext:
         fsGroup: 0
       containers:
@@ -550,6 +591,9 @@ spec:
             - mountPath: /opt/sonarqube/data
               name: sonarqube
               subPath: data
+            - mountPath: /opt/sonarqube/extensions/jdbc-driver/oracle
+              name: sonarqube
+              subPath: extensions/jdbc-driver/oracle
             - mountPath: /opt/sonarqube/temp
               name: sonarqube
               subPath: temp
@@ -572,6 +616,18 @@ spec:
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
+      - name: install-oracle-jdbc-driver
+        configMap:
+          name: ca-certificates-configmap.yaml-sonarqube-dce-install-oracle-jdbc-driver
+          items:
+            - key: install_oracle_jdbc_driver.sh
+              path: install_oracle_jdbc_driver.sh
+      - name: oracle-jdbc-driver-netrc-file
+        secret:
+          secretName: test
+          items:
+          - key: netrc
+            path: .netrc
       - name: sonarqube
         emptyDir:
           {}
