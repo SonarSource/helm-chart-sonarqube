@@ -220,6 +220,34 @@ spec:
         {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
+    {{- if and .Values.jdbcOverwrite.oracleJdbcDriver .Values.jdbcOverwrite.oracleJdbcDriver.url }}
+    - name: install-oracle-jdbc-driver
+      image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
+      imagePullPolicy: {{ .Values.image.pullPolicy  }}
+      command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
+      {{- with (default (fromYaml (include "sonarqube.initContainerSecurityContext" .)) .Values.initContainers.securityContext) }}
+      securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.initContainers.resources }}
+      resources: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumeMounts:
+        - mountPath: {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
+          name: sonarqube
+          subPath: extensions/jdbc-driver/oracle 
+        - name: install-oracle-jdbc-driver
+          mountPath: /tmp/scripts/
+        {{- if .Values.jdbcOverwrite.oracleJdbcDriver.netrcCreds }}
+        - name: oracle-jdbc-driver-netrc-file
+          mountPath: /root
+        {{- end }}
+      {{- if .Values.caCerts.enabled }} 
+        - mountPath: /tmp/secrets/ca-certs
+          name: ca-certs
+      {{- end }}
+      env:
+        {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
+    {{- end }}
   containers:
     {{- with .Values.extraContainers }}
     {{- toYaml . | nindent 4 }}
@@ -388,6 +416,14 @@ spec:
         - key: netrc
           path: .netrc
     {{- end }}
+    {{- if and .Values.jdbcOverwrite.oracleJdbcDriver .Values.jdbcOverwrite.oracleJdbcDriver.netrcCreds }}
+    - name: oracle-jdbc-driver-netrc-file
+      secret:
+        secretName: {{ .Values.jdbcOverwrite.oracleJdbcDriver.netrcCreds }}
+        items:
+        - key: netrc
+          path: .netrc
+    {{- end }}
     {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
     - name: init-sysctl
       configMap:
@@ -411,6 +447,14 @@ spec:
         items:
           - key: install_plugins.sh
             path: install_plugins.sh
+    {{- end }}
+    {{- if and .Values.jdbcOverwrite.oracleJdbcDriver .Values.jdbcOverwrite.oracleJdbcDriver.url }}
+    - name: install-oracle-jdbc-driver
+      configMap:
+        name: {{ include "sonarqube.fullname" . }}-install-oracle-jdbc-driver
+        items:
+          - key: install_oracle_jdbc_driver.sh
+            path: install_oracle_jdbc_driver.sh
     {{- end }}
     {{- if .Values.prometheusExporter.enabled }}
     - name: prometheus-config
