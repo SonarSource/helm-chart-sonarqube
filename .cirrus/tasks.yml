@@ -91,16 +91,9 @@ build_gcp_staging_app_task:
 verify_gcp_app_template: &VERIFY_GCP_APP_TEMPLATE
   only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $BRANCH == "master"
   env:
-    BASE_FOLDER: "/root/.gcp/cache"
-    PATH: "${BASE_FOLDER}/bin:${BASE_FOLDER}/google-cloud-sdk/bin:${PATH}"
     KUBE_CONFIG: "/tmp/kubeconfig"
     KUBECONFIG: "${KUBE_CONFIG}"
     HOME: "/tmp"
-  gcp_cache:
-    folder: ${BASE_FOLDER}
-    fingerprint_script: grep "gcloud" .tool-versions | awk '{print $NF}'
-    populate_script: 
-      - ./.cirrus/setup.sh
   ec2_instance:
     <<: *VM_TEMPLATE
   login_script:
