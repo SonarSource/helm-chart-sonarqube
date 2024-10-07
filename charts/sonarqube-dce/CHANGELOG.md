@@ -9,6 +9,8 @@ All changes to this chart will be documented in this file.
 * Fix ENV variables not fetched when using extraConfig.configmaps
 * Support Gateway on different namespace in HTTPRoute
 * Change `ingress.ingressClassName` default, set it to `nginx` if `nginx.enabled` or `ingress-nginx.enabled`
+* Ensure the Pod will stop at "init" stage if init_sysctl.sh failed to modify kernel parameters
+* Replace example image from busybox:1.36 to ubuntu:24.04
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0
