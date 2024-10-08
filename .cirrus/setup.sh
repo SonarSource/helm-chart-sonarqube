@@ -16,10 +16,10 @@ tar -xf google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz
 chmod +x ./google-cloud-sdk
 mv ./google-cloud-sdk ${BASE_FOLDER}/google-cloud-sdk
 
-gcloud components install gke-gcloud-auth-plugin kubectl
+gcloud components install gke-gcloud-auth-plugin kubectl --quiet
 
 curl -LO https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/archive/refs/tags/${MPDEV_VERSION}.tar.gz
 echo "${MPDEV_CHECKSUM}  ${MPDEV_VERSION}.tar.gz" | sha256sum -c
 tar -xf ${MPDEV_VERSION}.tar.gz
-mv marketplace-k8s-app-tools-${MPDEV_VERSION}/scripts/dev ${BASE_FOLDER}/bin/mpdev
-chmod +x ${BASE_FOLDER}/bin/mpdev
+mv marketplace-k8s-app-tools-${MPDEV_VERSION}/scripts/dev ${BASE_FOLDER}/mpdev
+chmod +x ${BASE_FOLDER}/mpdev

@@ -92,7 +92,7 @@ verify_gcp_app_template: &VERIFY_GCP_APP_TEMPLATE
   only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $BRANCH == "master"
   env:
     BASE_FOLDER: "/root/.gcp/cache"
-    PATH: "${BASE_FOLDER}/bin:${BASE_FOLDER}/google-cloud-sdk/bin:${PATH}"
+    PATH: "${BASE_FOLDER}:${BASE_FOLDER}/google-cloud-sdk/bin:${PATH}"
     KUBE_CONFIG: "/tmp/kubeconfig"
     KUBECONFIG: "${KUBE_CONFIG}"
     HOME: "/tmp"
