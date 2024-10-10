@@ -19,12 +19,13 @@ ARG KUBECONFORM_VERSION=0.6.7
 ARG KUBECONFORM_CHECKSUM="95f14e87aa28c09d5941f11bd024c1d02fdc0303ccaa23f61cef67bc92619d73"
 ARG CHART_VERIFIER_VERSION=1.13.8
 ARG CHART_VERIFIER_CHECKSUM="1ed190a3aa4f961269e59f9596408415761ab368d761a08eae2960a84d957352"
-ARG OPENSHIFT_CLI_VERSION=4.16.16
-ARG OPENSHIFT_CLI_CHECKSUM="a1cd9ac47f20c525e57668eac141318336a9e9c2cdae7dbff74d87b5fcf637f7"
+ARG OPENSHIFT_CLI_VERSION=4.17.0
+ARG OPENSHIFT_CLI_CHECKSUM="007d8bef0fd036c45f496fd00098bd6d9042eaf525a77793e892a1d500e0d041"
 
 ENV HELM_BASE_URL="https://get.helm.sh"
 ENV HELM_TAR_FILE="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
 ENV HELM_HASH_SUM_FILE="helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum"
+ENV PATH=/usr/bin/google-cloud-sdk/bin:${PATH}
 
 RUN apk add --update --no-cache \
     aws-cli \
@@ -42,7 +43,7 @@ RUN apk add --update --no-cache \
     py3-pip \
     py3-wheel \
     python3 && \
-    pip install --upgrade pip==24.1.1
+    pip install --upgrade pip==24.2
 
 RUN pip install "yamllint==${YAMLLINT_VERSION}" && \
     pip install "yamale==${YAMALE_VERSION}"
@@ -116,7 +117,6 @@ RUN set -eux; \
     chmod +x ./oc ; \
     mv ./oc /usr/bin/oc ; \
     rm openshift-client-linux.tar.gz kubectl README.md
-
 
 COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
 COPY --from=tools /usr/local/bin/gh /usr/local/bin/gh

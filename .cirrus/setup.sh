@@ -2,11 +2,11 @@
 
 set -eo pipefail
 
-GCLOUD_CLI_VERSION=466.0.0
-GCLOUD_CLI_CHECKSUM="ab7e256cb7e05f8ad2f4410cf33f2f9dcc3dbe0c3ed7b745f85c7d9793043e4d"
+GCLOUD_CLI_VERSION=495.0.0
+GCLOUD_CLI_CHECKSUM="5e76f6dae80e4eb07cdca607793a461162fd8d433b23ec2cc90403f686584044"
+MPDEV_VERSION=0.12.4
+MPDEV_CHECKSUM="fcc8aed037f9e3d79561d6658305ec38a30f29732ea7a89d128b5ab3bee490e6"
 BASE_FOLDER="${BASE_FOLDER:-"/root/.gcp/cache"}"
-
-export PATH=${BASE_FOLDER}/bin:${BASE_FOLDER}/google-cloud-sdk/bin:${PATH}
 
 mkdir -p ${BASE_FOLDER}
 
@@ -17,11 +17,10 @@ chmod +x ./google-cloud-sdk
 mv ./google-cloud-sdk ${BASE_FOLDER}/google-cloud-sdk
 rm -rf google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz
 
-curl -o mpdev https://raw.githubusercontent.com/GoogleCloudPlatform/marketplace-k8s-app-tools/master/scripts/dev
-chmod +x mpdev
-mkdir -p ${BASE_FOLDER}/bin
-mv mpdev ${BASE_FOLDER}/bin
+gcloud components install gke-gcloud-auth-plugin kubectl --quiet
 
-gcloud components install gke-gcloud-auth-plugin
-gcloud components install kubectl
-gcloud --version
+curl -LO https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/archive/refs/tags/${MPDEV_VERSION}.tar.gz
+echo "${MPDEV_CHECKSUM}  ${MPDEV_VERSION}.tar.gz" | sha256sum -c
+tar -xf ${MPDEV_VERSION}.tar.gz
+mv marketplace-k8s-app-tools-${MPDEV_VERSION}/scripts/dev ${BASE_FOLDER}/mpdev
+chmod +x ${BASE_FOLDER}/mpdev

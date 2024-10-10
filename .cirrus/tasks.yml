@@ -92,13 +92,15 @@ verify_gcp_app_template: &VERIFY_GCP_APP_TEMPLATE
   only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $BRANCH == "master"
   env:
     BASE_FOLDER: "/root/.gcp/cache"
-    PATH: "${BASE_FOLDER}/bin:${BASE_FOLDER}/google-cloud-sdk/bin:${PATH}"
+    PATH: "${BASE_FOLDER}:${BASE_FOLDER}/google-cloud-sdk/bin:${PATH}"
     KUBE_CONFIG: "/tmp/kubeconfig"
     KUBECONFIG: "${KUBE_CONFIG}"
     HOME: "/tmp"
+    GCLOUD_CLI_VERSION: 495.0.0
+    MPDEV_VERSION: 0.12.4
   gcp_cache:
     folder: ${BASE_FOLDER}
-    fingerprint_script: grep "gcloud" .tool-versions | awk '{print $NF}'
+    fingerprint_script: echo "${GCLOUD_CLI_VERSION}+${MPDEV_VERSION}"
     populate_script: 
       - ./.cirrus/setup.sh
   ec2_instance:
