@@ -15,6 +15,7 @@ echo "${GCLOUD_CLI_CHECKSUM}  google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_6
 tar -xf google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz
 chmod +x ./google-cloud-sdk
 mv ./google-cloud-sdk ${BASE_FOLDER}/google-cloud-sdk
+rm -rf google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz
 
 gcloud components install gke-gcloud-auth-plugin kubectl --quiet
 
