@@ -5,7 +5,8 @@ All changes to this chart will be documented in this file.
 * Update Chart's version to 10.8.0
 * Support the installation of the Oracle JDBC Driver
 * Support Kubernetes v1.31
-* Ensure the Pod will stop at "init" stage if init_sysctl.sh failed to modify kernel parameters
+* Ensure that ConfigMap resources are not created for `initFS` and `initSysctl` if not needed
+* Ensure the Pod will stop at `init` stage if init_sysctl.sh failed to modify kernel parameters
 * Replace example image from busybox:1.36 to ubuntu:24.04
 
 ## [10.7.0]
