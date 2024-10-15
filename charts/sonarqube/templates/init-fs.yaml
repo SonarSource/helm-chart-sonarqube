@@ -1,3 +1,4 @@
+{{- if and .Values.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -5,7 +6,6 @@ metadata:
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 data:
   init_fs.sh: |-
-    {{- if .Values.persistence.enabled }}
     chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/data
     chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/temp
     chown -R {{ .Values.persistence.uid }}:{{ .Values.persistence.guid }} {{ .Values.sonarqubeFolder }}/logs
@@ -18,4 +18,4 @@ data:
     {{- range .Values.persistence.mounts }}
     chown -R {{ $.Values.persistence.uid }}:{{ $.Values.persistence.guid }} {{ .mountPath }}
     {{- end }}
-    {{- end }}
+{{- end }}
