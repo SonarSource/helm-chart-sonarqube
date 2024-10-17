@@ -11,6 +11,9 @@ metadata:
 spec:
   parentRefs:
   - name: {{ .Values.httproute.gateway }}
+    {{- if .Values.httproute.gatewayNamespace }}
+    namespace: {{ .Values.httproute.gatewayNamespace }}
+    {{- end }}
   hostnames:
     {{- with .Values.httproute.hostnames }}
     {{ toYaml . }}
