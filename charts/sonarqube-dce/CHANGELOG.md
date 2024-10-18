@@ -12,7 +12,7 @@ All changes to this chart will be documented in this file.
 * Ensure the Pod will stop at "init" stage if init_sysctl.sh failed to modify kernel parameters
 * Ensure that ConfigMap resources are not created for `initFS` and `initSysctl` if not needed
 * Ensure the Pod will stop at `init` stage if init_sysctl.sh failed to modify kernel parameters
-* Replace example image from busybox:1.36 to ubuntu:24.04
+* Replace the example images in initContainers, initSysctl and initFs from `busybox:1.36` to `ubuntu:24.04`, which are commented out by default
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0
