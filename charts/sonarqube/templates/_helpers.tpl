@@ -34,6 +34,8 @@ Selector labels
 {{- define "sonarqube.selectorLabels" -}}
 app: {{ include "sonarqube.name" . }}
 release: {{ .Release.Name }}
+app.kubernetes.io/name: {{ include "sonarqube.name" . }}-{{ include "sonarqube.fullname" . }}
+app.kubernetes.io/version: {{ (tpl .Values.image.tag .) | trunc 63 | trimSuffix "-" | quote }}
 {{- end -}}
 
 {{/*
