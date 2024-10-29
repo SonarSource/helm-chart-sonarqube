@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.8.1]
+* Add Kubernetes-recommended labels to Pods
+
 ## [10.8.0]
 * Update Chart's version to 10.8.0
 * Support the installation of the Oracle JDBC Driver
