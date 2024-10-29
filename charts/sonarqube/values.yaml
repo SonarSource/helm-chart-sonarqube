@@ -64,8 +64,8 @@ securityContext:
 # Set security context for sonarqube container.
 # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
 containerSecurityContext:
-# Sonarqube dockerfile creates sonarqube user as UID and GID 0
-# Those default are used to match pod security standard restricted as least privileged approach
+  # Sonarqube dockerfile creates sonarqube user as UID and GID 0
+  # Those default are used to match pod security standard restricted as least privileged approach
   allowPrivilegeEscalation: false
   runAsNonRoot: true
   runAsUser: 1000
@@ -153,21 +153,21 @@ ingress:
   enabled: false
   # Used to create an Ingress record.
   hosts:
-    - name: sonarqube.your-org.com
-      # Different clouds or configurations might need /* as the default path
-      # path: /
-      # For additional control over serviceName and servicePort
-      # serviceName: someService
-      # servicePort: somePort
-      # the pathType can be one of the following values: Exact|Prefix|ImplementationSpecific(default)
-      # pathType: ImplementationSpecific
+  - name: sonarqube.your-org.com
+    # Different clouds or configurations might need /* as the default path
+    # path: /
+    # For additional control over serviceName and servicePort
+    # serviceName: someService
+    # servicePort: somePort
+    # the pathType can be one of the following values: Exact|Prefix|ImplementationSpecific(default)
+    # pathType: ImplementationSpecific
   annotations: {}
   # kubernetes.io/tls-acme: "true"
 
   # Set the ingressClassName on the ingress record
   # ingressClassName: nginx
 
-# Additional labels for Ingress manifest file
+  # Additional labels for Ingress manifest file
   # labels:
   #  traffic-type: external
   #  traffic-type: internal
@@ -319,7 +319,7 @@ initSysctl:
     # if run without root permissions, error "sysctl: permission denied on key xxx, ignoring"
     runAsUser: 0
     readOnlyRootFilesystem: true
-  # resources: {}
+    # resources: {}
 
 # This should not be required anymore, used to chown/chmod folder created by faulty CSI driver that are not applying properly POSIX fsgroup.
 initFs:
@@ -353,18 +353,18 @@ prometheusExporter:
 
   config:
     rules:
-      - pattern: ".*"
-  # Overrides config for the CE process Prometheus exporter (by default, the same rules are used for both the Web and CE processes).
-  # ceConfig:
-  #   rules:
-  #     - pattern: ".*"
-  # image: curlimages/curl:8.2.1
-  # For use behind a corporate proxy when downloading prometheus
-  # httpProxy: ""
-  # httpsProxy: ""
-  # noProxy: ""
-  # Reuse default initcontainers.securityContext that match restricted pod security standard
-  # securityContext: {}
+    - pattern: ".*"
+      # Overrides config for the CE process Prometheus exporter (by default, the same rules are used for both the Web and CE processes).
+      # ceConfig:
+      #   rules:
+      #     - pattern: ".*"
+      # image: curlimages/curl:8.2.1
+      # For use behind a corporate proxy when downloading prometheus
+      # httpProxy: ""
+      # httpsProxy: ""
+      # noProxy: ""
+      # Reuse default initcontainers.securityContext that match restricted pod security standard
+      # securityContext: {}
 
 prometheusMonitoring:
   # Generate a Prometheus Pod Monitor (https://github.com/coreos/prometheus-operator)
@@ -479,9 +479,9 @@ persistence:
 
 # In case you want to specify different resources for emptyDir than {}
 emptyDir: {}
-  # Example of resouces that might be used:
-  # medium: Memory
-  # sizeLimit: 16Mi
+# Example of resouces that might be used:
+# medium: Memory
+# sizeLimit: 16Mi
 
 # A custom sonar.properties file can be provided via dictionary.
 # For example:
@@ -521,30 +521,16 @@ jdbcOverwrite:
   #   url: "https://download.oracle.com/otn-pub/otn_software/jdbc/2113/ojdbc11.jar"
   #   netrcCreds: ""
 
-## (DEPRECATED) Configuration values for postgresql dependency
-## ref: https://github.com/bitnami/charts/blob/master/bitnami/postgresql/README.md
+## use new chart https://artifacthub.io/packages/helm/bitnami/postgresql
 postgresql:
   # Enable to deploy the bitnami PostgreSQL chart
   enabled: true
-  ## postgresql Chart global settings
-  # global:
-  #   imageRegistry: ''
-  #   imagePullSecrets: ''
-  ## bitnami/postgres image tag
-  # image:
-  #   tag: 11.7.0-debian-10-r9
-  # existingSecret Name of existing secret to use for PostgreSQL passwords
-  # The secret has to contain the keys postgresql-password which is the password for postgresqlUsername when it is
-  # different of postgres, postgresql-postgres-password which will override postgresqlPassword,
-  # postgresql-replication-password which will override replication.password and postgresql-ldap-password which will be
-  # used to authenticate on LDAP. The value is evaluated as a template.
-  # existingSecret: ""
-  #
-  # The bitnami chart enforces the key to be "postgresql-password". This value is only here for historic purposes
-  # existingSecretPasswordKey: "postgresql-password"
-  postgresqlUsername: "sonarUser"
-  postgresqlPassword: "sonarPass"
-  postgresqlDatabase: "sonarDB"
+
+  auth:
+    postgresPassword: postgres
+    username: "sonarUser"
+    password: "sonarPass"
+    database: "sonarDB"
   # Specify the TCP port that PostgreSQL should use
   service:
     port: 5432
