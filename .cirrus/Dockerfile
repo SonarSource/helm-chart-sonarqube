@@ -11,8 +11,6 @@ ARG CHART_TESTING_VERSION=3.11.0
 ARG CHART_TESTING_HASHSUM="38914f285ce309f86a876522640a27b57840a435d3480195f0878e104f1e8044"
 ARG YAMLLINT_VERSION=1.35.1
 ARG YAMALE_VERSION=5.2.1
-ARG AH_VERSION=1.19.0
-ARG AH_CHECKSUM="0e430493521ce387ca04d79b26646a86f92886dbcceb44985bb71082a9530ca5"
 ARG YQ_VERSION=4.44.3
 ARG YQ_CHECKSUM="a2c097180dd884a8d50c956ee16a9cec070f30a7947cf4ebf87d5f36213e9ed7"
 ARG KUBECONFORM_VERSION=0.6.7
@@ -78,15 +76,6 @@ RUN set -eux; \
     mv etc/lintconf.yaml /etc/ct/lintconf.yaml ; \
     mv ./ct /usr/bin/ct ; \
     rm chart-testing_${CHART_TESTING_VERSION}_linux_amd64.tar.gz 
-
-RUN set -eux; \
-    curl -LO https://github.com/artifacthub/hub/releases/download/v${AH_VERSION}/ah_${AH_VERSION}_linux_amd64.tar.gz ; \
-    echo "${AH_CHECKSUM}  ah_${AH_VERSION}_linux_amd64.tar.gz" | sha256sum -c ; \
-    tar -xf ah_${AH_VERSION}_linux_amd64.tar.gz ; \
-    chmod +x ./ah ; \
-    mv ./ah /usr/bin/ah ; \
-    rm LICENSE; \
-    rm -rf ah_${AH_VERSION}_linux_amd64.tar.gz
 
 RUN set -eux; \
     curl -LO https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64 ; \
