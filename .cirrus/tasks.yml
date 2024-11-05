@@ -163,7 +163,7 @@ chart_fixture_test_task:
     - .cirrus/generate_helm_fixtures.sh
     - git diff --exit-code
 
-chart_testing_on_eks_task:
+chart_testing_on_kind_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   timeout_in: 30m
   ec2_instance:
@@ -247,7 +247,7 @@ chart_packaging_task:
     - ./.cirrus/package.sh
     - ./.cirrus/sign_chart.sh
   depends_on:
-    - chart_testing_on_eks
+    - chart_testing_on_kind
     - chart_testing_on_openshift_sonarqube
     - chart_testing_on_openshift_sonarqube_dce
 
