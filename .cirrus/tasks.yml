@@ -46,8 +46,10 @@ container_template: &STD_CONTAINER_TEMPLATE
 
 vm_instance_template: &VM_TEMPLATE
   image: docker-builder-v*
-  type: t2.small
+  type: t2.xlarge
   region: eu-central-1
+  cpu: 4
+  memory: 16Gb
 
 clone_script_template: &CLONE_SCRIPT_TEMPLATE
   clone_script: |
@@ -161,25 +163,24 @@ chart_fixture_test_task:
     - .cirrus/generate_helm_fixtures.sh
     - git diff --exit-code
 
-chart_testing_on_eks_task:
+chart_testing_on_kind_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   timeout_in: 30m
-  eks_container:
-    <<: *CONTAINER_TEMPLATE
-    cpu: 2
-    memory: 4Gb
+  ec2_instance:
+    <<: *VM_TEMPLATE
   <<: *CLONE_SCRIPT_TEMPLATE
-  authenticate_to_eks_script:
-    - ./.cirrus/eks.sh
-    - kubectl get nodes
   setup_script:
+    - ./.cirrus/setup_kind_vm.sh
+    - kind create cluster
+    - kubectl cluster-info --context kind-kind
+    - kubectl get nodes
     - kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f - 
     - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
   script:
     - ct lint --config test.yaml --all
     - ct install --namespace test --config test.yaml --all --debug
   teardown_script:
-    - kubectl delete namespace test
+    - kind delete cluster
   artifacthub_lint_script:
     - ah lint
   depends_on:
@@ -246,7 +247,7 @@ chart_packaging_task:
     - ./.cirrus/package.sh
     - ./.cirrus/sign_chart.sh
   depends_on:
-    - chart_testing_on_eks
+    - chart_testing_on_kind
     - chart_testing_on_openshift_sonarqube
     - chart_testing_on_openshift_sonarqube_dce
 
