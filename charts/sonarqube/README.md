@@ -249,7 +249,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `env`                   | Environment variables to attach to the pods                                                                                             | `{}`          |
 | `annotations`           | SonarQube Pod annotations                                                                                                               | `{}`          |
 | `edition`               | SonarQube Edition to use (e.g. `community`, `developer` or `enterprise`). Please note that the default `community` value is deprecated. | `community`   |
-| `community.enabled`     | Install SonarQube Community Build                                                                                                       | `false`       |
+| `community.enabled`     | Install SonarQube Community Build. When set to `true`, this parameter replaces `edition=community`                                      | `true`        |
 | `community.buildNumber` | The SonarQube Community Build number to install                                                                                         | `10.7.0`      |
 | `sonarWebContext`       | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.                       | ``            |
 | `httpProxySecret`       | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will superseed every other proxy variables                              | ``            |

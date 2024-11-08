@@ -60,11 +60,11 @@ Expand the Application Image name.
   Define the image.tag value that computes the right tag to be used as `sonarqube.image`
 */}}
 {{- define "image.tag" -}}
-{{- if or (not (hasKey .Values.image "tag")) (empty .Values.image.tag) -}}
-{{- if or (.Values.community.enabled) (and (not (empty .Values.edition)) (eq .Values.edition "community"))  -}}
-{{- printf "%s-%s" .Values.community.buildNumber "community" -}}
-{{- else if and (not (empty .Values.edition)) (ne .Values.edition "community") -}}
+{{- if empty .Values.image.tag -}}
+{{- if and (not (empty .Values.edition)) (or (eq .Values.edition "developer") (eq .Values.edition "enterprise")) -}}
 {{- printf "%s-%s"  .Chart.AppVersion .Values.edition -}}
+{{- else if or (.Values.community.enabled) (and (not (empty .Values.edition)) (eq .Values.edition "community"))  -}}
+{{- printf "%s-%s" .Values.community.buildNumber "community" -}}
 {{- end -}}
 {{- else -}}
 {{- .Values.image.tag -}}
