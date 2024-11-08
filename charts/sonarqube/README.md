@@ -37,6 +37,13 @@ The [configuration](#configuration) section lists the parameters that can be con
 
 The default login is admin/admin.
 
+## Installing the SonarQube Community Build chart
+
+The SonarQube Community Edition has been replaced by the SonarQube Community Build.
+If you want to install the SonarQube Community Build chart, please set `community.enabled` to `true`.
+The `community.buildNumber` parameter will be set to the latest Community Build.
+The `community` value is deprecated and won't be supported for `edition` anymore.
+
 ## Installing the SonarQube 9.9 LTA chart
 
 The version of the chart for the SonarQube 9.9 LTA is being distributed as the `8.x.x` version of this chart.
@@ -227,26 +234,28 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Global
 
-| Parameter            | Description                                                                                                           | Default       |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `deploymentType`     | Deployment Type (supported values are `StatefulSet` or `Deployment`)                                                  | `StatefulSet` |
-| `replicaCount`       | Number of replicas deployed (supported values are 0 and 1)                                                            | `1`           |
-| `deploymentStrategy` | Deployment strategy                                                                                                   | `{}`          |
-| `priorityClassName`  | Schedule pods on priority (e.g. `high-priority`)                                                                      | `None`        |
-| `schedulerName`      | Kubernetes scheduler name                                                                                             | `None`        |
-| `affinity`           | Node / Pod affinities                                                                                                 | `{}`          |
-| `tolerations`        | List of node taints to tolerate                                                                                       | `[]`          |
-| `nodeSelector`       | Node labels for pod assignment                                                                                        | `{}`          |
-| `hostAliases`        | Aliases for IPs in /etc/hosts                                                                                         | `[]`          |
-| `podLabels`          | Map of labels to add to the pods                                                                                      | `{}`          |
-| `env`                | Environment variables to attach to the pods                                                                           | `{}`          |
-| `annotations`        | SonarQube Pod annotations                                                                                             | `{}`          |
-| `edition`            | SonarQube Edition to use (e.g. `community`, `developer` or `enterprise`)                                              | `community`   |
-| `sonarWebContext`    | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.     | ``            |
-| `httpProxySecret`    | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will superseed every other proxy variables            | ``            |
-| `httpProxy`          | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables  | ``            |
-| `httpsProxy`         | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable | ``            |
-| `noProxy`            | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables      | ``            |
+| Parameter               | Description                                                                                                                             | Default       |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `deploymentType`        | Deployment Type (supported values are `StatefulSet` or `Deployment`)                                                                    | `StatefulSet` |
+| `replicaCount`          | Number of replicas deployed (supported values are 0 and 1)                                                                              | `1`           |
+| `deploymentStrategy`    | Deployment strategy                                                                                                                     | `{}`          |
+| `priorityClassName`     | Schedule pods on priority (e.g. `high-priority`)                                                                                        | `None`        |
+| `schedulerName`         | Kubernetes scheduler name                                                                                                               | `None`        |
+| `affinity`              | Node / Pod affinities                                                                                                                   | `{}`          |
+| `tolerations`           | List of node taints to tolerate                                                                                                         | `[]`          |
+| `nodeSelector`          | Node labels for pod assignment                                                                                                          | `{}`          |
+| `hostAliases`           | Aliases for IPs in /etc/hosts                                                                                                           | `[]`          |
+| `podLabels`             | Map of labels to add to the pods                                                                                                        | `{}`          |
+| `env`                   | Environment variables to attach to the pods                                                                                             | `{}`          |
+| `annotations`           | SonarQube Pod annotations                                                                                                               | `{}`          |
+| `edition`               | SonarQube Edition to use (e.g. `community`, `developer` or `enterprise`). Please note that the default `community` value is deprecated. | `community`   |
+| `community.enabled`     | Install SonarQube Community Build                                                                                                       | `false`       |
+| `community.buildNumber` | The SonarQube Community Build number to install                                                                                         | `10.7.0`      |
+| `sonarWebContext`       | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.                       | ``            |
+| `httpProxySecret`       | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will superseed every other proxy variables                              | ``            |
+| `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables                    | ``            |
+| `httpsProxy`            | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable                   | ``            |
+| `noProxy`               | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables                        | ``            |
 
 ### NetworkPolicies
 
@@ -273,13 +282,13 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Image
 
-| Parameter           | Description                                                | Default                        |
-| ------------------- | ---------------------------------------------------------- | ------------------------------ |
-| `image.repository`  | image repository                                           | `sonarqube`                    |
-| `image.tag`         | `sonarqube` image tag.                                     | `10.7.0-{{ .Values.edition }}` |
-| `image.pullPolicy`  | Image pull policy                                          | `IfNotPresent`                 |
-| `image.pullSecret`  | (DEPRECATED) imagePullSecret to use for private repository | `None`                         |
-| `image.pullSecrets` | imagePullSecrets to use for private repository             | `None`                         |
+| Parameter           | Description                                                                                       | Default                        |
+| ------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `image.repository`  | image repository                                                                                  | `sonarqube`                    |
+| `image.tag`         | `sonarqube` image tag. Please note that the default `10.7.0-{{ .Values.edition }}` is deprecated. | `10.7.0-{{ .Values.edition }}` |
+| `image.pullPolicy`  | Image pull policy                                                                                 | `IfNotPresent`                 |
+| `image.pullSecret`  | (DEPRECATED) imagePullSecret to use for private repository                                        | `None`                         |
+| `image.pullSecrets` | imagePullSecrets to use for private repository                                                    | `None`                         |
 
 ### Security
 

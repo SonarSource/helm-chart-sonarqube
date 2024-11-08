@@ -46,14 +46,29 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/part-of: sonarqube
 app.kubernetes.io/component: {{ include "sonarqube.fullname" . }}
-app.kubernetes.io/version: {{ (tpl .Values.image.tag .) | trunc 63 | trimSuffix "-" | quote }}
+app.kubernetes.io/version: {{ (tpl (include "image.tag" .) . ) | trunc 63 | trimSuffix "-" | quote }}
 {{- end -}}
 
 {{/*
 Expand the Application Image name.
 */}}
 {{- define "sonarqube.image" -}}
-{{- printf "%s:%s" .Values.image.repository (tpl .Values.image.tag .) }}
+{{- printf "%s:%s" .Values.image.repository (tpl (include "image.tag" .) .) }}
+{{- end -}}
+
+{{/*
+  Define the image.tag value that computes the right tag to be used as `sonarqube.image`
+*/}}
+{{- define "image.tag" -}}
+{{- if or (not (hasKey .Values.image "tag")) (empty .Values.image.tag) -}}
+{{- if or (.Values.community.enabled) (and (not (empty .Values.edition)) (eq .Values.edition "community"))  -}}
+{{- printf "%s-%s" .Values.community.buildNumber "community" -}}
+{{- else if and (not (empty .Values.edition)) (ne .Values.edition "community") -}}
+{{- printf "%s-%s"  .Chart.AppVersion .Values.edition -}}
+{{- end -}}
+{{- else -}}
+{{- .Values.image.tag -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
