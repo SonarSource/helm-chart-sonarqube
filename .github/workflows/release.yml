@@ -30,8 +30,8 @@ jobs:
         uses: actions/checkout@v3
       - name: Fetch history
         run: git fetch --prune --unshallow
-      - name: Promote
-        run: jfrog rt build-promote --status released "${{ github.event.repository.name }}" "${{ github.event.inputs.buildNumber }}" sonarsource-helm-releases
+      # - name: Promote
+      #   run: jfrog rt build-promote --status released "${{ github.event.repository.name }}" "${{ github.event.inputs.buildNumber }}" sonarsource-helm-releases
       - name: Create local repository directory
         id: local_repo
         run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> "$GITHUB_OUTPUT"
@@ -40,31 +40,58 @@ jobs:
           local-repo-dir: ${{ steps.local_repo.outputs.dir }}
           remote-repo: sonarsource-helm
           build-number: ${{ github.event.inputs.buildNumber }}
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
+      - name: Untar the downloaded charts
+        run: | 
+          cd ${{ steps.local_repo.outputs.dir }}
+          for file in *.tgz; do tar -xzf "$file" && rm "$file"; done
+          cd ..
+      - name: Set up helm
+        uses: azure/setup-helm@v1
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file_glob: true
-          file: ${{ steps.local_repo.outputs.dir }}/*
-          tag: ${{ github.event.inputs.version }}
-          overwrite: true
-      - name: Configure Git
+          version: v3.7.0
+      - name: Remove the build number from the charts' versions and re-package the helm charts
         run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-      - name: Release to GitHub
-        uses: ./.github/actions/helm-index
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-        with:
-          repository-name: "${{ github.event.repository.name }}"
-          package-path: ${{ steps.local_repo.outputs.dir }}
-          release-name: "${{ github.event.inputs.version}}"
-      - name: Notify failures on Slack
-        if: failure()
-        uses: Ilshidur/action-slack@2.0.0
-        env:
-          SLACK_WEBHOOK: ${{ fromJSON(steps.secrets.outputs.vault).slack_webhook_url }}
-          SLACK_CHANNEL: team-sonarqube-build
-        with:
-          args: "Helm Chart Release failed, see the logs at https://github.com/SonarSource/helm-chart-sonarqube/actions"
+          SQ_CHART="sonarqube"
+          SQ_DCE_CHART="sonarqube-dce"
+
+          # Remove the build number if SQ_CHART is present
+          if [ -d "${{ steps.local_repo.outputs.dir }}/$SQ_CHART" ]; then
+            sed -i '/^version:/ {s/\(^version: [0-9]*\.[0-9]*\.[0-9]*\)\+.*/\1/;}' ${{ steps.local_repo.outputs.dir }}/$SQ_CHART/Chart.yaml
+            helm package ${{ steps.local_repo.outputs.dir }}/$SQ_CHART
+          fi
+
+          # Remove the build number if SQ_DCE_CHART is present
+          if [ -d "${{ steps.local_repo.outputs.dir }}/$SQ_DCE_CHART" ]; then
+            sed -i '/^version:/ {s/\(^version: [0-9]*\.[0-9]*\.[0-9]*\)\+.*/\1/;}' ${{ steps.local_repo.outputs.dir }}/$SQ_DCE_CHART/Chart.yaml
+            helm package ${{ steps.local_repo.outputs.dir }}/$SQ_DCE_CHART
+          fi
+      - name: Check resulting files
+        run: ls -l ${{ steps.local_repo.outputs.dir }}
+      # - name: Upload binaries to release # Here I can remove the build number.
+      #   uses: svenstaro/upload-release-action@v2
+      #   with:
+      #     repo_token: ${{ secrets.GITHUB_TOKEN }}
+      #     file_glob: true
+      #     file: ${{ steps.local_repo.outputs.dir }}/*
+      #     tag: ${{ github.event.inputs.version }}
+      #     overwrite: true
+      # - name: Configure Git
+      #   run: |
+      #     git config user.name "$GITHUB_ACTOR"
+      #     git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+      # - name: Release to GitHub
+      #   uses: ./.github/actions/helm-index
+      #   env:
+      #     CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      #   with:
+      #     repository-name: "${{ github.event.repository.name }}"
+      #     package-path: ${{ steps.local_repo.outputs.dir }}
+      #     release-name: "${{ github.event.inputs.version}}"
+      # - name: Notify failures on Slack
+      #   if: failure()
+      #   uses: Ilshidur/action-slack@2.0.0
+      #   env:
+      #     SLACK_WEBHOOK: ${{ fromJSON(steps.secrets.outputs.vault).slack_webhook_url }}
+      #     SLACK_CHANNEL: team-sonarqube-build
+      #   with:
+      #     args: "Helm Chart Release failed, see the logs at https://github.com/SonarSource/helm-chart-sonarqube/actions"
