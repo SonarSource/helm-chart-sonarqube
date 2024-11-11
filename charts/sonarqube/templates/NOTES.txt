@@ -17,6 +17,11 @@
   echo "Visit http://127.0.0.1:8080 to use your application"
   kubectl port-forward $POD_NAME 8080:{{ .Values.service.externalPort }} -n {{ .Release.Namespace }}
 {{- end }}
+{{- if eq .Values.edition "community" }}
+DEPRECATION NOTICE: The SonarQube Community Edition has been replaced by the SonarQube Community Build.
+                    Please use "community.enabled=true" to use the latest SonarQube Community Build. 
+                    The "community" value is deprecated and won't be supported for "edition" anymore.
+{{- end }}
 WARNING: 
          Please note that the SonarQube image runs with a non-root user (uid=1000) belonging to the root group (guid=0). In this way, the chart can support arbitrary user ids as recommended in OpenShift.
          Please visit https://docs.openshift.com/container-platform/4.14/openshift_images/create-images.html#use-uid_create-images for more information.

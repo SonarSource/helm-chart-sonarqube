@@ -4,6 +4,17 @@
         "replicaCount"
     ],
     "properties": {
+        "edition": {
+            "type": "string",
+            "enum": ["community", "developer", "enterprise"],
+            "properties": {
+                "community": {
+                    "type": "string",
+                    "deprecated": true,
+                    "$comment": "(DEPRECATED) Please use `community.enabled` instead"
+                }
+            }
+        },
         "persistence": {
             "type": "object",
             "properties": {
