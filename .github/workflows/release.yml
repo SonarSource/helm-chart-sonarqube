@@ -49,6 +49,7 @@ jobs:
         run: | 
           cd ${{ steps.local_repo.outputs.dir }}
           for file in *.tgz; do tar -xzf "$file" && rm "$file"; done
+          find . -type f \( -name "*.md5" -o -name "*.sha1" -o -name "*.sha256" -o -name "*.asc" \) -exec rm -rf {} \;
           cd ..
       - name: Set up helm
         uses: azure/setup-helm@v1
