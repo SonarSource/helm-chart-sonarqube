@@ -1,12 +1,14 @@
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version of the release"
-        required: true
-      buildNumber:
-        description: "Build number of the release"
-        required: true
+  pull_request:
+    types: [opened, synchronize, reopened]
+  # workflow_dispatch:
+  #   inputs:
+  #     version:
+  #       description: "Version of the release"
+  #       required: true
+  #     buildNumber:
+  #       description: "Build number of the release"
+  #       required: true
 
 name: Release
 
@@ -39,7 +41,10 @@ jobs:
         with:
           local-repo-dir: ${{ steps.local_repo.outputs.dir }}
           remote-repo: sonarsource-helm
-          build-number: ${{ github.event.inputs.buildNumber }}
+          build-number: "3762"
+          exclusions: "*.md5,*.sha1,*.sha256,*.sha512"
+      - name: Check resulting files
+        run: ls -l ${{ steps.local_repo.outputs.dir }}
       - name: Untar the downloaded charts
         run: | 
           cd ${{ steps.local_repo.outputs.dir }}
@@ -54,17 +59,23 @@ jobs:
           SQ_CHART="sonarqube"
           SQ_DCE_CHART="sonarqube-dce"
 
+          cd ${{ steps.local_repo.outputs.dir }}
+
           # Remove the build number if SQ_CHART is present
-          if [ -d "${{ steps.local_repo.outputs.dir }}/$SQ_CHART" ]; then
-            sed -i '/^version:/ {s/\(^version: [0-9]*\.[0-9]*\.[0-9]*\)\+.*/\1/;}' ${{ steps.local_repo.outputs.dir }}/$SQ_CHART/Chart.yaml
-            helm package ${{ steps.local_repo.outputs.dir }}/$SQ_CHART
+          if [ -d "$SQ_CHART" ]; then
+            sed -i '/^version:/ {s/\(^version: [0-9]*\.[0-9]*\.[0-9]*\)\+.*/\1/;}' $SQ_CHART/Chart.yaml
+            helm package $SQ_CHART
+            rm -rf $SQ_CHART
           fi
 
           # Remove the build number if SQ_DCE_CHART is present
-          if [ -d "${{ steps.local_repo.outputs.dir }}/$SQ_DCE_CHART" ]; then
-            sed -i '/^version:/ {s/\(^version: [0-9]*\.[0-9]*\.[0-9]*\)\+.*/\1/;}' ${{ steps.local_repo.outputs.dir }}/$SQ_DCE_CHART/Chart.yaml
-            helm package ${{ steps.local_repo.outputs.dir }}/$SQ_DCE_CHART
+          if [ -d "$SQ_DCE_CHART" ]; then
+            sed -i '/^version:/ {s/\(^version: [0-9]*\.[0-9]*\.[0-9]*\)\+.*/\1/;}' $SQ_DCE_CHART/Chart.yaml
+            helm package $SQ_DCE_CHART
+            rm -rf $SQ_DCE_CHART
           fi
+
+          cd ..
       - name: Check resulting files
         run: ls -l ${{ steps.local_repo.outputs.dir }}
       # - name: Upload binaries to release # Here I can remove the build number.
