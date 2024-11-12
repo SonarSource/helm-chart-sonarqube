@@ -19,7 +19,7 @@ spec:
   {{- end }}
   containers:
     - name: {{ .Release.Name }}-ui-test
-      image: {{ .Values.tests.image | default (printf "%s:%s" .Values.image.repository (tpl .Values.image.tag .)) | quote }}
+      image: {{ .Values.tests.image | default (include "sonarqube.image" .) | quote }}
       imagePullPolicy: {{ .Values.image.pullPolicy }}
       command: ['wget']
       args: [

@@ -46,10 +46,17 @@ OpenShift:
     # labels:
     #  external: 'true'
 
+# (DEPRECATED) The "community" value as the default of "edition" is deprecated and will be removed in the next release (in favor of an empty value). Please set "community" to "true", if you want to use SonarQube Community Build.
 edition: "community"
+
+# Set the chart to use the latest released SonarQube Community Build
+community:
+  enabled: true
+  buildNumber: "10.7.0"
 
 image:
   repository: sonarqube
+  # (DEPRECATED) The "image.tag" parameter will be set to be empty as default.
   tag: 10.7.0-{{ .Values.edition }}
   pullPolicy: IfNotPresent
   # If using a private repository, the imagePullSecrets to use

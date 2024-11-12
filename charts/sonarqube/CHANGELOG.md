@@ -5,6 +5,9 @@ All changes to this chart will be documented in this file.
 * Update Chart's version to 10.8.0
 * Support the installation of the Oracle JDBC Driver
 * Support Kubernetes v1.31
+* Deprecate the `community` value for the `edition` parameter
+* Introduce the `community.enabled` and `community.buildNumber` parameters for SonarQube Community Build
+* Deprecate the default value of `image.tag` in favor of an empty string
 * Ensure that ConfigMap resources are not created for `initFS` and `initSysctl` if not needed
 * Ensure the Pod will stop at `init` stage if init_sysctl.sh failed to modify kernel parameters
 * Replace the example images in initContainers, initSysctl and initFs from `busybox:1.36` to `ubuntu:24.04`, which are commented out by default

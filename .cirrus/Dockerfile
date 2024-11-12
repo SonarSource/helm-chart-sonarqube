@@ -11,20 +11,19 @@ ARG CHART_TESTING_VERSION=3.11.0
 ARG CHART_TESTING_HASHSUM="38914f285ce309f86a876522640a27b57840a435d3480195f0878e104f1e8044"
 ARG YAMLLINT_VERSION=1.35.1
 ARG YAMALE_VERSION=5.2.1
-ARG AH_VERSION=1.19.0
-ARG AH_CHECKSUM="0e430493521ce387ca04d79b26646a86f92886dbcceb44985bb71082a9530ca5"
 ARG YQ_VERSION=4.44.3
 ARG YQ_CHECKSUM="a2c097180dd884a8d50c956ee16a9cec070f30a7947cf4ebf87d5f36213e9ed7"
 ARG KUBECONFORM_VERSION=0.6.7
 ARG KUBECONFORM_CHECKSUM="95f14e87aa28c09d5941f11bd024c1d02fdc0303ccaa23f61cef67bc92619d73"
 ARG CHART_VERIFIER_VERSION=1.13.8
 ARG CHART_VERIFIER_CHECKSUM="1ed190a3aa4f961269e59f9596408415761ab368d761a08eae2960a84d957352"
-ARG OPENSHIFT_CLI_VERSION=4.16.16
-ARG OPENSHIFT_CLI_CHECKSUM="a1cd9ac47f20c525e57668eac141318336a9e9c2cdae7dbff74d87b5fcf637f7"
+ARG OPENSHIFT_CLI_VERSION=4.17.0
+ARG OPENSHIFT_CLI_CHECKSUM="007d8bef0fd036c45f496fd00098bd6d9042eaf525a77793e892a1d500e0d041"
 
 ENV HELM_BASE_URL="https://get.helm.sh"
 ENV HELM_TAR_FILE="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
 ENV HELM_HASH_SUM_FILE="helm-v${HELM_VERSION}-linux-amd64.tar.gz.sha256sum"
+ENV PATH=/usr/bin/google-cloud-sdk/bin:${PATH}
 
 RUN apk add --update --no-cache \
     aws-cli \
@@ -42,7 +41,7 @@ RUN apk add --update --no-cache \
     py3-pip \
     py3-wheel \
     python3 && \
-    pip install --upgrade pip==24.1.1
+    pip install --upgrade pip==24.2
 
 RUN pip install "yamllint==${YAMLLINT_VERSION}" && \
     pip install "yamale==${YAMALE_VERSION}"
@@ -79,15 +78,6 @@ RUN set -eux; \
     rm chart-testing_${CHART_TESTING_VERSION}_linux_amd64.tar.gz 
 
 RUN set -eux; \
-    curl -LO https://github.com/artifacthub/hub/releases/download/v${AH_VERSION}/ah_${AH_VERSION}_linux_amd64.tar.gz ; \
-    echo "${AH_CHECKSUM}  ah_${AH_VERSION}_linux_amd64.tar.gz" | sha256sum -c ; \
-    tar -xf ah_${AH_VERSION}_linux_amd64.tar.gz ; \
-    chmod +x ./ah ; \
-    mv ./ah /usr/bin/ah ; \
-    rm LICENSE; \
-    rm -rf ah_${AH_VERSION}_linux_amd64.tar.gz
-
-RUN set -eux; \
     curl -LO https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64 ; \
     echo "${YQ_CHECKSUM}  yq_linux_amd64" | sha256sum -c ; \
     chmod +x ./yq_linux_amd64 ; \
@@ -116,7 +106,6 @@ RUN set -eux; \
     chmod +x ./oc ; \
     mv ./oc /usr/bin/oc ; \
     rm openshift-client-linux.tar.gz kubectl README.md
-
 
 COPY --from=tools /usr/local/bin/cirrus-env /usr/local/bin/cirrus-env
 COPY --from=tools /usr/local/bin/gh /usr/local/bin/gh
