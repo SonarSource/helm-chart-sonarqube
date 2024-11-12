@@ -17,7 +17,7 @@ PREVIOUS_RELEASE=$(gh api "/repos/{owner}/{repo}/releases" --jq "[.[] | select(.
 CHARTS=$(ct list-changed --since "${PREVIOUS_RELEASE}" --target-branch "${TARGET_BRANCH}")
 
 BUILD_METADATA="-${BUILD_NUMBER}"
-[[ ${CIRRUS_RELEASE:-} = "" ]] && BUILD_METADATA=""
+[[ ${CIRRUS_RELEASE:-} != "" ]] && BUILD_METADATA=""
 
 echo "${CHARTS}"
 

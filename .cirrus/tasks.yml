@@ -246,10 +246,10 @@ chart_packaging_task:
     - helm repo update
     - ./.cirrus/package.sh
     - ./.cirrus/sign_chart.sh
-  # depends_on:
-  #   - chart_testing_on_kind
-  #   - chart_testing_on_openshift_sonarqube
-  #   - chart_testing_on_openshift_sonarqube_dce
+  depends_on:
+    - chart_testing_on_kind
+    - chart_testing_on_openshift_sonarqube
+    - chart_testing_on_openshift_sonarqube_dce
 
 push_to_repox_task:
   <<: *EXCEPT_ON_PR_OR_CRON
