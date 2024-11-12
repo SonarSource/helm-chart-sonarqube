@@ -57,24 +57,19 @@ jobs:
           version: v3.7.0
       - name: Remove the build number from the charts' versions and re-package the helm charts
         run: |
-          SQ_CHART="sonarqube"
-          SQ_DCE_CHART="sonarqube-dce"
+          remove_build_number() {
+            local chart="$1"
+            if [ -d "$chart" ]; then
+              sed -i '/^version:/ {s/\(^version: [0-9]*\.[0-9]*\.[0-9]*\)\+.*/\1/;}' "$chart/Chart.yaml"
+              helm package "$chart"
+              rm -rf "$chart"
+            fi
+          }
 
           cd ${{ steps.local_repo.outputs.dir }}
 
-          # Remove the build number if SQ_CHART is present
-          if [ -d "$SQ_CHART" ]; then
-            sed -i '/^version:/ {s/\(^version: [0-9]*\.[0-9]*\.[0-9]*\)\+.*/\1/;}' $SQ_CHART/Chart.yaml
-            helm package $SQ_CHART
-            rm -rf $SQ_CHART
-          fi
-
-          # Remove the build number if SQ_DCE_CHART is present
-          if [ -d "$SQ_DCE_CHART" ]; then
-            sed -i '/^version:/ {s/\(^version: [0-9]*\.[0-9]*\.[0-9]*\)\+.*/\1/;}' $SQ_DCE_CHART/Chart.yaml
-            helm package $SQ_DCE_CHART
-            rm -rf $SQ_DCE_CHART
-          fi
+          remove_build_number "sonarqube"
+          remove_build_number "sonarqube-dce"
 
           cd ..
       - name: Check resulting files
