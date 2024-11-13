@@ -5,6 +5,7 @@ All changes to this chart will be documented in this file.
 * Update Chart's version to 10.8.0
 * Support the installation of the Oracle JDBC Driver
 * Support Kubernetes v1.31
+* Update the Chart's icon with the SonarQube Server logo
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0
