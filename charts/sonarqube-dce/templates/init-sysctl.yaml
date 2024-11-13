@@ -13,36 +13,40 @@ data:
     set -o errexit
     set -o xtrace
     {{- if .Values.initSysctl.vmMaxMapCount }}
-    if [[ "$(sysctl -n vm.max_map_count)" -lt {{ .Values.initSysctl.vmMaxMapCount }} ]]; then
-      sysctl -w vm.max_map_count={{ .Values.initSysctl.vmMaxMapCount }}
-      if [[ "$(sysctl -n vm.max_map_count)" -lt {{ .Values.initSysctl.vmMaxMapCount }} ]]; then
+    vmMaxMapCount={{ .Values.initSysctl.vmMaxMapCount | int }}
+    if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
+      sysctl -w vm.max_map_count=$vmMaxMapCount
+      if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
         echo "Failed to set initSysctl.vmMaxMapCount"; exit 1
       fi
     fi
     {{- end }}
     {{- if .Values.initSysctl.fsFileMax }}
-    if [[ "$(sysctl -n fs.file-max)" -lt {{ .Values.initSysctl.fsFileMax }} ]]; then
-      sysctl -w fs.file-max={{ .Values.initSysctl.fsFileMax }}
-      if [[ "$(sysctl -n fs.file-max)" -lt {{ .Values.initSysctl.fsFileMax }} ]]; then
+    fsFileMax={{ .Values.initSysctl.fsFileMax | int }}
+    if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
+      sysctl -w fs.file-max=$fsFileMax
+      if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
         echo "Failed to set initSysctl.fsFileMax"; exit 1
       fi
     fi
     {{- end }}
     {{- if .Values.initSysctl.nofile }}
+    nofile={{ .Values.initSysctl.nofile | int }}
     if [[ "$(ulimit -n)" != "unlimited" ]]; then
-      if [[ "$(ulimit -n)" -lt {{ .Values.initSysctl.nofile }} ]]; then
-        ulimit -n {{ .Values.initSysctl.nofile }}
-        if [[ "$(ulimit -n)" -lt {{ .Values.initSysctl.nofile }} ]]; then
+      if [[ "$(ulimit -n)" -lt $nofile ]]; then
+        ulimit -n $nofile
+        if [[ "$(ulimit -n)" -lt $nofile ]]; then
           echo "Failed to set initSysctl.nofile"; exit 1
         fi
       fi
     fi
     {{- end }}
     {{- if .Values.initSysctl.nproc }}
+    nproc={{ .Values.initSysctl.nproc | int }}
     if [[ "$(ulimit -u)" != "unlimited" ]]; then
-      if [[ "$(ulimit -u)" -lt {{ .Values.initSysctl.nproc }} ]]; then
-        ulimit -u {{ .Values.initSysctl.nproc }}
-        if [[ "$(ulimit -u)" -lt {{ .Values.initSysctl.nproc }} ]]; then
+      if [[ "$(ulimit -u)" -lt $nproc ]]; then
+        ulimit -u $nproc
+        if [[ "$(ulimit -u)" -lt $nproc ]]; then
           echo "Failed to set initSysctl.nproc"; exit 1
         fi
       fi
