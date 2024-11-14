@@ -1,3 +1,5 @@
+{{ $applicationNodes := fromYaml (include "applicationNodes" . ) }}
+{{ $_ := set .Values "ApplicationNodes" $applicationNodes }}
 {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
 apiVersion: v1
 kind: ConfigMap

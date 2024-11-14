@@ -417,9 +417,9 @@ spec:
         release: ca-certificates-configmap.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: f3da560dff1973cebf518b7a9d8101b82ed07fb813b0bbeae67509a463b305da
-        checksum/config: 505964f6a2a7bb7d01a8952433a77e6b3dee2e772b4680aacc79950fcb84d03d
-        checksum/secret: 87d7d3096c3b63930e4aced97a689305d92650d13c06c4ea6d129a9fcade9a22
+        checksum/plugins: 6f8420ac0656969434a073ad0af1777cb70f956b73ccb24cc139c6f8323fb132
+        checksum/config: 2eebd07f1070fb5d641a0f495258f3939ef70b4ffc204a352ac05010c1f223be
+        checksum/secret: 9266a8e592014345034146a26e9865ab185351551b585b91094c2aa4a4b10a5c
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -556,7 +556,7 @@ spec:
               command:
               - sh
               - -c
-              - |
+              - |-
                 host="$(hostname -i || echo '127.0.0.1')"
                 wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
             failureThreshold: 6
@@ -568,7 +568,7 @@ spec:
               command:
               - sh
               - -c
-              - |
+              - |-
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
