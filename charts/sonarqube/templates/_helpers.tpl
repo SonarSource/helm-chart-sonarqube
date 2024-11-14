@@ -34,7 +34,7 @@ Selector labels
 {{- define "sonarqube.selectorLabels" -}}
 app: {{ include "sonarqube.name" . }}
 release: {{ .Release.Name }}
-app.kubernetes.io/name: {{ include "sonarqube.name" . }}-{{ include "sonarqube.fullname" . }}
+app.kubernetes.io/name: {{ .Release.Name }}
 app.kubernetes.io/version: {{ (tpl .Values.image.tag .) | trunc 63 | trimSuffix "-" | quote }}
 {{- end -}}
 
@@ -43,7 +43,7 @@ Workload labels (Deployment or StatefulSet)
 */}}
 {{- define "sonarqube.workloadLabels" -}}
 {{- include "sonarqube.labels" . }}
-app.kubernetes.io/name: {{ include "sonarqube.name" . }}-{{ include "sonarqube.fullname" . }}
+app.kubernetes.io/name: {{ .Release.Name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/part-of: sonarqube
