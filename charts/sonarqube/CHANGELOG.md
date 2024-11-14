@@ -1,9 +1,6 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-## [10.8.1]
-* Add Kubernetes-recommended labels to Pods
-
 ## [10.8.0]
 * Update Chart's version to 10.8.0
 * Support the installation of the Oracle JDBC Driver
@@ -12,6 +9,7 @@ All changes to this chart will be documented in this file.
 * Introduce the `community.enabled` and `community.buildNumber` parameters for SonarQube Community Build
 * Deprecate the default value of `image.tag` in favor of an empty string
 * Update the Chart's icon with the SonarQube Server logo
+* Set `app.kubernetes.io/name` and `app.kubernetes.io/version` as selector labels
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0
