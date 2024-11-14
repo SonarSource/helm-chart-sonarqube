@@ -400,7 +400,7 @@ metadata:
     chart: sonarqube-10.8.0
     release: template-refactoring-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: sonarqube-template-refactoring-values.yaml-sonarqube
+    app.kubernetes.io/name: template-refactoring-values.yaml
     app.kubernetes.io/instance: template-refactoring-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
@@ -414,6 +414,8 @@ spec:
     matchLabels:
       app: sonarqube
       release: template-refactoring-values.yaml
+      app.kubernetes.io/name: template-refactoring-values.yaml
+      app.kubernetes.io/version: "10.7.0-community"
   template:
     metadata:
       annotations:
@@ -425,6 +427,8 @@ spec:
       labels:
         app: sonarqube
         release: template-refactoring-values.yaml
+        app.kubernetes.io/name: template-refactoring-values.yaml
+        app.kubernetes.io/version: "10.7.0-community"
         azure.workload.identity/use: "true"
     spec:
       automountServiceAccountToken: false

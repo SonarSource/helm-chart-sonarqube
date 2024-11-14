@@ -413,7 +413,7 @@ metadata:
     chart: sonarqube-10.8.0
     release: proxies-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: sonarqube-proxies-values.yaml-sonarqube
+    app.kubernetes.io/name: proxies-values.yaml
     app.kubernetes.io/instance: proxies-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
@@ -427,6 +427,8 @@ spec:
     matchLabels:
       app: sonarqube
       release: proxies-values.yaml
+      app.kubernetes.io/name: proxies-values.yaml
+      app.kubernetes.io/version: "10.7.0-community"
   template:
     metadata:
       annotations:
@@ -439,6 +441,8 @@ spec:
       labels:
         app: sonarqube
         release: proxies-values.yaml
+        app.kubernetes.io/name: proxies-values.yaml
+        app.kubernetes.io/version: "10.7.0-community"
     spec:
       automountServiceAccountToken: false
       securityContext:

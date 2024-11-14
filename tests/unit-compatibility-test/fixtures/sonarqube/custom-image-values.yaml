@@ -380,7 +380,7 @@ metadata:
     chart: sonarqube-10.8.0
     release: custom-image-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: sonarqube-custom-image-values.yaml-sonarqube
+    app.kubernetes.io/name: custom-image-values.yaml
     app.kubernetes.io/instance: custom-image-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
@@ -394,6 +394,8 @@ spec:
     matchLabels:
       app: sonarqube
       release: custom-image-values.yaml
+      app.kubernetes.io/name: custom-image-values.yaml
+      app.kubernetes.io/version: "lts-community@sha256:3596d14feb065a31ce84cef60cc3ecfb7b47233ef8"
   template:
     metadata:
       annotations:
@@ -404,6 +406,8 @@ spec:
       labels:
         app: sonarqube
         release: custom-image-values.yaml
+        app.kubernetes.io/name: custom-image-values.yaml
+        app.kubernetes.io/version: "lts-community@sha256:3596d14feb065a31ce84cef60cc3ecfb7b47233ef8"
     spec:
       automountServiceAccountToken: false
       securityContext:
