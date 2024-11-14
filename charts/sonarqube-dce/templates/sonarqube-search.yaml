@@ -271,6 +271,8 @@ spec:
             {{- with .Values.searchNodes.env }}
             {{- . | toYaml | trim | nindent 12 }}
             {{- end }}
+{{- if or .Values.extraConfig.secrets .Values.extraConfig.configmaps }}
+          envFrom:
 {{- range .Values.extraConfig.secrets }}
             - secretRef:
                 name: {{ . }}
@@ -278,6 +280,7 @@ spec:
 {{- range .Values.extraConfig.configmaps }}
             - configMapRef:
                 name: {{ . }}
+{{- end }}
 {{- end }}
           livenessProbe:
             exec:
