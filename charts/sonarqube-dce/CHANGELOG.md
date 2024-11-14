@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Support the installation of the Oracle JDBC Driver
 * Support Kubernetes v1.31
 * Update the Chart's icon with the SonarQube Server logo
+* Fix ENV variables not fetched when using extraConfig.configmaps
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0
