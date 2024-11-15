@@ -63,50 +63,6 @@ metadata:
 data:
   sonar.properties: |
 ---
-# Source: sonarqube/templates/init-fs.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: openshift-values.yaml-sonarqube-init-fs
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.8.0
-    release: openshift-values.yaml
-    heritage: Helm
-data:
-  init_fs.sh: |-
----
-# Source: sonarqube/templates/init-sysctl.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: openshift-values.yaml-sonarqube-init-sysctl
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.8.0
-    release: openshift-values.yaml
-    heritage: Helm
-data:
-  init_sysctl.sh: |-
-    if [[ "$(sysctl -n vm.max_map_count)" -lt 524288 ]]; then
-      sysctl -w vm.max_map_count=524288
-    fi
-    if [[ "$(sysctl -n fs.file-max)" -lt 131072 ]]; then
-      sysctl -w fs.file-max=131072
-    fi
-    if [[ "$(ulimit -n)" != "unlimited" ]]; then
-      if [[ "$(ulimit -n)" -lt 131072 ]]; then
-        echo "ulimit -n 131072"
-        ulimit -n 131072
-      fi
-    fi
-    if [[ "$(ulimit -u)" != "unlimited" ]]; then
-      if [[ "$(ulimit -u)" -lt 8192 ]]; then
-        echo "ulimit -u 8192"
-        ulimit -u 8192
-      fi
-    fi
----
 # Source: sonarqube/templates/install-plugins.yaml
 apiVersion: v1
 kind: ConfigMap

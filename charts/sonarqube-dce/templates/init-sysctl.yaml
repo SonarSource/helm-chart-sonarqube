@@ -1,4 +1,4 @@
-{{- if .Values.initSysctl.enabled }}
+{{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
