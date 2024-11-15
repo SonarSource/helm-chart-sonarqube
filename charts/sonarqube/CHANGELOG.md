@@ -10,6 +10,7 @@ All changes to this chart will be documented in this file.
 * Deprecate the default value of `image.tag` in favor of an empty string
 * Update the Chart's icon with the SonarQube Server logo
 * Set `app.kubernetes.io/name` and `app.kubernetes.io/version` as selector labels
+* Support Gateway on different namespace in HTTPRoute
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0
