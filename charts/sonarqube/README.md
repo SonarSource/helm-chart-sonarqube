@@ -428,7 +428,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `plugins.httpProxy`          | For use behind a corporate proxy when downloading plugins                       | `""`                                                                   |
 | `plugins.httpsProxy`         | For use behind a corporate proxy when downloading plugins                       | `""`                                                                   |
 | `plugins.noProxy`            | For use behind a corporate proxy when downloading plugins                       | `""`                                                                   |
-| `plugins.image`              | Image for plugins container                                                     | `""`                                                                   |
+| `plugins.image`              | Image for plugins container                                                     | `"image.repository":"image.tag"`                                       |
 | `plugins.resources`          | Resources for plugins container                                                 | `{}`                                                                   |
 | `plugins.netrcCreds`         | Name of the secret containing .netrc file to use creds when downloading plugins | `""`                                                                   |
 | `plugins.noCheckCertificate` | Flag to not check server's certificate when downloading plugins                 | `false`                                                                |
