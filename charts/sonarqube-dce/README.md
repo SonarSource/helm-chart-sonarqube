@@ -617,7 +617,6 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `account.securityContext`           | Security context for downloading the prometheus exporter                                                     | see `values.yaml`        |
 | `adminJobAnnotations`               | Custom annotations for admin hook Job                                                                        | `{}`                     |
 | `terminationGracePeriodSeconds`     | Configuration of `terminationGracePeriodSeconds`                                                             | `60`                     |
-| `gcp_marketplace`                   | boolean to indicate the chart run as a google cloud marketplace app, trigger specific resources creation     | ``                       |
 
 You can also configure values for the PostgreSQL database via the PostgreSQL [Chart](https://hub.helm.sh/charts/bitnami/postgresql)
 
