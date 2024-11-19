@@ -543,8 +543,8 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 
 | Parameter                | Description                                                                                                               | Default |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `extraConfig.secrets`    | A list of `Secret`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables    | `[]`    |
-| `extraConfig.configmaps` | A list of `ConfigMap`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables | `[]`    |
+| `extraConfig.secrets`    | A list of `Secret`s (which must contain key/value pairs)                                                                  | `[]`    |
+| `extraConfig.configmaps` | A list of `ConfigMap`s (which must contain key/value pairs)                                                               | `[]`    |
 
 ### Advanced Options
 
