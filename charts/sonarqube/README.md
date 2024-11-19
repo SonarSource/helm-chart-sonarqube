@@ -256,6 +256,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables                    | ``            |
 | `httpsProxy`            | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable                   | ``            |
 | `noProxy`               | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables                        | ``            |
+| `ingress-nginx.enabled` | Install Nginx Ingress Helm                                                                                                              | `false`       |
 
 ### NetworkPolicies
 
@@ -320,7 +321,6 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                      | Description                                                  | Default                                                                                                      |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `ingress-nginx.enabled`        | Install Nginx Ingress Helm                                   | `false`                                                                                                      |
 | `nginx.enabled`                | (DEPRECATED) please use `ingress-nginx.enabled`              | `false`                                                                                                      |
 | `ingress.labels`               | Ingress additional labels                                    | `{}`                                                                                                         |
 | `ingress.hosts[0].name`        | Hostname to your SonarQube installation                      | `sonarqube.your-org.com`                                                                                     |

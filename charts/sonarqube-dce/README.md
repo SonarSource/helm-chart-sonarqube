@@ -418,6 +418,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `httpsProxy`             | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable | ``      |
 | `noProxy`                | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables      | ``      |
 | `nodeEncryption.enabled` | Secure the communication between Application and Search nodes using TLS                                               | `false` |
+| `ingress-nginx.enabled`  | Install Nginx Ingress Helm                                                                                            | `false` |
 
 ### NetworkPolicies
 
@@ -475,7 +476,6 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                      | Description                                                  | Default                                                                                                      |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `ingress-nginx.enabled`        | Install Nginx Ingress Helm                                   | `false`                                                                                                      |
 | `nginx.enabled`                | (DEPRECATED) please use `ingress-nginx.enabled`              | `false`                                                                                                      |
 | `ingress.enabled`              | Flag to enable Ingress                                       | `false`                                                                                                      |
 | `ingress.labels`               | Ingress additional labels                                    | `{}`                                                                                                         |
