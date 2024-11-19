@@ -8,6 +8,7 @@ All changes to this chart will be documented in this file.
 * Update the Chart's icon with the SonarQube Server logo
 * Fix ENV variables not fetched when using extraConfig.configmaps
 * Support Gateway on different namespace in HTTPRoute
+* Change `ingress.ingressClassName` default, set it to `nginx` if `nginx.enabled` or `ingress-nginx.enabled`
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0
