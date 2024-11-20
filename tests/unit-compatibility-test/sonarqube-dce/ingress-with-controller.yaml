@@ -1,6 +1,7 @@
+ingress-nginx:
+  enabled: true
 ingress:
   enabled: true
-  ingressClassName: "user-based"
   hosts:
   - name: sonarqube.your-org.com
     path: /
@@ -9,7 +10,6 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: nginx
     kubernetes.io/tls-acme: "true"
-    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
   labels:
     traffic-type: external
   tls:

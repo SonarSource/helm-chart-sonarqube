@@ -328,7 +328,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ingress.hosts[0].serviceName` | Optional field to override the default serviceName of a path | `None`                                                                                                       |
 | `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | `None`                                                                                                       |
 | `ingress.tls`                  | Ingress secrets for TLS certificates                         | `[]`                                                                                                         |
-| `ingress.ingressClassName`     | Optional field to configure ingress class name               | `None`                                                                                                       |
+| `ingress.ingressClassName`     | Optional field to configure ingress class name               | `None` OR `nginx` if `nginx.enabled` or `ingress-nginx.enabled`                                              |
 | `ingress.annotations`          | Field to add extra annotations to the ingress                | {`nginx.ingress.kubernetes.io/proxy-body-size: "64m"`} if `ingress-nginx.enabled=true or nginx.enabled=true` |
 
 ### HttpRoute
