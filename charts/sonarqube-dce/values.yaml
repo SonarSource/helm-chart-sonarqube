@@ -570,7 +570,8 @@ networkPolicy:
   # additionalNetworkPolicies:
 
 initContainers:
-  # image: ubuntu:24.04
+  # all initContainers use SonarQube image by default, but you can override it by setting the image field (ex image: ubuntu:24.04)
+  # image:
   # Set the security context for the init containers
   # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
   # We allow the init containers to have a separate security context declaration because
@@ -613,7 +614,8 @@ initSysctl:
   fsFileMax: 131072
   nofile: 131072
   nproc: 8192
-  # image: ubuntu:24.04
+  # all initContainers use SonarQube image by default, but you can override it by setting the image field (ex image: ubuntu:24.04)
+  # image:
   securityContext:
     # Compatible with podSecurity standard privileged
     privileged: true
@@ -624,7 +626,8 @@ initSysctl:
 
 initFs:
   enabled: true
-  # image: ubuntu:24.04
+  # all initContainers use SonarQube image by default, but you can override it by setting the image field (ex image: ubuntu:24.04)
+  # image:
   # Compatible with podSecurity standard baseline
   securityContext:
     privileged: false
