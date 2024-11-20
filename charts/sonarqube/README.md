@@ -256,6 +256,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables                    | ``            |
 | `httpsProxy`            | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable                   | ``            |
 | `noProxy`               | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables                        | ``            |
+| `ingress-nginx.enabled` | Install Nginx Ingress Helm                                                                                                              | `false`       |
 
 ### NetworkPolicies
 
@@ -320,7 +321,6 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                      | Description                                                  | Default                                                                                                      |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `ingress-nginx.enabled`        | Install Nginx Ingress Helm                                   | `false`                                                                                                      |
 | `nginx.enabled`                | (DEPRECATED) please use `ingress-nginx.enabled`              | `false`                                                                                                      |
 | `ingress.labels`               | Ingress additional labels                                    | `{}`                                                                                                         |
 | `ingress.hosts[0].name`        | Hostname to your SonarQube installation                      | `sonarqube.your-org.com`                                                                                     |
@@ -344,17 +344,26 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Probes
 
-| Parameter                          | Description                                                                                                      | Default           |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------- |
-| `readinessProbe`                   | ReadinessProbe for SonarQube                                                                                     | see `values.yaml` |
-| `readinessProbe.sonarWebContext`   | (DEPRECATED) SonarQube web context for readinessProbe, please use sonarWebContext at the value top level instead | `/`               |
-| `livenessProbe`                    | LivenessProbe for SonarQube                                                                                      | see `values.yaml` |
-| `livenessProbe.sonarWebContext`    | (DEPRECATED) SonarQube web context for LivenessProbe, please use sonarWebContext at the value top level instead  | `/`               |
-| `startupProbe.initialDelaySeconds` | StartupProbe initial delay for SonarQube checking                                                                | `30`              |
-| `startupProbe.periodSeconds`       | StartupProbe period between checking SonarQube                                                                   | `10`              |
-| `startupProbe.sonarWebContext`     | (DEPRECATED) SonarQube web context for StartupProbe, please use sonarWebContext at the value top level instead   | `/`               |
-| `startupProbe.failureThreshold`    | StartupProbe threshold for marking as failed                                                                     | `24`              |
-| `startupProbe.timeoutSeconds`      | StartupProbe timeout delay                                                                                       | `1`               |
+| Parameter                            | Description                                                                                                      | Default                                                        |
+| ----------------------------------   | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `readinessProbe`                     | ReadinessProbe for SonarQube                                                                                     | `exec; curl api/system/status` see `values.yaml` for details   |
+| `readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for SonarQube checking                                                              | `60`                                                           |
+| `readinessProbe.periodSeconds`       | ReadinessProbe period between checking SonarQube                                                                 | `30`                                                           |
+| `readinessProbe.failureThreshold`    | ReadinessProbe threshold for marking as failed                                                                   | `6`                                                            |
+| `readinessProbe.timeoutSeconds`      | ReadinessProbe timeout delay                                                                                     | `1`                                                            |
+| `readinessProbe.sonarWebContext`     | (DEPRECATED) SonarQube web context for readinessProbe, please use sonarWebContext at the value top level instead | `/`                                                            |
+| `livenessProbe`                      | LivenessProbe for SonarQube                                                                                      | `exec: curl api/system/liveness` see `values.yaml` for details |
+| `livenessProbe.initialDelaySeconds`  | LivenessProbe initial delay for SonarQube checking                                                               | `60`                                                           |
+| `livenessProbe.periodSeconds`        | LivenessProbe period between checking SonarQube                                                                  | `30`                                                           |
+| `livenessProbe.failureThreshold`     | LivenessProbe threshold for marking as failed                                                                    | `6`                                                            |
+| `livenessProbe.timeoutSeconds`       | LivenessProbe timeout delay                                                                                      | `1`                                                            |
+| `livenessProbe.sonarWebContext`      | (DEPRECATED) SonarQube web context for LivenessProbe, please use sonarWebContext at the value top level instead  | `/`                                                            |
+| `startupProbe`                       | StartupProbe for SonarQube                                                                                       | `httpGet: api/system/status`                                   |
+| `startupProbe.initialDelaySeconds`   | StartupProbe initial delay for SonarQube checking                                                                | `30`                                                           |
+| `startupProbe.periodSeconds`         | StartupProbe period between checking SonarQube                                                                   | `10`                                                           |
+| `startupProbe.failureThreshold`      | StartupProbe threshold for marking as failed                                                                     | `24`                                                           |
+| `startupProbe.timeoutSeconds`        | StartupProbe timeout delay                                                                                       | `1`                                                            |
+| `startupProbe.sonarWebContext`       | (DEPRECATED) SonarQube web context for StartupProbe, please use sonarWebContext at the value top level instead   | `/`                                                            |
 
 ### InitContainers
 
@@ -419,7 +428,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `plugins.httpProxy`          | For use behind a corporate proxy when downloading plugins                       | `""`                                                                   |
 | `plugins.httpsProxy`         | For use behind a corporate proxy when downloading plugins                       | `""`                                                                   |
 | `plugins.noProxy`            | For use behind a corporate proxy when downloading plugins                       | `""`                                                                   |
-| `plugins.image`              | Image for plugins container                                                     | `""`                                                                   |
+| `plugins.image`              | Image for plugins container                                                     | `"image.repository":"image.tag"`                                       |
 | `plugins.resources`          | Resources for plugins container                                                 | `{}`                                                                   |
 | `plugins.netrcCreds`         | Name of the secret containing .netrc file to use creds when downloading plugins | `""`                                                                   |
 | `plugins.noCheckCertificate` | Flag to not check server's certificate when downloading plugins                 | `false`                                                                |
@@ -534,8 +543,8 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 
 | Parameter                | Description                                                                                                               | Default |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `extraConfig.secrets`    | A list of `Secret`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables    | `[]`    |
-| `extraConfig.configmaps` | A list of `ConfigMap`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables | `[]`    |
+| `extraConfig.secrets`    | A list of `Secret`s (which must contain key/value pairs)                                                                  | `[]`    |
+| `extraConfig.configmaps` | A list of `ConfigMap`s (which must contain key/value pairs)                                                               | `[]`    |
 
 ### Advanced Options
 
