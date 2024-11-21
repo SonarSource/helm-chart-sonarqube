@@ -16,6 +16,7 @@ All changes to this chart will be documented in this file.
 * Ensure the Pod will stop at `init` stage if init_sysctl.sh failed to modify kernel parameters
 * Replace the example images in initContainers, initSysctl and initFs from `busybox:1.36` to `ubuntu:24.04`, which are commented out by default
 * Make the `automountServiceAccountToken` configurable with `serviceAccount.automountToken` in PodSpec
+* Deprecate `sonarqubeFolder`, `jdbcOverwrite.jdbcPassword` and `terminationGracePeriodSeconds`.
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0
