@@ -216,6 +216,275 @@ spec:
     app: sonarqube
     release: config-values.yaml
 ---
+# Source: sonarqube/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-10.8.0
+    release: config-values.yaml
+    heritage: Helm
+    app.kubernetes.io/name: config-values.yaml
+    app.kubernetes.io/instance: config-values.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: config-values.yaml-sonarqube
+    app.kubernetes.io/version: "10.7.0-community"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: sonarqube
+      release: config-values.yaml
+      app.kubernetes.io/name: config-values.yaml
+      app.kubernetes.io/version: "10.7.0-community"
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        checksum/config: bf299de747bd641a972414f81baf157f4d16d3860528a5512ce629c36477ad8b
+        checksum/init-sysctl: 83b1a298b1f79036f039f03c86c4f62b3ad643e33b175890fc4598529fe3a7bb
+        checksum/plugins: 4c7071abf03ef70430e791752c467a7cda11c5a674ce4da7d75ce55ee809e48e
+        checksum/secret: d618d008162331e03c4ce2cc4f594054e8c063bf0168e4adf4490854f505238b
+      labels:
+        app: sonarqube
+        release: config-values.yaml
+        app.kubernetes.io/name: config-values.yaml
+        app.kubernetes.io/version: "10.7.0-community"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 0
+      initContainers:
+        - name: "wait-for-db"
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          command: ["/bin/bash", "-c"]
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/config-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+        - name: init-sysctl
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
+          volumeMounts:
+            - name: init-sysctl
+              mountPath: /tmp/scripts/
+          env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+        - name: concat-properties
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              #!/bin/sh
+              if [ -f /tmp/props/sonar.properties ]; then
+                cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
+              fi
+              if [ -f /tmp/props/secret.properties ]; then
+                cat /tmp/props/secret.properties > /tmp/result/sonar.properties
+              fi
+              if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
+                awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+              fi
+          volumeMounts:
+            - mountPath: /tmp/result
+              name: concat-dir
+            - mountPath: /tmp/props/sonar.properties
+              name: config
+              subPath: sonar.properties
+            - mountPath: /tmp/props/secret.properties
+              name: secret-config
+              subPath: secret.properties
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+      containers:
+        - name: sonarqube
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              ephemeral-storage: 512000M
+              memory: 6144M
+            requests:
+              cpu: 400m
+              ephemeral-storage: 1536M
+              memory: 2048M
+          env:
+            - name: SONAR_HELM_CHART_VERSION
+              value: 10.8.0
+            - name: SONAR_JDBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: config-values.yaml-postgresql
+                  key: postgresql-password
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: config-values.yaml-sonarqube-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+          envFrom:
+            - configMapRef:
+                name: config-values.yaml-sonarqube-jdbc-config
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/api/system/liveness"
+            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+                # status about migration are added to prevent the node to be kill while SonarQube is upgrading the database.
+                if wget --no-proxy -qO- http://localhost:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                  exit 0
+                fi
+                exit 1
+            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              scheme: HTTP
+              path: /api/system/status
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 24
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+            - mountPath: /opt/sonarqube/conf/
+              name: concat-dir
+            - mountPath: /opt/sonarqube/secret/
+              name: secret
+            - mountPath: /opt/sonarqube/extensions
+              name: sonarqube
+              subPath: extensions
+            - mountPath: /extra-volume-mount
+              name: extra-volume
+              readOnly: true
+      serviceAccountName: default
+      volumes:
+        - emptyDir: {}
+          name: extra-volume
+        - name: config
+          configMap:
+            name: config-values.yaml-sonarqube-config
+            items:
+            - key: sonar.properties
+              path: sonar.properties
+        - name: secret-config
+          secret:
+            secretName: some-secret
+            items:
+            - key: secret.properties
+              path: secret.properties
+        - name: secret
+          secret:
+            secretName: settings-encryption-secret
+            items:
+            - key: sonar-secret.txt
+              path: sonar-secret.txt
+        
+        - name: init-sysctl
+          configMap:
+            name: config-values.yaml-sonarqube-init-sysctl
+            items:
+              - key: init_sysctl.sh
+                path: init_sysctl.sh
+        - name: sonarqube
+          emptyDir:
+            {}
+        - name : tmp-dir
+          emptyDir:
+            {}
+        - name : concat-dir
+          emptyDir:
+            {}
+---
 # Source: sonarqube/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
@@ -376,274 +645,6 @@ spec:
         resources:
           requests:
             storage: "20Gi"
----
-# Source: sonarqube/templates/sonarqube-sts.yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: config-values.yaml-sonarqube
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.8.0
-    release: config-values.yaml
-    heritage: Helm
-    app.kubernetes.io/name: config-values.yaml
-    app.kubernetes.io/instance: config-values.yaml
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: config-values.yaml-sonarqube
-    app.kubernetes.io/version: "10.7.0-community"
-spec:
-  replicas: 1
-  revisionHistoryLimit: 10
-  serviceName: config-values.yaml-sonarqube
-  selector:
-    matchLabels:
-      app: sonarqube
-      release: config-values.yaml
-      app.kubernetes.io/name: config-values.yaml
-      app.kubernetes.io/version: "10.7.0-community"
-  template:
-    metadata:
-      annotations:
-        checksum/config: bf299de747bd641a972414f81baf157f4d16d3860528a5512ce629c36477ad8b
-        checksum/init-sysctl: 83b1a298b1f79036f039f03c86c4f62b3ad643e33b175890fc4598529fe3a7bb
-        checksum/plugins: 4c7071abf03ef70430e791752c467a7cda11c5a674ce4da7d75ce55ee809e48e
-        checksum/secret: d618d008162331e03c4ce2cc4f594054e8c063bf0168e4adf4490854f505238b
-      labels:
-        app: sonarqube
-        release: config-values.yaml
-        app.kubernetes.io/name: config-values.yaml
-        app.kubernetes.io/version: "10.7.0-community"
-    spec:
-      automountServiceAccountToken: false
-      securityContext:
-        fsGroup: 0
-      initContainers:
-        - name: "wait-for-db"
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/config-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
-        - name: init-sysctl
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-            readOnlyRootFilesystem: true
-            runAsUser: 0
-          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
-          volumeMounts:
-            - name: init-sysctl
-              mountPath: /tmp/scripts/
-          env:
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
-        - name: concat-properties
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          command:
-            - sh
-            - -c
-            - |
-              #!/bin/sh
-              if [ -f /tmp/props/sonar.properties ]; then
-                cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
-              fi
-              if [ -f /tmp/props/secret.properties ]; then
-                cat /tmp/props/secret.properties > /tmp/result/sonar.properties
-              fi
-              if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
-                awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
-              fi
-          volumeMounts:
-            - mountPath: /tmp/result
-              name: concat-dir
-            - mountPath: /tmp/props/sonar.properties
-              name: config
-              subPath: sonar.properties
-            - mountPath: /tmp/props/secret.properties
-              name: secret-config
-              subPath: secret.properties
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          env:
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
-      containers:
-        - name: sonarqube
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: http
-              containerPort: 9000
-              protocol: TCP
-          resources:
-            limits:
-              cpu: 800m
-              ephemeral-storage: 512000M
-              memory: 6144M
-            requests:
-              cpu: 400m
-              ephemeral-storage: 1536M
-              memory: 2048M
-          env:
-            - name: SONAR_HELM_CHART_VERSION
-              value: 10.8.0
-            - name: SONAR_JDBC_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: config-values.yaml-postgresql
-                  key: postgresql-password
-            - name: SONAR_WEB_SYSTEMPASSCODE
-              valueFrom:
-                secretKeyRef:
-                  name: config-values.yaml-sonarqube-monitoring-passcode
-                  key: SONAR_WEB_SYSTEMPASSCODE
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
-          envFrom:
-            - configMapRef:
-                name: config-values.yaml-sonarqube-jdbc-config
-          livenessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - |
-                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/api/system/liveness"
-            failureThreshold: 6
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 1
-          readinessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - |
-                #!/bin/bash
-                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
-                if wget --no-proxy -qO- http://localhost:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
-                  exit 0
-                fi
-                exit 1
-            failureThreshold: 6
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 1
-          startupProbe:
-            httpGet:
-              scheme: HTTP
-              path: /api/system/status
-              port: http
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            failureThreshold: 24
-            timeoutSeconds: 1
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          volumeMounts:
-            - mountPath: /opt/sonarqube/data
-              name: sonarqube
-              subPath: data
-            - mountPath: /opt/sonarqube/temp
-              name: sonarqube
-              subPath: temp
-            - mountPath: /opt/sonarqube/logs
-              name: sonarqube
-              subPath: logs
-            - mountPath: /tmp
-              name: tmp-dir
-            - mountPath: /opt/sonarqube/conf/
-              name: concat-dir
-            - mountPath: /opt/sonarqube/secret/
-              name: secret
-            - mountPath: /opt/sonarqube/extensions
-              name: sonarqube
-              subPath: extensions
-            - mountPath: /extra-volume-mount
-              name: extra-volume
-              readOnly: true
-      serviceAccountName: default
-      volumes:
-        - emptyDir: {}
-          name: extra-volume
-        - name: config
-          configMap:
-            name: config-values.yaml-sonarqube-config
-            items:
-            - key: sonar.properties
-              path: sonar.properties
-        - name: secret-config
-          secret:
-            secretName: some-secret
-            items:
-            - key: secret.properties
-              path: secret.properties
-        - name: secret
-          secret:
-            secretName: settings-encryption-secret
-            items:
-            - key: sonar-secret.txt
-              path: sonar-secret.txt
-        
-        - name: init-sysctl
-          configMap:
-            name: config-values.yaml-sonarqube-init-sysctl
-            items:
-              - key: init_sysctl.sh
-                path: init_sysctl.sh
-        - name: sonarqube
-          emptyDir:
-            {}
-        - name : tmp-dir
-          emptyDir:
-            {}
-        - name : concat-dir
-          emptyDir:
-            {}
 ---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1

@@ -334,6 +334,201 @@ spec:
     app: sonarqube
     release: networkpolicy-new-values.yaml
 ---
+# Source: sonarqube/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: networkpolicy-new-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-10.8.0
+    release: networkpolicy-new-values.yaml
+    heritage: Helm
+    app.kubernetes.io/name: networkpolicy-new-values.yaml
+    app.kubernetes.io/instance: networkpolicy-new-values.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: networkpolicy-new-values.yaml-sonarqube
+    app.kubernetes.io/version: "10.7.0-community"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: sonarqube
+      release: networkpolicy-new-values.yaml
+      app.kubernetes.io/name: networkpolicy-new-values.yaml
+      app.kubernetes.io/version: "10.7.0-community"
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        checksum/config: 56ce34b636cd55076aac3adb9f4b8169f515233f003d8ca366cd833f8e1f053e
+        checksum/init-sysctl: c6b66c011da0760667d1d44bcdf02de85f7828db37870306a3b2c7c96065f985
+        checksum/plugins: e840a38986d334216d74cd0405ddd6ce2dcfc9fb4c7b9941278c6315acb15239
+        checksum/secret: 5b3829c6b9f9393cf0e29f9328bafc78703953d8b564b4cc1e9ea4259bb0971f
+      labels:
+        app: sonarqube
+        release: networkpolicy-new-values.yaml
+        app.kubernetes.io/name: networkpolicy-new-values.yaml
+        app.kubernetes.io/version: "10.7.0-community"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 0
+      initContainers:
+        - name: "wait-for-db"
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          command: ["/bin/bash", "-c"]
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/networkpolicy-new-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+        - name: init-sysctl
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
+          volumeMounts:
+            - name: init-sysctl
+              mountPath: /tmp/scripts/
+          env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+      containers:
+        - name: sonarqube
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              ephemeral-storage: 512000M
+              memory: 6144M
+            requests:
+              cpu: 400m
+              ephemeral-storage: 1536M
+              memory: 2048M
+          env:
+            - name: SONAR_HELM_CHART_VERSION
+              value: 10.8.0
+            - name: SONAR_JDBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: networkpolicy-new-values.yaml-postgresql
+                  key: postgresql-password
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: networkpolicy-new-values.yaml-sonarqube-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+          envFrom:
+            - configMapRef:
+                name: networkpolicy-new-values.yaml-sonarqube-jdbc-config
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/api/system/liveness"
+            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+                # status about migration are added to prevent the node to be kill while SonarQube is upgrading the database.
+                if wget --no-proxy -qO- http://localhost:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                  exit 0
+                fi
+                exit 1
+            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              scheme: HTTP
+              path: /api/system/status
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 24
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+            - mountPath: /opt/sonarqube/extensions
+              name: sonarqube
+              subPath: extensions
+      serviceAccountName: default
+      volumes:
+        
+        - name: init-sysctl
+          configMap:
+            name: networkpolicy-new-values.yaml-sonarqube-init-sysctl
+            items:
+              - key: init_sysctl.sh
+                path: init_sysctl.sh
+        - name: sonarqube
+          emptyDir:
+            {}
+        - name : tmp-dir
+          emptyDir:
+            {}
+---
 # Source: sonarqube/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
@@ -494,200 +689,6 @@ spec:
         resources:
           requests:
             storage: "20Gi"
----
-# Source: sonarqube/templates/sonarqube-sts.yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: networkpolicy-new-values.yaml-sonarqube
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.8.0
-    release: networkpolicy-new-values.yaml
-    heritage: Helm
-    app.kubernetes.io/name: networkpolicy-new-values.yaml
-    app.kubernetes.io/instance: networkpolicy-new-values.yaml
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: networkpolicy-new-values.yaml-sonarqube
-    app.kubernetes.io/version: "10.7.0-community"
-spec:
-  replicas: 1
-  revisionHistoryLimit: 10
-  serviceName: networkpolicy-new-values.yaml-sonarqube
-  selector:
-    matchLabels:
-      app: sonarqube
-      release: networkpolicy-new-values.yaml
-      app.kubernetes.io/name: networkpolicy-new-values.yaml
-      app.kubernetes.io/version: "10.7.0-community"
-  template:
-    metadata:
-      annotations:
-        checksum/config: 56ce34b636cd55076aac3adb9f4b8169f515233f003d8ca366cd833f8e1f053e
-        checksum/init-sysctl: c6b66c011da0760667d1d44bcdf02de85f7828db37870306a3b2c7c96065f985
-        checksum/plugins: e840a38986d334216d74cd0405ddd6ce2dcfc9fb4c7b9941278c6315acb15239
-        checksum/secret: 5b3829c6b9f9393cf0e29f9328bafc78703953d8b564b4cc1e9ea4259bb0971f
-      labels:
-        app: sonarqube
-        release: networkpolicy-new-values.yaml
-        app.kubernetes.io/name: networkpolicy-new-values.yaml
-        app.kubernetes.io/version: "10.7.0-community"
-    spec:
-      automountServiceAccountToken: false
-      securityContext:
-        fsGroup: 0
-      initContainers:
-        - name: "wait-for-db"
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/networkpolicy-new-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
-        - name: init-sysctl
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-            readOnlyRootFilesystem: true
-            runAsUser: 0
-          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
-          volumeMounts:
-            - name: init-sysctl
-              mountPath: /tmp/scripts/
-          env:
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
-      containers:
-        - name: sonarqube
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: http
-              containerPort: 9000
-              protocol: TCP
-          resources:
-            limits:
-              cpu: 800m
-              ephemeral-storage: 512000M
-              memory: 6144M
-            requests:
-              cpu: 400m
-              ephemeral-storage: 1536M
-              memory: 2048M
-          env:
-            - name: SONAR_HELM_CHART_VERSION
-              value: 10.8.0
-            - name: SONAR_JDBC_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: networkpolicy-new-values.yaml-postgresql
-                  key: postgresql-password
-            - name: SONAR_WEB_SYSTEMPASSCODE
-              valueFrom:
-                secretKeyRef:
-                  name: networkpolicy-new-values.yaml-sonarqube-monitoring-passcode
-                  key: SONAR_WEB_SYSTEMPASSCODE
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
-          envFrom:
-            - configMapRef:
-                name: networkpolicy-new-values.yaml-sonarqube-jdbc-config
-          livenessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - |
-                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/api/system/liveness"
-            failureThreshold: 6
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 1
-          readinessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - |
-                #!/bin/bash
-                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
-                if wget --no-proxy -qO- http://localhost:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
-                  exit 0
-                fi
-                exit 1
-            failureThreshold: 6
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 1
-          startupProbe:
-            httpGet:
-              scheme: HTTP
-              path: /api/system/status
-              port: http
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            failureThreshold: 24
-            timeoutSeconds: 1
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          volumeMounts:
-            - mountPath: /opt/sonarqube/data
-              name: sonarqube
-              subPath: data
-            - mountPath: /opt/sonarqube/temp
-              name: sonarqube
-              subPath: temp
-            - mountPath: /opt/sonarqube/logs
-              name: sonarqube
-              subPath: logs
-            - mountPath: /tmp
-              name: tmp-dir
-            - mountPath: /opt/sonarqube/extensions
-              name: sonarqube
-              subPath: extensions
-      serviceAccountName: default
-      volumes:
-        
-        - name: init-sysctl
-          configMap:
-            name: networkpolicy-new-values.yaml-sonarqube-init-sysctl
-            items:
-              - key: init_sysctl.sh
-                path: init_sysctl.sh
-        - name: sonarqube
-          emptyDir:
-            {}
-        - name : tmp-dir
-          emptyDir:
-            {}
 ---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1

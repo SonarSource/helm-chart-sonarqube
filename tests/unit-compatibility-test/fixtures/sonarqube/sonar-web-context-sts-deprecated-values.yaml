@@ -226,6 +226,201 @@ spec:
     app: sonarqube
     release: sonar-web-context-sts-deprecated-values.yaml
 ---
+# Source: sonarqube/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-10.8.0
+    release: sonar-web-context-sts-deprecated-values.yaml
+    heritage: Helm
+    app.kubernetes.io/name: sonar-web-context-sts-deprecated-values.yaml
+    app.kubernetes.io/instance: sonar-web-context-sts-deprecated-values.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: sonar-web-context-sts-deprecated-values.yaml-sonarqube
+    app.kubernetes.io/version: "10.7.0-community"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: sonarqube
+      release: sonar-web-context-sts-deprecated-values.yaml
+      app.kubernetes.io/name: sonar-web-context-sts-deprecated-values.yaml
+      app.kubernetes.io/version: "10.7.0-community"
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        checksum/config: f7ef68f1f42fbc5c159077a48b62140d1f230830e173963cb2f4e1ce867209c8
+        checksum/init-sysctl: 3a1214cdaf2dbfadaa14a72b058344f1cdebb019e48018e5cc2c8b321d43946f
+        checksum/plugins: 8a1358bb74a520ff0437ed0f54ad638b35dd297b1ecf93434dbdda9e7aae01b7
+        checksum/secret: 6f61591bce21512dbb271d38e4490742eb59a0a09f972e66f73c8082fdaf5d81
+      labels:
+        app: sonarqube
+        release: sonar-web-context-sts-deprecated-values.yaml
+        app.kubernetes.io/name: sonar-web-context-sts-deprecated-values.yaml
+        app.kubernetes.io/version: "10.7.0-community"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 0
+      initContainers:
+        - name: "wait-for-db"
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          command: ["/bin/bash", "-c"]
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/sonar-web-context-sts-deprecated-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+        - name: init-sysctl
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
+          volumeMounts:
+            - name: init-sysctl
+              mountPath: /tmp/scripts/
+          env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+      containers:
+        - name: sonarqube
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              ephemeral-storage: 512000M
+              memory: 6144M
+            requests:
+              cpu: 400m
+              ephemeral-storage: 1536M
+              memory: 2048M
+          env:
+            - name: SONAR_HELM_CHART_VERSION
+              value: 10.8.0
+            - name: SONAR_JDBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sonar-web-context-sts-deprecated-values.yaml-postgresql
+                  key: postgresql-password
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+          envFrom:
+            - configMapRef:
+                name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-jdbc-config
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/sonarqube-liveness/api/system/liveness"
+            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+                # status about migration are added to prevent the node to be kill while SonarQube is upgrading the database.
+                if wget --no-proxy -qO- http://localhost:9000/sonarqube-readiness/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                  exit 0
+                fi
+                exit 1
+            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              scheme: HTTP
+              path: /sonarqube-startup/api/system/status
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 24
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+            - mountPath: /opt/sonarqube/extensions
+              name: sonarqube
+              subPath: extensions
+      serviceAccountName: default
+      volumes:
+        
+        - name: init-sysctl
+          configMap:
+            name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-init-sysctl
+            items:
+              - key: init_sysctl.sh
+                path: init_sysctl.sh
+        - name: sonarqube
+          emptyDir:
+            {}
+        - name : tmp-dir
+          emptyDir:
+            {}
+---
 # Source: sonarqube/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
@@ -386,200 +581,6 @@ spec:
         resources:
           requests:
             storage: "20Gi"
----
-# Source: sonarqube/templates/sonarqube-sts.yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.8.0
-    release: sonar-web-context-sts-deprecated-values.yaml
-    heritage: Helm
-    app.kubernetes.io/name: sonar-web-context-sts-deprecated-values.yaml
-    app.kubernetes.io/instance: sonar-web-context-sts-deprecated-values.yaml
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: sonar-web-context-sts-deprecated-values.yaml-sonarqube
-    app.kubernetes.io/version: "10.7.0-community"
-spec:
-  replicas: 1
-  revisionHistoryLimit: 10
-  serviceName: sonar-web-context-sts-deprecated-values.yaml-sonarqube
-  selector:
-    matchLabels:
-      app: sonarqube
-      release: sonar-web-context-sts-deprecated-values.yaml
-      app.kubernetes.io/name: sonar-web-context-sts-deprecated-values.yaml
-      app.kubernetes.io/version: "10.7.0-community"
-  template:
-    metadata:
-      annotations:
-        checksum/config: f7ef68f1f42fbc5c159077a48b62140d1f230830e173963cb2f4e1ce867209c8
-        checksum/init-sysctl: 3a1214cdaf2dbfadaa14a72b058344f1cdebb019e48018e5cc2c8b321d43946f
-        checksum/plugins: 8a1358bb74a520ff0437ed0f54ad638b35dd297b1ecf93434dbdda9e7aae01b7
-        checksum/secret: 6f61591bce21512dbb271d38e4490742eb59a0a09f972e66f73c8082fdaf5d81
-      labels:
-        app: sonarqube
-        release: sonar-web-context-sts-deprecated-values.yaml
-        app.kubernetes.io/name: sonar-web-context-sts-deprecated-values.yaml
-        app.kubernetes.io/version: "10.7.0-community"
-    spec:
-      automountServiceAccountToken: false
-      securityContext:
-        fsGroup: 0
-      initContainers:
-        - name: "wait-for-db"
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/sonar-web-context-sts-deprecated-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
-        - name: init-sysctl
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-            readOnlyRootFilesystem: true
-            runAsUser: 0
-          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
-          volumeMounts:
-            - name: init-sysctl
-              mountPath: /tmp/scripts/
-          env:
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
-      containers:
-        - name: sonarqube
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: http
-              containerPort: 9000
-              protocol: TCP
-          resources:
-            limits:
-              cpu: 800m
-              ephemeral-storage: 512000M
-              memory: 6144M
-            requests:
-              cpu: 400m
-              ephemeral-storage: 1536M
-              memory: 2048M
-          env:
-            - name: SONAR_HELM_CHART_VERSION
-              value: 10.8.0
-            - name: SONAR_JDBC_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: sonar-web-context-sts-deprecated-values.yaml-postgresql
-                  key: postgresql-password
-            - name: SONAR_WEB_SYSTEMPASSCODE
-              valueFrom:
-                secretKeyRef:
-                  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-monitoring-passcode
-                  key: SONAR_WEB_SYSTEMPASSCODE
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
-          envFrom:
-            - configMapRef:
-                name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-jdbc-config
-          livenessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - |
-                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/sonarqube-liveness/api/system/liveness"
-            failureThreshold: 6
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 1
-          readinessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - |
-                #!/bin/bash
-                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
-                if wget --no-proxy -qO- http://localhost:9000/sonarqube-readiness/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
-                  exit 0
-                fi
-                exit 1
-            failureThreshold: 6
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 1
-          startupProbe:
-            httpGet:
-              scheme: HTTP
-              path: /sonarqube-startup/api/system/status
-              port: http
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            failureThreshold: 24
-            timeoutSeconds: 1
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          volumeMounts:
-            - mountPath: /opt/sonarqube/data
-              name: sonarqube
-              subPath: data
-            - mountPath: /opt/sonarqube/temp
-              name: sonarqube
-              subPath: temp
-            - mountPath: /opt/sonarqube/logs
-              name: sonarqube
-              subPath: logs
-            - mountPath: /tmp
-              name: tmp-dir
-            - mountPath: /opt/sonarqube/extensions
-              name: sonarqube
-              subPath: extensions
-      serviceAccountName: default
-      volumes:
-        
-        - name: init-sysctl
-          configMap:
-            name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-init-sysctl
-            items:
-              - key: init_sysctl.sh
-                path: init_sysctl.sh
-        - name: sonarqube
-          emptyDir:
-            {}
-        - name : tmp-dir
-          emptyDir:
-            {}
 ---
 # Source: sonarqube/templates/ingress.yaml
 apiVersion: networking.k8s.io/v1

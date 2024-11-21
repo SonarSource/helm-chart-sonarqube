@@ -245,6 +245,255 @@ spec:
     app: sonarqube
     release: template-refactoring-values.yaml
 ---
+# Source: sonarqube/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: template-refactoring-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-10.8.0
+    release: template-refactoring-values.yaml
+    heritage: Helm
+    app.kubernetes.io/name: template-refactoring-values.yaml
+    app.kubernetes.io/instance: template-refactoring-values.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: template-refactoring-values.yaml-sonarqube
+    app.kubernetes.io/version: "10.7.0-community"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: sonarqube
+      release: template-refactoring-values.yaml
+      app.kubernetes.io/name: template-refactoring-values.yaml
+      app.kubernetes.io/version: "10.7.0-community"
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        checksum/config: 184088cec069add83bf28a001d594da39752e76628700027b8bc762cea30a88e
+        checksum/init-fs: 15c28e0593b79f19d5babb0114614da600e2d35d4f5a5f844aa3736bd4d02e3d
+        checksum/init-sysctl: 293f81a573a4f3d75686af8d7867a4b82f66668a8c45218c099df74fab6a98a5
+        checksum/plugins: 8e50c5c09611c13e4bd5e93af0fbfa311b22c6c252fbb79423017613ba9a0220
+        checksum/secret: a0994849ab5fa9c9d829f4d2900a5b26fc2163900cfd4b34ba1575ba1a7dd864
+      labels:
+        app: sonarqube
+        release: template-refactoring-values.yaml
+        app.kubernetes.io/name: template-refactoring-values.yaml
+        app.kubernetes.io/version: "10.7.0-community"
+        azure.workload.identity/use: "true"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 0
+      initContainers:
+        - name: "wait-for-db"
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            limits:
+              cpu: 50m
+              memory: 64Mi
+          command: ["/bin/bash", "-c"]
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/template-refactoring-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+        - name: init-sysctl
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          resources:
+            limits:
+              cpu: 50m
+              memory: 64Mi
+          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
+          volumeMounts:
+            - name: init-sysctl
+              mountPath: /tmp/scripts/
+          env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+        - name: init-fs
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add:
+              - CHOWN
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: false
+            runAsUser: 0
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            limits:
+              cpu: 50m
+              memory: 64Mi
+          command: ["sh", "-e", "/tmp/scripts/init_fs.sh"]
+          volumeMounts:
+            - name: init-fs
+              mountPath: /tmp/scripts/
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+            - mountPath: /opt/sonarqube/extensions
+              name: sonarqube
+              subPath: extensions
+      containers:
+        - name: sonarqube
+          image: sonarqube:10.7.0-community
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              ephemeral-storage: 512000M
+              memory: 6144M
+            requests:
+              cpu: 400m
+              ephemeral-storage: 1536M
+              memory: 2048M
+          env:
+            - name: SONAR_HELM_CHART_VERSION
+              value: 10.8.0
+            - name: SONAR_JDBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: template-refactoring-values.yaml-postgresql
+                  key: postgresql-password
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: template-refactoring-values.yaml-sonarqube-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+          envFrom:
+            - configMapRef:
+                name: template-refactoring-values.yaml-sonarqube-jdbc-config
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/api/system/liveness"
+            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+                # status about migration are added to prevent the node to be kill while SonarQube is upgrading the database.
+                if wget --no-proxy -qO- http://localhost:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                  exit 0
+                fi
+                exit 1
+            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              scheme: HTTP
+              path: /api/system/status
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 24
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+            - mountPath: /opt/sonarqube/extensions
+              name: sonarqube
+              subPath: extensions
+      serviceAccountName: default
+      volumes:
+        
+        - name: init-sysctl
+          configMap:
+            name: template-refactoring-values.yaml-sonarqube-init-sysctl
+            items:
+              - key: init_sysctl.sh
+                path: init_sysctl.sh
+        - name: init-fs
+          configMap:
+            name: template-refactoring-values.yaml-sonarqube-init-fs
+            items:
+              - key: init_fs.sh
+                path: init_fs.sh
+        - name: sonarqube
+          persistentVolumeClaim:
+            claimName: template-refactoring-values.yaml-sonarqube
+        - name : tmp-dir
+          emptyDir:
+            {}
+---
 # Source: sonarqube/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
@@ -405,254 +654,6 @@ spec:
         resources:
           requests:
             storage: "20Gi"
----
-# Source: sonarqube/templates/sonarqube-sts.yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: template-refactoring-values.yaml-sonarqube
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.8.0
-    release: template-refactoring-values.yaml
-    heritage: Helm
-    app.kubernetes.io/name: template-refactoring-values.yaml
-    app.kubernetes.io/instance: template-refactoring-values.yaml
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: template-refactoring-values.yaml-sonarqube
-    app.kubernetes.io/version: "10.7.0-community"
-spec:
-  replicas: 1
-  revisionHistoryLimit: 10
-  serviceName: template-refactoring-values.yaml-sonarqube
-  selector:
-    matchLabels:
-      app: sonarqube
-      release: template-refactoring-values.yaml
-      app.kubernetes.io/name: template-refactoring-values.yaml
-      app.kubernetes.io/version: "10.7.0-community"
-  template:
-    metadata:
-      annotations:
-        checksum/config: 184088cec069add83bf28a001d594da39752e76628700027b8bc762cea30a88e
-        checksum/init-fs: 15c28e0593b79f19d5babb0114614da600e2d35d4f5a5f844aa3736bd4d02e3d
-        checksum/init-sysctl: 293f81a573a4f3d75686af8d7867a4b82f66668a8c45218c099df74fab6a98a5
-        checksum/plugins: 8e50c5c09611c13e4bd5e93af0fbfa311b22c6c252fbb79423017613ba9a0220
-        checksum/secret: a0994849ab5fa9c9d829f4d2900a5b26fc2163900cfd4b34ba1575ba1a7dd864
-      labels:
-        app: sonarqube
-        release: template-refactoring-values.yaml
-        app.kubernetes.io/name: template-refactoring-values.yaml
-        app.kubernetes.io/version: "10.7.0-community"
-        azure.workload.identity/use: "true"
-    spec:
-      automountServiceAccountToken: false
-      securityContext:
-        fsGroup: 0
-      initContainers:
-        - name: "wait-for-db"
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          resources:
-            limits:
-              cpu: 50m
-              memory: 64Mi
-          command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/template-refactoring-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
-        - name: init-sysctl
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-            readOnlyRootFilesystem: true
-            runAsUser: 0
-          resources:
-            limits:
-              cpu: 50m
-              memory: 64Mi
-          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
-          volumeMounts:
-            - name: init-sysctl
-              mountPath: /tmp/scripts/
-          env:
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
-        - name: init-fs
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            capabilities:
-              add:
-              - CHOWN
-              drop:
-              - ALL
-            privileged: false
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: false
-            runAsUser: 0
-            seccompProfile:
-              type: RuntimeDefault
-          resources:
-            limits:
-              cpu: 50m
-              memory: 64Mi
-          command: ["sh", "-e", "/tmp/scripts/init_fs.sh"]
-          volumeMounts:
-            - name: init-fs
-              mountPath: /tmp/scripts/
-            - mountPath: /opt/sonarqube/data
-              name: sonarqube
-              subPath: data
-            - mountPath: /opt/sonarqube/temp
-              name: sonarqube
-              subPath: temp
-            - mountPath: /opt/sonarqube/logs
-              name: sonarqube
-              subPath: logs
-            - mountPath: /tmp
-              name: tmp-dir
-            - mountPath: /opt/sonarqube/extensions
-              name: sonarqube
-              subPath: extensions
-      containers:
-        - name: sonarqube
-          image: sonarqube:10.7.0-community
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: http
-              containerPort: 9000
-              protocol: TCP
-          resources:
-            limits:
-              cpu: 800m
-              ephemeral-storage: 512000M
-              memory: 6144M
-            requests:
-              cpu: 400m
-              ephemeral-storage: 1536M
-              memory: 2048M
-          env:
-            - name: SONAR_HELM_CHART_VERSION
-              value: 10.8.0
-            - name: SONAR_JDBC_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: template-refactoring-values.yaml-postgresql
-                  key: postgresql-password
-            - name: SONAR_WEB_SYSTEMPASSCODE
-              valueFrom:
-                secretKeyRef:
-                  name: template-refactoring-values.yaml-sonarqube-monitoring-passcode
-                  key: SONAR_WEB_SYSTEMPASSCODE
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: ""
-            - name: SONAR_CE_JAVAOPTS
-              value: ""
-          envFrom:
-            - configMapRef:
-                name: template-refactoring-values.yaml-sonarqube-jdbc-config
-          livenessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - |
-                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/api/system/liveness"
-            failureThreshold: 6
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 1
-          readinessProbe:
-            exec:
-              command:
-              - sh
-              - -c
-              - |
-                #!/bin/bash
-                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
-                if wget --no-proxy -qO- http://localhost:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
-                  exit 0
-                fi
-                exit 1
-            failureThreshold: 6
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            timeoutSeconds: 1
-          startupProbe:
-            httpGet:
-              scheme: HTTP
-              path: /api/system/status
-              port: http
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            failureThreshold: 24
-            timeoutSeconds: 1
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          volumeMounts:
-            - mountPath: /opt/sonarqube/data
-              name: sonarqube
-              subPath: data
-            - mountPath: /opt/sonarqube/temp
-              name: sonarqube
-              subPath: temp
-            - mountPath: /opt/sonarqube/logs
-              name: sonarqube
-              subPath: logs
-            - mountPath: /tmp
-              name: tmp-dir
-            - mountPath: /opt/sonarqube/extensions
-              name: sonarqube
-              subPath: extensions
-      serviceAccountName: default
-      volumes:
-        
-        - name: init-sysctl
-          configMap:
-            name: template-refactoring-values.yaml-sonarqube-init-sysctl
-            items:
-              - key: init_sysctl.sh
-                path: init_sysctl.sh
-        - name: init-fs
-          configMap:
-            name: template-refactoring-values.yaml-sonarqube-init-fs
-            items:
-              - key: init_fs.sh
-                path: init_fs.sh
-        - name: sonarqube
-          persistentVolumeClaim:
-            claimName: template-refactoring-values.yaml-sonarqube
-        - name : tmp-dir
-          emptyDir:
-            {}
 ---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1

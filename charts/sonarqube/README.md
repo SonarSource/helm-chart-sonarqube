@@ -93,7 +93,7 @@ Here is the list of containers that are compatible with the [Pod Security levels
 
 This is achieved by setting this SecurityContext as default on **most** containers:
 
-```
+```yaml
 allowPrivilegeEscalation: false
 runAsNonRoot: true
 runAsUser: 1000
@@ -169,7 +169,7 @@ To get some guidance when setting the Xmx and Xms values, please refer to this [
 
 Please refer to the Helm upgrade section accessible [here](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/upgrade-the-server/upgrade/#upgrade-from-89x-lts-to-99x-lts).
 
-## Ingress
+## Ingress usage
 
 ### Path
 
@@ -209,7 +209,7 @@ If a Prometheus Operator is deployed in your cluster, you can enable a PodMonito
 
 If running on OpenShift, make sure your account has permissions to create PodMonitor resources under the monitoring.coreos.com/v1 apiVersion.
 
-## OpenShift
+## OpenShift installation
 
 The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).
 
@@ -226,6 +226,7 @@ helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube \
   --set postgresql.securityContext.enabled=false \
   --set postgresql.containerSecurityContext.enabled=false
 ```
+
 If you want to make your application publicly visible with Routes, you can set `OpenShift.route.enabled` to true. Please check the [configuration details](#openshift-1) to customize the Route base on your needs.
 
 ## Configuration
@@ -265,7 +266,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `networkPolicy.enabled`                   | Create NetworkPolicies                                                    | `false` |
 | `networkPolicy.prometheusNamespace`       | Allow incoming traffic to monitoring ports from this namespace            | `nil`   |
 | `networkPolicy.additionalNetworkPolicys`  | (DEPRECATED) Please use `networkPolicy.additionalNetworkPolicies` instead | `nil`   |
-| `networkPolicy.additionalNetworkPolicies` | User defined NetworkPolicies (usefull for external database)              | `nil`   |
+| `networkPolicy.additionalNetworkPolicies` | User defined NetworkPolicies (useful for external database)               | `nil`   |
 
 ### OpenShift
 
@@ -616,7 +617,7 @@ In environments with air-gapped setup, especially with internal tooling (repos) 
 
 Since SonarQube comes bundled with an Elasticsearch instance, some [bootstrap checks](https://www.elastic.co/guide/en/elasticsearch/reference/master/bootstrap-checks.html) of the host settings are done at start.
 
-This chart offers the option to use an initContainer in privilaged mode to automatically set certain kernel settings on the kube worker. While this can ensure proper functionality of Elasticsearch, modifying the underlying kernel settings on the Kubernetes node can impact other users. It may be best to work with your cluster administrator to either provide specific nodes with the proper kernel settings, or ensure they are set cluster wide.
+This chart offers the option to use an initContainer in privileged mode to automatically set certain kernel settings on the kube worker. While this can ensure proper functionality of Elasticsearch, modifying the underlying kernel settings on the Kubernetes node can impact other users. It may be best to work with your cluster administrator to either provide specific nodes with the proper kernel settings, or ensure they are set cluster wide.
 
 To enable auto-configuration of the kube worker node, set `elasticsearch.configureNode` to `true`. This is the default behavior, so you do not need to explicitly set this.
 
