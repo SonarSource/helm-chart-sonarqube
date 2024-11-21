@@ -52,7 +52,7 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
     spec:
-      automountServiceAccountToken: false
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
       {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret }}
       imagePullSecrets:
         {{- if .Values.ApplicationNodes.image.pullSecret }}

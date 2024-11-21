@@ -345,7 +345,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 ### Probes
 
 | Parameter                            | Description                                                                                                      | Default                                                        |
-| ----------------------------------   | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | `readinessProbe`                     | ReadinessProbe for SonarQube                                                                                     | `exec; curl api/system/status` see `values.yaml` for details   |
 | `readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for SonarQube checking                                                              | `60`                                                           |
 | `readinessProbe.periodSeconds`       | ReadinessProbe period between checking SonarQube                                                                 | `30`                                                           |
@@ -532,19 +532,19 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 
 ### ServiceAccount
 
-| Parameter                       | Description                                                                          | Default               |
-| ------------------------------- | ------------------------------------------------------------------------------------ | --------------------- |
-| `serviceAccount.create`         | If set to true, create a serviceAccount                                              | `false`               |
-| `serviceAccount.name`           | Name of the serviceAccount to create/use                                             | `sonarqube-sonarqube` |
-| `serviceAccount.automountToken` | Manage `automountServiceAccountToken` field for mounting service account credentials | `false`               |
-| `serviceAccount.annotations`    | Additional serviceAccount annotations                                                | `{}`                  |
+| Parameter                       | Description                                                                                                                                                                                           | Default               |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `serviceAccount.create`         | If set to true, create a service account                                                                                                                                                              | `false`               |
+| `serviceAccount.name`           | Name of the service account to create/use                                                                                                                                                             | `sonarqube-sonarqube` |
+| `serviceAccount.automountToken` | Manage `automountServiceAccountToken` field for mounting service account credentials. Please note that this will set the default value used by SQ Pods, regardless of the service account being used. | `false`               |
+| `serviceAccount.annotations`    | Additional service account annotations                                                                                                                                                                | `{}`                  |
 
 ### ExtraConfig
 
-| Parameter                | Description                                                                                                               | Default |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `extraConfig.secrets`    | A list of `Secret`s (which must contain key/value pairs)                                                                  | `[]`    |
-| `extraConfig.configmaps` | A list of `ConfigMap`s (which must contain key/value pairs)                                                               | `[]`    |
+| Parameter                | Description                                                 | Default |
+| ------------------------ | ----------------------------------------------------------- | ------- |
+| `extraConfig.secrets`    | A list of `Secret`s (which must contain key/value pairs)    | `[]`    |
+| `extraConfig.configmaps` | A list of `ConfigMap`s (which must contain key/value pairs) | `[]`    |
 
 ### Advanced Options
 
