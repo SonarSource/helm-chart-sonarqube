@@ -77,19 +77,6 @@ metadata:
 data:
   sonar.properties: |
 ---
-# Source: sonarqube/templates/init-fs.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-init-fs
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.8.0
-    release: sonar-web-context-deployment-deprecated-values.yaml
-    heritage: Helm
-data:
-  init_fs.sh: |-
----
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -102,22 +89,38 @@ metadata:
     heritage: Helm
 data:
   init_sysctl.sh: |-
-    if [[ "$(sysctl -n vm.max_map_count)" -lt 524288 ]]; then
-      sysctl -w vm.max_map_count=524288
-    fi
-    if [[ "$(sysctl -n fs.file-max)" -lt 131072 ]]; then
-      sysctl -w fs.file-max=131072
-    fi
-    if [[ "$(ulimit -n)" != "unlimited" ]]; then
-      if [[ "$(ulimit -n)" -lt 131072 ]]; then
-        echo "ulimit -n 131072"
-        ulimit -n 131072
+    set -o errexit
+    set -o xtrace
+    vmMaxMapCount=524288
+    if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
+      sysctl -w vm.max_map_count=$vmMaxMapCount
+      if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
+        echo "Failed to set initSysctl.vmMaxMapCount"; exit 1
       fi
     fi
+    fsFileMax=131072
+    if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
+      sysctl -w fs.file-max=$fsFileMax
+      if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
+        echo "Failed to set initSysctl.fsFileMax"; exit 1
+      fi
+    fi
+    nofile=131072
+    if [[ "$(ulimit -n)" != "unlimited" ]]; then
+      if [[ "$(ulimit -n)" -lt $nofile ]]; then
+        ulimit -n $nofile
+        if [[ "$(ulimit -n)" -lt $nofile ]]; then
+          echo "Failed to set initSysctl.nofile"; exit 1
+        fi
+      fi
+    fi
+    nproc=8192
     if [[ "$(ulimit -u)" != "unlimited" ]]; then
-      if [[ "$(ulimit -u)" -lt 8192 ]]; then
-        echo "ulimit -u 8192"
-        ulimit -u 8192
+      if [[ "$(ulimit -u)" -lt $nproc ]]; then
+        ulimit -u $nproc
+        if [[ "$(ulimit -u)" -lt $nproc ]]; then
+          echo "Failed to set initSysctl.nproc"; exit 1
+        fi
       fi
     fi
 ---
@@ -252,7 +255,7 @@ spec:
     metadata:
       annotations:
         checksum/config: 83d23e835621e8550aac7df4b62f60a5f9b5fe4df52b15143d2a4815bc9d8e2d
-        checksum/init-sysctl: 3071b2a85ebd835e18ff06ba418a1582180045d6158dfd9298d01bdb1f3a89ce
+        checksum/init-sysctl: c810d71278aac508ef538d3b926a3dbdffe044e1cef70e14d949a8d55033b7bf
         checksum/plugins: 564927565047ac25a8a3ec87d12f35e70a710b92c130877f4a871d8b8b263e44
         checksum/secret: ec0277fb153c63936e081d9676e508d7601dc6da32d70172fb67d74a24539556
       labels:

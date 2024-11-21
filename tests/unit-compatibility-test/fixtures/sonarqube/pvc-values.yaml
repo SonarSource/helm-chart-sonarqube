@@ -91,22 +91,38 @@ metadata:
     heritage: Helm
 data:
   init_sysctl.sh: |-
-    if [[ "$(sysctl -n vm.max_map_count)" -lt 524288 ]]; then
-      sysctl -w vm.max_map_count=524288
-    fi
-    if [[ "$(sysctl -n fs.file-max)" -lt 131072 ]]; then
-      sysctl -w fs.file-max=131072
-    fi
-    if [[ "$(ulimit -n)" != "unlimited" ]]; then
-      if [[ "$(ulimit -n)" -lt 131072 ]]; then
-        echo "ulimit -n 131072"
-        ulimit -n 131072
+    set -o errexit
+    set -o xtrace
+    vmMaxMapCount=524288
+    if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
+      sysctl -w vm.max_map_count=$vmMaxMapCount
+      if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
+        echo "Failed to set initSysctl.vmMaxMapCount"; exit 1
       fi
     fi
+    fsFileMax=131072
+    if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
+      sysctl -w fs.file-max=$fsFileMax
+      if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
+        echo "Failed to set initSysctl.fsFileMax"; exit 1
+      fi
+    fi
+    nofile=131072
+    if [[ "$(ulimit -n)" != "unlimited" ]]; then
+      if [[ "$(ulimit -n)" -lt $nofile ]]; then
+        ulimit -n $nofile
+        if [[ "$(ulimit -n)" -lt $nofile ]]; then
+          echo "Failed to set initSysctl.nofile"; exit 1
+        fi
+      fi
+    fi
+    nproc=8192
     if [[ "$(ulimit -u)" != "unlimited" ]]; then
-      if [[ "$(ulimit -u)" -lt 8192 ]]; then
-        echo "ulimit -u 8192"
-        ulimit -u 8192
+      if [[ "$(ulimit -u)" -lt $nproc ]]; then
+        ulimit -u $nproc
+        if [[ "$(ulimit -u)" -lt $nproc ]]; then
+          echo "Failed to set initSysctl.nproc"; exit 1
+        fi
       fi
     fi
 ---
@@ -422,8 +438,8 @@ spec:
     metadata:
       annotations:
         checksum/config: 49f318981baf26b116e82be804008f5d3e1243ae44e76c85d0a5741106808a53
-        checksum/init-fs: c7f40815c217ac700c13449e5a4f0f35ba8330b0a18878d6ebf38a0cecc7e497
-        checksum/init-sysctl: b24d53c3a57874d11db3a427d9187d92f0fad5680679ab11d5fab42de6e1d676
+        checksum/init-fs: 3c6fead050158338458c642167bed17b9455f2ad2c139188c70753a8b1637935
+        checksum/init-sysctl: 17703a62c334c33dd0a344965db7785a520598a8edd0fc2950ae02d817bee05c
         checksum/plugins: 0dd5ce415a8f411803332480799c6e163c9887836fb559e24d7f6f33235929b2
         checksum/secret: 7c8483b1ae0ba62babeae964bec5955b6476d2caf3e28b861ff2ebe8f145dd7a
       labels:

@@ -152,22 +152,38 @@ metadata:
     heritage: Helm
 data:
   init_sysctl.sh: |-
-    if [[ "$(sysctl -n vm.max_map_count)" -lt 524288 ]]; then
-      sysctl -w vm.max_map_count=524288
-    fi
-    if [[ "$(sysctl -n fs.file-max)" -lt 131072 ]]; then
-      sysctl -w fs.file-max=131072
-    fi
-    if [[ "$(ulimit -n)" != "unlimited" ]]; then
-      if [[ "$(ulimit -n)" -lt 131072 ]]; then
-        echo "ulimit -n 131072"
-        ulimit -n 131072
+    set -o errexit
+    set -o xtrace
+    vmMaxMapCount=524288
+    if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
+      sysctl -w vm.max_map_count=$vmMaxMapCount
+      if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
+        echo "Failed to set initSysctl.vmMaxMapCount"; exit 1
       fi
     fi
+    fsFileMax=131072
+    if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
+      sysctl -w fs.file-max=$fsFileMax
+      if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
+        echo "Failed to set initSysctl.fsFileMax"; exit 1
+      fi
+    fi
+    nofile=131072
+    if [[ "$(ulimit -n)" != "unlimited" ]]; then
+      if [[ "$(ulimit -n)" -lt $nofile ]]; then
+        ulimit -n $nofile
+        if [[ "$(ulimit -n)" -lt $nofile ]]; then
+          echo "Failed to set initSysctl.nofile"; exit 1
+        fi
+      fi
+    fi
+    nproc=8192
     if [[ "$(ulimit -u)" != "unlimited" ]]; then
-      if [[ "$(ulimit -u)" -lt 8192 ]]; then
-        echo "ulimit -u 8192"
-        ulimit -u 8192
+      if [[ "$(ulimit -u)" -lt $nproc ]]; then
+        ulimit -u $nproc
+        if [[ "$(ulimit -u)" -lt $nproc ]]; then
+          echo "Failed to set initSysctl.nproc"; exit 1
+        fi
       fi
     fi
 ---
@@ -752,8 +768,8 @@ spec:
         release: application-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: b0adbc75e013962bdccee0ff7c665f96cde26a19fb8f77276ab0b19209db1a89
-        checksum/init-fs: 8944b522b680449d8adea850260d1bea05b7e7bcd83500fb45c2fa0eb317a30a
+        checksum/init-sysctl: 1b587d906e96c6234cd5aa9555dd9ee949f054fb3988706772de25668ff91b43
+        checksum/init-fs: 461175353f719eb6a55a52b4494871d9ae945e5537294170eab6ab537a8c6f45
         checksum/config: 8b2345535c307746d03adee70b6115f85449c08829e7ce75c459a28796e9bd90
         checksum/secret: 1769049746dc3c194133f7b24aac8789c0882223b0da297d21d23d95ff731509
     spec:

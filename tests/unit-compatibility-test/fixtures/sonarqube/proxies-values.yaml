@@ -63,19 +63,6 @@ metadata:
 data:
   sonar.properties: |
 ---
-# Source: sonarqube/templates/init-fs.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: proxies-values.yaml-sonarqube-init-fs
-  labels:
-    app: sonarqube
-    chart: sonarqube-10.8.0
-    release: proxies-values.yaml
-    heritage: Helm
-data:
-  init_fs.sh: |-
----
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -88,22 +75,38 @@ metadata:
     heritage: Helm
 data:
   init_sysctl.sh: |-
-    if [[ "$(sysctl -n vm.max_map_count)" -lt 524288 ]]; then
-      sysctl -w vm.max_map_count=524288
-    fi
-    if [[ "$(sysctl -n fs.file-max)" -lt 131072 ]]; then
-      sysctl -w fs.file-max=131072
-    fi
-    if [[ "$(ulimit -n)" != "unlimited" ]]; then
-      if [[ "$(ulimit -n)" -lt 131072 ]]; then
-        echo "ulimit -n 131072"
-        ulimit -n 131072
+    set -o errexit
+    set -o xtrace
+    vmMaxMapCount=524288
+    if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
+      sysctl -w vm.max_map_count=$vmMaxMapCount
+      if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
+        echo "Failed to set initSysctl.vmMaxMapCount"; exit 1
       fi
     fi
+    fsFileMax=131072
+    if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
+      sysctl -w fs.file-max=$fsFileMax
+      if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
+        echo "Failed to set initSysctl.fsFileMax"; exit 1
+      fi
+    fi
+    nofile=131072
+    if [[ "$(ulimit -n)" != "unlimited" ]]; then
+      if [[ "$(ulimit -n)" -lt $nofile ]]; then
+        ulimit -n $nofile
+        if [[ "$(ulimit -n)" -lt $nofile ]]; then
+          echo "Failed to set initSysctl.nofile"; exit 1
+        fi
+      fi
+    fi
+    nproc=8192
     if [[ "$(ulimit -u)" != "unlimited" ]]; then
-      if [[ "$(ulimit -u)" -lt 8192 ]]; then
-        echo "ulimit -u 8192"
-        ulimit -u 8192
+      if [[ "$(ulimit -u)" -lt $nproc ]]; then
+        ulimit -u $nproc
+        if [[ "$(ulimit -u)" -lt $nproc ]]; then
+          echo "Failed to set initSysctl.nproc"; exit 1
+        fi
       fi
     fi
 ---
@@ -433,7 +436,7 @@ spec:
     metadata:
       annotations:
         checksum/config: a12b354481a21944c7cd35032a8008f50b693ea15ef3284360605bd9de02c56f
-        checksum/init-sysctl: f678c8325f810d6bccbe90acd0017c54a888e5fcd6630ce6f4bfe88f5c41c5a8
+        checksum/init-sysctl: 341fe81ce00deb669c5f97a1fa427c1458a4037c7054e7d86e4aee973cf7ed4d
         checksum/plugins: a5d1251cf02dfb0f27baa386720159e744a35c290f9d1c31971702bfdf3917e2
         checksum/secret: 4baa4897c1899085edf1b5c254ff945eb94be081446ce86e75df63a8ed3c273b
         checksum/prometheus-config: efd6763b541ee6b11348af0168dbad964ee0e2cd0a2c66378ffb58da43378c42
