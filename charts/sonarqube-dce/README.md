@@ -135,6 +135,16 @@ Nonetheless, if you intend to run a production-grade SonarQube please follow the
 * Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
 * Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
 
+### Renaming major values
+
+Before SonarQube Server Datacenter 10.8, we had a difference in naming convention between `.Values.searchNodes` and `.Values.ApplicationNodes`, one is pure camelCase, the other has a starting Capital. While a minor difference, we promote cleanCode at Sonar and this is a clear maintanability inconsistency issue.
+
+For user starting from 10.8 we advise everyone to rename your `ApplicationNodes` to `applicationNodes`.
+
+While this is a straightforward change for users, the internal logic for being cross-compatible without rewriting all files is pretty difficult. Hence please report any bug to https://community.sonarsource.com/
+
+PS: if you are interested in the technical details please take a look at this [PR](https://github.com/SonarSource/helm-chart-sonarqube/pull/586)
+
 #### Cpu and memory settings
 
 Monitoring cpu and memory is an important part of software reliability. The SonarQube helm chart comes with default values for cpu and memory requests and limits. Those memory values are matching the default SonarQube JVM Xmx and Xms values.
