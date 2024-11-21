@@ -76,7 +76,7 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
     spec:
-      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken | default "false" }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
       {{- if or .Values.searchNodes.image.pullSecrets .Values.searchNodes.image.pullSecret }}
       imagePullSecrets:
         {{- if .Values.searchNodes.image.pullSecret }}

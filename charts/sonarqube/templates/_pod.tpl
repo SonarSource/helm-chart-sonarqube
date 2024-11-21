@@ -23,7 +23,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
-  automountServiceAccountToken: {{ .Values.serviceAccount.automountToken | default "false" }}
+  automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
   {{- with .Values.schedulerName }}
   schedulerName: {{ . }}
   {{- end }}
