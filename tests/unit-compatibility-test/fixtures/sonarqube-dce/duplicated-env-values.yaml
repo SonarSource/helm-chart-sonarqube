@@ -400,9 +400,9 @@ spec:
         release: duplicated-env-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 898fa9c91d9ca6b31468e61d6db2b49bb10ad06d1516571e3162b8f5ee74404a
-        checksum/config: 4b695c4bbd53740bbfc21673a0698204c2debfdbce25c03837177ba91b0b01d1
-        checksum/secret: c9ff7fe6908dbc4a745aeb2aef0794cdf92051d51c1ebf40705e77a3cebe9917
+        checksum/plugins: 26e25cc9ee5ab778248195e5f0a2ddcf4987578391bec4e032c89e72a3dbff8c
+        checksum/config: 02ca423db51620be62435e30dbfc25901c0fa45c08576112c680ecbeb658a872
+        checksum/secret: 51ebdc7c941aaac44c35058d6fa2f8b2031eb83273834ca413c18a393b0e4f58
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -495,7 +495,7 @@ spec:
               command:
               - sh
               - -c
-              - |
+              - |-
                 host="$(hostname -i || echo '127.0.0.1')"
                 wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/some/context/api/system/liveness"
             failureThreshold: 6
@@ -507,7 +507,7 @@ spec:
               command:
               - sh
               - -c
-              - |
+              - |-
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
@@ -773,10 +773,10 @@ spec:
         release: duplicated-env-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: 2fe6a7e2cbae425aa72c87227afc6917f83922731438505e4e571d86096b4f5a
-        checksum/init-fs: 341206062feb3e5bcf3b757527bfcf936fc04949b7194a1b558a332cbac5ff03
-        checksum/config: 4b695c4bbd53740bbfc21673a0698204c2debfdbce25c03837177ba91b0b01d1
-        checksum/secret: c9ff7fe6908dbc4a745aeb2aef0794cdf92051d51c1ebf40705e77a3cebe9917
+        checksum/init-sysctl: a5bb8fd78f7e33a344270a0e14b77ddfc469128131a3abfacc94f7d1362d8c0b
+        checksum/init-fs: 5aeab3994bd087a5f764026b3b5f074c6e6d97728d672202aa75b90d0c7affdf
+        checksum/config: 02ca423db51620be62435e30dbfc25901c0fa45c08576112c680ecbeb658a872
+        checksum/secret: 51ebdc7c941aaac44c35058d6fa2f8b2031eb83273834ca413c18a393b0e4f58
     spec:
       automountServiceAccountToken: false
       initContainers:

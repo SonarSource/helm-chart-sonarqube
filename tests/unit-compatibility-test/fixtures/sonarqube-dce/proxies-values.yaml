@@ -433,11 +433,11 @@ spec:
         release: proxies-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: bf46362f34d1dcfc114df7cdf93045f69323c9472c0b62af9dfdfb320b5b7dd5
-        checksum/config: 65e9a02807c680f8d91d4de2b2e348b4ce2456ee838e627d68ef4f9d76673a3d
-        checksum/secret: 425d01e6a5e14326c45adff9e8bae426131efebc2b97b59672437085fe02079c
-        checksum/prometheus-config: b07db26d36016a9d8c9ca19f3cc6ffef0d6ece4eb97944f7f43b3f0c29ecf3b1
-        checksum/prometheus-ce-config: ed9e5067172f5bb2efa03c801904c49d4fe97824f62e9d00e3013fbcb307a1bc
+        checksum/plugins: b1b388b1ccc144c29a69e9cef1d3b7bfbb53fa24f4e9bbe58ee51773a64cde96
+        checksum/config: 36f73b401f0993f374335791f3a3e94c3ed8d1be6bf4b70122ec0bfb1cf1c325
+        checksum/secret: 7e79871d152a0cc3816b34d1396901de6ad4e2a430c10ab6f6ccc33ea50e9337
+        checksum/prometheus-config: 1df0eae66a54eba950ae06b101e0b65eacf21e2126cfe0189d883923aa8134f3
+        checksum/prometheus-ce-config: 088df72028b25025f4f3a0f7ca06b39491f53902848451b461abc2c4eb49d0f3
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -610,7 +610,7 @@ spec:
               command:
               - sh
               - -c
-              - |
+              - |-
                 host="$(hostname -i || echo '127.0.0.1')"
                 wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
             failureThreshold: 6
@@ -622,7 +622,7 @@ spec:
               command:
               - sh
               - -c
-              - |
+              - |-
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
@@ -909,10 +909,10 @@ spec:
         release: proxies-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: a75ac53927999d2e14753fec536110541b0165d24a186dde7251a70ee0708004
-        checksum/init-fs: b5263be2ef938b638dcb9d3238d9eb0fd395221a659418ce5dc349d5e7e3f9e5
-        checksum/config: 65e9a02807c680f8d91d4de2b2e348b4ce2456ee838e627d68ef4f9d76673a3d
-        checksum/secret: 425d01e6a5e14326c45adff9e8bae426131efebc2b97b59672437085fe02079c
+        checksum/init-sysctl: 23d7e4348f9340f092017abb62b832691ec5fce2d2115b44d1d8e34d29a9d156
+        checksum/init-fs: 6dd7c69488c0d2cf9827dbe4c6e5bf4b0f1926acfc3226899dde04f506492236
+        checksum/config: 36f73b401f0993f374335791f3a3e94c3ed8d1be6bf4b70122ec0bfb1cf1c325
+        checksum/secret: 7e79871d152a0cc3816b34d1396901de6ad4e2a430c10ab6f6ccc33ea50e9337
     spec:
       automountServiceAccountToken: false
       initContainers:

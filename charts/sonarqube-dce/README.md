@@ -322,6 +322,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.persistence.accessMode`                      | Volumes access mode to be set                                                              | `ReadWriteOnce`                                                        |
 | `searchNodes.persistence.size`                            | Size of the PVC                                                                            | `5G`                                                                   |
 | `searchNodes.persistence.uid`                             | UID used for init-fs container                                                             | `1000`                                                                 |
+| `searchNodes.persistence.volumes`                         | Set existing volumes                                                                       | `[]`                                                                   |
 | `searchNodes.persistence.guid`                            | GUID used for init-fs container                                                            | `0`                                                                    |
 | `searchNodes.extraContainers`                             | Array of extra containers to run alongside                                                 | `[]`                                                                   |
 | `searchNodes.nodeSelector`                                | Node labels for search nodes' pods assignment, global nodeSelector takes precedence        | `{}`                                                                   |
@@ -349,10 +350,19 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.podDistributionBudget`                         | (DEPRECATED typo) PodDisruptionBudget for the App Nodes                                                                                                                                                        | `minAvailable: 1`                                                      |
 | `applicationNodes.securityContext`                               | SecurityContext for the pod app nodes                                                                                                                                                                          | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `applicationNodes.containerSecurityContext`                      | SecurityContext for app container in sonarqube pod                                                                                                                                                             | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
-| `applicationNodes.readinessProbe`                                | ReadinessProbe for the App                                                                                                                                                                                     | see `values.yaml`                                                      |
+| `applicationNodes.readinessProbe`                                | ReadinessProbe for the App                                                                                                                                                                                     | `exec; curl api/system/status` see `values.yaml` for details           |
+| `applicationNodes.readinessProbe.initialDelaySeconds`            | ReadinessProbe initial delay for app Node checking                                                                                                                                                             | `0`                                                                    |
+| `applicationNodes.readinessProbe.periodSeconds`                  | ReadinessProbe period between checking app Node                                                                                                                                                                | `30`                                                                   |
+| `applicationNodes.readinessProbe.failureThreshold`               | ReadinessProbe threshold for marking as failed                                                                                                                                                                 | `8`                                                                    |
+| `applicationNodes.readinessProbe.timeoutSeconds`                 | ReadinessProbe timeout delay                                                                                                                                                                                   | `1`                                                                    |
 | `applicationNodes.readinessProbe.sonarWebContext`                | (DEPRECATED) SonarQube web context for readinessProbe, please use sonarWebContext at the value top level instead                                                                                               | `/`                                                                    |
-| `applicationNodes.livenessProbe`                                 | LivenessProbe for the App                                                                                                                                                                                      | see `values.yaml`                                                      |
+| `applicationNodes.livenessProbe`                                 | LivenessProbe for the App                                                                                                                                                                                      | `exec: curl api/system/liveness` see `values.yaml` for details         |
+| `applicationNodes.livenessProbe.initialDelaySeconds`             | LivenessProbe initial delay for app Node checking                                                                                                                                                              | `0`                                                                    |
+| `applicationNodes.livenessProbe.periodSeconds`                   | LivenessProbe period between checking app Node                                                                                                                                                                 | `30`                                                                   |
+| `applicationNodes.livenessProbe.failureThreshold`                | LivenessProbe threshold for marking as failed                                                                                                                                                                  | `6`                                                                    |
+| `applicationNodes.livenessProbe.timeoutSeconds`                  | LivenessProbe timeout delay                                                                                                                                                                                    | `1`                                                                    |
 | `applicationNodes.livenessProbe.sonarWebContext`                 | (DEPRECATED) SonarQube web context for livenessProbe, please use sonarWebContext at the value top level instead                                                                                                | `/`                                                                    |
+| `applicationNodes.startupProbe`                                  | StartupProbe for the App                                                                                                                                                                                       | `httpGet: api/system/status`                                           |
 | `applicationNodes.startupProbe.initialDelaySeconds`              | StartupProbe initial delay for app Node checking                                                                                                                                                               | `45`                                                                   |
 | `applicationNodes.startupProbe.periodSeconds`                    | StartupProbe period between checking app Node                                                                                                                                                                  | `10`                                                                   |
 | `applicationNodes.startupProbe.failureThreshold`                 | StartupProbe threshold for marking as failed                                                                                                                                                                   | `32`                                                                   |
@@ -387,7 +397,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.plugins.httpProxy`                             | For use behind a corporate proxy when downloading plugins                                                                                                                                                      | `""`                                                                   |
 | `applicationNodes.plugins.httpsProxy`                            | For use behind a corporate proxy when downloading plugins                                                                                                                                                      | `""`                                                                   |
 | `applicationNodes.plugins.noProxy`                               | For use behind a corporate proxy when downloading plugins                                                                                                                                                      | `""`                                                                   |
-| `applicationNodes.plugins.image`                                 | Image for plugins container                                                                                                                                                                                    | `""`                                                                   |
+| `applicationNodes.plugins.image`                                 | Image for plugins container                                                                                                                                                                                    | `"image.repository":"image.tag"`                                       |
 | `applicationNodes.plugins.resources`                             | Resources for plugins container                                                                                                                                                                                | `""`                                                                   |
 | `applicationNodes.plugins.netrcCreds`                            | Name of the secret containing .netrc file to use creds when downloading plugins                                                                                                                                | `""`                                                                   |
 | `applicationNodes.plugins.noCheckCertificate`                    | Flag to not check server's certificate when downloading plugins                                                                                                                                                | `false`                                                                |
@@ -427,6 +437,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `httpsProxy`             | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable | ``      |
 | `noProxy`                | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables      | ``      |
 | `nodeEncryption.enabled` | Secure the communication between Application and Search nodes using TLS                                               | `false` |
+| `ingress-nginx.enabled`  | Install Nginx Ingress Helm                                                                                            | `false` |
 
 ### NetworkPolicies
 
@@ -453,13 +464,14 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### HttpRoute
 
-| Parameter             | Description                                                                                                   | Default |
-| --------------------- | ------------------------------------------------------------------------------------------------------------- | ------- |
-| `httproute.enabled`   | Flag to enable GatewayAPI HttpRoute                                                                           | `False` |
-| `httproute.gateway`   | Name of the gateway located in the same namespace                                                             | `None`  |
-| `httproute.hostnames` | List of hostnames to match the HttpRoute against                                                              | `None`  |
-| `httproute.labels`    | (Optional) List of extra labels to add to the HttpRoute                                                       | `None`  |
-| `httproute.rules`     | (Optional) Extra Rules block of the HttpRoute. A default one is created with SonarWebContext and service port | `None`  |
+| Parameter                    | Description                                                                                                   | Default |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------- | ------- |
+| `httproute.enabled`          | Flag to enable GatewayAPI HttpRoute                                                                           | `False` |
+| `httproute.gateway`          | Name of the gateway                                                                                           | `None`  |
+| `httproute.gatewayNamespace` | (Optional) Name of the gateway namespace when located in a different namespace                                | `None`  |
+| `httproute.hostnames`        | List of hostnames to match the HttpRoute against                                                              | `None`  |
+| `httproute.labels`           | (Optional) List of extra labels to add to the HttpRoute                                                       | `None`  |
+| `httproute.rules`            | (Optional) Extra Rules block of the HttpRoute. A default one is created with SonarWebContext and service port | `None`  |
 
 ### Elasticsearch
 
@@ -483,7 +495,6 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                      | Description                                                  | Default                                                                                                      |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `ingress-nginx.enabled`        | Install Nginx Ingress Helm                                   | `false`                                                                                                      |
 | `nginx.enabled`                | (DEPRECATED) please use `ingress-nginx.enabled`              | `false`                                                                                                      |
 | `ingress.enabled`              | Flag to enable Ingress                                       | `false`                                                                                                      |
 | `ingress.labels`               | Ingress additional labels                                    | `{}`                                                                                                         |
@@ -492,7 +503,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `ingress.hosts[0].serviceName` | Optional field to override the default serviceName of a path | `None`                                                                                                       |
 | `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | `None`                                                                                                       |
 | `ingress.tls`                  | Ingress secrets for TLS certificates                         | `[]`                                                                                                         |
-| `ingress.ingressClassName`     | Optional field to configure ingress class name               | `None`                                                                                                       |
+| `ingress.ingressClassName`     | Optional field to configure ingress class name               | `None` OR `nginx` if `nginx.enabled` or `ingress-nginx.enabled`                                              |
 | `ingress.annotations`          | Field to add extra annotations to the ingress                | {`nginx.ingress.kubernetes.io/proxy-body-size: "64m"`} if `ingress-nginx.enabled=true or nginx.enabled=true` |
 
 ### InitContainers
@@ -585,19 +596,19 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 
 ### ServiceAccount
 
-| Parameter                       | Description                                                                          | Default               |
-| ------------------------------- | ------------------------------------------------------------------------------------ | --------------------- |
-| `serviceAccount.create`         | If set to true, create a serviceAccount                                              | `false`               |
-| `serviceAccount.name`           | Name of the serviceAccount to create/use                                             | `sonarqube-sonarqube` |
-| `serviceAccount.automountToken` | Manage `automountServiceAccountToken` field for mounting service account credentials | `false`               |
-| `serviceAccount.annotations`    | Additional serviceAccount annotations                                                | `{}`                  |
+| Parameter                       | Description                                                                                                                                                                                           | Default               |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `serviceAccount.create`         | If set to true, create a service account                                                                                                                                                              | `false`               |
+| `serviceAccount.name`           | Name of the service account to create/use                                                                                                                                                             | `sonarqube-sonarqube` |
+| `serviceAccount.automountToken` | Manage `automountServiceAccountToken` field for mounting service account credentials. Please note that this will set the default value used by SQ Pods, regardless of the service account being used. | `false`               |
+| `serviceAccount.annotations`    | Additional service account annotations                                                                                                                                                                | `{}`                  |
 
 ### ExtraConfig
 
-| Parameter                | Description                                                                                                               | Default |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `extraConfig.secrets`    | A list of `Secret`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables    | `[]`    |
-| `extraConfig.configmaps` | A list of `ConfigMap`s (which must contain key/value pairs) which may be loaded into the Scanner as environment variables | `[]`    |
+| Parameter                | Description                                                 | Default |
+| ------------------------ | ----------------------------------------------------------- | ------- |
+| `extraConfig.secrets`    | A list of `Secret`s (which must contain key/value pairs)    | `[]`    |
+| `extraConfig.configmaps` | A list of `ConfigMap`s (which must contain key/value pairs) | `[]`    |
 
 ### Advanced Options
 
@@ -616,7 +627,6 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `account.securityContext`           | Security context for downloading the prometheus exporter                                                     | see `values.yaml`        |
 | `adminJobAnnotations`               | Custom annotations for admin hook Job                                                                        | `{}`                     |
 | `terminationGracePeriodSeconds`     | Configuration of `terminationGracePeriodSeconds`                                                             | `60`                     |
-| `gcp_marketplace`                   | boolean to indicate the chart run as a google cloud marketplace app, trigger specific resources creation     | ``                       |
 
 You can also configure values for the PostgreSQL database via the PostgreSQL [Chart](https://hub.helm.sh/charts/bitnami/postgresql)
 

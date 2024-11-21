@@ -201,7 +201,7 @@ data:
   install_plugins.sh: |-
       rm -f /opt/sonarqube/extensions/plugins/*
       cd /opt/sonarqube/extensions/plugins
-      curl   -fsSLO "https://github.com/sbaudoin/sonar-yaml/releases/download/v1.7.0/sonar-yaml-plugin-1.7.0.jar"
+      curl --insecure  -fsSLO "https://github.com/sbaudoin/sonar-yaml/releases/download/v1.7.0/sonar-yaml-plugin-1.7.0.jar"
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
@@ -403,9 +403,9 @@ spec:
         release: install-plugins-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 958af731e5946658c27a8a969ce806eb79b106bc0f4698f7a72458a04d8bbe1f
-        checksum/config: c8035aa4dfa690c629ad6f5beb9774fffdc4c94d77f4f2418f0e70cc6ff55a1f
-        checksum/secret: 8a1127981fc985ee5c2d406dc734bb766b0ee9641e9b782329ad5708ac12fbda
+        checksum/plugins: 237c1ab6cadafcf1e56a935d3ef7bef5ab487883ce3af5321475b6c2cf821caf
+        checksum/config: 1827a191bdf5ac5e84e2d6dd85d5f9adc37e1ef5ca5ea6fd4de06ab32298ccec
+        checksum/secret: b1711a602d215f6282077df23d2a2857c8e77824667cb0eaff6c29476c0f12a4
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -534,7 +534,7 @@ spec:
               command:
               - sh
               - -c
-              - |
+              - |-
                 host="$(hostname -i || echo '127.0.0.1')"
                 wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
             failureThreshold: 6
@@ -546,7 +546,7 @@ spec:
               command:
               - sh
               - -c
-              - |
+              - |-
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
@@ -815,10 +815,10 @@ spec:
         release: install-plugins-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: 558c8216537708865ffba0d2f5f6dcec4bac35c0364883e66546761af7c97ed9
-        checksum/init-fs: f759926a03ce11478809c6981aa513b6723683d3d60951d774e63c157a049192
-        checksum/config: c8035aa4dfa690c629ad6f5beb9774fffdc4c94d77f4f2418f0e70cc6ff55a1f
-        checksum/secret: 8a1127981fc985ee5c2d406dc734bb766b0ee9641e9b782329ad5708ac12fbda
+        checksum/init-sysctl: 951adec9c24f795bf3a5b5c8105ec76a4e2129b4a25ec6f17dece972706331ad
+        checksum/init-fs: 2349411c9605a38a6db3628a56de1f93f05e96946be5df8e234a688b4e83cb2c
+        checksum/config: 1827a191bdf5ac5e84e2d6dd85d5f9adc37e1ef5ca5ea6fd4de06ab32298ccec
+        checksum/secret: b1711a602d215f6282077df23d2a2857c8e77824667cb0eaff6c29476c0f12a4
     spec:
       automountServiceAccountToken: false
       initContainers:
