@@ -17,6 +17,7 @@ All changes to this chart will be documented in this file.
 * Replace the example images in initContainers, initSysctl and initFs from `busybox:1.36` to `ubuntu:24.04`, which are commented out by default
 * Make the `automountServiceAccountToken` configurable with `serviceAccount.automountToken` in PodSpec
 * Deprecate `sonarqubeFolder`, `jdbcOverwrite.jdbcPassword` and `terminationGracePeriodSeconds`.
+* Deprecate `deploymentStrategy.type`, which will be set to `Recreate`
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0

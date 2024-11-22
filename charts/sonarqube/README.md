@@ -234,29 +234,29 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Global
 
-| Parameter               | Description                                                                                                                             | Default       |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `deploymentType`        | Deployment Type (supported values are `StatefulSet` or `Deployment`)                                                                    | `StatefulSet` |
-| `replicaCount`          | Number of replicas deployed (supported values are 0 and 1)                                                                              | `1`           |
-| `deploymentStrategy`    | Deployment strategy                                                                                                                     | `{}`          |
-| `priorityClassName`     | Schedule pods on priority (e.g. `high-priority`)                                                                                        | `None`        |
-| `schedulerName`         | Kubernetes scheduler name                                                                                                               | `None`        |
-| `affinity`              | Node / Pod affinities                                                                                                                   | `{}`          |
-| `tolerations`           | List of node taints to tolerate                                                                                                         | `[]`          |
-| `nodeSelector`          | Node labels for pod assignment                                                                                                          | `{}`          |
-| `hostAliases`           | Aliases for IPs in /etc/hosts                                                                                                           | `[]`          |
-| `podLabels`             | Map of labels to add to the pods                                                                                                        | `{}`          |
-| `env`                   | Environment variables to attach to the pods                                                                                             | `{}`          |
-| `annotations`           | SonarQube Pod annotations                                                                                                               | `{}`          |
-| `edition`               | SonarQube Edition to use (e.g. `community`, `developer` or `enterprise`). Please note that the default `community` value is deprecated. | `community`   |
-| `community.enabled`     | Install SonarQube Community Build. When set to `true`, this parameter replaces `edition=community`                                      | `true`        |
-| `community.buildNumber` | The SonarQube Community Build number to install                                                                                         | `10.7.0`      |
-| `sonarWebContext`       | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.                       | ``            |
-| `httpProxySecret`       | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will superseed every other proxy variables                              | ``            |
-| `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables                    | ``            |
-| `httpsProxy`            | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable                   | ``            |
-| `noProxy`               | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables                        | ``            |
-| `ingress-nginx.enabled` | Install Nginx Ingress Helm                                                                                                              | `false`       |
+| Parameter               | Description                                                                                                                             | Default            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `deploymentType`        | Deployment Type (supported values are `StatefulSet` or `Deployment`)                                                                    | `StatefulSet`      |
+| `replicaCount`          | Number of replicas deployed (supported values are 0 and 1)                                                                              | `1`                |
+| `deploymentStrategy`    | Deployment strategy. Setting the strategy type is deprecated and it will be hardcoded to `Recreate`                                     | `{type: Recreate}` |
+| `priorityClassName`     | Schedule pods on priority (e.g. `high-priority`)                                                                                        | `None`             |
+| `schedulerName`         | Kubernetes scheduler name                                                                                                               | `None`             |
+| `affinity`              | Node / Pod affinities                                                                                                                   | `{}`               |
+| `tolerations`           | List of node taints to tolerate                                                                                                         | `[]`               |
+| `nodeSelector`          | Node labels for pod assignment                                                                                                          | `{}`               |
+| `hostAliases`           | Aliases for IPs in /etc/hosts                                                                                                           | `[]`               |
+| `podLabels`             | Map of labels to add to the pods                                                                                                        | `{}`               |
+| `env`                   | Environment variables to attach to the pods                                                                                             | `{}`               |
+| `annotations`           | SonarQube Pod annotations                                                                                                               | `{}`               |
+| `edition`               | SonarQube Edition to use (e.g. `community`, `developer` or `enterprise`). Please note that the default `community` value is deprecated. | `community`        |
+| `community.enabled`     | Install SonarQube Community Build. When set to `true`, this parameter replaces `edition=community`                                      | `true`             |
+| `community.buildNumber` | The SonarQube Community Build number to install                                                                                         | `10.7.0`           |
+| `sonarWebContext`       | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.                       | ``                 |
+| `httpProxySecret`       | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will superseed every other proxy variables                              | ``                 |
+| `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables                    | ``                 |
+| `httpsProxy`            | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable                   | ``                 |
+| `noProxy`               | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables                        | ``                 |
+| `ingress-nginx.enabled` | Install Nginx Ingress Helm                                                                                                              | `false`            |
 
 ### NetworkPolicies
 
@@ -436,20 +436,20 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### SonarQube Specific
 
-| Parameter                      | Description                                                                                                                               | Default          |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------| ---------------- |
-| `jvmOpts`                      | (DEPRECATED) Values to add to `SONAR_WEB_JAVAOPTS`. Please set directly `SONAR_WEB_JAVAOPTS` or `sonar.web.javaOpts`                      | `""`             |
-| `jvmCeOpts`                    | (DEPRECATED) Values to add to `SONAR_CE_JAVAOPTS`. Please set directly `SONAR_CE_JAVAOPTS` or `sonar.ce.javaOpts`                         | `""`             |
-| `sonarqubeFolder`              | (DEPRECATED) Directory name of SonarQube, Due to 1-1 mapping between helm version and docker version, there is no need for configuration  | `/opt/sonarqube` |
-| `sonarProperties`              | Custom `sonar.properties` key-value pairs (e.g., "sonarProperties.sonar.forceAuthentication=true")                                        | `None`           |
-| `sonarSecretProperties`        | Additional `sonar.properties` key-value pairs to load from a secret                                                                       | `None`           |
-| `sonarSecretKey`               | Name of existing secret used for settings encryption                                                                                      | `None`           |
-| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format)                                                   | `define_it`      |
-| `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                                                                     | `None`           |
-| `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                                                                 | `None`           |
-| `extraContainers`              | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars)                                                      | `[]`             |
-| `extraVolumes`                 | Array of extra volumes to add to the SonarQube deployment                                                                                 | `[]`             |
-| `extraVolumeMounts`            | Array of extra volume mounts to add to the SonarQube deployment                                                                           | `[]`             |
+| Parameter                      | Description                                                                                                                              | Default          |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `jvmOpts`                      | (DEPRECATED) Values to add to `SONAR_WEB_JAVAOPTS`. Please set directly `SONAR_WEB_JAVAOPTS` or `sonar.web.javaOpts`                     | `""`             |
+| `jvmCeOpts`                    | (DEPRECATED) Values to add to `SONAR_CE_JAVAOPTS`. Please set directly `SONAR_CE_JAVAOPTS` or `sonar.ce.javaOpts`                        | `""`             |
+| `sonarqubeFolder`              | (DEPRECATED) Directory name of SonarQube, Due to 1-1 mapping between helm version and docker version, there is no need for configuration | `/opt/sonarqube` |
+| `sonarProperties`              | Custom `sonar.properties` key-value pairs (e.g., "sonarProperties.sonar.forceAuthentication=true")                                       | `None`           |
+| `sonarSecretProperties`        | Additional `sonar.properties` key-value pairs to load from a secret                                                                      | `None`           |
+| `sonarSecretKey`               | Name of existing secret used for settings encryption                                                                                     | `None`           |
+| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format)                                                  | `define_it`      |
+| `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                                                                    | `None`           |
+| `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                                                                | `None`           |
+| `extraContainers`              | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars)                                                     | `[]`             |
+| `extraVolumes`                 | Array of extra volumes to add to the SonarQube deployment                                                                                | `[]`             |
+| `extraVolumeMounts`            | Array of extra volume mounts to add to the SonarQube deployment                                                                          | `[]`             |
 
 ### Resources
 
