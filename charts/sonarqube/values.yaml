@@ -604,8 +604,7 @@ postgresql:
 # podLabels:
 #   key: value
 podLabels: {}
-# For compatibility with 8.0 replace by "/opt/sq"
-# For compatibility with 8.2, leave the default. They changed it back to /opt/sonarqube
+# (DEPRECATED) this field will be removed, as it needs to match the SonarQube image folder structure, considering we have one chart version per docker image version this field is not needed anymore.
 sonarqubeFolder: /opt/sonarqube
 
 tests:
@@ -673,4 +672,5 @@ extraConfig:
 # deprecated please use sonarWebContext at the value top level
 #   sonarWebContext: /
 
+# (DEPRECATED) This value is not used in the templates.
 terminationGracePeriodSeconds: 60
