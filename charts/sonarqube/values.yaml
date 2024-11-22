@@ -653,9 +653,30 @@ extraConfig:
   secrets: []
   configmaps: []
 
+# setAdminPassword:
+# The values can be set to define the current and the (new) custom admin passwords at the startup (the username will remain "admin")
+#  newPassword: AdminAdmin_12$
+#  currentPassword: admin
+# The above values can be also provided by a secret that contains "password" and "currentPassword" as keys. You can generate such a secret in your cluster
+# using "kubectl create secret generic admin-password-secret-name --from-literal=password=admin --from-literal=currentPassword=admin"
+#  passwordSecretName: ""
+# Reuse default initcontainers.securityContext that match restricted pod security standard
+#  securityContext: {}
+#  resources:
+#    limits:
+#      cpu: 100m
+#      memory: 128Mi
+#    requests:
+#      cpu: 100m
+#      memory: 128Mi
+#  image:
+#  annotations: {}
+
+
+# (DEPRECATED) please use setAdminPassword instead
 # account:
 # The values can be set to define the current and the (new) custom admin passwords at the startup (the username will remain "admin")
-#   adminPassword: admin
+#   adminPassword: AdminAdmin_12$
 #   currentAdminPassword: admin
 # The above values can be also provided by a secret that contains "password" and "currentPassword" as keys. You can generate such a secret in your cluster
 # using "kubectl create secret generic admin-password-secret-name --from-literal=password=admin --from-literal=currentPassword=admin"
@@ -669,7 +690,9 @@ extraConfig:
 #     requests:
 #       cpu: 100m
 #       memory: 128Mi
+# (DEPRECATED) please use setAdminPassword.image instead
 # curlContainerImage: curlimages/curl:8.2.1
+# (DEPRECATED) please use setAdminPassword.annotations instead
 # adminJobAnnotations: {}
 # deprecated please use sonarWebContext at the value top level
 #   sonarWebContext: /

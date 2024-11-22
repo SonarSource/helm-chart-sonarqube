@@ -604,23 +604,40 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `extraConfig.secrets`    | A list of `Secret`s (which must contain key/value pairs)    | `[]`    |
 | `extraConfig.configmaps` | A list of `ConfigMap`s (which must contain key/value pairs) | `[]`    |
 
+
+### SetAdminPassword
+
+| Parameter                                    | Description                                                                                            | Default                                                                |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `setAdminPassword.newPassword`               | Custom admin password                                                                                  | `AdminAdmin_12$`                                                       |
+| `setAdminPassword.currentPassword`           | Current admin password                                                                                 | `admin`                                                                |
+| `setAdminPassword.passwordSecretName`        | Secret containing `password` (custom password) and `currentPassword` (current password) keys for admin | `None`                                                                 |
+| `setAdminPassword.resources.requests.memory` | Memory request for Admin hook                                                                          | `128Mi`                                                                |
+| `setAdminPassword.resources.requests.cpu`    | CPU request for Admin hook                                                                             | `100m`                                                                 |
+| `setAdminPassword.resources.limits.memory`   | Memory limit for Admin hook                                                                            | `128Mi`                                                                |
+| `setAdminPassword.resources.limits.cpu`      | CPU limit for Admin hook                                                                               | `100m`                                                                 |
+| `setAdminPassword.securityContext`           | SecurityContext for change-password-hook                                                               | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
+| `setAdminPassword.image`                     | Curl container image                                                                                   | `"image.repository":"image.tag"`                                       |
+| `setAdminPassword.annotations`               | Custom annotations for admin hook Job                                                                  | `{}`                                                                   |
+
+
 ### Advanced Options
 
-| Parameter                           | Description                                                                                                  | Default                  |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------ |
-| `logging.jsonOutput`                | Enable/Disable logging in JSON format                                                                        | `false`                  |
-| `account.adminPassword`             | Custom new admin password                                                                                    | `admin`                  |
-| `account.currentAdminPassword`      | Current admin password                                                                                       | `admin`                  |
-| `account.adminPasswordSecretName`   | Secret containing `password` (custom password) and `currentPassword` (current password) keys for admin       | `None`                   |
-| `account.resources.requests.memory` | Memory request for Admin hook                                                                                | `128Mi`                  |
-| `account.resources.requests.cpu`    | CPU request for Admin hook                                                                                   | `100m`                   |
-| `account.resources.limits.memory`   | Memory limit for Admin hook                                                                                  | `128Mi`                  |
-| `account.resources.limits.cpu`      | CPU limit for Admin hook                                                                                     | `100m`                   |
-| `curlContainerImage`                | Curl container image                                                                                         | `applicationNodes.image` |
-| `account.sonarWebContext`           | (DEPRECATED) SonarQube web context for Admin hook. please use sonarWebContext at the value top level instead | `nil`                    |
-| `account.securityContext`           | Security context for downloading the prometheus exporter                                                     | see `values.yaml`        |
-| `adminJobAnnotations`               | Custom annotations for admin hook Job                                                                        | `{}`                     |
-| `terminationGracePeriodSeconds`     | (DEPRECATED) this field is not used in the templates                                                         | `60`                                                                   |
+| Parameter                           | Description                                                                                                                                                                    | Default                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `logging.jsonOutput`                | Enable/Disable logging in JSON format                                                                                                                                          | `false`                                                                |
+| `account.adminPassword`             | (DEPRECATED) Custom admin password. Please use `setAdminPassword.newPassword` instead.                                                                                         | `AdminAdmin_12$`                                                       |
+| `account.currentAdminPassword`      | (DEPRECATED) Current admin password. Please use `setAdminPassword.currentPassword` instead.                                                                                    | `admin`                                                                |
+| `account.adminPasswordSecretName`   | (DEPRECATED) Secret containing `password` (custom password) and `currentPassword` (current password) keys for admin. Please use `setAdminPassword.passwordSecretName` instead. | `None`                                                                 |
+| `account.resources.requests.memory` | (DEPRECATED) Memory request for Admin hook. Please use `setAdminPassword.resources.requests.memory` instead.                                                                   | `128Mi`                                                                |
+| `account.resources.requests.cpu`    | (DEPRECATED) CPU request for Admin hook. Please use `setAdminPassword.resources.requests.cpu` instead.                                                                         | `100m`                                                                 |
+| `account.resources.limits.memory`   | (DEPRECATED) Memory limit for Admin hook. Please use `setAdminPassword.resources.limits.memory` instead.                                                                       | `128Mi`                                                                |
+| `account.resources.limits.cpu`      | (DEPRECATED) CPU limit for Admin hook. Please use `setAdminPassword.resources.limits.cpu` instead.                                                                             | `100m`                                                                 |
+| `account.sonarWebContext`           | (DEPRECATED) SonarQube web context for Admin hook. Please use `sonarWebContext` at the value top level instead                                                                 | `nil`                                                                  |
+| `account.securityContext`           | (DEPRECATED) SecurityContext for change-password-hook. Please use `setAdminPassword.securityContext` instead.                                                                  | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
+| `curlContainerImage`                | (DEPRECATED) Curl container image. Please use `setAdminPassword.image` instead.                                                                                                | `"image.repository":"image.tag"`                                       |
+| `adminJobAnnotations`               | (DEPRECATED) Custom annotations for admin hook Job. Please use `setAdminPassword.annotations` instead.                                                                         | `{}`                                                                   |
+| `terminationGracePeriodSeconds`     | (DEPRECATED) this field is not used in the templates                                                                                                                               | `60`                                                                   |
 
 You can also configure values for the PostgreSQL database via the PostgreSQL [Chart](https://hub.helm.sh/charts/bitnami/postgresql)
 
