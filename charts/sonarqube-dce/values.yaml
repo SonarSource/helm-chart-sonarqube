@@ -679,7 +679,7 @@ jdbcOverwrite:
   jdbcUrl: "jdbc:postgresql://myPostgress/myDatabase"
   # The DB user that should be used for the JDBC connection
   jdbcUsername: "sonarUser"
-  # Use this if you don't mind the DB password getting stored in plain text within the values file
+  # (DEPRECATED) Please use `jdbcOverwrite.jdbcSecretName` along with `jdbcOverwrite.jdbcSecretPasswordKey` instead
   jdbcPassword: "sonarPass"
   ## Alternatively, use a pre-existing k8s secret containing the DB password
   # jdbcSecretName: "sonarqube-jdbc"
@@ -769,8 +769,7 @@ postgresql:
 # podLabels:
 #   key: value
 podLabels: {}
-# For compatibility with 8.0 replace by "/opt/sq"
-# For compatibility with 8.2, leave the default.
+# (DEPRECATED) this field will be removed, as it needs to match the SonarQube image folder structure, considering we have one chart version per docker image version this field is not needed anymore.
 sonarqubeFolder: /opt/sonarqube
 
 # Enable/Disable logging in JSON format
@@ -841,4 +840,5 @@ extraConfig:
 # Reuse default initcontainers.securityContext that match restricted pod security standard
 #   securityContext: {}
 
+# (DEPRECATED) This value is not used in the templates.
 terminationGracePeriodSeconds: 60

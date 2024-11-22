@@ -473,12 +473,6 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `httproute.labels`           | (Optional) List of extra labels to add to the HttpRoute                                                       | `None`  |
 | `httproute.rules`            | (Optional) Extra Rules block of the HttpRoute. A default one is created with SonarWebContext and service port | `None`  |
 
-### Elasticsearch
-
-| Parameter                       | Description                                     | Default |
-| ------------------------------- | ----------------------------------------------- | ------- |
-| `elasticsearch.bootstrapChecks` | Enables/disables Elasticsearch bootstrap checks | `true`  |
-
 ### Service
 
 | Parameter                          | Description                                        | Default     |
@@ -534,27 +528,27 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### SonarQube Specific
 
-| Parameter                      | Description                                                                             | Default          |
-| ------------------------------ | --------------------------------------------------------------------------------------- | ---------------- |
-| `sonarqubeFolder`              | Directory name of SonarQube                                                             | `/opt/sonarqube` |
-| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format) | `define_it`      |
-| `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                   | `None`           |
-| `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                               | `None`           |
-| `extraContainers`              | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars)    | `[]`             |
+| Parameter                      | Description                                                                                                                               | Default          |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `sonarqubeFolder`              | (DEPRECATED) Directory name of SonarQube, Due to 1-1 mapping between helm version and docker version, there is no need for configuration  | `/opt/sonarqube` |
+| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format)                                                   | `define_it`      |
+| `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                                                                     | `None`           |
+| `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                                                                 | `None`           |
+| `extraContainers`              | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars)                                                      | `[]`             |
 
 ### JDBC Overwrite
 
-| Parameter                                   | Description                                                                                                                                                  | Default                                    |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
-| `jdbcOverwrite.enable`                      | (DEPRECATED) Enable JDBC overwrites for external Databases (disables `postgresql.enabled`) ,Please use jdbcOverwrite.enabled instead                         | `false`                                    |
-| `jdbcOverwrite.enabled`                     | Enable JDBC overwrites for external Databases (disable `postgresql.enabled`)                                                                                 | `false`                                    |
-| `jdbcOverwrite.jdbcUrl`                     | The JDBC url to connect the external DB                                                                                                                      | `jdbc:postgresql://myPostgress/myDatabase` |
-| `jdbcOverwrite.jdbcUsername`                | The DB user that should be used for the JDBC connection                                                                                                      | `sonarUser`                                |
-| `jdbcOverwrite.jdbcPassword`                | The DB password that should be used for the JDBC connection (Use this if you don't mind the DB password getting stored in plain text within the values file) | `sonarPass`                                |
-| `jdbcOverwrite.jdbcSecretName`              | Alternatively, use a pre-existing k8s secret containing the DB password                                                                                      | `None`                                     |
-| `jdbcOverwrite.jdbcSecretPasswordKey`       | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret                                    | `None`                                     |
-| `jdbcOverwrite.oracleJdbcDriver.url`        | The URL of the Oracle JDBC driver to be downloaded                                                                                                           | `None`                                     |
-| `jdbcOverwrite.oracleJdbcDriver.netrcCreds` | Name of the secret containing .netrc file to use creds when downloading the Oracle JDBC driver                                                               | `None`                                     |
+| Parameter                                   | Description                                                                                                                                                    | Default                                    |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `jdbcOverwrite.enable`                      | (DEPRECATED) Enable JDBC overwrites for external Databases (disables `postgresql.enabled`) ,Please use jdbcOverwrite.enabled instead                           | `false`                                    |
+| `jdbcOverwrite.enabled`                     | Enable JDBC overwrites for external Databases (disable `postgresql.enabled`)                                                                                   | `false`                                    |
+| `jdbcOverwrite.jdbcUrl`                     | The JDBC url to connect the external DB                                                                                                                        | `jdbc:postgresql://myPostgress/myDatabase` |
+| `jdbcOverwrite.jdbcUsername`                | The DB user that should be used for the JDBC connection                                                                                                        | `sonarUser`                                |
+| `jdbcOverwrite.jdbcPassword`                | (DEPRECATED) The DB password that should be used for the JDBC connection, please use `jdbcOverwrite.jdbcSecretName` and `jdbcOverwrite.jdbcSecretPasswordKey` | `sonarPass`                                |
+| `jdbcOverwrite.jdbcSecretName`              | Alternatively, use a pre-existing k8s secret containing the DB password                                                                                        | `None`                                     |
+| `jdbcOverwrite.jdbcSecretPasswordKey`       | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret                                      | `None`                                     |
+| `jdbcOverwrite.oracleJdbcDriver.url`        | The URL of the Oracle JDBC driver to be downloaded                                                                                                             | `None`                                     |
+| `jdbcOverwrite.oracleJdbcDriver.netrcCreds` | Name of the secret containing .netrc file to use creds when downloading the Oracle JDBC driver                                                                 | `None`                                     |
 
 ### Bundled PostgreSQL Chart (DEPRECATED)
 
@@ -626,7 +620,7 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `account.sonarWebContext`           | (DEPRECATED) SonarQube web context for Admin hook. please use sonarWebContext at the value top level instead | `nil`                    |
 | `account.securityContext`           | Security context for downloading the prometheus exporter                                                     | see `values.yaml`        |
 | `adminJobAnnotations`               | Custom annotations for admin hook Job                                                                        | `{}`                     |
-| `terminationGracePeriodSeconds`     | Configuration of `terminationGracePeriodSeconds`                                                             | `60`                     |
+| `terminationGracePeriodSeconds`     | (DEPRECATED) this field is not used in the templates                                                         | `60`                                                                   |
 
 You can also configure values for the PostgreSQL database via the PostgreSQL [Chart](https://hub.helm.sh/charts/bitnami/postgresql)
 
@@ -671,8 +665,6 @@ This chart offers the option to use an initContainer in privilaged mode to autom
 To enable auto-configuration of the kube worker node, set `elasticsearch.configureNode` to `true`. This is the default behavior, so you do not need to explicitly set this.
 
 This will run `sysctl -w vm.max_map_count=262144` on the worker where the sonarqube pod(s) get scheduled. This needs to be set to `262144` but normally defaults to `65530`. Other kernel settings are recommended by the [docker image](https://hub.docker.com/_/sonarqube/#requirements), but the defaults work fine in most cases.
-
-To disable worker node configuration, set `elasticsearch.configureNode` to `false`. Note that if node configuration is not enabled, then you will likely need to also disable the Elasticsearch bootstrap checks. These can be explicitly disabled by setting `elasticsearch.bootstrapChecks` to `false`.
 
 ### Extra Config
 
