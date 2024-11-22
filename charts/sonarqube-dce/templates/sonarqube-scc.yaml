@@ -1,3 +1,5 @@
+{{ $applicationNodes := fromYaml (include "applicationNodes" . ) }}
+{{ $_ := set .Values "ApplicationNodes" $applicationNodes }}
 {{- if and (.Values.OpenShift.enabled) (.Values.OpenShift.createSCC) }}
 
 # This SCC allows any user ID but restricts capabilties and host access

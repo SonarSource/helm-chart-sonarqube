@@ -1,3 +1,5 @@
+{{ $applicationNodes := fromYaml (include "applicationNodes" . ) }}
+{{ $_ := set .Values "ApplicationNodes" $applicationNodes }}
 {{- if and .Values.OpenShift.route.enabled .Values.OpenShift.enabled -}}
 kind: Route
 apiVersion: route.openshift.io/v1

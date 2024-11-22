@@ -1,3 +1,44 @@
+{{/*
+  This helper deeply merges two maps (structs). It recursively merges nested maps and takes the values from `map2` when keys overlap.
+*/}}
+{{- define "deepMerge" -}}
+{{- $map1 := .map1 -}}
+{{- $map2 := .map2 -}}
+
+{{- $result := dict -}}
+
+{{- /* Merge keys from map1 */}}
+{{- range $key, $value := $map1 -}}
+  {{- $_ := set $result $key $value -}}
+{{- end -}}
+
+{{- /* Merge keys from map2 (overriding map1 if the key exists) */}}
+{{- range $key, $value := $map2 -}}
+  {{- if hasKey $map1 $key -}}
+    {{- /* If both maps have the same key and the value is a map, we need to merge recursively */}}
+    {{- if and (kindIs "map" $value) (kindIs "map" (index $map1 $key)) -}}
+      {{- $_ := set $result $key (fromYaml (include "deepMerge" (dict "map1" (index $map1 $key) "map2" $value))) -}}
+    {{- else -}}
+      {{- /* Otherwise, just take the value from map2 */}}
+      {{- $_ := set $result $key $value -}}
+    {{- end -}}
+  {{- else -}}
+    {{- /* If map2 has a key not in map1, just add it to the result */}}
+    {{- $_ := set $result $key $value -}}
+  {{- end -}}
+{{- end -}}
+
+{{- toYaml $result -}}
+{{- end -}}
+
+{{- define "applicationNodes" -}}
+{{- $map1 := .Values.applicationNodes -}}
+{{- $map2 := .Values.ApplicationNodes -}}
+
+{{- $applicationNodes := (include "deepMerge" (dict "map1" $map1 "map2" $map2)) -}}
+{{- $applicationNodes }}
+{{- end -}}
+
 {{/* vim: set filetype=mustache: */}}
 {{/*
 Expand the name of the chart.

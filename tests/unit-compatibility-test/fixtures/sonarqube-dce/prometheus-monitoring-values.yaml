@@ -214,6 +214,36 @@ data:
   SONAR_JDBC_USERNAME: "sonarUser"
   SONAR_JDBC_URL: "jdbc:postgresql://prometheus-monitoring-values.yaml-postgresql:5432/sonarDB"
 ---
+# Source: sonarqube-dce/templates/prometheus-ce-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-monitoring-values.yaml-sonarqube-dce-prometheus-ce-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.8.0
+    release: prometheus-monitoring-values.yaml
+    heritage: Helm
+data:
+  prometheus-ce-config.yaml: |-
+        rules:
+        - pattern: .*
+---
+# Source: sonarqube-dce/templates/prometheus-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-monitoring-values.yaml-sonarqube-dce-prometheus-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-10.8.0
+    release: prometheus-monitoring-values.yaml
+    heritage: Helm
+data:
+  prometheus-config.yaml: |-
+        rules:
+        - pattern: .*
+---
 # Source: sonarqube-dce/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
 kind: Service
@@ -400,9 +430,11 @@ spec:
         release: prometheus-monitoring-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 1465881617eeac1e7cfbd5b2e7c0313aafdd80cc9ba2c8286d16f724ce9eddf2
-        checksum/config: 61a8486b58412bfe4c47629fdd9d1b5f775861b6ad7836376f2f25707b08b81e
-        checksum/secret: 62eb5556e5e3f133aeb8e1b98c1ee3168287ea3e2065fb6186cf0a578a00b5db
+        checksum/plugins: 3e7bab118270ba41a01162ad9b922a6e0999836f91b4639d2c732d65fe9d28e8
+        checksum/config: 13bf9f27ef611af2bcac99f6769fe5f8a9913788bcfaf012e15914d7616e4f88
+        checksum/secret: 86515267e5967d1c719b0304f4477b3b629b9df96d2b1c2cb5fb6030dbf1605b
+        checksum/prometheus-config: 41bf4ae92953cbd6ea2213f64fdf1c8c46474e1511be33640366193d935a9254
+        checksum/prometheus-ce-config: 2dba0f0f5252c2229adfd24e9f461f278f4048aabc9411a3f7dcde0844a5716a
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -424,6 +456,44 @@ spec:
             {}
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/prometheus-monitoring-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+        - name: inject-prometheus-exporter
+          image: sonarqube:10.7.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
+          command: ["/bin/sh","-c"]
+          args: ["curl -s 'https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.17.2/jmx_prometheus_javaagent-0.17.2.jar' --insecure --output /data/jmx_prometheus_javaagent.jar -v"]
+          volumeMounts:
+            - mountPath: /data
+              name: sonarqube
+              subPath: data
+          env:
+            - name: http_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
+                  key: PROMETHEUS-EXPORTER-HTTP-PROXY
+            - name: https_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
+                  key: PROMETHEUS-EXPORTER-HTTPS-PROXY
+            - name: no_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
+                  key: PROMETHEUS-EXPORTER-NO-PROXY
       securityContext:
         fsGroup: 0
       containers:
@@ -433,6 +503,12 @@ spec:
           ports:
             - name: http
               containerPort: 9000
+              protocol: TCP
+            - name: monitoring-web
+              containerPort: 8000
+              protocol: TCP
+            - name: monitoring-ce
+              containerPort: 8001
               protocol: TCP
             - name: hazelcast
               containerPort: 9003
@@ -450,9 +526,9 @@ spec:
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS
-              value: ""
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml
             - name: SONAR_CE_JAVAOPTS
-              value: ""
+              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
             - name: SONAR_HELM_CHART_VERSION
               value: 10.8.0
             - name: SONAR_LOG_JSONOUTPUT
@@ -490,7 +566,7 @@ spec:
               command:
               - sh
               - -c
-              - |
+              - |-
                 host="$(hostname -i || echo '127.0.0.1')"
                 wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
             failureThreshold: 6
@@ -502,7 +578,7 @@ spec:
               command:
               - sh
               - -c
-              - |
+              - |-
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
@@ -546,6 +622,12 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
+            - mountPath: /opt/sonarqube/conf/prometheus-config.yaml
+              subPath: prometheus-config.yaml
+              name: prometheus-config
+            - mountPath: /opt/sonarqube/conf/prometheus-ce-config.yaml
+              subPath: prometheus-ce-config.yaml
+              name: prometheus-ce-config
       serviceAccountName: default
       volumes:
       
@@ -555,6 +637,18 @@ spec:
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
+      - name: prometheus-config
+        configMap:
+          name: prometheus-monitoring-values.yaml-sonarqube-dce-prometheus-config
+          items:
+            - key: prometheus-config.yaml
+              path: prometheus-config.yaml
+      - name: prometheus-ce-config
+        configMap:
+          name: prometheus-monitoring-values.yaml-sonarqube-dce-prometheus-ce-config
+          items:
+            - key: prometheus-ce-config.yaml
+              path: prometheus-ce-config.yaml
       - name: sonarqube
         emptyDir:
           {}
@@ -768,10 +862,10 @@ spec:
         release: prometheus-monitoring-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: b757916bc7bc7d680c9acf8fbd60733fcf57dc9191c96f7fd761ddc27e360312
-        checksum/init-fs: 7d1da28cf118c0f34ccbfed069816011809a9f2bd7c28cb6431dc235db83b67f
-        checksum/config: 61a8486b58412bfe4c47629fdd9d1b5f775861b6ad7836376f2f25707b08b81e
-        checksum/secret: 62eb5556e5e3f133aeb8e1b98c1ee3168287ea3e2065fb6186cf0a578a00b5db
+        checksum/init-sysctl: da55bfa435f09561773bda65716cefbbac512169e7a94d8e583d0f3cd9ad6bb7
+        checksum/init-fs: fa098a568c909e746c462936bdf692c691bb6087ca10862042e90368e0faaac9
+        checksum/config: 13bf9f27ef611af2bcac99f6769fe5f8a9913788bcfaf012e15914d7616e4f88
+        checksum/secret: 86515267e5967d1c719b0304f4477b3b629b9df96d2b1c2cb5fb6030dbf1605b
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -984,6 +1078,16 @@ spec:
     bearerTokenSecret:
       name: prometheus-monitoring-values.yaml-sonarqube-dce-monitoring-passcode
       key: SONAR_WEB_SYSTEMPASSCODE
+  - port: monitoring-ce
+    path: /
+    scheme: http
+    interval: 30s
+    scrapeTimeout: 30s
+  - port: monitoring-web
+    path: /
+    scheme: http
+    interval: 30s
+    scrapeTimeout: 30s
 ---
 # Source: sonarqube-dce/templates/tests/sonarqube-test.yaml
 apiVersion: v1

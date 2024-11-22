@@ -1,3 +1,5 @@
+{{ $applicationNodes := fromYaml (include "applicationNodes" . ) }}
+{{ $_ := set .Values "ApplicationNodes" $applicationNodes }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -68,7 +70,7 @@ spec:
       {{- end }}
       {{- if .Values.postgresql.enabled }}
         - name: "wait-for-db"
-          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
+          image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           {{- with (include "sonarqube.initContainersSecurityContext" .) }}
           securityContext: {{- . | nindent 12 }}
@@ -80,7 +82,7 @@ spec:
       {{- end }}
       {{- if .Values.caCerts.enabled }}
         - name: ca-certs
-          image: {{ default (include "sonarqube.image" $) .Values.caCerts.image }}
+          image: {{ default (include "sonarqube.image" .) .Values.caCerts.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
@@ -102,7 +104,7 @@ spec:
       {{- end }}
       {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
-          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
+          image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: 
           - sh
@@ -143,7 +145,7 @@ spec:
       {{- end }}
       {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
         - name: inject-prometheus-exporter
-          image: {{ default (include "sonarqube.image" $) .Values.ApplicationNodes.prometheusExporter.image }}
+          image: {{ default (include "sonarqube.image" .) .Values.ApplicationNodes.prometheusExporter.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) .Values.ApplicationNodes.prometheusExporter.securityContext) }}
           securityContext: {{- toYaml . | nindent 12 }}
@@ -151,7 +153,7 @@ spec:
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.ApplicationNodes.prometheusExporter.resources) | indent 12 }}
           command: ["/bin/sh","-c"]
-          args: ["curl -s '{{ template "prometheusExporter.downloadURL" . }}' {{ if $.Values.ApplicationNodes.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v"]
+          args: ["curl -s '{{ template "prometheusExporter.downloadURL" . }}' {{ if .Values.ApplicationNodes.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v"]
           volumeMounts:
             - mountPath: /data
               name: sonarqube
@@ -166,7 +168,7 @@ spec:
       {{- end }}
       {{- if .Values.ApplicationNodes.plugins.install }}
         - name: install-plugins
-          image: {{ default (include "sonarqube.image" $) .Values.ApplicationNodes.plugins.image }}
+          image: {{ default (include "sonarqube.image" .) .Values.ApplicationNodes.plugins.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh",
             "-e",
@@ -196,7 +198,7 @@ spec:
       {{- end }}
       {{- if and .Values.jdbcOverwrite.oracleJdbcDriver .Values.jdbcOverwrite.oracleJdbcDriver.url }}
         - name: install-oracle-jdbc-driver
-          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
+          image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
           {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) .Values.initContainers.securityContext) }}

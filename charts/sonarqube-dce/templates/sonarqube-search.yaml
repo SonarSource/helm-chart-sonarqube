@@ -1,3 +1,5 @@
+{{ $applicationNodes := fromYaml (include "applicationNodes" . ) }}
+{{ $_ := set .Values "ApplicationNodes" $applicationNodes }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -92,7 +94,7 @@ spec:
       {{- end }}
       {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
         - name: init-sysctl
-          image: {{ default (include "sonarqube.image" $) .Values.initSysctl.image }}
+          image: {{ default (include "sonarqube.image" .) .Values.initSysctl.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
           {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) (.Values.initSysctl.securityContext )) }}
           securityContext: {{- toYaml . | nindent 12 }}
@@ -112,7 +114,7 @@ spec:
       {{- end }}
       {{- if .Values.caCerts.enabled }}
         - name: ca-certs
-          image: {{ default (include "sonarqube.image" $) .Values.caCerts.image }}
+          image: {{ default (include "sonarqube.image" .) .Values.caCerts.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
@@ -134,7 +136,7 @@ spec:
       {{- end }}
       {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
-          image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
+          image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
           command: 
           - sh
@@ -175,7 +177,7 @@ spec:
       {{- end }}
       {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
         - name: init-fs
-          image: {{ default (include "sonarqube.image" $) .Values.initFs.image }}
+          image: {{ default (include "sonarqube.image" .) .Values.initFs.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
           {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) .Values.initFs.securityContext) }}
           securityContext: {{- toYaml . | nindent 12 }}

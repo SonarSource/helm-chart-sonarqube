@@ -282,9 +282,9 @@ spec:
         release: restricted-openshift.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 1e0a4b7d8d17b4cf5cf5b292347e7432f869296815a2a046d0ded723d0707223
-        checksum/config: c55ac6cf8e1e06b009ab53b734bd633dc9d8106e509dc0c862701d7cbfcb8a14
-        checksum/secret: 724158a85643d3dc3279a17a00a5186cbd38a7a7515fdcdaa4034ce856c71831
+        checksum/plugins: bf8e7f6011cc98aa3d2e720f82a494303971f41f9c79da16d90f348cc902e1dc
+        checksum/config: a28484aa61513a636b834cf8c7b1bb6841e33ed5eee25ba5142a77df9c7b84ac
+        checksum/secret: b5f3a93d55469e46fc4dcb8856d8d475bf8afeca50752076e26aa13ca0dcd50c
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -390,7 +390,7 @@ spec:
               command:
               - sh
               - -c
-              - |
+              - |-
                 host="$(hostname -i || echo '127.0.0.1')"
                 wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
             failureThreshold: 6
@@ -402,7 +402,7 @@ spec:
               command:
               - sh
               - -c
-              - |
+              - |-
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
@@ -517,8 +517,8 @@ spec:
         release: restricted-openshift.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/config: c55ac6cf8e1e06b009ab53b734bd633dc9d8106e509dc0c862701d7cbfcb8a14
-        checksum/secret: 724158a85643d3dc3279a17a00a5186cbd38a7a7515fdcdaa4034ce856c71831
+        checksum/config: a28484aa61513a636b834cf8c7b1bb6841e33ed5eee25ba5142a77df9c7b84ac
+        checksum/secret: b5f3a93d55469e46fc4dcb8856d8d475bf8afeca50752076e26aa13ca0dcd50c
     spec:
       automountServiceAccountToken: false
       initContainers:
