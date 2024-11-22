@@ -17,6 +17,7 @@ All changes to this chart will be documented in this file.
 * Replace helm top level '$' by '.' when not necessary
 * Deprecate `elasticsearch.bootstrapchecks`, `sonarqubeFolder`, `jdbcOverwrite.jdbcPassword` and `terminationGracePeriodSeconds`
 * Deprecate `account`, `curlContainerImage`, `adminJobAnnotations`
+* Deprecate `logging.jsonOutput` in favor of the ENV var SONAR_LOG_JSONOUTPUT or the sonar.properties's sonar.log.jsonOutput
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0
