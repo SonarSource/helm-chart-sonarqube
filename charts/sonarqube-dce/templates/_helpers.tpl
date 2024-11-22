@@ -39,6 +39,14 @@
 {{- $applicationNodes }}
 {{- end -}}
 
+{{- define "accountDeprecation" -}}
+{{- $map1 := .Values.setAdminPassword -}}
+{{- $map2 := .Values.account -}}
+
+{{- $accountDeprecation := (include "deepMerge" (dict "map1" $map1 "map2" $map2)) -}}
+{{- $accountDeprecation }}
+{{- end -}}
+
 {{/* vim: set filetype=mustache: */}}
 {{/*
 Expand the name of the chart.

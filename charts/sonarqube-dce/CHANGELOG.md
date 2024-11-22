@@ -16,6 +16,7 @@ All changes to this chart will be documented in this file.
 * Deprecate `ApplicationNodes` in favor of `applicationNodes`, fixing naming convention typo
 * Replace helm top level '$' by '.' when not necessary
 * Deprecate `elasticsearch.bootstrapchecks`, `sonarqubeFolder`, `jdbcOverwrite.jdbcPassword` and `terminationGracePeriodSeconds`
+* Deprecate `account`, `curlContainerImage`, `adminJobAnnotations`
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0
