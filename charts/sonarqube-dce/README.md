@@ -620,7 +620,7 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `account.sonarWebContext`           | (DEPRECATED) SonarQube web context for Admin hook. please use sonarWebContext at the value top level instead | `nil`                    |
 | `account.securityContext`           | Security context for downloading the prometheus exporter                                                     | see `values.yaml`        |
 | `adminJobAnnotations`               | Custom annotations for admin hook Job                                                                        | `{}`                     |
-| `terminationGracePeriodSeconds`     | Configuration of `terminationGracePeriodSeconds`                                                             | `60`                     |
+| `terminationGracePeriodSeconds`     | (DEPRECATED) this field is not used in the templates                                                         | `60`                                                                   |
 
 You can also configure values for the PostgreSQL database via the PostgreSQL [Chart](https://hub.helm.sh/charts/bitnami/postgresql)
 
