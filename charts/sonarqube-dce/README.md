@@ -473,12 +473,6 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `httproute.labels`           | (Optional) List of extra labels to add to the HttpRoute                                                       | `None`  |
 | `httproute.rules`            | (Optional) Extra Rules block of the HttpRoute. A default one is created with SonarWebContext and service port | `None`  |
 
-### Elasticsearch
-
-| Parameter                       | Description                                     | Default |
-| ------------------------------- | ----------------------------------------------- | ------- |
-| `elasticsearch.bootstrapChecks` | Enables/disables Elasticsearch bootstrap checks | `true`  |
-
 ### Service
 
 | Parameter                          | Description                                        | Default     |
@@ -671,8 +665,6 @@ This chart offers the option to use an initContainer in privilaged mode to autom
 To enable auto-configuration of the kube worker node, set `elasticsearch.configureNode` to `true`. This is the default behavior, so you do not need to explicitly set this.
 
 This will run `sysctl -w vm.max_map_count=262144` on the worker where the sonarqube pod(s) get scheduled. This needs to be set to `262144` but normally defaults to `65530`. Other kernel settings are recommended by the [docker image](https://hub.docker.com/_/sonarqube/#requirements), but the defaults work fine in most cases.
-
-To disable worker node configuration, set `elasticsearch.configureNode` to `false`. Note that if node configuration is not enabled, then you will likely need to also disable the Elasticsearch bootstrap checks. These can be explicitly disabled by setting `elasticsearch.bootstrapChecks` to `false`.
 
 ### Extra Config
 
