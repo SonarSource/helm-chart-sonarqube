@@ -237,7 +237,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter               | Description                                                                                                                             | Default            |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `deploymentType`        | (DEPRECATED) Deployment Type (supported values are `StatefulSet` or `Deployment`)                                                                    | `StatefulSet`      |
+| `deploymentType`        | (DEPRECATED) Deployment Type (supported values are `StatefulSet` or `Deployment`)                                                       | `StatefulSet`      |
 | `replicaCount`          | Number of replicas deployed (supported values are 0 and 1)                                                                              | `1`                |
 | `deploymentStrategy`    | Deployment strategy. Setting the strategy type is deprecated and it will be hardcoded to `Recreate`                                     | `{type: Recreate}` |
 | `priorityClassName`     | Schedule pods on priority (e.g. `high-priority`)                                                                                        | `None`             |
