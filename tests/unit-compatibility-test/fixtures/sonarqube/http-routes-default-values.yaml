@@ -508,7 +508,7 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
+                # status about migration are added to prevent the node to be kill while SonarQube is upgrading the database.
                 if wget --no-proxy -qO- http://localhost:9000/sonarqube/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
                   exit 0
                 fi

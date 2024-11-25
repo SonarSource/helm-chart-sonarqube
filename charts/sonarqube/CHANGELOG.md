@@ -19,6 +19,7 @@ All changes to this chart will be documented in this file.
 * Deprecate `sonarqubeFolder`, `jdbcOverwrite.jdbcPassword` and `terminationGracePeriodSeconds`
 * Deprecate `deploymentStrategy.type`, which will be set to `Recreate`
 * Deprecate `account`, `curlContainerImage`, `adminJobAnnotations`
+* Deprecates StatefulSet in favor of Deployment
 
 ## [10.7.0]
 * Update Chart's version to 10.7.0

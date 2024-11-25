@@ -36,3 +36,6 @@ WARNING: The ingress nginx controller dependency has been upgraded to a major ve
 {{ if hasKey .Values.deploymentStrategy "type" }}
 WARNING: Setting the deployment strategy type is deprecated and will be removed in a future release. It will be hard-coded to Recreate.
 {{- end }}
+{{ if eq .Values.deploymentType "StatefulSet" }}
+WARNING: The deploymentType value is deprecated and won't be supported anymore. SonarQube will be deployed as a Deployment by default.
+{{- end }}

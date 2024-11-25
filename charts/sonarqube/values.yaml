@@ -1,11 +1,12 @@
-# Default values for sonarqube.
+# Default values for SonarQube.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# If the deployment Type is set to Deployment sonarqube is deployed as a replica set.
+# (DEPRECATED) If the deployment Type is set to Deployment SonarQube is deployed as a replica set.
+# This will be removed in a future release.
 deploymentType: "StatefulSet"
 
-# There should not be more than 1 sonarqube instance connected to the same database. Please set this value to 1 or 0 (in case you need to scale down programmatically).
+# There should not be more than 1 SonarQube instance connected to the same database. Please set this value to 1 or 0 (in case you need to scale down programmatically).
 replicaCount: 1
 
 # How many revisions to retain (Deployment ReplicaSets or StatefulSets)
@@ -86,7 +87,7 @@ containerSecurityContext:
 
 # Settings to configure elasticsearch host requirements
 elasticsearch:
-  # DEPRECATED: Use initSysctl.enabled instead
+  # (DEPRECATED) Use initSysctl.enabled instead
   configureNode: false
   bootstrapChecks: true
 
@@ -223,7 +224,7 @@ readinessProbe:
     - |
       #!/bin/bash
       # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-      # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
+      # status about migration are added to prevent the node to be kill while SonarQube is upgrading the database.
       if wget --no-proxy -qO- http://localhost:{{ .Values.service.internalPort }}{{ .Values.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
         exit 0
       fi
@@ -291,7 +292,7 @@ initContainers:
 # Extra init containers to e.g. download required artifacts
 extraInitContainers: {}
 
-## Array of extra containers to run alongside the sonarqube container
+## Array of extra containers to run alongside the SonarQube container
 ##
 ## Example:
 ## - name: myapp-container
@@ -447,7 +448,7 @@ monitoringPasscode: "define_it"
 # Set annotations for pods
 annotations: {}
 
-## We usually don't make specific resource recommendations, as they are heavily dependend on
+## We usually don't make specific resource recommendations, as they are heavily dependant on
 ## the usage of SonarQube and the surrounding infrastructure.
 ## Those default are based on the default Web -Xmx1G -Xms128m and CE -Xmx2G -Xms128m and Search -Xmx2G -Xms2G settings of SQ sub processes
 ## Adjust these values to your needs, you can find more details on the main README of the chart.
@@ -505,7 +506,7 @@ emptyDir: {}
 # Additional sonar properties to load from a secret with a key "secret.properties" (must be a string)
 # sonarSecretProperties:
 
-# Kubernetes secret that contains the encryption key for the sonarqube instance.
+# Kubernetes secret that contains the encryption key for the SonarQube instance.
 # The secret must contain the key 'sonar-secret.txt'.
 # The 'sonar.secretKeyPath' property will be set automatically.
 # sonarSecretKey: "settings-encryption-secret"
