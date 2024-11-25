@@ -228,6 +228,34 @@ Set sonarqube.jvmCEOpts
 {{- end -}}
 
 {{/*
+Set sonarqube.log.jsonoutput
+*/}}
+{{- define "sonarqube.log.jsonoutput" -}}
+  {{- $node := (get .ctx.Values .node) }}
+  {{- $tempJsonOutput := "false" -}}
+  {{- if and .ctx.Values.logging (hasKey .ctx.Values.logging "jsonOutput" ) -}}
+    {{- $tempJsonOutput = (get .ctx.Values.logging "jsonOutput") | toString -}}
+  {{- else if and $node.sonarProperties (hasKey $node.sonarProperties "sonar.log.jsonOutput") -}}
+    {{- $tempJsonOutput = (get $node.sonarProperties "sonar.log.jsonOutput") -}}
+  {{- else if $node.env -}}
+    {{- range $index, $val := $node.env -}}
+      {{- if eq $val.name "SONAR_LOG_JSONOUTPUT" -}}
+        {{- $tempJsonOutput = $val.value -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else if and .ctx.Values.sonarProperties (hasKey .ctx.Values.sonarProperties "sonar.log.jsonOutput") -}}
+    {{- $tempJsonOutput = (get .ctx.Values.sonarProperties "sonar.log.jsonOutput") -}}
+  {{- else if .ctx.Values.env -}}
+    {{- range $index, $val := .ctx.Values.env -}}
+      {{- if eq $val.name "SONAR_LOG_JSONOUTPUT" -}}
+        {{- $tempJsonOutput = $val.value -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- printf "%s" $tempJsonOutput -}}
+{{- end -}}
+
+{{/*
 Set prometheusExporter.downloadURL
 */}}
 {{- define "prometheusExporter.downloadURL" -}}
@@ -357,18 +385,34 @@ Set sonarqube.webcontext, ensuring it starts and ends with a slash, in order to 
 
 
 {{/*
-Set combined_app_env, ensuring we dont have any duplicates with our features and some of the user provided env vars
+Set combined_app_env, ensuring we don't have any duplicates with our features and some of the user provided env vars
 */}}
 {{- define "sonarqube.combined_app_env" -}}
 {{- $filteredEnv := list -}}
 {{- range $index,$val := .Values.ApplicationNodes.env -}}
-  {{- if not (has $val.name (list "SONAR_WEB_CONTEXT" "SONAR_WEB_JAVAOPTS" "SONAR_CE_JAVAOPTS")) -}}
+  {{- if not (has $val.name (list "SONAR_WEB_CONTEXT" "SONAR_WEB_JAVAOPTS" "SONAR_CE_JAVAOPTS" "SONAR_LOG_JSONOUTPUT")) -}}
     {{- $filteredEnv = append $filteredEnv $val -}}
   {{- end -}}
 {{- end -}}
 {{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_WEB_CONTEXT" "value" (include "sonarqube.webcontext" .)) -}}
 {{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_WEB_JAVAOPTS" "value" (include "sonarqube.jvmOpts" .)) -}}
 {{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_CE_JAVAOPTS" "value" (include "sonarqube.jvmCEOpts" .)) -}}
+{{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_LOG_JSONOUTPUT" "value" (include "sonarqube.log.jsonoutput" (dict "ctx" . "node" "ApplicationNodes"))) -}}
+{{- toJson $filteredEnv -}}
+{{- end -}}
+
+
+{{/*
+Set combined_search_env, ensuring we don't have any duplicates with our features and some of the user provided env vars
+*/}}
+{{- define "sonarqube.combined_search_env" -}}
+{{- $filteredEnv := list -}}
+{{- range $index,$val := .Values.ApplicationNodes.env -}}
+  {{- if not (has $val.name (list "SONAR_LOG_JSONOUTPUT")) -}}
+    {{- $filteredEnv = append $filteredEnv $val -}}
+  {{- end -}}
+{{- end -}}
+{{- $filteredEnv = append $filteredEnv (dict "name" "SONAR_LOG_JSONOUTPUT" "value" (include "sonarqube.log.jsonoutput" (dict "ctx" . "node" "searchNodes"))) -}}
 {{- toJson $filteredEnv -}}
 {{- end -}}
 

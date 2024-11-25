@@ -458,10 +458,10 @@ spec:
               value: -Xmx1g
             - name: SONAR_CE_JAVAOPTS
               value: -Xms2G -Xmx2G -DsomeOption=some/Value
-            - name: SONAR_HELM_CHART_VERSION
-              value: 10.8.0
             - name: SONAR_LOG_JSONOUTPUT
               value: "false"
+            - name: SONAR_HELM_CHART_VERSION
+              value: 10.8.0
             - name: SONAR_CLUSTER_SEARCH_HOSTS
               value: "duplicated-env-values.yaml-sonarqube-dce-search"
             - name: SONAR_CLUSTER_KUBERNETES
@@ -856,6 +856,17 @@ spec:
               ephemeral-storage: 1536M
               memory: 3072M
           env:
+            - name: SONAR_WEB_CONTEXT
+              value: some/context
+            - name: SONAR_CE_JAVAOPTS
+              value: -Xms2G -Xmx2G -DsomeOption=some/Value
+            - name: SONAR_WEB_JAVAOPTS
+              value: -Xmx1g
+            - name: FOOBAR
+              valueFrom:
+                secretKeyRef:
+                  key: BARFOO
+                  name: sonarqube-ldap
             - name: SONAR_LOG_JSONOUTPUT
               value: "false"
             - name: SONAR_CLUSTER_ES_HOSTS
