@@ -11,8 +11,14 @@ ApplicationNodes:
       secretKeyRef:
         name: "sonarqube-ldap"
         key: BARFOO
+
 prometheusExporter:
     enabled: true
     httpProxy: "http://someProxy"
     httpsProxy: "https://someProxy"
     noProxy: "https://someUrl"
+
+searchNodes:
+  env:
+  - name: SONAR_LOG_JSONOUTPUT
+    value: "true"

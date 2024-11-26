@@ -229,6 +229,9 @@ Set sonarqube.jvmCEOpts
 
 {{/*
 Set sonarqube.log.jsonoutput
+Parameters:
+  - ctx: The context to use (required, normally should be '.')
+  - node: The node to use (required, ApplicationNodes or searchNodes)
 */}}
 {{- define "sonarqube.log.jsonoutput" -}}
   {{- $node := (get .ctx.Values .node) }}
@@ -407,7 +410,7 @@ Set combined_search_env, ensuring we don't have any duplicates with our features
 */}}
 {{- define "sonarqube.combined_search_env" -}}
 {{- $filteredEnv := list -}}
-{{- range $index,$val := .Values.ApplicationNodes.env -}}
+{{- range $index,$val := .Values.searchNodes.env -}}
   {{- if not (has $val.name (list "SONAR_LOG_JSONOUTPUT")) -}}
     {{- $filteredEnv = append $filteredEnv $val -}}
   {{- end -}}
