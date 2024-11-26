@@ -235,10 +235,8 @@ Parameters:
 */}}
 {{- define "sonarqube.log.jsonoutput" -}}
   {{- $node := (get .ctx.Values .node) }}
-  {{- $tempJsonOutput := "false" -}}
-  {{- if and .ctx.Values.logging (hasKey .ctx.Values.logging "jsonOutput" ) -}}
-    {{- $tempJsonOutput = (get .ctx.Values.logging "jsonOutput") | toString -}}
-  {{- else if and $node.sonarProperties (hasKey $node.sonarProperties "sonar.log.jsonOutput") -}}
+  {{- $tempJsonOutput := default "false" (get .ctx.Values.logging "jsonOutput") -}}
+  {{- if and $node.sonarProperties (hasKey $node.sonarProperties "sonar.log.jsonOutput") -}}
     {{- $tempJsonOutput = (get $node.sonarProperties "sonar.log.jsonOutput") -}}
   {{- else if $node.env -}}
     {{- range $index, $val := $node.env -}}
@@ -255,7 +253,7 @@ Parameters:
       {{- end -}}
     {{- end -}}
   {{- end -}}
-  {{- printf "%s" $tempJsonOutput -}}
+  {{- printf "%s" ($tempJsonOutput | toString) -}}
 {{- end -}}
 
 {{/*

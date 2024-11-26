@@ -269,9 +269,6 @@ spec:
                   key: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
             {{- end }}
             {{- end }}
-            {{- with .Values.searchNodes.env }}
-            {{- . | toYaml | trim | nindent 12 }}
-            {{- end }}
 {{- if or .Values.extraConfig.secrets .Values.extraConfig.configmaps }}
           envFrom:
 {{- range .Values.extraConfig.secrets }}
