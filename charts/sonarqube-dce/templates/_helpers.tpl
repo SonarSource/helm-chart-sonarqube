@@ -238,16 +238,16 @@ Parameters:
   {{- $tempJsonOutput := default "false" (get .ctx.Values.logging "jsonOutput") -}}
   {{- if and $node.sonarProperties (hasKey $node.sonarProperties "sonar.log.jsonOutput") -}}
     {{- $tempJsonOutput = (get $node.sonarProperties "sonar.log.jsonOutput") -}}
-  {{- else if $node.env -}}
-    {{- range $index, $val := $node.env -}}
+  {{- end -}}
+  {{- if .ctx.Values.env -}}
+    {{- range $index, $val := .ctx.Values.env -}}
       {{- if eq $val.name "SONAR_LOG_JSONOUTPUT" -}}
         {{- $tempJsonOutput = $val.value -}}
       {{- end -}}
     {{- end -}}
-  {{- else if and .ctx.Values.sonarProperties (hasKey .ctx.Values.sonarProperties "sonar.log.jsonOutput") -}}
-    {{- $tempJsonOutput = (get .ctx.Values.sonarProperties "sonar.log.jsonOutput") -}}
-  {{- else if .ctx.Values.env -}}
-    {{- range $index, $val := .ctx.Values.env -}}
+  {{- end -}}
+  {{- if $node.env -}}
+    {{- range $index, $val := $node.env -}}
       {{- if eq $val.name "SONAR_LOG_JSONOUTPUT" -}}
         {{- $tempJsonOutput = $val.value -}}
       {{- end -}}
