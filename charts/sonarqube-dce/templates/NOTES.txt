@@ -28,5 +28,8 @@ WARNING: The embedded PostgreSQL is intended for evaluation only, it is DEPRECAT
 WARNING: The ingress nginx controller dependency has been upgraded to a major version (4.x), please carefully read the changelogs at https://github.com/kubernetes/ingress-nginx/releases and refer to the documentation at https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/.
          Please also visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#production-use-case for more information.
 {{- end }}
+{{ if hasKey .Values.logging "jsonOutput" }}
+WARNING: The logging.jsonOutput value is deprecated in favor of the ENV var SONAR_LOG_JSONOUTPUT or the sonar.properties's sonar.log.jsonOutput.
+{{ end }}
 WARNING: If your values' file contains values under "ApplicationNodes", please note that this key is DEPRECATED and should be renamed to "applicationNodes".
          Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#applicationnodes-renamed-to-applicationnodes for more information.

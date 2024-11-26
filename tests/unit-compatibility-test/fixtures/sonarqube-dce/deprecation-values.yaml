@@ -1,206 +1,13 @@
 ---
-# Source: sonarqube-dce/templates/networkpolicy.yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-app
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
-    heritage: Helm
-spec:
-  podSelector:
-    matchLabels:
-      app: sonarqube-dce
-      sonarqube.datacenter/type: app
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: sonarqube-dce
-              release: networkpolicy-new-values.yaml
-              sonarqube.datacenter/type: app
-
-  egress:
-    - to:
-        - podSelector:
-            matchLabels:
-              sonarqube.datacenter/type: search
-      ports:
-        - port: 9001
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-      ports:
-        - port: 9000
-          protocol: TCP
-    - to:
-        - namespaceSelector: {}
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
-      ports:
-        - port: 53
-          protocol: UDP
-    - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: postgresql
-      ports:
-        - port: 5432
-          protocol: TCP
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-      ports:
-        - port: 9000
-          protocol: TCP
----
-# Source: sonarqube-dce/templates/networkpolicy.yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-search
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
-    heritage: Helm
-spec:
-  podSelector:
-    matchLabels:
-      app: sonarqube-dce
-      sonarqube.datacenter/type: search
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              sonarqube.datacenter/type: search
-      ports:
-        - port: 9001
-          protocol: TCP
-        - port: 9002
-          protocol: TCP
-    - from:
-        - podSelector:
-            matchLabels:
-              sonarqube.datacenter/type: app
-      ports:
-        - port: 9001
-          protocol: TCP
-  egress:
-    - to:
-        - namespaceSelector: {}
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
-      ports:
-        - port: 53
-          protocol: UDP
-    - to:
-        - podSelector:
-            matchLabels:
-              sonarqube.datacenter/type: search
-      ports:
-        - port: 9001
-          protocol: TCP
-        - port: 9002
-          protocol: TCP
----
-# Source: sonarqube-dce/templates/networkpolicy.yaml
-kind: NetworkPolicy
-apiVersion: networking.k8s.io/v1
-metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-database
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
-    heritage: Helm
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: postgresql
-      release: networkpolicy-new-values.yaml
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: sonarqube-dce
-              sonarqube.datacenter/type: "app"
-      ports:
-        - port: 5432
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              networking/namespace: "kube-system"
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
-      ports:
-        - port: 53
-          protocol: UDP
----
-# Source: sonarqube-dce/templates/networkpolicy.yaml
-kind: NetworkPolicy
-apiVersion: networking.k8s.io/v1
-metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-additional-network-policy
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
-    heritage: Helm
-spec:
-  egress:
-  - ports:
-    - port: 5978
-      protocol: TCP
-    to:
-    - ipBlock:
-        cidr: 10.0.0.0/24
-  ingress:
-  - from:
-    - ipBlock:
-        cidr: 172.17.0.0/16
-        except:
-        - 172.17.1.0/24
-    - namespaceSelector:
-        matchLabels:
-          project: myproject
-    - podSelector:
-        matchLabels:
-          role: frontend
-    ports:
-    - port: 6379
-      protocol: TCP
-  podSelector:
-    matchLabels:
-      role: db
-  policyTypes:
-  - Ingress
-  - Egress
----
 # Source: sonarqube-dce/templates/pod-disruption-budget.yaml
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-search
+  name: deprecation-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 spec:
   minAvailable: 2
@@ -213,11 +20,11 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-app
+  name: deprecation-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 spec:
   minAvailable: 1
@@ -230,11 +37,11 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: networkpolicy-new-values.yaml-postgresql
+  name: deprecation-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: networkpolicy-new-values.yaml
+    app.kubernetes.io/instance: deprecation-values.yaml
     app.kubernetes.io/managed-by: Helm
   namespace: default
 type: Opaque
@@ -246,11 +53,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-monitoring-passcode
+  name: deprecation-values.yaml-sonarqube-dce-monitoring-passcode
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -261,11 +68,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-jwt
+  name: deprecation-values.yaml-sonarqube-dce-jwt
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -276,11 +83,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-http-proxies
+  name: deprecation-values.yaml-sonarqube-dce-http-proxies
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 type: Opaque
 stringData:
@@ -295,11 +102,11 @@ stringData:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-app-config
+  name: deprecation-values.yaml-sonarqube-dce-app-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -308,11 +115,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-search-config
+  name: deprecation-values.yaml-sonarqube-dce-search-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -321,11 +128,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-init-fs
+  name: deprecation-values.yaml-sonarqube-dce-init-fs
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 data:
   init_fs.sh: |-
@@ -337,11 +144,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-init-sysctl
+  name: deprecation-values.yaml-sonarqube-dce-init-sysctl
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -384,11 +191,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-install-plugins
+  name: deprecation-values.yaml-sonarqube-dce-install-plugins
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
@@ -397,25 +204,25 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-jdbc-config
+  name: deprecation-values.yaml-sonarqube-dce-jdbc-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
-  SONAR_JDBC_URL: "jdbc:postgresql://networkpolicy-new-values.yaml-postgresql:5432/sonarDB"
+  SONAR_JDBC_URL: "jdbc:postgresql://deprecation-values.yaml-postgresql:5432/sonarDB"
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: networkpolicy-new-values.yaml-postgresql-headless
+  name: deprecation-values.yaml-postgresql-headless
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: networkpolicy-new-values.yaml
+    app.kubernetes.io/instance: deprecation-values.yaml
     app.kubernetes.io/managed-by: Helm
     # Use this annotation in addition to the actual publishNotReadyAddresses
     # field below because the annotation will stop being respected soon but the
@@ -436,17 +243,17 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: networkpolicy-new-values.yaml
+    app.kubernetes.io/instance: deprecation-values.yaml
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: networkpolicy-new-values.yaml-postgresql
+  name: deprecation-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: networkpolicy-new-values.yaml
+    app.kubernetes.io/instance: deprecation-values.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
   namespace: default
@@ -458,18 +265,18 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: networkpolicy-new-values.yaml
+    app.kubernetes.io/instance: deprecation-values.yaml
     role: primary
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce
+  name: deprecation-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 
 spec:
@@ -481,17 +288,17 @@ spec:
       name: http
   selector:
     app: sonarqube-dce
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-headless
+  name: deprecation-values.yaml-sonarqube-dce-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 
 spec:
@@ -505,17 +312,17 @@ spec:
       name: hazelcast
   selector:
     app: sonarqube-dce
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-search
+  name: deprecation-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 
 spec:
@@ -531,17 +338,17 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-search-headless
+  name: deprecation-values.yaml-sonarqube-dce-search-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 
 spec:
@@ -558,24 +365,24 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-app
+  name: deprecation-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: networkpolicy-new-values.yaml
+    app.kubernetes.io/name: deprecation-values.yaml
     sonarqube.datacenter/type: "app"
-    app.kubernetes.io/instance: networkpolicy-new-values.yaml
+    app.kubernetes.io/instance: deprecation-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: networkpolicy-new-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: deprecation-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "10.7.0-datacenter-app"
 spec:
   replicas: 2
@@ -585,17 +392,17 @@ spec:
   selector:
     matchLabels:
       app: sonarqube-dce
-      release: networkpolicy-new-values.yaml
+      release: deprecation-values.yaml
   template:
     metadata:
       labels:
         app: sonarqube-dce
-        release: networkpolicy-new-values.yaml
+        release: deprecation-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: fc17e01cb03482589424320351a66835afbaf9d176eb6df4293ef7305dacb332
-        checksum/config: bb901861ba703569e59c7a34df4667d9286decfcbb0951272edb0fbcfc87fb88
-        checksum/secret: 6657cb1bb3b92319795584172a410d65f223974c837f932729efb6dbe4a708ce
+        checksum/plugins: 9f05dcd009ed98aad06b922843d1dabdec76e91ca2dd3355eb37a6b72b74cfad
+        checksum/config: cacc71d81d660f658ae5a83be98c1e276fa87e8ddcf336fdab9f66bb832076f9
+        checksum/secret: cb8f2d4325c11d29e0c6b7ac58304cec95a1fc70b6114b8b0ae2cfa216bfdee0
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -616,7 +423,7 @@ spec:
           resources:
             {}
           command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/networkpolicy-new-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/deprecation-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
       securityContext:
         fsGroup: 0
       containers:
@@ -647,11 +454,11 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: ""
             - name: SONAR_LOG_JSONOUTPUT
-              value: "false"
+              value: "true"
             - name: SONAR_HELM_CHART_VERSION
               value: 10.8.0
             - name: SONAR_CLUSTER_SEARCH_HOSTS
-              value: "networkpolicy-new-values.yaml-sonarqube-dce-search"
+              value: "deprecation-values.yaml-sonarqube-dce-search"
             - name: SONAR_CLUSTER_KUBERNETES
               value: "true"
             - name: SONAR_CLUSTER_NODE_NAME
@@ -659,25 +466,25 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: SONAR_CLUSTER_HOSTS
-              value: "networkpolicy-new-values.yaml-sonarqube-dce-headless"
+              value: "deprecation-values.yaml-sonarqube-dce-headless"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
               valueFrom:
                 secretKeyRef:
-                  name: "networkpolicy-new-values.yaml-sonarqube-dce-jwt"
+                  name: "deprecation-values.yaml-sonarqube-dce-jwt"
                   key: SONAR_AUTH_JWTBASE64HS256SECRET
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: networkpolicy-new-values.yaml-postgresql
+                  name: deprecation-values.yaml-postgresql
                   key: postgresql-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: networkpolicy-new-values.yaml-sonarqube-dce-monitoring-passcode
+                  name: deprecation-values.yaml-sonarqube-dce-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
           envFrom:
             - configMapRef:
-                name: networkpolicy-new-values.yaml-sonarqube-dce-jdbc-config
+                name: deprecation-values.yaml-sonarqube-dce-jdbc-config
           livenessProbe:
             exec:
               command:
@@ -744,7 +551,7 @@ spec:
       
       - name: install-plugins
         configMap:
-          name: networkpolicy-new-values.yaml-sonarqube-dce-install-plugins
+          name: deprecation-values.yaml-sonarqube-dce-install-plugins
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
@@ -759,32 +566,32 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: networkpolicy-new-values.yaml-postgresql
+  name: deprecation-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: networkpolicy-new-values.yaml
+    app.kubernetes.io/instance: deprecation-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
   namespace: default
 spec:
-  serviceName: networkpolicy-new-values.yaml-postgresql-headless
+  serviceName: deprecation-values.yaml-postgresql-headless
   replicas: 1
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: networkpolicy-new-values.yaml
+      app.kubernetes.io/instance: deprecation-values.yaml
       role: primary
   template:
     metadata:
-      name: networkpolicy-new-values.yaml-postgresql
+      name: deprecation-values.yaml-postgresql
       labels:
         app.kubernetes.io/name: postgresql
         helm.sh/chart: postgresql-10.15.0
-        app.kubernetes.io/instance: networkpolicy-new-values.yaml
+        app.kubernetes.io/instance: deprecation-values.yaml
         app.kubernetes.io/managed-by: Helm
         role: primary
         app.kubernetes.io/component: primary
@@ -798,7 +605,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: postgresql
-                    app.kubernetes.io/instance: networkpolicy-new-values.yaml
+                    app.kubernetes.io/instance: deprecation-values.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
                   - "default"
@@ -810,7 +617,7 @@ spec:
         fsGroup: 1001
       automountServiceAccountToken: false
       containers:
-        - name: networkpolicy-new-values.yaml-postgresql
+        - name: deprecation-values.yaml-postgresql
           image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
@@ -841,14 +648,14 @@ spec:
             - name: POSTGRES_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: networkpolicy-new-values.yaml-postgresql
+                  name: deprecation-values.yaml-postgresql
                   key: postgresql-postgres-password
             - name: POSTGRES_USER
               value: "sonarUser"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: networkpolicy-new-values.yaml-postgresql
+                  name: deprecation-values.yaml-postgresql
                   key: postgresql-password
             - name: POSTGRES_DB
               value: "sonarDB"
@@ -920,34 +727,34 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-search
+  name: deprecation-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: "networkpolicy-new-values.yaml"
+    app.kubernetes.io/name: "deprecation-values.yaml"
     sonarqube.datacenter/type: "search"
-    app.kubernetes.io/instance: networkpolicy-new-values.yaml
+    app.kubernetes.io/instance: deprecation-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: networkpolicy-new-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: deprecation-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "10.7.0-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
-  serviceName: networkpolicy-new-values.yaml-sonarqube-dce-search
+  serviceName: deprecation-values.yaml-sonarqube-dce-search
   selector:
     matchLabels:
       app: sonarqube-dce-search
-      release: networkpolicy-new-values.yaml
+      release: deprecation-values.yaml
   volumeClaimTemplates:
   - metadata:
-      name: networkpolicy-new-values.yaml-sonarqube-dce
+      name: deprecation-values.yaml-sonarqube-dce
       labels:
-        release: networkpolicy-new-values.yaml
+        release: deprecation-values.yaml
         chart: "sonarqube-dce"
-        app: "networkpolicy-new-values.yaml-sonarqube-dce"
+        app: "deprecation-values.yaml-sonarqube-dce"
     spec:
       accessModes:
         - "ReadWriteOnce"
@@ -958,13 +765,13 @@ spec:
     metadata:
       labels:
         app: sonarqube-dce-search
-        release: networkpolicy-new-values.yaml
+        release: deprecation-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: d026963280c70738561bf368cb003ce3911bc31deb0a5eea22a9670caa1a6043
-        checksum/init-fs: c8420906ec77687a6173269ce6e8dfcf8c94e39ec4f76e3d9e8478d5ebadcd48
-        checksum/config: bb901861ba703569e59c7a34df4667d9286decfcbb0951272edb0fbcfc87fb88
-        checksum/secret: 6657cb1bb3b92319795584172a410d65f223974c837f932729efb6dbe4a708ce
+        checksum/init-sysctl: a01476e26098910ccefab12ca329c574d3372d28a896d0dc9238145ae0b9dfd6
+        checksum/init-fs: 46adae77e4daf0144d4f37e831074089257a20b30cb3234fe9238d6147aa8948
+        checksum/config: cacc71d81d660f658ae5a83be98c1e276fa87e8ddcf336fdab9f66bb832076f9
+        checksum/secret: cb8f2d4325c11d29e0c6b7ac58304cec95a1fc70b6114b8b0ae2cfa216bfdee0
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -1008,16 +815,16 @@ spec:
             - name: init-fs
               mountPath: /tmp/scripts/
             - mountPath: /opt/sonarqube/certs
-              name: "networkpolicy-new-values.yaml-sonarqube-dce"
+              name: "deprecation-values.yaml-sonarqube-dce"
               subPath: certs
             - mountPath: /opt/sonarqube/data
-              name: "networkpolicy-new-values.yaml-sonarqube-dce"
+              name: "deprecation-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "networkpolicy-new-values.yaml-sonarqube-dce"
+              name: "deprecation-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "networkpolicy-new-values.yaml-sonarqube-dce"
+              name: "deprecation-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -1045,11 +852,11 @@ spec:
               memory: 3072M
           env:
             - name: SONAR_LOG_JSONOUTPUT
-              value: "false"
+              value: "true"
             - name: SONAR_CLUSTER_ES_HOSTS
-              value: "networkpolicy-new-values.yaml-sonarqube-dce-search-0,networkpolicy-new-values.yaml-sonarqube-dce-search-1,networkpolicy-new-values.yaml-sonarqube-dce-search-2,"
+              value: "deprecation-values.yaml-sonarqube-dce-search-0,deprecation-values.yaml-sonarqube-dce-search-1,deprecation-values.yaml-sonarqube-dce-search-2,"
             - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
-              value: "networkpolicy-new-values.yaml-sonarqube-dce-search-headless"
+              value: "deprecation-values.yaml-sonarqube-dce-search-headless"
             - name: SONAR_CLUSTER_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -1117,17 +924,17 @@ spec:
               type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/certs
-              name: "networkpolicy-new-values.yaml-sonarqube-dce"
+              name: "deprecation-values.yaml-sonarqube-dce"
               subPath: certs
               readOnly: true
             - mountPath: /opt/sonarqube/data
-              name: "networkpolicy-new-values.yaml-sonarqube-dce"
+              name: "deprecation-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "networkpolicy-new-values.yaml-sonarqube-dce"
+              name: "deprecation-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "networkpolicy-new-values.yaml-sonarqube-dce"
+              name: "deprecation-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -1136,17 +943,17 @@ spec:
       
       - name: init-sysctl
         configMap:
-          name: networkpolicy-new-values.yaml-sonarqube-dce-init-sysctl
+          name: deprecation-values.yaml-sonarqube-dce-init-sysctl
           items:
             - key: init_sysctl.sh
               path: init_sysctl.sh
       - name: init-fs
         configMap:
-          name: networkpolicy-new-values.yaml-sonarqube-dce-init-fs
+          name: deprecation-values.yaml-sonarqube-dce-init-fs
           items:
             - key: init_fs.sh
               path: init_fs.sh
-      - name: "networkpolicy-new-values.yaml-sonarqube-dce"
+      - name: "deprecation-values.yaml-sonarqube-dce"
       - name : tmp-dir
         emptyDir:
           {}
@@ -1155,18 +962,18 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "networkpolicy-new-values.yaml-ui-test"
+  name: "deprecation-values.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-10.8.0
-    release: networkpolicy-new-values.yaml
+    release: deprecation-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: networkpolicy-new-values.yaml-ui-test
+    - name: deprecation-values.yaml-ui-test
       image: "sonarqube:10.7.0-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['wget']
@@ -1177,7 +984,7 @@ spec:
         '-t',
         '1200',
         '-qO-',
-        'networkpolicy-new-values.yaml-sonarqube-dce:9000/api/system/status'
+        'deprecation-values.yaml-sonarqube-dce:9000/api/system/status'
         ]
       resources:
         limits:
