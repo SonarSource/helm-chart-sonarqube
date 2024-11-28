@@ -267,6 +267,10 @@ You can generate the required certificate, create a secret, and add it to `searc
 
 Finally, do not forget to set the `searchNodes.searchAuthentication.userPassword`.
 
+## License
+
+SonarQube Server Data Center Edition is licensed under [SonarQube Server Terms and Conditions](https://www.sonarsource.com/legal/sonarqube/terms-and-conditions/).
+
 ## Configuration
 
 The following table lists the configurable parameters of the SonarQube chart and their default values.
