@@ -14,7 +14,7 @@ Please note that this chart only supports SonarQube Community, Developer, and En
 
 ## Compatibility
 
-Compatible SonarQube Version: `10.7.0`
+Compatible SonarQube Version: `10.8.0`
 
 Supported Kubernetes Versions: From `1.24` to `1.31`
 Supported Openshift Versions: From `4.11` to `4.16`
@@ -255,7 +255,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `annotations`           | SonarQube Pod annotations                                                                                                               | `{}`               |
 | `edition`               | SonarQube Edition to use (e.g. `community`, `developer` or `enterprise`). Please note that the default `community` value is deprecated. | `community`        |
 | `community.enabled`     | Install SonarQube Community Build. When set to `true`, this parameter replaces `edition=community`                                      | `true`             |
-| `community.buildNumber` | The SonarQube Community Build number to install                                                                                         | `10.7.0`           |
+| `community.buildNumber` | The SonarQube Community Build number to install                                                                                         | `10.8.0`           |
 | `sonarWebContext`       | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.                       | ``                 |
 | `httpProxySecret`       | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will superseed every other proxy variables                              | ``                 |
 | `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables                    | ``                 |
@@ -291,7 +291,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter           | Description                                                                                       | Default                        |
 | ------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------ |
 | `image.repository`  | image repository                                                                                  | `sonarqube`                    |
-| `image.tag`         | `sonarqube` image tag. Please note that the default `10.7.0-{{ .Values.edition }}` is deprecated. | `10.7.0-{{ .Values.edition }}` |
+| `image.tag`         | `sonarqube` image tag. Please note that the default `10.8.0-{{ .Values.edition }}` is deprecated. | `10.8.0-{{ .Values.edition }}` |
 | `image.pullPolicy`  | Image pull policy                                                                                 | `IfNotPresent`                 |
 | `image.pullSecret`  | (DEPRECATED) imagePullSecret to use for private repository                                        | `None`                         |
 | `image.pullSecrets` | imagePullSecrets to use for private repository                                                    | `None`                         |
