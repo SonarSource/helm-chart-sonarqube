@@ -153,7 +153,7 @@ chart_fixture_test_task:
 
 chart_testing_on_kind_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-  timeout_in: 30m
+  timeout_in: 1h
   ec2_instance:
     <<: *VM_TEMPLATE
   <<: *CLONE_SCRIPT_TEMPLATE
@@ -176,7 +176,7 @@ chart_testing_on_kind_task:
 
 chart_testing_on_openshift_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-  timeout_in: 30m
+  timeout_in: 1h
   eks_container:
     <<: *CONTAINER_TEMPLATE
     cpu: 2
