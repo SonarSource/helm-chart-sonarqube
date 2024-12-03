@@ -9,7 +9,6 @@ docker_build_container_template: &CONTAINER_TEMPLATE
   builder_role: cirrus-builder
   builder_image: docker-builder-v*
   builder_instance_type: t2.small
-  builder_subnet_id: ${CIRRUS_AWS_SUBNET}
   region: eu-central-1
   namespace: default
   cpu: 1
@@ -22,6 +21,13 @@ container_template: &STD_CONTAINER_TEMPLATE
   namespace: default
   cpu: 1
   memory: 1Gb
+
+vm_instance_template: &VM_TEMPLATE
+  image: docker-builder-v*
+  type: t2.xlarge
+  region: eu-central-1
+  cpu: 4
+  memory: 16Gb
 
 clone_script_template: &CLONE_SCRIPT_TEMPLATE
   clone_script: |
@@ -37,29 +43,21 @@ clone_script_template: &CLONE_SCRIPT_TEMPLATE
 chart_testing_task:
   only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_BRANCH != "master"
   timeout_in: 30m
-  eks_container:
-    <<: *CONTAINER_TEMPLATE
-    cpu: 2
-    memory: 4Gb
-    additional_containers:
-      - name: dockerdaemon
-        privileged: true
-        cpu: 4
-        memory: 16Gb
-        image: docker:20-dind
-        port: 2375
-        env:
-          DOCKER_DRIVER: overlay2
-          DOCKER_TLS_CERTDIR: ""
+  ec2_instance:
+    <<: *VM_TEMPLATE
   <<: *CLONE_SCRIPT_TEMPLATE
-  start_kind_background_script:
-    - export DOCKER_HOST=tcp://localhost:2375
+  setup_script:
+    - ./.cirrus/setup_kind_vm.sh
     - kind create cluster
-  wait_for_kind_script:
-    - secs=3600; endTime=$(( $(date +%s) + secs )); while [[ -n "$(kubectl cluster-info --context kind-kind 2>&1 > /dev/null)" ]] || [ $(date +%s) -gt $endTime ]; do sleep 5; done
+    - kubectl cluster-info --context kind-kind
+    - kubectl get nodes
+    - kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
+    - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
   script:
     - ct lint --config test.yaml --all
-    - ct install --config test.yaml --all
+    - ct install --namespace test --config test.yaml --all --debug
+  teardown_script:
+    - kind delete cluster
   artifacthub_lint_script:
     - ah lint
 
