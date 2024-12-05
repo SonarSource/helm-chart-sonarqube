@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [10.8.1]
 * Update Chart's version to 10.8.1
+* Remove immutable labels selector `app.kubernetes.io/name` and `app.kubernetes.io/version` as it breaks upgrades
 
 ## [10.8.0]
 * Update Chart's version to 10.8.0
