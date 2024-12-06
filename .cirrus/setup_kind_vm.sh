@@ -39,8 +39,8 @@ mv ./kubectl /usr/bin/kubectl
 rm kubectl.sha256
 
 # Install helm
-HELM_VERSION=3.16.1
-HELM_CHECKSUM="e57e826410269d72be3113333dbfaac0d8dfdd1b0cc4e9cb08bdf97722731ca9"
+HELM_VERSION=3.16.3
+HELM_CHECKSUM="f5355c79190951eed23c5432a3b920e071f4c00a64f75e077de0dd4cb7b294ea"
 curl -LO https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz
 echo "${HELM_CHECKSUM}  helm-v${HELM_VERSION}-linux-amd64.tar.gz" | sha256sum -c
 tar -xf helm-v${HELM_VERSION}-linux-amd64.tar.gz
@@ -50,16 +50,16 @@ rm -rf ./linux-amd64
 rm helm-v${HELM_VERSION}-linux-amd64.tar.gz
 
 # Install kind
-KIND_VERSION=0.24.0
-KIND_CHECKSUM="b89aada5a39d620da3fcd16435b7f28d858927dd53f92cbac77686b0588b600d"
+KIND_VERSION=0.25.0
+KIND_CHECKSUM="b22ff7e5c02b8011e82cc3223d069d178b9e1543f1deb21e936d11764780a3d8"
 curl -LO https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-linux-amd64
 echo "${KIND_CHECKSUM}  kind-linux-amd64" | sha256sum -c
 chmod +x ./kind-linux-amd64
 mv ./kind-linux-amd64 /usr/local/bin/kind
 
 # Install artifacthub lint
-AH_VERSION=1.19.0
-AH_CHECKSUM="0e430493521ce387ca04d79b26646a86f92886dbcceb44985bb71082a9530ca5"
+AH_VERSION=1.20.0
+AH_CHECKSUM="9027626f19ff9f3ac668f222917130ac885e289e922e1428bfd2e7f066324e31"
 curl -LO https://github.com/artifacthub/hub/releases/download/v${AH_VERSION}/ah_${AH_VERSION}_linux_amd64.tar.gz
 echo "${AH_CHECKSUM}  ah_${AH_VERSION}_linux_amd64.tar.gz" | sha256sum -c
 tar -xf ah_${AH_VERSION}_linux_amd64.tar.gz
