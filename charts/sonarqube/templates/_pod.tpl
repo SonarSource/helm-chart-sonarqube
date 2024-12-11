@@ -474,9 +474,13 @@ spec:
       {{- if .Values.persistence.enabled }}
       persistentVolumeClaim:
         claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ include "sonarqube.fullname" . }}{{- end }}
+      {{- else if .Values.hostPath.enabled }}
+      hostPath:
+         path: {{ .Values.hostPath.path }}
+         type: {{ .Values.hostPath.type }}
       {{- else }}
       emptyDir: {{- toYaml .Values.emptyDir | nindent 8 }}
-      {{- end  }}
+      {{- end }}
     - name : tmp-dir
       emptyDir: {{- toYaml .Values.emptyDir | nindent 8 }}
       {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
