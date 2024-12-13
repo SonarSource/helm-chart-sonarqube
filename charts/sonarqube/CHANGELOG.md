@@ -7,6 +7,7 @@ All changes to this chart will be documented in this file.
 * Support Kubernetes v1.32
 * Remove the default passcode provided with `monitoringPasscode`
 * Support Openshift v4.17
+* Improves editions and versions setting for sonarqube chart
 
 ## [10.8.1]
 * Update Chart's version to 10.8.1

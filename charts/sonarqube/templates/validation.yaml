@@ -1,3 +1,29 @@
+{{/*
+This file is for validating the values.yaml file.
+It is used to validate the values.yaml file before the installation starts.
+*/}}
+{{- define "sonarqube.fail" -}}
+{{- printf "\n ** The values.yaml file is not valid. ** \n %s\n" . | fail -}}
+{{- end -}}
+
+{{/*
+* Validates the monitoring passcode logic.
+*/}}
 {{- if or (and (not .Values.monitoringPasscode) (not .Values.monitoringPasscodeSecretName) (not .Values.monitoringPasscodeSecretKey)) (and (not .Values.monitoringPasscodeSecretName) .Values.monitoringPasscodeSecretKey) (and .Values.monitoringPasscodeSecretName (not .Values.monitoringPasscodeSecretKey)) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n Please provide a passcode either setting \"monitoringPasscode\" or \"monitoringPasscodeSecretName\" and \"monitoringPasscodeSecretKey\"" -}}
+{{- include "sonarqube.fail" "Please provide a passcode either setting \"monitoringPasscode\" or \"monitoringPasscodeSecretName\" and \"monitoringPasscodeSecretKey\"" -}}
+{{- end -}}
+
+{{/*
+* Validates the community.enabled, edition, and tag logic.
+*/}}
+{{- if eq .Values.edition "community" -}}
+    {{- include "sonarqube.fail" "'community' is not a valid edition. If you want to use SonarQube Community Build, unset 'edition' and set 'community.enabled=true' instead." -}}
+{{- else if and (.Values.community.enabled) (not (empty .Values.edition)) -}}
+    {{- include "sonarqube.fail" "You can't set 'community.enabled=true' and an 'edition' at the same time." -}}
+{{- else if not .Values.community.enabled -}}
+    {{- if empty .Values.edition -}}
+        {{- include "sonarqube.fail" "You must choose an 'edition' to install: 'developer' or 'enterprise'.\nIf you want to use SonarQube Community Build, unset 'edition' and set 'community.enabled=true' instead." -}}
+    {{- else if not (has .Values.edition (list "developer" "enterprise")) -}}
+        {{- include "sonarqube.fail" "The 'edition' must be either 'developer' or 'enterprise'." -}}
+    {{- end -}}
 {{- end -}}

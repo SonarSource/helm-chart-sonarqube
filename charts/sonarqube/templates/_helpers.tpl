@@ -58,17 +58,39 @@ Expand the Application Image name.
 
 {{/*
   Define the image.tag value that computes the right tag to be used as `sonarqube.image`
+  The tag is derived from the following parameters:
+  - .Values.image.tag
+  - .Values.community.enabled
+  - .Values.community.buildNumber
+  - .Values.edition
+  - .Chart.AppVersion
+
+  The logic to generate the tag is as follows:
+  There should not be a default edition, with users that specify it.
+  The edition must be one of these values: developer/enterprise.
+  When “edition“ is used and “image.tag” is not, we use “appVersion” for paid editions and the latest release of SQ-CB for the community.
+  The CI supports the release of the Server edition.
 */}}
 {{- define "image.tag" -}}
-{{- if empty .Values.image.tag -}}
-{{- if and (not (empty .Values.edition)) (or (eq .Values.edition "developer") (eq .Values.edition "enterprise")) -}}
-{{- printf "%s-%s"  .Chart.AppVersion .Values.edition -}}
-{{- else if or (.Values.community.enabled) (and (not (empty .Values.edition)) (eq .Values.edition "community"))  -}}
-{{- printf "%s-%s" .Values.community.buildNumber "community" -}}
-{{- end -}}
-{{- else -}}
-{{- .Values.image.tag -}}
-{{- end -}}
+  {{- $imageTag := "" -}}
+  {{- if not (empty .Values.edition) -}}
+    {{- if or (empty .Values.image) (empty .Values.image.tag) -}}
+      {{- $imageTag = printf "%s-%s" .Chart.AppVersion .Values.edition -}}
+    {{- else -}}
+      {{- $imageTag = printf "%s" .Values.image.tag -}}
+    {{- end -}}
+  {{- else if (and (.Values.community) .Values.community.enabled) -}}
+    {{- if or (empty .Values.image) (empty .Values.image.tag) -}}
+      {{- if not (empty .Values.community.buildNumber) -}}
+        {{- $imageTag = printf "%s-%s" .Values.community.buildNumber "community" -}}
+      {{- else -}}
+        {{- $imageTag = printf "community" -}}
+      {{- end -}}
+    {{- else -}}
+      {{- $imageTag = printf "%s" .Values.image.tag -}}
+    {{- end -}}
+  {{- end -}}
+  {{- printf "%s" $imageTag -}}
 {{- end -}}
 
 {{/*

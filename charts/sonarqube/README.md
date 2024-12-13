@@ -31,7 +31,7 @@ kubectl create namespace sonarqube
 helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube
 ```
 
-The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace. 
+The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace.
 If you are interested in deploying SonarQube on Openshift, please check the [dedicated section](#openshift).
 
 The [configuration](#configuration) section lists the parameters that can be configured during installation.
@@ -43,7 +43,6 @@ The default login is admin/admin.
 The SonarQube Community Edition has been replaced by the SonarQube Community Build.
 If you want to install the SonarQube Community Build chart, please set `community.enabled` to `true`.
 The `community.buildNumber` parameter will be set to the latest Community Build.
-The `community` value is deprecated and won't be supported for `edition` anymore.
 
 ## Installing the SonarQube 9.9 LTA chart
 
@@ -146,9 +145,9 @@ For this reason, it is recommended to set Xmx to the ~80% of the total amount of
 
 Please find here the default SonarQube Xmx parameters to setup the memory requests and limits accordingly.
 
-| Edition            | Sum of Xmx |
+| SonarQube Offering | Sum of Xmx |
 | ------------------ | ---------- |
-| community edition  | 1536M      |
+| community build    | 1536M      |
 | developer edition  | 1536M      |
 | enterprise edition | 5G         |
 
@@ -240,29 +239,29 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Global
 
-| Parameter               | Description                                                                                                                             | Default            |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `deploymentType`        | (DEPRECATED) Deployment Type (supported values are `StatefulSet` or `Deployment`)                                                       | `StatefulSet`      |
-| `replicaCount`          | Number of replicas deployed (supported values are 0 and 1)                                                                              | `1`                |
-| `deploymentStrategy`    | Deployment strategy. Setting the strategy type is deprecated and it will be hardcoded to `Recreate`                                     | `{type: Recreate}` |
-| `priorityClassName`     | Schedule pods on priority (e.g. `high-priority`)                                                                                        | `None`             |
-| `schedulerName`         | Kubernetes scheduler name                                                                                                               | `None`             |
-| `affinity`              | Node / Pod affinities                                                                                                                   | `{}`               |
-| `tolerations`           | List of node taints to tolerate                                                                                                         | `[]`               |
-| `nodeSelector`          | Node labels for pod assignment                                                                                                          | `{}`               |
-| `hostAliases`           | Aliases for IPs in /etc/hosts                                                                                                           | `[]`               |
-| `podLabels`             | Map of labels to add to the pods                                                                                                        | `{}`               |
-| `env`                   | Environment variables to attach to the pods                                                                                             | `{}`               |
-| `annotations`           | SonarQube Pod annotations                                                                                                               | `{}`               |
-| `edition`               | SonarQube Edition to use (e.g. `community`, `developer` or `enterprise`). Please note that the default `community` value is deprecated. | `community`        |
-| `community.enabled`     | Install SonarQube Community Build. When set to `true`, this parameter replaces `edition=community`                                      | `true`             |
-| `community.buildNumber` | The SonarQube Community Build number to install                                                                                         | `24.12.0.100206`   |
-| `sonarWebContext`       | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.                       | ``                 |
-| `httpProxySecret`       | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will superseed every other proxy variables                              | ``                 |
-| `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables                    | ``                 |
-| `httpsProxy`            | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable                   | ``                 |
-| `noProxy`               | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables                        | ``                 |
-| `ingress-nginx.enabled` | Install Nginx Ingress Helm                                                                                                              | `false`            |
+| Parameter               | Description                                                                                                           | Default            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| `deploymentType`        | (DEPRECATED) Deployment Type (supported values are `StatefulSet` or `Deployment`)                                     | `StatefulSet`      |
+| `replicaCount`          | Number of replicas deployed (supported values are 0 and 1)                                                            | `1`                |
+| `deploymentStrategy`    | Deployment strategy. Setting the strategy type is deprecated and it will be hardcoded to `Recreate`                   | `{type: Recreate}` |
+| `priorityClassName`     | Schedule pods on priority (e.g. `high-priority`)                                                                      | `None`             |
+| `schedulerName`         | Kubernetes scheduler name                                                                                             | `None`             |
+| `affinity`              | Node / Pod affinities                                                                                                 | `{}`               |
+| `tolerations`           | List of node taints to tolerate                                                                                       | `[]`               |
+| `nodeSelector`          | Node labels for pod assignment                                                                                        | `{}`               |
+| `hostAliases`           | Aliases for IPs in /etc/hosts                                                                                         | `[]`               |
+| `podLabels`             | Map of labels to add to the pods                                                                                      | `{}`               |
+| `env`                   | Environment variables to attach to the pods                                                                           | `{}`               |
+| `annotations`           | SonarQube Pod annotations                                                                                             | `{}`               |
+| `edition`               | SonarQube Edition to use (`developer` or `enterprise`).                                                               | `None`             |
+| `community.enabled`     | Install SonarQube Community Build. When set to `true`, `edition` must not be set.                                     | `false`            |
+| `community.buildNumber` | The SonarQube Community Build number to install                                                                       | `24.12.0.100206`   |
+| `sonarWebContext`       | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.     | ``                 |
+| `httpProxySecret`       | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will supersede every other proxy variables            | ``                 |
+| `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will supersede initContainer specific http proxy variables  | ``                 |
+| `httpsProxy`            | HTTPS proxy for downloading JMX agent and install plugins, will supersede initContainer specific https proxy variable | ``                 |
+| `noProxy`               | No proxy for downloading JMX agent and install plugins, will supersede initContainer specific no proxy variables      | ``                 |
+| `ingress-nginx.enabled` | Install Nginx Ingress Helm                                                                                            | `false`            |
 
 ### NetworkPolicies
 
