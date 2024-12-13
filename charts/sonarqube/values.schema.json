@@ -203,55 +203,65 @@
     },
     "allOf": [
         {
-          "if": {
-            "properties": {
-              "community": {
+            "if": {
                 "properties": {
-                  "enabled": { "const": true }
+                    "community": {
+                        "properties": {
+                            "enabled": {
+                                "const": true
+                            }
+                        }
+                    }
                 }
-              }
+            },
+            "then": {
+                "properties": {
+                    "edition": {
+                        "maxLength": 0,
+                        "errorMessage": "edition must not be set if community.enabled is true"
+                    }
+                }
             }
-          },
-          "then": {
-            "properties": {
-              "edition": {
-                "maxLength": 0,
-                "errorMessage": "edition must not be set if community.enabled is true"
-              }
-            }
-          }
         },
         {
-          "if": {
-            "properties": {
-              "community": {
+            "if": {
                 "properties": {
-                  "enabled": { "const": false }
+                    "community": {
+                        "properties": {
+                            "enabled": {
+                                "const": false
+                            }
+                        }
+                    }
                 }
-              }
+            },
+            "then": {
+                "required": [
+                    "edition"
+                ],
+                "errorMessage": "edition is required if community.enabled is false"
             }
-          },
-          "then": {
-            "required": ["edition"],
-            "errorMessage": "edition is required if community.enabled is false"
-          }
         },
         {
-          "if": {
-            "not": {
-              "properties": {
-                "community": {
-                  "properties": {
-                    "enabled": { "type": "boolean" }
-                  }
+            "if": {
+                "not": {
+                    "properties": {
+                        "community": {
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    }
                 }
-              }
+            },
+            "then": {
+                "required": [
+                    "edition"
+                ],
+                "errorMessage": "edition is required if community is not set"
             }
-          },
-          "then": {
-            "required": ["edition"],
-            "errorMessage": "edition is required if community is not set"
-          }
         }
-      ]
+    ]
 }
