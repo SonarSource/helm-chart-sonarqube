@@ -171,3 +171,33 @@ func TestCommunityEmptyBuildNumberEmptyTag(t *testing.T) {
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
 }
+
+// This test loads the values.yaml used by Cirrus at runtime.
+func TestCiCirrusValues(t *testing.T) {
+	helmOptions.ValuesFiles = []string{chartPath + "/ci/cirrus-values.yaml"}
+	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
+	assert.NoError(t, err)
+
+	var renderedTemplate appsv1.StatefulSet
+	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
+
+	expectedContainerImage := "sonarsource/sonarqube:24.12.0.100206-community"
+	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
+	assert.Equal(t, 1, len(actualContainers))
+	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
+}
+
+// This test loads the values.yaml used by the OpenShift Verifier at runtime.
+func TestCiOpenshiftVerifierValues(t *testing.T) {
+	helmOptions.ValuesFiles = []string{chartPath + "/openshift-verifier/values.yaml"}
+	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
+	assert.NoError(t, err)
+
+	var renderedTemplate appsv1.StatefulSet
+	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
+
+	expectedContainerImage := "sonarsource/sonarqube:24.12.0.100206-community"
+	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
+	assert.Equal(t, 1, len(actualContainers))
+	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
+}
