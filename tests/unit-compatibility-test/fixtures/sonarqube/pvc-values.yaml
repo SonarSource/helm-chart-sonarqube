@@ -423,7 +423,11 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: pvc-values.yaml-sonarqube
+<<<<<<< HEAD
     app.kubernetes.io/version: "24.12.0.100206-community"
+=======
+    app.kubernetes.io/version: "10.8.0-enterprise"
+>>>>>>> 287f8b3 (SONAR-23559 Improves editions and versions setting for sonarqube chart)
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -449,7 +453,11 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
+<<<<<<< HEAD
           image: sonarqube:24.12.0.100206-community
+=======
+          image: sonarqube:10.8.0-enterprise
+>>>>>>> 287f8b3 (SONAR-23559 Improves editions and versions setting for sonarqube chart)
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -465,7 +473,11 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/pvc-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
+<<<<<<< HEAD
           image: sonarqube:24.12.0.100206-community
+=======
+          image: sonarqube:10.8.0-enterprise
+>>>>>>> 287f8b3 (SONAR-23559 Improves editions and versions setting for sonarqube chart)
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -483,7 +495,11 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: ""
         - name: init-fs
+<<<<<<< HEAD
           image: sonarqube:24.12.0.100206-community
+=======
+          image: sonarqube:10.8.0-enterprise
+>>>>>>> 287f8b3 (SONAR-23559 Improves editions and versions setting for sonarqube chart)
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -518,7 +534,11 @@ spec:
               subPath: extensions
       containers:
         - name: sonarqube
+<<<<<<< HEAD
           image: sonarqube:24.12.0.100206-community
+=======
+          image: sonarqube:10.8.0-enterprise
+>>>>>>> 287f8b3 (SONAR-23559 Improves editions and versions setting for sonarqube chart)
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -655,7 +675,11 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: pvc-values.yaml-ui-test
+<<<<<<< HEAD
       image: "sonarqube:24.12.0.100206-community"
+=======
+      image: "sonarqube:10.8.0-enterprise"
+>>>>>>> 287f8b3 (SONAR-23559 Improves editions and versions setting for sonarqube chart)
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

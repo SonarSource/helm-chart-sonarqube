@@ -341,7 +341,11 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: openshift-values.yaml-sonarqube
+<<<<<<< HEAD
     app.kubernetes.io/version: "24.12.0.100206-community"
+=======
+    app.kubernetes.io/version: "10.8.0-enterprise"
+>>>>>>> 287f8b3 (SONAR-23559 Improves editions and versions setting for sonarqube chart)
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -365,7 +369,11 @@ spec:
         {}
       initContainers:
         - name: "wait-for-db"
+<<<<<<< HEAD
           image: sonarqube:24.12.0.100206-community
+=======
+          image: sonarqube:10.8.0-enterprise
+>>>>>>> 287f8b3 (SONAR-23559 Improves editions and versions setting for sonarqube chart)
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -380,7 +388,11 @@ spec:
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/openshift-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
       containers:
         - name: sonarqube
+<<<<<<< HEAD
           image: sonarqube:24.12.0.100206-community
+=======
+          image: sonarqube:10.8.0-enterprise
+>>>>>>> 287f8b3 (SONAR-23559 Improves editions and versions setting for sonarqube chart)
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -527,7 +539,11 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: openshift-values.yaml-ui-test
+<<<<<<< HEAD
       image: "sonarqube:24.12.0.100206-community"
+=======
+      image: "sonarqube:10.8.0-enterprise"
+>>>>>>> 287f8b3 (SONAR-23559 Improves editions and versions setting for sonarqube chart)
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
