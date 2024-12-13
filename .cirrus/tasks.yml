@@ -137,6 +137,17 @@ chart_static_compatibility_test_task:
     - ./.cirrus/build_chart_dependencies.sh charts/sonarqube-dce
     - ./.cirrus/unit_helm_compatibility_test.sh sonarqube-dce
 
+chart_schema_test_task:
+  eks_container:
+    <<: *CONTAINER_TEMPLATE
+    cpu: 1
+    memory: 2Gb
+  <<: *CLONE_SCRIPT_TEMPLATE
+  script:
+    - ./.cirrus/build_chart_dependencies.sh charts/sonarqube
+    - ./.cirrus/build_chart_dependencies.sh charts/sonarqube-dce
+    - ./.cirrus/schema_test.sh
+
 chart_fixture_test_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   timeout_in: 30m

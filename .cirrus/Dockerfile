@@ -1,7 +1,7 @@
 ARG CIRRUS_AWS_ACCOUNT
-FROM ${CIRRUS_AWS_ACCOUNT:-275878209202}.dkr.ecr.eu-central-1.amazonaws.com/base:j11-latest as tools
+FROM ${CIRRUS_AWS_ACCOUNT:-275878209202}.dkr.ecr.eu-central-1.amazonaws.com/base:j11-latest AS tools
 
-FROM docker:20.10
+FROM docker:27.4
 
 USER root
 
@@ -27,24 +27,25 @@ ENV PATH=/usr/bin/google-cloud-sdk/bin:${PATH}
 
 RUN apk add --update --no-cache \
     aws-cli \
-    ca-certificates \
     bash \
-    jq \
-    moreutils \
+    ca-certificates \
     curl \
     gcompat \
     git \
     gnupg \
+    go \
+    jq \
     libc6-compat \
     libstdc++ \
+    moreutils \
     openssh-client \
     py3-pip \
     py3-wheel \
     python3 && \
-    pip install --upgrade pip==24.2
+    pip install --break-system-packages --upgrade pip==24.2
 
-RUN pip install "yamllint==${YAMLLINT_VERSION}" && \
-    pip install "yamale==${YAMALE_VERSION}"
+RUN pip install --break-system-packages "yamllint==${YAMLLINT_VERSION}" && \
+    pip install --break-system-packages "yamale==${YAMALE_VERSION}"
 
 RUN set -eux; \
     curl -sL ${HELM_BASE_URL}/${HELM_TAR_FILE} -o ${HELM_TAR_FILE} ; \
