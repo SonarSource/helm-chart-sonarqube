@@ -143,7 +143,10 @@ chart_schema_test_task:
     cpu: 1
     memory: 2Gb
   <<: *CLONE_SCRIPT_TEMPLATE
-  script: ./.cirrus/schema_test.sh
+  script:
+    - ./.cirrus/build_chart_dependencies.sh charts/sonarqube
+    - ./.cirrus/build_chart_dependencies.sh charts/sonarqube-dce
+    - ./.cirrus/schema_test.sh
 
 chart_fixture_test_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
