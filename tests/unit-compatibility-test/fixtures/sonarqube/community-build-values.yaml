@@ -23,7 +23,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: community-build-values.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: community-build-values.yaml
     heritage: Helm
 type: Opaque
@@ -57,7 +57,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: community-build-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: community-build-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: community-build-values.yaml
     heritage: Helm
 data:
@@ -130,7 +130,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: community-build-values.yaml
     heritage: Helm
 data:
@@ -198,7 +198,7 @@ metadata:
   name: community-build-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: community-build-values.yaml
     heritage: Helm
 spec:
@@ -380,7 +380,7 @@ metadata:
   name: community-build-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: community-build-values.yaml
     heritage: Helm
     app.kubernetes.io/name: community-build-values.yaml
@@ -397,20 +397,16 @@ spec:
     matchLabels:
       app: sonarqube
       release: community-build-values.yaml
-      app.kubernetes.io/name: community-build-values.yaml
-      app.kubernetes.io/version: ""
   template:
     metadata:
       annotations:
-        checksum/config: a4d88eb947778f8b81711aecba5fd66d69d3e7bcad0265850f22dfda398a4bf7
-        checksum/init-sysctl: fc32eec46d01df3097a120b66c49287b8c5259b7c9634a7bfc427c3681a92bc1
-        checksum/plugins: 8e84faa75179825707db8977a0b198529420b83d0a1fd6dfcf9e3ab869b5c8ad
-        checksum/secret: 79f5b98325f7d184d590754b8e68d45bc866c24edc47453010162024c5ad95b9
+        checksum/config: df6420fcba29a6cb73f16faebe76a6b575323a4b4dde48158ef174a952a98f58
+        checksum/init-sysctl: 10cb2dc83871222f0dfa9ae6f37ad0df6fe68db32424820a64c4834ef4b044f4
+        checksum/plugins: 0cf4cd784d6d250c1e2f475988570eb33a9e0aa83740d02c8c9ace0207fcb6ef
+        checksum/secret: c11be5b38f8e49d1e1949b682de33fb2eea645673429335586d7b56329e52e89
       labels:
         app: sonarqube
         release: community-build-values.yaml
-        app.kubernetes.io/name: community-build-values.yaml
-        app.kubernetes.io/version: ""
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -469,7 +465,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.1.0
+              value: 2025.1.1
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -576,7 +572,7 @@ metadata:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: community-build-values.yaml
     heritage: Helm
 spec:

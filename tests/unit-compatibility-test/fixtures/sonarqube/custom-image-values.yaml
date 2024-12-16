@@ -23,7 +23,7 @@ metadata:
   name: custom-image-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: custom-image-values.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: custom-image-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: custom-image-values.yaml
     heritage: Helm
 type: Opaque
@@ -57,7 +57,7 @@ metadata:
   name: custom-image-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: custom-image-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: custom-image-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: custom-image-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: custom-image-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: custom-image-values.yaml
     heritage: Helm
 data:
@@ -130,7 +130,7 @@ metadata:
   name: custom-image-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: custom-image-values.yaml
     heritage: Helm
 data:
@@ -198,7 +198,7 @@ metadata:
   name: custom-image-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: custom-image-values.yaml
     heritage: Helm
 spec:
@@ -380,7 +380,7 @@ metadata:
   name: custom-image-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: custom-image-values.yaml
     heritage: Helm
     app.kubernetes.io/name: custom-image-values.yaml
@@ -397,20 +397,16 @@ spec:
     matchLabels:
       app: sonarqube
       release: custom-image-values.yaml
-      app.kubernetes.io/name: custom-image-values.yaml
-      app.kubernetes.io/version: "lts-community@sha256:3596d14feb065a31ce84cef60cc3ecfb7b47233ef8"
   template:
     metadata:
       annotations:
-        checksum/config: 823c48495b77ee522a1fd057cf6daa47d4157ca2cb1edb6d7c6e70ad43877774
-        checksum/init-sysctl: 25b232d46a6e2c7863e29f39410d39fcf2c1076a5be94e97c0dc2def45b4ffcc
-        checksum/plugins: a081330e857246ba1513b75d053197f2111dd0d48cdfb414adf30e99be77a790
-        checksum/secret: 40427d0e15d063e92e609e836d6a578bdbe692a48283552ea854ddf18fc1363e
+        checksum/config: f687b2456b6f01f03a75de1fdcd0a009478f6a3d5aeacea455cc3a576d6fcc4f
+        checksum/init-sysctl: 1a03641dcbea136c5b900d8475e1d005aed8800e6f823c8bf52245e554490211
+        checksum/plugins: c8a39c74525ac041a80992e663e25ec2f97123056c72e8739b481c2804489a1d
+        checksum/secret: 82906e46b1a088f2f5dcdfd7d35ba8d6e923a9156f87a081d65b57742eb1de09
       labels:
         app: sonarqube
         release: custom-image-values.yaml
-        app.kubernetes.io/name: custom-image-values.yaml
-        app.kubernetes.io/version: "lts-community@sha256:3596d14feb065a31ce84cef60cc3ecfb7b47233ef8"
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -469,7 +465,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.1.0
+              value: 2025.1.1
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -576,7 +572,7 @@ metadata:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: custom-image-values.yaml
     heritage: Helm
 spec:
