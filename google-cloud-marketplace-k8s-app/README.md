@@ -20,7 +20,7 @@ and run this command.
 # make sure you are on a staging account
 export REGISTRY=gcr.io/$(gcloud config get-value project | tr ':' '/')
 export APP_NAME=sonarqube-dce
-export TAG=10.8.0
+export TAG=10.8.1
 export MINOR_VERSION=$(echo $TAG | cut -d. -f1,2)
 # Deployer does not care about patch version. see [here](https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/blob/master/docs/building-deployer-helm.md#images-in-staging-gcr)
 docker build -f google-cloud-marketplace-k8s-app/Dockerfile --build-arg REGISTRY="${REGISTRY}" --build-arg TAG="${TAG}" --tag $REGISTRY/$APP_NAME/deployer:$MINOR_VERSION .
