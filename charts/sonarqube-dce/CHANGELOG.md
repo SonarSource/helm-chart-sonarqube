@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.8.1]
+* Update Chart's version to 10.8.1
+* Upgrade SonarQube Server to 10.8.1
+
 ## [10.8.0]
 * Update Chart's version to 10.8.0
 * Upgrade SonarQube Server to 10.8.0
