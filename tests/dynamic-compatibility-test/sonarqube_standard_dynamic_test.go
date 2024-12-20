@@ -62,9 +62,11 @@ func TestSonarQubeChartDynamicCompatibility(t *testing.T) {
 		{"standard-chart-default-values-deployment", "sonarqube", 2, map[string]string{TESTS_ENABLING_ACTION: "false",
 			"deploymentType":             "Deployment",
 			"prometheusExporter.enabled": "false", // only for deployment
+			"edition":                    "enterprise",
 		}, []string{"../../charts/sonarqube/values.yaml"}},
 
-		{"standard-chart-default-values-sts", "sonarqube", 2, map[string]string{TESTS_ENABLING_ACTION: "false"},
+		{"standard-chart-default-values-sts", "sonarqube", 2, map[string]string{TESTS_ENABLING_ACTION: "false",
+			"edition": "enterprise"},
 			[]string{"../../charts/sonarqube/values.yaml"}},
 
 		{"standard-chart-all-values-deployment", "sonarqube", 2, map[string]string{TESTS_ENABLING_ACTION: "false",

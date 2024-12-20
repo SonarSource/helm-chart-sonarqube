@@ -6,14 +6,10 @@
     "properties": {
         "edition": {
             "type": "string",
-            "enum": ["community", "developer", "enterprise"],
-            "properties": {
-                "community": {
-                    "type": "string",
-                    "deprecated": true,
-                    "$comment": "(DEPRECATED) Please use `community.enabled` instead"
-                }
-            }
+            "enum": [
+                "developer",
+                "enterprise"
+            ]
         },
         "persistence": {
             "type": "object",
@@ -40,8 +36,7 @@
                 }
             }
         },
-        "OpenShift":
-        {
+        "OpenShift": {
             "type": "object",
             "properties": {
                 "createSCC": {
@@ -98,7 +93,10 @@
         },
         "replicaCount": {
             "type": "integer",
-            "enum": [0, 1]
+            "enum": [
+                0,
+                1
+            ]
         },
         "jvmOpts": {
             "type": "string",
@@ -172,20 +170,17 @@
             "deprecated": true,
             "$comment": "(DEPRECATED) this option will be removed in the next major release"
         },
-        "curlContainerImage":
-        {
+        "curlContainerImage": {
             "type": "string",
             "deprecated": true,
             "$comment": "(DEPRECATED) please use `setAdminPassword.image` at the value top level"
         },
-        "adminJobAnnotations":
-        {
+        "adminJobAnnotations": {
             "type": "object",
             "deprecated": true,
             "$comment": "(DEPRECATED) please use `setAdminPassword.annotations` at the value top level"
         },
-        "sonarqubeFolder":
-        {
+        "sonarqubeFolder": {
             "type": "string",
             "deprecated": true,
             "$comment": "(DEPRECATED) This value will is no longer required and will be dropped in future releases"
@@ -205,5 +200,68 @@
                 }
             }
         }
-    }
- }
+    },
+    "allOf": [
+        {
+            "if": {
+                "properties": {
+                    "community": {
+                        "properties": {
+                            "enabled": {
+                                "const": true
+                            }
+                        }
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "edition": {
+                        "maxLength": 0,
+                        "errorMessage": "edition must not be set if community.enabled is true"
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "community": {
+                        "properties": {
+                            "enabled": {
+                                "const": false
+                            }
+                        }
+                    }
+                }
+            },
+            "then": {
+                "required": [
+                    "edition"
+                ],
+                "errorMessage": "edition is required if community.enabled is false"
+            }
+        },
+        {
+            "if": {
+                "not": {
+                    "properties": {
+                        "community": {
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "then": {
+                "required": [
+                    "edition"
+                ],
+                "errorMessage": "edition is required if community is not set"
+            }
+        }
+    ]
+}
