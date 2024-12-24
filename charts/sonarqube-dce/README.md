@@ -535,7 +535,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                      | Description                                                                                                                              | Default          |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
 | `sonarqubeFolder`              | (DEPRECATED) Directory name of SonarQube, Due to 1-1 mapping between helm version and docker version, there is no need for configuration | `/opt/sonarqube` |
-| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format)                                                  | `define_it`      |
+| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format).                                                 | `None`           |
 | `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                                                                    | `None`           |
 | `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                                                                | `None`           |
 | `extraContainers`              | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars)                                                     | `[]`             |

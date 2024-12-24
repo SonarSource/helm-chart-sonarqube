@@ -450,7 +450,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `sonarProperties`              | Custom `sonar.properties` key-value pairs (e.g., "sonarProperties.sonar.forceAuthentication=true")                                       | `None`           |
 | `sonarSecretProperties`        | Additional `sonar.properties` key-value pairs to load from a secret                                                                      | `None`           |
 | `sonarSecretKey`               | Name of existing secret used for settings encryption                                                                                     | `None`           |
-| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format)                                                  | `define_it`      |
+| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format)                                                  | `None`           |
 | `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                                                                    | `None`           |
 | `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                                                                | `None`           |
 | `extraContainers`              | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars)                                                     | `[]`             |
