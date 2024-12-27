@@ -1,7 +1,7 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-## [10.8.2]
+## [2025.1.1]
 * Add the possibility of to save the data with hostpath.
 
 ## [2025.1.0]
