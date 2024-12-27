@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [10.8.2]
+* Add the possibility of to save the data with hostpath.
+
 ## [2025.1.0]
 * Update Chart's version to 2025.1.0
 * Update ingress-nginx subchart to 4.11.3
