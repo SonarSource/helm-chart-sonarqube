@@ -28,7 +28,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube/templates/secret.yaml
 ---
@@ -341,7 +341,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: openshift-values.yaml-sonarqube
-    app.kubernetes.io/version: "10.8.0-community"
+    app.kubernetes.io/version: "24.12.0.100206-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -350,26 +350,22 @@ spec:
     matchLabels:
       app: sonarqube
       release: openshift-values.yaml
-      app.kubernetes.io/name: openshift-values.yaml
-      app.kubernetes.io/version: "10.8.0-community"
   template:
     metadata:
       annotations:
         checksum/config: d23e7975228fa39a747325a3f754054d0afa242bddf2a7b53644f6a30f29e8ab
         checksum/plugins: c649dc6ac25abcc575f4f2e0e5376e084fa582833dd8fc37a8e8f6bbf29e6419
-        checksum/secret: d1576a0839d4a9357c68e9971f81bb7e204db1e50df7af771c730a400f4df34e
+        checksum/secret: a0a0108a986f791e66998dc4b6d6279c2c2dfde0623ada28367b4810b157dbe7
       labels:
         app: sonarqube
         release: openshift-values.yaml
-        app.kubernetes.io/name: openshift-values.yaml
-        app.kubernetes.io/version: "10.8.0-community"
     spec:
       automountServiceAccountToken: false
       securityContext:
         {}
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -384,7 +380,7 @@ spec:
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/openshift-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
       containers:
         - name: sonarqube
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -531,7 +527,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: openshift-values.yaml-ui-test
-      image: "sonarqube:10.8.0-community"
+      image: "sonarqube:24.12.0.100206-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

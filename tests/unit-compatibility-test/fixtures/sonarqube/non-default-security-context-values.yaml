@@ -28,7 +28,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube/templates/secret.yaml
 apiVersion: v1
@@ -435,7 +435,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: non-default-security-context-values.yaml-sonarqube
-    app.kubernetes.io/version: "10.8.0-community"
+    app.kubernetes.io/version: "24.12.0.100206-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -444,29 +444,25 @@ spec:
     matchLabels:
       app: sonarqube
       release: non-default-security-context-values.yaml
-      app.kubernetes.io/name: non-default-security-context-values.yaml
-      app.kubernetes.io/version: "10.8.0-community"
   template:
     metadata:
       annotations:
         checksum/config: 1aa0c740ad0d3f1805d58ed47682235a31199c43a221ae1d551d02b66f403395
         checksum/init-sysctl: fda9beefd09907922b5906173e70683b72648bb6112127ed1b7179dc026d440c
         checksum/plugins: 439943935ec21b40207a08865e7e734596aeb717285059555c10de3c41d6083d
-        checksum/secret: 92a40c3d1b2419b15e569fee1296c02c85eec6f57f2607c75c5d1496584a54da
+        checksum/secret: 73d6bc391b440aabbccd2e91b9930ceab838f3247edcebab09418383c17103fb
         checksum/prometheus-config: 3f53da1e114c73fff585522ff34e0028bc50f2e26f1f6e7b6c9896393981f653
         checksum/prometheus-ce-config: 99f429a5a97d98d34d6fdcbc7cb4c7a6010d30b6cab1cc16dffa44073bad733a
       labels:
         app: sonarqube
         release: non-default-security-context-values.yaml
-        app.kubernetes.io/name: non-default-security-context-values.yaml
-        app.kubernetes.io/version: "10.8.0-community"
     spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -482,7 +478,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/non-default-security-context-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -500,7 +496,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
         - name: inject-prometheus-exporter
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -542,7 +538,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
         - name: install-plugins
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
           securityContext:
@@ -586,7 +582,7 @@ spec:
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
       containers:
         - name: sonarqube
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -747,7 +743,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: non-default-security-context-values.yaml-ui-test
-      image: "sonarqube:10.8.0-community"
+      image: "sonarqube:24.12.0.100206-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

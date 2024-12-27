@@ -28,7 +28,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube/templates/secret.yaml
 ---
@@ -421,7 +421,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: proxies-values.yaml-sonarqube
-    app.kubernetes.io/version: "10.8.0-community"
+    app.kubernetes.io/version: "24.12.0.100206-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -430,29 +430,25 @@ spec:
     matchLabels:
       app: sonarqube
       release: proxies-values.yaml
-      app.kubernetes.io/name: proxies-values.yaml
-      app.kubernetes.io/version: "10.8.0-community"
   template:
     metadata:
       annotations:
         checksum/config: c97e53ac44ff83321d73a9d5a67b29a5e5d8592adf5c6c3e7ab947063053151d
         checksum/init-sysctl: 36dbca1b847ef7a269174e7562b954a41e8a9bcd039276dfe246527876cb24dd
         checksum/plugins: 275c3a7fcbbed9ba868de00ab672019074c0900fd1b0c3e02ac5a489992eb4f6
-        checksum/secret: 17a229f032973e14a361c474433a60ada8d0dc2d4db05c337fe3414835e743c1
+        checksum/secret: 7d2d39af41dee9098472545848e6add961937ce116d6eb1c186a33935055247c
         checksum/prometheus-config: fa27fbffd7a18fec0ec34586167f93127c6e7f94f369a10ee2b054a550a3c5f2
         checksum/prometheus-ce-config: 1ad97f0c2c1d65f686d193677bebf70f8fc2950555776622ad0211bcb9678e8b
       labels:
         app: sonarqube
         release: proxies-values.yaml
-        app.kubernetes.io/name: proxies-values.yaml
-        app.kubernetes.io/version: "10.8.0-community"
     spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -468,7 +464,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/proxies-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -486,7 +482,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
         - name: inject-prometheus-exporter
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -528,7 +524,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
         - name: install-plugins
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
           securityContext:
@@ -572,7 +568,7 @@ spec:
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
       containers:
         - name: sonarqube
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -733,7 +729,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: proxies-values.yaml-ui-test
-      image: "sonarqube:10.8.0-community"
+      image: "sonarqube:24.12.0.100206-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

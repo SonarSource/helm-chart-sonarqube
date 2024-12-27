@@ -28,7 +28,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube/templates/secret.yaml
 ---
@@ -404,7 +404,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: ca-certificates-configmap.yaml-sonarqube
-    app.kubernetes.io/version: "10.8.0-community"
+    app.kubernetes.io/version: "24.12.0.100206-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -413,27 +413,23 @@ spec:
     matchLabels:
       app: sonarqube
       release: ca-certificates-configmap.yaml
-      app.kubernetes.io/name: ca-certificates-configmap.yaml
-      app.kubernetes.io/version: "10.8.0-community"
   template:
     metadata:
       annotations:
         checksum/config: 405c5545083c4ba1280599abe95ada899b267ee67e3d57983bb9a1fc69208845
         checksum/init-sysctl: 05e4b087ae91fae3fdbffddec3fb1551635796ce6cd7f3571f57d0390376cab2
         checksum/plugins: 54629f885a7e9f91e2d4c6d6b501fe1568e63427ced467b9b53bcc3d4efaaee6
-        checksum/secret: 0470dcc16403f2fc80793a59137321f718167b167d1bbfa373eac6b6e29c1f5e
+        checksum/secret: 264e3584589e3ff89afc1828903a49501eb82704442577364832a7cd32d90a07
       labels:
         app: sonarqube
         release: ca-certificates-configmap.yaml
-        app.kubernetes.io/name: ca-certificates-configmap.yaml
-        app.kubernetes.io/version: "10.8.0-community"
     spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -449,7 +445,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/ca-certificates-configmap.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: ca-certs
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
@@ -478,7 +474,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: init-sysctl
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -496,7 +492,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: install-oracle-jdbc-driver
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
           securityContext:
@@ -529,7 +525,7 @@ spec:
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
       containers:
         - name: sonarqube
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -680,7 +676,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: ca-certificates-configmap.yaml-ui-test
-      image: "sonarqube:10.8.0-community"
+      image: "sonarqube:24.12.0.100206-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

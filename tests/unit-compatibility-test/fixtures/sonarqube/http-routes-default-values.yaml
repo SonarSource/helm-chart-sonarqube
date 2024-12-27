@@ -28,7 +28,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube/templates/secret.yaml
 ---
@@ -388,7 +388,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: http-routes-default-values.yaml-sonarqube
-    app.kubernetes.io/version: "10.8.0-community"
+    app.kubernetes.io/version: "24.12.0.100206-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -397,27 +397,23 @@ spec:
     matchLabels:
       app: sonarqube
       release: http-routes-default-values.yaml
-      app.kubernetes.io/name: http-routes-default-values.yaml
-      app.kubernetes.io/version: "10.8.0-community"
   template:
     metadata:
       annotations:
         checksum/config: 968dcf6a8cbdaf7ef5256d07e2eb3a9663e70215d18255e72f654ae8f9088594
         checksum/init-sysctl: ac3b1329cee59979639c425dc9c5e96bcca938369397bbf0f2276c4d79dbb211
         checksum/plugins: 36739d505017862b0a787f13c117588cd1750b59287d0446120d20d6b2b41570
-        checksum/secret: 07a583d4e5f577cce392fe7628ceeffd31fea3c574278f633cc7d7cc8087d009
+        checksum/secret: 601bccba8c798dfb1538ab6660b573afe2f9a5e3cc985c2aaae3a2074f5489f7
       labels:
         app: sonarqube
         release: http-routes-default-values.yaml
-        app.kubernetes.io/name: http-routes-default-values.yaml
-        app.kubernetes.io/version: "10.8.0-community"
     spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -433,7 +429,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/http-routes-default-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -452,7 +448,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -608,7 +604,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: http-routes-default-values.yaml-ui-test
-      image: "sonarqube:10.8.0-community"
+      image: "sonarqube:24.12.0.100206-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

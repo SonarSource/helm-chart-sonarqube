@@ -58,8 +58,9 @@ community:
 
 image:
   repository: sonarqube
-  # (DEPRECATED) The "image.tag" parameter will be set to be empty as default.
-  tag: 10.8.0-{{ .Values.edition }}
+  # (DEPRECATED) The "image.tag" parameter is set to be empty as default.
+  # image.tag is set according to the edition and community fields, user-defined have precedance.
+  # tag: 10.8.1-{{ .Values.edition }}
   pullPolicy: IfNotPresent
   # If using a private repository, the imagePullSecrets to use
   # pullSecrets:
@@ -431,7 +432,7 @@ jvmCeOpts: ""
 
 ## a monitoring passcode needs to be defined in order to get reasonable probe results
 # not setting the monitoring passcode will result in a deployment that will never be ready
-monitoringPasscode: "define_it"
+# monitoringPasscode: "define_it"
 # Alternatively, you can define the passcode loading it from an existing secret specifying the right key
 # monitoringPasscodeSecretName: "pass-secret-name"
 # monitoringPasscodeSecretKey: "pass-key"

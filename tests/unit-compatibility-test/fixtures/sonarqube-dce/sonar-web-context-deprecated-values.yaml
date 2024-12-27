@@ -61,7 +61,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 ---
@@ -398,7 +398,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: sonar-web-context-deprecated-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "10.8.0-datacenter-app"
+    app.kubernetes.io/version: "10.8.1-datacenter-app"
 spec:
   replicas: 2
   revisionHistoryLimit: 
@@ -417,12 +417,12 @@ spec:
       annotations:
         checksum/plugins: 6da794a278902144b546e8b12e7b0da526a0885cba496835146112cb3c4f4e8f
         checksum/config: 53d53d206c44ac4e45cabfde0e49f34b09ffe15c230e19b7dede8bc5e426dfdd
-        checksum/secret: d00fa029127d558e100b5ae660879e5c8fa063d69324e0b53117ab33a49ebefd
+        checksum/secret: 76eb626ee0764d0a3570dbffe693029e8fbba731aea4f19c59e0bf5b6b61525d
     spec:
       automountServiceAccountToken: false
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -440,7 +440,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/sonar-web-context-deprecated-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: concat-properties
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           command: 
           - sh
@@ -479,7 +479,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -802,7 +802,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: sonar-web-context-deprecated-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "10.8.0-datacenter-search"
+    app.kubernetes.io/version: "10.8.1-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
@@ -834,12 +834,12 @@ spec:
         checksum/init-sysctl: b6e20b2f351fe8cf384fb935f2325bd2321edde00c809756482230ec003aa481
         checksum/init-fs: c96fd6cde0be2fc580d6b8ae28f4f0cbe214ac774aec2b8f05e261c3f9f0d4b6
         checksum/config: 53d53d206c44ac4e45cabfde0e49f34b09ffe15c230e19b7dede8bc5e426dfdd
-        checksum/secret: d00fa029127d558e100b5ae660879e5c8fa063d69324e0b53117ab33a49ebefd
+        checksum/secret: 76eb626ee0764d0a3570dbffe693029e8fbba731aea4f19c59e0bf5b6b61525d
     spec:
       automountServiceAccountToken: false
       initContainers:
         - name: init-sysctl
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -854,7 +854,7 @@ spec:
             - name: init-sysctl
               mountPath: /tmp/scripts/
         - name: init-fs
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -895,7 +895,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce-search
-          image: "sonarqube:10.8.0-datacenter-search"
+          image: "sonarqube:10.8.1-datacenter-search"
           imagePullPolicy: IfNotPresent
           ports:
             - name: search-port
@@ -1060,7 +1060,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: sonar-web-context-deprecated-values.yaml-ui-test
-      image: "sonarqube:10.8.0-datacenter-app"
+      image: "sonarqube:10.8.1-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
@@ -1109,7 +1109,7 @@ spec:
       serviceAccountName: default
       containers:
       - name: sonar-web-context-deprecated-values.yaml-sonarqube-dce-change-default-admin-password
-        image: sonarqube:10.8.0-datacenter-app
+        image: sonarqube:10.8.1-datacenter-app
         securityContext:
             allowPrivilegeEscalation: false
             capabilities:

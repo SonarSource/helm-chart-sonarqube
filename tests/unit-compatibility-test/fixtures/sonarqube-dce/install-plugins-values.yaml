@@ -61,7 +61,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 ---
@@ -386,7 +386,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: install-plugins-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "10.8.0-datacenter-app"
+    app.kubernetes.io/version: "10.8.1-datacenter-app"
 spec:
   replicas: 2
   revisionHistoryLimit: 
@@ -405,12 +405,12 @@ spec:
       annotations:
         checksum/plugins: 53228e864ec37f0a1363275b00dfa0b25bc2b3cbd1b9ad9971b2163c23acf3f6
         checksum/config: dc483102be812e0336d1c2854f42c9d544bfca08e33864c6f0f3a36911c6efc2
-        checksum/secret: 63e2d15f90c3c37fb79301d9319948678c80c569f6dac53d959d3da1e2caa33c
+        checksum/secret: 7e1730f39b59e83eb999e71bf411a5495144be41aa22c6d935980ab126ad33ec
     spec:
       automountServiceAccountToken: false
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -428,7 +428,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/install-plugins-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: install-plugins
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           command: ["sh",
             "-e",
@@ -472,7 +472,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -786,7 +786,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: install-plugins-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "10.8.0-datacenter-search"
+    app.kubernetes.io/version: "10.8.1-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
@@ -818,12 +818,12 @@ spec:
         checksum/init-sysctl: 5027b29fa2233d5de39cd453d32e52b406129a46182258380fa37dc5c15c5463
         checksum/init-fs: f645b66e2a81cb560dd930cc52be7c0e3f9b3827368c4901479d0590b521b980
         checksum/config: dc483102be812e0336d1c2854f42c9d544bfca08e33864c6f0f3a36911c6efc2
-        checksum/secret: 63e2d15f90c3c37fb79301d9319948678c80c569f6dac53d959d3da1e2caa33c
+        checksum/secret: 7e1730f39b59e83eb999e71bf411a5495144be41aa22c6d935980ab126ad33ec
     spec:
       automountServiceAccountToken: false
       initContainers:
         - name: init-sysctl
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -838,7 +838,7 @@ spec:
             - name: init-sysctl
               mountPath: /tmp/scripts/
         - name: init-fs
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -879,7 +879,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce-search
-          image: "sonarqube:10.8.0-datacenter-search"
+          image: "sonarqube:10.8.1-datacenter-search"
           imagePullPolicy: IfNotPresent
           ports:
             - name: search-port
@@ -1021,7 +1021,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: install-plugins-values.yaml-ui-test
-      image: "sonarqube:10.8.0-datacenter-app"
+      image: "sonarqube:10.8.1-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

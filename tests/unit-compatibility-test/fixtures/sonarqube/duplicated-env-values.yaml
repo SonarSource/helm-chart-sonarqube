@@ -28,7 +28,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube/templates/secret.yaml
 ---
@@ -418,7 +418,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: duplicated-env-values.yaml-sonarqube
-    app.kubernetes.io/version: "10.8.0-community"
+    app.kubernetes.io/version: "24.12.0.100206-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -427,29 +427,25 @@ spec:
     matchLabels:
       app: sonarqube
       release: duplicated-env-values.yaml
-      app.kubernetes.io/name: duplicated-env-values.yaml
-      app.kubernetes.io/version: "10.8.0-community"
   template:
     metadata:
       annotations:
         checksum/config: d05129847387233a198ba56db0a238e98b8974ffc9a1eaae45e4f0fdc2b1c088
         checksum/init-sysctl: 04c8815a81650bfc475634c21c902ad21e29f60a3cb3072510fe2f95ad755d90
         checksum/plugins: 74e5ce6be3cca49aedd6bd0b22745e607748a2e1b2854275ee7ec251f715e015
-        checksum/secret: f3a05e22da9d4ed406eeed2a5e3a43452b39dcfe8242fedee72214d36a5bdcdd
+        checksum/secret: 2057b383be9dd40afacc9194e0f2590f949d86ff64e91aaf5d989c33f437d560
         checksum/prometheus-config: 60b7be9e3195d21456544981d88c719d137417f3a04d0600d96a6319531b600e
         checksum/prometheus-ce-config: 50a0b55f7afd980022330b80981f79d5417d5b8d33fba2ee220b494f81140d63
       labels:
         app: sonarqube
         release: duplicated-env-values.yaml
-        app.kubernetes.io/name: duplicated-env-values.yaml
-        app.kubernetes.io/version: "10.8.0-community"
     spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -465,7 +461,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/duplicated-env-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -490,7 +486,7 @@ spec:
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
                 -Xms2G -Xmx2G -DsomeOption=some/Value
         - name: inject-prometheus-exporter
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -540,7 +536,7 @@ spec:
                 -Xms2G -Xmx2G -DsomeOption=some/Value
       containers:
         - name: sonarqube
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -702,7 +698,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: duplicated-env-values.yaml-ui-test
-      image: "sonarqube:10.8.0-community"
+      image: "sonarqube:24.12.0.100206-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

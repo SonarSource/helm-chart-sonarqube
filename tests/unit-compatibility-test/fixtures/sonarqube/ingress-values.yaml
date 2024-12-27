@@ -28,7 +28,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube/templates/secret.yaml
 ---
@@ -388,7 +388,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: ingress-values.yaml-sonarqube
-    app.kubernetes.io/version: "10.8.0-community"
+    app.kubernetes.io/version: "24.12.0.100206-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -397,27 +397,23 @@ spec:
     matchLabels:
       app: sonarqube
       release: ingress-values.yaml
-      app.kubernetes.io/name: ingress-values.yaml
-      app.kubernetes.io/version: "10.8.0-community"
   template:
     metadata:
       annotations:
         checksum/config: 1353d7f3a31bf9b6733af35981e9d66d3e60caa4fbf4b2fe3963821aed84471e
         checksum/init-sysctl: 9c26a442dbbdbf3c35a436a524de6272121af52c93bccb0694815428618aaeea
         checksum/plugins: 28ec0fc90f76db99fc1c724ae5bba07b02ef59f510c7817599211528ec829710
-        checksum/secret: 779838db80d1acc862c87d618e57bde8dbac16240d770afd4b8bc320d36c763d
+        checksum/secret: 5a39645bca9aaa2ee602fd72faebdbef7940c75cb56e82786ecbfe7fb88e54bd
       labels:
         app: sonarqube
         release: ingress-values.yaml
-        app.kubernetes.io/name: ingress-values.yaml
-        app.kubernetes.io/version: "10.8.0-community"
     spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -433,7 +429,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/ingress-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -452,7 +448,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -616,7 +612,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: ingress-values.yaml-ui-test
-      image: "sonarqube:10.8.0-community"
+      image: "sonarqube:24.12.0.100206-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

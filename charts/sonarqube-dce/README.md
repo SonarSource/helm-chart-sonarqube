@@ -14,9 +14,9 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 ## Compatibility
 
-Compatible SonarQube Version: `10.8.0`
+Compatible SonarQube Version: `10.8.1`
 
-Supported Kubernetes Versions: From `1.24` to `1.31`
+Supported Kubernetes Versions: From `1.29` to `1.32`
 Supported Openshift Versions: From `4.11` to `4.16`
 
 ## Installing the chart
@@ -282,7 +282,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                                                 | Description                                                                                | Default                                                                |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
 | `searchNodes.image.repository`                            | search image repository                                                                    | `sonarqube`                                                            |
-| `searchNodes.image.tag`                                   | search image tag                                                                           | `10.8.0-datacenter-search`                                             |
+| `searchNodes.image.tag`                                   | search image tag                                                                           | `10.8.1-datacenter-search`                                             |
 | `searchNodes.image.pullPolicy`                            | search image pull policy                                                                   | `IfNotPresent`                                                         |
 | `searchNodes.image.pullSecret`                            | (DEPRECATED) search imagePullSecret to use for private repository                          | `nil`                                                                  |
 | `searchNodes.image.pullSecrets`                           | search imagePullSecrets to use for private repository                                      | `nil`                                                                  |
@@ -339,7 +339,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                                                        | Description                                                                                                                                                                                                    | Default                                                                |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `applicationNodes.image.repository`                              | app image repository                                                                                                                                                                                           | `sonarqube`                                                            |
-| `applicationNodes.image.tag`                                     | app image tag                                                                                                                                                                                                  | `10.8.0-datacenter-app`                                                |
+| `applicationNodes.image.tag`                                     | app image tag                                                                                                                                                                                                  | `10.8.1-datacenter-app`                                                |
 | `applicationNodes.image.pullPolicy`                              | app image pull policy                                                                                                                                                                                          | `IfNotPresent`                                                         |
 | `applicationNodes.image.pullSecret`                              | (DEPRECATED) app imagePullSecret to use for private repository                                                                                                                                                 | `nil`                                                                  |
 | `applicationNodes.image.pullSecrets`                             | app imagePullSecrets to use for private repository                                                                                                                                                             | `nil`                                                                  |
@@ -535,7 +535,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                      | Description                                                                                                                              | Default          |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
 | `sonarqubeFolder`              | (DEPRECATED) Directory name of SonarQube, Due to 1-1 mapping between helm version and docker version, there is no need for configuration | `/opt/sonarqube` |
-| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format)                                                  | `define_it`      |
+| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format).                                                 | `None`           |
 | `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                                                                    | `None`           |
 | `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                                                                | `None`           |
 | `extraContainers`              | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars)                                                     | `[]`             |

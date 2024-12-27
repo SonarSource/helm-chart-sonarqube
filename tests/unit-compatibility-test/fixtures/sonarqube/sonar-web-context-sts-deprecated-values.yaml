@@ -28,7 +28,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube/templates/secret.yaml
 apiVersion: v1
@@ -402,7 +402,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: sonar-web-context-sts-deprecated-values.yaml-sonarqube
-    app.kubernetes.io/version: "10.8.0-community"
+    app.kubernetes.io/version: "24.12.0.100206-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -411,27 +411,23 @@ spec:
     matchLabels:
       app: sonarqube
       release: sonar-web-context-sts-deprecated-values.yaml
-      app.kubernetes.io/name: sonar-web-context-sts-deprecated-values.yaml
-      app.kubernetes.io/version: "10.8.0-community"
   template:
     metadata:
       annotations:
         checksum/config: c6d5daca42664ace2331e1498631b74d41144e6803443e480c24ca127ae55f1d
         checksum/init-sysctl: cde21dcf6e8be19e042f96eb9f8782d0e260d971ba823d4c31c19858477a7ba3
         checksum/plugins: 84134c4bbc2b21356a44589c2d6cee7a0a8ce18c53c7617ffb4084d36f30cf29
-        checksum/secret: 49deed4fb7d5cecdff67fade1b02808f658773d1a3e80c5c6131742344982329
+        checksum/secret: a5a7a914abe0c921b1688b6cea5123e4dad060044b2e414fc851818b79eecdd5
       labels:
         app: sonarqube
         release: sonar-web-context-sts-deprecated-values.yaml
-        app.kubernetes.io/name: sonar-web-context-sts-deprecated-values.yaml
-        app.kubernetes.io/version: "10.8.0-community"
     spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -447,7 +443,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/sonar-web-context-sts-deprecated-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -466,7 +462,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -620,7 +616,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: sonar-web-context-sts-deprecated-values.yaml-ui-test
-      image: "sonarqube:10.8.0-community"
+      image: "sonarqube:24.12.0.100206-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
@@ -670,7 +666,7 @@ spec:
       serviceAccountName: default
       containers:
       - name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-change-default-admin-password
-        image: sonarqube:10.8.0-community
+        image: sonarqube:24.12.0.100206-community
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

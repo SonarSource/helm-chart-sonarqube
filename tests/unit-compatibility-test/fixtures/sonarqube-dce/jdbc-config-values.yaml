@@ -61,7 +61,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 ---
@@ -383,7 +383,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: jdbc-config-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "10.8.0-datacenter-app"
+    app.kubernetes.io/version: "10.8.1-datacenter-app"
 spec:
   replicas: 2
   revisionHistoryLimit: 
@@ -402,12 +402,12 @@ spec:
       annotations:
         checksum/plugins: fb64e7d3082f74ad33c663e646ec3bb92dc7885cf2b0f9ef22abcc7469f7fb62
         checksum/config: 65be33489f5f532e18fff187a751f56ad4d9adcf00e988445ef59c1fb58f901a
-        checksum/secret: 5082436720fe5fdc200d22b4e8afa1e68c1f4b4ed3528643aa974499186e0b03
+        checksum/secret: 05f14420088e6c413e6ea8f19475037605c62725e859822283c497889a3fe6bb
     spec:
       automountServiceAccountToken: false
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -428,7 +428,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -739,7 +739,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: jdbc-config-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "10.8.0-datacenter-search"
+    app.kubernetes.io/version: "10.8.1-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
@@ -771,12 +771,12 @@ spec:
         checksum/init-sysctl: 391358d8a5d250c0008de30a68e65646b744af6384efb02b4c0c462f767a28b2
         checksum/init-fs: f2eb5ba23359406dfcf2df94c53b1eba59d601501efa1de9daad16ab4aa0da30
         checksum/config: 65be33489f5f532e18fff187a751f56ad4d9adcf00e988445ef59c1fb58f901a
-        checksum/secret: 5082436720fe5fdc200d22b4e8afa1e68c1f4b4ed3528643aa974499186e0b03
+        checksum/secret: 05f14420088e6c413e6ea8f19475037605c62725e859822283c497889a3fe6bb
     spec:
       automountServiceAccountToken: false
       initContainers:
         - name: init-sysctl
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -791,7 +791,7 @@ spec:
             - name: init-sysctl
               mountPath: /tmp/scripts/
         - name: init-fs
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -832,7 +832,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce-search
-          image: "sonarqube:10.8.0-datacenter-search"
+          image: "sonarqube:10.8.1-datacenter-search"
           imagePullPolicy: IfNotPresent
           ports:
             - name: search-port
@@ -974,7 +974,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: jdbc-config-values.yaml-ui-test
-      image: "sonarqube:10.8.0-datacenter-app"
+      image: "sonarqube:10.8.1-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

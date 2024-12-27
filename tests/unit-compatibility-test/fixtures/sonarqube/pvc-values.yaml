@@ -28,7 +28,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube/templates/secret.yaml
 ---
@@ -423,7 +423,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: pvc-values.yaml-sonarqube
-    app.kubernetes.io/version: "10.8.0-community"
+    app.kubernetes.io/version: "24.12.0.100206-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -432,8 +432,6 @@ spec:
     matchLabels:
       app: sonarqube
       release: pvc-values.yaml
-      app.kubernetes.io/name: pvc-values.yaml
-      app.kubernetes.io/version: "10.8.0-community"
   template:
     metadata:
       annotations:
@@ -441,19 +439,17 @@ spec:
         checksum/init-fs: 08b59e40c11846392497bd697aa9ed4b68a3f4f11fe2564ea1fef66563379e76
         checksum/init-sysctl: 0a02f0395b7bf673d1440081449a0d41aa38dcdbeebd5fa2267b4a8e522ebf8a
         checksum/plugins: c5091c59f5c27288998018313a7e82a0158d9600c76d3133d67da1cfdf14755c
-        checksum/secret: dc1a96ff147d51d960d467ca59deb2c27ae2e825a335a67d3814b4db937d7997
+        checksum/secret: 6b61c87d02816598a764397cd171947db53b0b412b640cb997b4b0d6841f6b31
       labels:
         app: sonarqube
         release: pvc-values.yaml
-        app.kubernetes.io/name: pvc-values.yaml
-        app.kubernetes.io/version: "10.8.0-community"
     spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -469,7 +465,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/pvc-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -487,7 +483,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: ""
         - name: init-fs
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -522,7 +518,7 @@ spec:
               subPath: extensions
       containers:
         - name: sonarqube
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -659,7 +655,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: pvc-values.yaml-ui-test
-      image: "sonarqube:10.8.0-community"
+      image: "sonarqube:24.12.0.100206-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

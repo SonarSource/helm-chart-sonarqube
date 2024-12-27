@@ -61,7 +61,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 ---
@@ -383,7 +383,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: application-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "10.8.0-datacenter-app"
+    app.kubernetes.io/version: "10.8.1-datacenter-app"
 spec:
   replicas: 2
   revisionHistoryLimit: 
@@ -402,12 +402,12 @@ spec:
       annotations:
         checksum/plugins: 7f24a3d6482b2129f679c9757bf21e5da233e385391bbfcffe5893a751ce4ca1
         checksum/config: aadbd5c551e813bde98349cfe8225b31aa87a22e55efbc5dfc753658896c23c0
-        checksum/secret: 29f0ff250b7e8a884fa8bb6e0bfd49d6662d7f05a352286bc2c91f1f4b905bf8
+        checksum/secret: bb6654cbd753cb460f503882d182b55ae4fd897a8243b6b02fb075cf01b8d58b
     spec:
       automountServiceAccountToken: false
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -428,7 +428,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -739,7 +739,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: application-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "10.8.0-datacenter-search"
+    app.kubernetes.io/version: "10.8.1-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
@@ -771,12 +771,12 @@ spec:
         checksum/init-sysctl: 513773d04154d0b575b6f8502de57363170897931a592a4c5b5f1d12bb6e91d0
         checksum/init-fs: 4ad4bbe3474b82b398009f1ca94d98cf18f910c3f18364a3550342ebc9debd02
         checksum/config: aadbd5c551e813bde98349cfe8225b31aa87a22e55efbc5dfc753658896c23c0
-        checksum/secret: 29f0ff250b7e8a884fa8bb6e0bfd49d6662d7f05a352286bc2c91f1f4b905bf8
+        checksum/secret: bb6654cbd753cb460f503882d182b55ae4fd897a8243b6b02fb075cf01b8d58b
     spec:
       automountServiceAccountToken: false
       initContainers:
         - name: init-sysctl
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -791,7 +791,7 @@ spec:
             - name: init-sysctl
               mountPath: /tmp/scripts/
         - name: init-fs
-          image: sonarqube:10.8.0-datacenter-app
+          image: sonarqube:10.8.1-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -832,7 +832,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce-search
-          image: "sonarqube:10.8.0-datacenter-search"
+          image: "sonarqube:10.8.1-datacenter-search"
           imagePullPolicy: IfNotPresent
           ports:
             - name: search-port
@@ -974,7 +974,7 @@ metadata:
 spec:
   descriptor:
     type: sonarqube-dce
-    version: "10.8.0-datacenter-app"
+    version: "10.8.1-datacenter-app"
     description: |-
         [SonarQube](https://www.sonarsource.com/products/sonarqube/) is a self-managed, automatic code review tool that systematically helps you deliver Clean Code.
         As a core element of our [Sonar solution](https://www.sonarsource.com/), SonarQube integrates into your existing workflow and detects issues in your code to help you perform continuous code inspections of your projects.
@@ -1033,7 +1033,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: application-values.yaml-ui-test
-      image: "sonarqube:10.8.0-datacenter-app"
+      image: "sonarqube:10.8.1-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

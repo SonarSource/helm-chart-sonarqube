@@ -14,10 +14,10 @@ Please note that this chart only supports SonarQube Community, Developer, and En
 
 ## Compatibility
 
-Compatible SonarQube Server Version: `10.8.0`
+Compatible SonarQube Server Version: `10.8.1`
 Compatible SonarQube Community Build: `24.12.0.100206`
 
-Supported Kubernetes Versions: From `1.24` to `1.31`
+Supported Kubernetes Versions: From `1.29` to `1.32`
 Supported Openshift Versions: From `4.11` to `4.16`
 
 ## Installing the chart
@@ -292,7 +292,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter           | Description                                                                                       | Default                        |
 | ------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------ |
 | `image.repository`  | image repository                                                                                  | `sonarqube`                    |
-| `image.tag`         | `sonarqube` image tag. Please note that the default `10.8.0-{{ .Values.edition }}` is deprecated. | `10.8.0-{{ .Values.edition }}` |
+| `image.tag`         | `sonarqube` image tag. Please note that the default `10.8.1-{{ .Values.edition }}` is deprecated. | `10.8.1-{{ .Values.edition }}` |
 | `image.pullPolicy`  | Image pull policy                                                                                 | `IfNotPresent`                 |
 | `image.pullSecret`  | (DEPRECATED) imagePullSecret to use for private repository                                        | `None`                         |
 | `image.pullSecrets` | imagePullSecrets to use for private repository                                                    | `None`                         |
@@ -450,7 +450,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `sonarProperties`              | Custom `sonar.properties` key-value pairs (e.g., "sonarProperties.sonar.forceAuthentication=true")                                       | `None`           |
 | `sonarSecretProperties`        | Additional `sonar.properties` key-value pairs to load from a secret                                                                      | `None`           |
 | `sonarSecretKey`               | Name of existing secret used for settings encryption                                                                                     | `None`           |
-| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format)                                                  | `define_it`      |
+| `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes (encoded to Base64 format)                                                  | `None`           |
 | `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                                                                    | `None`           |
 | `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                                                                | `None`           |
 | `extraContainers`              | Array of extra containers to run alongside the `sonarqube` container (aka. Sidecars)                                                     | `[]`             |

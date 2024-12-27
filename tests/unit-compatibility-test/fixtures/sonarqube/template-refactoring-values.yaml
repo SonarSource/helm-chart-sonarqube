@@ -28,7 +28,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  SONAR_WEB_SYSTEMPASSCODE: "ZGVmaW5lX2l0"
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube/templates/secret.yaml
 ---
@@ -421,7 +421,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: template-refactoring-values.yaml-sonarqube
-    app.kubernetes.io/version: "10.8.0-community"
+    app.kubernetes.io/version: "24.12.0.100206-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -430,8 +430,6 @@ spec:
     matchLabels:
       app: sonarqube
       release: template-refactoring-values.yaml
-      app.kubernetes.io/name: template-refactoring-values.yaml
-      app.kubernetes.io/version: "10.8.0-community"
   template:
     metadata:
       annotations:
@@ -439,12 +437,10 @@ spec:
         checksum/init-fs: b83ea2419a52090c0fa8609c446ef17d43adc68373c89c6e3c4cfad7a5abfd5a
         checksum/init-sysctl: 30f95f97f6ccd478e9a750994068db33a803adcfa876fff5cbed2638b582215f
         checksum/plugins: c6cd1927f5462e72c5270f46aafe4feb598919ca62ae0076dc1804f7eccc9a22
-        checksum/secret: 0070a0ca543a0b378359566c7ff20c6d3bfebdd527eeb003508cd042780605c6
+        checksum/secret: 75f43191b99dcb1adda282f51d335b94ff84bdd16c0dc4425f22603cd421b838
       labels:
         app: sonarqube
         release: template-refactoring-values.yaml
-        app.kubernetes.io/name: template-refactoring-values.yaml
-        app.kubernetes.io/version: "10.8.0-community"
         azure.workload.identity/use: "true"
     spec:
       automountServiceAccountToken: false
@@ -452,7 +448,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -472,7 +468,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/template-refactoring-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -494,7 +490,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: ""
         - name: init-fs
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -533,7 +529,7 @@ spec:
               subPath: extensions
       containers:
         - name: sonarqube
-          image: sonarqube:10.8.0-community
+          image: sonarqube:24.12.0.100206-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -670,7 +666,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: template-refactoring-values.yaml-ui-test
-      image: "sonarqube:10.8.0-community"
+      image: "sonarqube:24.12.0.100206-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

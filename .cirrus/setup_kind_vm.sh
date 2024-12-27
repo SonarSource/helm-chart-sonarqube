@@ -29,7 +29,7 @@ pip install "yamllint==${YAMLLINT_VERSION}"
 pip install "yamale==${YAMALE_VERSION}"
 
 # Install kubectl
-KUBECTL_VERSION=1.31.0
+KUBECTL_VERSION=1.32.0
 curl -LO https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
 curl -LO https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl.sha256 
 printf %s "  kubectl" >> kubectl.sha256
