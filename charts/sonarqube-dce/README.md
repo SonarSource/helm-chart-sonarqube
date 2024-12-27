@@ -426,7 +426,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 ### Generic Configuration
 
 | Parameter                | Description                                                                                                           | Default |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------- |
+| ------------------------ |-----------------------------------------------------------------------------------------------------------------------| ------- |
 | `affinity`               | Node / Pod affinities                                                                                                 | `{}`    |
 | `tolerations`            | List of node taints to tolerate                                                                                       | `[]`    |
 | `priorityClassName`      | Schedule pods on priority (e.g. `high-priority`)                                                                      | `None`  |
@@ -442,6 +442,9 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `noProxy`                | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables      | ``      |
 | `nodeEncryption.enabled` | Secure the communication between Application and Search nodes using TLS                                               | `false` |
 | `ingress-nginx.enabled`  | Install Nginx Ingress Helm                                                                                            | `false` |
+| `hostPath.enabled`       | Flag for enabling storage with `hostPath`                                                                             | `false` |
+| `hostPath.path`          | Path where the data will be stored with `hostPath`                                                                    | `""`    |
+| `hostPath.type`          | `hostPath` volume types                                                                                               | `""`    |
 
 ### NetworkPolicies
 
