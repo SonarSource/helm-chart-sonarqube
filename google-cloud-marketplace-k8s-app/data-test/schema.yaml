@@ -39,6 +39,13 @@ properties:
     default: dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=
     x-google-marketplace:
       type: MASKED_FIELD
+  monitoringPasscode:
+    title: Monitoring Passcode
+    description: A string encoded with base64 used to verify SonarQube Server's liveness. Please refer to docs.sonarsource.com for more details.
+    type: string
+    default: dGVzdA==
+    x-google-marketplace:
+      type: MASKED_FIELD
   postgresql.enabled:
     title: Enable embedded PostgreSQL
     description: If true, PostgreSQL will be installed (not recommended for production use case)
@@ -46,7 +53,7 @@ properties:
     default: true
   jdbcOverwrite.enabled:
     title: Connection to a database - Recommended
-    description: Connect SonarQube to your PostgreSQL database. The connection parameters JDBC URL, username, and password will be used. Make sure that the Embedded database option is disabled.
+    description: Connect SonarQube Server to your PostgreSQL database. The connection parameters JDBC URL, username, and password will be used. Make sure that the Embedded database option is disabled.
     type: boolean
     default: false
 required:
