@@ -30,11 +30,8 @@ spec:
   {{- with (include "sonarqube.securityContext" .) }}
   securityContext: {{- . | nindent 4 }}
   {{- end }}
-  {{- if or .Values.image.pullSecrets .Values.image.pullSecret }}
+  {{- if .Values.image.pullSecrets }}
   imagePullSecrets:
-    {{- if .Values.image.pullSecret }}
-    - name: {{ .Values.image.pullSecret }}
-    {{- end }}
     {{- with .Values.image.pullSecrets }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

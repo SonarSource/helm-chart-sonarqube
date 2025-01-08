@@ -411,6 +411,8 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 0
+      imagePullSecrets:
+        - name: mypullsecret
       initContainers:
         - name: "wait-for-db"
           image: sonarqube:lts-community@sha256:3596d14feb065a31ce84cef60cc3ecfb7b47233ef860fd85c0d4e465f676c9f7
@@ -577,6 +579,8 @@ metadata:
     heritage: Helm
 spec:
   automountServiceAccountToken: false
+  imagePullSecrets:
+    - name: mypullsecret
   containers:
     - name: custom-image-values.yaml-ui-test
       image: "sonarqube:lts-community@sha256:3596d14feb065a31ce84cef60cc3ecfb7b47233ef860fd85c0d4e465f676c9f7"

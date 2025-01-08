@@ -8,11 +8,8 @@ metadata:
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
   automountServiceAccountToken: false
-  {{- if or .Values.image.pullSecrets .Values.image.pullSecret }}
+  {{- if .Values.image.pullSecrets }}
   imagePullSecrets:
-    {{- if .Values.image.pullSecret }}
-    - name: {{ .Values.image.pullSecret }}
-    {{- end }}
     {{- with .Values.image.pullSecrets }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

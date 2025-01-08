@@ -294,7 +294,6 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `image.repository`  | image repository                                                                                  | `sonarqube`                    |
 | `image.tag`         | `sonarqube` image tag. Please note that the default `10.8.1-{{ .Values.edition }}` is deprecated. | `10.8.1-{{ .Values.edition }}` |
 | `image.pullPolicy`  | Image pull policy                                                                                 | `IfNotPresent`                 |
-| `image.pullSecret`  | (DEPRECATED) imagePullSecret to use for private repository                                        | `None`                         |
 | `image.pullSecrets` | imagePullSecrets to use for private repository                                                    | `None`                         |
 
 ### Security

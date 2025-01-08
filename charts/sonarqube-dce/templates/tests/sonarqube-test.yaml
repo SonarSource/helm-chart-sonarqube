@@ -14,14 +14,9 @@ metadata:
     heritage: {{ .Release.Service }}
 spec:
   automountServiceAccountToken: false
-  {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret }}
+  {{- if .Values.ApplicationNodes.image.pullSecrets }}
   imagePullSecrets:
-    {{- if .Values.ApplicationNodes.image.pullSecret }}
-    - name: {{ .Values.ApplicationNodes.image.pullSecret }}
-    {{- end }}
-    {{- if .Values.ApplicationNodes.image.pullSecrets }}
 {{ toYaml .Values.ApplicationNodes.image.pullSecrets | indent 4 }}
-    {{- end }}
   {{- end }}
   containers:
     - name: {{ .Release.Name }}-ui-test
