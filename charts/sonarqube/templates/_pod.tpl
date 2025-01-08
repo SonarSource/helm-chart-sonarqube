@@ -77,7 +77,7 @@ spec:
       env:
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
-    {{- if and (or .Values.initSysctl.enabled .Values.elasticsearch.configureNode) (not .Values.OpenShift.enabled) }}
+    {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
     - name: init-sysctl
       image: {{ default (include "sonarqube.image" $) .Values.initSysctl.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
