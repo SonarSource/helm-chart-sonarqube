@@ -18,7 +18,7 @@ Compatible SonarQube Server Version: `10.8.1`
 Compatible SonarQube Community Build: `24.12.0.100206`
 
 Supported Kubernetes Versions: From `1.29` to `1.32`
-Supported Openshift Versions: From `4.11` to `4.16`
+Supported Openshift Versions: From `4.11` to `4.17`
 
 ## Installing the chart
 
