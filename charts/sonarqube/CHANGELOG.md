@@ -6,7 +6,7 @@ All changes to this chart will be documented in this file.
 * Update ingress-nginx subchart to 4.11.3
 * Support Kubernetes v1.32
 * Remove the default passcode provided with `monitoringPasscode`
-* Remove deprecated `elasticsearch.configureNode` and `image.pullSecret`
+* Remove deprecated `elasticsearch.configureNode`, `image.pullSecret` and `postgresql.postgresqlServer`
 
 ## [10.8.1]
 * Update Chart's version to 10.8.1

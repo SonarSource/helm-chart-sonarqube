@@ -85,8 +85,6 @@ Expand the Application Image name.
 {{- define "postgresql.hostname" -}}
 {{- if .Values.postgresql.enabled -}}
 {{- printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s" .Values.postgresql.postgresqlServer -}}
 {{- end -}}
 {{- end -}}
 

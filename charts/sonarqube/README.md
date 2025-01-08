@@ -504,7 +504,6 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | -------------------------------------------------------- | ---------------------------------------------------------------------- | --------------- |
 | `postgresql.enabled`                                     | Set to `false` to use external server                                  | `true`          |
 | `postgresql.existingSecret`                              | existingSecret Name of existing secret to use for PostgreSQL passwords | `nil`           |
-| `postgresql.postgresqlServer`                            | (DEPRECATED) Hostname of the external PostgreSQL server                | `nil`           |
 | `postgresql.postgresqlUsername`                          | PostgreSQL database user                                               | `sonarUser`     |
 | `postgresql.postgresqlPassword`                          | PostgreSQL database password                                           | `sonarPass`     |
 | `postgresql.postgresqlDatabase`                          | PostgreSQL database name                                               | `sonarDB`       |
