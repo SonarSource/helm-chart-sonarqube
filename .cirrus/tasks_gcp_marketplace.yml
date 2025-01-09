@@ -1,7 +1,7 @@
 build_gcp_app_template: &BUILD_GCP_APP_TEMPLATE
   ec2_instance:
     <<: *VM_TEMPLATE
-  skip: "!changesInclude('charts/sonarqube-dce/**/*', 'google-cloud-marketplace-k8s-app/**/*', 'tests/unity-compatibility-test/sonarqube-dce/*', '.cirrus/*.sh', '.cirrus/tasks{_sonarqube_dce,_templates,_gcp_marketplace,}.yml', '.cirrus/tasks.star', '.cirrus.star')"
+  skip: "!changesInclude('charts/sonarqube-dce/*', 'charts/sonarqube-dce/**/*', 'google-cloud-marketplace-k8s-app/*', 'google-cloud-marketplace-k8s-app/**/*', 'tests/unity-compatibility-test/sonarqube-dce/*', '.cirrus/*.sh', '.cirrus/tasks{_sonarqube_dce,_templates,_gcp_marketplace,}.yml', '.cirrus/tasks.star', '.cirrus.star')"
   login_to_gcr_script:
     - export DOCKER_GCLOUD_PASSWORD=$(echo ${DOCKER_GCLOUD_SA_KEY} | base64 -d)
     - docker login -u _json_key -p "$DOCKER_GCLOUD_PASSWORD" https://${GCLOUD_REGISTRY}
