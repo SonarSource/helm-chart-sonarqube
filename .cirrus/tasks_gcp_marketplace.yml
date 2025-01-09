@@ -20,7 +20,7 @@ build_gcp_app_template: &BUILD_GCP_APP_TEMPLATE
 
 build_gcp_staging_app_task:
   <<: *BUILD_GCP_APP_TEMPLATE
-  only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $TRIGGER == "PUSH_PROD_DEPLOYER" || $BRANCH == "master" || $BRANCH == "dkv/sonar-23970-conditional-ci" || $BRANCH == "dkv/no-merge-trigger-gcp-marketplace-ci"
+  only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $TRIGGER == "PUSH_PROD_DEPLOYER" || $BRANCH == "master"
   env:
     GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
 
@@ -54,7 +54,7 @@ verify_gcp_app_template: &VERIFY_GCP_APP_TEMPLATE
 
 verify_gcp_staging_app_task:
   <<: *VERIFY_GCP_APP_TEMPLATE
-  only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $TRIGGER == "PUSH_PROD_DEPLOYER" || $BRANCH == "master" || $BRANCH == "dkv/sonar-23970-conditional-ci" || $BRANCH == "dkv/no-merge-trigger-gcp-marketplace-ci"
+  only_if: $TRIGGER == "PUSH_STAGING_DEPLOYER" || $TRIGGER == "PUSH_PROD_DEPLOYER" || $BRANCH == "master"
   env:
     GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
   depends_on:

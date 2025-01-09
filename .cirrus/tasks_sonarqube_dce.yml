@@ -10,6 +10,8 @@ chart_testing_on_openshift_sonarqube_dce_task:
   skip: "!changesInclude('charts/sonarqube-dce/*', 'charts/sonarqube-dce/**/*', 'tests/unity-compatibility-test/sonarqube-dce/*', '.cirrus/*.sh', '.cirrus/tasks{_sonarqube_dce,_templates,}.yml', '.cirrus/tasks.star', '.cirrus.star')"
   env:
     - VERIFYING_CHART: sonarqube-dce
+  depends_on:
+    - sonarqube_dce_chart_static_compatibility_test
 
 sonarqube_dce_chart_packaging_task:
   <<: *CHART_PACKAGING_TASK_TEMPLATE
@@ -30,10 +32,3 @@ sonarqube_dce_push_to_repox_task:
     - ./.cirrus/upload_chart.sh sonarqube-dce
   depends_on:
     - sonarqube_dce_chart_packaging
-
-sonarqube_dce_trigger_release_task:
-  <<: *TRIGGER_RELEASE_TASK_TEMPLATE
-  skip: "!changesInclude('charts/sonarqube-dce/*', 'charts/sonarqube-dce/**/*', 'tests/unity-compatibility-test/sonarqube-dce/*', '.cirrus/*.sh', '.cirrus/tasks{_sonarqube_dce,_templates,}.yml', '.cirrus/tasks.star', '.cirrus.star')"
-  depends_on:
-    - sonarqube_dce_chart_packaging
-    - sonarqube_dce_push_to_repox

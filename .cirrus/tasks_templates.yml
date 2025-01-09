@@ -46,7 +46,7 @@ clone_script_template: &CLONE_SCRIPT_TEMPLATE
       git reset --hard $CIRRUS_CHANGE_IN_REPO
     fi
 
-chart_static_compatibility_test_task: &CHART_STATIC_COMPATIBILITY_TEST_TEMPLATE
+chart_static_compatibility_test: &CHART_STATIC_COMPATIBILITY_TEST_TEMPLATE
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   skip: "!changesInclude('charts/**/*', '.cirrus/*')"
   timeout_in: 30m
@@ -80,8 +80,6 @@ chart_testing_on_openshif: &CHART_TESTING_ON_OPENSHIFT_TEMPLATE
   always:
     cleanup_script:
       - oc delete project "${VERIFYING_CHART}"
-  depends_on:
-    - chart_static_compatibility_test
 
 chart_packaging: &CHART_PACKAGING_TASK_TEMPLATE
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
@@ -121,32 +119,3 @@ push_to_repox: &PUSH_TO_REPOX_TASK_TEMPLATE
   env:
     ARTIFACTORY_URL: VAULT[development/kv/data/repox data.url]
     ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
-  depends_on:
-    - chart_packaging
-
-trigger_release: &TRIGGER_RELEASE_TASK_TEMPLATE
-  timeout_in: 15m
-  eks_container:
-    <<: *STD_CONTAINER_TEMPLATE
-    cpu: 1
-    memory: 1Gb
-  only_if: $CIRRUS_PRERELEASE != "true" && $CIRRUS_RELEASE != ""
-  <<: *CLONE_SCRIPT_TEMPLATE
-  stateful: 'true'
-  environment_cache:
-    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
-    fingerprint_script: echo $CIRRUS_BUILD_ID
-  env:
-    GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-releases token]
-    SLACK_TOKEN: VAULT[development/kv/data/slack data.token]
-  gh_action_script: |
-    source cirrus-env RELEASE
-    CHARTS=$(find $CIRRUS_WORKING_DIR -maxdepth 1 -name "*.tgz*" -type f -exec basename "{}" ";")
-    [[ "x$CHARTS" == "x" ]] && exit 0
-    gh workflow run release.yml -f version=$CIRRUS_TAG -f buildNumber=$BUILD_NUMBER
-  depends_on:
-    - chart_packaging
-    - push_to_repox
-  on_failure:
-    slack_notification_script:
-      - ./.cirrus/slack-notification.sh

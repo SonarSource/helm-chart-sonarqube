@@ -2,8 +2,6 @@
 
 set -euo pipefail
 
-: "${SONARSOURCE_SIGN_KEY:?}"
-: "${SONARSOURCE_SIGN_KEY_ID:?}"
 : "${SONARSOURCE_SIGN_KEY_PASSPHRASE:?}"
 : "${CIRRUS_WORKING_DIR:?}"
 
