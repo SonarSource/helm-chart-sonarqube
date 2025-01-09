@@ -7,4 +7,5 @@ def build_tasks(ctx):
     tasks = fs.read(".cirrus/tasks.yml")
     tasks += fs.read(".cirrus/tasks_sonarqube.yml")
     tasks += fs.read(".cirrus/tasks_sonarqube_dce.yml")
+    tasks += fs.read(".cirrus/tasks_gcp_marketplace.yml")
     return tasks_env + tasks_templates + tasks
