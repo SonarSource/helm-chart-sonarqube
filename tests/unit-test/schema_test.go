@@ -46,12 +46,12 @@ func TestInvalidSchema(t *testing.T) {
 		{
 			testCaseName:     "no-default-edition",
 			valuesFilesPaths: []string{"test-cases-values/sonarqube/invalid-no-default-edition.yaml"},
-			expectedError:    "You must choose an 'edition' to install: 'developer' or 'enterprise'.\nIf you want to use SonarQube Community Build, unset 'edition' and set 'community.enabled=true' instead.",
+			expectedError:    "You must choose an 'edition' to install: 'developer' or 'enterprise'. If you want to use SonarQube Community Build, unset 'edition' and set 'community.enabled=true' instead.",
 		},
 		{
 			testCaseName:     "community-disabled-no-edition",
 			valuesFilesPaths: []string{"test-cases-values/sonarqube/invalid-community-disabled-no-edition.yaml"},
-			expectedError:    "You must choose an 'edition' to install: 'developer' or 'enterprise'.\nIf you want to use SonarQube Community Build, unset 'edition' and set 'community.enabled=true' instead.",
+			expectedError:    "You must choose an 'edition' to install: 'developer' or 'enterprise'. If you want to use SonarQube Community Build, unset 'edition' and set 'community.enabled=true' instead.",
 		},
 		{
 			testCaseName:     "invalid-community-edition",

@@ -20,15 +20,15 @@ Compatible SonarQube Community Build: `24.12.0.100206`
 Supported Kubernetes Versions: From `1.29` to `1.32`
 Supported Openshift Versions: From `4.11` to `4.17`
 
-## Installing the chart
+## Installing SonarQube Server
 
-To install the chart:
+Here is an example of how to install the SonarQube Server Developer edition:
 
 ```bash
 helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
 helm repo update
 kubectl create namespace sonarqube
-helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube
+helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube --set edition=developer,monitoringPasscode=yourPasscode
 ```
 
 The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace.
@@ -38,7 +38,7 @@ The [configuration](#configuration) section lists the parameters that can be con
 
 The default login is admin/admin.
 
-## Installing the SonarQube Community Build chart
+## Installing SonarQube Community Build
 
 The SonarQube Community Edition has been replaced by the SonarQube Community Build.
 If you want to install the SonarQube Community Build chart, please set `community.enabled` to `true`.

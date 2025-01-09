@@ -22,7 +22,7 @@ It is used to validate the values.yaml file before the installation starts.
     {{- include "sonarqube.fail" "You can't set 'community.enabled=true' and an 'edition' at the same time." -}}
 {{- else if not .Values.community.enabled -}}
     {{- if empty .Values.edition -}}
-        {{- include "sonarqube.fail" "You must choose an 'edition' to install: 'developer' or 'enterprise'.\nIf you want to use SonarQube Community Build, unset 'edition' and set 'community.enabled=true' instead." -}}
+        {{- include "sonarqube.fail" "You must choose an 'edition' to install: 'developer' or 'enterprise'. If you want to use SonarQube Community Build, unset 'edition' and set 'community.enabled=true' instead." -}}
     {{- else if not (has .Values.edition (list "developer" "enterprise")) -}}
         {{- include "sonarqube.fail" "The 'edition' must be either 'developer' or 'enterprise'." -}}
     {{- end -}}
