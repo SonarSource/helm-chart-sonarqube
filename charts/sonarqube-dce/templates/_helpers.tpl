@@ -146,7 +146,7 @@ Determine JDBC username
 {{- end -}}
 
 {{/*
-Determine the k8s secretKey contrining the JDBC password
+Determine the k8s secretKey containing the JDBC password
 */}}
 {{- define "jdbc.secretPasswordKey" -}}
 {{- if .Values.postgresql.enabled -}}

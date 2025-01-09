@@ -20,6 +20,7 @@ KUBE_VERSION=1.19.6 ../../.cirrus/unit_helm_compatibility_test.sh
 ```
 
 ## Fixtures
+
 The fixtures test's goal is to make sure the behavior of our templating stays the same between changes, catching regressions, and making sure any changes are explicitly seen and reviewed.
 
 They use a pre-commit hook to template our chart against the unit compatibility test values; then dev commits the resulting yamls. That will allow PR review to ensure we have not introduced unwanted changes.
