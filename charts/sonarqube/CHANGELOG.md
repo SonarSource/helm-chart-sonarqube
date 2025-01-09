@@ -8,14 +8,12 @@ All changes to this chart will be documented in this file.
 * Remove the default passcode provided with `monitoringPasscode`
 * Support Openshift v4.17
 * Improves editions and versions setting for sonarqube chart
+* Add the possibility of to save the data with hostpath.
 
 ## [10.8.1]
 * Update Chart's version to 10.8.1
 * Remove immutable labels selector `app.kubernetes.io/name` and `app.kubernetes.io/version` as it breaks upgrades
 * set `image.tag` empty in default value file, `image.tag` is dynamically set according to the `edition` and `community` fields. user-defined have precedence
-
-## [10.8.1]
-* Add the possibility of to save the data with hostpath.
 
 ## [10.8.0]
 * Update Chart's version to 10.8.0
