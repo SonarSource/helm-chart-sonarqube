@@ -32,10 +32,3 @@ sonarqube_push_to_repox_task:
     - ./.cirrus/upload_chart.sh sonarqube
   depends_on:
     - sonarqube_chart_packaging
-
-sonarqube_dce_schema_test_task:
-  <<: *CHART_SCHEMA_TEST_TASK_TEMPLATE
-  skip: "!changesInclude('charts/sonarqube/*', 'charts/sonarqube/**/*', 'tests/unity-compatibility-test/sonarqube/*', '.cirrus/*.sh', '.cirrus/tasks{_sonarqube,_templates,}.yml', '.cirrus/tasks.star', '.cirrus.star')"  
-  script:
-    - ./.cirrus/build_chart_dependencies.sh charts/sonarqube
-    - ./.cirrus/schema_test.sh

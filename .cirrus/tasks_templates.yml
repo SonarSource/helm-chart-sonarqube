@@ -119,10 +119,3 @@ push_to_repox: &PUSH_TO_REPOX_TASK_TEMPLATE
   env:
     ARTIFACTORY_URL: VAULT[development/kv/data/repox data.url]
     ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
-
-chart_schema_test: &CHART_SCHEMA_TEST_TASK_TEMPLATE
-  eks_container:
-    <<: *CONTAINER_TEMPLATE
-    cpu: 1
-    memory: 2Gb
-  <<: *CLONE_SCRIPT_TEMPLATE

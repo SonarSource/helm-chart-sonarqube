@@ -37,3 +37,15 @@ chart_testing_on_kind_task:
   depends_on:
     - sonarqube_chart_static_compatibility_test
     - sonarqube_dce_chart_static_compatibility_test
+
+chart_schema_test_task:
+  skip: "!changesInclude('charts/**/*', '.cirrus/schema_test.sh', 'tests/unit-test/*', 'tests/unit-test/**/*')"
+  eks_container:
+    <<: *CONTAINER_TEMPLATE
+    cpu: 1
+    memory: 2Gb
+  <<: *CLONE_SCRIPT_TEMPLATE
+  script:
+    - ./.cirrus/build_chart_dependencies.sh charts/sonarqube
+    - ./.cirrus/build_chart_dependencies.sh charts/sonarqube-dce
+    - ./.cirrus/schema_test.sh
