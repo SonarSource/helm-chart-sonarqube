@@ -8,7 +8,7 @@ This chart bootstraps an instance of the latest SonarQube Server version with a 
 
 The latest version of the chart installs the latest SonarQube version.
 
-To install the version of the chart for SonarQube 9.9 LTA, please read the section [below](#installing-the-sonarqube-99-lta-chart). Deciding between LTA and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/)
+To install the version of the chart for SonarQube 9.9 LTA, please read the section [below](#installing-the-sonarqube-99-lta-chart). Deciding between LTA and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/).
 
 Please note that this chart only supports SonarQube Server Developer and Enterprise editions and SonarQube Community Build. For SonarQube Server Data Center Edition refer to this [chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce).
 
@@ -28,7 +28,8 @@ Here is an example of how to install the SonarQube Server Developer edition:
 helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
 helm repo update
 kubectl create namespace sonarqube
-helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube --set edition=developer,monitoringPasscode=yourPasscode
+export MONITORING_PASSCODE="yourPasscode"
+helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube --set edition=developer,monitoringPasscode=$MONITORING_PASSCODE
 ```
 
 The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace.
@@ -44,7 +45,19 @@ The SonarQube Community Edition has been replaced by the SonarQube Community Bui
 If you want to install the SonarQube Community Build chart, please set `community.enabled` to `true`.
 The `community.buildNumber` parameter will be set to the latest Community Build.
 
-## Installing the SonarQube 9.9 LTA chart
+## Upgrading to SonarQube Server 2025.1 LTA
+
+When upgrading to SonarQube 2025.1 LTA from a previous versions, you should read carefully [the official documentation](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade-the-server/determine-path/) and determine the right upgrade path based on your current SonarQube Server version.
+
+When upgrading to the latest LTA version, you will experience a few changes.
+
+* The `monitoringPasscode` needs to be set by the users. Set either that or `monitoringPasscodeSecretName` and `monitoringPasscodeSecretKey`.
+* The `edition` parameter is now required to be explicitly set by the user to either `developer` or `enterprise`.
+* Users that want to install the SonarQube Community Build, must set `community.enabled` to `true` (check the [dedicated section](#installing-the-sonarqube-community-build-chart)).
+
+## Installing previous chart versions
+
+### Installing the SonarQube 9.9 LTA chart
 
 The version of the chart for the SonarQube 9.9 LTA is being distributed as the `8.x.x` version of this chart.
 

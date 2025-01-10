@@ -23,7 +23,7 @@ Supported Openshift Versions: From `4.11` to `4.17`
 
 > **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/) for further information on how to install and tune the helm chart specifications.
 
-Prior to installing the chart, please ensure that the `applicationNodes.jwtSecret` value is set properly with a HS256 key encoded with base64. In the following, an example on how to generate this key on a Unix system:
+Prior to installing the chart, please ensure that the `monitoringPasscode` and `applicationNodes.jwtSecret` are properly set. The `applicationNodes.jwtSecret` value needs to be set with a HS256 key encoded with base64. In the following, an example on how to generate this key on a Unix system:
 
 ```bash
 echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64
@@ -36,7 +36,8 @@ helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
 helm repo update
 kubectl create namespace sonarqube-dce
 export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64)
-helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set applicationNodes.jwtSecret=$JWT_SECRET
+export MONITORING_PASSCODE="yourPasscode"
+helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set applicationNodes.jwtSecret=$JWT_SECRET,monitoringPasscode=$MONITORING_PASSCODE
 ```
 
 The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace.
@@ -46,7 +47,17 @@ The [configuration](#configuration) section lists the parameters that can be con
 
 The default login is admin/admin.
 
-## Installing the SonarQube 9.9 LTA chart
+## Upgrading to SonarQube Server 2025.1 LTA
+
+When upgrading to SonarQube 2025.1 LTA from a previous versions, you should read carefully [the official documentation](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade-the-server/determine-path/) and determine the right upgrade path based on your current SonarQube Server version.
+
+When upgrading to the latest LTA version, you will experience an important change.
+
+* The `monitoringPasscode` needs to be set by the users. Set either that or `monitoringPasscodeSecretName` and `monitoringPasscodeSecretKey`.
+
+## Installing previous chart versions
+
+### Installing the SonarQube 9.9 LTA chart
 
 The version of the chart for the SonarQube 9.9 LTA is being distributed as the `7.x.x` version of this chart.
 
