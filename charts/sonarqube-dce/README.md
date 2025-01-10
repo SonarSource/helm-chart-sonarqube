@@ -49,7 +49,7 @@ The default login is admin/admin.
 
 ## Upgrading to SonarQube Server 2025.1 LTA
 
-When upgrading to SonarQube 2025.1 LTA from a previous versions, you should read carefully [the official documentation](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade-the-server/determine-path/) and determine the right upgrade path based on your current SonarQube Server version.
+When upgrading to SonarQube Server 2025.1 LTA from a previous versions, you should read carefully [the official documentation](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade-the-server/determine-path/) and determine the right upgrade path based on your current SonarQube Server version.
 
 When upgrading to the latest LTA version, you will experience an important change.
 
