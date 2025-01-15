@@ -123,7 +123,8 @@ chart_packaging: &CHART_PACKAGING_TASK_TEMPLATE
     - helm repo update
 
 push_to_repox: &PUSH_TO_REPOX_TASK_TEMPLATE
-  <<: *EXCEPT_ON_PR_OR_CRON
+  # <<: *EXCEPT_ON_PR_OR_CRON
+  only_if: ($CIRRUS_PRERELEASE != "true" && $CIRRUS_PR == "" && $CIRRUS_CRON != $NIGHTLY_CRON) || $BRANCH == "dkv/sgb-270-fix-push-to-repox"
   timeout_in: 15m
   eks_container:
     <<: *STD_CONTAINER_TEMPLATE
