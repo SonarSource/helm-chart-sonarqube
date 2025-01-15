@@ -97,9 +97,6 @@ chart_testing_on_kind: &CHART_TESTING_ON_KIND_TEMPLATE
     - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
   artifacthub_lint_script:
     - ah lint
-  always:
-    cleanup_script:
-      - kind delete cluster
 
 chart_packaging: &CHART_PACKAGING_TASK_TEMPLATE
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
