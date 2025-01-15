@@ -13,7 +13,7 @@ chart_fixture_test_task:
     - ./.cirrus/generate_helm_fixtures.sh
     - git diff --exit-code
 
-chart_testing_on_kind_task:
+chart_testing_on_kind: &CHART_TESTING_ON_KIND_TEMPLATE
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   skip: "!changesInclude('charts/**/*', '.cirrus/*')"
   timeout_in: 1h
@@ -27,9 +27,6 @@ chart_testing_on_kind_task:
     - kubectl get nodes
     - kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
     - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
-  script:
-    - ct lint --config test.yaml --all
-    - ct install --namespace test --config test.yaml --all --debug
   teardown_script:
     - kind delete cluster
   artifacthub_lint_script:
