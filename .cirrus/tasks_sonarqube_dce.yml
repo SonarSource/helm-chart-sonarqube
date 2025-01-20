@@ -28,6 +28,9 @@ chart_testing_on_kind_sonarqube_dce_task:
 sonarqube_dce_chart_packaging_task:
   <<: *CHART_PACKAGING_TASK_TEMPLATE
   <<: *SKIP_IF_NOT_SONARQUBE_DCE
+  environment_cache:
+    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
+    fingerprint_script: echo "${CIRRUS_BUILD_ID}-sonarqube-dce"
   script:
     - source cirrus-env BUILD
     - ./.cirrus/package.sh sonarqube-dce
@@ -39,6 +42,9 @@ sonarqube_dce_chart_packaging_task:
 sonarqube_dce_push_to_repox_task:
   <<: *PUSH_TO_REPOX_TASK_TEMPLATE
   <<: *SKIP_IF_NOT_SONARQUBE_DCE
+  environment_cache:
+    folder: ${CIRRUS_WORKING_DIR}/*.tgz*
+    fingerprint_script: echo "${CIRRUS_BUILD_ID}-sonarqube-dce"
   script:
     - source cirrus-env ""
     - ./.cirrus/upload_chart.sh sonarqube-dce

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -xeuo pipefail
 
 : "${ARTIFACTORY_URL:?}"
 : "${ARTIFACTORY_ACCESS_TOKEN:?}"
@@ -20,9 +20,11 @@ fi
 find_charts=$(find "${CIRRUS_WORKING_DIR}" -maxdepth 1 -name "${NAME_GLOB}" -type f -exec basename "{}" ";" || exit 1)
 
 CHART_TO_UPLOAD=()
-while IFS= read -r chart; do
-    CHART_TO_UPLOAD+=("${chart}")
-done <<< "${find_charts}"
+if [[ -n "${find_charts}" ]]; then
+    while IFS= read -r chart; do
+        CHART_TO_UPLOAD+=("${chart}")
+    done <<< "${find_charts}"
+fi
 
 if [[ ${#CHART_TO_UPLOAD[@]} -eq 0 ]]; then
     echo "No charts found to upload."
