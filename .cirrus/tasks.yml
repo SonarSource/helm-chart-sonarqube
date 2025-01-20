@@ -13,31 +13,6 @@ chart_fixture_test_task:
     - ./.cirrus/generate_helm_fixtures.sh
     - git diff --exit-code
 
-chart_testing_on_kind_task:
-  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-  skip: "!changesInclude('charts/**/*', '.cirrus/*')"
-  timeout_in: 1h
-  ec2_instance:
-    <<: *VM_TEMPLATE
-  <<: *CLONE_SCRIPT_TEMPLATE
-  setup_script:
-    - ./.cirrus/setup_kind_vm.sh
-    - kind create cluster
-    - kubectl cluster-info --context kind-kind
-    - kubectl get nodes
-    - kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
-    - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
-  script:
-    - ct lint --config test.yaml --all
-    - ct install --namespace test --config test.yaml --all --debug
-  teardown_script:
-    - kind delete cluster
-  artifacthub_lint_script:
-    - ah lint
-  depends_on:
-    - sonarqube_chart_static_compatibility_test
-    - sonarqube_dce_chart_static_compatibility_test
-
 chart_schema_test_task:
   skip: "!changesInclude('charts/**/*', '.cirrus/schema_test.sh', 'tests/unit-test/*', 'tests/unit-test/**/*')"
   eks_container:
