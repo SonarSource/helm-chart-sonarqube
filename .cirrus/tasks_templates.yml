@@ -81,6 +81,23 @@ chart_testing_on_openshif: &CHART_TESTING_ON_OPENSHIFT_TEMPLATE
     cleanup_script:
       - oc delete project "${VERIFYING_CHART}"
 
+chart_testing_on_kind: &CHART_TESTING_ON_KIND_TEMPLATE
+  <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
+  skip: "!changesInclude('charts/**/*', '.cirrus/*')"
+  timeout_in: 1h
+  ec2_instance:
+    <<: *VM_TEMPLATE
+  <<: *CLONE_SCRIPT_TEMPLATE
+  setup_script:
+    - ./.cirrus/setup_kind_vm.sh
+    - kind create cluster
+    - kubectl cluster-info --context kind-kind
+    - kubectl get nodes
+    - kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
+    - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
+  artifacthub_lint_script:
+    - ah lint
+
 chart_packaging: &CHART_PACKAGING_TASK_TEMPLATE
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
   timeout_in: 15m
