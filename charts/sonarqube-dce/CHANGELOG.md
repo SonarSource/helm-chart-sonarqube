@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [2025.1.0]
 * Update Chart's version to 2025.1.0
+* Upgrade SonarQube Server to 2025.1.0
 * Update ingress-nginx subchart to 4.11.3
 * Support Kubernetes v1.32
 * Remove the default passcode provided with `monitoringPasscode`

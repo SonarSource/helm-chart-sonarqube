@@ -14,7 +14,7 @@ Please note that this chart only supports SonarQube Server Developer and Enterpr
 
 ## Compatibility
 
-Compatible SonarQube Server Version: `10.8.1`
+Compatible SonarQube Server Version: `2025.1.0`
 Compatible SonarQube Community Build: `24.12.0.100206`
 
 Supported Kubernetes Versions: From `1.29` to `1.32`
@@ -301,13 +301,13 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Image
 
-| Parameter           | Description                                                                                       | Default                        |
-| ------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------ |
-| `image.repository`  | image repository                                                                                  | `sonarqube`                    |
-| `image.tag`         | `sonarqube` image tag. Please note that the default `10.8.1-{{ .Values.edition }}` is deprecated. | `10.8.1-{{ .Values.edition }}` |
-| `image.pullPolicy`  | Image pull policy                                                                                 | `IfNotPresent`                 |
-| `image.pullSecret`  | (DEPRECATED) imagePullSecret to use for private repository                                        | `None`                         |
-| `image.pullSecrets` | imagePullSecrets to use for private repository                                                    | `None`                         |
+| Parameter           | Description                                                | Default        |
+| ------------------- | ---------------------------------------------------------- | -------------- |
+| `image.repository`  | image repository                                           | `sonarqube`    |
+| `image.tag`         | `sonarqube` image tag.                                     | `None`         |
+| `image.pullPolicy`  | Image pull policy                                          | `IfNotPresent` |
+| `image.pullSecret`  | (DEPRECATED) imagePullSecret to use for private repository | `None`         |
+| `image.pullSecrets` | imagePullSecrets to use for private repository             | `None`         |
 
 ### Security
 
