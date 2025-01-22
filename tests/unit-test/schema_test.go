@@ -80,7 +80,7 @@ func TestNoTagLatestCommunity(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarqube:24.12.0.100206-community"
+	expectedContainerImage := "sonarqube:25.1.0.102122-community"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
@@ -116,7 +116,7 @@ func TestShouldUseBuildNumber(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarqube:24.12.0.99999-community"
+	expectedContainerImage := "sonarqube:25.1.0.102122-community"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
@@ -187,7 +187,7 @@ func TestCiCirrusValues(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarsource/sonarqube:24.12.0.100206-community"
+	expectedContainerImage := "sonarsource/sonarqube:25.1.0.102122-community"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
@@ -202,7 +202,7 @@ func TestCiOpenshiftVerifierValues(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarsource/sonarqube:24.12.0.100206-community"
+	expectedContainerImage := "sonarsource/sonarqube:25.1.0.102122-community"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
