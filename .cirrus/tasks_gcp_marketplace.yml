@@ -62,6 +62,7 @@ verify_gcp_staging_app_task:
 
 release_gcp_prod_app_task:
   <<: *BUILD_GCP_APP_TEMPLATE
+  skip: $TRIGGER != "PUSH_PROD_DEPLOYER"
   only_if: $TRIGGER == "PUSH_PROD_DEPLOYER"
   env:
     GCLOUD_REGISTRY: gcr.io/sonarsource-public
