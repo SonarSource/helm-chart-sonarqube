@@ -62,7 +62,8 @@ verify_gcp_staging_app_task:
 
 release_gcp_prod_app_task:
   <<: *BUILD_GCP_APP_TEMPLATE
-  only_if: $TRIGGER == "PUSH_PROD_DEPLOYER"
+  # The following skip enables this task to run even when there are no changes in the charts
+  skip: $TRIGGER != "PUSH_PROD_DEPLOYER"
   env:
     GCLOUD_REGISTRY: gcr.io/sonarsource-public
     GCLOUD_PRODUCT_NAME: official-sonarqube-data-center-edition
