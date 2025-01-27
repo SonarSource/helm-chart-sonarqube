@@ -13,10 +13,8 @@ build_gcp_app_template: &BUILD_GCP_APP_TEMPLATE
     - ./.cirrus/build_chart_dependencies.sh charts/sonarqube-dce
   tag_and_promote_script:
     - export CURRENT_MINOR_VERSION=$(echo ${GCLOUD_TAG} | cut -d '.' -f 1,2)
-    - docker build -f google-cloud-marketplace-k8s-app/Dockerfile --build-arg REGISTRY=${GCLOUD_REGISTRY} --build-arg TAG=${GCLOUD_TAG} --tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} .
-    - docker tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${GCLOUD_TAG}
-    - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${GCLOUD_TAG}
-    - docker push ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION}
+    - docker buildx create --driver=docker-container --use
+    - docker buildx build --platform linux/amd64 --provenance=false --annotation "manifest,manifest-descriptor:com.googleapis.cloudmarketplace.product.service.name=services/official-sonarqube-data-center-edition.endpoints.sonarsource-public.cloud.goog" -f google-cloud-marketplace-k8s-app/Dockerfile --build-arg REGISTRY=${GCLOUD_REGISTRY} --build-arg TAG=${GCLOUD_TAG} --tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} --tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${GCLOUD_TAG} --push .
 
 build_gcp_staging_app_task:
   <<: *BUILD_GCP_APP_TEMPLATE
