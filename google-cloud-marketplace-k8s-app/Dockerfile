@@ -4,6 +4,8 @@ FROM $FROM
 ENV WAIT_FOR_READY_TIMEOUT 1200
 ENV TESTER_TIMEOUT 1200
 
+LABEL com.googleapis.cloudmarketplace.product.service.name=services/sonarqube-dce
+
 COPY charts/sonarqube-dce /tmp/chart.tmp/sonarqube-dce
 WORKDIR /tmp
 RUN mv chart.tmp/* chart \
