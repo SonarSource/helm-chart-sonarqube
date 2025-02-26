@@ -24,7 +24,7 @@ Common labels
 {{- define "sonarqube.labels" -}}
 app: {{ include "sonarqube.name" . }}
 chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" }}
-release: {{ .Release.Name }}
+release: {{ .Release.Name | quote }}
 heritage: {{ .Release.Service }}
 {{- end -}}
 
@@ -33,7 +33,7 @@ Selector labels
 */}}
 {{- define "sonarqube.selectorLabels" -}}
 app: {{ include "sonarqube.name" . }}
-release: {{ .Release.Name }}
+release: {{ .Release.Name | quote }}
 {{- end -}}
 
 {{/*
@@ -42,11 +42,11 @@ Workload labels (Deployment or StatefulSet)
 {{- define "sonarqube.workloadLabels" -}}
 {{- include "sonarqube.labels" . }}
 app.kubernetes.io/name: {{ .Release.Name }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/instance: {{ .Release.Name | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/part-of: sonarqube
 app.kubernetes.io/component: {{ include "sonarqube.fullname" . }}
-app.kubernetes.io/version: {{ (tpl (include "image.tag" .) . ) | trunc 63 | trimSuffix "-" | quote }}
+app.kubernetes.io/version: {{ tpl .Values.global.images.sonarqube.tag . | trunc 63 | trimSuffix "-" | quote }}
 {{- end -}}
 
 {{/*

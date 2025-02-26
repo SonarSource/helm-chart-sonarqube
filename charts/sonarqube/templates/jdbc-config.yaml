@@ -8,5 +8,5 @@ data:
   {{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable }}
   SONAR_JDBC_URL: {{ .Values.jdbcOverwrite.jdbcUrl | trim | quote }}
   {{- else if and .Values.postgresql.service.port .Values.postgresql.postgresqlDatabase }}
-  SONAR_JDBC_URL: "jdbc:postgresql://{{ template "postgresql.hostname" . }}:{{- .Values.postgresql.service.port -}}/{{- .Values.postgresql.postgresqlDatabase -}}"
+  SONAR_JDBC_URL: "jdbc:postgresql://{{ template "postgresql.hostname" . }}:{{- .Values.postgresql.service.port -}}/{{- .Values.postgresql.postgresqlDatabase -}}{{- if not .Values.postgresql.postgresqlSSL -}}?ssl=false{{- end -}}"
   {{- end }}

@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-sonar-db
+spec:
+  template:
+    spec:
+      containers:
+        - name: init-db
+          image: docker-mirrors.alauda.cn/bitnami/postgresql:11.14.0-debian-10-r22
+          env:
+            - name: POSTGRES_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-password
+                  name: pg-postgresql
+          command:
+            - sh
+            - -c
+            - |
+              export pg_host=pg-postgresql
+              export PGPASSWORD=${POSTGRES_POSTGRES_PASSWORD};
+              export PGUSER=postgres;
+              until pg_isready -U ${PGUSER} -h ${pg_host} -p 5432; do
+                echo "等待 Postgres 启动..."
+                sleep 2
+              done
+              # 创建数据库
+              psql -h ${pg_host} -U ${PGUSER} -c "CREATE DATABASE sonardb;"
+      restartPolicy: OnFailure
