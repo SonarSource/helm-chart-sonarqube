@@ -450,7 +450,9 @@ plugins:
   # Set to true to not validate the server's certificate to download plugin
   noCheckCertificate: false
   # Reuse default initcontainers.securityContext that match restricted pod security standard
-  # securityContext: {}
+  ## install-plugins 这个 initContainer 执行 mkdir 时候没有权限
+  securityContext:
+    runAsUser: 0
 
 ## (DEPRECATED) The following value sets SONAR_WEB_JAVAOPTS (e.g., jvmOpts: "-Djava.net.preferIPv4Stack=true"). However, this is deprecated, please set SONAR_WEB_JAVAOPTS or sonar.web.javaOpts directly instead.
 jvmOpts: ""
