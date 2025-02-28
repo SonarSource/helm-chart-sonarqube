@@ -40,33 +40,6 @@ spec:
     {{- end }}
   {{- end }}
   initContainers:
-    {{- if and (.Values.persistence.host.nodeName) (.Values.persistence.host.path) }}
-    # avoid hostpath volume permission issue
-    - name: "change-permission"
-      resources: {{- toYaml .Values.resources | nindent 8 }}
-      image: "{{ template "initSysctl.image" . }}"
-      imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
-      command: [ "/bin/sh" ]
-      args: [ "-c", "chown -R 1000:1000 {{ .Values.sonarqubeFolder }}" ]
-      securityContext:
-        runAsUser: 0
-      volumeMounts:
-        - mountPath: {{ .Values.sonarqubeFolder }}
-          name: sonarqube
-        {{- if .Values.sonarSecretKey }}
-        - mountPath: {{ .Values.sonarqubeFolder }}/secret/
-          name: secret
-        {{- end }}
-        - mountPath: {{ .Values.sonarqubeFolder }}/temp
-          name: sonarqube
-          subPath: temp
-        - mountPath: {{ .Values.sonarqubeFolder }}/logs
-          name: sonarqube
-          subPath: logs
-        - mountPath: {{ .Values.sonarqubeFolder }}/data
-          name: sonarqube
-          subPath: data
-    {{- end  }}
     {{- if .Values.extraInitContainers }}
     {{- toYaml .Values.extraInitContainers | nindent 4 }}
     {{- end }}
@@ -229,7 +202,7 @@ spec:
         "-c",
         "mkdir -p /opt/sonarqube/extensions/plugins/tmp &&
         rm -f /opt/sonarqube/extensions/plugins/tmp/* &&
-        cp /tmp/plugins/*.jar /opt/sonarqube/extensions/plugins/tmp && chmod 0777 -R /opt/sonarqube"
+        cp /tmp/plugins/*.jar /opt/sonarqube/extensions/plugins/tmp"
         ]
       {{- else }}
       command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
@@ -284,6 +257,33 @@ spec:
       env:
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
+    {{- if and (.Values.persistence.host.nodeName) (.Values.persistence.host.path) }}
+    # avoid hostpath volume permission issue
+    - name: "change-permission"
+      resources: {{- toYaml .Values.resources | nindent 8 }}
+      image: "{{ template "initSysctl.image" . }}"
+      imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
+      command: [ "/bin/sh" ]
+      args: [ "-c", "chown -R 1000:1000 {{ .Values.sonarqubeFolder }}" ]
+      securityContext:
+        runAsUser: 0
+      volumeMounts:
+        - mountPath: {{ .Values.sonarqubeFolder }}
+          name: sonarqube
+        {{- if .Values.sonarSecretKey }}
+        - mountPath: {{ .Values.sonarqubeFolder }}/secret/
+          name: secret
+        {{- end }}
+        - mountPath: {{ .Values.sonarqubeFolder }}/temp
+          name: sonarqube
+          subPath: temp
+        - mountPath: {{ .Values.sonarqubeFolder }}/logs
+          name: sonarqube
+          subPath: logs
+        - mountPath: {{ .Values.sonarqubeFolder }}/data
+          name: sonarqube
+          subPath: data
+    {{- end  }}
   containers:
     {{- with .Values.extraContainers }}
     {{- toYaml . | nindent 4 }}
