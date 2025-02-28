@@ -87,3 +87,8 @@
     并且 Pod 资源检查通过
       | name                    | path                                                                        | value         |
       | sonarqube-pvc-sonarqube | $.spec.volumes[?(@.name == 'sonarqube')][0].persistentVolumeClaim.claimName | sonarqube-pvc |
+    当 发送 "修改密码" 请求
+      """
+      POST http://<node.first>:<nodeport.http>/api/authentication/login?login=admin&password=07Apples@07Apples@ HTTP/1.1
+      """
+    那么 HTTP 响应状态码为 "200"
