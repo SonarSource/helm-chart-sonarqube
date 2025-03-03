@@ -18,6 +18,7 @@
       """
       chartPath: ../charts/sonarqube
       releaseName: sonarqube-sc
+      timeout: 10m
       values:
       - testdata/snippets/base-values.yaml
       - testdata/snippets/tpl-values-network-nodeport.yaml
@@ -45,6 +46,7 @@
       """
       chartPath: ../charts/sonarqube
       releaseName: sonarqube-hostpath
+      timeout: 10m
       values:
       - testdata/snippets/base-values.yaml
       - testdata/snippets/tpl-values-network-nodeport.yaml
@@ -74,6 +76,7 @@
       """
       chartPath: ../charts/sonarqube
       releaseName: sonarqube-pvc
+      timeout: 10m
       values:
       - testdata/snippets/base-values.yaml
       - testdata/snippets/tpl-values-network-nodeport.yaml
