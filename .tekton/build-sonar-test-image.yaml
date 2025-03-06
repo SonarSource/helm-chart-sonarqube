@@ -10,8 +10,8 @@ metadata:
         ".tekton/build-sonar-test-image.yaml".pathChanged()
       ) && ((
         event == "push" && (
-          source_branch.matches("^(main|master|release-.*)$") ||
-          target_branch.matches("^(main|master|release-.*)$") ||
+          source_branch.matches("^(main|master|release-.*|alauda.*)$") ||
+          target_branch.matches("^(main|master|release-.*|alauda.*)$") ||
           target_branch.startsWith("refs/tags/")
         )
       ) || (
@@ -47,7 +47,7 @@ spec:
     
 
     - name: image-repository
-      value: build-harbor.alauda.cn/devops/sonarqube-e2e-test
+      value: build-harbor.alauda.cn/devops/sonarqube-ce-test
 
     - name: dockerfile-path
       value: testing/Dockerfile

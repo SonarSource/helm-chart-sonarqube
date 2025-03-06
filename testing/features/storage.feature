@@ -8,7 +8,7 @@
   @priority-high
   @sonarqube-chart-deploy-storage-sc
   场景: 使用存储类方式部署 SonarQube
-    假定 集群已存在存储类
+    假定 集群已存在默认存储类
     并且 命名空间 "testing-sonarqube-storage-sc-<template.{{randAlphaNum 4 | toLower}}>" 已存在
     并且 已导入 "SonarQube 数据库" 资源: "./testdata/resources/pg-postgresql.yaml"
     并且 已导入 "初始化 SonarQube 数据的 job" 资源: "./testdata/resources/job-init-sonar-db.yaml"
@@ -67,6 +67,7 @@
   @sonarqube-chart-deploy-storage-pvc
   场景: 使用指定 pvc 的方式部署 sonarqube
     假定 命名空间 "testing-sonarqube-storage-pvc-<template.{{randAlphaNum 4 | toLower}}>" 已存在
+    并且 集群已存在默认存储类
     并且 已导入 "SonarQube 数据库" 资源: "./testdata/resources/pg-postgresql.yaml"
     并且 已导入 "初始化 SonarQube 数据的 job" 资源: "./testdata/resources/job-init-sonar-db.yaml"
     并且 已导入 "SonarQube 自定义 root 密码" 资源: "./testdata/resources/custom-root-password.yaml"
