@@ -39,3 +39,14 @@ WARNING: Setting the deployment strategy type is deprecated and will be removed 
 {{ if eq .Values.deploymentType "StatefulSet" }}
 WARNING: The deploymentType value is deprecated and won't be supported anymore. SonarQube will be deployed as a Deployment by default.
 {{- end }}
+
+{{ $accountDeprecation := fromYaml (include "accountDeprecation" . ) }}
+{{ $_ := set .Values "account" $accountDeprecation }}
+{{- if or .Values.account.adminPassword .Values.account.adminPasswordSecretName}}
+2. Get default admin password
+{{- if .Values.account.adminPasswordSecretName}}
+  $ kubectl get secret -n {{ .Release.Namespace }} {{ .Values.account.adminPasswordSecretName }} -o jsonpath="{.data.password}" | base64 --decode;
+{{- else }}
+  $ kubectl get secret -n {{ .Release.Namespace }} {{ template "sonarqube.fullname" . }}-admin-password -o jsonpath="{.data.password}" | base64 --decode;
+{{- end }}
+{{- end }}

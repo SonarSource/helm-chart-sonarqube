@@ -1,10 +1,34 @@
+global:
+  replicas: 1
+  namespace: alauda-system
+  registry:
+    address: build-harbor.alauda.cn
+  images:
+    sonarqube:
+      code: github.com/AlaudaDevops/docker-sonarqube
+      repository: devops/sonarqube
+      tag: v2025.1.0-f39840
+      support_arm: true
+      thirdparty: true
+    pluginPackage:
+      code: github.com/AlaudaDevops/docker-sonarqube
+      repository: devops/sonarqube-plugins
+      tag: v2025.1.0-d0676b
+      support_arm: true
+      thirdparty: true
+    busybox:
+      repository: ops/ubuntu
+      tag: "24"
+      support_arm: true
+      thirdparty: true
+  labelBaseDomain: alauda.io
 # Default values for SonarQube.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 # (DEPRECATED) If the deployment Type is set to Deployment SonarQube is deployed as a replica set.
 # This will be removed in a future release.
-deploymentType: "StatefulSet"
+deploymentType: "Deployment"
 
 # There should not be more than 1 SonarQube instance connected to the same database. Please set this value to 1 or 0 (in case you need to scale down programmatically).
 replicaCount: 1
@@ -49,11 +73,11 @@ OpenShift:
     #  external: 'true'
 
 # Configure the edition of SonarQube Server to deploy: developer or enterprise
-# edition: ""
+# edition: "developer"
 
 # Set the chart to use the latest released SonarQube Community Build
 community:
-  enabled: false
+  enabled: true
   buildNumber: "25.1.0.102122"
 
 image:
@@ -404,7 +428,12 @@ prometheusMonitoring:
 #    - "https://github.com/SonarSource/sonar-ldap/releases/download/2.2-RC3/sonar-ldap-plugin-2.2.0.601.jar"
 #
 plugins:
+  deleteDefaultPlugins: true
+  useDefaultPluginsPackage: true
   install: []
+  # - https://github.com/mc1arke/sonarqube-community-branch-plugin/releases/download/1.23.0/sonarqube-community-branch-plugin-1.23.0.jar
+  # - https://github.com/vaulttec/sonar-auth-oidc/releases/download/v2.1.1/sonar-auth-oidc-plugin-2.1.1.jar
+  # - https://github.com/spotbugs/sonar-findbugs/releases/download/4.4.0/sonar-findbugs-plugin-4.4.0.jar
 
   # For use behind a corporate proxy when downloading plugins
   # httpProxy: ""
@@ -420,7 +449,9 @@ plugins:
   # Set to true to not validate the server's certificate to download plugin
   noCheckCertificate: false
   # Reuse default initcontainers.securityContext that match restricted pod security standard
-  # securityContext: {}
+  ## install-plugins 这个 initContainer 执行 mkdir 时候没有权限
+  securityContext:
+    runAsUser: 0
 
 ## (DEPRECATED) The following value sets SONAR_WEB_JAVAOPTS (e.g., jvmOpts: "-Djava.net.preferIPv4Stack=true"). However, this is deprecated, please set SONAR_WEB_JAVAOPTS or sonar.web.javaOpts directly instead.
 jvmOpts: ""
@@ -430,7 +461,7 @@ jvmCeOpts: ""
 
 ## a monitoring passcode needs to be defined in order to get reasonable probe results
 # not setting the monitoring passcode will result in a deployment that will never be ready
-# monitoringPasscode: "define_it"
+monitoringPasscode: "define_it"
 # Alternatively, you can define the passcode loading it from an existing secret specifying the right key
 # monitoringPasscodeSecretName: "pass-secret-name"
 # monitoringPasscodeSecretKey: "pass-key"
@@ -488,6 +519,9 @@ persistence:
   ## DEPRECATED please use root level extraVolumeMounts value
   ## Specify extra mounts. Refer to ".spec.containers.volumeMounts" specification : https://kubernetes.io/fr/docs/concepts/storage/volumes/
   mounts: []
+  host:
+    nodeName: ""
+    path: /var/sonarqube/portal
 
 # In case you want to specify different resources for emptyDir than {}
 emptyDir: {}
@@ -497,7 +531,9 @@ emptyDir: {}
 
 # A custom sonar.properties file can be provided via dictionary.
 # For example:
-# sonarProperties:
+sonarProperties:
+  sonar.web.javaAdditionalOpts: '-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-1.23.0.jar=web'
+  sonar.ce.javaAdditionalOpts: '-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-1.23.0.jar=ce'
 #   sonar.forceAuthentication: true
 #   sonar.security.realm: LDAP
 #   ldap.url: ldaps://organization.com
@@ -674,22 +710,22 @@ extraConfig:
 
 
 # (DEPRECATED) please use setAdminPassword instead
-# account:
+account:
 # The values can be set to define the current and the (new) custom admin passwords at the startup (the username will remain "admin")
 #   adminPassword: AdminAdmin_12$
-#   currentAdminPassword: admin
+  currentAdminPassword: admin
 # The above values can be also provided by a secret that contains "password" and "currentPassword" as keys. You can generate such a secret in your cluster
 # using "kubectl create secret generic admin-password-secret-name --from-literal=password=admin --from-literal=currentPassword=admin"
 #   adminPasswordSecretName: ""
 # Reuse default initcontainers.securityContext that match restricted pod security standard
 #   securityContext: {}
-#   resources:
-#     limits:
-#       cpu: 100m
-#       memory: 128Mi
-#     requests:
-#       cpu: 100m
-#       memory: 128Mi
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
 # (DEPRECATED) please use setAdminPassword.image instead
 # curlContainerImage: curlimages/curl:8.2.1
 # (DEPRECATED) please use setAdminPassword.annotations instead

@@ -1,0 +1,38 @@
+apiVersion: operator.alaudadevops.io/v1alpha1
+kind: Sonarqube
+metadata:
+  name: ingress-oidc
+spec:
+  helmValues:
+    caCerts:
+      enabled: true
+      secret: dex-tls
+    sonarProperties:
+      sonar.web.javaAdditionalOpts: '-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-1.14.0.jar=web'
+      sonar.ce.javaAdditionalOpts: '-javaagent:/opt/sonarqube/extensions/plugins/sonarqube-community-branch-plugin-1.14.0.jar=ce'
+      sonar.core.serverBaseURL: http://<node.ip.first>:<nodeport.http>
+      sonar.forceAuthentication: false
+      sonar.auth.oidc.enabled: true
+      sonar.auth.oidc.issuerUri: <config.{{.acp.baseUrl}}>/dex
+      sonar.auth.oidc.clientId.secured: test-dex
+      sonar.auth.oidc.clientSecret.secured: Z2l0bGFiLW9mZmljaWFsLTAK
+      sonar.auth.oidc.loginStrategy: Email
+      sonar.auth.oidc.providerConfiguration: '{"issuer":"<config.{{.acp.baseUrl}}>/dex","authorization_endpoint":"<config.{{.acp.baseUrl}}>/dex/auth","token_endpoint":"<config.{{.acp.baseUrl}}>/dex/token","jwks_uri":"<config.{{.acp.baseUrl}}>/dex/keys","response_types_supported":["code","id_token","token"],"subject_types_supported":["public"],"id_token_signing_alg_values_supported":["RS256"],"scopes_supported":["openid","email","groups","profile","offline_access"],"token_endpoint_auth_methods_supported":["client_secret_basic"],"claims_supported":["aud","email","email_verified","exp","iat","iss","locale","name","sub"]}'
+    postgresql:
+      enabled: false
+    jdbcOverwrite:
+      enable: true
+      jdbcSecretName: postgres-password
+      jdbcUrl: jdbc:postgresql://pg-postgresql.<namespace>.svc.cluster.local:5432/sonardb?socketTimeout=1500
+      jdbcUsername: postgres
+    prometheusExporter:
+      enabled: false
+    service:
+      name: sonarqube
+      type: NodePort
+      nodePort: <nodeport.http>
+    account:
+      adminPasswordSecretName: sonarqube-root-password
+    persistence:
+      enabled: true
+      existingClaim: sonarqube-pvc
