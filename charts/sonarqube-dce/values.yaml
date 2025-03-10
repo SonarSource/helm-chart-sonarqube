@@ -5,7 +5,7 @@
 searchNodes:
   image:
     repository: sonarqube
-    tag: 9.9.8-datacenter-search
+    tag: 9.9.9-datacenter-search
     pullPolicy: IfNotPresent
     # If using a private repository, the imagePullSecrets to use
     # pullSecrets:
@@ -113,7 +113,7 @@ searchNodes:
 ApplicationNodes:
   image:
     repository: sonarqube
-    tag: 9.9.8-datacenter-app
+    tag: 9.9.9-datacenter-app
     pullPolicy: IfNotPresent
     # If using a private repository, the imagePullSecrets to use
     # pullSecrets:
@@ -247,7 +247,6 @@ ApplicationNodes:
   # can use existing secret with SONAR_AUTH_JWTBASE64HS256SECRET as key
   # existingJwtSecret: ""
 
-
   ## We usually don't make specific resource recommendations, as they are heavily dependent on
   ## The usage of SonarQube and the surrounding infrastructure.
   ## Adjust these values to your needs, but make sure that the memory limit is never under 4 GB
@@ -301,14 +300,14 @@ ingress:
       # the pathType can be one of the following values: Exact|Prefix|ImplementationSpecific(default)
       # pathType: ImplementationSpecific
   annotations:
-  # kubernetes.io/tls-acme: "true"
-  # This property allows for reports up to a certain size to be uploaded to SonarQube
+    # kubernetes.io/tls-acme: "true"
+    # This property allows for reports up to a certain size to be uploaded to SonarQube
     nginx.ingress.kubernetes.io/proxy-body-size: "64m"
 
   # Set the ingressClassName on the ingress record
   # ingressClassName: nginx
 
-# Additional labels for Ingress manifest file
+  # Additional labels for Ingress manifest file
   # labels:
   #  traffic-type: external
   #  traffic-type: internal
@@ -413,7 +412,8 @@ monitoringPasscode: "define_it"
 annotations: {}
 
 # In case you want to specify different resources for emptyDir than {}
-emptyDir: {}
+emptyDir:
+  {}
   # Example of resouces that might be used:
   # medium: Memory
   # sizeLimit: 16Mi
