@@ -1,0 +1,24 @@
+apiVersion: operator.alaudadevops.io/v1alpha1
+kind: Sonarqube
+metadata:
+  name: sonarqube-test
+spec:
+  helmValues:
+    postgresql:
+      enabled: false
+    jdbcOverwrite:
+      enable: true
+      jdbcSecretName: postgres-password
+      jdbcUrl: jdbc:postgresql://pg-postgresql.<namespace>.svc.cluster.local:5432/sonardb?socketTimeout=1500
+      jdbcUsername: postgres
+    prometheusExporter:
+      enabled: false
+    service:
+      name: sonarqube
+      type: NodePort
+      nodePort: <nodeport.http>
+    account:
+      adminPasswordSecretName: sonarqube-root-password
+    persistence:
+      enabled: true
+      existingClaim: sonarqube-pvc

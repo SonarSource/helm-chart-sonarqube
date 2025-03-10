@@ -14,7 +14,7 @@ generate:
 create-testing-ns:
 	kubectl create ns bdd-testing || true
 
-TAGS ?= sonarqube-chart-deploy
+TAGS ?= sonarqube-e2e
 test: create-testing-ns
 	$(TEST_COMMAND) $(GODOG_ARGS) --godog.tags=$(TAGS)
 

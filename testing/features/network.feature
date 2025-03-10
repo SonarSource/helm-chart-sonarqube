@@ -62,7 +62,16 @@
       url: https://test-ingress-https.example.com
       timeout: 10m
       """
-
+    当 执行 "sonar 扫描" 脚本成功
+      | command                                                                                                                           |
+      | bash -x testdata/script/wait-sonar-analysis.sh 'https://test-ingress-https.example.com' '07Apples@07Apples@' 'language-java'  -Dsonar.login='admin' -Dsonar.password='07Apples@07Apples@'|
+    并且 发送 "获取扫描结果" 请求
+      """
+      GET https://test-ingress-https.example.com/api/measures/component?component=language-java&branch=main&metricKeys=ncloc,coverage HTTP/1.1
+      Authorization: Basic YWRtaW46MDdBcHBsZXNAMDdBcHBsZXNA
+      """
+    那么 HTTP 响应状态码为 "200"
+   
   @smoke
   @automated
   @priority-high
@@ -88,3 +97,18 @@
       url: http://<node.ip.first>:<nodeport.http>
       timeout: 10m
       """
+    当 执行 "sonar 扫描" 脚本成功
+      | command                                                                                                |
+      | bash scripts/scan.sh <path> sonar-scanner -Dsonar.projectKey=<projectKey> -Dsonar.host.url='http://<node.ip.first>:<nodeport.http>' -Dsonar.login='admin' -Dsonar.password='07Apples@07Apples@' |
+      | bash scripts/wait-sonar-analysis.sh 'http://<node.ip.first>:<nodeport.http>' '07Apples@07Apples@' <projectKey> |
+    并且 发送 "获取扫描结果" 请求
+      """
+      GET http://<node.ip.first>:<nodeport.http>/api/measures/component?component=<projectKey>&branch=main&metricKeys=ncloc,coverage HTTP/1.1
+      Authorization: Basic YWRtaW46MDdBcHBsZXNAMDdBcHBsZXNA
+      """
+    那么 HTTP 响应状态码为 "200"
+
+      例子:
+        | path                 | projectKey      |
+        | repos/go-example     | language-go     |
+
