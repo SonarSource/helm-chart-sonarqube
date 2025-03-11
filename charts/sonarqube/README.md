@@ -14,7 +14,11 @@ Please note that this chart only supports SonarQube Community, Developer, and En
 
 ## Compatibility
 
-Compatible SonarQube Version: `9.9.9`
+Compatible SonarQube Versions:
+
+- Community Edition: `9.9.8`
+- Developer Edition: `9.9.8`
+- Enterprise Edition: `9.9.9`
 
 Supported Kubernetes Versions: From `1.23` to `1.26`
 
