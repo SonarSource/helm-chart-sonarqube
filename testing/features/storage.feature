@@ -32,6 +32,20 @@
     并且 Pod 资源检查通过
       | name                   | path                                                                        | value                        |
       | sonarqube-sc-sonarqube | $.spec.volumes[?(@.name == 'sonarqube')][0].persistentVolumeClaim.claimName | sonarqube-sc-sonarqube       |
+    当 执行 "sonar 扫描" 脚本成功
+      | command                                                                                              |
+      | bash scripts/scan.sh repos/go-example sonar-scanner -Dsonar.host.url='http://<node.ip.first>:<nodeport.http>' -Dsonar.projectKey=method-cli  -Dsonar.login='admin' -Dsonar.password='07Apples@07Apples@' |
+      | bash scripts/wait-sonar-analysis.sh 'http://<node.ip.first>:<nodeport.http>' '07Apples@07Apples@' method-cli |
+    并且 发送 "获取扫描结果" 请求
+        """
+        GET http://<node.ip.first>:<nodeport.http>/api/measures/component?component=method-cli&branch=main&metricKeys=ncloc,coverage HTTP/1.1
+        Authorization: Basic YWRtaW46MDdBcHBsZXNAMDdBcHBsZXNA
+        """
+    那么 HTTP 响应状态码为 "200"
+    并且 HTTP 响应应包含以下 JSON 数据
+        | path                                                     | value |
+        | $.component.measures[?(@.metric == 'ncloc')][0].value    | 32    |
+        | $.component.measures[?(@.metric == 'coverage')][0].value | 41.7  |
 
   @automated
   @priority-high
@@ -91,8 +105,17 @@
     并且 Pod 资源检查通过
       | name                    | path                                                                        | value         |
       | sonarqube-pvc-sonarqube | $.spec.volumes[?(@.name == 'sonarqube')][0].persistentVolumeClaim.claimName | sonarqube-pvc |
-    当 发送 "修改密码" 请求
-      """
-      POST http://<node.ip.first>:<nodeport.http>/api/authentication/login?login=admin&password=07Apples@07Apples@ HTTP/1.1
-      """
+    假定 执行 "maven 扫描" 脚本成功
+      | command                                                                                                                         |
+      | bash scripts/scan.sh repos/maven-simple mvn verify sonar:sonar -Dsonar.host.url='http://<node.ip.first>:<nodeport.http>' -Dsonar.projectKey=method-maven -Dsonar.projectName=method-maven -Dsonar.login='admin' -Dsonar.password='07Apples@07Apples@' |
+      | bash scripts/wait-sonar-analysis.sh 'http://<node.ip.first>:<nodeport.http>' '07Apples@07Apples@' method-maven                          |
+    当 发送 "获取扫描结果" 请求
+        """
+        GET http://<node.ip.first>:<nodeport.http>/api/measures/component?component=method-maven&branch=main&metricKeys=ncloc,coverage HTTP/1.1
+        Authorization: YWRtaW46MDdBcHBsZXNAMDdBcHBsZXNA
+        """
     那么 HTTP 响应状态码为 "200"
+    并且 HTTP 响应应包含以下 JSON 数据
+        | path                                                     | value |
+        | $.component.measures[?(@.metric == 'ncloc')][0].value    | 92    |
+        | $.component.measures[?(@.metric == 'coverage')][0].value | 50.0  |

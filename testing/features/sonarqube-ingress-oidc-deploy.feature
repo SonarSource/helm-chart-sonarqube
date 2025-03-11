@@ -1,15 +1,15 @@
 # language: zh-CN
 @sonarqube-operator-deploy
 @e2e
-@sonarqube-e2e
+@sonarqube-sso
 功能: 支持通过 operator 部署 SonarQube
 
     @automated
     @priority-high
     @sonarqube-operator-deploy-sso
     场景: 通过默认配置部署 Sonarqube
-        并且 集群已存在存储类
-        并且 命名空间 "testing-sonarqube-operator" 已存在
+        并且 集群已存在默认存储类
+        并且 命名空间 "testing-sonarqube-sso-<template.{{randAlphaNum 4 | toLower}}>" 已存在
         并且 已导入 "SonarQube 数据库" 资源: "./testdata/resources/pg-postgresql.yaml"
         并且 已导入 "初始化 SonarQube 数据的 job" 资源: "./testdata/resources/job-init-sonar-db.yaml"
         并且 已导入 "域名 TLS 证书" 资源: "./testdata/resources/secret-tls-cert.yaml"

@@ -33,17 +33,27 @@ RUN set -eux; \
     cd /app && \
     CGO_ENABLED=0 go test -c -o /tools/bin/sonarqube-e2e.test ./
 
+RUN set -eux; \
+    cd /app/sonar-service-case && \
+    CGO_ENABLED=0 go test -c -o /tools/bin/sonar-service-case.test ./
+
 FROM registry.alauda.cn:60070/ops/ubuntu:24.04
 
 RUN mkdir -p /tools/bin
 COPY --from=builder /tools/bin /tools/bin
 
-# install playwright dependencies
+
 RUN apt-get update && apt-get install -y ca-certificates tzdata bash locales make curl wget \
     && rm -rf /var/lib/apt/lists/* \
     && locale-gen en_US.UTF-8 \
     && locale-gen zh_CN.UTF-8 \
-    && update-locale
+    && update-locale \
+    curl -O https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-6.2.1.4610-linux-x64.zip; \
+    unzip sonar-scanner-cli-6.2.1.4610-linux-x64.zip; \
+    rm sonar-scanner-cli-6.2.1.4610-linux-x64.zip; \
+    rm -rf /var/lib/apt/lists/*
+
+ENV PATH="${PATH}:/app/sonar-scanner-6.2.1.4610-linux-x64/bin"
 
 COPY . /app
 
