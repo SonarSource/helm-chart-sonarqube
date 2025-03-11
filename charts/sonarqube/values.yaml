@@ -27,7 +27,7 @@ edition: "community"
 
 image:
   repository: sonarqube
-  tag: 9.9.8-{{ .Values.edition }}
+  tag: 9.9.9-{{ .Values.edition }}
   pullPolicy: IfNotPresent
   # If using a private repository, the imagePullSecrets to use
   # pullSecrets:
@@ -89,14 +89,14 @@ ingress:
       # the pathType can be one of the following values: Exact|Prefix|ImplementationSpecific(default)
       # pathType: ImplementationSpecific
   annotations:
-  # kubernetes.io/tls-acme: "true"
-  # This property allows for reports up to a certain size to be uploaded to SonarQube
+    # kubernetes.io/tls-acme: "true"
+    # This property allows for reports up to a certain size to be uploaded to SonarQube
     nginx.ingress.kubernetes.io/proxy-body-size: "64m"
 
   # Set the ingressClassName on the ingress record
   # ingressClassName: nginx
 
-# Additional labels for Ingress manifest file
+  # Additional labels for Ingress manifest file
   # labels:
   #  traffic-type: external
   #  traffic-type: internal
@@ -348,7 +348,8 @@ persistence:
   mounts: []
 
 # In case you want to specify different resources for emptyDir than {}
-emptyDir: {}
+emptyDir:
+  {}
   # Example of resouces that might be used:
   # medium: Memory
   # sizeLimit: 16Mi
@@ -461,7 +462,7 @@ podLabels: {}
 sonarqubeFolder: /opt/sonarqube
 
 tests:
-  image: ""
+  image: "sonarqube:9.9.9-enterprise"
   enabled: true
   resources: {}
 

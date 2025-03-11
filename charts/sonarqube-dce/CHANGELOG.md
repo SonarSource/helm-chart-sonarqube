@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [7.0.9]
+* Update SonarQube to 9.9.9
+
 ## [7.0.8]
 * Update SonarQube to 9.9.8
 
@@ -190,7 +193,7 @@ All changes to this chart will be documented in this file.
 * added link to community support forum
 
 ## [0.1.6]
-* fixed wrong scc user reference if name was explicitly set 
+* fixed wrong scc user reference if name was explicitly set
 
 ## [0.1.5]
 * fixed serviceaccount logic
