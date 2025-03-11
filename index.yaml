@@ -1111,6 +1111,58 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
+          description: "Update SonarQube to 9.9.9"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube
+          image: sonarqube:9.9.9-community
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
+    apiVersion: v2
+    appVersion: 9.9.9
+    created: "2025-03-11T19:23:01.305118225Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://raw.githubusercontent.com/bitnami/charts/pre-2022/bitnami
+      version: 10.15.0
+    - condition: nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.0.13
+    description: SonarQube offers Code Quality and Code Security analysis for up to
+      27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
+      throughout your workflow.
+    digest: 9acc78eb51082ff5ca2db0e1c4fc57ae2c7168cadacb025dd168c4468eee85d8
+    home: https://www.sonarqube.org/
+    icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.19.0-0'
+    maintainers:
+    - email: carmine.vassallo@sonarsource.com
+      name: carminevassallo
+    - email: jeremy.cotineau@sonarsource.com
+      name: jCOTINEAU
+    - email: davi.koscianski-vidal@sonarsource.com
+      name: davividal
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-9.9.9-sonarqube-dce-9.9.9/sonarqube-8.0.9+4357.tgz
+    version: 8.0.9+4357
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
           description: "Update SonarQube to 9.9.8"
       artifacthub.io/containsSecurityUpdates: "false"
       artifacthub.io/images: |
@@ -3722,21 +3774,21 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
-          description: "Update SonarQube to 9.9.8"
+          description: "Update SonarQube to 9.9.9"
       artifacthub.io/containsSecurityUpdates: "false"
       artifacthub.io/images: |
         - name: sonarqube-app
-          image: sonarqube:9.9.8-datacenter-app
+          image: sonarqube:9.9.9-datacenter-app
         - name: sonarqube-search
-          image: sonarqube:9.9.8-datacenter-search
+          image: sonarqube:9.9.9-datacenter-search
       artifacthub.io/links: |
         - name: support
           url: https://community.sonarsource.com/
         - name: Chart Source
           url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
     apiVersion: v2
-    appVersion: 9.9.8
-    created: "2024-12-04T14:08:34.336302858Z"
+    appVersion: 9.9.9
+    created: "2025-03-11T19:23:01.312860268Z"
     dependencies:
     - condition: postgresql.enabled
       name: postgresql
@@ -3749,7 +3801,7 @@ entries:
     description: SonarQube offers Code Quality and Code Security analysis for up to
       27 languages. Find Bugs, Vulnerabilities, Security Hotspots and Code Smells
       throughout your workflow.
-    digest: 0656f8a4e16600859389bebc4118c5a52916882a8d7ed13be6c2c3b4f23b185e
+    digest: 3c17f9e3a863e95c161d97074b8ee2d4662d6f05d705ed93d476fbcd783346a7
     home: https://www.sonarqube.org/
     icon: https://www.sonarqube.org/assets/logo-31ad3115b1b4b120f3d1efd63e6b13ac9f1f89437f0cf6881cc4d8b5603a52b4.svg
     keywords:
@@ -3771,8 +3823,8 @@ entries:
     - https://github.com/SonarSource/sonarqube
     type: application
     urls:
-    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-9.9.8-sonarqube-dce-9.9.8/sonarqube-dce-7.0.8+3946.tgz
-    version: 7.0.8+3946
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-9.9.9-sonarqube-dce-9.9.9/sonarqube-dce-7.0.8+4357.tgz
+    version: 7.0.8+4357
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
@@ -5880,4 +5932,4 @@ entries:
     urls:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-lts-1.0.16+98.tgz
     version: 1.0.16+98
-generated: "2025-01-22T12:00:46.277051874Z"
+generated: "2025-03-11T19:23:01.297156377Z"
