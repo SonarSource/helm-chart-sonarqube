@@ -19,11 +19,13 @@ RUN set -eux; \
     curl -sfL https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_${ARCH} -o ./bin/yq && \
     curl -sfL https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl -o ./bin/kubectl && \
     curl -sfL https://get.helm.sh/helm-v${HELM_VERSION}-linux-${ARCH}.tar.gz | tar xzf - -C tmp 2>&1 && mv tmp/linux-${ARCH}/helm ./bin && \
+    curl -sfL https://github.com/stedolan/jq/releases/download/jq-${JQ_VERSION}/jq-linux64 -o ./bin/jq && \
     chmod +x ./bin/* && \
     rm -rf tmp && \
     ./bin/yq --version && \
     ./bin/kubectl version --client && \
-    ./bin/helm version
+    ./bin/helm version && \
+    ./bin/jq --version
 
 
 COPY testing /app
