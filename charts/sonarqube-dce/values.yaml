@@ -5,7 +5,7 @@
 searchNodes:
   image:
     repository: sonarqube
-    tag: 2025.1.0-datacenter-search
+    tag: 2025.1.1-datacenter-search
     pullPolicy: IfNotPresent
     # If using a private repository, the imagePullSecrets to use
     # pullSecrets:
@@ -153,7 +153,7 @@ searchNodes:
 applicationNodes:
   image:
     repository: sonarqube
-    tag: 2025.1.0-datacenter-app
+    tag: 2025.1.1-datacenter-app
     pullPolicy: IfNotPresent
     # If using a private repository, the imagePullSecrets to use
     # pullSecrets:
@@ -221,17 +221,17 @@ applicationNodes:
   readinessProbe:
     exec:
       command:
-      - sh
-      - -c
-      - |
-        #!/bin/bash
-        # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-        # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
-        host="$(hostname -i || echo '127.0.0.1')"
-        if wget --no-proxy -qO- http://${host}:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
-          exit 0
-        fi
-        exit 1
+        - sh
+        - -c
+        - |
+          #!/bin/bash
+          # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+          # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
+          host="$(hostname -i || echo '127.0.0.1')"
+          if wget --no-proxy -qO- http://${host}:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+            exit 0
+          fi
+          exit 1
     initialDelaySeconds: 0
     periodSeconds: 30
     failureThreshold: 8
@@ -244,11 +244,11 @@ applicationNodes:
   livenessProbe:
     exec:
       command:
-      - sh
-      - -c
-      - |
-        host="$(hostname -i || echo '127.0.0.1')"
-        wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.ApplicationNodes.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
+        - sh
+        - -c
+        - |
+          host="$(hostname -i || echo '127.0.0.1')"
+          wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.ApplicationNodes.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
     initialDelaySeconds: 0
     periodSeconds: 30
     failureThreshold: 6
@@ -352,7 +352,6 @@ applicationNodes:
   jwtSecret: ""
   # can use existing secret with SONAR_AUTH_JWTBASE64HS256SECRET as key
   # existingJwtSecret: ""
-
 
   ## We usually don't make specific resource recommendations, as they are heavily dependent on
   ## the usage of SonarQube and the surrounding infrastructure.
@@ -502,18 +501,18 @@ ingress:
     - name: sonarqube.your-org.com
   #     Different clouds or configurations might need /* as the default path
   #     path: /
-      # For additional control over serviceName and servicePort
-      # serviceName: someService
-      # servicePort: somePort
-      # the pathType can be one of the following values: Exact|Prefix|ImplementationSpecific(default)
-      # pathType: ImplementationSpecific
+  # For additional control over serviceName and servicePort
+  # serviceName: someService
+  # servicePort: somePort
+  # the pathType can be one of the following values: Exact|Prefix|ImplementationSpecific(default)
+  # pathType: ImplementationSpecific
   annotations: {}
   # kubernetes.io/tls-acme: "true"
 
   # Set the ingressClassName on the ingress record
   # ingressClassName: nginx
 
-# Additional labels for Ingress manifest file
+  # Additional labels for Ingress manifest file
   # labels:
   #  traffic-type: external
   #  traffic-type: internal
@@ -658,7 +657,8 @@ initFs:
 annotations: {}
 
 # In case you want to specify different resources for emptyDir than {}
-emptyDir: {}
+emptyDir:
+  {}
   # Example of resouces that might be used:
   # medium: Memory
   # sizeLimit: 16Mi
@@ -838,7 +838,6 @@ extraConfig:
 #      memory: 128Mi
 #  image:
 #  annotations: {}
-
 
 # (DEPRECATED) please use setAdminPassword instead
 # account:
