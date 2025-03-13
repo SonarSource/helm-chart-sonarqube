@@ -47,4 +47,4 @@ EOF
 export SONAR_HOST=$SONAR_HOST
 export SONAR_TOKEN=$SONAR_TOKEN
 
-/tools/bin/sonar-service-case.test --godog.concurrency=1 --godog.tags='@sonar-service-case'
+/tools/bin/sonar-service-case.test --godog.concurrency=1 --godog.format=allure --godog.tags='@sonar-service-case'
