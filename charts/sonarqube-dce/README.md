@@ -14,14 +14,14 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 ## Compatibility
 
-Compatible SonarQube Version: `2025.1.0`
+Compatible SonarQube Version: `2025.1.1`
 
 Supported Kubernetes Versions: From `1.29` to `1.32`
 Supported Openshift Versions: From `4.11` to `4.17`
 
 ## Installing the chart
 
-> **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/) for further information on how to install and tune the helm chart specifications.
+> **_NOTE:_** Please refer to [the official page](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/) for further information on how to install and tune the helm chart specifications.
 
 Prior to installing the chart, please ensure that the `monitoringPasscode` and `applicationNodes.jwtSecret` are properly set. The `applicationNodes.jwtSecret` value needs to be set with a HS256 key encoded with base64. In the following, an example on how to generate this key on a Unix system:
 
@@ -43,7 +43,7 @@ helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set 
 The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace.
 If you are interested in deploying SonarQube on Openshift, please check the [dedicated section](#openshift).
 
-The [configuration](#configuration) section lists the parameters that can be configured during installation. 
+The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 The default login is admin/admin.
 
@@ -53,7 +53,7 @@ When upgrading to SonarQube Server 2025.1 LTA from a previous versions, you shou
 
 When upgrading to the 2025.1 LTA version, you will experience an important change.
 
-* The `monitoringPasscode` needs to be set by the users. Set either that or `monitoringPasscodeSecretName` and `monitoringPasscodeSecretKey`.
+- The `monitoringPasscode` needs to be set by the users. Set either that or `monitoringPasscodeSecretName` and `monitoringPasscodeSecretKey`.
 
 ## Installing previous chart versions
 
@@ -93,14 +93,14 @@ Please read the official documentation prerequisites [here](https://docs.sonarso
 
 Here is the list of containers that are compatible with the [Pod Security levels](https://kubernetes.io/docs/concepts/security/pod-security-admission/#pod-security-levels):
 
-* privileged:
-  * `init-sysctl`
-* baseline:
-  * `init-fs`
-* restricted:
-  * SQ application containers
-  * SQ init containers.
-  * postgresql containers.
+- privileged:
+  - `init-sysctl`
+- baseline:
+  - `init-fs`
+- restricted:
+  - SQ application containers
+  - SQ init containers.
+  - postgresql containers.
 
 This is achieved by setting this SecurityContext as default on **most** containers:
 
@@ -130,8 +130,8 @@ Because of such constraints, even when running in Docker containers, SonarQube r
 
 Please carefully read the following and make sure these configurations are set up at the host level:
 
-* [vm.max_map_count](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html#vm-max-map-count)
-* [seccomp filter should be available](https://github.com/SonarSource/docker-sonarqube/issues/614)
+- [vm.max_map_count](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html#vm-max-map-count)
+- [seccomp filter should be available](https://github.com/SonarSource/docker-sonarqube/issues/614)
 
 In general, please carefully read the Elasticsearch's [documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/system-config.html) and specifically [here](https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-virtual-memory.html) for tutorial on how to change those parameters.
 
@@ -141,16 +141,16 @@ The SonarQube helm chart is packed with multiple features enabling users to inst
 
 Nonetheless, if you intend to run a production-grade SonarQube please follow these recommendations.
 
-* Set `ingress-nginx.enabled` to **false**. This parameter would run the nginx chart. This is useful for testing purposes only. Ingress controllers are critical Kubernetes components, we advise users to install their own.
-* Set `postgresql.enabled` to **false**. This parameter would run the postgresql pre-2022 bitnami chart. That is useful for testing purposes, however, given that the database is at the hearth of SonarQube, we advise users to be careful with it and use a well-maintained database as a service or deploy their own database on top of Kubernetes.
-* Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
-* Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
+- Set `ingress-nginx.enabled` to **false**. This parameter would run the nginx chart. This is useful for testing purposes only. Ingress controllers are critical Kubernetes components, we advise users to install their own.
+- Set `postgresql.enabled` to **false**. This parameter would run the postgresql pre-2022 bitnami chart. That is useful for testing purposes, however, given that the database is at the hearth of SonarQube, we advise users to be careful with it and use a well-maintained database as a service or deploy their own database on top of Kubernetes.
+- Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
+- Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
 
 ### ApplicationNodes renamed to applicationNodes
 
 Prior to SonarQube Server Datacenter 10.8, we used a different naming conventions for `searchNodes` and `ApplicationNodes`. Specifically, we used the [Camel Case](https://en.wikipedia.org/wiki/Camel_case) notation in the former and not in the latter. While this can be viewed as a minor difference, we promote [Clean Code](https://www.sonarsource.com/solutions/clean-code/) at Sonar and this is a clear maintanability (and inconsistency) issue.
 
-Starting from 10.8, we advise users to rename your `ApplicationNodes` to `applicationNodes`. While this is a straightforward change for users, ensuring cross-compability between both usage is challenging (if you are interested in the technical implementation, please take a look at this [PR](https://github.com/SonarSource/helm-chart-sonarqube/pull/586)). 
+Starting from 10.8, we advise users to rename your `ApplicationNodes` to `applicationNodes`. While this is a straightforward change for users, ensuring cross-compability between both usage is challenging (if you are interested in the technical implementation, please take a look at this [PR](https://github.com/SonarSource/helm-chart-sonarqube/pull/586)).
 
 Please report any encountered bugs to https://community.sonarsource.com/.
 
@@ -171,8 +171,8 @@ Please find here the default SonarQube Xmx parameters to setup the memory reques
 
 To comply with the 80% rule mentioned above, we set the following default values:
 
-* searchNodes.resources.memory.request/limit=3072M
-* applicationNodes.resources.memory.request/limit=4096M
+- searchNodes.resources.memory.request/limit=3072M
+- applicationNodes.resources.memory.request/limit=4096M
 
 Please feel free to adjust those values to your needs. However, given that memory is a “non-compressible” resource, we advise you to set the memory requests and limits to the **same**, making memory a guaranteed resource. This is needed especially for production use cases.
 
@@ -244,7 +244,7 @@ If you want to make your application publicly visible with Routes, you can set `
 
 The SonarQube applications nodes can be set to automatically scale up and down based on their average CPU utilization. This is particularly useful when scanning new projects or evaluating Pull Requests with SonarQube. In order to enable the autoscaling, you can rely on the `applicationNodes.hpa` parameters.
 
-Please ensure the [Metrics Server](https://github.com/kubernetes-sigs/metrics-server) is installed in your cluster to provide resource usage metrics. You can deploy it using: 
+Please ensure the [Metrics Server](https://github.com/kubernetes-sigs/metrics-server) is installed in your cluster to provide resource usage metrics. You can deploy it using:
 
 ```
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
@@ -293,7 +293,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                                                 | Description                                                                                | Default                                                                |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
 | `searchNodes.image.repository`                            | search image repository                                                                    | `sonarqube`                                                            |
-| `searchNodes.image.tag`                                   | search image tag                                                                           | `2025.1.0-datacenter-search`                                             |
+| `searchNodes.image.tag`                                   | search image tag                                                                           | `2025.1.1-datacenter-search`                                           |
 | `searchNodes.image.pullPolicy`                            | search image pull policy                                                                   | `IfNotPresent`                                                         |
 | `searchNodes.image.pullSecret`                            | (DEPRECATED) search imagePullSecret to use for private repository                          | `nil`                                                                  |
 | `searchNodes.image.pullSecrets`                           | search imagePullSecrets to use for private repository                                      | `nil`                                                                  |
@@ -344,13 +344,12 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.affinity`                                    | Node / Pod affinities for searchNodes, global affinity takes precedence                    | `{}`                                                                   |
 | `searchNodes.tolerations`                                 | List of node taints to tolerate for searchNodes, global tolerations take precedence        | `[]`                                                                   |
 
-
 ### App Nodes Configuration
 
 | Parameter                                                        | Description                                                                                                                                                                                                    | Default                                                                |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `applicationNodes.image.repository`                              | app image repository                                                                                                                                                                                           | `sonarqube`                                                            |
-| `applicationNodes.image.tag`                                     | app image tag                                                                                                                                                                                                  | `2025.1.0-datacenter-app`                                                |
+| `applicationNodes.image.tag`                                     | app image tag                                                                                                                                                                                                  | `2025.1.1-datacenter-app`                                              |
 | `applicationNodes.image.pullPolicy`                              | app image pull policy                                                                                                                                                                                          | `IfNotPresent`                                                         |
 | `applicationNodes.image.pullSecret`                              | (DEPRECATED) app imagePullSecret to use for private repository                                                                                                                                                 | `nil`                                                                  |
 | `applicationNodes.image.pullSecrets`                             | app imagePullSecrets to use for private repository                                                                                                                                                             | `nil`                                                                  |
@@ -432,7 +431,6 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.nodeSelector`                                  | Node labels for application nodes' pods assignment, global nodeSelector takes precedence                                                                                                                       | `{}`                                                                   |
 | `applicationNodes.affinity`                                      | Node / Pod affinities for applicationNodes, global affinity takes precedence                                                                                                                                   | `{}`                                                                   |
 | `applicationNodes.tolerations`                                   | List of node taints to tolerate for applicationNodes, global tolerations take precedence                                                                                                                       | `[]`                                                                   |
-
 
 ### Generic Configuration
 
@@ -619,7 +617,6 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `extraConfig.secrets`    | A list of `Secret`s (which must contain key/value pairs)    | `[]`    |
 | `extraConfig.configmaps` | A list of `ConfigMap`s (which must contain key/value pairs) | `[]`    |
 
-
 ### SetAdminPassword
 
 | Parameter                                    | Description                                                                                            | Default                                                                |
@@ -634,7 +631,6 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `setAdminPassword.securityContext`           | SecurityContext for change-password-hook                                                               | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `setAdminPassword.image`                     | Curl container image                                                                                   | `"image.repository":"image.tag"`                                       |
 | `setAdminPassword.annotations`               | Custom annotations for admin hook Job                                                                  | `{}`                                                                   |
-
 
 ### Advanced Options
 

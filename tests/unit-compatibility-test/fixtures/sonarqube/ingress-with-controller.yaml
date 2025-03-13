@@ -39,7 +39,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: ingress-with-controller.yaml
     heritage: Helm
 type: Opaque
@@ -54,7 +54,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: ingress-with-controller.yaml
     heritage: Helm
 type: Opaque
@@ -90,7 +90,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: ingress-with-controller.yaml
     heritage: Helm
 data:
@@ -103,7 +103,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: ingress-with-controller.yaml
     heritage: Helm
 data:
@@ -150,7 +150,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: ingress-with-controller.yaml
     heritage: Helm
 data:
@@ -163,7 +163,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: ingress-with-controller.yaml
     heritage: Helm
 data:
@@ -515,7 +515,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: ingress-with-controller.yaml
     heritage: Helm
 spec:
@@ -822,7 +822,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: ingress-with-controller.yaml
     heritage: Helm
     app.kubernetes.io/name: ingress-with-controller.yaml
@@ -830,7 +830,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: ingress-with-controller.yaml-sonarqube
-    app.kubernetes.io/version: "2025.1.0-enterprise"
+    app.kubernetes.io/version: "2025.1.1-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -842,10 +842,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: a33187d6b31f9d2c721dac3c447e42737d16639d557039422ebbad1184517653
-        checksum/init-sysctl: 2d0d0b4944b73aae22bd0ec904a309f2899d3901b1d921f856d4f18b2f74b666
-        checksum/plugins: 950d57d97bd6086d389dcb763e455f87a9992a3e7b7b4b8a05efa3e9f580f177
-        checksum/secret: 3183814039a09a21675fff1244905653024dd63f56534cf6b52e3c1220f0d8cc
+        checksum/config: 22d7d0750917312fbbdbad0f19d6a0bd0332abf754d3570207e95267a6699af4
+        checksum/init-sysctl: 97623ea9e4a40af386cf0e2b8fb234f2f2ed5208f81d41a24d5a2e3bbc3d019e
+        checksum/plugins: dd9fbe52f19cbe3d527c1d56067890f6c9507a0ce87e0a05025b117c4989ce55
+        checksum/secret: e8bfbeff79585954141bee25ded5859bf66dbdacd2199ccb6aa2caf6bbeed3fb
       labels:
         app: sonarqube
         release: ingress-with-controller.yaml
@@ -855,7 +855,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:2025.1.0-enterprise
+          image: sonarqube:2025.1.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -871,7 +871,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/ingress-with-controller.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:2025.1.0-enterprise
+          image: sonarqube:2025.1.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -890,7 +890,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2025.1.0-enterprise
+          image: sonarqube:2025.1.1-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -907,7 +907,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.1.0
+              value: 2025.1.1
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -1028,7 +1028,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: ingress-with-controller.yaml
     heritage: Helm
     traffic-type: external
@@ -1228,14 +1228,14 @@ metadata:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.0
+    chart: sonarqube-2025.1.1
     release: ingress-with-controller.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: ingress-with-controller.yaml-ui-test
-      image: "sonarqube:2025.1.0-enterprise"
+      image: "sonarqube:2025.1.1-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
