@@ -9,7 +9,7 @@
     场景: 扫描 Java 项目
         假定 执行 "sonar 扫描" 脚本成功
             | command                                                                                                                           |
-            | bash scripts/scan.sh repos/maven-simple mvn verify sonar:sonar -Dsonar.projectKey=language-java -Dsonar.projectName=language-java |
+            | bash scripts/scan.sh repos/maven-simple mvn verify sonar:sonar -Dsonar.projectKey=language-java -Dsonar.projectName=language-java -Dsonar.host.url=<config.{{.sonar.url}}> -Dsonar.login=<config.{{.sonar.token}}> |
             | bash scripts/wait-sonar-analysis.sh '<config.{{.sonar.url}}>' '<config.{{.sonar.token}}>' 'language-java'                         |
         当 发送 "获取扫描结果" 请求
             """
