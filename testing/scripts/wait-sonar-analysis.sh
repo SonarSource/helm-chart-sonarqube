@@ -28,7 +28,7 @@ check_all_success() {
 }
 
 # 最大重试次数和间隔时间
-SLEEP_INTERVAL=1
+SLEEP_INTERVAL=5
 
 # 初始化重试计数器
 retry_count=0
