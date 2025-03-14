@@ -3,6 +3,7 @@
 @smoke
 @sonar-service-case
 @sonar-scan-revision
+@sonarqube-feature
 功能: 支持扫描不同的 Git Revision
 
     @sonar-scan-revision-branch

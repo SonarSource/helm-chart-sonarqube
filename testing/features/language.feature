@@ -3,6 +3,7 @@
 @smoke
 @sonar-service-case
 @sonar-scan-language
+@sonarqube-feature
 功能: 支持扫描不同语言项目
 
     @sonar-scan-language-java

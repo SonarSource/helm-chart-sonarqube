@@ -1,6 +1,7 @@
 REPORT ?= pretty
 GODOG_ARGS ?= --godog.concurrency=2 --godog.format=$(REPORT)
-E2E_CONFIG ?= ./config.yaml
+TESTING_CONFIG ?= ./config.yaml
+
 TEST_COMMAND ?= go test -timeout=1h -v -count 1 .
 ARCH ?= amd64
 BIN ?= ./bin
@@ -14,21 +15,15 @@ generate:
 create-testing-ns:
 	kubectl create ns bdd-testing || true
 
-TAGS ?= sonarqube-e2e
+TAGS ?= @sonarqube-chart-deploy
 test: create-testing-ns
 	$(TEST_COMMAND) $(GODOG_ARGS) --godog.tags=$(TAGS)
 
-test-smoke: create-testing-ns
-	$(TEST_COMMAND) $(GODOG_ARGS) --godog.tags="@smoke && ~@e2e"
-
-test-all: create-testing-ns
-	$(TEST_COMMAND) $(GODOG_ARGS) --godog.tags="~@e2e"
-
-test-sonarqube-e2e: create-testing-ns
+test-e2e: create-testing-ns
 	$(TEST_COMMAND) $(GODOG_ARGS) --godog.tags="@sonarqube-e2e"
 
-test-e2e: create-testing-ns
-	bash -x hack/run-e2e.sh $(E2E_CONFIG)
+sonarqube: create-testing-ns
+	$(TEST_COMMAND) $(GODOG_ARGS) --godog.tags="@sonarqube-feature"
 
 report:
 	allure generate --clean

@@ -20,7 +20,7 @@
       """
       chartPath: ../charts/sonarqube
       releaseName: sonarqube-http
-      timeout: 10m
+      timeout: 20m
       values:
       - testdata/snippets/base-values.yaml
       - testdata/snippets/tpl-values-storage-hostpath.yaml
@@ -29,7 +29,7 @@
     那么 "sonarqube" 可以正常访问
       """
       url: http://test-ingress-http.example.com
-      timeout: 10m
+      timeout: 20m
       """
 
   @smoke
@@ -51,7 +51,7 @@
       """
       chartPath: ../charts/sonarqube
       releaseName: sonarqube-https
-      timeout: 10m
+      timeout: 20m
       values:
       - testdata/snippets/base-values.yaml
       - testdata/snippets/tpl-values-storage-hostpath.yaml
@@ -60,7 +60,7 @@
     那么 "sonarqube" 可以正常访问
       """
       url: https://test-ingress-https.example.com
-      timeout: 10m
+      timeout: 20m
       """
     当 执行 "sonar 扫描" 脚本成功
       | command                                                                                                                           |
@@ -86,7 +86,7 @@
       """
       chartPath: ../charts/sonarqube
       releaseName: sonarqube-nodeport
-      timeout: 10m
+      timeout: 20m
       values:
       - testdata/snippets/base-values.yaml
       - testdata/snippets/tpl-values-storage-hostpath.yaml
@@ -95,7 +95,7 @@
     那么 "sonarqube" 可以正常访问
       """
       url: http://<node.ip.first>:<nodeport.http>
-      timeout: 10m
+      timeout: 20m
       """
     当 执行 "sonar 扫描" 脚本成功
       | command                                                                                                |

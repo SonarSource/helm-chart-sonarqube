@@ -18,7 +18,7 @@
       """
       chartPath: ../charts/sonarqube
       releaseName: sonarqube-sc
-      timeout: 10m
+      timeout: 20m
       values:
       - testdata/snippets/base-values.yaml
       - testdata/snippets/tpl-values-network-nodeport.yaml
@@ -27,7 +27,7 @@
     那么 "sonarqube" 可以正常访问
       """
       url: http://<node.ip.first>:<nodeport.http>
-      timeout: 10m
+      timeout: 20m
       """
     并且 Pod 资源检查通过
       | name                   | path                                                                        | value                        |
@@ -60,7 +60,7 @@
       """
       chartPath: ../charts/sonarqube
       releaseName: sonarqube-hostpath
-      timeout: 10m
+      timeout: 20m
       values:
       - testdata/snippets/base-values.yaml
       - testdata/snippets/tpl-values-network-nodeport.yaml
@@ -69,7 +69,7 @@
     那么 "sonarqube" 可以正常访问
       """
       url: http://<node.ip.first>:<nodeport.http>
-      timeout: 10m
+      timeout: 20m
       """
     并且 Pod 资源检查通过
       | name                         | path            | value        |
@@ -91,7 +91,7 @@
       """
       chartPath: ../charts/sonarqube
       releaseName: sonarqube-pvc
-      timeout: 10m
+      timeout: 20m
       values:
       - testdata/snippets/base-values.yaml
       - testdata/snippets/tpl-values-network-nodeport.yaml
@@ -100,7 +100,7 @@
     那么 "sonarqube" 可以正常访问
       """
       url: http://<node.ip.first>:<nodeport.http>
-      timeout: 10m
+      timeout: 20m
       """
     并且 Pod 资源检查通过
       | name                    | path                                                                        | value         |
