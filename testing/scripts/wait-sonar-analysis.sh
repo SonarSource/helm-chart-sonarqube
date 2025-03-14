@@ -1,19 +1,10 @@
 #! /bin/bash
 
-# 获取脚本所在目录的绝对路径
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source "$SCRIPT_DIR/get-token.sh"
-
 HOST=$1
-PWD=$2
+TOKEN=$2
 COMPONENT=$3
 BRANCH=${4:-main}
 MAX_RETRIES=${5:-20}
-
-
-
-TOKEN=$(get_token "$HOST" "$PWD")
-echo "获取到的Token是: $TOKEN"
 
 # 获取 SonarQube 分析结果
 get_response() {
@@ -37,7 +28,7 @@ check_all_success() {
 }
 
 # 最大重试次数和间隔时间
-SLEEP_INTERVAL=1
+SLEEP_INTERVAL=5
 
 # 初始化重试计数器
 retry_count=0

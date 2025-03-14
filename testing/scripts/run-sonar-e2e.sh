@@ -1,12 +1,13 @@
+#!/bin/bash
+
 set -ex
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source "$SCRIPT_DIR/get-token.sh"
-
 SONAR_HOST=$1
-SONAR_PWD=$2
+SONAR_USER=$2
+SONAR_PWD=$3
 
-SONAR_TOKEN=$(get_token "$SONAR_HOST" "$SONAR_PWD")
+url="$SONAR_HOST/api/user_tokens/generate?name=my-token-$(date +%s)"
+SONAR_TOKEN=$(curl -s -X POST -u "$SONAR_USER:$SONAR_PWD" "$url" | jq -r '.token')
 echo "获取到的Token是: $SONAR_TOKEN"
 
 
@@ -36,15 +37,18 @@ cat <<EOF > ~/.m2/settings.xml
 </settings>
 EOF
 
-cd sonar-service-case
 
-cat <<EOF > config.yaml
+cat <<EOF > sonarqube-config.yaml
 sonar:
     url: $SONAR_HOST
     token: $SONAR_TOKEN
 EOF
 
+cat ./sonarqube-config.yaml
+
+
 export SONAR_HOST=$SONAR_HOST
 export SONAR_TOKEN=$SONAR_TOKEN
+export TESTING_CONFIG=./sonarqube-config.yaml
 
-/tools/bin/sonar-service-case.test --godog.concurrency=1 --godog.format=allure --godog.tags='@sonar-service-case'
+make sonarqube

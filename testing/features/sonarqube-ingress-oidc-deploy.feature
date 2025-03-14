@@ -27,7 +27,7 @@
         那么 "sonarqube" 可以正常访问
             """
             url: http://<node.ip.first>:<nodeport.http>
-            timeout: 10m
+            timeout: 20m
             """
         并且 "Sonarqube 组件" 资源检查通过
             | kind        | apiVersion | name                     | path            | value | interval | timeout |

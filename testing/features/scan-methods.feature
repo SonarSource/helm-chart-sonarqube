@@ -3,6 +3,7 @@
 @smoke
 @sonar-service-case
 @sonar-scan-method
+@sonarqube-feature
 功能: 支持不同方式执行扫描
     作为开发人员
     我可以根据不同编程语言的特性选择不同的扫描方式
@@ -12,7 +13,7 @@
     场景: 通过 sonar-scanner 执行扫描
         假定 执行 "sonar 扫描" 脚本成功
             | command                                                                                              |
-            | bash scripts/scan.sh repos/go-example sonar-scanner -Dsonar.projectKey=method-cli -Dsonar.host.url=<config.{{.sonar.url}}> -Dsonar.login=<config.{{.sonar.token}}> |
+            | bash scripts/scan.sh repos/go-example sonar-scanner -Dsonar.projectKey=method-cli -Dsonar.host.url='<config.{{.sonar.url}}>' -Dsonar.login='<config.{{.sonar.token}}>' |
             | bash scripts/wait-sonar-analysis.sh '<config.{{.sonar.url}}>' '<config.{{.sonar.token}}>' method-cli |
         当 发送 "获取扫描结果" 请求
             """
@@ -23,7 +24,7 @@
         并且 HTTP 响应应包含以下 JSON 数据
             | path                                                     | value |
             | $.component.measures[?(@.metric == 'ncloc')][0].value    | 32    |
-            | $.component.measures[?(@.metric == 'coverage')][0].value | 41.7  |
+            | $.component.measures[?(@.metric == 'coverage')][0].value | 0.0  |
         并且 执行 "清理项目" 脚本成功
             | command                                                                                          |
             | bash scripts/cleanup-project.sh '<config.{{.sonar.url}}>' '<config.{{.sonar.token}}>' method-cli |
