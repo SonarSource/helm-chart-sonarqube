@@ -19,6 +19,7 @@ type Steps struct {
 func (cs Steps) InitializeSteps(ctx context.Context, scenarioCtx *godog.ScenarioContext) context.Context {
 	scenarioCtx.Step(`^"([^"]*)" 实例资源检查通过$`, stepSonarqubeResourceConditionCheck)
 	scenarioCtx.Step(`^SSO 测试通过$`, checkSSo)
+	scenarioCtx.Step(`^SonarQube 分析通过$`, WaitForAnalysis)
 	return ctx
 }
 
