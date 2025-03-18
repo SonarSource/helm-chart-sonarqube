@@ -12,6 +12,12 @@
             | command                                                                                                                           |
             | bash scripts/scan.sh repos/maven-simple mvn verify sonar:sonar -Dsonar.projectKey=language-java -Dsonar.projectName=language-java -Dsonar.host.url=<config.{{.sonar.url}}> -Dsonar.login=<config.{{.sonar.token}}> |
             | bash scripts/wait-sonar-analysis.sh '<config.{{.sonar.url}}>' '<config.{{.sonar.token}}>' 'language-java'                         |
+        并且 SonarQube 分析通过
+            """
+            host: <config.{{.sonar.url}}>
+            token: <config.{{.sonar.token}}>
+            component: language-java
+            """
         当 发送 "获取扫描结果" 请求
             """
             GET <config.{{.sonar.url}}>/api/measures/component?component=language-java&branch=main&metricKeys=ncloc,coverage HTTP/1.1
@@ -24,7 +30,12 @@
         假定 执行 "sonar 扫描" 脚本成功
             | command                                                                                                |
             | bash scripts/scan.sh <path> sonar-scanner -Dsonar.projectKey=<projectKey> -Dsonar.host.url=<config.{{.sonar.url}}> -Dsonar.login=<config.{{.sonar.token}}> |
-            | bash scripts/wait-sonar-analysis.sh '<config.{{.sonar.url}}>' '<config.{{.sonar.token}}>' <projectKey> |
+        并且 SonarQube 分析通过
+            """
+            host: <config.{{.sonar.url}}>
+            token: <config.{{.sonar.token}}>
+            component: <projectKey>
+            """
         当 发送 "获取扫描结果" 请求
             """
             GET <config.{{.sonar.url}}>/api/measures/component?component=<projectKey>&branch=main&metricKeys=ncloc,coverage HTTP/1.1

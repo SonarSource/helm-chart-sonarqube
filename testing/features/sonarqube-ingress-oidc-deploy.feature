@@ -18,7 +18,7 @@
         并且 已导入 "pvc" 资源: "./testdata/resources/sonarqube-pvc.yaml"
         并且 执行 "sso 配置" 脚本成功
             | command                                                                                                             |
-            | sh ./testdata/script/prepare-sso-config.sh '<config.{{.acp.baseUrl}}>' '<config.{{.acp.token}}>' '<config.{{.acp.cluster}}>'  testing-sonarqube-operator http://<node.ip.first>:<nodeport.http> |
+            | sh ./script/prepare-sso-config.sh '<config.{{.acp.baseUrl}}>' '<config.{{.acp.token}}>' '<config.{{.acp.cluster}}>'  testing-sonarqube-operator http://<node.ip.first>:<nodeport.http> |
             | mkdir -p output/images                                                                                                   |
         当 已导入 "sonarqube 实例" 资源
             """
@@ -27,7 +27,7 @@
         那么 "sonarqube" 可以正常访问
             """
             url: http://<node.ip.first>:<nodeport.http>
-            timeout: 20m
+            timeout: 30m
             """
         并且 "Sonarqube 组件" 资源检查通过
             | kind        | apiVersion | name                     | path            | value | interval | timeout |

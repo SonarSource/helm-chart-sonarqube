@@ -1,12 +1,12 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
-  name: build-sonar-test-image
+  name: sonarqube-test-image
   annotations:
     pipelinesascode.tekton.dev/on-comment: "^((/test-all)|(/test-image))"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: |-
-      target_branch.matches("^(main|release-.*|alauda-.*)$")
+      target_branch.matches("^(main|release-.*|alauda-.*)$") && !last_commit_title.contains("Auto-commit")
 spec:
   pipelineRef:
     resolver: hub
@@ -42,6 +42,11 @@ spec:
     - name: file-list-for-commit-sha
       value:
         - testing/
+    - name: tags
+      value:
+        - v2025.1.0
+    - name: ignore-gitversion-tag
+      value: true
 
     - name: upstreams
       value:
@@ -55,7 +60,10 @@ spec:
       value: github-credentials
     - name: ignore-trivy-scan
       value: "true"
-
+    - name: update-files-based-on-image
+      value: |
+        export YQ=$(which yq)
+        sed -i 's|build-harbor\.alauda\.cn/devops/sonarqube-ce-test:v[0-9\.]*-[a-z0-9\.\-]*$|'"${IMAGE_URL}:${IMAGE_TAG}"'|' .tekton/integration.yaml
   workspaces:
     - name: source
       volumeClaimTemplate:

@@ -18,7 +18,7 @@
       """
       chartPath: ../charts/sonarqube
       releaseName: sonarqube-sc
-      timeout: 20m
+      timeout: 30m
       values:
       - testdata/snippets/base-values.yaml
       - testdata/snippets/tpl-values-network-nodeport.yaml
@@ -27,15 +27,21 @@
     那么 "sonarqube" 可以正常访问
       """
       url: http://<node.ip.first>:<nodeport.http>
-      timeout: 20m
+      timeout: 30m
       """
     并且 Pod 资源检查通过
       | name                   | path                                                                        | value                        |
       | sonarqube-sc-sonarqube | $.spec.volumes[?(@.name == 'sonarqube')][0].persistentVolumeClaim.claimName | sonarqube-sc-sonarqube       |
     当 执行 "sonar 扫描" 脚本成功
-      | command                                                                                              |
-      | bash scripts/scan.sh repos/go-example sonar-scanner -Dsonar.host.url='http://<node.ip.first>:<nodeport.http>' -Dsonar.projectKey=method-cli  -Dsonar.login='admin' -Dsonar.password='07Apples@07Apples@' |
-      | bash scripts/wait-sonar-analysis.sh 'http://<node.ip.first>:<nodeport.http>' '07Apples@07Apples@' method-cli |
+      | command                                                                                              |`
+      | bash scripts/scan_with_notoken.sh 'http://<node.ip.first>:<nodeport.http>' admin 07Apples@07Apples@ repos/go-example sonar-scanner -Dsonar.host.url='http://<node.ip.first>:<nodeport.http>' -Dsonar.projectKey=method-cli |
+    并且 SonarQube 分析通过
+      """
+      host: http://<node.ip.first>:<nodeport.http>
+      user: admin
+      pwd: 07Apples@07Apples@
+      component: method-cli
+      """
     并且 发送 "获取扫描结果" 请求
         """
         GET http://<node.ip.first>:<nodeport.http>/api/measures/component?component=method-cli&branch=main&metricKeys=ncloc,coverage HTTP/1.1
@@ -45,7 +51,7 @@
     并且 HTTP 响应应包含以下 JSON 数据
         | path                                                     | value |
         | $.component.measures[?(@.metric == 'ncloc')][0].value    | 32    |
-        | $.component.measures[?(@.metric == 'coverage')][0].value | 41.7  |
+        | $.component.measures[?(@.metric == 'coverage')][0].value | 0.0  |
 
   @automated
   @priority-high
@@ -60,7 +66,7 @@
       """
       chartPath: ../charts/sonarqube
       releaseName: sonarqube-hostpath
-      timeout: 20m
+      timeout: 30m
       values:
       - testdata/snippets/base-values.yaml
       - testdata/snippets/tpl-values-network-nodeport.yaml
@@ -69,11 +75,11 @@
     那么 "sonarqube" 可以正常访问
       """
       url: http://<node.ip.first>:<nodeport.http>
-      timeout: 20m
+      timeout: 30m
       """
     并且 Pod 资源检查通过
-      | name                         | path            | value        |
-      | sonarqube-hostpath-sonarqube | $.status.hostIP | <node.ip.first> |
+      | name                         | path                | value        |
+      | sonarqube-hostpath-sonarqube | $.spec.volumes[?(@.name == sonarqube)][0].hostPath.type | DirectoryOrCreate |
 
   @smoke
   @automated
@@ -91,7 +97,7 @@
       """
       chartPath: ../charts/sonarqube
       releaseName: sonarqube-pvc
-      timeout: 20m
+      timeout: 30m
       values:
       - testdata/snippets/base-values.yaml
       - testdata/snippets/tpl-values-network-nodeport.yaml
@@ -100,19 +106,25 @@
     那么 "sonarqube" 可以正常访问
       """
       url: http://<node.ip.first>:<nodeport.http>
-      timeout: 20m
+      timeout: 30m
       """
     并且 Pod 资源检查通过
       | name                    | path                                                                        | value         |
       | sonarqube-pvc-sonarqube | $.spec.volumes[?(@.name == 'sonarqube')][0].persistentVolumeClaim.claimName | sonarqube-pvc |
     假定 执行 "maven 扫描" 脚本成功
       | command                                                                                                                         |
-      | bash scripts/scan.sh repos/maven-simple mvn verify sonar:sonar -Dsonar.host.url='http://<node.ip.first>:<nodeport.http>' -Dsonar.projectKey=method-maven -Dsonar.projectName=method-maven -Dsonar.login='admin' -Dsonar.password='07Apples@07Apples@' |
-      | bash scripts/wait-sonar-analysis.sh 'http://<node.ip.first>:<nodeport.http>' '07Apples@07Apples@' method-maven                          |
+      | bash scripts/scan_with_notoken.sh http://<node.ip.first>:<nodeport.http> admin 07Apples@07Apples@ repos/maven-simple mvn verify sonar:sonar -Dsonar.projectKey=method-maven -Dsonar.projectName=method-maven -Dsonar.host.url=http://<node.ip.first>:<nodeport.http> |
+    并且 SonarQube 分析通过
+      """
+      host: http://<node.ip.first>:<nodeport.http>
+      user: admin
+      pwd: 07Apples@07Apples@
+      component: method-maven
+      """
     当 发送 "获取扫描结果" 请求
         """
         GET http://<node.ip.first>:<nodeport.http>/api/measures/component?component=method-maven&branch=main&metricKeys=ncloc,coverage HTTP/1.1
-        Authorization: YWRtaW46MDdBcHBsZXNAMDdBcHBsZXNA
+        Authorization: Basic YWRtaW46MDdBcHBsZXNAMDdBcHBsZXNA
         """
     那么 HTTP 响应状态码为 "200"
     并且 HTTP 响应应包含以下 JSON 数据

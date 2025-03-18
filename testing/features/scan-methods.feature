@@ -14,7 +14,12 @@
         假定 执行 "sonar 扫描" 脚本成功
             | command                                                                                              |
             | bash scripts/scan.sh repos/go-example sonar-scanner -Dsonar.projectKey=method-cli -Dsonar.host.url='<config.{{.sonar.url}}>' -Dsonar.login='<config.{{.sonar.token}}>' |
-            | bash scripts/wait-sonar-analysis.sh '<config.{{.sonar.url}}>' '<config.{{.sonar.token}}>' method-cli |
+        并且 SonarQube 分析通过
+            """
+            host: <config.{{.sonar.url}}>
+            token: <config.{{.sonar.token}}>
+            component: method-cli
+            """
         当 发送 "获取扫描结果" 请求
             """
             GET <config.{{.sonar.url}}>/api/measures/component?component=method-cli&branch=main&metricKeys=ncloc,coverage HTTP/1.1
@@ -34,7 +39,12 @@
         假定 执行 "maven 扫描" 脚本成功
             | command                                                                                                                         |
             | bash scripts/scan.sh repos/maven-simple mvn verify sonar:sonar -Dsonar.projectKey=method-maven -Dsonar.projectName=method-maven |
-            | bash scripts/wait-sonar-analysis.sh '<config.{{.sonar.url}}>' '<config.{{.sonar.token}}>' method-maven                          |
+        并且 SonarQube 分析通过
+            """
+            host: <config.{{.sonar.url}}>
+            token: <config.{{.sonar.token}}>
+            component: method-maven
+            """
         当 发送 "获取扫描结果" 请求
             """
             GET <config.{{.sonar.url}}>/api/measures/component?component=method-maven&branch=main&metricKeys=ncloc,coverage HTTP/1.1
