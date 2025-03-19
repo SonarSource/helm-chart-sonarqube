@@ -60,6 +60,5 @@ RUN cd /app/charts/sonarqube && /app/bin/helm dependency update
 ENV CI=true
 ENV LANG=zh_CN.UTF-8
 ENV LC_ALL=zh_CN.UTF-8
-ENV TAGS=sonarqube-e2e
 ENV TEST_COMMAND="/app/bin/sonarqube-e2e.test"
 ENTRYPOINT ["/app/testing/sonarqube-e2e.test"]

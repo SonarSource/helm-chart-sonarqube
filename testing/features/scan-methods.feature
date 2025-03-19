@@ -38,7 +38,7 @@
     场景: 通过 Maven 插件执行扫描
         假定 执行 "maven 扫描" 脚本成功
             | command                                                                                                                         |
-            | bash scripts/scan.sh repos/maven-simple mvn verify sonar:sonar -Dsonar.projectKey=method-maven -Dsonar.projectName=method-maven |
+            | bash scripts/scan.sh repos/maven-simple mvn verify sonar:sonar -Dsonar.projectKey=method-maven -Dsonar.projectName=method-maven -Dsonar.login=<config.{{.sonar.token}}> |
         并且 SonarQube 分析通过
             """
             host: <config.{{.sonar.url}}>
