@@ -5,6 +5,7 @@ go 1.23.6
 require (
 	github.com/AlaudaDevops/bdd v0.0.0-20250304061414-e7de786dc9d5
 	github.com/cucumber/godog v0.15.0
+	github.com/go-resty/resty/v2 v2.6.0
 	github.com/playwright-community/playwright-go v0.4902.0
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -57,7 +58,6 @@ require (
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
-	github.com/go-resty/resty/v2 v2.6.0 // indirect
 	github.com/go-sprout/sprout v1.0.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
@@ -163,3 +163,5 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 	yunion.io/x/pkg v0.0.0-20210218105412-13a69f60034c // indirect
 )
+
+replace github.com/godogx/allure => github.com/AlaudaDevops/allure v0.0.0-20250226133203-15725f53ca11
