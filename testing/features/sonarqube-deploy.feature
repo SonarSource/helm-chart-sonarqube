@@ -6,7 +6,7 @@
 
     @automated
     @priority-high
-    @sonarqube-operator-deploy
+    @allure.label.case_id:sonarqube-operator-deploy
     场景: 通过默认配置部署 Sonarqube
         假定 集群已存在存储类
         并且 命名空间 "testing-sonarqube-operator-<template.{{randAlphaNum 4 | toLower}}>" 已存在

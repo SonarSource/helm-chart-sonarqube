@@ -6,7 +6,7 @@
 @sonarqube-feature
 功能: 支持扫描不同的 Git Revision
 
-    @sonar-scan-revision-branch
+    @allure.label.case_id:sonar-scan-revision-branch
     场景: 分支扫描
         假定 执行 "sonar 扫描" 脚本成功
             | command                                                                                                        |
@@ -26,7 +26,7 @@
             """
         那么 HTTP 响应状态码为 "200"
 
-    @sonar-scan-revision-pr
+    @allure.label.case_id:sonar-scan-revision-pr
     场景: PR 扫描
         假定 执行 "main 分支扫描" 脚本成功
             | command                                                                                                     |

@@ -5,7 +5,7 @@
 
   @automated
   @priority-high
-  @sonarqube-chart-deploy-network-http
+  @allure.label.case_id:sonarqube-chart-deploy-network-http
   场景: 使用 http 方式部署 sonarqube
     假定 集群已安装 ingress controller
     并且 已添加域名解析
@@ -58,7 +58,7 @@
   @smoke
   @automated
   @priority-high
-  @sonarqube-chart-deploy-network-https
+  @allure.label.case_id:sonarqube-chart-deploy-network-https
   场景: 使用 https 方式部署 sonarqube
     假定 集群已安装 ingress controller
     并且 已添加域名解析
@@ -89,7 +89,7 @@
   @smoke
   @automated
   @priority-high
-  @sonarqube-chart-deploy-network-nodeport
+  @allure.label.case_id:sonarqube-chart-deploy-network-nodeport
   场景: 使用 nodeport 方式部署 sonarqube
     假定 命名空间 "testing-sonarqube-nodeport-<template.{{randAlphaNum 4 | toLower}}>" 已存在
     并且 已导入 "SonarQube 数据库" 资源: "./testdata/resources/pg-postgresql.yaml"
