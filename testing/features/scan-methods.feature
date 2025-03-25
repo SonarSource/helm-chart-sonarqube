@@ -9,7 +9,7 @@
     我可以根据不同编程语言的特性选择不同的扫描方式
     以便于通过最简单的方式完成代码质量的分析
 
-    @sonar-scan-method-cli
+    @allure.label.case_id:sonar-scan-method-cli
     场景: 通过 sonar-scanner 执行扫描
         假定 执行 "sonar 扫描" 脚本成功
             | command                                                                                              |
@@ -34,7 +34,7 @@
             | command                                                                                          |
             | bash scripts/cleanup-project.sh '<config.{{.sonar.url}}>' '<config.{{.sonar.token}}>' method-cli |
 
-    @sonar-scan-method-maven
+    @allure.label.case_id:sonar-scan-method-maven
     场景: 通过 Maven 插件执行扫描
         假定 执行 "maven 扫描" 脚本成功
             | command                                                                                                                         |

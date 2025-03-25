@@ -6,7 +6,7 @@
 @sonarqube-feature
 功能: 支持扫描不同语言项目
 
-    @sonar-scan-language-java
+    @allure.label.case_id:sonar-scan-language-java
     场景: 扫描 Java 项目
         假定 执行 "sonar 扫描" 脚本成功
             | command                                                                                                                           |
@@ -24,7 +24,7 @@
             """
         那么 HTTP 响应状态码为 "200"
 
-    @sonar-scan-language-other
+    @allure.label.case_id:sonar-scan-language-other
     场景大纲: 扫描其他常用语言项目
         假定 执行 "sonar 扫描" 脚本成功
             | command                                                                                                |

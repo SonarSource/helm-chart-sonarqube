@@ -6,7 +6,7 @@
 
     @automated
     @priority-high
-    @sonarqube-operator-deploy-sso
+    @allure.label.case_id:sonarqube-operator-deploy-sso
     场景: 通过默认配置部署 Sonarqube
         并且 集群已存在存储类
         并且 命名空间 "testing-sonarqube-sso-<template.{{randAlphaNum 4 | toLower}}>" 已存在
