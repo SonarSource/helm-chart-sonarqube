@@ -1,6 +1,6 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
-
+* Update ca-certs init container to ensure that the cacerts store is writable for IronBank Hardened Containers
 ## [2025.2.0]
 * Update Chart's version to 2025.2.0
 * Update ingress-nginx subchart to 4.12.1
