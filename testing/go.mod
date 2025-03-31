@@ -3,7 +3,7 @@ module sonarqube
 go 1.23.6
 
 require (
-	github.com/AlaudaDevops/bdd v0.0.0-20250320022403-a930c8459923
+	github.com/AlaudaDevops/bdd v0.0.0-20250331055313-65d3abf1ebf6
 	github.com/cucumber/godog v0.15.0
 	github.com/go-resty/resty/v2 v2.6.0
 	github.com/playwright-community/playwright-go v0.4902.0
