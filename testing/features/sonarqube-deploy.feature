@@ -21,7 +21,7 @@
             """
         那么 "sonarqube" 可以正常访问
             """
-            url: http://<node.ip.first>:<nodeport.http>
+            url: http://<node.ip.random.readable>:<nodeport.http>
             timeout: 30m
             """
         并且 "Sonarqube 组件" 资源检查通过
@@ -30,4 +30,4 @@
         并且 "sonarqube-test" 实例资源检查通过
         并且 执行 "Sonarqube 官方 e2e" 脚本成功
           | command                                                                                                                                                 |
-          | bash -x scripts/run-sonar-e2e.sh http://<node.ip.first>:<nodeport.http> admin 07Apples@07Apples@ |
+          | bash -x scripts/run-sonar-e2e.sh http://<node.ip.random.readable>:<nodeport.http> admin 07Apples@07Apples@ |

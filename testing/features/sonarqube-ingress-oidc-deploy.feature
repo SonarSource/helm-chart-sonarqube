@@ -18,7 +18,7 @@
         并且 已导入 "pvc" 资源: "./testdata/resources/sonarqube-pvc.yaml"
         并且 执行 "sso 配置" 脚本成功
             | command                                                                                                             |
-            | sh ./script/prepare-sso-config.sh '<config.{{.acp.baseUrl}}>' '<config.{{.acp.token}}>' '<config.{{.acp.cluster}}>'  testing-sonarqube-operator http://<node.ip.first>:<nodeport.http> |
+            | sh ./script/prepare-sso-config.sh '<config.{{.acp.baseUrl}}>' '<config.{{.acp.token}}>' '<config.{{.acp.cluster}}>'  testing-sonarqube-operator http://<node.ip.random.readable>:<nodeport.http> |
             | mkdir -p output/images                                                                                                   |
         当 已导入 "sonarqube 实例" 资源
             """
@@ -26,7 +26,7 @@
             """
         那么 "sonarqube" 可以正常访问
             """
-            url: http://<node.ip.first>:<nodeport.http>
+            url: http://<node.ip.random.readable>:<nodeport.http>
             timeout: 30m
             """
         并且 "Sonarqube 组件" 资源检查通过
@@ -35,7 +35,7 @@
         并且 "ingress-oidc" 实例资源检查通过
         并且 SSO 测试通过
             """
-            sonarURL: http://<node.ip.first>:<nodeport.http>/sessions/new?return_to=/projects
+            sonarURL: http://<node.ip.random.readable>:<nodeport.http>/sessions/new?return_to=/projects
             acpURL: <config.{{.acp.baseUrl}}>
             acpUser: <config.{{.acp.username}}>
             acpPassword: <config.{{.acp.password}}>

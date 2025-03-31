@@ -108,22 +108,22 @@
       """
     那么 "sonarqube" 可以正常访问
       """
-      url: http://<node.ip.first>:<nodeport.http>
+      url: http://<node.ip.random.readable>:<nodeport.http>
       timeout: 30m
       """
     当 执行 "sonar 扫描" 脚本成功
       | command                                                                                                |
-      | bash -x scripts/scan_with_notoken.sh http://<node.ip.first>:<nodeport.http> admin 07Apples@07Apples@ <path> sonar-scanner -Dsonar.projectKey=<projectKey> -Dsonar.host.url='http://<node.ip.first>:<nodeport.http>' |
+      | bash -x scripts/scan_with_notoken.sh http://<node.ip.random.readable>:<nodeport.http> admin 07Apples@07Apples@ <path> sonar-scanner -Dsonar.projectKey=<projectKey> -Dsonar.host.url='http://<node.ip.random.readable>:<nodeport.http>' |
     并且 SonarQube 分析通过
       """
-      host: http://<node.ip.first>:<nodeport.http>
+      host: http://<node.ip.random.readable>:<nodeport.http>
       user: admin
       pwd: 07Apples@07Apples@
       component: <projectKey>
       """
     并且 发送 "获取扫描结果" 请求
       """
-      GET http://<node.ip.first>:<nodeport.http>/api/measures/component?component=<projectKey>&branch=main&metricKeys=ncloc,coverage HTTP/1.1
+      GET http://<node.ip.random.readable>:<nodeport.http>/api/measures/component?component=<projectKey>&branch=main&metricKeys=ncloc,coverage HTTP/1.1
       Authorization: Basic YWRtaW46MDdBcHBsZXNAMDdBcHBsZXNA
       """
     那么 HTTP 响应状态码为 "200"
