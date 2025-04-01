@@ -9,7 +9,7 @@ metadata:
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service }}
 spec:
   podSelector:
@@ -24,7 +24,7 @@ spec:
         - podSelector:
             matchLabels:
               app: {{ template "sonarqube.name" . }}
-              release: {{ .Release.Name }}
+              release: {{ .Release.Name | quote }}
               sonarqube.datacenter/type: app
 {{ if .Values.ApplicationNodes.prometheusExporter.enabled }}
     - from:
@@ -84,7 +84,7 @@ metadata:
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service }}
 spec:
   podSelector:
@@ -140,13 +140,13 @@ metadata:
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service }}
 spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: postgresql
-      release: {{ .Release.Name }}
+      release: {{ .Release.Name | quote }}
   policyTypes:
     - Ingress
     - Egress
@@ -180,7 +180,7 @@ metadata:
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service }}
 spec:
 {{- if.Values.networkPolicy.additionalNetworkPolicys -}}

@@ -7,11 +7,11 @@ metadata:
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service }}
-    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Release.Name | quote }}
     sonarqube.datacenter/type: "app"
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: {{ template "sonarqube.fullname" . }}
@@ -26,12 +26,12 @@ spec:
   selector:
     matchLabels:
       app: {{ template "sonarqube.name" . }}
-      release: {{ .Release.Name }}
+      release: {{ .Release.Name | quote }}
   template:
     metadata:
       labels:
         app: {{ template "sonarqube.name" . }}
-        release: {{ .Release.Name }}
+        release: {{ .Release.Name | quote }}
         sonarqube.datacenter/type: "app"
 {{- with .Values.podLabels }}
 {{ toYaml . | indent 8 }}

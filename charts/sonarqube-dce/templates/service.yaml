@@ -7,7 +7,7 @@ metadata:
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service }}
   {{- range $key, $value := .Values.service.labels }}
     {{ $key }}: {{ $value | quote }}
@@ -30,7 +30,7 @@ spec:
       {{- end }}
   selector:
     app: {{ template "sonarqube.name" . }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
   {{- if eq .Values.service.type "LoadBalancer" }}
   {{- if .Values.service.loadBalancerSourceRanges }}
   loadBalancerSourceRanges:
@@ -51,7 +51,7 @@ metadata:
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service }}
   {{- range $key, $value := .Values.service.labels }}
     {{ $key }}: {{ $value | quote }}
@@ -74,7 +74,7 @@ spec:
       name: hazelcast
   selector:
     app: {{ template "sonarqube.name" . }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
 
 
 ---
@@ -85,7 +85,7 @@ metadata:
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service }}
   {{- range $key, $value := .Values.service.labels }}
     {{ $key }}: {{ $value | quote }}
@@ -109,7 +109,7 @@ spec:
       name: es
   selector:
     app: {{ template "sonarqube.name" . }}-search
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
 
 ---
 apiVersion: v1
@@ -119,7 +119,7 @@ metadata:
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service }}
   {{- range $key, $value := .Values.service.labels }}
     {{ $key }}: {{ $value | quote }}
@@ -145,4 +145,4 @@ spec:
       name: es
   selector:
     app: {{ template "sonarqube.name" . }}-search
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
