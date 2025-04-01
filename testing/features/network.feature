@@ -10,10 +10,10 @@
     假定 集群已安装 ingress controller
     并且 已添加域名解析
       | domain                        | ip           |
-      | test-ingress-http.example.com | <ingress-ip> |
+      | test-sonarqube-ingress-http.example.com | <ingress-ip> |
     并且 执行 "添加 DNS 解析" 脚本成功
     | command                                                                       |
-    | bash ./scripts/add-host.sh <ingress-ip> test-ingress-http.example.com |
+    | bash ./scripts/add-host.sh <ingress-ip> test-sonarqube-ingress-http.example.com |
     并且 命名空间 "testing-sonarqube-http-<template.{{randAlphaNum 4 | toLower}}>" 已存在
     并且 已导入 "SonarQube 数据库" 资源: "./testdata/resources/pg-postgresql.yaml"
     并且 已导入 "初始化 SonarQube 数据的 job" 资源: "./testdata/resources/job-init-sonar-db.yaml"
@@ -31,22 +31,22 @@
       """
     那么 "sonarqube" 可以正常访问
       """
-      url: http://test-ingress-http.example.com
+      url: http://test-sonarqube-ingress-http.example.com
       timeout: 30m
       """
     当 执行 "sonar 扫描" 脚本成功
       | command                                                                                                                           |
-      | bash scripts/scan_with_notoken.sh 'http://test-ingress-http.example.com' admin 07Apples@07Apples@ <path> sonar-scanner -Dsonar.projectKey=<projectKey> -Dsonar.host.url='http://test-ingress-http.example.com' |
+      | bash scripts/scan_with_notoken.sh 'http://test-sonarqube-ingress-http.example.com' admin 07Apples@07Apples@ <path> sonar-scanner -Dsonar.projectKey=<projectKey> -Dsonar.host.url='http://test-sonarqube-ingress-http.example.com' |
     并且 SonarQube 分析通过
       """
-      host: http://test-ingress-http.example.com
+      host: http://test-sonarqube-ingress-http.example.com
       user: admin
       pwd: 07Apples@07Apples@
       component: <projectKey>
       """
     并且 发送 "获取扫描结果" 请求
       """
-      GET http://test-ingress-http.example.com/api/measures/component?component=<projectKey>&branch=main&metricKeys=ncloc,coverage HTTP/1.1
+      GET http://test-sonarqube-ingress-http.example.com/api/measures/component?component=<projectKey>&branch=main&metricKeys=ncloc,coverage HTTP/1.1
       Authorization: Basic YWRtaW46MDdBcHBsZXNAMDdBcHBsZXNA
       """
     那么 HTTP 响应状态码为 "200"
@@ -63,7 +63,7 @@
     假定 集群已安装 ingress controller
     并且 已添加域名解析
       | domain                         | ip           |
-      | test-ingress-https.example.com | <ingress-ip> |
+      | test-sonarqube-ingress-https.example.com | <ingress-ip> |
     并且 命名空间 "testing-sonarqube-https-<template.{{randAlphaNum 4 | toLower}}>" 已存在
     并且 已导入 "SonarQube 数据库" 资源: "./testdata/resources/pg-postgresql.yaml"
     并且 已导入 "初始化 SonarQube 数据的 job" 资源: "./testdata/resources/job-init-sonar-db.yaml"
@@ -82,7 +82,7 @@
       """
     那么 "sonarqube" 可以正常访问
       """
-      url: https://test-ingress-https.example.com
+      url: https://test-sonarqube-ingress-https.example.com
       timeout: 30m
       """
    
@@ -108,22 +108,22 @@
       """
     那么 "sonarqube" 可以正常访问
       """
-      url: http://<node.ip.first>:<nodeport.http>
+      url: http://<node.ip.random.readable>:<nodeport.http>
       timeout: 30m
       """
     当 执行 "sonar 扫描" 脚本成功
       | command                                                                                                |
-      | bash -x scripts/scan_with_notoken.sh http://<node.ip.first>:<nodeport.http> admin 07Apples@07Apples@ <path> sonar-scanner -Dsonar.projectKey=<projectKey> -Dsonar.host.url='http://<node.ip.first>:<nodeport.http>' |
+      | bash -x scripts/scan_with_notoken.sh http://<node.ip.random.readable>:<nodeport.http> admin 07Apples@07Apples@ <path> sonar-scanner -Dsonar.projectKey=<projectKey> -Dsonar.host.url='http://<node.ip.random.readable>:<nodeport.http>' |
     并且 SonarQube 分析通过
       """
-      host: http://<node.ip.first>:<nodeport.http>
+      host: http://<node.ip.random.readable>:<nodeport.http>
       user: admin
       pwd: 07Apples@07Apples@
       component: <projectKey>
       """
     并且 发送 "获取扫描结果" 请求
       """
-      GET http://<node.ip.first>:<nodeport.http>/api/measures/component?component=<projectKey>&branch=main&metricKeys=ncloc,coverage HTTP/1.1
+      GET http://<node.ip.random.readable>:<nodeport.http>/api/measures/component?component=<projectKey>&branch=main&metricKeys=ncloc,coverage HTTP/1.1
       Authorization: Basic YWRtaW46MDdBcHBsZXNAMDdBcHBsZXNA
       """
     那么 HTTP 响应状态码为 "200"

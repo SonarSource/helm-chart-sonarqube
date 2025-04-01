@@ -26,7 +26,7 @@
       """
     那么 "sonarqube" 可以正常访问
       """
-      url: http://<node.ip.first>:<nodeport.http>
+      url: http://<node.ip.random.readable>:<nodeport.http>
       timeout: 30m
       """
     并且 Pod 资源检查通过
@@ -34,17 +34,17 @@
       | sonarqube-sc-sonarqube | $.spec.volumes[?(@.name == 'sonarqube')][0].persistentVolumeClaim.claimName | sonarqube-sc-sonarqube       |
     当 执行 "sonar 扫描" 脚本成功
       | command                                                                                              |`
-      | bash scripts/scan_with_notoken.sh 'http://<node.ip.first>:<nodeport.http>' admin 07Apples@07Apples@ repos/go-example sonar-scanner -Dsonar.host.url='http://<node.ip.first>:<nodeport.http>' -Dsonar.projectKey=method-cli |
+      | bash scripts/scan_with_notoken.sh 'http://<node.ip.random.readable>:<nodeport.http>' admin 07Apples@07Apples@ repos/go-example sonar-scanner -Dsonar.host.url='http://<node.ip.random.readable>:<nodeport.http>' -Dsonar.projectKey=method-cli |
     并且 SonarQube 分析通过
       """
-      host: http://<node.ip.first>:<nodeport.http>
+      host: http://<node.ip.random.readable>:<nodeport.http>
       user: admin
       pwd: 07Apples@07Apples@
       component: method-cli
       """
     并且 发送 "获取扫描结果" 请求
         """
-        GET http://<node.ip.first>:<nodeport.http>/api/measures/component?component=method-cli&branch=main&metricKeys=ncloc,coverage HTTP/1.1
+        GET http://<node.ip.random.readable>:<nodeport.http>/api/measures/component?component=method-cli&branch=main&metricKeys=ncloc,coverage HTTP/1.1
         Authorization: Basic YWRtaW46MDdBcHBsZXNAMDdBcHBsZXNA
         """
     那么 HTTP 响应状态码为 "200"
@@ -74,7 +74,7 @@
       """
     那么 "sonarqube" 可以正常访问
       """
-      url: http://<node.ip.first>:<nodeport.http>
+      url: http://<node.ip.random.readable>:<nodeport.http>
       timeout: 30m
       """
     并且 Pod 资源检查通过
@@ -105,7 +105,7 @@
       """
     那么 "sonarqube" 可以正常访问
       """
-      url: http://<node.ip.first>:<nodeport.http>
+      url: http://<node.ip.random.readable>:<nodeport.http>
       timeout: 30m
       """
     并且 Pod 资源检查通过
@@ -113,17 +113,17 @@
       | sonarqube-pvc-sonarqube | $.spec.volumes[?(@.name == 'sonarqube')][0].persistentVolumeClaim.claimName | sonarqube-pvc |
     假定 执行 "maven 扫描" 脚本成功
       | command                                                                                                                         |
-      | bash scripts/scan_with_notoken.sh http://<node.ip.first>:<nodeport.http> admin 07Apples@07Apples@ repos/maven-simple mvn verify sonar:sonar -Dsonar.projectKey=method-maven -Dsonar.projectName=method-maven -Dsonar.host.url=http://<node.ip.first>:<nodeport.http> |
+      | bash scripts/scan_with_notoken.sh http://<node.ip.random.readable>:<nodeport.http> admin 07Apples@07Apples@ repos/maven-simple mvn verify sonar:sonar -Dsonar.projectKey=method-maven -Dsonar.projectName=method-maven -Dsonar.host.url=http://<node.ip.random.readable>:<nodeport.http> |
     并且 SonarQube 分析通过
       """
-      host: http://<node.ip.first>:<nodeport.http>
+      host: http://<node.ip.random.readable>:<nodeport.http>
       user: admin
       pwd: 07Apples@07Apples@
       component: method-maven
       """
     当 发送 "获取扫描结果" 请求
         """
-        GET http://<node.ip.first>:<nodeport.http>/api/measures/component?component=method-maven&branch=main&metricKeys=ncloc,coverage HTTP/1.1
+        GET http://<node.ip.random.readable>:<nodeport.http>/api/measures/component?component=method-maven&branch=main&metricKeys=ncloc,coverage HTTP/1.1
         Authorization: Basic YWRtaW46MDdBcHBsZXNAMDdBcHBsZXNA
         """
     那么 HTTP 响应状态码为 "200"
