@@ -1,6 +1,6 @@
 chart_fixture_test_task:
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-  skip: "!changesInclude('charts/**/*', '.cirrus/*')"
+  skip: "!changesInclude('charts/**/*', '.cirrus/*') && $CIRRUS_CRON != $NIGHTLY_CRON"
   timeout_in: 30m
   eks_container:
     <<: *CONTAINER_TEMPLATE
@@ -14,7 +14,7 @@ chart_fixture_test_task:
     - git diff --exit-code
 
 chart_schema_test_task:
-  skip: "!changesInclude('charts/**/*', '.cirrus/schema_test.sh', 'tests/unit-test/*', 'tests/unit-test/**/*')"
+  skip: "!changesInclude('charts/**/*', '.cirrus/schema_test.sh', 'tests/unit-test/*', 'tests/unit-test/**/*') && $CIRRUS_CRON != $NIGHTLY_CRON"
   eks_container:
     <<: *CONTAINER_TEMPLATE
     cpu: 1
