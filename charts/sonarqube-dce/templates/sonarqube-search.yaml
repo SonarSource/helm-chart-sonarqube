@@ -7,11 +7,11 @@ metadata:
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service }}
     app.kubernetes.io/name: "{{ .Release.Name }}"
     sonarqube.datacenter/type: "search"
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: {{ template "sonarqube.fullname" . }}
@@ -23,13 +23,13 @@ spec:
   selector:
     matchLabels:
       app: {{ template "sonarqube.name" . }}-search
-      release: {{ .Release.Name }}
+      release: {{ .Release.Name | quote }}
 {{- if .Values.searchNodes.persistence.enabled }}
   volumeClaimTemplates:
   - metadata:
       name: {{ template "sonarqube.fullname" . }}
       labels:
-        release: {{ .Release.Name }}
+        release: {{ .Release.Name | quote }}
         chart: "{{ .Chart.Name }}"
         app: "{{ template "sonarqube.fullname" . }}"
     {{- with .Values.searchNodes.persistence.annotations  }}
@@ -54,7 +54,7 @@ spec:
     metadata:
       labels:
         app: {{ template "sonarqube.name" . }}-search
-        release: {{ .Release.Name }}
+        release: {{ .Release.Name | quote }}
         sonarqube.datacenter/type: "search"
 {{- with .Values.podLabels }}
 {{ toYaml . | indent 8 }}

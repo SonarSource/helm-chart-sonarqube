@@ -10,7 +10,7 @@ metadata:
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service }}
 {{- if .Values.ingress.labels }}
 {{ .Values.ingress.labels | toYaml | trimSuffix "\n"| indent 4 -}}
@@ -26,7 +26,7 @@ metadata:
 {{- end }}
 spec:
   {{- if .Values.ingress.ingressClassName }}
-  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName | quote}}
   {{- else if or (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled") }}
   ingressClassName: "nginx"
   {{- end }}
