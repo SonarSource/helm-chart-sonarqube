@@ -48,7 +48,7 @@ clone_script_template: &CLONE_SCRIPT_TEMPLATE
 
 chart_static_compatibility_test: &CHART_STATIC_COMPATIBILITY_TEST_TEMPLATE
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-  skip: "!changesInclude('charts/**/*', '.cirrus/*')"
+  skip: "!changesInclude('charts/**/*', '.cirrus/*') && $CIRRUS_CRON != $NIGHTLY_CRON"
   timeout_in: 30m
   eks_container:
     <<: *CONTAINER_TEMPLATE
@@ -83,7 +83,7 @@ chart_testing_on_openshif: &CHART_TESTING_ON_OPENSHIFT_TEMPLATE
 
 chart_testing_on_kind: &CHART_TESTING_ON_KIND_TEMPLATE
   <<: *ONLY_ON_NON_RELEASE_DRAFT_TEMPLATE
-  skip: "!changesInclude('charts/**/*', '.cirrus/*')"
+  skip: "!changesInclude('charts/**/*', '.cirrus/*') && $CIRRUS_CRON != $NIGHTLY_CRON"
   timeout_in: 1h
   ec2_instance:
     <<: *VM_TEMPLATE
