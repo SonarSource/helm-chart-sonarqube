@@ -73,7 +73,7 @@ Common labels
 {{- define "sonarqube.labels" -}}
 app: {{ include "sonarqube.name" . }}
 chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" }}
-release: {{ .Release.Name }}
+release: {{ .Release.Name | quote }}
 heritage: {{ .Release.Service }}
 {{- end -}}
 

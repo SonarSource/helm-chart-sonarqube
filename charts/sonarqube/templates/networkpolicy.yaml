@@ -17,7 +17,7 @@ spec:
         - podSelector:
             matchLabels:
               app: {{ template "sonarqube.name" . }}
-              release: {{ .Release.Name }}
+              release: {{ .Release.Name | quote }}
       ports:
         - port: {{ .Values.service.internalPort }}
     {{ if .Values.prometheusExporter.enabled }}

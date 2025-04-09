@@ -8,7 +8,7 @@ metadata:
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service }}
 spec:
 {{ if .Values.searchNodes.podDistributionBudget }}
@@ -31,7 +31,7 @@ metadata:
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    release: {{ .Release.Name }}
+    release: {{ .Release.Name | quote }}
     heritage: {{ .Release.Service }}
 spec:
 {{ if .Values.ApplicationNodes.podDistributionBudget }}

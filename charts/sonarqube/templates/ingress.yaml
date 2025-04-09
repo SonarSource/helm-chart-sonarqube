@@ -21,7 +21,7 @@ metadata:
   {{- end }}
 spec:
   {{- if .Values.ingress.ingressClassName }}
-  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName | quote }}
   {{- else if or (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled") }}
   ingressClassName: "nginx"
   {{- end }}
