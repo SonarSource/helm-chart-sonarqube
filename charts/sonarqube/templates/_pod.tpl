@@ -307,14 +307,7 @@ spec:
       readinessProbe:
         {{- tpl (omit .Values.readinessProbe "sonarWebContext" | toYaml) . | nindent 8 }}
       startupProbe:
-        httpGet:
-          scheme: HTTP
-          path: {{ .Values.startupProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status
-          port: http
-        initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
-        periodSeconds: {{ .Values.startupProbe.periodSeconds }}
-        failureThreshold: {{ .Values.startupProbe.failureThreshold }}
-        timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+        {{- tpl ((omit .Values.livenessProbe "sonarWebContext") | merge (omit .Values.startupProbe "sonarWebContext") | toYaml) . | nindent 8 }}
       {{- with (include "sonarqube.containerSecurityContext" .) }}
       securityContext: {{- . | nindent 8 }}
       {{- end }}
