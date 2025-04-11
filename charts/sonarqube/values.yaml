@@ -261,6 +261,10 @@ startupProbe:
   failureThreshold: 24
   # Note that timeoutSeconds was not respected before Kubernetes 1.20 for exec probes
   timeoutSeconds: 1
+  # If an ingress *path* other than the root (/) is defined, it should be reflected here
+  # A trailing "/" must be included
+  # deprecated please use sonarWebContext at the value top level
+  # sonarWebContext: /
 
 initContainers:
   # all initContainers use SonarQube image by default, but you can override it by setting the image field (ex image: ubuntu:24.04)
