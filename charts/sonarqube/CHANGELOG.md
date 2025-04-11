@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [Unreleased]
+* Align startup probe with liveness probe
+
 ## [2025.2.0]
 * Update Chart's version to 2025.2.0
 * Update ingress-nginx subchart to 4.12.1
