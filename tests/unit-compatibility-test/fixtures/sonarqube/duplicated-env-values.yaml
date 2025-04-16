@@ -50,19 +50,6 @@ stringData:
   PROMETHEUS-EXPORTER-HTTPS-PROXY: "https://someProxy"
   PROMETHEUS-EXPORTER-NO-PROXY: "https://someUrl"
 ---
-# Source: sonarqube/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: duplicated-env-values.yaml-sonarqube-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: duplicated-env-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -109,19 +96,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: duplicated-env-values.yaml-sonarqube-install-plugins
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: duplicated-env-values.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
@@ -430,10 +404,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 8e106972b410dc66d6cd39fec170bc2076dbedd10f601973c1ddf379268975c9
+        checksum/config: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
         checksum/init-sysctl: cd37e918e90e6bfeee1aa5b33b1e2dde38b19741748daaddb3d97b3ac62c51da
-        checksum/plugins: c2b9cff9e30a8613a8158d4c4629fbe9bba0666a7335e45096926b01d70eda23
-        checksum/secret: 84d1dc63c9c4596e297063f86fa2a3c55c81e01a0927ba8b61e17cd55a11bc58
+        checksum/plugins: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: b60ec18c300b40eb1fbca9aee73aa211ffda0c8298ed5f4d5e9b6b6bae575263
         checksum/prometheus-config: 7be26549483a589dcd2f53e8fc061a53cae5be96c44b0d3de4c73ddc3a6f04f1
         checksum/prometheus-ce-config: 447f9a1d6f5d1d870da43d7907b85eedd8296a98eb46085f93f3aaa5603f4e2c
       labels:

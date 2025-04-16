@@ -290,6 +290,14 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
 {{- end -}}
 
 
+{{- define "If_any_proxy_var_exists" -}}
+  {{- if or .Values.httpProxy .Values.plugins.httpProxy .Values.httpsProxy .Values.plugins.httpsProxy .Values.noProxy .Values.plugins.noProxy .Values.prometheusExporter.httpProxy .Values.prometheusExporter.httpsProxy .Values.prometheusExporter.noProxy }}
+    {{- true -}}
+  {{- else -}}
+    {{- false -}}
+  {{- end -}}
+{{- end -}}
+
 {{/*
   generate Proxy env var from httpProxySecret
 */}}
@@ -317,7 +325,7 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
 {{- define "sonarqube.prometheusExporterProxy.env" -}}
 {{- if .Values.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
-{{- else -}}
+{{- else if eq (include "If_any_proxy_var_exists" .) "true" -}}
 - name: http_proxy
   valueFrom:
     secretKeyRef:
@@ -342,7 +350,7 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
 {{- define "sonarqube.install-plugins-proxy.env" -}}
 {{- if .Values.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
-{{- else -}}
+{{- else if eq (include "If_any_proxy_var_exists" .) "true" -}}
 - name: http_proxy
   valueFrom:
     secretKeyRef:
@@ -453,4 +461,25 @@ Remove incompatible user/group values that do not work in Openshift out of the b
 
 {{- $accountDeprecation := (include "deepMerge" (dict "map1" $map1 "map2" $map2)) -}}
 {{- $accountDeprecation }}
+{{- end -}}
+
+#
+#   This helper checks if sonarProperties, sonarSecretKey or bootstrapChecks are set to true.
+#   We cannot return the if statement, or the "or" condition direclty because of how include/template works in helm
+#
+{{- define "If_sonarProperties_or_sonarSecretKey_or_not_elasticsearch.bootstrapChecks" -}}
+  {{- if or .Values.sonarProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) -}}
+    {{- true -}}
+  {{- else -}}
+    {{- false -}}
+  {{- end -}}
+{{- end -}}
+
+
+{{- define "If_jdbcOverwrite.enabled_or_jdbcOverwrite.enable_or_postgresql.service.port_and_postgresql.postgresqlDatabase" -}}
+  {{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable (and .Values.postgresql.service.port .Values.postgresql.postgresqlDatabase) -}}
+    {{- true -}}
+  {{- else -}}
+    {{- false -}}
+  {{- end -}}
 {{- end -}}

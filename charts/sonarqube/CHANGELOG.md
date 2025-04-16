@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [2025.3.0]
 * Update Chart's version to 2025.3.0
 * Normalizes the extension for all templates
+* Prevent empty configMap/secrets from being created
 
 ## [2025.2.0]
 * Update Chart's version to 2025.2.0

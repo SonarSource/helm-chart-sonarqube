@@ -115,7 +115,7 @@ spec:
       volumeMounts:
         - mountPath: /tmp/result
           name: concat-dir
-        {{- if or .Values.sonarProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
+        {{- if eq (include "If_sonarProperties_or_sonarSecretKey_or_not_elasticsearch.bootstrapChecks" .) "true" }}
         - mountPath: /tmp/props/sonar.properties
           name: config
           subPath: sonar.properties
@@ -292,8 +292,10 @@ spec:
             {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
       envFrom:
+        {{- if eq (include "If_jdbcOverwrite.enabled_or_jdbcOverwrite.enable_or_postgresql.service.port_and_postgresql.postgresqlDatabase" .) "true" }}
         - configMapRef:
             name: {{ include "sonarqube.fullname" . }}-jdbc-config
+        {{- end }}
         {{- range .Values.extraConfig.secrets }}
         - secretRef:
             name: {{ . }}
@@ -383,7 +385,7 @@ spec:
     {{- with .Values.extraVolumes }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-    {{- if or .Values.sonarProperties .Values.sonarSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
+    {{- if eq (include "If_sonarProperties_or_sonarSecretKey_or_not_elasticsearch.bootstrapChecks" .) "true" }}
     - name: config
       configMap:
         name: {{ include "sonarqube.fullname" . }}-config
