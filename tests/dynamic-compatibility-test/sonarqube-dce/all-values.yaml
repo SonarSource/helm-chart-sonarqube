@@ -1,17 +1,18 @@
 # tests/unit-compatibility-test/sonarqube-dce/change-admin-password-hook-values.yaml
+monitoringPasscode: somePasscode
 account:
-  adminPassword: admin1
+  adminPassword: AdminAdmin_12$
   currentAdminPassword: admin
   securityContext: 
     runAsGroup: 1001
     runAsUser: 1001
   resources:
     limits:
-      cpu: 3
-      memory: 16Gi
+      cpu: 1
+      memory: 1Gi
     requests:
-      cpu: 3
-      memory: 16Gi
+      cpu: 1
+      memory: 1Gi
 curlContainerImage: curlimages/curl:8.2.0
 adminJobAnnotations:
   someAnnotaion: toto
@@ -20,11 +21,11 @@ sonarWebContext: /
 # tests/unit-compatibility-test/sonarqube-dce/config-values.yaml
 searchNodes:
   sonarProperties:
-    sonar.forceAuthentication: false
+    sonar.log.level: DEBUG
 
 ApplicationNodes:
   sonarProperties:
-    sonar.forceAuthentication: false
+    sonar.log.level: DEBUG
 
 # tests/unit-compatibility-test/sonarqube-dce/ingress-values.yaml
 ingress:

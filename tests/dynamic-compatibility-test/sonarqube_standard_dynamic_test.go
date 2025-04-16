@@ -63,10 +63,13 @@ func TestSonarQubeChartDynamicCompatibility(t *testing.T) {
 			"deploymentType":             "Deployment",
 			"prometheusExporter.enabled": "false", // only for deployment
 			"edition":                    "enterprise",
+			"monitoringPasscode":        "monitoringPasscode",
 		}, []string{"../../charts/sonarqube/values.yaml"}},
 
 		{"standard-chart-default-values-sts", "sonarqube", 2, map[string]string{TESTS_ENABLING_ACTION: "false",
-			"edition": "enterprise"},
+			"edition":                   "enterprise",
+			"monitoringPasscode":        "monitoringPasscode",
+		},
 			[]string{"../../charts/sonarqube/values.yaml"}},
 
 		{"standard-chart-all-values-deployment", "sonarqube", 2, map[string]string{TESTS_ENABLING_ACTION: "false",
@@ -79,6 +82,7 @@ func TestSonarQubeChartDynamicCompatibility(t *testing.T) {
 
 		{"dce-chart-default-values", "sonarqube-dce", 6, map[string]string{TESTS_ENABLING_ACTION: "false",
 			"ApplicationNodes.jwtSecret": "dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=",
+			"monitoringPasscode":        "monitoringPasscode",
 		}, []string{"../../charts/sonarqube-dce/values.yaml"}},
 
 		{"dce-chart-all-values", "sonarqube-dce", 6, map[string]string{TESTS_ENABLING_ACTION: "false",
