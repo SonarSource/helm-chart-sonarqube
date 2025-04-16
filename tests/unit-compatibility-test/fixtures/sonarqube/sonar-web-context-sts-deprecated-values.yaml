@@ -45,38 +45,6 @@ stringData:
   password: "admin1"
   currentPassword: "admin"
 ---
-# Source: sonarqube/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: sonar-web-context-sts-deprecated-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
-# Source: sonarqube/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: sonar-web-context-sts-deprecated-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -123,19 +91,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube-install-plugins
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: sonar-web-context-sts-deprecated-values.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
@@ -414,10 +369,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: d76dc57ce2eb9ac5afcc462b391f8874f28ad940cf3c4e2e64e0ea57576589c1
+        checksum/config: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
         checksum/init-sysctl: 45d28db3fa73d3e949bbb760e5c4916cc65077af7d71aecdc14c364209ffd39a
-        checksum/plugins: 2576a6168845ad5eed5bab2e51dfbb40923622e6a4fe799be75ec26c1431cb49
-        checksum/secret: 574a294cc0853f9aaf8f5a60c2d2795a10b88ffba8c72eab7670de242099f7ee
+        checksum/plugins: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 54fa14ac04fc17389d95bb1e8034f602fb9a6b60a629350f5e493a712d68673e
       labels:
         app: sonarqube
         release: sonar-web-context-sts-deprecated-values.yaml

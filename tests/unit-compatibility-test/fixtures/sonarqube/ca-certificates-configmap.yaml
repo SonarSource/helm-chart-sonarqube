@@ -30,39 +30,6 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
-# Source: sonarqube/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ca-certificates-configmap.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: ca-certificates-configmap.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
-# Source: sonarqube/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ca-certificates-configmap.yaml-sonarqube-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: ca-certificates-configmap.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -125,19 +92,6 @@ data:
       rm -f /opt/sonarqube/extensions/jdbc-driver/oracle/*
       cd /opt/sonarqube/extensions/jdbc-driver/oracle
       curl --cacert /tmp/secrets/ca-certs/* --netrc-file /root/.netrc -fsSLO https://download.oracle.com/otn-pub/otn_software/jdbc/2113/ojdbc11.jar
----
-# Source: sonarqube/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ca-certificates-configmap.yaml-sonarqube-install-plugins
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: ca-certificates-configmap.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
@@ -416,10 +370,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 0f98ffe087698a3fa1295f6f57ef8524812723507a9049701d707c35b5c15596
+        checksum/config: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
         checksum/init-sysctl: 9a10719b8e1e7069d34393dda465f47936c5667fcf3193d867f911493b280307
-        checksum/plugins: 5649e93354dc57c254bcefd2df39f4af22f55b41acc56f7acb61e585f2a71f34
-        checksum/secret: f55c93b55300b230465c7f0ee1f2ee45ac62887271e18100d07979a647754889
+        checksum/plugins: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: b56f7300a349481823e898e7471bf69957d0160a035733a27812b8c71027ed1f
       labels:
         app: sonarqube
         release: ca-certificates-configmap.yaml

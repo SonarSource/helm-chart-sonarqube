@@ -64,7 +64,6 @@ data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -93,25 +92,6 @@ stringData:
   password: "admin1"
   currentPassword: "admin"
 ---
-# Source: sonarqube-dce/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sonar-web-context-deprecated-values.yaml-sonarqube-dce-http-proxies
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: sonar-web-context-deprecated-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -125,19 +105,6 @@ metadata:
 data:
   sonar.properties: |
     sonar.web.context=/sonarqube-web-context/
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sonar-web-context-deprecated-values.yaml-sonarqube-dce-search-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: sonar-web-context-deprecated-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
 ---
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
@@ -201,19 +168,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube-dce/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sonar-web-context-deprecated-values.yaml-sonarqube-dce-install-plugins
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: sonar-web-context-deprecated-values.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
@@ -415,9 +369,9 @@ spec:
         release: sonar-web-context-deprecated-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 655df24497a701871a8407bab6d97988d658e0df9f49f6e974a7a88c56cc3dcc
-        checksum/config: b8de3b9edbdb715ee0ea112552dfb5a939235e1e2758e032542cebba99d6e815
-        checksum/secret: 05449ccce0a9c5c2ef4dc744f59b47a3fe720a52cf95089de2f2c09ef16dfd2f
+        checksum/plugins: 75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070
+        checksum/config: 72e5ca75ceca670ea2fd9cd0aa1ba22bcce323ff4b03bdde6e7213af693e3880
+        checksum/secret: ada8d1a533218ed5fb395fe4b26fdc22c5e5b33c5a33d84e13ab5060aba05a62
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -609,12 +563,6 @@ spec:
           - key: sonar.properties
             path: sonar.properties
       
-      - name: install-plugins
-        configMap:
-          name: sonar-web-context-deprecated-values.yaml-sonarqube-dce-install-plugins
-          items:
-            - key: install_plugins.sh
-              path: install_plugins.sh
       - name: sonarqube
         emptyDir:
           {}
@@ -833,8 +781,8 @@ spec:
       annotations:
         checksum/init-sysctl: 4b298f5f38c33778ffaaf68227432495f1195ac97ae58b7f2fe652a40f5b4149
         checksum/init-fs: b1706c8e8fc097441f2011539e7ef7f7c5944055c040cf1ccdc740da09d640af
-        checksum/config: b8de3b9edbdb715ee0ea112552dfb5a939235e1e2758e032542cebba99d6e815
-        checksum/secret: 05449ccce0a9c5c2ef4dc744f59b47a3fe720a52cf95089de2f2c09ef16dfd2f
+        checksum/config: 72e5ca75ceca670ea2fd9cd0aa1ba22bcce323ff4b03bdde6e7213af693e3880
+        checksum/secret: ada8d1a533218ed5fb395fe4b26fdc22c5e5b33c5a33d84e13ab5060aba05a62
     spec:
       automountServiceAccountToken: false
       initContainers:

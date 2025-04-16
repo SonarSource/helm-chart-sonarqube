@@ -94,7 +94,8 @@ spec:
       env:
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
-    {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
+
+    {{- if or .Values.sonarSecretProperties .Values.sonarProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
     - name: concat-properties
       image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -292,8 +293,10 @@ spec:
             {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
       envFrom:
+        {{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable (and .Values.postgresql.service.port .Values.postgresql.postgresqlDatabase) }}
         - configMapRef:
             name: {{ include "sonarqube.fullname" . }}-jdbc-config
+        {{- end }}
         {{- range .Values.extraConfig.secrets }}
         - secretRef:
             name: {{ . }}
@@ -383,7 +386,7 @@ spec:
     {{- with .Values.extraVolumes }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-    {{- if or .Values.sonarProperties .Values.sonarSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
+    {{- if or .Values.sonarProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
     - name: config
       configMap:
         name: {{ include "sonarqube.fullname" . }}-config

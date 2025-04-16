@@ -30,39 +30,6 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
-# Source: sonarqube/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: jdbc-config-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: jdbc-config-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
-# Source: sonarqube/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: jdbc-config-values.yaml-sonarqube-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: jdbc-config-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -109,19 +76,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: jdbc-config-values.yaml-sonarqube-install-plugins
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: jdbc-config-values.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
@@ -400,10 +354,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 270086deb7aa1e6cd74d75b07670b339aea943e12bd7b8b5068e0953760c1e02
+        checksum/config: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
         checksum/init-sysctl: 1252e3b729cf309689c13fe9052f954c70a4e52d60a8ffa5496e051a395b96b8
-        checksum/plugins: 0736d11b40e152b06419b21b7ab29963f9f19b3bbdc65b900f9094c5a6163f41
-        checksum/secret: 6907776af4d4148eb050ce682e9a6ff88347c68def47aeccd1f036e3c137abbc
+        checksum/plugins: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: f79ba0d8652fc0a85b6690767f9e05e0f88e6c624ab4bd03cbe4054ecfdc7f90
       labels:
         app: sonarqube
         release: jdbc-config-values.yaml

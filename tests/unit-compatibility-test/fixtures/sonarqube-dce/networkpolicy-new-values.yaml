@@ -257,7 +257,6 @@ data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -270,52 +269,6 @@ metadata:
 type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: ""
----
-# Source: sonarqube-dce/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-http-proxies
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: networkpolicy-new-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-app-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: networkpolicy-new-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-search-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: networkpolicy-new-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
 ---
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
@@ -379,19 +332,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube-dce/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: networkpolicy-new-values.yaml-sonarqube-dce-install-plugins
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: networkpolicy-new-values.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
@@ -593,9 +533,9 @@ spec:
         release: networkpolicy-new-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: a58f6c71a20818dca450395cc7d4ff5ace4043cb738c1c5b9dc307669669b743
-        checksum/config: d968e96f1be056fc5ec2f76160547a6ec9e1c251f47d65281c06a84caf403cbb
-        checksum/secret: caaae91d6f860b44828f9ad20ad73668a3bc2e3c54a35c528d5245aeb5feac60
+        checksum/plugins: 75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 238dfced4417813354c729876e7694e2081a4b5b8e6317b34970b4fb5824a65b
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -742,12 +682,6 @@ spec:
       serviceAccountName: default
       volumes:
       
-      - name: install-plugins
-        configMap:
-          name: networkpolicy-new-values.yaml-sonarqube-dce-install-plugins
-          items:
-            - key: install_plugins.sh
-              path: install_plugins.sh
       - name: sonarqube
         emptyDir:
           {}
@@ -963,8 +897,8 @@ spec:
       annotations:
         checksum/init-sysctl: 1afba08043ef43171fbf1b6d847271502f9460dc7c8045a70f4c9a173d139879
         checksum/init-fs: b6167f49b4b1d48f67a99bbd82ad23556408ca8689cad14b885f38153c1b1baa
-        checksum/config: d968e96f1be056fc5ec2f76160547a6ec9e1c251f47d65281c06a84caf403cbb
-        checksum/secret: caaae91d6f860b44828f9ad20ad73668a3bc2e3c54a35c528d5245aeb5feac60
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 238dfced4417813354c729876e7694e2081a4b5b8e6317b34970b4fb5824a65b
     spec:
       automountServiceAccountToken: false
       initContainers:

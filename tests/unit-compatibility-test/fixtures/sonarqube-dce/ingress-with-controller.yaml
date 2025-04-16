@@ -80,7 +80,6 @@ data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -93,26 +92,6 @@ metadata:
 type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: ""
----
-# Source: sonarqube-dce/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ingress-with-controller.yaml-sonarqube-dce-http-proxies
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: ingress-with-controller.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/controller-configmap.yaml
 apiVersion: v1
@@ -129,32 +108,6 @@ metadata:
   name: ingress-with-controller.yaml-ingress-nginx-controller
   namespace: default
 data:
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ingress-with-controller.yaml-sonarqube-dce-app-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: ingress-with-controller.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ingress-with-controller.yaml-sonarqube-dce-search-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: ingress-with-controller.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
 ---
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
@@ -218,19 +171,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube-dce/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ingress-with-controller.yaml-sonarqube-dce-install-plugins
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: ingress-with-controller.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
@@ -841,9 +781,9 @@ spec:
         release: ingress-with-controller.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: ad44f0f084f20a8a5637eb9a8c5fb6ae534ba169495b6a0e375074c27eb9be36
-        checksum/config: 078d7f77fbcc68ec6febf4b2985fe7079b280c74b3b8a854ba79b96d0471299f
-        checksum/secret: 1a7d4d48cbf2adba2bd5092b376c49e28f33e06852ca00162b1acefbbf6afc60
+        checksum/plugins: 75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 9421e263c39b905b0f35f87c2d5406765d9edb96c1be2ac4f5385c30211dea2c
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -990,12 +930,6 @@ spec:
       serviceAccountName: default
       volumes:
       
-      - name: install-plugins
-        configMap:
-          name: ingress-with-controller.yaml-sonarqube-dce-install-plugins
-          items:
-            - key: install_plugins.sh
-              path: install_plugins.sh
       - name: sonarqube
         emptyDir:
           {}
@@ -1211,8 +1145,8 @@ spec:
       annotations:
         checksum/init-sysctl: 66ea4e249cccb90affb309e7f8947d6d1ae274d40910309791b05ffd1324fd19
         checksum/init-fs: 456e30799728f5d925b80a659ce5d295b9351452593c49f9c8bce7cb243a4b3d
-        checksum/config: 078d7f77fbcc68ec6febf4b2985fe7079b280c74b3b8a854ba79b96d0471299f
-        checksum/secret: 1a7d4d48cbf2adba2bd5092b376c49e28f33e06852ca00162b1acefbbf6afc60
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 9421e263c39b905b0f35f87c2d5406765d9edb96c1be2ac4f5385c30211dea2c
     spec:
       automountServiceAccountToken: false
       initContainers:

@@ -64,7 +64,6 @@ data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -77,52 +76,6 @@ metadata:
 type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: ""
----
-# Source: sonarqube-dce/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: pvc-values.yaml-sonarqube-dce-http-proxies
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: pvc-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: pvc-values.yaml-sonarqube-dce-app-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: pvc-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: pvc-values.yaml-sonarqube-dce-search-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: pvc-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
 ---
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
@@ -186,19 +139,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube-dce/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: pvc-values.yaml-sonarqube-dce-install-plugins
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: pvc-values.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
@@ -400,9 +340,9 @@ spec:
         release: pvc-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 0b87b0fd34bf809a01fc326118b74d8eb68488276b83d349d4c779ca8c9f09e6
-        checksum/config: 83cc06f777f751957cd52330204ae88082b241a818d3d204f05eba691afc1fd1
-        checksum/secret: 1311139c9b60d37417bdec052f921fe58c0c622ab100b61e4411431610edd984
+        checksum/plugins: 75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: ca2f3a0c9a7937096558d09201ccdfe7685bdd324b0266645517a06a2c9fb42b
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -549,12 +489,6 @@ spec:
       serviceAccountName: default
       volumes:
       
-      - name: install-plugins
-        configMap:
-          name: pvc-values.yaml-sonarqube-dce-install-plugins
-          items:
-            - key: install_plugins.sh
-              path: install_plugins.sh
       - name: sonarqube
         emptyDir:
           {}
@@ -772,8 +706,8 @@ spec:
       annotations:
         checksum/init-sysctl: b3817b73a518f19e4309c6b7f01f23fdfa08abe592afac815bba74369cbd4f10
         checksum/init-fs: eea03789c864bf50f2faf377b9644ba8bf5eccd72b156c0f28fca6b5cdea7a7b
-        checksum/config: 83cc06f777f751957cd52330204ae88082b241a818d3d204f05eba691afc1fd1
-        checksum/secret: 1311139c9b60d37417bdec052f921fe58c0c622ab100b61e4411431610edd984
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: ca2f3a0c9a7937096558d09201ccdfe7685bdd324b0266645517a06a2c9fb42b
     spec:
       automountServiceAccountToken: false
       initContainers:

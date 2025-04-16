@@ -290,6 +290,14 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
 {{- end -}}
 
 
+{{- define "If_any_proxy_var_exists" -}}
+  {{- if or .Values.httpProxy .Values.plugins.httpProxy .Values.httpsProxy .Values.plugins.httpsProxy .Values.noProxy .Values.plugins.noProxy .Values.prometheusExporter.httpProxy .Values.prometheusExporter.httpsProxy .Values.prometheusExporter.noProxy }}
+    {{- true -}}
+  {{- else -}}
+    {{- false -}}
+  {{- end -}}
+{{- end -}}
+
 {{/*
   generate Proxy env var from httpProxySecret
 */}}
@@ -317,7 +325,7 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
 {{- define "sonarqube.prometheusExporterProxy.env" -}}
 {{- if .Values.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
-{{- else -}}
+{{- else if eq (include "If_any_proxy_var_exists" .) "true" -}}
 - name: http_proxy
   valueFrom:
     secretKeyRef:
@@ -342,7 +350,7 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
 {{- define "sonarqube.install-plugins-proxy.env" -}}
 {{- if .Values.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
-{{- else -}}
+{{- else if eq (include "If_any_proxy_var_exists" .) "true" -}}
 - name: http_proxy
   valueFrom:
     secretKeyRef:

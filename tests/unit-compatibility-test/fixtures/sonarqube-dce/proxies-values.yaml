@@ -64,7 +64,6 @@ data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -97,32 +96,6 @@ stringData:
   PROMETHEUS-EXPORTER-HTTP-PROXY: "http://someProxy"
   PROMETHEUS-EXPORTER-HTTPS-PROXY: "https://someProxy"
   PROMETHEUS-EXPORTER-NO-PROXY: "https://someUrl"
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: proxies-values.yaml-sonarqube-dce-app-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: proxies-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: proxies-values.yaml-sonarqube-dce-search-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: proxies-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
 ---
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
@@ -434,8 +407,8 @@ spec:
         sonarqube.datacenter/type: "app"
       annotations:
         checksum/plugins: 435fcf44666ca7c4fa34d1ce5172b14d66ba64f8b4b3ac1512023df074f566f2
-        checksum/config: efde52b6c54657d7c33b848b121b16e4aea25154eccd8dcb918083fdc655e808
-        checksum/secret: 65ed172e1996289b7261d5206a9c82b0063028bf473a183809d01e57be9e001b
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: f89af36cb427e83879bb2e6b762b5f5944aee9d5eb6f48aa1778cd145fbdebb8
         checksum/prometheus-config: 4d505126ce2dd398db6d5aad56c64db9751ec6692a8df3d1d7f2e150a9226eb5
         checksum/prometheus-ce-config: dbcea738ecdf6460502079c306f8a6b22cd737cf74cac34eaec78cec3807cd27
     spec:
@@ -677,7 +650,6 @@ spec:
               name: prometheus-ce-config
       serviceAccountName: default
       volumes:
-      
       - name: install-plugins
         configMap:
           name: proxies-values.yaml-sonarqube-dce-install-plugins
@@ -911,8 +883,8 @@ spec:
       annotations:
         checksum/init-sysctl: 6cdc89e97390a6bb07295d2ffe95753d0b721adc7a4a42a63f7ea62deb800e05
         checksum/init-fs: 96941813abc5f1d4f412c0cdb86b8a94802212a2c37e6173cfbc216088e2042d
-        checksum/config: efde52b6c54657d7c33b848b121b16e4aea25154eccd8dcb918083fdc655e808
-        checksum/secret: 65ed172e1996289b7261d5206a9c82b0063028bf473a183809d01e57be9e001b
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: f89af36cb427e83879bb2e6b762b5f5944aee9d5eb6f48aa1778cd145fbdebb8
     spec:
       automountServiceAccountToken: false
       initContainers:

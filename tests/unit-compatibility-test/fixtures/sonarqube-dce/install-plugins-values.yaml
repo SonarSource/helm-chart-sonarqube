@@ -64,7 +64,6 @@ data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -97,32 +96,6 @@ stringData:
   PROMETHEUS-EXPORTER-HTTP-PROXY: ""
   PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
   PROMETHEUS-EXPORTER-NO-PROXY: ""
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: install-plugins-values.yaml-sonarqube-dce-app-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: install-plugins-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: install-plugins-values.yaml-sonarqube-dce-search-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: install-plugins-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
 ---
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
@@ -404,8 +377,8 @@ spec:
         sonarqube.datacenter/type: "app"
       annotations:
         checksum/plugins: 69f15cf6a8db9f75f9a2b888e49df3f56c9ea42abff9ef3776a78d5217d8faa9
-        checksum/config: 79313715839b332b4aada869621c59234bfa2627d97e5575bdd040aae247c1ec
-        checksum/secret: 39d5a44b5cdf9add5652d0986d8eb6fb655429f382a003b83722b38d176865c9
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: d87dcfe5addd5642b38e2eaf318a63a59bed15dedd261d5051daa2f9b28efe25
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -595,7 +568,6 @@ spec:
               name: tmp-dir
       serviceAccountName: default
       volumes:
-      
       - name: install-plugins
         configMap:
           name: install-plugins-values.yaml-sonarqube-dce-install-plugins
@@ -817,8 +789,8 @@ spec:
       annotations:
         checksum/init-sysctl: 1677659386232ea9ecd5bd2f24c2cd9ad7779d41e341b39803a47936a9d7760b
         checksum/init-fs: cee023a43302682d01a62f084c45f00a66d7fd5c01cdf0bb8f21f7f9c08b04a8
-        checksum/config: 79313715839b332b4aada869621c59234bfa2627d97e5575bdd040aae247c1ec
-        checksum/secret: 39d5a44b5cdf9add5652d0986d8eb6fb655429f382a003b83722b38d176865c9
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: d87dcfe5addd5642b38e2eaf318a63a59bed15dedd261d5051daa2f9b28efe25
     spec:
       automountServiceAccountToken: false
       initContainers:

@@ -30,39 +30,6 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
-# Source: sonarqube/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: pvc-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: pvc-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
-# Source: sonarqube/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: pvc-values.yaml-sonarqube-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: pvc-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
 # Source: sonarqube/templates/init-fs.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -125,19 +92,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: pvc-values.yaml-sonarqube-install-plugins
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: pvc-values.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
@@ -435,11 +389,11 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 23ac0fe20b5872a4cce045f7942f04f01dd4b90934e20099b38dbf755d89bcbb
+        checksum/config: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
         checksum/init-fs: d1c2a061d1df989518d812dee5e0563f4af4c245104dff0e3e114c741a75044b
         checksum/init-sysctl: e37dc2b43eb340f7d598d01bca8f2375d7dbda710614dec2f02ccde429abb32c
-        checksum/plugins: 71998015fc919ead51869ef33a89582502f354db312273ad44bf210a62b3a46a
-        checksum/secret: 1bb38a407bde9af402274184fb9f109ba444ce80a9b702e2c77f9c96dc08b85b
+        checksum/plugins: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: b02b186278fde838a317f9bcdb2c9a65cb3df6b1ea51e9c0c6524e1e9c485f9c
       labels:
         app: sonarqube
         release: pvc-values.yaml

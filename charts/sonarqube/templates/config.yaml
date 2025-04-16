@@ -1,3 +1,4 @@
+{{- if or .Values.sonarProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks)}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -14,3 +15,4 @@ data:
   {{- if .Values.sonarSecretKey }}
     sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
   {{- end }}
+{{- end }}

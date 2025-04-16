@@ -1,5 +1,6 @@
 {{ $applicationNodes := fromYaml (include "applicationNodes" . ) }}
 {{ $_ := set .Values "ApplicationNodes" $applicationNodes }}
+{{- if .Values.ApplicationNodes.plugins.install }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,10 +12,9 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   install_plugins.sh: |-
-    {{- if .Values.ApplicationNodes.plugins.install }}
       rm -f {{ .Values.sonarqubeFolder }}/extensions/plugins/*
       cd {{ .Values.sonarqubeFolder }}/extensions/plugins
       {{- range $index, $val := .Values.ApplicationNodes.plugins.install }}
       curl {{ if $.Values.ApplicationNodes.plugins.noCheckCertificate }}--insecure{{ end }} {{ if $.Values.ApplicationNodes.plugins.netrcCreds }}--netrc-file /root/.netrc{{ end }} -fsSLO {{ $val | quote }}
       {{- end }}
-    {{- end }}
+{{- end }}

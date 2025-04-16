@@ -30,39 +30,6 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
-# Source: sonarqube/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: template-refactoring-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: template-refactoring-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
-# Source: sonarqube/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: template-refactoring-values.yaml-sonarqube-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: template-refactoring-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
 # Source: sonarqube/templates/init-fs.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -125,19 +92,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: template-refactoring-values.yaml-sonarqube-install-plugins
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: template-refactoring-values.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
@@ -433,11 +387,11 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 8009edb8c88ec266f98581f30c542a7347c3839d32dce2b5b0c71b92f1c4fdc5
+        checksum/config: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
         checksum/init-fs: c4af9051634fd02a8f63b6c0d4b7c7840a083a6264ea21920bf7040b4eaa18ad
         checksum/init-sysctl: 7c670c2cd2d5c317b0f8220f44e3ee88a443f10e0a45aed5ea52ca69ea202e46
-        checksum/plugins: 08d126ed27b7be32a01eb5f6808581798218a269304cf76e0106e018e6ceba0e
-        checksum/secret: bd931035eb501e7a0a2b77abeb4d709fbe501390ef773bea989761394aceffbf
+        checksum/plugins: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 01145d6f178ad5609e1015e8befefcd12fd4da8dd1d3fae9dcf64988b3c2725f
       labels:
         app: sonarqube
         release: template-refactoring-values.yaml

@@ -1,5 +1,6 @@
 {{ $applicationNodes := fromYaml (include "applicationNodes" . ) }}
 {{ $_ := set .Values "ApplicationNodes" $applicationNodes }}
+{{- if or .Values.searchNodes.podDistributionBudget .Values.searchNodes.podDisruptionBudget -}}
 ---
 apiVersion: {{ include "common.capabilities.policy.apiVersion" . }}
 kind: PodDisruptionBudget
@@ -23,6 +24,8 @@ spec:
   selector:
     matchLabels:
       sonarqube.datacenter/type: "search"
+{{ end }}
+{{- if or .Values.ApplicationNodes.podDistributionBudget .Values.ApplicationNodes.podDisruptionBudget -}}
 ---
 apiVersion: {{ include "common.capabilities.policy.apiVersion" . }}
 kind: PodDisruptionBudget
@@ -46,3 +49,4 @@ spec:
   selector:
     matchLabels:
       sonarqube.datacenter/type: "app"
+{{ end }}

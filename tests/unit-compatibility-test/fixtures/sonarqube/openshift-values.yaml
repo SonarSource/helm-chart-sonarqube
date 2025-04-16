@@ -30,52 +30,6 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
-# Source: sonarqube/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: openshift-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: openshift-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
-# Source: sonarqube/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: openshift-values.yaml-sonarqube-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: openshift-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
-# Source: sonarqube/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: openshift-values.yaml-sonarqube-install-plugins
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: openshift-values.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
----
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -353,9 +307,9 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 39400f6082ec5a46f09dab69075fd87888af10fd9dcbb81a5710866fd73df1a5
-        checksum/plugins: 49a41f6cad8ebdab7980a1f457f59ba06b5b3cde3a3395ed943e4e097e285d3b
-        checksum/secret: c77f8777a0bcb7cae4c0e9a98648eebc08854c1b5add49f668f5ed3ac4002c24
+        checksum/config: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        checksum/plugins: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 48d1f3fea68b1732cf41d685ee72d3be38248c97bcb3423ce330caa0e629188a
       labels:
         app: sonarqube
         release: openshift-values.yaml

@@ -30,39 +30,6 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
-# Source: sonarqube/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: http-routes-default-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: http-routes-default-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
-# Source: sonarqube/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: http-routes-default-values.yaml-sonarqube-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: http-routes-default-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -109,19 +76,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: http-routes-default-values.yaml-sonarqube-install-plugins
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: http-routes-default-values.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
@@ -400,10 +354,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: bd751789a7085247895c7796db78e8547157365eedf70281cfb7e817c05ac286
+        checksum/config: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
         checksum/init-sysctl: c7027d15391d4e8929afb2c790597b50b3e28869c1892fb30c862d477c528ebc
-        checksum/plugins: 67c67814a4977b650580c063b6af6a122054af50db18784ac14ca81b836d1d79
-        checksum/secret: 0cb74d30846eeee0db5bc6dfa09ecaad41fc3cfad9a953a8506aa93b6ab5a1a5
+        checksum/plugins: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 5f2bab39d8d09a206cf2bebfb6a4ff2232cc1a97f6fb257541e2822664b47aef
       labels:
         app: sonarqube
         release: http-routes-default-values.yaml

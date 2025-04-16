@@ -50,19 +50,6 @@ stringData:
   PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
   PROMETHEUS-EXPORTER-NO-PROXY: ""
 ---
-# Source: sonarqube/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: install-plugins-values.yaml-sonarqube-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: install-plugins-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -403,10 +390,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: cf288aa750621b188e43ab7256de7fc24b0bd15eb6657fedbf66aaaf3246c04f
+        checksum/config: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
         checksum/init-sysctl: 12f4493e9c092fa89da02a1f675e3a843e4f664d30fe35867f5b262d2ffca02d
-        checksum/plugins: 09d41ef37cd41d7bc722c3a9478aff385a193e73f54409ccb8cd392f7a517560
-        checksum/secret: e9f8123a8417963e8af134409eb1af8903d4956fd002e3092cd8fd03c041b97a
+        checksum/plugins: 8f454b907947b346551951823dd7570863ce8e8ba62bf702d81d54fba716e82c
+        checksum/secret: 2182d2e538faf1141092300f8ec1a2740f57bbb2e5c4f12ab2b1575580394fb2
       labels:
         app: sonarqube
         release: install-plugins-values.yaml

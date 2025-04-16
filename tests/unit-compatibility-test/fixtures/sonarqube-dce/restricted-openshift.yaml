@@ -75,26 +75,6 @@ type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: "ZFowRUIwS3huRisrbnI1KzR2ZlRDYXVuL2VXYnY2Z09vWG9kaUFNcWNGbz0="
 ---
-# Source: sonarqube-dce/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: restricted-openshift.yaml-sonarqube-dce-http-proxies
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: restricted-openshift.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -122,19 +102,6 @@ metadata:
 data:
   sonar.properties: |
     sonar.forceAuthentication=true
----
-# Source: sonarqube-dce/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: restricted-openshift.yaml-sonarqube-dce-install-plugins
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: restricted-openshift.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
@@ -282,9 +249,9 @@ spec:
         release: restricted-openshift.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 475fc21ab6cc8c427d8bbc425cbcfbbfc684cfec5f67eda61d3650d919063355
-        checksum/config: 7b19a816c1c9e2df3822f7f5c3e22cf65e3f0e96097694e1e946494199b7ac99
-        checksum/secret: 091387875394ab9c8b5d514c08d83ee4fa48f955568eb2cead957f2f521f0483
+        checksum/plugins: 75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070
+        checksum/config: 36dd2b3c87ee1370a9d29f08f3420f1b44f09a8e4c3ddc50e7046a46369ff685
+        checksum/secret: 867a78615490c40d40438d3406375a1381a04d1b690fd5fc7cd405ad8161d398
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -456,12 +423,6 @@ spec:
           - key: sonar.properties
             path: sonar.properties
       
-      - name: install-plugins
-        configMap:
-          name: restricted-openshift.yaml-sonarqube-dce-install-plugins
-          items:
-            - key: install_plugins.sh
-              path: install_plugins.sh
       - name: sonarqube
         emptyDir:
           {}
@@ -517,8 +478,8 @@ spec:
         release: restricted-openshift.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/config: 7b19a816c1c9e2df3822f7f5c3e22cf65e3f0e96097694e1e946494199b7ac99
-        checksum/secret: 091387875394ab9c8b5d514c08d83ee4fa48f955568eb2cead957f2f521f0483
+        checksum/config: 36dd2b3c87ee1370a9d29f08f3420f1b44f09a8e4c3ddc50e7046a46369ff685
+        checksum/secret: 867a78615490c40d40438d3406375a1381a04d1b690fd5fc7cd405ad8161d398
     spec:
       automountServiceAccountToken: false
       initContainers:

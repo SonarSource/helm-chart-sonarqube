@@ -64,7 +64,6 @@ data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -77,52 +76,6 @@ metadata:
 type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: ""
----
-# Source: sonarqube-dce/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: node-topology-per-process-values.yaml-sonarqube-dce-http-proxies
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: node-topology-per-process-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: node-topology-per-process-values.yaml-sonarqube-dce-app-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: node-topology-per-process-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: node-topology-per-process-values.yaml-sonarqube-dce-search-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: node-topology-per-process-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
 ---
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
@@ -186,19 +139,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube-dce/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: node-topology-per-process-values.yaml-sonarqube-dce-install-plugins
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: node-topology-per-process-values.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
@@ -400,9 +340,9 @@ spec:
         release: node-topology-per-process-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: c466374d5f5ad8f9223ac2770ae8afd438e5ad99815d11f15de14c54fa39ad6b
-        checksum/config: 0ab39401857dd297351ba72ab6638852417f7a6b7afa6e5b5e68c8a7e9188451
-        checksum/secret: 4f6ff9150ce0e973736c997ba32da34fa37155d20291a5b10163f47524225300
+        checksum/plugins: 75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: f11ae999263b88fb32453a350cc2dd5271fabc37f0f9eefa8bcc9ad2a1c7b30d
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -564,12 +504,6 @@ spec:
       serviceAccountName: default
       volumes:
       
-      - name: install-plugins
-        configMap:
-          name: node-topology-per-process-values.yaml-sonarqube-dce-install-plugins
-          items:
-            - key: install_plugins.sh
-              path: install_plugins.sh
       - name: sonarqube
         emptyDir:
           {}
@@ -785,8 +719,8 @@ spec:
       annotations:
         checksum/init-sysctl: e788d2c71879d2112adb941911b8d7f36d76713d351fafc4d37781bbf5086fb4
         checksum/init-fs: 8165b3799198189f8fb8bfca256ffba2b515430bedbde647aac04f4de0d689be
-        checksum/config: 0ab39401857dd297351ba72ab6638852417f7a6b7afa6e5b5e68c8a7e9188451
-        checksum/secret: 4f6ff9150ce0e973736c997ba32da34fa37155d20291a5b10163f47524225300
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: f11ae999263b88fb32453a350cc2dd5271fabc37f0f9eefa8bcc9ad2a1c7b30d
     spec:
       automountServiceAccountToken: false
       initContainers:

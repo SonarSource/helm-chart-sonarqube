@@ -64,7 +64,6 @@ data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -77,52 +76,6 @@ metadata:
 type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: ""
----
-# Source: sonarqube-dce/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: prometheus-monitoring-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: prometheus-monitoring-values.yaml-sonarqube-dce-app-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: prometheus-monitoring-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: prometheus-monitoring-values.yaml-sonarqube-dce-search-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: prometheus-monitoring-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
 ---
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
@@ -186,19 +139,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube-dce/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: prometheus-monitoring-values.yaml-sonarqube-dce-install-plugins
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.3.0
-    release: prometheus-monitoring-values.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
@@ -430,9 +370,9 @@ spec:
         release: prometheus-monitoring-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 538d636d70a36cbd966b1a1e03ff264c1324cec2947e0d87635ee88bbab68995
-        checksum/config: 633fe221dc1405820e68eb1370a42dbaa8a8f14833886613b627b71985597776
-        checksum/secret: 514e49789a5697483a4d10378834c0f276e7862cb26cbb8f76c77e827a3261f6
+        checksum/plugins: 75a11da44c802486bc6f65640aa48a730f0f684c5c07a42ba3cd1735eb3fb070
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 1ea23ce0a73cc45198721ed2f121926cf8c5ff2021fe3121240fcf0b9a05d56c
         checksum/prometheus-config: 122140bb5a042f58615fbb2f826f91ffac7485135063a1bd7e0b67771504fe57
         checksum/prometheus-ce-config: 7acead6710a4c7c56e36d411ef3bc7af38a8bd2b6429b02c64cfa22ec66c2182
     spec:
@@ -479,21 +419,6 @@ spec:
               name: sonarqube
               subPath: data
           env:
-            - name: http_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
-                  key: PROMETHEUS-EXPORTER-HTTP-PROXY
-            - name: https_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
-                  key: PROMETHEUS-EXPORTER-HTTPS-PROXY
-            - name: no_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
-                  key: PROMETHEUS-EXPORTER-NO-PROXY
       securityContext:
         fsGroup: 0
       containers:
@@ -631,12 +556,6 @@ spec:
       serviceAccountName: default
       volumes:
       
-      - name: install-plugins
-        configMap:
-          name: prometheus-monitoring-values.yaml-sonarqube-dce-install-plugins
-          items:
-            - key: install_plugins.sh
-              path: install_plugins.sh
       - name: prometheus-config
         configMap:
           name: prometheus-monitoring-values.yaml-sonarqube-dce-prometheus-config
@@ -864,8 +783,8 @@ spec:
       annotations:
         checksum/init-sysctl: 8c27ede70c78456a70f93e2346a9ca52580a45488188c81e7c978fc9eb8b907c
         checksum/init-fs: b2603c7bacb8962f6e46c71f42b452b1818924d712ac0762de9edaa94cf5d862
-        checksum/config: 633fe221dc1405820e68eb1370a42dbaa8a8f14833886613b627b71985597776
-        checksum/secret: 514e49789a5697483a4d10378834c0f276e7862cb26cbb8f76c77e827a3261f6
+        checksum/config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 1ea23ce0a73cc45198721ed2f121926cf8c5ff2021fe3121240fcf0b9a05d56c
     spec:
       automountServiceAccountToken: false
       initContainers:
