@@ -45,38 +45,6 @@ stringData:
   password: "admin1"
   currentPassword: "admin"
 ---
-# Source: sonarqube/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sonar-web-context-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: sonar-web-context-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
-# Source: sonarqube/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sonar-web-context-values.yaml-sonarqube-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: sonar-web-context-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -123,19 +91,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sonar-web-context-values.yaml-sonarqube-install-plugins
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: sonar-web-context-values.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
@@ -414,10 +369,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 30231952a4aa308f875a5f0e53f65f8b8398dc6e84165dfe54f4a54a490a106d
+        checksum/config: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
         checksum/init-sysctl: a9d0bb8da91a2c6e043161acd87408f2641b0c4f96fe63fba3650c24e07b6a5c
-        checksum/plugins: 83e6a70c847b0e9c27a6115cc4b33ce92f688d017485f0ec89e4f706c6db4181
-        checksum/secret: 21b3a3439ada26789ae4ca438cf858596e80feddb32129195a623873410e4533
+        checksum/plugins: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 06c592cc5f28d24330de3364aad9f90de562dd51743b02e8f2dffc9430f697eb
       labels:
         app: sonarqube
         release: sonar-web-context-values.yaml

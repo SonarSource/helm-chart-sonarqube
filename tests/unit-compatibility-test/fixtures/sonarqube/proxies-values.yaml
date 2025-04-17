@@ -50,19 +50,6 @@ stringData:
   PROMETHEUS-EXPORTER-HTTPS-PROXY: "https://someProxy"
   PROMETHEUS-EXPORTER-NO-PROXY: "https://someUrl"
 ---
-# Source: sonarqube/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: proxies-values.yaml-sonarqube-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: proxies-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -433,10 +420,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: f6bf5eeb65a277e83300c2aed60f9ab2b1d9abec24d030a8f031cc2bd8d66c77
+        checksum/config: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
         checksum/init-sysctl: 928756fe134f66a08dc519248b850b62410061e493c2fed73385493bbabb7448
-        checksum/plugins: 90b1c2b2991ab67fa756d5ba8a74775ac91054e1777ce6737a41cea3942c56d2
-        checksum/secret: 8d03633df1a706beaed3905583122efb5a3ef2b9a0ba5d60e3221141186e95e6
+        checksum/plugins: 7c41e6766148114c3762728a0104a238c252dd6fa322a71ade03854acaac9086
+        checksum/secret: 935f8d48a3acc0d1cc6e445ca67c1f7901db6c6e4ea09826867f5299c0644674
         checksum/prometheus-config: f46a49bf7f7430117e83072b12fda92e828ed1edc1fec95a61f7bf45c1dce52f
         checksum/prometheus-ce-config: 57b2cc78c0664a039b025455ebac4e8d5f70af298c603b28d457b834b11016e2
       labels:

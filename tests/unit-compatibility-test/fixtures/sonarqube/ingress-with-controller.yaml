@@ -46,26 +46,6 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
-# Source: sonarqube/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ingress-with-controller.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: ingress-with-controller.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube/charts/ingress-nginx/templates/controller-configmap.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -81,19 +61,6 @@ metadata:
   name: ingress-with-controller.yaml-ingress-nginx-controller
   namespace: default
 data:
----
-# Source: sonarqube/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ingress-with-controller.yaml-sonarqube-config
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: ingress-with-controller.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
@@ -141,19 +108,6 @@ data:
         fi
       fi
     fi
----
-# Source: sonarqube/templates/install-plugins.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ingress-with-controller.yaml-sonarqube-install-plugins
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.3.0
-    release: ingress-with-controller.yaml
-    heritage: Helm
-data:
-  install_plugins.sh: |-
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
@@ -841,10 +795,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 18c107102184dd9de9f3c553137ff20ec09fa3125d0794a2f6bae2499904fa63
+        checksum/config: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
         checksum/init-sysctl: 7b5a4e548613db24ed8af668fd0b8f1fa5941d8cac9440bd800ffa335aaa146b
-        checksum/plugins: af6ae952b848a82cde03ec077668004fdc825790045df3f1d948b9df6a27b0df
-        checksum/secret: af4c57a7846001a81dec97e96c80cdf5dff06c4ab0892bf00240162a457041c5
+        checksum/plugins: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 63df3fa37d98b427d5151048100f2cabc7801adbf0ad1cfcb5ca40661f8f03c4
       labels:
         app: sonarqube
         release: ingress-with-controller.yaml

@@ -1,3 +1,4 @@
+{{- if eq (include "If_sonarProperties_or_sonarSecretKey_or_not_elasticsearch.bootstrapChecks" .) "true" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -14,3 +15,4 @@ data:
   {{- if .Values.sonarSecretKey }}
     sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
   {{- end }}
+{{- end }}
