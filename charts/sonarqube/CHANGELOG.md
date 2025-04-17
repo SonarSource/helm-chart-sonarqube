@@ -1,8 +1,14 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-## [Unreleased]
+## [2025.4.0]
+* Update Chart's version to 2025.4.0
 * Align startup probe with liveness probe
+
+## [2025.3.0]
+* Update Chart's version to 2025.3.0
+* Normalizes the extension for all templates
+
 
 ## [2025.2.0]
 * Update Chart's version to 2025.2.0

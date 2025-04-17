@@ -20,8 +20,8 @@ chart_testing_on_kind_sonarqube_task:
   <<: *CHART_TESTING_ON_KIND_TEMPLATE
   <<: *SKIP_IF_NOT_SONARQUBE
   script:
-    - ct lint --config ct-sonarqube-test.yaml --all
-    - ct install --namespace test --config ct-sonarqube-test.yaml --all --debug
+    - ct lint --config ct-sonarqube-test.yaml
+    - ct install --namespace test --config ct-sonarqube-test.yaml --debug
   depends_on:
     - sonarqube_chart_static_compatibility_test
 
