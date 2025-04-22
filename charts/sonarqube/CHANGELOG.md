@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2025.4.0]
+* Update Chart's version to 2025.4.0
+* Add key `jdbcOverwrite.jdbcSecretURLKey` which takes priority over `jdbcOverwrite.jdbcUrl`
+
 ## [2025.3.0]
 * Update Chart's version to 2025.3.0
 * Normalizes the extension for all templates
