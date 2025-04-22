@@ -499,7 +499,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 ### JDBC Overwrite
 
 | Parameter                                   | Description                                                                                                                                                    | Default                                    |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+|---------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------ |
 | `jdbcOverwrite.enable`                      | (DEPRECATED) Enable JDBC overwrites for external Databases (disables `postgresql.enabled`) ,Please use jdbcOverwrite.enabled instead                           | `false`                                    |
 | `jdbcOverwrite.enabled`                     | Enable JDBC overwrites for external Databases (disables `postgresql.enabled`)                                                                                  | `false`                                    |
 | `jdbcOverwrite.jdbcUrl`                     | The JDBC url to connect the external DB                                                                                                                        | `jdbc:postgresql://myPostgress/myDatabase` |
@@ -507,6 +507,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `jdbcOverwrite.jdbcPassword`                | (DEPRECATED) The DB password that should be used for the JDBC connection, please use `jdbcOverwrite.jdbcSecretName`  and `jdbcOverwrite.jdbcSecretPasswordKey` | `sonarPass`                                |
 | `jdbcOverwrite.jdbcSecretName`              | Alternatively, use a pre-existing k8s secret containing the DB password                                                                                        | `None`                                     |
 | `jdbcOverwrite.jdbcSecretPasswordKey`       | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret                                      | `None`                                     |
+| `jdbcOverwrite.jdbcSecretURLKey`            | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the URL property in the secret                                           | `None`                                     |
 | `jdbcOverwrite.oracleJdbcDriver.url`        | The URL of the Oracle JDBC driver to be downloaded                                                                                                             | `None`                                     |
 | `jdbcOverwrite.oracleJdbcDriver.netrcCreds` | Name of the secret containing .netrc file to use creds when downloading the Oracle JDBC driver                                                                 | `None`                                     |
 

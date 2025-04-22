@@ -280,6 +280,13 @@ spec:
             secretKeyRef:
               name: {{ include "jdbc.secret" . }}
               key: {{ include "jdbc.secretPasswordKey" . }}
+        {{- if .Values.jdbcOverwrite.jdbcSecretURLKey }}
+        - name: SONAR_JDBC_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "jdbc.secret" . }}
+              key: {{ include "jdbc.secretURLKey" . }}
+        {{- end }}
         - name: SONAR_WEB_SYSTEMPASSCODE
           valueFrom:
             secretKeyRef:
