@@ -1,5 +1,8 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
+## [2025.3.1]
+* Update Chart's version to 2025.3.1
+* Add ExtraManifests to deploy additional Manifests alongside with the Helm Chart e.g. in favor of encrypted Secrets
 
 ## [2025.3.0]
 * Update Chart's version to 2025.3.0

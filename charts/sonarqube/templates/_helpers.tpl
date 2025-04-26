@@ -454,3 +454,19 @@ Remove incompatible user/group values that do not work in Openshift out of the b
 {{- $accountDeprecation := (include "deepMerge" (dict "map1" $map1 "map2" $map2)) -}}
 {{- $accountDeprecation }}
 {{- end -}}
+
+{{- /*
+Render ExtraManifests
+*/}}
+{{- define "extraManifests.render" -}}
+{{- $value := typeIs "string" .value | ternary .value (.value | toYaml) }}
+{{- if contains "{{" (toJson .value) }}
+  {{- if .scope }}
+      {{- tpl (cat "{{- with $.RelativeScope -}}" $value "{{- end }}") (merge (dict "RelativeScope" .scope) .context) }}
+  {{- else }}
+    {{- tpl $value .context }}
+  {{- end }}
+{{- else }}
+    {{- $value }}
+{{- end }}
+{{- end -}}

@@ -653,6 +653,23 @@ extraConfig:
   secrets: []
   configmaps: []
 
+# extraManifests is used to Deploy additional Manifests alongside with the Helm Chart
+# This is useful for checking sensitive data into your git in encrypted form (e.g. as SealedSecret) 
+# instead of unencrypted in plain text.
+# extraManifests:
+#   - apiVersion: bitnami.com/v1alpha1
+#     kind: SealedSecret
+#     metadata:
+#       name: my-secret
+#       namespace: default
+#     spec:
+#       encryptedData:
+#         password: <encrypted password>
+#         username: <encrypted username>
+#         values.yaml: <encrypted values data>
+
+extraManifests: []
+
 # setAdminPassword:
 # The values can be set to define the current and the (new) custom admin passwords at the startup (the username will remain "admin")
 #  newPassword: AdminAdmin_12$
