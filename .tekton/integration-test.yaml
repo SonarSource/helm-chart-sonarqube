@@ -1,24 +1,18 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   name: sonarqube-integration-test
   annotations:
     pipelinesascode.tekton.dev/on-comment: "^((/test-all)|(/integration-test)|(test-multi.*\ sonar-e2e.*))$"
     pipelinesascode.tekton.dev/on-cel-expression: |-
-      (
-        source_branch.matches("^(main|release-.*|alauda.*)$")
-      ) && (
-        "charts/sonarqube/***".pathChanged() ||
-        ".tekton/integration.yaml".pathChanged()
-      ) && ((
-        event == "push" && (
-          source_branch.matches("^(main|release-.*|alauda.*)$") ||
-          target_branch.matches("^(main|release-.*|alauda.*)$") ||
-          target_branch.startsWith("refs/tags/")
-        )
-      ))
+      target_branch.matches("^(main|release-.*|alauda-.*)$")
     pipelinesascode.tekton.dev/max-keep-runs: "5"
 spec:
+  taskRunTemplate:
+    podTemplate:
+      securityContext:
+        fsGroup: 65532
+        fsGroupChangePolicy: "OnRootMismatch"
   taskRunSpecs:
     - pipelineTaskName: run-test
       computeResources:
@@ -40,7 +34,7 @@ spec:
       - name: name
         value: vcluster-integration-test
       - name: version
-        value: "0.1"
+        value: "0.2"
 
   params:
     - name: git-revision
@@ -48,9 +42,12 @@ spec:
         url: "{{ repo_url }}"
         branch: "{{ source_branch }}"
         commit: "{{ revision }}"
+    - name: build-test-image
+      value:
+        image-repository: build-harbor.alauda.cn/devops/sonarqube-ce-test
+        dockerfile-path: testing/Dockerfile
     - name: test
       value:
-        image: build-harbor.alauda.cn/devops/sonarqube-ce-test:v2025.1.0-v0.1.0-testart0.1028.gf231899-f23189
         command: |
           set -x
           export KUBECONFIG=$(workspaces.config.path)/vcluster-config
@@ -106,3 +103,13 @@ spec:
     - name: upload-conf
       secret:
         secretName: upload-allure-report-conf
+    - name: dockerconfig
+      secret:
+        secretName: build-harbor.kauto.docfj
+    - name: basic-auth
+      secret:
+        secretName: github-credentials
+    - name: gitversion-config
+      configMap:
+        name: gitversion-config
+
