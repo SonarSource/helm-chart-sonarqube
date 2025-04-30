@@ -22,8 +22,9 @@ test: create-testing-ns
 test-e2e: create-testing-ns
 	$(TEST_COMMAND) $(GODOG_ARGS) --godog.tags="@sonarqube-e2e"
 
+# This test will run in other tests, so we need to add '--bdd.cleanup=false' to avoid the resources being cleanup
 sonarqube: create-testing-ns
-	$(TEST_COMMAND) $(GODOG_ARGS) --godog.tags="@sonarqube-feature"
+	$(TEST_COMMAND) $(GODOG_ARGS) --godog.tags="@sonarqube-feature" --bdd.cleanup=false
 
 report:
 	allure generate --clean
