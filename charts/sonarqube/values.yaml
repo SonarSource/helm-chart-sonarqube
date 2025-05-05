@@ -56,6 +56,14 @@ community:
   enabled: false
   buildNumber: "25.9.0.112764"
 
+global:
+  azure:
+    images:
+      sonarqube:
+        registry: testdavi.azurecr.io
+        image: sonarqube
+        tag: 2025.2.0-enterprise
+
 image:
   repository: sonarqube
   # tag: ""
@@ -72,8 +80,8 @@ securityContext:
 # Set security context for sonarqube container.
 # The current section contains the default values set in a generic Kubernetes cluster. If you are using OpenShift, you should not set any specific UID or GID to be used for the execution.
 containerSecurityContext:
-# Sonarqube dockerfile creates sonarqube user as UID and GID 0
-# Those default are used to match pod security standard restricted as least privileged approach
+  # Sonarqube dockerfile creates sonarqube user as UID and GID 0
+  # Those default are used to match pod security standard restricted as least privileged approach
   allowPrivilegeEscalation: false
   runAsNonRoot: true
   runAsUser: 1000
@@ -176,7 +184,7 @@ ingress:
   # Set the ingressClassName on the ingress record
   # ingressClassName: nginx
 
-# Additional labels for Ingress manifest file
+  # Additional labels for Ingress manifest file
   # labels:
   #  traffic-type: external
   #  traffic-type: internal
@@ -218,16 +226,16 @@ hostAliases: []
 readinessProbe:
   exec:
     command:
-    - sh
-    - -c
-    - |
-      #!/bin/bash
-      # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-      # status about migration are added to prevent the node to be kill while SonarQube is upgrading the database.
-      if wget --no-proxy -qO- http://localhost:{{ .Values.service.internalPort }}{{ .Values.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
-        exit 0
-      fi
-      exit 1
+      - sh
+      - -c
+      - |
+        #!/bin/bash
+        # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+        # status about migration are added to prevent the node to be kill while SonarQube is upgrading the database.
+        if wget --no-proxy -qO- http://localhost:{{ .Values.service.internalPort }}{{ .Values.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+          exit 0
+        fi
+        exit 1
   initialDelaySeconds: 60
   periodSeconds: 30
   failureThreshold: 6
@@ -241,10 +249,10 @@ readinessProbe:
 livenessProbe:
   exec:
     command:
-    - sh
-    - -c
-    - |
-      wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:{{ .Values.service.internalPort }}{{ .Values.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
+      - sh
+      - -c
+      - |
+        wget --no-proxy --quiet -O /dev/null --timeout={{ .Values.livenessProbe.timeoutSeconds }} --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:{{ .Values.service.internalPort }}{{ .Values.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
   initialDelaySeconds: 60
   periodSeconds: 30
   failureThreshold: 6
@@ -497,7 +505,8 @@ persistence:
   #   type: DirectoryOrCreate
 
 # In case you want to specify different resources for emptyDir than {}
-emptyDir: {}
+emptyDir:
+  {}
   # Example of resouces that might be used:
   # medium: Memory
   # sizeLimit: 16Mi
