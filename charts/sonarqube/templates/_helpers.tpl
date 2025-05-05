@@ -147,7 +147,7 @@ Determine JDBC username
 {{- end -}}
 
 {{/*
-Determine the k8s secretKey contrining the JDBC password
+Determine the k8s secretKey containing the JDBC password
 */}}
 {{- define "jdbc.secretPasswordKey" -}}
 {{- if .Values.postgresql.enabled -}}
@@ -165,6 +165,16 @@ Determine the k8s secretKey contrining the JDBC password
 {{- else -}}
   {{- "jdbc-password" -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Determine the k8s secretKey containing the JDBC URL
+*/}}
+{{- define "jdbc.secretURLKey" -}}
+{{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
+  {{- if and .Values.jdbcOverwrite.jdbcSecretName .Values.jdbcOverwrite.jdbcSecretURLKey -}}
+  {{- .Values.jdbcOverwrite.jdbcSecretURLKey -}}
+  {{- end -}}
 {{- end -}}
 
 {{/*
