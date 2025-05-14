@@ -24,6 +24,8 @@ Please be aware that we are not actively looking for feature contributions. The 
 
 With that in mind, if you would like to submit a code contribution, please create a pull request for this repository. Please explain your motives to contribute to this change: what problem you are trying to fix, and what improvement you are trying to make.
 
+> Our merging process involves duplicating pull requests, aligning the code with our standards, and conducting internal tests. You will be informed of this process by the creation of a Jira ticket. Please note that we implement these features on a best-effort basis, and therefore, we cannot provide an estimated time of arrival (ETA). The original author will still be attributed to all commits.
+
 Willing to contribute to SonarSource products? We are looking for smart, passionate, and skilled people to help us build world-class code-quality solutions. Have a look at our current [job offers here](https://www.sonarsource.com/company/jobs/)!
 
 Note of Thanks
