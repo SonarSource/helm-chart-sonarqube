@@ -303,10 +303,8 @@ spec:
           containerPort: {{ .Values.prometheusExporter.ceBeanPort }}
           protocol: TCP
         {{- end }}
-      {{- if or (.Values.plugins.install) (.Values.plugins.useDefaultPluginsPackage) }}
       command:
         - /tmp/scripts/copy_plugins.sh
-      {{- end }}
       resources: {{- toYaml .Values.resources | nindent 8 }}
       env:
         - name: SONAR_HELM_CHART_VERSION

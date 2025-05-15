@@ -9,6 +9,7 @@ data:
       {{- if .Values.plugins.deleteDefaultPlugins }}
       rm -f /opt/sonarqube/extensions/plugins/*.jar
       {{- end }}
+      {{- if .Values.plugins.useDefaultPluginsPackage }}
       for f in /opt/sonarqube/extensions/plugins/tmp/*.jar
       do
         file=${f##*/} && file=${file%-[0-9]*}
@@ -21,6 +22,7 @@ data:
         done
       done
       cp /opt/sonarqube/extensions/plugins/tmp/*.jar /opt/sonarqube/extensions/plugins/
+      {{- end }}
       # set jdbc password env
       if [ -f /run/postgresql/secret/SONAR_JDBC_PASSWORD ]; then
         export SONAR_JDBC_PASSWORD=$(cat /run/postgresql/secret/SONAR_JDBC_PASSWORD)

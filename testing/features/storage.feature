@@ -22,7 +22,7 @@
       values:
       - testdata/snippets/base-values.yaml
       - testdata/snippets/tpl-values-network-nodeport.yaml
-      - testdata/values-storage-sc.yaml
+      - testdata/snippets/tpl-values-storage-sc.yaml
       """
     那么 "sonarqube" 可以正常访问
       """
