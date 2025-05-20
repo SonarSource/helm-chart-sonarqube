@@ -679,7 +679,7 @@ spec:
           runAsUser: 1000
           seccompProfile:
             type: RuntimeDefault
-        command: ["sh", "-c", 'until curl -v --connect-timeout 100 sonar-web-context-deployment-deprecated-values.yaml-sonarqube:9000/sonarqube-account/api/system/status | grep -w UP; do sleep 10; done; curl -v --connect-timeout 100 -u admin:$CURRENT_ADMIN_PASSWORD -X POST "sonar-web-context-deployment-deprecated-values.yaml-sonarqube:9000/sonarqube-account/api/users/change_password?login=admin" --data-urlencode "previousPassword=$CURRENT_ADMIN_PASSWORD" --data-urlencode "password=$ADMIN_PASSWORD"']
+        command: ["sh", "-c", 'until curl -sSi --connect-timeout 100 sonar-web-context-deployment-deprecated-values.yaml-sonarqube:9000/sonarqube-account/api/system/status | grep -w UP; do sleep 10; done; curl -sSi --connect-timeout 100 -u admin:"$CURRENT_ADMIN_PASSWORD" -X POST "sonar-web-context-deployment-deprecated-values.yaml-sonarqube:9000/sonarqube-account/api/users/change_password?login=admin" --data-urlencode "previousPassword=$CURRENT_ADMIN_PASSWORD" --data-urlencode "password=$ADMIN_PASSWORD"']
         env:
         - name: ADMIN_PASSWORD
           valueFrom:
