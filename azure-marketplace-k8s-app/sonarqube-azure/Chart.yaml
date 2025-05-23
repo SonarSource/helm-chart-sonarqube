@@ -1,0 +1,13 @@
+apiVersion: v2 # Or v1 depending on your Helm version
+name: my-sonarqube-offer
+version: 1.0.0 # This is the version of your wrapper chart
+appVersion: "2025.2.0" # This could match the SonarQube app version
+description: "SonarQube Offer for Azure Marketplace with custom configurations"
+type: application
+dependencies:
+  - name: sonarqube # The name of the chart you're wrapping
+    version: "2025.3.0" # IMPORTANT: Match the version from charts/sonarqube/Chart.yaml
+    repository: "file://../../charts/sonarqube" # Reference your local SonarQube chart
+    # OR if you've already packaged sonarqube as a .tgz in my-sonarqube-offer/charts/:
+    # repository: "file://./charts/sonarqube-YOUR_SONARQUBE_CHART_VERSION.tgz"
+    # condition: sonarqube.enabled # Example: Allow enabling/disabling the subchart
