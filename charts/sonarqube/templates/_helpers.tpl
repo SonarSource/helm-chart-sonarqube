@@ -53,7 +53,11 @@ app.kubernetes.io/version: {{ (tpl (include "image.tag" .) . ) | trunc 63 | trim
 Expand the Application Image name.
 */}}
 {{- define "sonarqube.image" -}}
+{{- if and .Values.global .Values.global.azure .Values.global.azure.images .Values.global.azure.images.sonarqube }}
+{{- printf "%s/%s:%s" .Values.global.azure.images.sonarqube.registry .Values.global.azure.images.sonarqube.image .Values.global.azure.images.sonarqube.tag }}
+{{- else }}
 {{- printf "%s:%s" .Values.image.repository (tpl (include "image.tag" .) .) }}
+{{- end -}}
 {{- end -}}
 
 {{/*
