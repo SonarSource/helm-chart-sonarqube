@@ -175,13 +175,11 @@
     },
     "resources": [
         {
-            "type": "Microsoft.ContainerService/managedClusters",
             "condition": "[parameters('createNewCluster')]",
+            "type": "Microsoft.ContainerService/managedClusters",
             "apiVersion": "2024-05-01",
             "name": "[parameters('clusterResourceName')]",
             "location": "[parameters('location')]",
-            "dependsOn": [],
-            "tags": {},
             "sku": {
                 "name": "Basic",
                 "tier": "Free"
@@ -209,9 +207,7 @@
                         "type": "VirtualMachineScaleSets",
                         "mode": "System",
                         "maxPods": 110,
-                        "availabilityZones": [],
-                        "enableNodePublicIP": false,
-                        "tags": {}
+                        "enableNodePublicIP": false
                     }
                 ],
                 "networkProfile": {
@@ -235,9 +231,18 @@
             }
         },
         {
+            "scope": "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterResourceName'))]",
             "type": "Microsoft.KubernetesConfiguration/extensions",
             "apiVersion": "2023-05-01",
             "name": "[parameters('extensionResourceName')]",
+            "plan": {
+                "name": "[variables('plan-name')]",
+                "publisher": "[variables('plan-publisher')]",
+                "product": "[variables('plan-offerID')]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerService/managedClusters/', parameters('clusterResourceName'))]"
+            ],
             "properties": {
                 "extensionType": "[variables('clusterExtensionTypeName')]",
                 "autoUpgradeMinorVersion": true,
@@ -248,20 +253,8 @@
                     "jdbcOverwrite.jdbcUrl": "[parameters('jdbcOverwriteJdbcUrl')]",
                     "jdbcOverwrite.jdbcUsername": "[parameters('jdbcOverwriteJdbcUsername')]",
                     "jdbcOverwrite.jdbcPassword": "[parameters('jdbcOverwriteJdbcPassword')]"
-                },
-                "configurationProtectedSettings": {
-
                 }
-            },
-            "plan": {
-                "name": "[variables('plan-name')]",
-                "publisher": "[variables('plan-publisher')]",
-                "product": "[variables('plan-offerID')]"
-            },
-            "scope": "[concat('Microsoft.ContainerService/managedClusters/', parameters('clusterResourceName'))]",
-            "dependsOn": [
-                "[resourceId('Microsoft.ContainerService/managedClusters/', parameters('clusterResourceName'))]"
-            ]
+            }
         }
     ],
     "outputs": {
