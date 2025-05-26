@@ -15,7 +15,7 @@ Please note that this chart only supports SonarQube Server Developer and Enterpr
 ## Compatibility
 
 Compatible SonarQube Server Version: `2025.2.0`
-Compatible SonarQube Community Build: `25.5.0.107428`
+Compatible SonarQube Community Build: `25.5.0.107428`. If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
 
 Supported Kubernetes Versions: From `1.30` to `1.32`
 Supported Openshift Versions: From `4.11` to `4.17`
