@@ -12,12 +12,16 @@ To install the version of the chart for SonarQube 9.9 LTA, please read the secti
 
 Please note that this chart only supports SonarQube Server Developer and Enterprise editions and SonarQube Community Build. For SonarQube Server Data Center Edition refer to this [chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce).
 
-## Compatibility
+## Default Versions
 
-Compatible SonarQube Server Version: `2025.2.0`
-Compatible SonarQube Community Build: `25.1.0.102122`
+SonarQube Server Version: `2025.2.0`
+
+SonarQube Community Build: `25.5.0.107428`. If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
+
+## Kubernetes and Openshift Compatibility
 
 Supported Kubernetes Versions: From `1.30` to `1.32`
+
 Supported Openshift Versions: From `4.11` to `4.17`
 
 ## Installing SonarQube Server
@@ -43,7 +47,9 @@ The default login is admin/admin.
 
 The SonarQube Community Edition has been replaced by the SonarQube Community Build.
 If you want to install the SonarQube Community Build chart, please set `community.enabled` to `true`.
-The `community.buildNumber` parameter will be set to the latest Community Build.
+
+This chart by default installs the SonarQube Community Build's latest version available at the time of the Helm chart release.
+If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
 
 ## Upgrading to SonarQube Server 2025.1 LTA
 
@@ -268,7 +274,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `annotations`           | SonarQube Pod annotations                                                                                             | `{}`               |
 | `edition`               | SonarQube Edition to use (`developer` or `enterprise`).                                                               | `None`             |
 | `community.enabled`     | Install SonarQube Community Build. When set to `true`, `edition` must not be set.                                     | `false`            |
-| `community.buildNumber` | The SonarQube Community Build number to install                                                                       | `25.1.0.102122`   |
+| `community.buildNumber` | The SonarQube Community Build number to install                                                                       | `25.5.0.107428`   |
 | `sonarWebContext`       | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.     | ``                 |
 | `httpProxySecret`       | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will supersede every other proxy variables            | ``                 |
 | `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will supersede initContainer specific http proxy variables  | ``                 |
