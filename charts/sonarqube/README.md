@@ -44,7 +44,7 @@ The default login is admin/admin.
 The SonarQube Community Edition has been replaced by the SonarQube Community Build.
 If you want to install the SonarQube Community Build chart, please set `community.enabled` to `true`.
 
-This chart supports the SonarQube Community Build's version available at the time of the latest SonarQube Server's version release.
+This chart by default installs the SonarQube Community Build's latest version available at the time of the Helm chart release.
 If you want to be sure to use the latest SonarQube Community Build, please set the `community.buildNumber` with the desired version (e.g., `25.5.0.107428`).
 
 ## Upgrading to SonarQube Server 2025.1 LTA
