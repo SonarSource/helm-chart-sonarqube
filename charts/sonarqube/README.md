@@ -12,11 +12,13 @@ To install the version of the chart for SonarQube 9.9 LTA, please read the secti
 
 Please note that this chart only supports SonarQube Server Developer and Enterprise editions and SonarQube Community Build. For SonarQube Server Data Center Edition refer to this [chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce).
 
-## Compatibility
+## Default Versions
 
-Compatible SonarQube Server Version: `2025.2.0`
+SonarQube Server Version: `2025.2.0`
 
-Compatible SonarQube Community Build: `25.5.0.107428`. If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
+SonarQube Community Build: `25.5.0.107428`. If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
+
+## Kubernetes and Openshift Compatibility
 
 Supported Kubernetes Versions: From `1.30` to `1.32`
 
