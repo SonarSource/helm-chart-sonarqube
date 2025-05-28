@@ -14,7 +14,7 @@ Please note that this chart only supports SonarQube Server Developer and Enterpr
 
 ## Compatibility
 
-Compatible SonarQube Server Version: `2025.1.1`
+Compatible SonarQube Server Version: `2025.1.2`
 Compatible SonarQube Community Build: `25.1.0.102122`
 
 Supported Kubernetes Versions: From `1.29` to `1.32`
