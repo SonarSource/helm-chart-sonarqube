@@ -2,12 +2,8 @@
 # This is a YAML-formatted file.
 sonarqube:
   edition: enterprise
-  monitoringPasscode: helloguys
-
-  postgresql:
-  # Enable to deploy the bitnami PostgreSQL chart
-    enabled: false
-
+  monitoringPasscode: define-me
+      
 global:
   azure:
     identity:
@@ -21,14 +17,12 @@ global:
       resourceId: "DONOTMODIFY" # application's Azure Resource ID, Azure populates this value at deployment time
     images:
       sonarqube:
-        registry: testdavi.azurecr.io
+        registry: testsqsmarketplace.azurecr.io
         image: sonarqube
         tag: 2025.2.0-enterprise
-      postgres:
-        registry: testdavi.azurecr.io
-        image: sonarqube
-        tag: 2025.2.0-enterprise
-      nginx:
-        registry: testdavi.azurecr.io
-        image: sonarqube
-        tag: 2025.2.0-enterprise
+      postgresql:
+        registry: testsqsmarketplace.azurecr.io
+        image: bitnami/postgresql
+        tag: 11.14.0-debian-10-r22
+
+
