@@ -60,6 +60,18 @@ Expand the Application Image name.
 {{- end -}}
 {{- end -}}
 
+{{- define "postgresql.image" -}}
+{{- if and .Values.global .Values.global.azure .Values.global.azure.images .Values.global.azure.images.postgresql }}
+  {{- /* Use Azure Marketplace image if global values are defined */ -}}
+  {{- printf "%s/%s:%s" .Values.global.azure.images.postgresql.registry .Values.global.azure.images.postgresql.image .Values.global.azure.images.postgresql.tag }}
+{{- else }}
+  {{- /* Fallback to the subchart's default image values */ -}}
+  {{- /* Assuming subchart uses .Values.image.repository and .Values.image.tag */ -}}
+  {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+{{- end }}
+{{- end -}}
+
+
 {{/*
   Define the image.tag value that computes the right tag to be used as `sonarqube.image`
   The tag is derived from the following parameters:

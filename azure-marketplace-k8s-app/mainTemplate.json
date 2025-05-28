@@ -28,7 +28,7 @@
             }
         },
         "monitoringPasscode": {
-            "type": "String",
+            "type": "secureString",
             "metadata": {
                 "description": "The Monitoring Passcode."
             }
@@ -52,7 +52,7 @@
             }
         },
         "jdbcOverwriteJdbcPassword": {
-            "type": "String",
+            "type": "secureString",
             "metadata": {
                 "description": "The JDBC Password to connect to the database."
             }
@@ -248,11 +248,11 @@
                 "autoUpgradeMinorVersion": true,
                 "releaseTrain": "[variables('releaseTrain')]",
                 "configurationSettings": {
-                    "monitoringPasscode": "[parameters('monitoringPasscode')]",
-                    "jdbcOverwrite.enabled": "[parameters('jdbcOverwriteEnabled')]",
-                    "jdbcOverwrite.jdbcUrl": "[parameters('jdbcOverwriteJdbcUrl')]",
-                    "jdbcOverwrite.jdbcUsername": "[parameters('jdbcOverwriteJdbcUsername')]",
-                    "jdbcOverwrite.jdbcPassword": "[parameters('jdbcOverwriteJdbcPassword')]"
+                    "sonarqube.monitoringPasscode": "[parameters('monitoringPasscode')]",
+                    "sonarqube.jdbcOverwrite.enabled": "[parameters('jdbcOverwriteEnabled')]",
+                    "sonarqube.jdbcOverwrite.jdbcUrl": "[parameters('jdbcOverwriteJdbcUrl')]",
+                    "sonarqube.jdbcOverwrite.jdbcUsername": "[parameters('jdbcOverwriteJdbcUsername')]",
+                    "sonarqube.jdbcOverwrite.jdbcPassword": "[parameters('jdbcOverwriteJdbcPassword')]"
                 }
             }
         }
