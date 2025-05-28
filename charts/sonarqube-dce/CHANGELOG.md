@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Normalizes the extension for all templates
 * Remove example about non-system sonar.properties
 * Fix change-admin-password hook when using special characters
+* Upgrade SonarQube Server to 2025.3.0
 
 ## [2025.2.0]
 * Update Chart's version to 2025.2.0
