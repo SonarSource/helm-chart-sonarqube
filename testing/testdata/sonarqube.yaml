@@ -4,6 +4,9 @@ metadata:
   name: sonarqube-test
 spec:
   helmValues:
+    global:
+      registry:
+        address: <config.{{.registry.test | default "152-231-registry.alauda.cn:60070"}}>
     postgresql:
       enabled: false
     jdbcOverwrite:
