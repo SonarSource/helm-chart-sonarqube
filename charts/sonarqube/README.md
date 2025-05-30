@@ -53,7 +53,7 @@ If you want the use a more recent SonarQube Community Build, please set the `com
 
 ## Upgrading to SonarQube Server 2025.1 LTA
 
-When upgrading to SonarQube Server 2025.1 LTA from a previous versions, you should read carefully [the official documentation](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade-the-server/determine-path/) and determine the right upgrade path based on your current SonarQube Server version.
+When upgrading to SonarQube Server 2025.1 LTA from a previous versions, you should read carefully [the official documentation](https://docs.sonarsource.com/sonarqube-server/2025.1/server-upgrade-and-maintenance/upgrade/determine-path/) and determine the right upgrade path based on your current SonarQube Server version.
 
 When upgrading to the 2025.1 LTA version, you will experience a few changes.
 
@@ -79,7 +79,7 @@ To upgrade from the old and unmaintained [sonarqube-lts chart](https://artifacth
 
 ## How to use it
 
-Take some time to read the Deploy on [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/server/introduction/) page.
+Take some time to read the Deploy on [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/server/introduction/) page.
 SonarQube deployment on Kubernetes has been tested with the recommendations and constraints documented there, and deployment has some limitations.
 
 ## Uninstalling the chart
@@ -95,7 +95,7 @@ $ helm delete kindly-newt
 
 ## Prerequisites and suggested settings for production
 
-Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube/latest/requirements/prerequisites-and-overview/).
+Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/installation-requirements/overview/).
 
 ### Kubernetes - Pod Security Standards
 
@@ -174,11 +174,11 @@ The default request and limit for this chart are set to 2048M and 6144M, to comp
 
 Please feel free to adjust those values to your needs. However, given that memory is a “non-compressible” resource, we advise you to set the memory requests and limits to the **same**, making memory a guaranteed resource. This is needed especially for production use cases.
 
-To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/configure-and-operate-a-server/environment-variables/) and set the environment variables or sonar.properties accordingly.
+To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/environment-variables/) and set the environment variables or sonar.properties accordingly.
 
 ## Upgrade
 
-1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/upgrade-the-server/roadmap/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
+1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/roadmap/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
 2. Change the SonarQube version on `values.yaml`
 3. Redeploy SonarQube with the same helm chart (see [Install instructions](#installing-the-chart))
 4. Browse to <http://yourSonarQubeServerURL/setup> and follow the setup instructions
@@ -186,7 +186,7 @@ To get some guidance when setting the Xmx and Xms values, please refer to this [
 
 ### Upgrade from the old sonarqube-lts to this chart
 
-Please refer to the Helm upgrade section accessible [here](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/upgrade-the-server/upgrade/#upgrade-from-89x-lts-to-99x-lts).
+Please refer to the Helm upgrade section accessible [here](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade/#upgrade-from-89x-lta-to-99x-lta).
 
 ## Ingress usage
 
@@ -214,7 +214,7 @@ ingress:
 
 ## Monitoring
 
-This Helm chart offers the possibility to monitor SonarQube with Prometheus. You can find [Information on SonarQube monitoring on Kubernetes](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/set-up-monitoring/introduction/) in the SonarQube documentation.
+This Helm chart offers the possibility to monitor SonarQube with Prometheus. You can find [Information on SonarQube monitoring on Kubernetes](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/set-up-monitoring/introduction/) in the SonarQube documentation.
 
 ### Export JMX metrics
 
