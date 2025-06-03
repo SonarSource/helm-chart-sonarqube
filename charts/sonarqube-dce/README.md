@@ -21,7 +21,7 @@ Supported Openshift Versions: From `4.11` to `4.17`
 
 ## Installing the chart
 
-> **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/) for further information on how to install and tune the helm chart specifications.
+> **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/dce/introduction/) for further information on how to install and tune the helm chart specifications.
 
 Prior to installing the chart, please ensure that the `monitoringPasscode` and `applicationNodes.jwtSecret` are properly set. The `applicationNodes.jwtSecret` value needs to be set with a HS256 key encoded with base64. In the following, an example on how to generate this key on a Unix system:
 
@@ -49,7 +49,7 @@ The default login is admin/admin.
 
 ## Upgrading to SonarQube Server 2025.1 LTA
 
-When upgrading to SonarQube Server 2025.1 LTA from a previous versions, you should read carefully [the official documentation](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade-the-server/determine-path/) and determine the right upgrade path based on your current SonarQube Server version.
+When upgrading to SonarQube Server 2025.1 LTA from a previous versions, you should read carefully [the official documentation](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/determine-path/) and determine the right upgrade path based on your current SonarQube Server version.
 
 When upgrading to the 2025.1 LTA version, you will experience an important change.
 
@@ -71,7 +71,7 @@ helm upgrade --install -n sonarqube-dce --version '~7' sonarqube sonarqube/sonar
 
 ## How to use it
 
-Take some time to read the Deploy [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/) page.
+Take some time to read the Deploy [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/dce/introduction/) page.
 SonarQube deployment on Kubernetes has been tested with the recommendations and constraints documented there, and deployment has some limitations.
 
 ## Uninstalling the chart
@@ -87,7 +87,7 @@ $ helm delete kindly-newt
 
 ## Prerequisites and suggested settings for production
 
-Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube/latest/requirements/prerequisites-and-overview/).
+Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/installation-requirements/overview/).
 
 ### Kubernetes - Pod Security Standards
 
@@ -176,7 +176,7 @@ To comply with the 80% rule mentioned above, we set the following default values
 
 Please feel free to adjust those values to your needs. However, given that memory is a “non-compressible” resource, we advise you to set the memory requests and limits to the **same**, making memory a guaranteed resource. This is needed especially for production use cases.
 
-To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/configure-and-operate-a-server/environment-variables/) and set the environment variables or sonar.properties accordingly.
+To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/environment-variables/) and set the environment variables or sonar.properties accordingly.
 
 ## Ingress use cases
 
@@ -204,7 +204,7 @@ ingress:
 
 ## Monitoring
 
-This Helm chart offers the possibility to monitor SonarQube with Prometheus. You can find [Information on the SonarQube monitoring on Kubernetes](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/set-up-monitoring/introduction/) in the SonarQube documentation.
+This Helm chart offers the possibility to monitor SonarQube with Prometheus. You can find [Information on the SonarQube monitoring on Kubernetes](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/set-up-monitoring/introduction/) in the SonarQube documentation.
 
 ### Export JMX metrics
 
