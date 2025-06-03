@@ -20,6 +20,9 @@ var chartPath string = "../../charts/sonarqube"
 // release name
 var releaseName string = "sonarqube"
 
+// Community Build
+var expectedContainerImage string = "sonarqube:25.6.0.109173-community"
+
 // Ensure we are using the dry-run flag
 var helmOptions *helm.Options = &helm.Options{
 	ExtraArgs: map[string][]string{"install": {"--dry-run"}},
@@ -80,7 +83,6 @@ func TestNoTagLatestCommunity(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarqube:25.5.0.107428-community"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
@@ -116,7 +118,6 @@ func TestShouldUseBuildNumber(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarqube:25.5.0.107428-community"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
@@ -187,10 +188,10 @@ func TestCiCirrusValues(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarsource/sonarqube:25.5.0.107428-community"
+	expectedPrivateContainerImage := "sonarsource/" + expectedContainerImage
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
+	assert.Equal(t, expectedPrivateContainerImage, actualContainers[0].Image)
 }
 
 // This test loads the values.yaml used by the OpenShift Verifier at runtime.
@@ -202,10 +203,10 @@ func TestCiOpenshiftVerifierValues(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarsource/sonarqube:25.5.0.107428-community"
+	expectedPrivateContainerImage := "sonarsource/" + expectedContainerImage
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
+	assert.Equal(t, expectedPrivateContainerImage, actualContainers[0].Image)
 }
 
 func TestDeveloperEdition(t *testing.T) {
