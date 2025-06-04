@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [2025.4.0]
 * Update Chart's version to 2025.4.0
 * Upgrade SonarQube Community Build to 25.6.0.109173
+* Upgrade nginx subchart to 4.12.2
 
 ## [2025.3.0]
 * Update Chart's version to 2025.3.0
