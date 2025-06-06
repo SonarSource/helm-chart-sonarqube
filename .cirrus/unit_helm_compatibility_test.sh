@@ -10,7 +10,7 @@ CHART_NAME="${1:-$(basename "${PWD}")}"
 CHART_PATH="${1:+charts/$1}"
 CHART_PATH="${CHART_PATH:-.}"
 
-KUBE_VERSION="${KUBE_VERSION:-1.25.0}"
+KUBE_VERSION="${KUBE_VERSION:-1.33.1}"
 STATIC_TEST_FOLDER="${PROJECT_ROOT}/tests/unit-compatibility-test/${CHART_NAME}"
 
 if ! [[ -d "${STATIC_TEST_FOLDER}" ]]; then
