@@ -2,16 +2,19 @@
 
 set -eo pipefail
 
-GCLOUD_CLI_VERSION=495.0.0
-GCLOUD_CLI_CHECKSUM="5e76f6dae80e4eb07cdca607793a461162fd8d433b23ec2cc90403f686584044"
-MPDEV_VERSION=0.12.4
-MPDEV_CHECKSUM="fcc8aed037f9e3d79561d6658305ec38a30f29732ea7a89d128b5ab3bee490e6"
+# renovate: datasource=github-tags depName=gcloud-cli-vm packageName=twistedpair/google-cloud-sdk
+GCLOUD_CLI_VERSION=525.0.0
+GCLOUD_CLI_CHECKSUM_NO_RENOVATE="75941a1017e233bf42f7d7240488ed29b42dd3f347a4e453ee3d505932d2c475"
+
+# renovate: datasource=github-releases depName=mpdev-vm packageName=GoogleCloudPlatform/marketplace-k8s-app-tools
+MPDEV_VERSION=0.12.6
+MPDEV_CHECKSUM_NO_RENOVATE="c6f3894718b6a930bb60e21955d96832d722a4ca86a3077d8745bc49a47bdf7a"
 BASE_FOLDER="${BASE_FOLDER:-"/root/.gcp/cache"}"
 
 mkdir -p ${BASE_FOLDER}
 
 curl -LO https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz
-echo "${GCLOUD_CLI_CHECKSUM}  google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz" | sha256sum -c
+echo "${GCLOUD_CLI_CHECKSUM_NO_RENOVATE}  google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz" | sha256sum -c
 tar -xf google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz
 chmod +x ./google-cloud-sdk
 mv ./google-cloud-sdk ${BASE_FOLDER}/google-cloud-sdk
@@ -20,7 +23,7 @@ rm -rf google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz
 gcloud components install gke-gcloud-auth-plugin kubectl --quiet
 
 curl -LO https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/archive/refs/tags/${MPDEV_VERSION}.tar.gz
-echo "${MPDEV_CHECKSUM}  ${MPDEV_VERSION}.tar.gz" | sha256sum -c
+echo "${MPDEV_CHECKSUM_NO_RENOVATE}  ${MPDEV_VERSION}.tar.gz" | sha256sum -c
 tar -xf ${MPDEV_VERSION}.tar.gz
 mv marketplace-k8s-app-tools-${MPDEV_VERSION}/scripts/dev ${BASE_FOLDER}/mpdev
 chmod +x ${BASE_FOLDER}/mpdev

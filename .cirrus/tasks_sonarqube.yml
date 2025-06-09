@@ -1,5 +1,5 @@
 SKIP_IF_NOT_SONARQUBE: &SKIP_IF_NOT_SONARQUBE
-  skip: "!changesInclude('charts/sonarqube/*', 'charts/sonarqube/**/*', 'tests/unity-compatibility-test/sonarqube/*', '.cirrus/*.sh', '.cirrus/tasks{_sonarqube,_templates,}.yml', '.cirrus/tasks.star', '.cirrus.star') && $CIRRUS_CRON != $NIGHTLY_CRON"
+  skip: "!changesInclude('.cirrus/Dockerfile', 'charts/sonarqube/*', 'charts/sonarqube/**/*', 'tests/unity-compatibility-test/sonarqube/*', '.cirrus/*.sh', '.cirrus/tasks{_sonarqube,_templates,}.yml', '.cirrus/tasks.star', '.cirrus.star') && $CIRRUS_CRON != $NIGHTLY_CRON"
 
 sonarqube_chart_static_compatibility_test_task:
   <<: *CHART_STATIC_COMPATIBILITY_TEST_TEMPLATE
