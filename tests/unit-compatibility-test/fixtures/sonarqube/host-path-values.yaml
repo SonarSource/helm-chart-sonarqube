@@ -63,6 +63,22 @@ metadata:
 data:
   sonar.properties: |
 ---
+# Source: sonarqube/templates/init-fs.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: host-path-values.yaml-sonarqube-init-fs
+  labels:
+    app: sonarqube
+    chart: sonarqube-2025.4.0
+    release: host-path-values.yaml
+    heritage: Helm
+data:
+  init_fs.sh: |-
+    chown -R 1000:0 /opt/sonarqube/data
+    chown -R 1000:0 /opt/sonarqube/temp
+    chown -R 1000:0 /opt/sonarqube/logs
+---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -136,6 +152,23 @@ metadata:
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
   SONAR_JDBC_URL: "jdbc:postgresql://host-path-values.yaml-postgresql:5432/sonarDB"
+---
+# Source: sonarqube/templates/pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: host-path-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-2025.4.0
+    release: host-path-values.yaml
+    heritage: Helm
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "5Gi"
 ---
 # Source: sonarqube/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
@@ -401,6 +434,7 @@ spec:
     metadata:
       annotations:
         checksum/config: 58f926f453978be3b119001c5f15781bd300654c595c38f672316e215ced2cbe
+        checksum/init-fs: 307361eaa9ff131a8fbb4c4bf58c6706dc2a593b7046c1755254f0148c873bf3
         checksum/init-sysctl: ec235591418021d41910f07c9ac50aa9db2878f93b883145b7a20804cd20dacf
         checksum/plugins: 8c8b7ced6a47e8c11d306b7a505aa8cbfaa0af254f622cc5627821be217db8de
         checksum/secret: 692d927e2728f06c2d2db4e7fe5c7b1379d5ba80a22c494cf88edb92c0ad6130
@@ -446,6 +480,40 @@ spec:
               value: ""
             - name: SONAR_CE_JAVAOPTS
               value: ""
+        - name: init-fs
+          image: sonarqube:25.6.0.109173-community
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add:
+              - CHOWN
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: false
+            runAsUser: 0
+            seccompProfile:
+              type: RuntimeDefault
+          command: ["sh", "-e", "/tmp/scripts/init_fs.sh"]
+          volumeMounts:
+            - name: init-fs
+              mountPath: /tmp/scripts/
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+            - mountPath: /opt/sonarqube/extensions
+              name: sonarqube
+              subPath: extensions
       containers:
         - name: sonarqube
           image: sonarqube:25.6.0.109173-community
@@ -556,6 +624,12 @@ spec:
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
+        - name: init-fs
+          configMap:
+            name: host-path-values.yaml-sonarqube-init-fs
+            items:
+              - key: init_fs.sh
+                path: init_fs.sh
         - name: sonarqube
           hostPath:
              path: /data/sonarqube/

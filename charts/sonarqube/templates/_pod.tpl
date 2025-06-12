@@ -234,14 +234,14 @@ spec:
       volumeMounts:
         - mountPath: {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
           name: sonarqube
-          subPath: extensions/jdbc-driver/oracle 
+          subPath: extensions/jdbc-driver/oracle
         - name: install-oracle-jdbc-driver
           mountPath: /tmp/scripts/
         {{- if .Values.jdbcOverwrite.oracleJdbcDriver.netrcCreds }}
         - name: oracle-jdbc-driver-netrc-file
           mountPath: /root
         {{- end }}
-      {{- if .Values.caCerts.enabled }} 
+      {{- if .Values.caCerts.enabled }}
         - mountPath: /tmp/secrets/ca-certs
           name: ca-certs
       {{- end }}
@@ -471,13 +471,13 @@ spec:
             path: prometheus-ce-config.yaml
     {{- end }}
     - name: sonarqube
-      {{- if .Values.persistence.enabled }}
+      {{- if and .Values.persistence.enabled (not .Values.persistence.hostPath) }}
       persistentVolumeClaim:
         claimName: {{ if .Values.persistence.existingClaim }}{{ .Values.persistence.existingClaim }}{{- else }}{{ include "sonarqube.fullname" . }}{{- end }}
-      {{- else if .Values.hostPath.enabled }}
+      {{- else if and .Values.persistence.enabled .Values.persistence.hostPath }}
       hostPath:
-         path: {{ .Values.hostPath.path }}
-         type: {{ .Values.hostPath.type }}
+         path: {{ .Values.persistence.hostPath.path }}
+         type: {{ .Values.persistence.hostPath.type }}
       {{- else }}
       emptyDir: {{- toYaml .Values.emptyDir | nindent 8 }}
       {{- end }}
