@@ -490,13 +490,7 @@ spec:
           secretName: {{ .Values.searchNodes.searchAuthentication.keyStoreSecret }}
       {{- end }}
       - name: sonarqube
-        {{- if .Values.hostPath.enabled }}
-        hostPath:
-          path: {{ .Values.hostPath.path }}
-          type: {{ .Values.hostPath.type }}
-        {{- else }}
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
-        {{- end }}
       - name : tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
         {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
