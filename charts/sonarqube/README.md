@@ -488,19 +488,32 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Persistence
 
-| Parameter                   | Description                                       | Default         |
-| --------------------------- | ------------------------------------------------- | --------------- |
-| `persistence.enabled`       | Flag for enabling persistent storage              | `false`         |
-| `persistence.annotations`   | Kubernetes pvc annotations                        | `{}`            |
-| `persistence.existingClaim` | Do not create a new PVC but use this one          | `None`          |
-| `persistence.storageClass`  | Storage class to be used                          | `""`            |
-| `persistence.accessMode`    | Volumes access mode to be set                     | `ReadWriteOnce` |
-| `persistence.size`          | Size of the volume                                | `5Gi`           |
-| `persistence.volumes`       | (DEPRECATED) Please use extraVolumes instead      | `[]`            |
-| `persistence.mounts`        | (DEPRECATED) Please use extraVolumeMounts instead | `[]`            |
-| `persistence.uid`           | UID used for init-fs container                    | `1000`          |
-| `persistence.guid`          | GUID used for init-fs container                   | `0`             |
-| `emptyDir`                  | Configuration of resources for `emptyDir`         | `{}`            |
+| Parameter                   | Description                                        | Default         |
+| --------------------------- | -------------------------------------------------- | --------------- |
+| `persistence.enabled`       | Flag for enabling persistent storage               | `false`         |
+| `persistence.annotations`   | Kubernetes pvc annotations                         | `{}`            |
+| `persistence.existingClaim` | Do not create a new PVC but use this one           | `None`          |
+| `persistence.storageClass`  | Storage class to be used                           | `""`            |
+| `persistence.accessMode`    | Volumes access mode to be set                      | `ReadWriteOnce` |
+| `persistence.size`          | Size of the volume                                 | `5Gi`           |
+| `persistence.volumes`       | (DEPRECATED) Please use extraVolumes instead       | `[]`            |
+| `persistence.mounts`        | (DEPRECATED) Please use extraVolumeMounts instead  | `[]`            |
+| `persistence.uid`           | UID used for init-fs container                     | `1000`          |
+| `persistence.guid`          | GUID used for init-fs container                    | `0`             |
+| `emptyDir`                  | Configuration of resources for `emptyDir`          | `{}`            |
+| `persistence.hostPath.path` | Path where the data will be stored with `hostPath` | `""`            |
+| `persistence.hostPath.type` | `hostPath` volume types                            | `""`            |
+
+When using hostPath persistence, ensure that you are aware of the implications
+of using hostPath volumes in Kubernetes, as they can lead to data loss if the
+node is deleted or if the pod is rescheduled to a different node, as well as
+potential security risks if not properly managed. It is generally recommended
+to use a more robust storage solution for production deployments. Please refer
+to the [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath)
+for more information on hostPath volumes.
+
+In order to use hostPath persistence, you need to enable `persistence.enabled`
+and set `persistence.hostPath.path` and `persistence.hostPath.type`.
 
 ### JDBC Overwrite
 
