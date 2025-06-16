@@ -3,11 +3,11 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ca-certificates-configmap.yaml-postgresql
+  name: host-path-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: ca-certificates-configmap.yaml
+    app.kubernetes.io/instance: host-path-values.yaml
     app.kubernetes.io/managed-by: Helm
   namespace: default
 type: Opaque
@@ -20,11 +20,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ca-certificates-configmap.yaml-sonarqube-monitoring-passcode
+  name: host-path-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
     chart: sonarqube-2025.4.0
-    release: ca-certificates-configmap.yaml
+    release: host-path-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -35,11 +35,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ca-certificates-configmap.yaml-sonarqube-http-proxies
+  name: host-path-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
     chart: sonarqube-2025.4.0
-    release: ca-certificates-configmap.yaml
+    release: host-path-values.yaml
     heritage: Helm
 type: Opaque
 stringData:
@@ -54,24 +54,40 @@ stringData:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ca-certificates-configmap.yaml-sonarqube-config
+  name: host-path-values.yaml-sonarqube-config
   labels:
     app: sonarqube
     chart: sonarqube-2025.4.0
-    release: ca-certificates-configmap.yaml
+    release: host-path-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
+---
+# Source: sonarqube/templates/init-fs.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: host-path-values.yaml-sonarqube-init-fs
+  labels:
+    app: sonarqube
+    chart: sonarqube-2025.4.0
+    release: host-path-values.yaml
+    heritage: Helm
+data:
+  init_fs.sh: |-
+    chown -R 1000:0 /opt/sonarqube/data
+    chown -R 1000:0 /opt/sonarqube/temp
+    chown -R 1000:0 /opt/sonarqube/logs
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ca-certificates-configmap.yaml-sonarqube-init-sysctl
+  name: host-path-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
     chart: sonarqube-2025.4.0
-    release: ca-certificates-configmap.yaml
+    release: host-path-values.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -110,31 +126,15 @@ data:
       fi
     fi
 ---
-# Source: sonarqube/templates/install-oracle-jdbc-driver.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: ca-certificates-configmap.yaml-sonarqube-install-oracle-jdbc-driver
-  labels:
-    app: sonarqube
-    chart: sonarqube-2025.4.0
-    release: ca-certificates-configmap.yaml
-    heritage: Helm
-data:
-  install_oracle_jdbc_driver.sh: |-
-      rm -f /opt/sonarqube/extensions/jdbc-driver/oracle/*
-      cd /opt/sonarqube/extensions/jdbc-driver/oracle
-      curl --cacert /tmp/secrets/ca-certs/* --netrc-file /root/.netrc -fsSLO https://download.oracle.com/otn-pub/otn_software/jdbc/2113/ojdbc11.jar
----
 # Source: sonarqube/templates/install-plugins.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ca-certificates-configmap.yaml-sonarqube-install-plugins
+  name: host-path-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
     chart: sonarqube-2025.4.0
-    release: ca-certificates-configmap.yaml
+    release: host-path-values.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
@@ -143,25 +143,42 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ca-certificates-configmap.yaml-sonarqube-jdbc-config
+  name: host-path-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
     chart: sonarqube-2025.4.0
-    release: ca-certificates-configmap.yaml
+    release: host-path-values.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
-  SONAR_JDBC_URL: "jdbc:postgresql://ca-certificates-configmap.yaml-postgresql:5432/sonarDB"
+  SONAR_JDBC_URL: "jdbc:postgresql://host-path-values.yaml-postgresql:5432/sonarDB"
+---
+# Source: sonarqube/templates/pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: host-path-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-2025.4.0
+    release: host-path-values.yaml
+    heritage: Helm
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "5Gi"
 ---
 # Source: sonarqube/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: ca-certificates-configmap.yaml-postgresql-headless
+  name: host-path-values.yaml-postgresql-headless
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: ca-certificates-configmap.yaml
+    app.kubernetes.io/instance: host-path-values.yaml
     app.kubernetes.io/managed-by: Helm
     # Use this annotation in addition to the actual publishNotReadyAddresses
     # field below because the annotation will stop being respected soon but the
@@ -182,17 +199,17 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: ca-certificates-configmap.yaml
+    app.kubernetes.io/instance: host-path-values.yaml
 ---
 # Source: sonarqube/charts/postgresql/templates/svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: ca-certificates-configmap.yaml-postgresql
+  name: host-path-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: ca-certificates-configmap.yaml
+    app.kubernetes.io/instance: host-path-values.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
   namespace: default
@@ -204,18 +221,18 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: ca-certificates-configmap.yaml
+    app.kubernetes.io/instance: host-path-values.yaml
     role: primary
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: ca-certificates-configmap.yaml-sonarqube
+  name: host-path-values.yaml-sonarqube
   labels:
     app: sonarqube
     chart: sonarqube-2025.4.0
-    release: ca-certificates-configmap.yaml
+    release: host-path-values.yaml
     heritage: Helm
 spec:
   type: ClusterIP
@@ -226,38 +243,38 @@ spec:
       name: http
   selector:
     app: sonarqube
-    release: ca-certificates-configmap.yaml
+    release: host-path-values.yaml
 ---
 # Source: sonarqube/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: ca-certificates-configmap.yaml-postgresql
+  name: host-path-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: ca-certificates-configmap.yaml
+    app.kubernetes.io/instance: host-path-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
   namespace: default
 spec:
-  serviceName: ca-certificates-configmap.yaml-postgresql-headless
+  serviceName: host-path-values.yaml-postgresql-headless
   replicas: 1
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: ca-certificates-configmap.yaml
+      app.kubernetes.io/instance: host-path-values.yaml
       role: primary
   template:
     metadata:
-      name: ca-certificates-configmap.yaml-postgresql
+      name: host-path-values.yaml-postgresql
       labels:
         app.kubernetes.io/name: postgresql
         helm.sh/chart: postgresql-10.15.0
-        app.kubernetes.io/instance: ca-certificates-configmap.yaml
+        app.kubernetes.io/instance: host-path-values.yaml
         app.kubernetes.io/managed-by: Helm
         role: primary
         app.kubernetes.io/component: primary
@@ -271,7 +288,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: postgresql
-                    app.kubernetes.io/instance: ca-certificates-configmap.yaml
+                    app.kubernetes.io/instance: host-path-values.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
                   - "default"
@@ -283,7 +300,7 @@ spec:
         fsGroup: 1001
       automountServiceAccountToken: false
       containers:
-        - name: ca-certificates-configmap.yaml-postgresql
+        - name: host-path-values.yaml-postgresql
           image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
@@ -314,14 +331,14 @@ spec:
             - name: POSTGRES_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: ca-certificates-configmap.yaml-postgresql
+                  name: host-path-values.yaml-postgresql
                   key: postgresql-postgres-password
             - name: POSTGRES_USER
               value: "sonarUser"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: ca-certificates-configmap.yaml-postgresql
+                  name: host-path-values.yaml-postgresql
                   key: postgresql-password
             - name: POSTGRES_DB
               value: "sonarDB"
@@ -393,43 +410,44 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: ca-certificates-configmap.yaml-sonarqube
+  name: host-path-values.yaml-sonarqube
   labels:
     app: sonarqube
     chart: sonarqube-2025.4.0
-    release: ca-certificates-configmap.yaml
+    release: host-path-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: ca-certificates-configmap.yaml
-    app.kubernetes.io/instance: ca-certificates-configmap.yaml
+    app.kubernetes.io/name: host-path-values.yaml
+    app.kubernetes.io/instance: host-path-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: ca-certificates-configmap.yaml-sonarqube
-    app.kubernetes.io/version: "2025.3.0-enterprise"
+    app.kubernetes.io/component: host-path-values.yaml-sonarqube
+    app.kubernetes.io/version: "25.6.0.109173-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
-  serviceName: ca-certificates-configmap.yaml-sonarqube
+  serviceName: host-path-values.yaml-sonarqube
   selector:
     matchLabels:
       app: sonarqube
-      release: ca-certificates-configmap.yaml
+      release: host-path-values.yaml
   template:
     metadata:
       annotations:
-        checksum/config: 2934f5515c2c030a14c01e3f09e8339a2a7a67aff4c5597c16dfe8c0ff4efb07
-        checksum/init-sysctl: 619ea3889a356a1987f2f3e40a1cd0dc0d917fe0a4321e1c6b5e280f646a7dbd
-        checksum/plugins: 3c57e908aefa8bb13a2e06c0d0e9f6344567b347bee23f923f502d2bfc1d31c2
-        checksum/secret: 9a7c1d608ff50b2b10d0e67f8b93d07eb4b9a13937b6ec8f2437d864fe7bd64f
+        checksum/config: 58f926f453978be3b119001c5f15781bd300654c595c38f672316e215ced2cbe
+        checksum/init-fs: 307361eaa9ff131a8fbb4c4bf58c6706dc2a593b7046c1755254f0148c873bf3
+        checksum/init-sysctl: ec235591418021d41910f07c9ac50aa9db2878f93b883145b7a20804cd20dacf
+        checksum/plugins: 8c8b7ced6a47e8c11d306b7a505aa8cbfaa0af254f622cc5627821be217db8de
+        checksum/secret: 692d927e2728f06c2d2db4e7fe5c7b1379d5ba80a22c494cf88edb92c0ad6130
       labels:
         app: sonarqube
-        release: ca-certificates-configmap.yaml
+        release: host-path-values.yaml
     spec:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:2025.3.0-enterprise
+          image: sonarqube:25.6.0.109173-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -443,38 +461,9 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/ca-certificates-configmap.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
-        - name: ca-certs
-          image: sonarqube:2025.3.0-enterprise
-          imagePullPolicy: IfNotPresent
-          command: ["sh"]
-          args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          volumeMounts:
-            - mountPath: /tmp/certs
-              name: sonarqube
-              subPath: certs
-            - mountPath: /tmp/secrets/ca-certs
-              name: ca-certs
-          env:
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
-            - name: SONAR_CE_JAVAOPTS
-              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/host-path-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:2025.3.0-enterprise
+          image: sonarqube:25.6.0.109173-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -488,44 +477,46 @@ spec:
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS
-              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
+              value: ""
             - name: SONAR_CE_JAVAOPTS
-              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
-        - name: install-oracle-jdbc-driver
-          image: sonarqube:2025.3.0-enterprise
+              value: ""
+        - name: init-fs
+          image: sonarqube:25.6.0.109173-community
           imagePullPolicy: IfNotPresent
-          command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
           securityContext:
-            allowPrivilegeEscalation: false
             capabilities:
+              add:
+              - CHOWN
               drop:
               - ALL
+            privileged: false
             readOnlyRootFilesystem: true
             runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
+            runAsNonRoot: false
+            runAsUser: 0
             seccompProfile:
               type: RuntimeDefault
+          command: ["sh", "-e", "/tmp/scripts/init_fs.sh"]
           volumeMounts:
-            - mountPath: /opt/sonarqube/extensions/jdbc-driver/oracle
-              name: sonarqube
-              subPath: extensions/jdbc-driver/oracle
-            - name: install-oracle-jdbc-driver
+            - name: init-fs
               mountPath: /tmp/scripts/
-            - name: oracle-jdbc-driver-netrc-file
-              mountPath: /root
-            - mountPath: /tmp/secrets/ca-certs
-              name: ca-certs
-          env:
-            - name: SONAR_WEB_CONTEXT
-              value: /
-            - name: SONAR_WEB_JAVAOPTS
-              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
-            - name: SONAR_CE_JAVAOPTS
-              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+            - mountPath: /opt/sonarqube/extensions
+              name: sonarqube
+              subPath: extensions
       containers:
         - name: sonarqube
-          image: sonarqube:2025.3.0-enterprise
+          image: sonarqube:25.6.0.109173-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -546,22 +537,22 @@ spec:
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: ca-certificates-configmap.yaml-postgresql
+                  name: host-path-values.yaml-postgresql
                   key: postgresql-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: ca-certificates-configmap.yaml-sonarqube-monitoring-passcode
+                  name: host-path-values.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS
-              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
+              value: ""
             - name: SONAR_CE_JAVAOPTS
-              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
+              value: ""
           envFrom:
             - configMapRef:
-                name: ca-certificates-configmap.yaml-sonarqube-jdbc-config
+                name: host-path-values.yaml-sonarqube-jdbc-config
           livenessProbe:
             exec:
               command:
@@ -621,41 +612,28 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-            - mountPath: /opt/sonarqube/certs
-              name: sonarqube
-              subPath: certs
             - mountPath: /opt/sonarqube/extensions
               name: sonarqube
               subPath: extensions
       serviceAccountName: default
       volumes:
-        - name: ca-certs
-          configMap:
-            name: my-custom-cacerts-certificate
-            items:
-              - key: forticlient.crt
-                path: forticlient.crt
-        - name: oracle-jdbc-driver-netrc-file
-          secret:
-            secretName: test
-            items:
-            - key: netrc
-              path: .netrc
+        
         - name: init-sysctl
           configMap:
-            name: ca-certificates-configmap.yaml-sonarqube-init-sysctl
+            name: host-path-values.yaml-sonarqube-init-sysctl
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
-        - name: install-oracle-jdbc-driver
+        - name: init-fs
           configMap:
-            name: ca-certificates-configmap.yaml-sonarqube-install-oracle-jdbc-driver
+            name: host-path-values.yaml-sonarqube-init-fs
             items:
-              - key: install_oracle_jdbc_driver.sh
-                path: install_oracle_jdbc_driver.sh
+              - key: init_fs.sh
+                path: init_fs.sh
         - name: sonarqube
-          emptyDir:
-            {}
+          hostPath:
+             path: /data/sonarqube/
+             type: DirectoryOrCreate
         - name : tmp-dir
           emptyDir:
             {}
@@ -664,19 +642,19 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "ca-certificates-configmap.yaml-ui-test"
+  name: "host-path-values.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
     chart: sonarqube-2025.4.0
-    release: ca-certificates-configmap.yaml
+    release: host-path-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: ca-certificates-configmap.yaml-ui-test
-      image: "sonarqube:2025.3.0-enterprise"
+    - name: host-path-values.yaml-ui-test
+      image: "sonarqube:25.6.0.109173-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
@@ -686,7 +664,7 @@ spec:
         '-t',
         '12',
         '-qO-',
-        'ca-certificates-configmap.yaml-sonarqube:9000/api/system/status'
+        'host-path-values.yaml-sonarqube:9000/api/system/status'
         ]
       resources:
         limits:

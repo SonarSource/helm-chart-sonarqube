@@ -43,7 +43,7 @@ helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set 
 The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace.
 If you are interested in deploying SonarQube on Openshift, please check the [dedicated section](#openshift).
 
-The [configuration](#configuration) section lists the parameters that can be configured during installation. 
+The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 The default login is admin/admin.
 
@@ -150,7 +150,7 @@ Nonetheless, if you intend to run a production-grade SonarQube please follow the
 
 Prior to SonarQube Server Datacenter 10.8, we used a different naming conventions for `searchNodes` and `ApplicationNodes`. Specifically, we used the [Camel Case](https://en.wikipedia.org/wiki/Camel_case) notation in the former and not in the latter. While this can be viewed as a minor difference, we promote [Clean Code](https://www.sonarsource.com/solutions/clean-code/) at Sonar and this is a clear maintanability (and inconsistency) issue.
 
-Starting from 10.8, we advise users to rename your `ApplicationNodes` to `applicationNodes`. While this is a straightforward change for users, ensuring cross-compability between both usage is challenging (if you are interested in the technical implementation, please take a look at this [PR](https://github.com/SonarSource/helm-chart-sonarqube/pull/586)). 
+Starting from 10.8, we advise users to rename your `ApplicationNodes` to `applicationNodes`. While this is a straightforward change for users, ensuring cross-compability between both usage is challenging (if you are interested in the technical implementation, please take a look at this [PR](https://github.com/SonarSource/helm-chart-sonarqube/pull/586)).
 
 Please report any encountered bugs to https://community.sonarsource.com/.
 
@@ -244,7 +244,7 @@ If you want to make your application publicly visible with Routes, you can set `
 
 The SonarQube applications nodes can be set to automatically scale up and down based on their average CPU utilization. This is particularly useful when scanning new projects or evaluating Pull Requests with SonarQube. In order to enable the autoscaling, you can rely on the `applicationNodes.hpa` parameters.
 
-Please ensure the [Metrics Server](https://github.com/kubernetes-sigs/metrics-server) is installed in your cluster to provide resource usage metrics. You can deploy it using: 
+Please ensure the [Metrics Server](https://github.com/kubernetes-sigs/metrics-server) is installed in your cluster to provide resource usage metrics. You can deploy it using:
 
 ```
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml

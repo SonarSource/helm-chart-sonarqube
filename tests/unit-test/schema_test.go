@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"fmt"
+
 	"github.com/gruntwork-io/terratest/modules/helm"
 	"github.com/gruntwork-io/terratest/modules/logger"
 	"helm.sh/helm/v3/pkg/chart"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // Global variables
@@ -221,4 +223,47 @@ func TestDeveloperEdition(t *testing.T) {
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
+}
+
+// This function is used by TestHostPath and TestPersistenceWithoutHostpath
+func findVolumeByName(volumes []v1.Volume, name string) *v1.Volume {
+	for _, volume := range volumes {
+		if volume.Name == name {
+			return &volume
+		}
+	}
+	return nil
+}
+
+func TestHostPath(t *testing.T) {
+	helmOptions.ValuesFiles = []string{"test-cases-values/sonarqube/test-persistence-hostpath.yaml"}
+	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
+	assert.NoError(t, err)
+
+	var renderedTemplate appsv1.StatefulSet
+	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
+
+	actualVolumes := renderedTemplate.Spec.Template.Spec.Volumes
+	volume := findVolumeByName(actualVolumes, "sonarqube")
+
+	assert.NotNil(t, volume, "Volume 'sonarqube' should exist but was not found")
+	assert.NotNil(t, volume.HostPath, "sonarqube volume should have a HostPath source")
+	assert.Equal(t, "/hostPath/path", volume.HostPath.Path)
+	assert.Equal(t, v1.HostPathDirectoryOrCreate, *volume.HostPath.Type)
+}
+
+func TestPersistenceWithoutHostpath(t *testing.T) {
+	helmOptions.ValuesFiles = []string{"test-cases-values/sonarqube/test-persistence-without-hostpath.yaml"}
+	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
+	assert.NoError(t, err)
+
+	var renderedTemplate appsv1.StatefulSet
+	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
+
+	actualVolumes := renderedTemplate.Spec.Template.Spec.Volumes
+	volume := findVolumeByName(actualVolumes, "sonarqube")
+
+	assert.NotNil(t, volume, "Volume 'sonarqube' should exist but was not found")
+	assert.Nil(t, volume.HostPath, "sonarqube volume should NOT have a HostPath source")
+	assert.Equal(t, "sonarqube-sonarqube", volume.PersistentVolumeClaim.ClaimName)
 }

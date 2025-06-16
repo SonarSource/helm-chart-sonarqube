@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Upgrade SonarQube Community Build to 25.6.0.109173
 * Upgrade nginx subchart to 4.12.2
 * Support Kubernetes v1.32
+* Add the possibility of to save the data with hostpath
 
 ## [2025.3.0]
 * Update Chart's version to 2025.3.0
