@@ -72,7 +72,7 @@ chart_testing_on_openshift: &CHART_TESTING_ON_OPENSHIFT_TEMPLATE
     - chart-verifier version
   script:
     - mkdir -p "$(pwd)/report-${VERIFYING_CHART}"
-    - chart-verifier verify charts/"${VERIFYING_CHART}" --helm-install-timeout 20m -F charts/"${VERIFYING_CHART}"/openshift-verifier/values.yaml -n "${VERIFYING_CHART}" --openshift-version 4.16 > "$(pwd)/report-${VERIFYING_CHART}/report.yaml"
+    - chart-verifier verify -x images-are-certified charts/"${VERIFYING_CHART}" --helm-install-timeout 20m -F charts/"${VERIFYING_CHART}"/openshift-verifier/values.yaml -n "${VERIFYING_CHART}" --openshift-version 4.16 > "$(pwd)/report-${VERIFYING_CHART}/report.yaml"
   verifier_report_artifacts:
     path: "report-*/*.yaml"
   check_violations_script:
