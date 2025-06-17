@@ -22,8 +22,8 @@ var chartPath string = "../../charts/sonarqube"
 // release name
 var releaseName string = "sonarqube"
 
-// Community Build
-var expectedContainerImage string = "sonarqube:25.6.0.109173-master-community"
+// Community Build Version
+var expectedContainerImage string = "sonarqube:25.6.0.109173"
 
 // Ensure we are using the dry-run flag
 var helmOptions *helm.Options = &helm.Options{
@@ -87,7 +87,7 @@ func TestNoTagLatestCommunity(t *testing.T) {
 
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
+	assert.Equal(t, expectedContainerImage+"-community", actualContainers[0].Image)
 }
 
 func TestNoTagAppVersionDeveloper(t *testing.T) {
@@ -122,7 +122,7 @@ func TestShouldUseBuildNumber(t *testing.T) {
 
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
+	assert.Equal(t, expectedContainerImage+"-community", actualContainers[0].Image)
 }
 
 func TestShouldUseImageTag(t *testing.T) {
@@ -190,7 +190,7 @@ func TestCiCirrusValues(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedPrivateContainerImage := "sonarsource/" + expectedContainerImage
+	expectedPrivateContainerImage := "sonarsource/" + expectedContainerImage + "-master-community"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedPrivateContainerImage, actualContainers[0].Image)
@@ -205,7 +205,7 @@ func TestCiOpenshiftVerifierValues(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedPrivateContainerImage := "sonarsource/" + expectedContainerImage
+	expectedPrivateContainerImage := "sonarsource/" + expectedContainerImage + "-master-community"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedPrivateContainerImage, actualContainers[0].Image)
