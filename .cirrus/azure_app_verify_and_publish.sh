@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e # Exit immediately if a command exits with a non-zero status.
+set -ex # Exit immediately if a command exits with a non-zero status.
 
 # --- Configuration Variables ---
 # IMPORTANT: Replace these placeholder values with your actual details.
@@ -75,7 +75,7 @@ echo "CPA verification complete."
 echo "7. Building the CPA bundle (cpa buildbundle)..."
 # This creates the .cnab directory and the bundle file (e.g., sonarqube.cnab)
 # in the current directory (mounted as /data in container).
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data mcr.microsoft.com/container-package-app:latest cpa buildbundle --force --directory /data
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data -w /data mcr.microsoft.com/container-package-app:latest cpa buildbundle
 echo "CPA bundle built successfully."
 echo "CPA bundle pushed to ACR successfully!"
 
