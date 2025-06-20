@@ -14,6 +14,8 @@ PSQL_VERSION="${PSQL_VERSION:-11.14.0-debian-10-r22}" # PostgreSQL version used 
 # Azure Container Registry (ACR) details
 # This should match the 'registryServer' in your manifest.yaml
 ACR_REGISTRY="${AZURE_ACR_REGISTRY:-}"  
+ACR_USERNAME="${AZURE_ACR_USERNAME:-}" # Use environment variable or provide directly
+ACR_PASSWORD="${AZURE_ACR_PASSWORD:-}" # Use environment variable or provide directly
 
 # Application name from manifest.yaml (used for the CNAB bundle name)
 APPLICATION_NAME="sonarqube"
@@ -72,7 +74,16 @@ echo "CPA verification complete."
 echo "7. Building the CPA bundle (cpa buildbundle)..."
 # This creates the .cnab directory and the bundle file (e.g., sonarqube.cnab)
 # in the current directory (mounted as /data in container).
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data -w /data mcr.microsoft.com/container-package-app:latest cpa buildbundle --force
+docker run --platform linux/amd64 --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$(pwd)":/data \
+  -w /data \
+  -e AZURE_ACR_REGISTRY \
+  -e AZURE_ACR_USERNAME \
+  -e AZURE_ACR_PASSWORD \
+  mcr.microsoft.com/container-package-app:latest \
+  sh -c 'echo "$AZURE_ACR_PASSWORD" | docker login "$AZURE_ACR_REGISTRY" -u "$AZURE_ACR_USERNAME" --password-stdin && cpa buildbundle --force'
+
 echo "CPA bundle built successfully."
 echo "CPA bundle pushed to ACR successfully!"
 
