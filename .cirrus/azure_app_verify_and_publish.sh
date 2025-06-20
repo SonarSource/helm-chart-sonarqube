@@ -75,7 +75,7 @@ echo "CPA verification complete."
 echo "7. Building the CPA bundle (cpa buildbundle)..."
 # This creates the .cnab directory and the bundle file (e.g., sonarqube.cnab)
 # in the current directory (mounted as /data in container).
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data -w /data mcr.microsoft.com/container-package-app:latest cpa buildbundle
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data -w /data mcr.microsoft.com/container-package-app:latest cpa buildbundle --force
 echo "CPA bundle built successfully."
 echo "CPA bundle pushed to ACR successfully!"
 
