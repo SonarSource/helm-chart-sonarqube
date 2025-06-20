@@ -14,8 +14,6 @@ PSQL_VERSION="${PSQL_VERSION:-11.14.0-debian-10-r22}" # PostgreSQL version used 
 # Azure Container Registry (ACR) details
 # This should match the 'registryServer' in your manifest.yaml
 ACR_REGISTRY="${AZURE_ACR_REGISTRY:-}"  
-ACR_USERNAME="${AZURE_ACR_USERNAME:-}" # Use environment variable or provide directly
-ACR_PASSWORD="${AZURE_ACR_PASSWORD:-}" # Use environment variable or provide directly
 
 # Application name from manifest.yaml (used for the CNAB bundle name)
 APPLICATION_NAME="sonarqube"
@@ -56,7 +54,6 @@ echo "SonarQube subchart decompressed and .tgz removed."
 # 4. Navigate back to the main offer directory
 cd ../.. # Back to azure-marketplace-k8s-app/
 
-
 # # 5. Push required images to the ACR_REGISTRY registry
 echo "5. Push required images to the ACR_REGISTRY registry..."
 docker tag "sonarqube:${SONARQUBE_CHART_VERSION}-enterprise" "${ACR_REGISTRY}/sonarqube:${SONARQUBE_CHART_VERSION}-enterprise"
@@ -68,7 +65,7 @@ docker push "${ACR_REGISTRY}/bitnami/postgresql:${PSQL_VERSION}"
 echo "6. Running CPA verification (cpa verify)..."
 # The -v ./:/data mounts the current directory (azure-marketplace-k8s-app) to /data inside the container.
 # CPA commands will operate on files relative to /data.
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data mcr.microsoft.com/container-package-app:latest cpa verify --directory /data
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data -w /data mcr.microsoft.com/container-package-app:latest cpa verify
 echo "CPA verification complete."
 
 # 7. Run CPA buildbundle within the container
