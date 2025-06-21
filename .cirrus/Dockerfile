@@ -9,9 +9,9 @@ USER root
 # Note: the v in some version is a restriction for github-release-attachments datasource, where tags are expected to start with v.
 ##
 # renovate: datasource=github-releases depName=helm packageName=helm/helm
-ARG HELM_VERSION=v3.18.2
+ARG HELM_VERSION=v3.18.3
 # renovate: datasource=github-releases depName=kubectl packageName=kubernetes/kubernetes
-ARG KUBECTL_VERSION=v1.33.1
+ARG KUBECTL_VERSION=v1.33.2
 # renovate: datasource=pypi depName=yamllint packageName=yamllint
 ARG YAMLLINT_VERSION=1.37.1
 # renovate: datasource=pypi depName=yamale packageName=yamale
@@ -26,8 +26,8 @@ ARG YQ_CHECKSUM="b96de04645707e14a12f52c37e6266832e03c29e95b9b139cddcae7314466e6
 ARG KUBECONFORM_VERSION=v0.7.0
 ARG KUBECONFORM_CHECKSUM="c31518ddd122663b3f3aa874cfe8178cb0988de944f29c74a0b9260920d115d3"
 # renovate: datasource=github-release-attachments depName=chart-verified packageName=redhat-certification/chart-verifier
-ARG CHART_VERIFIER_VERSION=1.13.11
-ARG CHART_VERIFIER_CHECKSUM="ad221d0e030ce820c8ecfadaa10a6d5183adbe00fcd8dee627c3fdd7e5bf37e7"
+ARG CHART_VERIFIER_VERSION=1.13.12
+ARG CHART_VERIFIER_CHECKSUM="4fbca3f3b6cb29090e2b8118968312f4d257c874972d76408a301b68d14cbded"
 #NO RENOVATE, this is not possible to fetch update automatically as there is no proper github release or json file available
 ARG OPENSHIFT_CLI_VERSION=4.18.9
 ARG OPENSHIFT_CLI_CHECKSUM="1e2d73c870756e3940dcb6c1112c7aa7f702a89cfdb992d11079ac852b4ea05c"
