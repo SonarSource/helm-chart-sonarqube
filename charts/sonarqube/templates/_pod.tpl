@@ -193,7 +193,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     {{- end }}
-    {{- if .Values.plugins.install }}
+    {{- if or .Values.plugins.install .Values.persistence.enabled }}
     - name: install-plugins
       image: {{ default (include "sonarqube.image" $) .Values.plugins.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -440,7 +440,7 @@ spec:
           - key: init_fs.sh
             path: init_fs.sh
     {{- end }}
-    {{- if .Values.plugins.install }}
+    {{- if or .Values.plugins.install .Values.persistence.enabled }}
     - name: install-plugins
       configMap:
         name: {{ include "sonarqube.fullname" . }}-install-plugins

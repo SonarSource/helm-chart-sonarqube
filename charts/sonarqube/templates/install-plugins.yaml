@@ -5,10 +5,28 @@ metadata:
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 data:
   install_plugins.sh: |-
+    cd {{ .Values.sonarqubeFolder }}/extensions/plugins
+    if [ -f "installed-plugins.txt" ]; then
+        echo "Found existing installed-plugins.txt. Cleaning up old files..."
+        
+        while IFS= read -r plugin_file; do
+            if [ -f "$plugin_file" ]; then
+                echo "Deleting $plugin_file..."
+                rm -f "$plugin_file"
+            else
+                echo "File $plugin_file not found, skipping..."
+            fi
+        done < installed-plugins.txt
+
+        rm -f installed-plugins.txt
+    else
+        echo "installed-plugins.txt not found. Deleting all files in the folder..."
+        rm -f ./*
+    fi
+
+    touch installed-plugins.txt
     {{- if .Values.plugins.install }}
-      rm -f {{ .Values.sonarqubeFolder }}/extensions/plugins/*
-      cd {{ .Values.sonarqubeFolder }}/extensions/plugins
       {{- range $index, $val := .Values.plugins.install }}
-      curl {{ if $.Values.plugins.noCheckCertificate }}--insecure{{ end }} {{ if $.Values.plugins.netrcCreds }}--netrc-file /root/.netrc{{ end }} -fsSLO {{ $val | quote }}
+      curl {{ if $.Values.plugins.noCheckCertificate }}--insecure{{ end }} {{ if $.Values.plugins.netrcCreds }}--netrc-file /root/.netrc{{ end }} -fsSLO {{ $val | quote }} && echo "$(basename {{ $val | quote }})" >> installed-plugins.txt
       {{- end }}
     {{- end }}
