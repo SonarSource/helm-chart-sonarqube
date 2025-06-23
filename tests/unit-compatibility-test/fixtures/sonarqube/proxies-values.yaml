@@ -23,7 +23,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.3.0
+    chart: sonarqube-2025.3.1
     release: proxies-values.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.3.0
+    chart: sonarqube-2025.3.1
     release: proxies-values.yaml
     heritage: Helm
 type: Opaque
@@ -57,7 +57,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.3.0
+    chart: sonarqube-2025.3.1
     release: proxies-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.3.0
+    chart: sonarqube-2025.3.1
     release: proxies-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.3.0
+    chart: sonarqube-2025.3.1
     release: proxies-values.yaml
     heritage: Helm
 data:
@@ -133,7 +133,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.3.0
+    chart: sonarqube-2025.3.1
     release: proxies-values.yaml
     heritage: Helm
 data:
@@ -147,7 +147,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-prometheus-ce-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.3.0
+    chart: sonarqube-2025.3.1
     release: proxies-values.yaml
     heritage: Helm
 data:
@@ -162,7 +162,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-prometheus-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.3.0
+    chart: sonarqube-2025.3.1
     release: proxies-values.yaml
     heritage: Helm
 data:
@@ -231,7 +231,7 @@ metadata:
   name: proxies-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.3.0
+    chart: sonarqube-2025.3.1
     release: proxies-values.yaml
     heritage: Helm
 spec:
@@ -413,7 +413,7 @@ metadata:
   name: proxies-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.3.0
+    chart: sonarqube-2025.3.1
     release: proxies-values.yaml
     heritage: Helm
     app.kubernetes.io/name: proxies-values.yaml
@@ -421,7 +421,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: proxies-values.yaml-sonarqube
-    app.kubernetes.io/version: "2025.3.0-enterprise"
+    app.kubernetes.io/version: "2025.3.1-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -433,12 +433,12 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: f6bf5eeb65a277e83300c2aed60f9ab2b1d9abec24d030a8f031cc2bd8d66c77
-        checksum/init-sysctl: 928756fe134f66a08dc519248b850b62410061e493c2fed73385493bbabb7448
-        checksum/plugins: 90b1c2b2991ab67fa756d5ba8a74775ac91054e1777ce6737a41cea3942c56d2
-        checksum/secret: 8d03633df1a706beaed3905583122efb5a3ef2b9a0ba5d60e3221141186e95e6
-        checksum/prometheus-config: f46a49bf7f7430117e83072b12fda92e828ed1edc1fec95a61f7bf45c1dce52f
-        checksum/prometheus-ce-config: 57b2cc78c0664a039b025455ebac4e8d5f70af298c603b28d457b834b11016e2
+        checksum/config: 02783f666b08a8fd1f04193547c787a6252b3f2cbc8a889e5181364945d3cd30
+        checksum/init-sysctl: 0c0addc94ebc8fd8fd79dce2a1350fcc3d891fe3b6c5bf57919bc4853f11e2f1
+        checksum/plugins: acc7cf5489e358f8379d3b2af04010e09ce679424b239dc58857c9988784f985
+        checksum/secret: a5111a21d032f1fb18a4ab4aa50994a1a0ef7219b19490c3f1d00d782d03849d
+        checksum/prometheus-config: 474f5e9e13322510ecaa428923fdde3f628b237bbdd86519ad50b6416283995f
+        checksum/prometheus-ce-config: ed97b1cdbd7e4b37201964a5b3c6d27f4876a83ad50710887549f2a6c524d46e
       labels:
         app: sonarqube
         release: proxies-values.yaml
@@ -448,7 +448,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:2025.3.0-enterprise
+          image: sonarqube:2025.3.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -464,7 +464,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/proxies-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:2025.3.0-enterprise
+          image: sonarqube:2025.3.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -482,7 +482,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
         - name: inject-prometheus-exporter
-          image: sonarqube:2025.3.0-enterprise
+          image: sonarqube:2025.3.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -524,7 +524,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
         - name: install-plugins
-          image: sonarqube:2025.3.0-enterprise
+          image: sonarqube:2025.3.1-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
           securityContext:
@@ -568,7 +568,7 @@ spec:
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
       containers:
         - name: sonarqube
-          image: sonarqube:2025.3.0-enterprise
+          image: sonarqube:2025.3.1-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -591,7 +591,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.3.0
+              value: 2025.3.1
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -722,14 +722,14 @@ metadata:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
-    chart: sonarqube-2025.3.0
+    chart: sonarqube-2025.3.1
     release: proxies-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: proxies-values.yaml-ui-test
-      image: "sonarqube:2025.3.0-enterprise"
+      image: "sonarqube:2025.3.1-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

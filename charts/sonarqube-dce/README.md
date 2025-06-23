@@ -14,7 +14,7 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 ## Compatibility
 
-Compatible SonarQube Version: `2025.3.0`
+Compatible SonarQube Version: `2025.3.1`
 
 Supported Kubernetes Versions: From `1.30` to `1.32`
 Supported Openshift Versions: From `4.11` to `4.17`
@@ -293,7 +293,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                                                 | Description                                                                                | Default                                                                |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
 | `searchNodes.image.repository`                            | search image repository                                                                    | `sonarqube`                                                            |
-| `searchNodes.image.tag`                                   | search image tag                                                                           | `2025.3.0-datacenter-search`                                             |
+| `searchNodes.image.tag`                                   | search image tag                                                                           | `2025.3.1-datacenter-search`                                             |
 | `searchNodes.image.pullPolicy`                            | search image pull policy                                                                   | `IfNotPresent`                                                         |
 | `searchNodes.image.pullSecret`                            | (DEPRECATED) search imagePullSecret to use for private repository                          | `nil`                                                                  |
 | `searchNodes.image.pullSecrets`                           | search imagePullSecrets to use for private repository                                      | `nil`                                                                  |
@@ -350,7 +350,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                                                        | Description                                                                                                                                                                                                    | Default                                                                |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `applicationNodes.image.repository`                              | app image repository                                                                                                                                                                                           | `sonarqube`                                                            |
-| `applicationNodes.image.tag`                                     | app image tag                                                                                                                                                                                                  | `2025.3.0-datacenter-app`                                                |
+| `applicationNodes.image.tag`                                     | app image tag                                                                                                                                                                                                  | `2025.3.1-datacenter-app`                                                |
 | `applicationNodes.image.pullPolicy`                              | app image pull policy                                                                                                                                                                                          | `IfNotPresent`                                                         |
 | `applicationNodes.image.pullSecret`                              | (DEPRECATED) app imagePullSecret to use for private repository                                                                                                                                                 | `nil`                                                                  |
 | `applicationNodes.image.pullSecrets`                             | app imagePullSecrets to use for private repository                                                                                                                                                             | `nil`                                                                  |
