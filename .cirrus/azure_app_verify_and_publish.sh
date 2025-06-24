@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e # Exit immediately if a command exits with a non-zero status.
+set -ex # Exit immediately if a command exits with a non-zero status.
 
 # --- Configuration Variables ---
 # IMPORTANT: Replace these placeholder values with your actual details.
@@ -56,7 +56,6 @@ echo "SonarQube subchart decompressed and .tgz removed."
 # 4. Navigate back to the main offer directory
 cd ../.. # Back to azure-marketplace-k8s-app/
 
-
 # # 5. Push required images to the ACR_REGISTRY registry
 echo "5. Push required images to the ACR_REGISTRY registry..."
 docker tag "sonarqube:${SONARQUBE_CHART_VERSION}-enterprise" "${ACR_REGISTRY}/sonarqube:${SONARQUBE_CHART_VERSION}-enterprise"
@@ -68,15 +67,25 @@ docker push "${ACR_REGISTRY}/bitnami/postgresql:${PSQL_VERSION}"
 echo "6. Running CPA verification (cpa verify)..."
 # The -v ./:/data mounts the current directory (azure-marketplace-k8s-app) to /data inside the container.
 # CPA commands will operate on files relative to /data.
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data mcr.microsoft.com/container-package-app:latest cpa verify --directory /data
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data -w /data mcr.microsoft.com/container-package-app:latest cpa verify
 echo "CPA verification complete."
 
 # 7. Run CPA buildbundle within the container
 echo "7. Building the CPA bundle (cpa buildbundle)..."
 # This creates the .cnab directory and the bundle file (e.g., sonarqube.cnab)
 # in the current directory (mounted as /data in container).
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data mcr.microsoft.com/container-package-app:latest cpa buildbundle --force --directory /data
+docker run --platform linux/amd64 --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$(pwd)":/data \
+  -w /data \
+  -e AZURE_ACR_REGISTRY \
+  -e AZURE_ACR_USERNAME \
+  -e AZURE_ACR_PASSWORD \
+  mcr.microsoft.com/container-package-app:latest \
+  sh -c 'echo "$AZURE_ACR_PASSWORD" | docker login "$AZURE_ACR_REGISTRY" -u "$AZURE_ACR_USERNAME" --password-stdin && cpa buildbundle --force'
+
 echo "CPA bundle built successfully."
 echo "CPA bundle pushed to ACR successfully!"
 
 echo "--- Azure Marketplace K8s App Packaging Process Complete ---"
+
