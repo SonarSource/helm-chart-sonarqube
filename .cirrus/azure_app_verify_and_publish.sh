@@ -88,3 +88,4 @@ echo "CPA bundle built successfully."
 echo "CPA bundle pushed to ACR successfully!"
 
 echo "--- Azure Marketplace K8s App Packaging Process Complete ---"
+
