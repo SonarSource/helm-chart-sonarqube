@@ -3,7 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [2025.4.0]
 * Update Chart's version to 2025.4.0
-* Upgrade SonarQube Community Build to 25.6.0.109173
+* Upgrade SonarQube Community Build to 25.7.0.110598
 * Upgrade nginx subchart to 4.12.2
 * Support Kubernetes v1.32
 * Add the possibility of to save the data with hostpath
