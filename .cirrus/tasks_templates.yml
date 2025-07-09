@@ -18,7 +18,7 @@ docker_build_container_template: &CONTAINER_TEMPLATE
   region: eu-central-1
   namespace: default
   cpu: 1
-  memory: 1Gb
+  memory: 2Gb
 
 container_template: &STD_CONTAINER_TEMPLATE
   image: ${CIRRUS_AWS_ACCOUNT}.dkr.ecr.eu-central-1.amazonaws.com/base:j11-latest
@@ -26,7 +26,7 @@ container_template: &STD_CONTAINER_TEMPLATE
   region: eu-central-1
   namespace: default
   cpu: 1
-  memory: 1Gb
+  memory: 2Gb
 
 vm_instance_template: &VM_TEMPLATE
   image: docker-builder-v*
@@ -53,7 +53,7 @@ chart_static_compatibility_test: &CHART_STATIC_COMPATIBILITY_TEST_TEMPLATE
   eks_container:
     <<: *CONTAINER_TEMPLATE
     cpu: 1
-    memory: 1Gb
+    memory: 2Gb
   <<: *CLONE_SCRIPT_TEMPLATE
 
 chart_testing_on_openshift: &CHART_TESTING_ON_OPENSHIFT_TEMPLATE
@@ -104,7 +104,7 @@ chart_packaging: &CHART_PACKAGING_TASK_TEMPLATE
   eks_container:
     <<: *CONTAINER_TEMPLATE
     cpu: 2
-    memory: 1Gb
+    memory: 2Gb
   <<: *CLONE_SCRIPT_TEMPLATE
   environment_cache:
     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
@@ -128,7 +128,7 @@ push_to_repox: &PUSH_TO_REPOX_TASK_TEMPLATE
   eks_container:
     <<: *STD_CONTAINER_TEMPLATE
     cpu: 1
-    memory: 1Gb
+    memory: 2Gb
   <<: *CLONE_SCRIPT_TEMPLATE
   environment_cache:
     folder: ${CIRRUS_WORKING_DIR}/*.tgz*
