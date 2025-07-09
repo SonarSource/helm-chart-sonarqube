@@ -8,13 +8,13 @@ sonarqube_dce_chart_static_compatibility_test_task:
     - ./.cirrus/build_chart_dependencies.sh charts/sonarqube-dce
     - ./.cirrus/unit_helm_compatibility_test.sh sonarqube-dce
 
-# chart_testing_on_openshift_sonarqube_dce_task:
-#   <<: *CHART_TESTING_ON_OPENSHIFT_TEMPLATE
-#   <<: *SKIP_IF_NOT_SONARQUBE_DCE
-#   env:
-#     - VERIFYING_CHART: sonarqube-dce
-#   depends_on:
-#     - sonarqube_dce_chart_static_compatibility_test
+chart_testing_on_openshift_sonarqube_dce_task:
+  <<: *CHART_TESTING_ON_OPENSHIFT_TEMPLATE
+  <<: *SKIP_IF_NOT_SONARQUBE_DCE
+  env:
+    - VERIFYING_CHART: sonarqube-dce
+  depends_on:
+    - sonarqube_dce_chart_static_compatibility_test
 
 chart_testing_on_kind_sonarqube_dce_task:
   <<: *CHART_TESTING_ON_KIND_TEMPLATE
@@ -37,7 +37,7 @@ sonarqube_dce_chart_packaging_task:
     - ./.cirrus/sign_chart.sh sonarqube-dce
   depends_on:
     - chart_testing_on_kind_sonarqube_dce
-    # - chart_testing_on_openshift_sonarqube_dce
+    - chart_testing_on_openshift_sonarqube_dce
 
 sonarqube_dce_push_to_repox_task:
   <<: *PUSH_TO_REPOX_TASK_TEMPLATE
