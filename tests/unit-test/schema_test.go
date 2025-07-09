@@ -187,7 +187,7 @@ func TestCiCirrusValues(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarsource/sonarqube:2025.1.3-enterprise"
+	expectedContainerImage := "sonarsource/sonarqube:2025.1.3-master-enterprise"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
@@ -202,7 +202,7 @@ func TestCiOpenshiftVerifierValues(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarsource/sonarqube:2025.1.3-enterprise"
+	expectedContainerImage := "sonarsource/sonarqube:2025.1.3-master-enterprise"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)

@@ -1,5 +1,5 @@
 SKIP_IF_NOT_SONARQUBE_DCE: &SKIP_IF_NOT_SONARQUBE_DCE
-  skip: "!changesInclude('charts/sonarqube-dce/*', 'charts/sonarqube-dce/**/*', 'tests/unity-compatibility-test/sonarqube-dce/*', '.cirrus/*.sh', '.cirrus/tasks{_sonarqube_dce,_templates,}.yml', '.cirrus/tasks.star', '.cirrus.star') && $CIRRUS_CRON != $NIGHTLY_CRON"
+  skip: "!($CIRRUS_PRERELEASE != \"true\" && $CIRRUS_RELEASE != \"\") && !changesInclude('charts/sonarqube-dce/*', 'charts/sonarqube-dce/**/*', 'tests/unity-compatibility-test/sonarqube-dce/*', '.cirrus/*.sh', '.cirrus/tasks{_sonarqube_dce,_templates,}.yml', '.cirrus/tasks.star', '.cirrus.star') && $CIRRUS_CRON != $NIGHTLY_CRON"
 
 sonarqube_dce_chart_static_compatibility_test_task:
   <<: *CHART_STATIC_COMPATIBILITY_TEST_TEMPLATE
