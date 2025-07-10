@@ -23,7 +23,7 @@ var chartPath string = "../../charts/sonarqube"
 var releaseName string = "sonarqube"
 
 // Community Build Version
-var expectedContainerImage string = "sonarqube:25.6.0.109173"
+var expectedContainerImage string = "sonarqube:25.7.0.110598"
 
 // Ensure we are using the dry-run flag
 var helmOptions *helm.Options = &helm.Options{
