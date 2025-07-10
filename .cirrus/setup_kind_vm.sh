@@ -34,7 +34,7 @@ pip install "yamale==${YAMALE_VERSION}"
 
 # Install kubectl
 # renovate: datasource=github-releases depName=kubectl-vm packageName=kubernetes/kubernetes
-KUBECTL_VERSION=v1.33.1
+KUBECTL_VERSION=v1.33.2
 curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
 curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl.sha256 
 printf %s "  kubectl" >> kubectl.sha256
@@ -45,7 +45,7 @@ rm kubectl.sha256
 
 # Install helm
 # renovate: datasource=github-releases depName=helm-vm packageName=helm/helm
-HELM_VERSION=v3.18.2
+HELM_VERSION=v3.18.4
 curl -LO https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz
 tar -xf helm-${HELM_VERSION}-linux-amd64.tar.gz
 chmod +x ./linux-amd64/helm
