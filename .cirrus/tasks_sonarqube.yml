@@ -1,5 +1,5 @@
 SKIP_IF_NOT_SONARQUBE: &SKIP_IF_NOT_SONARQUBE
-  skip: "!changesInclude('charts/sonarqube/*', 'charts/sonarqube/**/*', 'tests/unity-compatibility-test/sonarqube/*', '.cirrus/*.sh', '.cirrus/tasks{_sonarqube,_templates,}.yml', '.cirrus/tasks.star', '.cirrus.star') && $CIRRUS_CRON != $NIGHTLY_CRON"
+  skip: "$CIRRUS_PRERELEASE == \"true\" && $CIRRUS_RELEASE == \"\" && !changesInclude('charts/sonarqube/*', 'charts/sonarqube/**/*', 'tests/unity-compatibility-test/sonarqube/*', '.cirrus/*.sh', '.cirrus/tasks{_sonarqube,_templates,}.yml', '.cirrus/tasks.star', '.cirrus.star') && $CIRRUS_CRON != $NIGHTLY_CRON"
 
 sonarqube_chart_static_compatibility_test_task:
   <<: *CHART_STATIC_COMPATIBILITY_TEST_TEMPLATE
@@ -8,13 +8,13 @@ sonarqube_chart_static_compatibility_test_task:
     - ./.cirrus/build_chart_dependencies.sh charts/sonarqube
     - ./.cirrus/unit_helm_compatibility_test.sh sonarqube
 
-# chart_testing_on_openshift_sonarqube_task:
-#   <<: *CHART_TESTING_ON_OPENSHIFT_TEMPLATE
-#   <<: *SKIP_IF_NOT_SONARQUBE
-#   env:
-#     - VERIFYING_CHART: sonarqube
-#   depends_on:
-#     - sonarqube_chart_static_compatibility_test
+chart_testing_on_openshift_sonarqube_task:
+  <<: *CHART_TESTING_ON_OPENSHIFT_TEMPLATE
+  <<: *SKIP_IF_NOT_SONARQUBE
+  env:
+    - VERIFYING_CHART: sonarqube
+  depends_on:
+    - sonarqube_chart_static_compatibility_test
 
 chart_testing_on_kind_sonarqube_task:
   <<: *CHART_TESTING_ON_KIND_TEMPLATE
@@ -34,7 +34,7 @@ sonarqube_chart_packaging_task:
     - ./.cirrus/sign_chart.sh sonarqube
   depends_on:
     - chart_testing_on_kind_sonarqube
-    # - chart_testing_on_openshift_sonarqube
+    - chart_testing_on_openshift_sonarqube
 
 sonarqube_push_to_repox_task:
   <<: *PUSH_TO_REPOX_TASK_TEMPLATE

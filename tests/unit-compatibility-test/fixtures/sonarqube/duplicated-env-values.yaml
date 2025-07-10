@@ -23,7 +23,7 @@ metadata:
   name: duplicated-env-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.2
+    chart: sonarqube-2025.1.3
     release: duplicated-env-values.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: duplicated-env-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.2
+    chart: sonarqube-2025.1.3
     release: duplicated-env-values.yaml
     heritage: Helm
 type: Opaque
@@ -57,7 +57,7 @@ metadata:
   name: duplicated-env-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.2
+    chart: sonarqube-2025.1.3
     release: duplicated-env-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: duplicated-env-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.2
+    chart: sonarqube-2025.1.3
     release: duplicated-env-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: duplicated-env-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.2
+    chart: sonarqube-2025.1.3
     release: duplicated-env-values.yaml
     heritage: Helm
 data:
@@ -130,7 +130,7 @@ metadata:
   name: duplicated-env-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.2
+    chart: sonarqube-2025.1.3
     release: duplicated-env-values.yaml
     heritage: Helm
 data:
@@ -144,7 +144,7 @@ metadata:
   name: duplicated-env-values.yaml-sonarqube-prometheus-ce-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.2
+    chart: sonarqube-2025.1.3
     release: duplicated-env-values.yaml
     heritage: Helm
 data:
@@ -159,7 +159,7 @@ metadata:
   name: duplicated-env-values.yaml-sonarqube-prometheus-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.2
+    chart: sonarqube-2025.1.3
     release: duplicated-env-values.yaml
     heritage: Helm
 data:
@@ -228,7 +228,7 @@ metadata:
   name: duplicated-env-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.2
+    chart: sonarqube-2025.1.3
     release: duplicated-env-values.yaml
     heritage: Helm
 spec:
@@ -410,7 +410,7 @@ metadata:
   name: duplicated-env-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.2
+    chart: sonarqube-2025.1.3
     release: duplicated-env-values.yaml
     heritage: Helm
     app.kubernetes.io/name: duplicated-env-values.yaml
@@ -418,7 +418,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: duplicated-env-values.yaml-sonarqube
-    app.kubernetes.io/version: "2025.1.2-enterprise"
+    app.kubernetes.io/version: "2025.1.3-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -430,12 +430,12 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 3f05a36d0fa70aced92305633b06fab92510a792f470a9776847fd22c07a4bd4
-        checksum/init-sysctl: d389d3b371a792fe3dbde2958776d4e5991c468e77dea73b63ab0c58cee6d9c6
-        checksum/plugins: b76ac37613c4fff03ebb19be18951c0a67eb3401dfd9ecd8a72531f54c264aad
-        checksum/secret: fb9860236aa696ba5ae3f2b512ff38ec0bff6efa91016a46ca13e911b5dd7b07
-        checksum/prometheus-config: 0d600be2aeded6b0556bf0950e10fb5143ac350170e4da2b7411494757598251
-        checksum/prometheus-ce-config: 04c27721130dc477177a298a90e52340a9a823e9b6ca1a7108d5086189f1bff4
+        checksum/config: 1e96fdec2fcebec3776579f457ddd5314a76d1f487d05a1b1f40ebd02718b784
+        checksum/init-sysctl: 764fe17b72fc41bded1464e627e7562f4bfe0dcb03ac84042083e62fa1676e0d
+        checksum/plugins: 6b04c9a09954c75ff0e36b1705b239f30894e6087717d405845134b5b43ac0b0
+        checksum/secret: 99f61c7553796e6e4f04eb82781668cb86f971cb1537fe677dd7ecb2132cc6e7
+        checksum/prometheus-config: 703e4cea7f500aec05adb21a1fade49bffc4c97e04d3bb2814c8a7a1c421c327
+        checksum/prometheus-ce-config: ff3f206316541637c84ff905c62ce56bd71d36c4f60cab45d33a67732fb5f90b
       labels:
         app: sonarqube
         release: duplicated-env-values.yaml
@@ -445,7 +445,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:2025.1.2-enterprise
+          image: sonarqube:2025.1.3-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -461,7 +461,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/duplicated-env-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:2025.1.2-enterprise
+          image: sonarqube:2025.1.3-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -486,7 +486,7 @@ spec:
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
                 -Xms2G -Xmx2G -DsomeOption=some/Value
         - name: inject-prometheus-exporter
-          image: sonarqube:2025.1.2-enterprise
+          image: sonarqube:2025.1.3-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -536,7 +536,7 @@ spec:
                 -Xms2G -Xmx2G -DsomeOption=some/Value
       containers:
         - name: sonarqube
-          image: sonarqube:2025.1.2-enterprise
+          image: sonarqube:2025.1.3-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -559,7 +559,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.1.2
+              value: 2025.1.3
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -691,14 +691,14 @@ metadata:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.2
+    chart: sonarqube-2025.1.3
     release: duplicated-env-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: duplicated-env-values.yaml-ui-test
-      image: "sonarqube:2025.1.2-enterprise"
+      image: "sonarqube:2025.1.3-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
