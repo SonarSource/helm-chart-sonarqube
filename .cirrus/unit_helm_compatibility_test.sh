@@ -29,6 +29,7 @@ for file in "${STATIC_TEST_FOLDER}"/*; do
         --dry-run \
         --debug \
         --set monitoringPasscode='test' \
+        --set applicationNodes.jwtSecret='some-secret' \
         -f "${file}" "${TEST_CASE_NAME}" "${CHART_PATH}" \
     | kubeconform \
         --kubernetes-version "${KUBE_VERSION}" \
