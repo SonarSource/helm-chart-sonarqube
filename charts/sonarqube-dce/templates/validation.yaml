@@ -4,6 +4,6 @@
 {{- end -}}
 
 {{/* Validation for jwtSecret and existingJwtSecret (XOR check) */}}
-{{- if or (and .Values.applicationNodes.jwtSecret .Values.applicationNodes.existingJwtSecret) (and (not .Values.applicationNodes.jwtSecret) (not .Values.applicationNodes.existingJwtSecret)) -}}
+{{- if or (and .Values.ApplicationNodes.jwtSecret .Values.ApplicationNodes.existingJwtSecret) (and (not .Values.ApplicationNodes.jwtSecret) (not .Values.ApplicationNodes.existingJwtSecret)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n You must set a value for either \"jwtSecret\" or \"existingJwtSecret\", but not both." -}}
 {{- end -}}
