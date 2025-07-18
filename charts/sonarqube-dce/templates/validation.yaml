@@ -1,3 +1,9 @@
+{{/* Validation for monitoring passcode */}}
 {{- if or (and (not .Values.monitoringPasscode) (not .Values.monitoringPasscodeSecretName) (not .Values.monitoringPasscodeSecretKey)) (and (not .Values.monitoringPasscodeSecretName) .Values.monitoringPasscodeSecretKey) (and .Values.monitoringPasscodeSecretName (not .Values.monitoringPasscodeSecretKey)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n Please provide a passcode either setting \"monitoringPasscode\" or \"monitoringPasscodeSecretName\" and \"monitoringPasscodeSecretKey\"" -}}
+{{- end -}}
+
+{{/* Validation for jwtSecret and existingJwtSecret (XOR check) */}}
+{{- if or (and .Values.ApplicationNodes.jwtSecret .Values.ApplicationNodes.existingJwtSecret) (and (not .Values.ApplicationNodes.jwtSecret) (not .Values.ApplicationNodes.existingJwtSecret)) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n You must set a value for either \"jwtSecret\" or \"existingJwtSecret\", but not both." -}}
 {{- end -}}
