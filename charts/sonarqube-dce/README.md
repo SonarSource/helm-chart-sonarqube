@@ -152,7 +152,7 @@ Prior to SonarQube Server Datacenter 10.8, we used a different naming convention
 
 Starting from 10.8, we advise users to rename your `ApplicationNodes` to `applicationNodes`. While this is a straightforward change for users, ensuring cross-compability between both usage is challenging (if you are interested in the technical implementation, please take a look at this [PR](https://github.com/SonarSource/helm-chart-sonarqube/pull/586)).
 
-Please report any encountered bugs to https://community.sonarsource.com/.
+Please report any encountered bugs to <https://community.sonarsource.com/>.
 
 #### Cpu and memory settings
 
@@ -251,6 +251,25 @@ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/late
 
 ```
 
+## Working with Istio
+
+When deploying SonarQube in an Istio service mesh environment, you need to configure fixed ports for Hazelcast communication between application nodes. This is required because Istio's sidecar proxy needs to know all ports in advance for traffic management, security policies, and observability.
+
+By default, SonarQube's Hazelcast cluster uses dynamic port allocation, which conflicts with Istio's requirement for explicit port declarations in service definitions and network policies. To resolve this, you must set fixed ports for the following Hazelcast communication channels:
+
+* `applicationNodes.webPort` - Used by the Web process for cluster communication
+* `applicationNodes.cePort` - Used by the Compute Engine process for cluster communication
+
+**Example configuration:**
+
+```yaml
+applicationNodes:
+  webPort: 9001   # Web process communication
+  cePort: 9002    # Compute Engine process communication
+```
+
+This ensures that Istio can properly route traffic, apply security policies, and provide telemetry for all inter-node communication within the SonarQube cluster.
+
 ### Upgrading the Helm chart
 
 When upgrading your SonarQube instance, due to high CPU usage, it is recommended to disable the autoscaling before the upgrade process, re-enabling it afterwards.
@@ -344,7 +363,6 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.affinity`                                    | Node / Pod affinities for searchNodes, global affinity takes precedence                    | `{}`                                                                   |
 | `searchNodes.tolerations`                                 | List of node taints to tolerate for searchNodes, global tolerations take precedence        | `[]`                                                                   |
 
-
 ### App Nodes Configuration
 
 | Parameter                                                        | Description                                                                                                                                                                                                    | Default                                                                |
@@ -432,7 +450,9 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.nodeSelector`                                  | Node labels for application nodes' pods assignment, global nodeSelector takes precedence                                                                                                                       | `{}`                                                                   |
 | `applicationNodes.affinity`                                      | Node / Pod affinities for applicationNodes, global affinity takes precedence                                                                                                                                   | `{}`                                                                   |
 | `applicationNodes.tolerations`                                   | List of node taints to tolerate for applicationNodes, global tolerations take precedence                                                                                                                       | `[]`                                                                   |
-
+| `applicationNodes.port`                                   | The Hazelcast port for communication with each application member of the cluster.                                                                                                                       | `9003`                                                                   |
+| `applicationNodes.webPort`                                   | The Hazelcast port for communication with the WebServer process. If not specified, a dynamic port will be chosen.                                                                                                                    | ``                                                                   |
+| `applicationNodes.cePort`                                   | The Hazelcast port for communication with the ComputeEngine process. If not specified, a dynamic port will be chosen                                                                                                                     | ``                                                                   |
 
 ### Generic Configuration
 
@@ -619,7 +639,6 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `extraConfig.secrets`    | A list of `Secret`s (which must contain key/value pairs)    | `[]`    |
 | `extraConfig.configmaps` | A list of `ConfigMap`s (which must contain key/value pairs) | `[]`    |
 
-
 ### SetAdminPassword
 
 | Parameter                                    | Description                                                                                            | Default                                                                |
@@ -634,7 +653,6 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `setAdminPassword.securityContext`           | SecurityContext for change-password-hook                                                               | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `setAdminPassword.image`                     | Curl container image                                                                                   | `"image.repository":"image.tag"`                                       |
 | `setAdminPassword.annotations`               | Custom annotations for admin hook Job                                                                  | `{}`                                                                   |
-
 
 ### Advanced Options
 
