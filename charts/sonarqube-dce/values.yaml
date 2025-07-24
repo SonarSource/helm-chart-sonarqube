@@ -18,12 +18,12 @@ searchNodes:
 
   ## Environment variables to attach to the search pods
   ##
-  # env:
-  #   # If you use a different ingress path from /, you have to add it here as the value of SONAR_WEB_CONTEXT
-  #   - name: SONAR_WEB_CONTEXT
-  #     value: /sonarqube
-  #   - name: VARIABLE
-  #     value: my-value
+  env:
+    # If you use a different ingress path from /, you have to add it here as the value of SONAR_WEB_CONTEXT
+    - name: SONAR_WEB_CONTEXT
+      value: /sonarqube
+    - name: VARIABLE
+      value: my-value
 
   ## Labels to add to the search pods
   ##
@@ -411,6 +411,15 @@ applicationNodes:
   affinity: {}
   # if the global .Values.tolerations is set, the following one will be ignored
   tolerations: []
+
+  ## The following values are used to set the ports for the Hazelcast cluster communication
+  # The port used by the application nodes to communicate with each other
+  port: 9003
+  # The port used by the web process to communicate with other application nodes (If unset, it will be dynamically allocated)
+  # webPort: 4023
+  # The port used by the compute engine process to communicate with other application nodes (If unset, it will be dynamically allocated)
+  # cePort: 4024
+
 
 ## This sets the TLS encryption between application and search nodes
 nodeEncryption:
