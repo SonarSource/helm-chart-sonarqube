@@ -8,6 +8,10 @@ All changes to this chart will be documented in this file.
 * Support Kubernetes v1.32
 * Add the possibility of to save the data with hostpath
 
+## [2025.3.1]
+* Update Chart's version to 2025.3.1
+* Upgrade SonarQube Server to 2025.3.1
+
 ## [2025.3.0]
 * Update Chart's version to 2025.3.0
 * Upgrade SonarQube Community Build to 25.5.0.107428
