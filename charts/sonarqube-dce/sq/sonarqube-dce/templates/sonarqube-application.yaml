@@ -1,0 +1,195 @@
+---
+# Source: sonarqube-dce/templates/sonarqube-application.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-sonarqube-dce-app
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2025.4.0
+    release: release-name
+    heritage: Helm
+    app.kubernetes.io/name: release-name
+    sonarqube.datacenter/type: "app"
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: release-name-sonarqube-dce
+    app.kubernetes.io/version: "2025.3.0-datacenter-app"
+spec:
+  replicas: 2
+  revisionHistoryLimit: 
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sonarqube-dce
+      release: release-name
+  template:
+    metadata:
+      labels:
+        app: sonarqube-dce
+        release: release-name
+        sonarqube.datacenter/type: "app"
+      annotations:
+        checksum/plugins: a8e9fce168c8603800a8f99013039a302c1cd0f80651b6762209a62ff83eae6a
+        checksum/config: 6b68406bf8949c4f5b69e1c6e8ed6f822a2bcd7e22e51375f208a149d7cdf641
+        checksum/secret: 15cedc47db63107bf9ddae69c3f72ef58df4a80f0743042508284ab435812fe5
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: "wait-for-db"
+          image: sonarqube:2025.3.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
+          command: ["/bin/bash", "-c"]
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/release-name-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+      securityContext:
+        fsGroup: 0
+      containers:
+        - name: sonarqube-dce
+          image: sonarqube:2025.3.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+            - name: hazelcast
+              containerPort: 9003
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              ephemeral-storage: 512000M
+              memory: 4096M
+            requests:
+              cpu: 400m
+              ephemeral-storage: 1536M
+              memory: 4096M
+          env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+            - name: SONAR_LOG_JSONOUTPUT
+              value: "false"
+            - name: SONAR_HELM_CHART_VERSION
+              value: 2025.4.0
+            - name: SONAR_CLUSTER_SEARCH_HOSTS
+              value: "release-name-sonarqube-dce-search"
+            - name: SONAR_CLUSTER_KUBERNETES
+              value: "true"
+            - name: SONAR_CLUSTER_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SONAR_CLUSTER_HOSTS
+              value: "release-name-sonarqube-dce-headless"
+            - name: SONAR_AUTH_JWTBASE64HS256SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "release-name-sonarqube-dce-jwt"
+                  key: SONAR_AUTH_JWTBASE64HS256SECRET
+            - name: SONAR_JDBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: release-name-postgresql
+                  key: postgresql-password
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: release-name-sonarqube-dce-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
+          envFrom:
+            - configMapRef:
+                name: release-name-sonarqube-dce-jdbc-config
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |-
+                host="$(hostname -i || echo '127.0.0.1')"
+                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
+            failureThreshold: 6
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |-
+                #!/bin/bash
+                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --no-proxy -qO- http://${host}:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                  exit 0
+                fi
+                exit 1
+            failureThreshold: 8
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              scheme: HTTP
+              path: /api/system/status
+              port: http
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            failureThreshold: 32
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+      serviceAccountName: default
+      volumes:
+      
+      - name: install-plugins
+        configMap:
+          name: release-name-sonarqube-dce-install-plugins
+          items:
+            - key: install_plugins.sh
+              path: install_plugins.sh
+      - name: sonarqube
+        emptyDir:
+          {}
+      - name : tmp-dir
+        emptyDir:
+          {}
