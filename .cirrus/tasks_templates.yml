@@ -93,7 +93,12 @@ chart_testing_on_kind: &CHART_TESTING_ON_KIND_TEMPLATE
     - kind create cluster
     - kubectl cluster-info --context kind-kind
     - kubectl get nodes
+    - helm repo add istio https://istio-release.storage.googleapis.com/charts
+    - kubectl create namespace istio-system --dry-run=client -o yaml | kubectl apply -f -
+    - helm upgrade -i istio-base istio/base -n istio-system --set defaultRevision=default --set global.proxy.holdApplicationUntilProxyStarts=true  --wait
+    - helm upgrade -i istiod istio/istiod --set global.proxy.holdApplicationUntilProxyStarts=true -n istio-system --wait
     - kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
+    - kubectl label namespace test istio-injection=enabled
     - kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
   artifacthub_lint_script:
     - ah lint
