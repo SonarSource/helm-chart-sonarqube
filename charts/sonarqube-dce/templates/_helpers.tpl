@@ -563,3 +563,41 @@ Remove incompatible user/group values that do not work in Openshift out of the b
   {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Generate required Hazelcast cluster properties when custom ports are configured.
+This helper automatically sets the sonar.cluster.node properties when any of the
+Hazelcast ports (port, webPort, cePort) are configured, ensuring proper cluster communication.
+*/}}
+{{- define "sonarqube.hazelcastProperties" -}}
+{{- $props := dict -}}
+{{- if .Values.ApplicationNodes.port -}}
+{{- $_ := set $props "sonar.cluster.node.port" (.Values.ApplicationNodes.port | toString) -}}
+{{- end -}}
+{{- if .Values.ApplicationNodes.webPort -}}
+{{- $_ := set $props "sonar.cluster.node.web.port" (.Values.ApplicationNodes.webPort | toString) -}}
+{{- end -}}
+{{- if .Values.ApplicationNodes.cePort -}}
+{{- $_ := set $props "sonar.cluster.node.ce.port" (.Values.ApplicationNodes.cePort | toString) -}}
+{{- end -}}
+{{- toYaml $props -}}
+{{- end -}}
+
+{{/*
+Merge user-provided sonarProperties with automatically generated Hazelcast properties.
+User-provided properties take precedence over automatically generated ones.
+*/}}
+{{- define "sonarqube.mergedSonarProperties" -}}
+{{- $hazelcastProps := fromYaml (include "sonarqube.hazelcastProperties" .) | default dict -}}
+{{- $userProps := .Values.ApplicationNodes.sonarProperties | default dict -}}
+{{- $merged := dict -}}
+{{- /* Start with automatically generated properties */}}
+{{- range $key, $val := $hazelcastProps -}}
+  {{- $_ := set $merged $key $val -}}
+{{- end -}}
+{{- /* User properties override automatic ones */}}
+{{- range $key, $val := $userProps -}}
+  {{- $_ := set $merged $key $val -}}
+{{- end -}}
+{{- toYaml $merged -}}
+{{- end -}}

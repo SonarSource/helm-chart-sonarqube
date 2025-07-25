@@ -68,19 +68,19 @@ spec:
   clusterIP: None
   publishNotReadyAddresses: true
   ports:
-    - port: {{ .Values.ApplicationNodes.port }}
+    - port: {{ .Values.ApplicationNodes.port | default 9003 }}
       targetPort: hazelcast
       protocol: TCP
       appProtocol: tcp
       name: hazelcast
-    {{- if and .Values.ApplicationNodes.webPort (ne .Values.ApplicationNodes.webPort "") }}
+    {{- if .Values.ApplicationNodes.webPort }}
     - port: {{ .Values.ApplicationNodes.webPort }}
       targetPort: hazelcast-web
       protocol: TCP
       appProtocol: tcp
       name: hazelcast-web
     {{- end }}
-    {{- if and .Values.ApplicationNodes.cePort (ne .Values.ApplicationNodes.cePort "") }}
+    {{- if .Values.ApplicationNodes.cePort }}
     - port: {{ .Values.ApplicationNodes.cePort }}
       targetPort: hazelcast-ce
       protocol: TCP
