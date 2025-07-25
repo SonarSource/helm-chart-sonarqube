@@ -1,0 +1,14 @@
+---
+# Source: sonarqube-dce/templates/jdbc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-sonarqube-dce-jdbc-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2025.4.0
+    release: release-name
+    heritage: Helm
+data:
+  SONAR_JDBC_USERNAME: "sonarUser"
+  SONAR_JDBC_URL: "jdbc:postgresql://release-name-postgresql:5432/sonarDB"

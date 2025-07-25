@@ -102,7 +102,8 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
+      {{- $hasMergedProps := or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.port .Values.ApplicationNodes.webPort .Values.ApplicationNodes.cePort }}
+      {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
           image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
@@ -121,7 +122,7 @@ spec:
               awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
             fi
           volumeMounts:
-          {{- if or .Values.ApplicationNodes.sonarProperties .Values.sonarSecretKey }}
+          {{- if or $hasMergedProps .Values.sonarSecretKey }}
             - mountPath: /tmp/props/sonar.properties
               name: config
               subPath: sonar.properties
@@ -248,8 +249,18 @@ spec:
               protocol: TCP
             {{- end }}
             - name: hazelcast
-              containerPort: 9003
+              containerPort: {{ .Values.ApplicationNodes.port | default 9003 }}
               protocol: TCP
+            {{- if .Values.ApplicationNodes.webPort }}
+            - name: hazelcast-web
+              containerPort: {{ .Values.ApplicationNodes.webPort }}
+              protocol: TCP
+            {{- end }}
+            {{- if .Values.ApplicationNodes.cePort }}
+            - name: hazelcast-ce
+              containerPort: {{ .Values.ApplicationNodes.cePort }}
+              protocol: TCP
+            {{- end }}
           resources:
 {{ toYaml (default .Values.ApplicationNodes.resources .Values.resource) | indent 12 }}
           env:
@@ -338,7 +349,7 @@ spec:
           securityContext: {{- . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
+            {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
               subPath: sonar.properties
               name: concat-dir
@@ -415,7 +426,7 @@ spec:
     {{- end }}
       serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
       volumes:
-      {{- if or .Values.ApplicationNodes.sonarProperties .Values.sonarSecretKey }}
+      {{- if or $hasMergedProps .Values.sonarSecretKey }}
       - name: config
         configMap:
           name: {{ template "sonarqube.fullname" . }}-app-config
@@ -493,7 +504,7 @@ spec:
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
       - name : tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
-        {{- if or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
+        {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
       - name : concat-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 -}}
         {{- end }}

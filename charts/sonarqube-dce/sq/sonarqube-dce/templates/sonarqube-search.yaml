@@ -1,0 +1,235 @@
+---
+# Source: sonarqube-dce/templates/sonarqube-search.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-sonarqube-dce-search
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2025.4.0
+    release: release-name
+    heritage: Helm
+    app.kubernetes.io/name: "release-name"
+    sonarqube.datacenter/type: "search"
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: release-name-sonarqube-dce
+    app.kubernetes.io/version: "2025.3.0-datacenter-search"
+spec:
+  podManagementPolicy : Parallel
+  replicas: 3
+  serviceName: release-name-sonarqube-dce-search
+  selector:
+    matchLabels:
+      app: sonarqube-dce-search
+      release: release-name
+  volumeClaimTemplates:
+  - metadata:
+      name: release-name-sonarqube-dce
+      labels:
+        release: release-name
+        chart: "sonarqube-dce"
+        app: "release-name-sonarqube-dce"
+    spec:
+      accessModes:
+        - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: "5Gi"
+  template:
+    metadata:
+      labels:
+        app: sonarqube-dce-search
+        release: release-name
+        sonarqube.datacenter/type: "search"
+      annotations:
+        checksum/init-sysctl: 4a0ed2b68c69e57f8e08e6ab45e82614d6c8c337287af8ac5d30be7a384b6bee
+        checksum/init-fs: adf54ceec25dcc301f51cf5da15022f5150505269bb8eca49b95b98950bca1de
+        checksum/config: 6b68406bf8949c4f5b69e1c6e8ed6f822a2bcd7e22e51375f208a149d7cdf641
+        checksum/secret: 15cedc47db63107bf9ddae69c3f72ef58df4a80f0743042508284ab435812fe5
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: init-sysctl
+          image: sonarqube:2025.3.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          resources:
+            {}
+          command: ["/bin/bash",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
+          volumeMounts:
+            - name: init-sysctl
+              mountPath: /tmp/scripts/
+        - name: init-fs
+          image: sonarqube:2025.3.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add:
+              - CHOWN
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: false
+            runAsUser: 0
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
+          command: ["sh",
+            "-ex",
+            "/tmp/scripts/init_fs.sh"]
+          volumeMounts:
+            - name: init-fs
+              mountPath: /tmp/scripts/
+            - mountPath: /opt/sonarqube/certs
+              name: "release-name-sonarqube-dce"
+              subPath: certs
+            - mountPath: /opt/sonarqube/data
+              name: "release-name-sonarqube-dce"
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: "release-name-sonarqube-dce"
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: "release-name-sonarqube-dce"
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+      securityContext:
+        fsGroup: 0
+      containers:
+        - name: sonarqube-dce-search
+          image: "sonarqube:2025.3.0-datacenter-search"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: search-port
+              containerPort: 9001
+              protocol: TCP
+            - name: es-port
+              containerPort: 9002
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              ephemeral-storage: 512000M
+              memory: 3072M
+            requests:
+              cpu: 400m
+              ephemeral-storage: 1536M
+              memory: 3072M
+          env:
+            - name: SONAR_LOG_JSONOUTPUT
+              value: "false"
+            - name: SONAR_CLUSTER_ES_HOSTS
+              value: "release-name-sonarqube-dce-search-0,release-name-sonarqube-dce-search-1,release-name-sonarqube-dce-search-2,"
+            - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
+              value: "release-name-sonarqube-dce-search-headless"
+            - name: SONAR_CLUSTER_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered live if http call returns 200
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-proxy -qO- "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-proxy -qO- "http://${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          startupProbe:
+            exec:
+             command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered started if http call returns 200
+                host="$(hostname -i || echo '127.0.0.1')"
+                if wget --auth-no-challenge --no-proxy -qO- "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 24
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/certs
+              name: "release-name-sonarqube-dce"
+              subPath: certs
+              readOnly: true
+            - mountPath: /opt/sonarqube/data
+              name: "release-name-sonarqube-dce"
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: "release-name-sonarqube-dce"
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: "release-name-sonarqube-dce"
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+      serviceAccountName: default
+      volumes:
+      
+      - name: init-sysctl
+        configMap:
+          name: release-name-sonarqube-dce-init-sysctl
+          items:
+            - key: init_sysctl.sh
+              path: init_sysctl.sh
+      - name: init-fs
+        configMap:
+          name: release-name-sonarqube-dce-init-fs
+          items:
+            - key: init_fs.sh
+              path: init_fs.sh
+      - name: "release-name-sonarqube-dce"
+      - name : tmp-dir
+        emptyDir:
+          {}

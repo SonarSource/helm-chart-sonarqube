@@ -12,7 +12,8 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   sonar.properties: |
-  {{- range $key, $val := .Values.ApplicationNodes.sonarProperties }}
+  {{- $mergedProps := fromYaml (include "sonarqube.mergedSonarProperties" .) | default dict }}
+  {{- range $key, $val := $mergedProps }}
     {{ $key }}={{ $val }}
   {{- end }}
   {{- if .Values.sonarSecretKey }}

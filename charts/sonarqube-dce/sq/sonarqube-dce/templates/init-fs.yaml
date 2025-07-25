@@ -1,0 +1,16 @@
+---
+# Source: sonarqube-dce/templates/init-fs.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-sonarqube-dce-init-fs
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2025.4.0
+    release: release-name
+    heritage: Helm
+data:
+  init_fs.sh: |-
+    chown -R 1000:0 /opt/sonarqube/data
+    chown -R 1000:0 /opt/sonarqube/temp
+    chown -R 1000:0 /opt/sonarqube/logs

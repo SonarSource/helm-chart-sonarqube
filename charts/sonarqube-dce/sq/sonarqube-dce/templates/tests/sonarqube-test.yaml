@@ -1,0 +1,39 @@
+---
+# Source: sonarqube-dce/templates/tests/sonarqube-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "release-name-ui-test"
+  annotations:
+    "helm.sh/hook": test-success
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2025.4.0
+    release: release-name
+    heritage: Helm
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: release-name-ui-test
+      image: "sonarqube:2025.3.0-datacenter-app"
+      imagePullPolicy: IfNotPresent
+      command: ['wget']
+      args: [
+        '--retry-connrefused',
+        '--waitretry=1',
+        '--timeout=5',
+        '-t',
+        '1200',
+        '-qO-',
+        'release-name-sonarqube-dce:9000/api/system/status'
+        ]
+      resources:
+        limits:
+          cpu: 500m
+          ephemeral-storage: 1000M
+          memory: 200M
+        requests:
+          cpu: 500m
+          ephemeral-storage: 100M
+          memory: 200M
+  restartPolicy: Never
