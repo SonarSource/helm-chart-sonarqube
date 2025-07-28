@@ -324,6 +324,7 @@ spec:
     - port: 9003
       targetPort: hazelcast
       protocol: TCP
+      appProtocol: tcp
       name: hazelcast
   selector:
     app: sonarqube-dce
@@ -1104,6 +1105,9 @@ spec:
         app: sonarqube-dce
         heritage: Helm
         release: sonar-web-context-deprecated-values.yaml
+      annotations:
+        # Disable Istio sidecar injection for this hook pod
+        "sidecar.istio.io/inject": "false"
     spec:
       restartPolicy: OnFailure
       serviceAccountName: default

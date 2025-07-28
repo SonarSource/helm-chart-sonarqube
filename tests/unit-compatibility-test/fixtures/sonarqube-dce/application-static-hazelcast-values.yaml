@@ -3,11 +3,11 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-search
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 spec:
   minAvailable: 2
@@ -20,11 +20,11 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-app
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 spec:
   minAvailable: 1
@@ -37,11 +37,11 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sonar-web-context-values.yaml-postgresql
+  name: application-static-hazelcast-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: application-static-hazelcast-values.yaml
     app.kubernetes.io/managed-by: Helm
   namespace: default
 type: Opaque
@@ -53,11 +53,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-monitoring-passcode
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-monitoring-passcode
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -68,40 +68,26 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-jwt
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-jwt
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: "c29tZS1zZWNyZXQ="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-admin-password
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  password: "admin1"
-  currentPassword: "admin"
 ---
-# Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-http-proxies
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-http-proxies
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 type: Opaque
 stringData:
@@ -116,24 +102,27 @@ stringData:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-app-config
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-app-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
+    sonar.cluster.node.ce.port=4024
+    sonar.cluster.node.port=9067
+    sonar.cluster.node.web.port=4023
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-search-config
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-search-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -142,11 +131,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-init-fs
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-init-fs
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 data:
   init_fs.sh: |-
@@ -158,11 +147,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-init-sysctl
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-init-sysctl
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -205,11 +194,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-install-plugins
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-install-plugins
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
@@ -218,25 +207,25 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-jdbc-config
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-jdbc-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
-  SONAR_JDBC_URL: "jdbc:postgresql://sonar-web-context-values.yaml-postgresql:5432/sonarDB"
+  SONAR_JDBC_URL: "jdbc:postgresql://application-static-hazelcast-values.yaml-postgresql:5432/sonarDB"
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonar-web-context-values.yaml-postgresql-headless
+  name: application-static-hazelcast-values.yaml-postgresql-headless
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: application-static-hazelcast-values.yaml
     app.kubernetes.io/managed-by: Helm
     # Use this annotation in addition to the actual publishNotReadyAddresses
     # field below because the annotation will stop being respected soon but the
@@ -257,17 +246,17 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: application-static-hazelcast-values.yaml
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonar-web-context-values.yaml-postgresql
+  name: application-static-hazelcast-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: application-static-hazelcast-values.yaml
     app.kubernetes.io/managed-by: Helm
   annotations:
   namespace: default
@@ -279,18 +268,18 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: application-static-hazelcast-values.yaml
     role: primary
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce
+  name: application-static-hazelcast-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 
 spec:
@@ -302,17 +291,17 @@ spec:
       name: http
   selector:
     app: sonarqube-dce
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-headless
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 
 spec:
@@ -320,24 +309,34 @@ spec:
   clusterIP: None
   publishNotReadyAddresses: true
   ports:
-    - port: 9003
+    - port: 9067
       targetPort: hazelcast
       protocol: TCP
       appProtocol: tcp
       name: hazelcast
+    - port: 4023
+      targetPort: hazelcast-web
+      protocol: TCP
+      appProtocol: tcp
+      name: hazelcast-web
+    - port: 4024
+      targetPort: hazelcast-ce
+      protocol: TCP
+      appProtocol: tcp
+      name: hazelcast-ce
   selector:
     app: sonarqube-dce
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-search
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 
 spec:
@@ -353,17 +352,17 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-search-headless
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-search-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 
 spec:
@@ -380,24 +379,24 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-app
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: sonar-web-context-values.yaml
+    app.kubernetes.io/name: application-static-hazelcast-values.yaml
     sonarqube.datacenter/type: "app"
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: application-static-hazelcast-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: sonar-web-context-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: application-static-hazelcast-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "2025.3.0-datacenter-app"
 spec:
   replicas: 2
@@ -407,17 +406,17 @@ spec:
   selector:
     matchLabels:
       app: sonarqube-dce
-      release: sonar-web-context-values.yaml
+      release: application-static-hazelcast-values.yaml
   template:
     metadata:
       labels:
         app: sonarqube-dce
-        release: sonar-web-context-values.yaml
+        release: application-static-hazelcast-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 91a826a58676ea912a1cf7f58c5d665c67eaa4d9a3f4467f776b771804d14d64
-        checksum/config: 2cd92b851ca4aea13b9321453bc58160cb601047c99b956e62a516d6b2db8213
-        checksum/secret: 1bb2ca7a128ab7c98b79d56a8bf80fccb566ce9394723a7576f616c6e6777270
+        checksum/plugins: f1bce1545c8ae276110c630ccb471ef75b16e92aad22808bfd2e48fbd04f7b27
+        checksum/config: 8e8ab35b32c45fc558095ee62c51ea299e2a689860fce835e52447f432f83a63
+        checksum/secret: 738b4a9fb050c8978d8d11e76e4f1531719a16b04f76f42e24722321c6994281
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -438,7 +437,43 @@ spec:
           resources:
             {}
           command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/sonar-web-context-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/application-static-hazelcast-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
+        - name: concat-properties
+          image: sonarqube:2025.3.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          command: 
+          - sh
+          - -c
+          - |
+            #!/bin/sh
+            if [ -f /tmp/props/sonar.properties ]; then
+              cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/secret.properties ]; then
+              cat /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
+              awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+          volumeMounts:
+            - mountPath: /tmp/props/sonar.properties
+              name: config
+              subPath: sonar.properties
+            - mountPath: /tmp/result
+              name: concat-dir
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
       securityContext:
         fsGroup: 0
       containers:
@@ -450,7 +485,13 @@ spec:
               containerPort: 9000
               protocol: TCP
             - name: hazelcast
-              containerPort: 9003
+              containerPort: 9067
+              protocol: TCP
+            - name: hazelcast-web
+              containerPort: 4023
+              protocol: TCP
+            - name: hazelcast-ce
+              containerPort: 4024
               protocol: TCP
           resources:
             limits:
@@ -463,7 +504,7 @@ spec:
               memory: 4096M
           env:
             - name: SONAR_WEB_CONTEXT
-              value: /sonarqube-web-context/
+              value: /
             - name: SONAR_WEB_JAVAOPTS
               value: ""
             - name: SONAR_CE_JAVAOPTS
@@ -473,7 +514,7 @@ spec:
             - name: SONAR_HELM_CHART_VERSION
               value: 2025.4.0
             - name: SONAR_CLUSTER_SEARCH_HOSTS
-              value: "sonar-web-context-values.yaml-sonarqube-dce-search"
+              value: "application-static-hazelcast-values.yaml-sonarqube-dce-search"
             - name: SONAR_CLUSTER_KUBERNETES
               value: "true"
             - name: SONAR_CLUSTER_NODE_NAME
@@ -481,25 +522,25 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: SONAR_CLUSTER_HOSTS
-              value: "sonar-web-context-values.yaml-sonarqube-dce-headless"
+              value: "application-static-hazelcast-values.yaml-sonarqube-dce-headless"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
               valueFrom:
                 secretKeyRef:
-                  name: "sonar-web-context-values.yaml-sonarqube-dce-jwt"
+                  name: "application-static-hazelcast-values.yaml-sonarqube-dce-jwt"
                   key: SONAR_AUTH_JWTBASE64HS256SECRET
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: sonar-web-context-values.yaml-postgresql
+                  name: application-static-hazelcast-values.yaml-postgresql
                   key: postgresql-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: sonar-web-context-values.yaml-sonarqube-dce-monitoring-passcode
+                  name: application-static-hazelcast-values.yaml-sonarqube-dce-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
           envFrom:
             - configMapRef:
-                name: sonar-web-context-values.yaml-sonarqube-dce-jdbc-config
+                name: application-static-hazelcast-values.yaml-sonarqube-dce-jdbc-config
           livenessProbe:
             exec:
               command:
@@ -507,7 +548,7 @@ spec:
               - -c
               - |-
                 host="$(hostname -i || echo '127.0.0.1')"
-                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/sonarqube-web-context/api/system/liveness"
+                wget --no-proxy --quiet -O /dev/null --timeout=1 --header="X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
             failureThreshold: 6
             initialDelaySeconds: 0
             periodSeconds: 30
@@ -522,7 +563,7 @@ spec:
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
                 host="$(hostname -i || echo '127.0.0.1')"
-                if wget --no-proxy -qO- http://${host}:9000/sonarqube-web-context/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                if wget --no-proxy -qO- http://${host}:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
                   exit 0
                 fi
                 exit 1
@@ -533,7 +574,7 @@ spec:
           startupProbe:
             httpGet:
               scheme: HTTP
-              path: /sonarqube-web-context/api/system/status
+              path: /api/system/status
               port: http
             initialDelaySeconds: 45
             periodSeconds: 10
@@ -550,6 +591,9 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
+            - mountPath: /opt/sonarqube/conf/sonar.properties
+              subPath: sonar.properties
+              name: concat-dir
             - mountPath: /opt/sonarqube/data
               name: sonarqube
               subPath: data
@@ -563,10 +607,16 @@ spec:
               name: tmp-dir
       serviceAccountName: default
       volumes:
+      - name: config
+        configMap:
+          name: application-static-hazelcast-values.yaml-sonarqube-dce-app-config
+          items:
+          - key: sonar.properties
+            path: sonar.properties
       
       - name: install-plugins
         configMap:
-          name: sonar-web-context-values.yaml-sonarqube-dce-install-plugins
+          name: application-static-hazelcast-values.yaml-sonarqube-dce-install-plugins
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
@@ -576,37 +626,40 @@ spec:
       - name : tmp-dir
         emptyDir:
           {}
+      - name : concat-dir
+        emptyDir:
+          {}
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: sonar-web-context-values.yaml-postgresql
+  name: application-static-hazelcast-values.yaml-postgresql
   labels:
     app.kubernetes.io/name: postgresql
     helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: application-static-hazelcast-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
   namespace: default
 spec:
-  serviceName: sonar-web-context-values.yaml-postgresql-headless
+  serviceName: application-static-hazelcast-values.yaml-postgresql-headless
   replicas: 1
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
       app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: sonar-web-context-values.yaml
+      app.kubernetes.io/instance: application-static-hazelcast-values.yaml
       role: primary
   template:
     metadata:
-      name: sonar-web-context-values.yaml-postgresql
+      name: application-static-hazelcast-values.yaml-postgresql
       labels:
         app.kubernetes.io/name: postgresql
         helm.sh/chart: postgresql-10.15.0
-        app.kubernetes.io/instance: sonar-web-context-values.yaml
+        app.kubernetes.io/instance: application-static-hazelcast-values.yaml
         app.kubernetes.io/managed-by: Helm
         role: primary
         app.kubernetes.io/component: primary
@@ -620,7 +673,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: postgresql
-                    app.kubernetes.io/instance: sonar-web-context-values.yaml
+                    app.kubernetes.io/instance: application-static-hazelcast-values.yaml
                     app.kubernetes.io/component: primary
                 namespaces:
                   - "default"
@@ -632,7 +685,7 @@ spec:
         fsGroup: 1001
       automountServiceAccountToken: false
       containers:
-        - name: sonar-web-context-values.yaml-postgresql
+        - name: application-static-hazelcast-values.yaml-postgresql
           image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
@@ -663,14 +716,14 @@ spec:
             - name: POSTGRES_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: sonar-web-context-values.yaml-postgresql
+                  name: application-static-hazelcast-values.yaml-postgresql
                   key: postgresql-postgres-password
             - name: POSTGRES_USER
               value: "sonarUser"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: sonar-web-context-values.yaml-postgresql
+                  name: application-static-hazelcast-values.yaml-postgresql
                   key: postgresql-password
             - name: POSTGRES_DB
               value: "sonarDB"
@@ -742,34 +795,34 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-search
+  name: application-static-hazelcast-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: "sonar-web-context-values.yaml"
+    app.kubernetes.io/name: "application-static-hazelcast-values.yaml"
     sonarqube.datacenter/type: "search"
-    app.kubernetes.io/instance: sonar-web-context-values.yaml
+    app.kubernetes.io/instance: application-static-hazelcast-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: sonar-web-context-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: application-static-hazelcast-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "2025.3.0-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
-  serviceName: sonar-web-context-values.yaml-sonarqube-dce-search
+  serviceName: application-static-hazelcast-values.yaml-sonarqube-dce-search
   selector:
     matchLabels:
       app: sonarqube-dce-search
-      release: sonar-web-context-values.yaml
+      release: application-static-hazelcast-values.yaml
   volumeClaimTemplates:
   - metadata:
-      name: sonar-web-context-values.yaml-sonarqube-dce
+      name: application-static-hazelcast-values.yaml-sonarqube-dce
       labels:
-        release: sonar-web-context-values.yaml
+        release: application-static-hazelcast-values.yaml
         chart: "sonarqube-dce"
-        app: "sonar-web-context-values.yaml-sonarqube-dce"
+        app: "application-static-hazelcast-values.yaml-sonarqube-dce"
     spec:
       accessModes:
         - "ReadWriteOnce"
@@ -780,13 +833,13 @@ spec:
     metadata:
       labels:
         app: sonarqube-dce-search
-        release: sonar-web-context-values.yaml
+        release: application-static-hazelcast-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: 30cba585ca7e53be5e2277fa082d4b2212fcb3a0f4ba1735f93fcad7490a4898
-        checksum/init-fs: 620d4ef133c58e71d6ded4833fb70c4a33b81866ab75e12339aed119fec675ce
-        checksum/config: 2cd92b851ca4aea13b9321453bc58160cb601047c99b956e62a516d6b2db8213
-        checksum/secret: 1bb2ca7a128ab7c98b79d56a8bf80fccb566ce9394723a7576f616c6e6777270
+        checksum/init-sysctl: 8cb46363c627b712279ba5656d26793484850ee1c92a81dbd31873db3acd6013
+        checksum/init-fs: 4ca0bc6b01680a23de120710e1e7828a3223b26f41b6e3e0a54a3e8065f64472
+        checksum/config: 8e8ab35b32c45fc558095ee62c51ea299e2a689860fce835e52447f432f83a63
+        checksum/secret: 738b4a9fb050c8978d8d11e76e4f1531719a16b04f76f42e24722321c6994281
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -830,16 +883,16 @@ spec:
             - name: init-fs
               mountPath: /tmp/scripts/
             - mountPath: /opt/sonarqube/certs
-              name: "sonar-web-context-values.yaml-sonarqube-dce"
+              name: "application-static-hazelcast-values.yaml-sonarqube-dce"
               subPath: certs
             - mountPath: /opt/sonarqube/data
-              name: "sonar-web-context-values.yaml-sonarqube-dce"
+              name: "application-static-hazelcast-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "sonar-web-context-values.yaml-sonarqube-dce"
+              name: "application-static-hazelcast-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "sonar-web-context-values.yaml-sonarqube-dce"
+              name: "application-static-hazelcast-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -869,9 +922,9 @@ spec:
             - name: SONAR_LOG_JSONOUTPUT
               value: "false"
             - name: SONAR_CLUSTER_ES_HOSTS
-              value: "sonar-web-context-values.yaml-sonarqube-dce-search-0,sonar-web-context-values.yaml-sonarqube-dce-search-1,sonar-web-context-values.yaml-sonarqube-dce-search-2,"
+              value: "application-static-hazelcast-values.yaml-sonarqube-dce-search-0,application-static-hazelcast-values.yaml-sonarqube-dce-search-1,application-static-hazelcast-values.yaml-sonarqube-dce-search-2,"
             - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
-              value: "sonar-web-context-values.yaml-sonarqube-dce-search-headless"
+              value: "application-static-hazelcast-values.yaml-sonarqube-dce-search-headless"
             - name: SONAR_CLUSTER_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -939,17 +992,17 @@ spec:
               type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/certs
-              name: "sonar-web-context-values.yaml-sonarqube-dce"
+              name: "application-static-hazelcast-values.yaml-sonarqube-dce"
               subPath: certs
               readOnly: true
             - mountPath: /opt/sonarqube/data
-              name: "sonar-web-context-values.yaml-sonarqube-dce"
+              name: "application-static-hazelcast-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "sonar-web-context-values.yaml-sonarqube-dce"
+              name: "application-static-hazelcast-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "sonar-web-context-values.yaml-sonarqube-dce"
+              name: "application-static-hazelcast-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -958,60 +1011,37 @@ spec:
       
       - name: init-sysctl
         configMap:
-          name: sonar-web-context-values.yaml-sonarqube-dce-init-sysctl
+          name: application-static-hazelcast-values.yaml-sonarqube-dce-init-sysctl
           items:
             - key: init_sysctl.sh
               path: init_sysctl.sh
       - name: init-fs
         configMap:
-          name: sonar-web-context-values.yaml-sonarqube-dce-init-fs
+          name: application-static-hazelcast-values.yaml-sonarqube-dce-init-fs
           items:
             - key: init_fs.sh
               path: init_fs.sh
-      - name: "sonar-web-context-values.yaml-sonarqube-dce"
+      - name: "application-static-hazelcast-values.yaml-sonarqube-dce"
       - name : tmp-dir
         emptyDir:
           {}
----
-# Source: sonarqube-dce/templates/ingress.yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
-    heritage: Helm
-spec:
-  rules:
-  - host: sonarqube.your-org.com
-    http:
-      paths:
-      - backend:
-          service:
-            name: sonar-web-context-values.yaml-sonarqube-dce
-            port:
-              number: 9000
-        path: /sonarqube-web-context/
-        pathType: ImplementationSpecific
 ---
 # Source: sonarqube-dce/templates/tests/sonarqube-test.yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "sonar-web-context-values.yaml-ui-test"
+  name: "application-static-hazelcast-values.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
-    release: sonar-web-context-values.yaml
+    release: application-static-hazelcast-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: sonar-web-context-values.yaml-ui-test
+    - name: application-static-hazelcast-values.yaml-ui-test
       image: "sonarqube:2025.3.0-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['wget']
@@ -1022,7 +1052,7 @@ spec:
         '-t',
         '1200',
         '-qO-',
-        'sonar-web-context-values.yaml-sonarqube-dce:9000/api/system/status'
+        'application-static-hazelcast-values.yaml-sonarqube-dce:9000/api/system/status'
         ]
       resources:
         limits:
@@ -1034,59 +1064,3 @@ spec:
           ephemeral-storage: 100M
           memory: 200M
   restartPolicy: Never
----
-# Source: sonarqube-dce/templates/change-admin-password-hook.yaml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-change-admin-password-hook
-  labels:
-    app: sonarqube-dce
-    heritage: Helm
-    release: sonar-web-context-values.yaml
-    helm.sh/chart: "sonarqube-dce-2025.4.0"
-  annotations:
-    "helm.sh/hook": post-install, post-upgrade
-    "helm.sh/hook-delete-policy": hook-succeeded
-spec:
-  template:
-    metadata:
-      name: sonar-web-context-values.yaml-sonarqube-dce-change-admin-password-hook
-      labels:
-        app: sonarqube-dce
-        heritage: Helm
-        release: sonar-web-context-values.yaml
-      annotations:
-        # Disable Istio sidecar injection for this hook pod
-        "sidecar.istio.io/inject": "false"
-    spec:
-      restartPolicy: OnFailure
-      serviceAccountName: default
-      containers:
-      - name: sonar-web-context-values.yaml-sonarqube-dce-change-default-admin-password
-        image: sonarqube:2025.3.0-datacenter-app
-        securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-        command: ["sh", "-c", 'until curl -sSi --connect-timeout 100 sonar-web-context-values.yaml-sonarqube-dce:9000/sonarqube-web-context/api/system/status | grep -w UP; do sleep 10; done; curl -sSi --connect-timeout 100 -u admin:"$CURRENT_ADMIN_PASSWORD" -X POST "sonar-web-context-values.yaml-sonarqube-dce:9000/sonarqube-web-context/api/users/change_password?login=admin" --data-urlencode "previousPassword=$CURRENT_ADMIN_PASSWORD" --data-urlencode "password=$ADMIN_PASSWORD"']
-        env:
-        - name: ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: sonar-web-context-values.yaml-sonarqube-dce-admin-password
-              key: password
-        - name: CURRENT_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: sonar-web-context-values.yaml-sonarqube-dce-admin-password
-              key: currentPassword
-        resources:
-          null

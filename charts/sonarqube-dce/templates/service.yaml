@@ -68,10 +68,25 @@ spec:
   clusterIP: None
   publishNotReadyAddresses: true
   ports:
-    - port: 9003
+    - port: {{ .Values.ApplicationNodes.port | default 9003 }}
       targetPort: hazelcast
       protocol: TCP
+      appProtocol: tcp
       name: hazelcast
+    {{- if .Values.ApplicationNodes.webPort }}
+    - port: {{ .Values.ApplicationNodes.webPort }}
+      targetPort: hazelcast-web
+      protocol: TCP
+      appProtocol: tcp
+      name: hazelcast-web
+    {{- end }}
+    {{- if .Values.ApplicationNodes.cePort }}
+    - port: {{ .Values.ApplicationNodes.cePort }}
+      targetPort: hazelcast-ce
+      protocol: TCP
+      appProtocol: tcp
+      name: hazelcast-ce
+    {{- end }}
   selector:
     app: {{ template "sonarqube.name" . }}
     release: {{ .Release.Name }}
