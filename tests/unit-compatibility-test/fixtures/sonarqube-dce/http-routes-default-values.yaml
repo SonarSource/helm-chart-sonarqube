@@ -991,6 +991,8 @@ metadata:
   name: "http-routes-default-values.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
+    # Disable Istio sidecar injection for this test pod
+    "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2025.4.0
