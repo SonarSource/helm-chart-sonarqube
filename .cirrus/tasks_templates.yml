@@ -30,9 +30,9 @@ container_template: &STD_CONTAINER_TEMPLATE
 
 vm_instance_template: &VM_TEMPLATE
   image: docker-builder-v*
-  type: c5.4xlarge # Updated to c5.4xlarge for better performance
+  type: c5.4xlarge
   region: eu-central-1
-  cpu: 16 # Updated to 16 cores for better performance
+  cpu: 16
   memory: 32Gb
 
 clone_script_template: &CLONE_SCRIPT_TEMPLATE
@@ -72,7 +72,7 @@ chart_testing_on_openshift: &CHART_TESTING_ON_OPENSHIFT_TEMPLATE
     - chart-verifier version
   script:
     - mkdir -p "$(pwd)/report-${VERIFYING_CHART}"
-    - chart-verifier verify charts/"${VERIFYING_CHART}" -x images-are-certified --helm-install-timeout 20m -F charts/"${VERIFYING_CHART}"/openshift-verifier/values.yaml -n "${VERIFYING_CHART}" --openshift-version 4.16 > "$(pwd)/report-${VERIFYING_CHART}/report.yaml"
+    - chart-verifier verify -x images-are-certified charts/"${VERIFYING_CHART}" --helm-install-timeout 20m -F charts/"${VERIFYING_CHART}"/openshift-verifier/values.yaml -n "${VERIFYING_CHART}" --openshift-version 4.16 > "$(pwd)/report-${VERIFYING_CHART}/report.yaml"
   verifier_report_artifacts:
     path: "report-*/*.yaml"
   check_violations_script:

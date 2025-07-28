@@ -22,8 +22,8 @@ chart_testing_on_kind_sonarqube_dce_task:
   script:
     - ct lint --config ct-sonarqube-dce-test.yaml
     - ct install --namespace test --config ct-sonarqube-dce-test.yaml --debug
-  # depends_on:
-  #   - sonarqube_dce_chart_static_compatibility_test
+  depends_on:
+    - sonarqube_dce_chart_static_compatibility_test
 
 sonarqube_dce_chart_packaging_task:
   <<: *CHART_PACKAGING_TASK_TEMPLATE
