@@ -7,6 +7,11 @@ metadata:
     "helm.sh/hook": test-success
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
+  template:
+    metadata:
+      annotations:
+        # Disable Istio sidecar injection for this hook pod
+        "sidecar.istio.io/inject": "false"
   automountServiceAccountToken: false
   {{- if or .Values.image.pullSecrets .Values.image.pullSecret }}
   imagePullSecrets:
