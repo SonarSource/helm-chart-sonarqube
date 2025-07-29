@@ -607,6 +607,8 @@ metadata:
   name: "sonar-web-context-values.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
+    # Disable Istio sidecar injection for this test pod
+    "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
     chart: sonarqube-2025.4.0
@@ -661,6 +663,9 @@ spec:
         chart: sonarqube-2025.4.0
         release: sonar-web-context-values.yaml
         heritage: Helm
+      annotations:
+        # Disable Istio sidecar injection for this hook pod
+        "sidecar.istio.io/inject": "false"
     spec:
       restartPolicy: OnFailure
       serviceAccountName: default

@@ -8,6 +8,10 @@ All changes to this chart will be documented in this file.
 * Added validation to ensure that either the `applicationNodes.jwtSecret` or `applicationNodes.jwtExistingSecret` value is set
 * Support the deployment with Istio
 
+## [2025.3.1]
+* Update Chart's version to 2025.3.1
+* Upgrade SonarQube Server to 2025.3.1
+
 ## [2025.3.0]
 * Update Chart's version to 2025.3.0
 * Normalizes the extension for all templates

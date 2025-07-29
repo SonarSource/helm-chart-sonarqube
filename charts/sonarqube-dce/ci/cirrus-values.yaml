@@ -2,7 +2,7 @@
 # decreased replica count for cirrus CI
 
 searchNodes:
-  replicaCount: 1
+  replicaCount: 3
   image:
     repository: "sonarsource/sonarqube"
     tag: "2025.3.0-datacenter-search"
@@ -10,13 +10,15 @@ searchNodes:
       - name: pullsecret
 
 ApplicationNodes:
-  replicaCount: 1
+  replicaCount: 2
   jwtSecret: "mnGBJtmwRbIREqy3vSw6Cinoi2WEom9JH+iw/tXOJX4="
   image:
     repository: "sonarsource/sonarqube"
     tag: "2025.3.0-datacenter-app"
     pullSecrets:
       - name: pullsecret
+  webPort: 4023
+  cePort: 4024
 
 postgresql:
   securityContext:

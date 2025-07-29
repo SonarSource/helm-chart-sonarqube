@@ -5,6 +5,8 @@ metadata:
   name: "{{ .Release.Name }}-ui-test"
   annotations:
     "helm.sh/hook": test-success
+    # Disable Istio sidecar injection for this test pod
+    "sidecar.istio.io/inject": "false"
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
   automountServiceAccountToken: false
