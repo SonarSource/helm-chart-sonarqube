@@ -251,7 +251,15 @@ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/late
 
 ```
 
+### Upgrading the Helm chart
+
+When upgrading your SonarQube instance, due to high CPU usage, it is recommended to disable the autoscaling before the upgrade process, re-enabling it afterwards.
+
+You can achieve that by either setting `applicationNodes.hpa.enabled` to `false` or by setting `applicationNodes.hpa.maxReplicas` to be the same value as `applicationNodes.hpa.minReplicas`.
+
 ## Working with Istio
+
+> SonarQube Server is tested using Istio in sidecar mode.
 
 When deploying SonarQube in an Istio service mesh environment, you need to configure fixed ports for Hazelcast communication between application nodes. This is required because Istio's sidecar proxy needs to know all ports in advance for traffic management, security policies, and observability.
 
@@ -264,17 +272,11 @@ By default, SonarQube's Hazelcast cluster uses dynamic port allocation, which co
 
 ```yaml
 applicationNodes:
-  webPort: 9001   # Web process communication
-  cePort: 9002    # Compute Engine process communication
+  webPort: 4023   # Web process communication
+  cePort: 4024    # Compute Engine process communication
 ```
 
 This ensures that Istio can properly route traffic, apply security policies, and provide telemetry for all inter-node communication within the SonarQube cluster.
-
-### Upgrading the Helm chart
-
-When upgrading your SonarQube instance, due to high CPU usage, it is recommended to disable the autoscaling before the upgrade process, re-enabling it afterwards.
-
-You can achieve that by either setting `applicationNodes.hpa.enabled` to `false` or by setting `applicationNodes.hpa.maxReplicas` to be the same value as `applicationNodes.hpa.minReplicas`.
 
 ## Secure the communication within the cluster
 
