@@ -423,7 +423,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: pvc-values.yaml-sonarqube
-    app.kubernetes.io/version: "2025.3.0-enterprise"
+    app.kubernetes.io/version: "2025.4.0-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -449,7 +449,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:2025.3.0-enterprise
+          image: sonarqube:2025.4.0-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -465,7 +465,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/pvc-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:2025.3.0-enterprise
+          image: sonarqube:2025.4.0-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -483,7 +483,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: ""
         - name: init-fs
-          image: sonarqube:2025.3.0-enterprise
+          image: sonarqube:2025.4.0-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -518,7 +518,7 @@ spec:
               subPath: extensions
       containers:
         - name: sonarqube
-          image: sonarqube:2025.3.0-enterprise
+          image: sonarqube:2025.4.0-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -657,7 +657,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: pvc-values.yaml-ui-test
-      image: "sonarqube:2025.3.0-enterprise"
+      image: "sonarqube:2025.4.0-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
