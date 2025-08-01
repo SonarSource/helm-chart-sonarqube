@@ -23,7 +23,7 @@ metadata:
   name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.4.1
     release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
 type: Opaque
@@ -37,7 +37,7 @@ metadata:
   name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-admin-password
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.4.1
     release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
 type: Opaque
@@ -52,7 +52,7 @@ metadata:
   name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.4.1
     release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
 type: Opaque
@@ -71,7 +71,7 @@ metadata:
   name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.4.1
     release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
 data:
@@ -84,7 +84,7 @@ metadata:
   name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.4.1
     release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
 data:
@@ -131,7 +131,7 @@ metadata:
   name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.4.1
     release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
 data:
@@ -144,7 +144,7 @@ metadata:
   name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.4.1
     release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
 data:
@@ -212,7 +212,7 @@ metadata:
   name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.4.1
     release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
 spec:
@@ -233,7 +233,7 @@ metadata:
   name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.4.1
     release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
     app.kubernetes.io/name: sonar-web-context-deployment-deprecated-values.yaml
@@ -241,7 +241,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: sonar-web-context-deployment-deprecated-values.yaml-sonarqube
-    app.kubernetes.io/version: "2025.3.1-enterprise"
+    app.kubernetes.io/version: "2025.4.1-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -254,10 +254,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 858108ae84232136d4ce2fe3d2a57028d9e5f6766fb142455fa800c808495ff0
-        checksum/init-sysctl: 04010083b785d5573e01f87704a906719eee12a9cdb031064ad8e57cf17a8dba
-        checksum/plugins: aaca882279f973951133624293a1a659374213affafc9fdd866d4970ae8794fe
-        checksum/secret: a8c8ef83fadc9c8565c6ee36936aa18a14df13583320ac03c65a13d306bd7ef6
+        checksum/config: 91118fe04f4ef3934d8e25216ac007cb2286c05b84608d6e523d1142386f767c
+        checksum/init-sysctl: 86afc835e7b05ed14a91ae81a043de89b60b863a8975ed4b7b0fce780137f844
+        checksum/plugins: f66a78ef85b18de20651b91425709fab43fb747276e6a52136c9998167252fa2
+        checksum/secret: 0b683edc65331d8311f70092ed0ad3226a9a4553f7ed77ff0699395babf57ae3
       labels:
         app: sonarqube
         release: sonar-web-context-deployment-deprecated-values.yaml
@@ -267,7 +267,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:2025.3.1-enterprise
+          image: sonarqube:2025.4.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -283,7 +283,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/sonar-web-context-deployment-deprecated-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:2025.3.1-enterprise
+          image: sonarqube:2025.4.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -302,7 +302,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2025.3.1-enterprise
+          image: sonarqube:2025.4.1-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -319,7 +319,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.4.0
+              value: 2025.4.1
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -585,7 +585,7 @@ metadata:
   name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.4.1
     release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
 spec:
@@ -612,14 +612,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.4.1
     release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: sonar-web-context-deployment-deprecated-values.yaml-ui-test
-      image: "sonarqube:2025.3.1-enterprise"
+      image: "sonarqube:2025.4.1-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
@@ -649,7 +649,7 @@ metadata:
   name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-change-admin-password-hook
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.4.1
     release: sonar-web-context-deployment-deprecated-values.yaml
     heritage: Helm
   annotations:
@@ -661,7 +661,7 @@ spec:
       name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-change-admin-password-hook
       labels:
         app: sonarqube
-        chart: sonarqube-2025.4.0
+        chart: sonarqube-2025.4.1
         release: sonar-web-context-deployment-deprecated-values.yaml
         heritage: Helm
       annotations:
@@ -672,7 +672,7 @@ spec:
       serviceAccountName: default
       containers:
       - name: sonar-web-context-deployment-deprecated-values.yaml-sonarqube-change-default-admin-password
-        image: sonarqube:2025.3.1-enterprise
+        image: sonarqube:2025.4.1-enterprise
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
