@@ -2,14 +2,32 @@
 # decreased replica count for cirrus CI
 
 searchNodes:
-  replicaCount: 3
+  replicaCount: 2
   image:
     repository: "sonarsource/sonarqube"
     tag: "2025.4.0-datacenter-search"
     pullSecrets:
       - name: pullsecret
+  resources:
+    limits:
+      cpu: 800m
+      memory: 1024M
+      ephemeral-storage: 512000M
+    requests:
+      cpu: 100m
+      memory: 1024M
+      ephemeral-storage: 1536M
 
 ApplicationNodes:
+  resources:
+    limits:
+      cpu: 800m
+      memory: 1024M
+      ephemeral-storage: 512000M
+    requests:
+      cpu: 100m
+      memory: 1024M
+      ephemeral-storage: 1536M
   replicaCount: 2
   jwtSecret: "mnGBJtmwRbIREqy3vSw6Cinoi2WEom9JH+iw/tXOJX4="
   image:
@@ -29,3 +47,14 @@ postgresql:
     fsGroup: 1001
 
 monitoringPasscode: "test"
+
+tests:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 200M
+      ephemeral-storage: 100M
+    limits:
+      cpu: 50m
+      memory: 200M
+      ephemeral-storage: 1000M

@@ -24,18 +24,16 @@ jobs:
       - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
         with:
           version: 2025.7.12
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.7.0
+      - uses: actions/setup-python@v5.3.0
+        with:
+          python-version: '3.x'
+          check-latest: true
       - name: Install additional tools
         run: |
           # Install yamllint and yamale
           pip install yamllint==1.37.1 yamale==6.0.0
-          # Install chart-testing
-          curl -LO https://github.com/helm/chart-testing/releases/download/v3.13.0/chart-testing_3.13.0_linux_amd64.tar.gz
-          echo "fcbae93a01887730054b5b0b4536b8cfbfe6010fdffccf66b8b87f5f764287d9  chart-testing_3.13.0_linux_amd64.tar.gz" | sha256sum -c
-          tar -xf chart-testing_3.13.0_linux_amd64.tar.gz
-          sudo mv ct /usr/local/bin/ct
-          sudo mkdir -p /etc/ct
-          sudo mv etc/chart_schema.yaml /etc/ct/chart_schema.yaml
-          sudo mv etc/lintconf.yaml /etc/ct/lintconf.yaml
       - name: Build chart dependencies
         run: |
           ./.cirrus/build_chart_dependencies.sh charts/sonarqube
@@ -151,8 +149,10 @@ jobs:
         run: |
           curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.18.9/openshift-client-linux.tar.gz
           echo "1e2d73c870756e3940dcb6c1112c7aa7f702a89cfdb992d11079ac852b4ea05c  openshift-client-linux.tar.gz" | sha256sum -c
-          tar -xf openshift-client-linux.tar.gz
-          sudo mv oc /usr/local/bin/oc
+          mkdir -p /tmp/openshift
+          tar -xf openshift-client-linux.tar.gz -C /tmp/openshift
+          sudo mv /tmp/openshift/oc /usr/local/bin/oc
+          rm -rf /tmp/openshift openshift-client-linux.tar.gz
       - name: Authenticate to OpenShift
         env:
           ROSA_OPENSHIFT_URL: ${{ fromJSON(steps.secrets.outputs.vault).ROSA_OPENSHIFT_URL }}
@@ -222,8 +222,10 @@ jobs:
         run: |
           curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.18.9/openshift-client-linux.tar.gz
           echo "1e2d73c870756e3940dcb6c1112c7aa7f702a89cfdb992d11079ac852b4ea05c  openshift-client-linux.tar.gz" | sha256sum -c
-          tar -xf openshift-client-linux.tar.gz
-          sudo mv oc /usr/local/bin/oc
+          mkdir -p /tmp/openshift
+          tar -xf openshift-client-linux.tar.gz -C /tmp/openshift
+          sudo mv /tmp/openshift/oc /usr/local/bin/oc
+          rm -rf /tmp/openshift openshift-client-linux.tar.gz
       - name: Authenticate to OpenShift
         env:
           ROSA_OPENSHIFT_URL: ${{ fromJSON(steps.secrets.outputs.vault).ROSA_OPENSHIFT_URL }}
@@ -272,27 +274,22 @@ jobs:
       - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
         with:
           version: 2025.7.12
-      - name: Install chart-testing
-        run: |
-          curl -LO https://github.com/helm/chart-testing/releases/download/v3.13.0/chart-testing_3.13.0_linux_amd64.tar.gz
-          echo "fcbae93a01887730054b5b0b4536b8cfbfe6010fdffccf66b8b87f5f764287d9  chart-testing_3.13.0_linux_amd64.tar.gz" | sha256sum -c
-          tar -xf chart-testing_3.13.0_linux_amd64.tar.gz
-          sudo mv ct /usr/local/bin/ct
-          sudo mkdir -p /etc/ct
-          sudo mv etc/chart_schema.yaml /etc/ct/chart_schema.yaml
-          sudo mv etc/lintconf.yaml /etc/ct/lintconf.yaml
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.7.0
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.12.0
       - name: Setup Kind cluster
         run: |
-          ./.cirrus/setup_kind_vm.sh
-          kind create cluster
-          kubectl cluster-info --context kind-kind
+          # ./.cirrus/setup_kind_vm.sh
+          kubectl cluster-info --context kind-chart-testing
           kubectl get nodes
+          kubectl describe node chart-testing-control-plane
       - name: Setup Istio
         run: |
           helm repo add istio https://istio-release.storage.googleapis.com/charts
           kubectl create namespace istio-system --dry-run=client -o yaml | kubectl apply -f -
           helm upgrade -i istio-base istio/base -n istio-system --set defaultRevision=default --set global.proxy.holdApplicationUntilProxyStarts=true --wait
-          helm upgrade -i istiod istio/istiod --set global.proxy.holdApplicationUntilProxyStarts=true -n istio-system --wait
+          helm upgrade -i istiod istio/istiod --set global.proxy.holdApplicationUntilProxyStarts=true --set resources.requests.cpu=100m -n istio-system --wait
           kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
           kubectl label namespace test istio-injection=enabled
       - id: secrets
@@ -306,6 +303,14 @@ jobs:
           DOCKER_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_PASSWORD }}
         run: kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
+      - name: Install ArtifactHub CLI
+        run: |
+          curl -LO https://github.com/artifacthub/hub/releases/download/v1.21.0/ah_1.21.0_linux_amd64.tar.gz
+          echo "48d6b87b60baf4ee8fd5efbfec3bf5fb3ca783ab3f1dab625e64332b95df2a84  ah_1.21.0_linux_amd64.tar.gz" | sha256sum -c
+          mkdir -p /tmp/artifacthub
+          tar -xf ah_1.21.0_linux_amd64.tar.gz -C /tmp/artifacthub
+          sudo mv /tmp/artifacthub/ah /usr/local/bin/ah
+          rm -rf /tmp/artifacthub ah_1.21.0_linux_amd64.tar.gz
       - name: Run ArtifactHub lint
         run: ah lint
       - name: Run chart testing
@@ -330,30 +335,25 @@ jobs:
       - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
         with:
           version: 2025.7.12
-      - name: Install chart-testing
-        run: |
-          curl -LO https://github.com/helm/chart-testing/releases/download/v3.13.0/chart-testing_3.13.0_linux_amd64.tar.gz
-          echo "fcbae93a01887730054b5b0b4536b8cfbfe6010fdffccf66b8b87f5f764287d9  chart-testing_3.13.0_linux_amd64.tar.gz" | sha256sum -c
-          tar -xf chart-testing_3.13.0_linux_amd64.tar.gz
-          sudo mv ct /usr/local/bin/ct
-          sudo mkdir -p /etc/ct
-          sudo mv etc/chart_schema.yaml /etc/ct/chart_schema.yaml
-          sudo mv etc/lintconf.yaml /etc/ct/lintconf.yaml
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.7.0
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.12.0
       - name: Setup Kind cluster
         run: |
-          ./.cirrus/setup_kind_vm.sh
-          kind create cluster
-          kubectl cluster-info --context kind-kind
+          # ./.cirrus/setup_kind_vm.sh
+          kubectl cluster-info --context kind-chart-testing
           kubectl get nodes
+          kubectl describe node chart-testing-control-plane
       - name: Setup Istio
         run: |
           helm repo add istio https://istio-release.storage.googleapis.com/charts
           kubectl create namespace istio-system --dry-run=client -o yaml | kubectl apply -f -
           helm upgrade -i istio-base istio/base -n istio-system --set defaultRevision=default --set global.proxy.holdApplicationUntilProxyStarts=true --wait
-          helm upgrade -i istiod istio/istiod --set global.proxy.holdApplicationUntilProxyStarts=true -n istio-system --wait
+          helm upgrade -i istiod istio/istiod --set global.proxy.holdApplicationUntilProxyStarts=true --set resources.requests.cpu=100m -n istio-system --wait
           kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
           kubectl label namespace test istio-injection=enabled
-      - id: secrets
+      - id: dcesecrets
         uses: SonarSource/vault-action-wrapper@3.0.2
         with:
           secrets: |
@@ -361,9 +361,17 @@ jobs:
             development/kv/data/docker/sonardockerrw access_token_rwd | DOCKER_PASSWORD;
       - name: Setup docker registry secret
         env:
-          DOCKER_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_PASSWORD }}
+          DOCKER_USERNAME: ${{ fromJSON(steps.dcesecrets.outputs.vault).DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ fromJSON(steps.dcesecrets.outputs.vault).DOCKER_PASSWORD }}
         run: kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
+      - name: Install ArtifactHub CLI
+        run: |
+          curl -LO https://github.com/artifacthub/hub/releases/download/v1.21.0/ah_1.21.0_linux_amd64.tar.gz
+          echo "48d6b87b60baf4ee8fd5efbfec3bf5fb3ca783ab3f1dab625e64332b95df2a84  ah_1.21.0_linux_amd64.tar.gz" | sha256sum -c
+          mkdir -p /tmp/artifacthub
+          tar -xf ah_1.21.0_linux_amd64.tar.gz -C /tmp/artifacthub
+          sudo mv /tmp/artifacthub/ah /usr/local/bin/ah
+          rm -rf /tmp/artifacthub ah_1.21.0_linux_amd64.tar.gz
       - name: Run ArtifactHub lint
         run: ah lint
       - name: Run chart testing

@@ -14,3 +14,24 @@ postgresql:
     # fsGroup and runAsUser specifications below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
     # postgresql dockerfile sets user as 1001
     fsGroup: 1001
+
+resources:
+  limits:
+    cpu: 800m
+    memory: 6144M
+    ephemeral-storage: 512000M
+  requests:
+    cpu: 200m
+    memory: 2048M
+    ephemeral-storage: 1536M
+
+tests:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 200M
+      ephemeral-storage: 100M
+    limits:
+      cpu: 50m
+      memory: 200M
+      ephemeral-storage: 1000M
