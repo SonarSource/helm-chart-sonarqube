@@ -14,9 +14,9 @@ Please note that this chart only supports SonarQube Server Developer and Enterpr
 
 ## Default Versions
 
-SonarQube Server Version: `2025.4.1`
+SonarQube Server Version: `2025.4.2`
 
-SonarQube Community Build: `25.7.0.110598`. If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
+SonarQube Community Build: `25.8.0.112029`. If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
 
 ## Kubernetes and Openshift Compatibility
 
@@ -274,7 +274,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `annotations`           | SonarQube Pod annotations                                                                                             | `{}`               |
 | `edition`               | SonarQube Edition to use (`developer` or `enterprise`).                                                               | `None`             |
 | `community.enabled`     | Install SonarQube Community Build. When set to `true`, `edition` must not be set.                                     | `false`            |
-| `community.buildNumber` | The SonarQube Community Build number to install                                                                       | `25.7.0.110598`   |
+| `community.buildNumber` | The SonarQube Community Build number to install                                                                       | `25.8.0.112029`   |
 | `sonarWebContext`       | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.     | ``                 |
 | `httpProxySecret`       | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will supersede every other proxy variables            | ``                 |
 | `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will supersede initContainer specific http proxy variables  | ``                 |

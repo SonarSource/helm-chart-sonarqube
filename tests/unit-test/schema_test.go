@@ -23,7 +23,7 @@ var chartPath string = "../../charts/sonarqube"
 var releaseName string = "sonarqube"
 
 // Community Build Version
-var expectedContainerImage string = "sonarqube:25.7.0.110598"
+var expectedContainerImage string = "sonarqube:25.8.0.112029"
 
 // Ensure we are using the dry-run flag
 var helmOptions *helm.Options = &helm.Options{
@@ -133,7 +133,7 @@ func TestShouldUseImageTag(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarqube:2025.4.1-enterprise"
+	expectedContainerImage := "sonarqube:2025.4.2-enterprise"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
@@ -219,7 +219,7 @@ func TestDeveloperEdition(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarqube:2025.4.1-developer"
+	expectedContainerImage := "sonarqube:2025.4.2-developer"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
