@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [Unrelased]
+* Added ability to run the change admin password hook only on install as well as on install and upgrade by default
+
 ## [2025.4.0]
 * Update Chart's version to 2025.4.0
 * Upgrade SonarQube Server to to 2025.4.0
