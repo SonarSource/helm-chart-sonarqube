@@ -397,6 +397,7 @@ jobs:
         with:
           version: 2025.7.12
       - uses: SonarSource/ci-github-actions/get-build-number@v1
+        id: build-number
       - id: secrets
         uses: SonarSource/vault-action-wrapper@3.0.2
         with:
@@ -416,11 +417,11 @@ jobs:
           helm repo update
       - name: Package and sign SonarQube chart
         env:
+          BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
           SONARSOURCE_SIGN_KEY_ID: ${{ fromJSON(steps.secrets.outputs.vault).SONARSOURCE_SIGN_KEY_ID }}
           SONARSOURCE_SIGN_KEY_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).SONARSOURCE_SIGN_KEY_PASSPHRASE }}
         run: |
-          source cirrus-env BUILD
           ./.cirrus/package.sh sonarqube
           ./.cirrus/sign_chart.sh sonarqube
       - name: Upload SonarQube chart artifact
@@ -447,6 +448,7 @@ jobs:
         with:
           version: 2025.7.12
       - uses: SonarSource/ci-github-actions/get-build-number@v1
+        id: build-number
       - id: secrets
         uses: SonarSource/vault-action-wrapper@3.0.2
         with:
@@ -466,11 +468,11 @@ jobs:
           helm repo update
       - name: Package and sign SonarQube DCE chart
         env:
+          BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
           SONARSOURCE_SIGN_KEY_ID: ${{ fromJSON(steps.secrets.outputs.vault).SONARSOURCE_SIGN_KEY_ID }}
           SONARSOURCE_SIGN_KEY_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).SONARSOURCE_SIGN_KEY_PASSPHRASE }}
         run: |
-          source cirrus-env BUILD
           ./.cirrus/package.sh sonarqube-dce
           ./.cirrus/sign_chart.sh sonarqube-dce
       - name: Upload SonarQube DCE chart artifact
@@ -498,6 +500,7 @@ jobs:
           cache_save: false
           version: 2025.7.12
       - uses: SonarSource/ci-github-actions/get-build-number@v1
+        id: build-number
       - name: Download SonarQube chart artifact
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
@@ -510,10 +513,10 @@ jobs:
             development/artifactory/token/SonarSource-helm-chart-sonarqube-qa-deployer access_token | ARTIFACTORY_ACCESS_TOKEN;
       - name: Upload to Repox
         env:
+          BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
           ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
         run: |
-          source cirrus-env ""
           ./.cirrus/upload_chart.sh sonarqube
 
   sonarqube-dce-push-to-repox:
@@ -535,6 +538,7 @@ jobs:
           cache_save: false
           version: 2025.7.12
       - uses: SonarSource/ci-github-actions/get-build-number@v1
+        id: build-number
       - name: Download SonarQube DCE chart artifact
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
@@ -547,10 +551,10 @@ jobs:
             development/artifactory/token/SonarSource-helm-chart-sonarqube-qa-deployer access_token | ARTIFACTORY_ACCESS_TOKEN;
       - name: Upload to Repox
         env:
+          BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
           ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
         run: |
-          source cirrus-env ""
           ./.cirrus/upload_chart.sh sonarqube-dce
 
   trigger-release:
@@ -573,6 +577,7 @@ jobs:
           cache_save: false
           version: 2025.7.12
       - uses: SonarSource/ci-github-actions/get-build-number@v1
+        id: build-number
       - name: Download SonarQube chart artifact
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
@@ -589,9 +594,9 @@ jobs:
             development/kv/data/slack token | SLACK_TOKEN;
       - name: Trigger release workflow
         env:
+          BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
         run: |
-          source cirrus-env RELEASE
           CHARTS=$(find $GITHUB_WORKSPACE -maxdepth 1 -name "*.tgz*" -type f -exec basename "{}" ";")
           [[ "x$CHARTS" == "x" ]] && exit 0
           gh workflow run release.yml -f version=${{ github.ref_name }} -f buildNumber=$BUILD_NUMBER
