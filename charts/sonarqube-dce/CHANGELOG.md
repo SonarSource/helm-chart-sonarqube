@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [2025.5.0]
 * Update Chart's version to 2025.5.0
+* Update the image repository used by postgresql
 
 ## [2025.4.0]
 * Update Chart's version to 2025.4.0
