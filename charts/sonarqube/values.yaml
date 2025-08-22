@@ -554,7 +554,7 @@ postgresql:
   image:
     repository: "bitnamilegacy/postgresql"
   #   tag: 11.14.0-debian-10-r22
-  # Set the readiness probe to avoid that the initialization scripts' are completed before marking the pod as ready.
+  # Set the readiness probe to avoid that the initialization scripts' are not completed before marking the pod as ready.
   readinessProbe:
     enabled: false
   customReadinessProbe:
@@ -564,8 +564,14 @@ postgresql:
         - -c
         - -e
         - |
-          exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
+          {{- if (include "postgresql.database" .) }}
+          exec pg_isready -U {{ include "postgresql.username" . | quote }} -d "dbname={{ include "postgresql.database" . }} {{- if .Values.tls.enabled }} sslcert={{ include "postgresql.tlsCert" . }} sslkey={{ include "postgresql.tlsCertKey" . }}{{- end }}" -h 127.0.0.1 -p {{ .Values.containerPorts.postgresql }}
+          {{- else }}
+          exec pg_isready -U {{ include "postgresql.username" . | quote }} {{- if .Values.tls.enabled }} -d "sslcert={{ include "postgresql.tlsCert" . }} sslkey={{ include "postgresql.tlsCertKey" . }}"{{- end }} -h 127.0.0.1 -p {{ .Values.containerPorts.postgresql }}
+          {{- end }}
+          {{- if contains "bitnamilegacy/" .Values.image.repository }}
           [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+          {{- end }}
     failureThreshold: 6
     initialDelaySeconds: 5
     periodSeconds: 10
