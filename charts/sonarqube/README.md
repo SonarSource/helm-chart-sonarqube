@@ -154,9 +154,9 @@ Nonetheless, if you intend to run a production-grade SonarQube please follow the
 * Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
 * Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
 
-#### Cpu and memory settings
+#### CPU and memory settings
 
-Monitoring cpu and memory is an important part of software reliability. The SonarQube helm chart comes with default values for cpu and memory requests and limits. Those memory values are matching the default SonarQube JVM Xmx and Xms values.
+Monitoring CPU and memory is an important part of software reliability. The SonarQube helm chart comes with default values for CPU and memory requests and limits. Those memory values are matching the default SonarQube JVM Xmx and Xms values.
 
 Xmx defines the maximum size of the JVM heap, this is **not** the maximum memory the JVM can allocate.
 
@@ -480,10 +480,10 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                              | Description               | Default |
 | -------------------------------------- | ------------------------- | ------- |
 | `resources.requests.memory`            | SonarQube memory request  | `2048M` |
-| `resources.requests.cpu`               | SonarQube cpu request     | `400m`  |
+| `resources.requests.cpu`               | SonarQube CPU request     | `400m`  |
 | `resources.requests.ephemeral-storage` | SonarQube storage request | `1536M` |
 | `resources.limits.memory`              | SonarQube memory limit    | `6144M` |
-| `resources.limits.cpu`                 | SonarQube cpu limit       | `800m`  |
+| `resources.limits.cpu`                 | SonarQube CPU limit       | `800m`  |
 | `resources.limits.ephemeral-storage`   | SonarQube storage limit   | `500Gi` |
 
 ### Persistence
@@ -543,9 +543,9 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `postgresql.postgresqlDatabase`                          | PostgreSQL database name                                               | `sonarDB`       |
 | `postgresql.service.port`                                | PostgreSQL port                                                        | `5432`          |
 | `postgresql.resources.requests.memory`                   | PostgreSQL memory request                                              | `256Mi`         |
-| `postgresql.resources.requests.cpu`                      | PostgreSQL cpu request                                                 | `250m`          |
+| `postgresql.resources.requests.cpu`                      | PostgreSQL CPU request                                                 | `250m`          |
 | `postgresql.resources.limits.memory`                     | PostgreSQL memory limit                                                | `2Gi`           |
-| `postgresql.resources.limits.cpu`                        | PostgreSQL cpu limit                                                   | `2`             |
+| `postgresql.resources.limits.cpu`                        | PostgreSQL CPU limit                                                   | `2`             |
 | `postgresql.persistence.enabled`                         | PostgreSQL persistence en/disabled                                     | `true`          |
 | `postgresql.persistence.accessMode`                      | PostgreSQL persistence accessMode                                      | `ReadWriteOnce` |
 | `postgresql.persistence.size`                            | PostgreSQL persistence size                                            | `20Gi`          |

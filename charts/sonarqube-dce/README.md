@@ -154,9 +154,9 @@ Starting from 10.8, we advise users to rename your `ApplicationNodes` to `applic
 
 Please report any encountered bugs to <https://community.sonarsource.com/>.
 
-#### Cpu and memory settings
+#### CPU and memory settings
 
-Monitoring cpu and memory is an important part of software reliability. The SonarQube helm chart comes with default values for cpu and memory requests and limits. Those memory values are matching the default SonarQube JVM Xmx and Xms values.
+Monitoring CPU and memory is an important part of software reliability. The SonarQube helm chart comes with default values for CPU and memory requests and limits. Those memory values are matching the default SonarQube JVM Xmx and Xms values.
 
 Xmx defines the maximum size of the JVM heap, this is **not** the maximum memory the JVM can allocate.
 
@@ -347,10 +347,10 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.startupProbe.failureThreshold`               | StartupProbe threshold for marking as failed                                               | `24`                                                                   |
 | `searchNodes.startupProbe.timeoutSeconds`                 | StartupProbe timeout delay                                                                 | `1`                                                                    |
 | `searchNodes.resources.requests.memory`                   | memory request for Search Nodes                                                            | `3072M`                                                                |
-| `searchNodes.resources.requests.cpu`                      | cpu request for Search Nodes                                                               | `400m`                                                                 |
+| `searchNodes.resources.requests.cpu`                      | CPU request for Search Nodes                                                               | `400m`                                                                 |
 | `searchNodes.resources.requests.ephemeral-storage`        | storage request for Search Nodes                                                           | `1536M`                                                                |
 | `searchNodes.resources.limits.memory`                     | memory limit for Search Nodes. should not be under 3G                                      | `3072M`                                                                |
-| `searchNodes.resources.limits.cpu`                        | cpu limit for Search Nodes                                                                 | `800m`                                                                 |
+| `searchNodes.resources.limits.cpu`                        | CPU limit for Search Nodes                                                                 | `800m`                                                                 |
 | `searchNodes.resources.limits.ephemeral-storage`          | storage limit for Search Nodes                                                             | `512000M`                                                              |
 | `searchNodes.persistence.enabled`                         | enabled or disables the creation of VPCs for the Search Nodes                              | `true`                                                                 |
 | `searchNodes.persistence.annotations`                     | PVC annotations for the Search Nodes                                                       | `{}`                                                                   |
@@ -404,10 +404,10 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.startupProbe.timeoutSeconds`                   | StartupProbe timeout delay                                                                                                                                                                                     | `1`                                                                    |
 | `applicationNodes.startupProbe.sonarWebContext`                  | (DEPRECATED) SonarQube web context for startupProbe, please use sonarWebContext at the value top level instead                                                                                                 | `/`                                                                    |
 | `applicationNodes.resources.requests.memory`                     | memory request for app Nodes                                                                                                                                                                                   | `4096M`                                                                |
-| `applicationNodes.resources.requests.cpu`                        | cpu request for app Nodes                                                                                                                                                                                      | `400m`                                                                 |
+| `applicationNodes.resources.requests.cpu`                        | CPU request for app Nodes                                                                                                                                                                                      | `400m`                                                                 |
 | `applicationNodes.resources.requests.ephemeral-storage`          | storage request for app Nodes                                                                                                                                                                                  | `1536M`                                                                |
 | `applicationNodes.resources.limits.memory`                       | memory limit for app Nodes. should not be under 4G                                                                                                                                                             | `4096M`                                                                |
-| `applicationNodes.resources.limits.cpu`                          | cpu limit for app Nodes                                                                                                                                                                                        | `800m`                                                                 |
+| `applicationNodes.resources.limits.cpu`                          | CPU limit for app Nodes                                                                                                                                                                                        | `800m`                                                                 |
 | `applicationNodes.resources.limits.ephemeral-storage`            | storage limit for app Nodes                                                                                                                                                                                    | `512000M`                                                              |
 | `applicationNodes.prometheusExporter.enabled`                    | Use the Prometheus JMX exporter                                                                                                                                                                                | `false`                                                                |
 | `applicationNodes.prometheusExporter.version`                    | jmx_prometheus_javaagent version to download from Maven Central                                                                                                                                                | `0.17.2`                                                               |
@@ -600,9 +600,9 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `postgresql.postgresqlDatabase`                          | PostgreSQL database name                                               | `sonarDB`       |
 | `postgresql.service.port`                                | PostgreSQL port                                                        | `5432`          |
 | `postgresql.resources.requests.memory`                   | PostgreSQL memory request                                              | `256Mi`         |
-| `postgresql.resources.requests.cpu`                      | PostgreSQL cpu request                                                 | `250m`          |
+| `postgresql.resources.requests.cpu`                      | PostgreSQL CPU request                                                 | `250m`          |
 | `postgresql.resources.limits.memory`                     | PostgreSQL memory limit                                                | `2Gi`           |
-| `postgresql.resources.limits.cpu`                        | PostgreSQL cpu limit                                                   | `2`             |
+| `postgresql.resources.limits.cpu`                        | PostgreSQL CPU limit                                                   | `2`             |
 | `postgresql.persistence.enabled`                         | PostgreSQL persistence en/disabled                                     | `true`          |
 | `postgresql.persistence.accessMode`                      | PostgreSQL persistence accessMode                                      | `ReadWriteOnce` |
 | `postgresql.persistence.size`                            | PostgreSQL persistence size                                            | `20Gi`          |

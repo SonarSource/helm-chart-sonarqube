@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [2025.5.0]
 * Update Chart's version to 2025.5.0
+* Update the image repository and readinessProbe used by postgresql after they migrated to a legacy repository
 
 ## [2025.4.0]
 * Update Chart's version to 2025.4.0
