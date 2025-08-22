@@ -5,6 +5,7 @@ All changes to this chart will be documented in this file.
 * Update Chart's version to 2025.4.2
 * Upgrade SonarQube Server to 2025.4.2
 * Upgrade SonarQube Community Build to 25.8.0.112029
+* Update the image repository and readinessProbe used by postgresql after they migrated to a legacy repository
 
 ## [2025.4.1]
 * Update Chart's version to 2025.4.1
