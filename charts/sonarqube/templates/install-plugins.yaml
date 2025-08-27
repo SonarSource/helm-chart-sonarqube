@@ -9,6 +9,6 @@ data:
       rm -f {{ .Values.sonarqubeFolder }}/extensions/plugins/*
       cd {{ .Values.sonarqubeFolder }}/extensions/plugins
       {{- range $index, $val := .Values.plugins.install }}
-      curl {{ if $.Values.plugins.noCheckCertificate }}--insecure{{ end }} {{ if $.Values.plugins.netrcCreds }}--netrc-file /root/.netrc{{ end }} -fsSLO {{ $val | quote }}
+      curl {{ if $.Values.plugins.noCheckCertificate }}--insecure{{ end }} {{ if $.Values.plugins.netrcCreds }}--netrc-file /root/.netrc{{ end }} {{ if $.Values.plugins.curlOpts }}{{$.Values.plugins.curlOpts}}{{ end }} -fsSLO {{ $val | quote }}
       {{- end }}
     {{- end }}

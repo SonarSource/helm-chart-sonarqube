@@ -214,6 +214,9 @@ spec:
         - name: plugins-netrc-file
           mountPath: /root
         {{- end }}
+        {{- with .Values.plugins.extraVolumeMounts }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       env:
         {{- with (include "sonarqube.install-plugins-proxy.env" .) }}
         {{- . | nindent 8 }}
