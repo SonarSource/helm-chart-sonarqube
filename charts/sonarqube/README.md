@@ -457,6 +457,8 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `plugins.netrcCreds`         | Name of the secret containing .netrc file to use creds when downloading plugins | `""`                                                                   |
 | `plugins.noCheckCertificate` | Flag to not check server's certificate when downloading plugins                 | `false`                                                                |
 | `plugins.securityContext`    | Security context for the container to download plugins                          | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
+| `plugins.extraVolumeMounts`  | Additional volumeMounts for the install-plugins initContainer                   | `{}`                                                                   |
+| `plugins.curlOpts`           | Additional options for the install-plugins `curl` command                       | `""`                                                                   |
 
 ### SonarQube Specific
 
