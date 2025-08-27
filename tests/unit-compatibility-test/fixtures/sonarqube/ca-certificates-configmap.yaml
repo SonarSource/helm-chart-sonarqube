@@ -23,7 +23,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: ca-certificates-configmap.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: ca-certificates-configmap.yaml
     heritage: Helm
 type: Opaque
@@ -57,7 +57,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-install-oracle-jdbc-driver
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
@@ -133,7 +133,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
@@ -146,7 +146,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
@@ -214,7 +214,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: ca-certificates-configmap.yaml
     heritage: Helm
 spec:
@@ -284,7 +284,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: ca-certificates-configmap.yaml-postgresql
-          image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
+          image: docker.io/bitnamilegacy/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
             limits:
@@ -358,17 +358,17 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /bin/sh
-                - -c
-                - -e
-                - |
-                  exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
-                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+              - /bin/sh
+              - -c
+              - -e
+              - |
+                exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
+                [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+            failureThreshold: 6
             initialDelaySeconds: 5
             periodSeconds: 10
-            timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 6
+            timeoutSeconds: 5
           volumeMounts:
             - name: dshm
               mountPath: /dev/shm
@@ -396,7 +396,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: ca-certificates-configmap.yaml
     heritage: Helm
     app.kubernetes.io/name: ca-certificates-configmap.yaml
@@ -416,10 +416,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 2934f5515c2c030a14c01e3f09e8339a2a7a67aff4c5597c16dfe8c0ff4efb07
-        checksum/init-sysctl: 619ea3889a356a1987f2f3e40a1cd0dc0d917fe0a4321e1c6b5e280f646a7dbd
-        checksum/plugins: 3c57e908aefa8bb13a2e06c0d0e9f6344567b347bee23f923f502d2bfc1d31c2
-        checksum/secret: 9a7c1d608ff50b2b10d0e67f8b93d07eb4b9a13937b6ec8f2437d864fe7bd64f
+        checksum/config: e0aedb339ffd33db64b847aed3a6ab79f319a4601048e9334882954937ad381b
+        checksum/init-sysctl: abb0297472783499ee3efb1e78fb4960d0844681c06725f3cbc4c97a20393287
+        checksum/plugins: 906ef132ae895866cac7cd2ced9c916e3545921a5a19620969f67b461d5d1b30
+        checksum/secret: 9bbcd121e6b16a89c44689658ee4aee39f382ed41960a743badd74604a95306a
       labels:
         app: sonarqube
         release: ca-certificates-configmap.yaml
@@ -542,7 +542,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.4.0
+              value: 2025.5.0
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -671,7 +671,7 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: ca-certificates-configmap.yaml
     heritage: Helm
 spec:

@@ -23,7 +23,7 @@ metadata:
   name: host-path-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: host-path-values.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: host-path-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: host-path-values.yaml
     heritage: Helm
 type: Opaque
@@ -57,7 +57,7 @@ metadata:
   name: host-path-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: host-path-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: host-path-values.yaml-sonarqube-init-fs
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: host-path-values.yaml
     heritage: Helm
 data:
@@ -86,7 +86,7 @@ metadata:
   name: host-path-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: host-path-values.yaml
     heritage: Helm
 data:
@@ -133,7 +133,7 @@ metadata:
   name: host-path-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: host-path-values.yaml
     heritage: Helm
 data:
@@ -146,7 +146,7 @@ metadata:
   name: host-path-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: host-path-values.yaml
     heritage: Helm
 data:
@@ -160,7 +160,7 @@ metadata:
   name: host-path-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: host-path-values.yaml
     heritage: Helm
 spec:
@@ -231,7 +231,7 @@ metadata:
   name: host-path-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: host-path-values.yaml
     heritage: Helm
 spec:
@@ -301,7 +301,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: host-path-values.yaml-postgresql
-          image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
+          image: docker.io/bitnamilegacy/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
             limits:
@@ -375,17 +375,17 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /bin/sh
-                - -c
-                - -e
-                - |
-                  exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
-                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+              - /bin/sh
+              - -c
+              - -e
+              - |
+                exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
+                [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+            failureThreshold: 6
             initialDelaySeconds: 5
             periodSeconds: 10
-            timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 6
+            timeoutSeconds: 5
           volumeMounts:
             - name: dshm
               mountPath: /dev/shm
@@ -413,7 +413,7 @@ metadata:
   name: host-path-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: host-path-values.yaml
     heritage: Helm
     app.kubernetes.io/name: host-path-values.yaml
@@ -421,7 +421,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: host-path-values.yaml-sonarqube
-    app.kubernetes.io/version: "25.7.0.110598-community"
+    app.kubernetes.io/version: "25.8.0.112029-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -433,11 +433,11 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 58f926f453978be3b119001c5f15781bd300654c595c38f672316e215ced2cbe
-        checksum/init-fs: 307361eaa9ff131a8fbb4c4bf58c6706dc2a593b7046c1755254f0148c873bf3
-        checksum/init-sysctl: ec235591418021d41910f07c9ac50aa9db2878f93b883145b7a20804cd20dacf
-        checksum/plugins: 8c8b7ced6a47e8c11d306b7a505aa8cbfaa0af254f622cc5627821be217db8de
-        checksum/secret: 692d927e2728f06c2d2db4e7fe5c7b1379d5ba80a22c494cf88edb92c0ad6130
+        checksum/config: 0efb68db4acdbbd5b06d46d730106e9da4662a9898159cbd34f15b6bfefc0449
+        checksum/init-fs: 4025a74c12067e4cb6891c89093a0563a1c66f5137ea71b7b6c2e6bc596c8b62
+        checksum/init-sysctl: 679cdb89417c963001c1bcc03ad4683b1c177daf9fff9f321645d63fea4968f0
+        checksum/plugins: 275b40f4d5e3d7b59a6c3a328ba517c7771307c11fbdaee0c1128c73fb055aa3
+        checksum/secret: 1a8235806e0617519e6395873ae7b7dcd283b7d158056da4e683eaf7681e22be
       labels:
         app: sonarqube
         release: host-path-values.yaml
@@ -447,7 +447,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:25.7.0.110598-community
+          image: sonarqube:25.8.0.112029-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -463,7 +463,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/host-path-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:25.7.0.110598-community
+          image: sonarqube:25.8.0.112029-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -481,7 +481,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: ""
         - name: init-fs
-          image: sonarqube:25.7.0.110598-community
+          image: sonarqube:25.8.0.112029-community
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -516,7 +516,7 @@ spec:
               subPath: extensions
       containers:
         - name: sonarqube
-          image: sonarqube:25.7.0.110598-community
+          image: sonarqube:25.8.0.112029-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -533,7 +533,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.4.0
+              value: 2025.5.0
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -649,14 +649,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: host-path-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: host-path-values.yaml-ui-test
-      image: "sonarqube:25.7.0.110598-community"
+      image: "sonarqube:25.8.0.112029-community"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

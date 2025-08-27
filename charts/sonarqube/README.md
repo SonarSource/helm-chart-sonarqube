@@ -16,7 +16,7 @@ Please note that this chart only supports SonarQube Server Developer and Enterpr
 
 SonarQube Server Version: `2025.4.0`
 
-SonarQube Community Build: `25.7.0.110598`. If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
+SonarQube Community Build: `25.8.0.112029`. If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
 
 ## Kubernetes and Openshift Compatibility
 
@@ -154,9 +154,9 @@ Nonetheless, if you intend to run a production-grade SonarQube please follow the
 * Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
 * Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
 
-#### Cpu and memory settings
+#### CPU and memory settings
 
-Monitoring cpu and memory is an important part of software reliability. The SonarQube helm chart comes with default values for cpu and memory requests and limits. Those memory values are matching the default SonarQube JVM Xmx and Xms values.
+Monitoring CPU and memory is an important part of software reliability. The SonarQube helm chart comes with default values for CPU and memory requests and limits. Those memory values are matching the default SonarQube JVM Xmx and Xms values.
 
 Xmx defines the maximum size of the JVM heap, this is **not** the maximum memory the JVM can allocate.
 
@@ -274,7 +274,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `annotations`           | SonarQube Pod annotations                                                                                             | `{}`               |
 | `edition`               | SonarQube Edition to use (`developer` or `enterprise`).                                                               | `None`             |
 | `community.enabled`     | Install SonarQube Community Build. When set to `true`, `edition` must not be set.                                     | `false`            |
-| `community.buildNumber` | The SonarQube Community Build number to install                                                                       | `25.7.0.110598`   |
+| `community.buildNumber` | The SonarQube Community Build number to install                                                                       | `25.8.0.112029`   |
 | `sonarWebContext`       | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.     | ``                 |
 | `httpProxySecret`       | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will supersede every other proxy variables            | ``                 |
 | `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will supersede initContainer specific http proxy variables  | ``                 |
@@ -480,10 +480,10 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                              | Description               | Default |
 | -------------------------------------- | ------------------------- | ------- |
 | `resources.requests.memory`            | SonarQube memory request  | `2048M` |
-| `resources.requests.cpu`               | SonarQube cpu request     | `400m`  |
+| `resources.requests.cpu`               | SonarQube CPU request     | `400m`  |
 | `resources.requests.ephemeral-storage` | SonarQube storage request | `1536M` |
 | `resources.limits.memory`              | SonarQube memory limit    | `6144M` |
-| `resources.limits.cpu`                 | SonarQube cpu limit       | `800m`  |
+| `resources.limits.cpu`                 | SonarQube CPU limit       | `800m`  |
 | `resources.limits.ephemeral-storage`   | SonarQube storage limit   | `500Gi` |
 
 ### Persistence
@@ -543,9 +543,9 @@ The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/p
 | `postgresql.postgresqlDatabase`                          | PostgreSQL database name                                               | `sonarDB`       |
 | `postgresql.service.port`                                | PostgreSQL port                                                        | `5432`          |
 | `postgresql.resources.requests.memory`                   | PostgreSQL memory request                                              | `256Mi`         |
-| `postgresql.resources.requests.cpu`                      | PostgreSQL cpu request                                                 | `250m`          |
+| `postgresql.resources.requests.cpu`                      | PostgreSQL CPU request                                                 | `250m`          |
 | `postgresql.resources.limits.memory`                     | PostgreSQL memory limit                                                | `2Gi`           |
-| `postgresql.resources.limits.cpu`                        | PostgreSQL cpu limit                                                   | `2`             |
+| `postgresql.resources.limits.cpu`                        | PostgreSQL CPU limit                                                   | `2`             |
 | `postgresql.persistence.enabled`                         | PostgreSQL persistence en/disabled                                     | `true`          |
 | `postgresql.persistence.accessMode`                      | PostgreSQL persistence accessMode                                      | `ReadWriteOnce` |
 | `postgresql.persistence.size`                            | PostgreSQL persistence size                                            | `20Gi`          |

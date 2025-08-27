@@ -23,7 +23,7 @@ metadata:
   name: service-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: service-values.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: service-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: service-values.yaml
     heritage: Helm
 type: Opaque
@@ -57,7 +57,7 @@ metadata:
   name: service-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: service-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: service-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: service-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: service-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: service-values.yaml
     heritage: Helm
 data:
@@ -130,7 +130,7 @@ metadata:
   name: service-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: service-values.yaml
     heritage: Helm
 data:
@@ -198,7 +198,7 @@ metadata:
   name: service-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: service-values.yaml
     heritage: Helm
     mylabel: "tutu"
@@ -275,7 +275,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: service-values.yaml-postgresql
-          image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
+          image: docker.io/bitnamilegacy/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
             limits:
@@ -349,17 +349,17 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /bin/sh
-                - -c
-                - -e
-                - |
-                  exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
-                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+              - /bin/sh
+              - -c
+              - -e
+              - |
+                exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
+                [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+            failureThreshold: 6
             initialDelaySeconds: 5
             periodSeconds: 10
-            timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 6
+            timeoutSeconds: 5
           volumeMounts:
             - name: dshm
               mountPath: /dev/shm
@@ -387,7 +387,7 @@ metadata:
   name: service-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: service-values.yaml
     heritage: Helm
     app.kubernetes.io/name: service-values.yaml
@@ -407,10 +407,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 217b37c9986da14efc8e365aeb9378c7745c2d18a0f386cf4df743319c21545a
-        checksum/init-sysctl: fc8c57c1421e47318c304e0bf12df227c570c42368724466dcf877fbd468ccf6
-        checksum/plugins: 9db8c15caed84271129d451a00e37fffda7c44b1df15834d32353f76daec9b60
-        checksum/secret: 2d01a19d3e482e936f02569eee763c3808b22f21cbfab559e3765a3212e55741
+        checksum/config: 10409a9a78e93919df4dfe4dc86e871c7d137f49bd12d8a3a96de43a1a5cff9b
+        checksum/init-sysctl: 81fc8300fdf0737a1f6370538d29d8b3268c8f32480df2cfb05f993cb6223c99
+        checksum/plugins: 33937fd7a0952ee332698322d1c453f445ba502d4614402fcc7b35b86175af8a
+        checksum/secret: 7678e759cfbb0bca2fd5734604697b0454c6dbfb7eb42aaff6683b00ccfa227f
       labels:
         app: sonarqube
         release: service-values.yaml
@@ -472,7 +472,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.4.0
+              value: 2025.5.0
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -581,7 +581,7 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: service-values.yaml
     heritage: Helm
 spec:

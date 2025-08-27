@@ -23,7 +23,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: community-build-values.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: community-build-values.yaml
     heritage: Helm
 type: Opaque
@@ -57,7 +57,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: community-build-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: community-build-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: community-build-values.yaml
     heritage: Helm
 data:
@@ -130,7 +130,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: community-build-values.yaml
     heritage: Helm
 data:
@@ -198,7 +198,7 @@ metadata:
   name: community-build-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: community-build-values.yaml
     heritage: Helm
 spec:
@@ -268,7 +268,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: community-build-values.yaml-postgresql
-          image: docker.io/bitnami/postgresql:11.14.0-debian-10-r22
+          image: docker.io/bitnamilegacy/postgresql:11.14.0-debian-10-r22
           imagePullPolicy: "IfNotPresent"
           resources:
             limits:
@@ -342,17 +342,17 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /bin/sh
-                - -c
-                - -e
-                - |
-                  exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
-                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+              - /bin/sh
+              - -c
+              - -e
+              - |
+                exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
+                [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+            failureThreshold: 6
             initialDelaySeconds: 5
             periodSeconds: 10
-            timeoutSeconds: 5
             successThreshold: 1
-            failureThreshold: 6
+            timeoutSeconds: 5
           volumeMounts:
             - name: dshm
               mountPath: /dev/shm
@@ -380,7 +380,7 @@ metadata:
   name: community-build-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: community-build-values.yaml
     heritage: Helm
     app.kubernetes.io/name: community-build-values.yaml
@@ -400,10 +400,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ae90f69aa09558bcd1f0ceb10d5f74da86c28971fa1c99dd7fb96bc626e6ae30
-        checksum/init-sysctl: 5367a37ed3c57c7801aad7188dbf3d3aec580b0cac35644598d4bd5e5e7115b8
-        checksum/plugins: e7b2c19500af61b1119e2ee0ab33147a0b59d55728bf74c698088c939883e758
-        checksum/secret: d40fcfdf56b97f66c3198efffdef2e86fc1d938a46de60c703a16c9339426e28
+        checksum/config: c650b4d43f62f3e27149d8e2800245d4177084416607f1cc101051866b4a6d8a
+        checksum/init-sysctl: 62b35deb7993f2b0817c71ece7498397db53853c5602162f14cf9f9feaaee310
+        checksum/plugins: 48714cb3e6a7cba86364fb6828f7484ce8b6fb9dd18d496af970726810d3dc60
+        checksum/secret: 45f48edf2a4ade5b10070d5678430ff53507d79caceb5f8f5b6384dc3a97cca6
       labels:
         app: sonarqube
         release: community-build-values.yaml
@@ -465,7 +465,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.4.0
+              value: 2025.5.0
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -574,7 +574,7 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.0
+    chart: sonarqube-2025.5.0
     release: community-build-values.yaml
     heritage: Helm
 spec:
