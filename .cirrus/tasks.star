@@ -8,6 +8,7 @@ def build_tasks(ctx):
     tasks += fs.read(".cirrus/tasks_sonarqube.yml")
     tasks += fs.read(".cirrus/tasks_sonarqube_dce.yml")
     tasks += fs.read(".cirrus/tasks_gcp_marketplace.yml")
+    tasks += fs.read(".cirrus/tasks_azure_marketplace.yml")
 
     # The release task depends on some sonarqube and sonarqube_dce tasks,
     # therefore it MUST be loaded AFTER tasks_sonarqube.yml and tasks_sonarqube_dce.yml
