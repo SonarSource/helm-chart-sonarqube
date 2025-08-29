@@ -53,7 +53,6 @@
         },
         "jdbcOverwriteJdbcPassword": {
             "type": "secureString",
-            "defaultValue": "sonarPass",
             "metadata": {
                 "description": "The JDBC Password to connect to the database."
             }
@@ -253,7 +252,7 @@
                     "sonarqube.jdbcOverwrite.enabled": "[parameters('jdbcOverwriteEnabled')]",
                     "sonarqube.jdbcOverwrite.jdbcUrl": "[parameters('jdbcOverwriteJdbcUrl')]",
                     "sonarqube.jdbcOverwrite.jdbcUsername": "[parameters('jdbcOverwriteJdbcUsername')]",
-                    "sonarqube.jdbcOverwrite.jdbcPassword": "[parameters('jdbcOverwriteJdbcPassword')]"
+                    "sonarqube.jdbcOverwrite.jdbcPassword": "[if(equals(parameters('jdbcOverwriteJdbcPassword'), ''), 'sonarPass', parameters('jdbcOverwriteJdbcPassword'))]"
                 }
             }
         }

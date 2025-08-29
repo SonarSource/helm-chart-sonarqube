@@ -268,7 +268,8 @@
 						"toolTip": "The JDBC URL to connect to the database",
 						"constraints": {
 							"required": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, true)]",
-							"validationMessage": "Please insert a valid JDBC URL."
+							"regex": "^jdbc:[a-zA-Z0-9]+://.*$",
+							"validationMessage": "Please insert a valid JDBC URL (e.g., jdbc:postgresql://host:5432/db)."
 						},
 						"visible": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, true)]"
 					},
@@ -280,7 +281,8 @@
 						"toolTip": "The username to connect to the database",
 						"constraints": {
 							"required": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, true)]",
-							"validationMessage": "Only alphanumeric characters are allowed, and the value must be 1-30 characters long."
+							"regex": ".*",
+							"validationMessage": "Please insert a value."
 						},
 						"osPlatform": "Windows",
 						"visible": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, true)]"
@@ -295,7 +297,8 @@
 						"toolTip": "The password to connect to the database",
 						"constraints": {
 							"required": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, true)]",
-							"validationMessage": "Password must be at least 8 characters long, contain only numbers and letters"
+							"regex": ".*",
+							"validationMessage": "Please insert a value."
 						},
 						"options": {
 							"hideConfirmation": true
