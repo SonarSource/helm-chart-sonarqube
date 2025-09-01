@@ -289,19 +289,15 @@
 					},
 					{
 						"name": "jdbcOverwriteJdbcPassword",
-						"type": "Microsoft.Common.PasswordBox",
-						"label": {
-							"password": "JDBC Password",
-							"confirmPassword": "Confirm password"
-						},
+						"type": "Microsoft.Common.TextBox",
+						"label": "JDBC Password",
+						"placeholder": "",
+						"defaultValue": "",
 						"toolTip": "The password to connect to the database",
 						"constraints": {
 							"required": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, true)]",
 							"regex": ".{8,}",
 							"validationMessage": "Password must be at least 8 characters long."
-						},
-						"options": {
-							"hideConfirmation": true
 						},
 						"visible": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, true)]"
 					}
