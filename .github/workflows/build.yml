@@ -7,11 +7,12 @@ on:
   schedule:
     - cron: '0 2 * * *'  # Nightly builds
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ !(github.ref_name == 'main' || startsWith(github.ref_name, 'release/')) }}
+
 jobs:
   chart-fixture-test:
-    concurrency:
-      group: ${{ github.workflow }}-chart-fixture-test-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: github-ubuntu-latest-s
     name: Chart Fixture Test
     permissions:
@@ -44,9 +45,6 @@ jobs:
           git diff --exit-code
 
   chart-schema-test:
-    concurrency:
-      group: ${{ github.workflow }}-chart-schema-test-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: github-ubuntu-latest-s
     name: Chart Schema Test
     permissions:
@@ -70,9 +68,6 @@ jobs:
         run: ./.cirrus/schema_test.sh
 
   sonarqube-static-compatibility-test:
-    concurrency:
-      group: ${{ github.workflow }}-sonarqube-static-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: github-ubuntu-latest-s
     name: SonarQube Static Compatibility Test
     permissions:
@@ -91,9 +86,6 @@ jobs:
         run: ./.cirrus/unit_helm_compatibility_test.sh sonarqube
 
   sonarqube-dce-static-compatibility-test:
-    concurrency:
-      group: ${{ github.workflow }}-sonarqube-dce-static-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: github-ubuntu-latest-s
     name: SonarQube DCE Static Compatibility Test
     permissions:
@@ -259,9 +251,6 @@ jobs:
 
   sonarqube-kind-test:
     needs: [chart-fixture-test, chart-schema-test, sonarqube-static-compatibility-test]
-    concurrency:
-      group: ${{ github.workflow }}-sonarqube-kind-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: github-ubuntu-latest-s
     name: SonarQube Kind Test
     permissions:
@@ -320,9 +309,6 @@ jobs:
 
   sonarqube-dce-kind-test:
     needs: [chart-fixture-test, chart-schema-test, sonarqube-dce-static-compatibility-test]
-    concurrency:
-      group: ${{ github.workflow }}-sonarqube-dce-kind-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: github-ubuntu-latest-m
     name: SonarQube DCE Kind Test
     permissions:
@@ -381,9 +367,6 @@ jobs:
 
   sonarqube-packaging:
     needs: [sonarqube-kind-test]
-    concurrency:
-      group: ${{ github.workflow }}-sonarqube-packaging-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: github-ubuntu-latest-s
     name: SonarQube Packaging
     permissions:
@@ -432,9 +415,6 @@ jobs:
 
   sonarqube-dce-packaging:
     needs: [sonarqube-dce-kind-test]
-    concurrency:
-      group: ${{ github.workflow }}-sonarqube-dce-packaging-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: github-ubuntu-latest-s
     name: SonarQube DCE Packaging
     permissions:
@@ -483,9 +463,6 @@ jobs:
 
   sonarqube-push-to-repox:
     needs: [sonarqube-packaging]
-    concurrency:
-      group: ${{ github.workflow }}-sonarqube-repox-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: github-ubuntu-latest-s
     name: SonarQube Push to Repox
     permissions:
@@ -521,9 +498,6 @@ jobs:
 
   sonarqube-dce-push-to-repox:
     needs: [sonarqube-dce-packaging]
-    concurrency:
-      group: ${{ github.workflow }}-sonarqube-dce-repox-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: github-ubuntu-latest-s
     name: SonarQube DCE Push to Repox
     permissions:
@@ -559,9 +533,6 @@ jobs:
 
   trigger-release:
     needs: [sonarqube-push-to-repox, sonarqube-dce-push-to-repox]
-    concurrency:
-      group: ${{ github.workflow }}-trigger-release-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: github-ubuntu-latest-s
     name: Trigger Release
     permissions:
