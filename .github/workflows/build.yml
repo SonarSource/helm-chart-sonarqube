@@ -258,7 +258,7 @@ jobs:
   #       run: oc delete project "${VERIFYING_CHART}" || true
 
   sonarqube-kind-test:
-    needs: [sonarqube-static-compatibility-test]
+    needs: [chart-fixture-test, chart-schema-test, sonarqube-static-compatibility-test]
     concurrency:
       group: ${{ github.workflow }}-sonarqube-kind-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
@@ -319,7 +319,7 @@ jobs:
           ct install --namespace test --config ct-sonarqube-test.yaml --debug
 
   sonarqube-dce-kind-test:
-    needs: [sonarqube-dce-static-compatibility-test]
+    needs: [chart-fixture-test, chart-schema-test, sonarqube-dce-static-compatibility-test]
     concurrency:
       group: ${{ github.workflow }}-sonarqube-dce-kind-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
@@ -380,7 +380,7 @@ jobs:
           ct install --namespace test --config ct-sonarqube-dce-test.yaml --debug
 
   sonarqube-packaging:
-    needs: [sonarqube-static-compatibility-test]
+    needs: [sonarqube-kind-test]
     concurrency:
       group: ${{ github.workflow }}-sonarqube-packaging-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
@@ -431,7 +431,7 @@ jobs:
           path: "*.tgz*"
 
   sonarqube-dce-packaging:
-    needs: [sonarqube-dce-static-compatibility-test]
+    needs: [sonarqube-dce-kind-test]
     concurrency:
       group: ${{ github.workflow }}-sonarqube-dce-packaging-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
@@ -558,7 +558,7 @@ jobs:
           ./.cirrus/upload_chart.sh sonarqube-dce
 
   trigger-release:
-    needs: [sonarqube-packaging, sonarqube-dce-packaging, sonarqube-push-to-repox, sonarqube-dce-push-to-repox]
+    needs: [sonarqube-push-to-repox, sonarqube-dce-push-to-repox]
     concurrency:
       group: ${{ github.workflow }}-trigger-release-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
