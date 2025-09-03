@@ -75,7 +75,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    if: ${{ github.event.inputs.trigger == 'PUSH_STAGING_DEPLOYER' || (github.ref_name == 'master' && github.event_name == 'push') }}
+    if: ${{ github.event.inputs.trigger == 'PUSH_STAGING_DEPLOYER' || github.event.inputs.trigger == 'PUSH_PROD_DEPLOYER' || github.event_name == 'push' }}
     env:
       BASE_FOLDER: "/home/runner/.gcp/cache"
       KUBE_CONFIG: "/tmp/kubeconfig"
