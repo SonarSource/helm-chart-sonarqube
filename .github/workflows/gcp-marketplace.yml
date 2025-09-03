@@ -14,6 +14,10 @@ on:
           - PUSH_STAGING_DEPLOYER
           - PUSH_PROD_DEPLOYER
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ !(github.ref_name == 'main' || startsWith(github.ref_name, 'release/')) }}
+
 env:
   GCLOUD_TAG: 2025.4.0
 
@@ -66,9 +70,6 @@ jobs:
 
   verify-gcp-staging-app:
     needs: [build-gcp-staging-app]
-    concurrency:
-      group: ${{ github.workflow }}-verify-staging-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: github-ubuntu-latest-s
     name: Verify GCP Staging App
     permissions:
@@ -118,9 +119,6 @@ jobs:
 
   release-gcp-prod-app:
     needs: [verify-gcp-staging-app]
-    concurrency:
-      group: ${{ github.workflow }}-release-prod-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: ${{ github.ref_name != github.event.repository.default_branch }}
     runs-on: github-ubuntu-latest-s
     name: Release GCP Prod App
     permissions:
