@@ -27,16 +27,12 @@ jobs:
       - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
         with:
           version: 2025.7.12
-      - name: Set up chart-testing
-        uses: helm/chart-testing-action@0d28d3144d3a25ea2cc349d6e59901c4ff469b3b
       - uses: actions/setup-python@v5.3.0
         with:
           python-version: '3.x'
           check-latest: true
-      - name: Install additional tools
-        run: |
-          # Install yamllint and yamale
-          pip install yamllint==1.37.1 yamale==6.0.0
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@0d28d3144d3a25ea2cc349d6e59901c4ff469b3b
       - name: Build chart dependencies
         run: |
           ./.cirrus/build_chart_dependencies.sh charts/sonarqube
@@ -242,7 +238,7 @@ jobs:
   sonarqube-packaging:
     needs: [kind-test,openshift-tests]
     runs-on: github-ubuntu-latest-s
-    name: SonarQube Packaging
+    name: ${{ matrix.chart }} Packaging
     strategy:
       matrix:
         include:
@@ -277,7 +273,7 @@ jobs:
           helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
           helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
           helm repo update
-      - name: Package and sign SonarQube chart
+      - name: Package and sign ${{ matrix.chart }} chart
         env:
           BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
           GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
@@ -300,7 +296,7 @@ jobs:
         include:
           - chart: sonarqube-dce
           - chart: sonarqube
-    name: SonarQube Push to Repox
+    name: ${{ matrix.chart }} Push to Repox
     permissions:
       id-token: write
       contents: write
@@ -314,7 +310,7 @@ jobs:
           version: 2025.7.12
       - uses: SonarSource/ci-github-actions/get-build-number@v1
         id: build-number
-      - name: Download SonarQube chart artifact
+      - name: Download ${{ matrix.chart }} chart artifact
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: ${{ matrix.chart }}-chart-${{ github.run_id }}
@@ -324,7 +320,7 @@ jobs:
           secrets: |
             development/kv/data/repox url | ARTIFACTORY_URL;
             development/artifactory/token/SonarSource-helm-chart-sonarqube-qa-deployer access_token | ARTIFACTORY_ACCESS_TOKEN;
-      - name: Upload to Repox
+      - name: Upload ${{ matrix.chart }} to Repox
         env:
           BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
           ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
