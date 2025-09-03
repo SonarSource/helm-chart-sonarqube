@@ -6,6 +6,8 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 2 * * *'  # Nightly builds
+  release:
+    types: [created]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -362,14 +364,21 @@ jobs:
           secrets: |
             development/github/token/SonarSource-helm-chart-sonarqube-releases token | GITHUB_TOKEN;
             development/kv/data/slack token | SLACK_TOKEN;
-      - name: Trigger release workflow
-        env:
-          BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
-          GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
+      - name: Check if charts exist
+        id: check-charts
         run: |
           CHARTS=$(find $GITHUB_WORKSPACE -maxdepth 1 -name "*.tgz*" -type f -exec basename "{}" ";")
-          [[ "x$CHARTS" == "x" ]] && exit 0
-          gh workflow run release.yml -f version=${{ github.ref_name }} -f buildNumber=$BUILD_NUMBER
+          if [[ "x$CHARTS" != "x" ]]; then
+            echo "charts-exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "charts-exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Call release workflow
+        if: steps.check-charts.outputs.charts-exist == 'true'
+        uses: ./.github/workflows/release.yml
+        with:
+          version: ${{ github.ref_name }}
+          buildNumber: ${{ steps.build-number.outputs.BUILD_NUMBER }}
       - name: Slack notification on failure
         if: failure()
         env:
