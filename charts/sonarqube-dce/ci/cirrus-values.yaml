@@ -10,7 +10,7 @@ searchNodes:
       - name: pullsecret
 
 ApplicationNodes:
-  replicaCount: 2
+  replicaCount: 3
   jwtSecret: "mnGBJtmwRbIREqy3vSw6Cinoi2WEom9JH+iw/tXOJX4="
   image:
     repository: "sonarsource/sonarqube"
@@ -29,3 +29,14 @@ postgresql:
     fsGroup: 1001
 
 monitoringPasscode: "test"
+
+tests:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 200M
+      ephemeral-storage: 100M
+    limits:
+      cpu: 50m
+      memory: 200M
+      ephemeral-storage: 1000M
