@@ -1,10 +1,15 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+
+## [Unrelased]
+* Added ability to run the change admin password hook only on install as well as on install and upgrade by default
+
 ## [2025.5.0]
 * Update Chart's version to 2025.5.0
 * Upgrade SonarQube Community Build to 25.9.0.112764
 * Update the image and readinessProbe used by postgresql after they migrated to a legacy repository
+
 
 ## [2025.4.0]
 * Update Chart's version to 2025.4.0
