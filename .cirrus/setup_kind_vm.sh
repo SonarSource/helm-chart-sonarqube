@@ -34,7 +34,7 @@ pip install "yamale==${YAMALE_VERSION}"
 
 # Install kubectl
 # renovate: datasource=github-releases depName=kubectl-vm packageName=kubernetes/kubernetes
-KUBECTL_VERSION=v1.33.1
+KUBECTL_VERSION=v1.34.0
 curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
 curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl.sha256 
 printf %s "  kubectl" >> kubectl.sha256
