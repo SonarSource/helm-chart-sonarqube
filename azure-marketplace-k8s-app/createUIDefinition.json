@@ -7,43 +7,7 @@
 			"isWizard": false,
 			"basics": {
 				"location": {
-					"visible": "[basics('createNewCluster')]",
-					"allowedValues": [
-						"eastus",
-						"eastus2",
-						"centralus",
-						"northcentralus",
-						"westcentralus",
-						"southcentralus",
-						"westus",
-						"westus2",
-						"westus3",
-						"canadacentral",
-						"canadaeast",
-						"brazilsouth",
-						"northeurope",
-						"westeurope",
-						"uksouth",
-						"ukwest",
-						"francecentral",
-						"francesouth",
-						"germanywestcentral",
-						"norwayeast",
-						"switzerlandnorth",
-						"swedencentral",
-						"uaenorth",
-						"southafricanorth",
-						"australiaeast",
-						"australiasoutheast",
-						"southeastasia",
-						"eastasia",
-						"southindia",
-						"centralindia",
-						"japaneast",
-						"japanwest",
-						"koreacentral",
-						"koreasouth"
-					]
+					"visible": "[basics('createNewCluster')]"
 				},
 				"resourceGroup": {
 					"allowExisting": true
@@ -231,7 +195,6 @@
 						"toolTip": "A string encoded with base64 used to verify SonarQube Server's liveness. Please refer to docs.sonarsource.com for more details.",
 						"constraints": {
 							"required": true,
-							"regex": "^[a-zA-Z0-9]{8,}$",
 							"validationMessage": ""
 						},
 						"options": {
@@ -249,11 +212,11 @@
 							"allowedValues": [
 								{
 									"label": "Yes",
-									"value": "true"
+									"value": true
 								},
 								{
 									"label": "No",
-									"value": "false"
+									"value": false
 								}
 							],
 							"required": true
@@ -268,43 +231,39 @@
 						"defaultValue": "",
 						"toolTip": "The JDBC URL to connect to the database",
 						"constraints": {
-							"required": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, 'true')]",
-							"regex": "^[a-z0-9A-Z]{1,30}$",
-							"validationMessage": "Please insert a valid JDBC URL."
+							"required": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, true)]",
+							"regex": "^jdbc:[a-zA-Z0-9]+://.*$",
+							"validationMessage": "Please insert a valid JDBC URL (e.g., jdbc:postgresql://host:5432/db)."
 						},
-						"visible": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, 'true')]"
+						"visible": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, true)]"
 					},
 					{
 						"name": "jdbcOverwriteJdbcUsername",
 						"type": "Microsoft.Compute.UserNameTextBox",
 						"label": "JDBC Username",
 						"defaultValue": "",
-						"toolTip": "The username to connect to the database",
+						"toolTip": "The Username to connect to the database",
 						"constraints": {
-							"required": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, 'true')]",
-							"regex": "^[a-z0-9A-Z]{1,30}$",
-							"validationMessage": "Only alphanumeric characters are allowed, and the value must be 1-30 characters long."
+							"required": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, true)]",
+							"regex": ".+",
+							"validationMessage": "Please insert a value."
 						},
 						"osPlatform": "Windows",
-						"visible": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, 'true')]"
+						"visible": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, true)]"
 					},
 					{
 						"name": "jdbcOverwriteJdbcPassword",
-						"type": "Microsoft.Common.PasswordBox",
-						"label": {
-							"password": "JDBC Password",
-							"confirmPassword": "Confirm password"
-						},
-						"toolTip": "The password to connect to the database",
+						"type": "Microsoft.Common.TextBox",
+						"label": "JDBC Password",
+						"placeholder": "",
+						"defaultValue": "",
+						"toolTip": "The Password to connect to the database",
 						"constraints": {
-							"required": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, 'true')]",
-							"regex": "^[a-zA-Z0-9]{8,}$",
-							"validationMessage": "Password must be at least 8 characters long, contain only numbers and letters"
+							"required": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, true)]",
+							"regex": ".{8,}",
+							"validationMessage": "Password must be at least 8 characters long."
 						},
-						"options": {
-							"hideConfirmation": true
-						},
-						"visible": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, 'true')]"
+						"visible": "[equals(steps('applicationDetails').jdbcOverwriteEnabled, true)]"
 					}
 				]
 			}
