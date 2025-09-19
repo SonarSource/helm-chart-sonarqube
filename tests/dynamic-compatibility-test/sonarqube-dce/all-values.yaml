@@ -22,6 +22,10 @@ sonarWebContext: /
 searchNodes:
   sonarProperties:
     sonar.log.level: DEBUG
+  persistence:
+    enabled: true
+    annotations:
+      someAnnotations: toto     
 
 ApplicationNodes:
   sonarProperties:
@@ -44,7 +48,7 @@ ingress:
 # tests/unit-compatibility-test/sonarqube-dce/install-plugins-values.yaml
 plugins:
  install:
-   - "https://github.com/elegoff/sonar-rust/releases/download/v0.0.9/community-rust-plugin-0.0.9.jar"
+   - https://github.com/xuhuisheng/sonar-l10n-zh/releases/download/sonar-l10n-zh-plugin-25.9/sonar-l10n-zh-plugin-25.9.jar"
 
 # tests/unit-compatibility-test/sonarqube-dce/jdbc-config-values.yaml # It requires an external db
 # tests/unit-compatibility-test/sonarqube-dce/networkpolicy-values.yaml
@@ -52,12 +56,6 @@ networkPolicy:
   enabled: true
   prometheusNamespace: "monitoring"
 
-# tests/unit-compatibility-test/sonarqube-dce/pvc-values.yaml
-searchNodes:
-  persistence:
-    enabled: true
-    annotations:
-      someAnnotations: toto      
 
 # tests/unit-compatibility-test/sonarqube-dce/secret-values.yaml
 # tests/unit-compatibility-test/sonarqube-dce/service-values.yaml
