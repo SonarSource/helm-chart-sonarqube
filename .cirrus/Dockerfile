@@ -9,9 +9,9 @@ USER root
 # Note: the v in some version is a restriction for github-release-attachments datasource, where tags are expected to start with v.
 ##
 # renovate: datasource=github-releases depName=helm packageName=helm/helm
-ARG HELM_VERSION=v3.18.2
+ARG HELM_VERSION=v3.19.0
 # renovate: datasource=github-releases depName=kubectl packageName=kubernetes/kubernetes
-ARG KUBECTL_VERSION=v1.34.0
+ARG KUBECTL_VERSION=v1.34.1
 # renovate: datasource=pypi depName=yamllint packageName=yamllint
 ARG YAMLLINT_VERSION=1.37.1
 # renovate: datasource=pypi depName=yamale packageName=yamale
@@ -20,14 +20,14 @@ ARG YAMALE_VERSION=6.0.0
 ARG CHART_TESTING_VERSION=v3.13.0
 ARG CHART_TESTING_CHECKSUM="fcbae93a01887730054b5b0b4536b8cfbfe6010fdffccf66b8b87f5f764287d9"
 # renovate: datasource=github-release-attachments depName=yq packageName=mikefarah/yq
-ARG YQ_VERSION=v4.45.4
-ARG YQ_CHECKSUM="b96de04645707e14a12f52c37e6266832e03c29e95b9b139cddcae7314466e69"
+ARG YQ_VERSION=v4.47.2
+ARG YQ_CHECKSUM="1bb99e1019e23de33c7e6afc23e93dad72aad6cf2cb03c797f068ea79814ddb0"
 # renovate: datasource=github-release-attachments depName=kubeconform packageName=yannh/kubeconform
 ARG KUBECONFORM_VERSION=v0.7.0
 ARG KUBECONFORM_CHECKSUM="c31518ddd122663b3f3aa874cfe8178cb0988de944f29c74a0b9260920d115d3"
 # renovate: datasource=github-release-attachments depName=chart-verified packageName=redhat-certification/chart-verifier
-ARG CHART_VERIFIER_VERSION=1.13.11
-ARG CHART_VERIFIER_CHECKSUM="ad221d0e030ce820c8ecfadaa10a6d5183adbe00fcd8dee627c3fdd7e5bf37e7"
+ARG CHART_VERIFIER_VERSION=1.13.13
+ARG CHART_VERIFIER_CHECKSUM="5b19f0c3f7a6281e60d9d5391a5c365530f090bb217bcbf0b072e975107a425a"
 #NO RENOVATE, this is not possible to fetch update automatically as there is no proper github release or json file available
 ARG OPENSHIFT_CLI_VERSION=4.18.9
 ARG OPENSHIFT_CLI_CHECKSUM="1e2d73c870756e3940dcb6c1112c7aa7f702a89cfdb992d11079ac852b4ea05c"
@@ -38,7 +38,7 @@ ENV HELM_HASH_SUM_FILE="helm-${HELM_VERSION}-linux-amd64.tar.gz.sha256sum"
 ENV PATH=/usr/bin/google-cloud-sdk/bin:${PATH}
 
 # renovate: datasource=pypi depName=pip packageName=pip
-ENV PYTHON_PIP_VERSION=25.1.1
+ENV PYTHON_PIP_VERSION=25.2
 
 RUN apk add --update --no-cache \
     aws-cli \
