@@ -23,7 +23,7 @@ metadata:
   name: http-routes-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.3
+    chart: sonarqube-2025.1.4
     release: http-routes-values.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: http-routes-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.3
+    chart: sonarqube-2025.1.4
     release: http-routes-values.yaml
     heritage: Helm
 type: Opaque
@@ -57,7 +57,7 @@ metadata:
   name: http-routes-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.3
+    chart: sonarqube-2025.1.4
     release: http-routes-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: http-routes-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.3
+    chart: sonarqube-2025.1.4
     release: http-routes-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: http-routes-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.3
+    chart: sonarqube-2025.1.4
     release: http-routes-values.yaml
     heritage: Helm
 data:
@@ -130,7 +130,7 @@ metadata:
   name: http-routes-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.3
+    chart: sonarqube-2025.1.4
     release: http-routes-values.yaml
     heritage: Helm
 data:
@@ -198,7 +198,7 @@ metadata:
   name: http-routes-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.3
+    chart: sonarqube-2025.1.4
     release: http-routes-values.yaml
     heritage: Helm
 spec:
@@ -380,7 +380,7 @@ metadata:
   name: http-routes-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.3
+    chart: sonarqube-2025.1.4
     release: http-routes-values.yaml
     heritage: Helm
     app.kubernetes.io/name: http-routes-values.yaml
@@ -388,7 +388,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: http-routes-values.yaml-sonarqube
-    app.kubernetes.io/version: "2025.1.3-enterprise"
+    app.kubernetes.io/version: "2025.1.4-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -400,10 +400,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: fca38826111961873e812a777fede0c9c52ebfc6fd48965b47f9af139124897e
-        checksum/init-sysctl: 36cabacbb86b3419cae5e329ed2d0f99aa0140b31dc96420b0ece0ccbbfad52d
-        checksum/plugins: fe8ce82a662421258271ab661c24340468f805ce3906f1e0f1d4a8ec21846acc
-        checksum/secret: ca8b8da172f73377d1ea191ca7b4810812bb1489212a065f998b9b21c1dabbc6
+        checksum/config: 223c857992bc2b48f58ab74e1967ef62d62129875ef9d7361a27d2d201b8f703
+        checksum/init-sysctl: 212418eb7aea07fd33edca4447235abe5f60c6d2eed9d646da91a65fe310b420
+        checksum/plugins: d2c1a2476c4bc2dabdd28c2f45923221a52437136549f3675de268f2f99f1ada
+        checksum/secret: ebe4d97828b8c201c4af59cfc9c1c9c4367da5327bac7014ab3f68ae87a48de8
       labels:
         app: sonarqube
         release: http-routes-values.yaml
@@ -413,7 +413,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:2025.1.3-enterprise
+          image: sonarqube:2025.1.4-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -429,7 +429,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/http-routes-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:2025.1.3-enterprise
+          image: sonarqube:2025.1.4-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -448,7 +448,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2025.1.3-enterprise
+          image: sonarqube:2025.1.4-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -465,7 +465,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.1.3
+              value: 2025.1.4
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -570,7 +570,7 @@ metadata:
   name: http-routes-values.yaml-sonarqube-http-route
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.3
+    chart: sonarqube-2025.1.4
     release: http-routes-values.yaml
     heritage: Helm
 spec:
@@ -597,14 +597,14 @@ metadata:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.3
+    chart: sonarqube-2025.1.4
     release: http-routes-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: http-routes-values.yaml-ui-test
-      image: "sonarqube:2025.1.3-enterprise"
+      image: "sonarqube:2025.1.4-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
