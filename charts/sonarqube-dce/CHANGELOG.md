@@ -2,6 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [2025.5.0]
+* Upgrade SonarQube Server to to 2025.5.0
 * Update Chart's version to 2025.5.0
 * Update the image and readinessProbe used by postgresql after they migrated to a legacy repository
 * Support Kubernetes v1.34.0
