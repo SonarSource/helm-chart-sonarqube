@@ -23,7 +23,7 @@ metadata:
   name: deployment-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.2
+    chart: sonarqube-2025.4.3
     release: deployment-values.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: deployment-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.2
+    chart: sonarqube-2025.4.3
     release: deployment-values.yaml
     heritage: Helm
 type: Opaque
@@ -57,7 +57,7 @@ metadata:
   name: deployment-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.2
+    chart: sonarqube-2025.4.3
     release: deployment-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: deployment-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.2
+    chart: sonarqube-2025.4.3
     release: deployment-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: deployment-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.2
+    chart: sonarqube-2025.4.3
     release: deployment-values.yaml
     heritage: Helm
 data:
@@ -130,7 +130,7 @@ metadata:
   name: deployment-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.2
+    chart: sonarqube-2025.4.3
     release: deployment-values.yaml
     heritage: Helm
 data:
@@ -198,7 +198,7 @@ metadata:
   name: deployment-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.2
+    chart: sonarqube-2025.4.3
     release: deployment-values.yaml
     heritage: Helm
 spec:
@@ -219,7 +219,7 @@ metadata:
   name: deployment-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.2
+    chart: sonarqube-2025.4.3
     release: deployment-values.yaml
     heritage: Helm
     app.kubernetes.io/name: deployment-values.yaml
@@ -227,7 +227,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: deployment-values.yaml-sonarqube
-    app.kubernetes.io/version: "2025.4.2-enterprise"
+    app.kubernetes.io/version: "2025.4.3-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -240,10 +240,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: dcd9d221780666e6c2f85b6310572f7dae03c8aaf83a64032373749952937092
-        checksum/init-sysctl: 8f1b7745dac9a9bcf4c99caca70eb519c694d40d0d504f0f0c5d3191d9e1471e
-        checksum/plugins: c50ac31b2b56c15e9d1b3513148cb9aa7d005d4b6a68269768dafbde4095b22a
-        checksum/secret: 2d7d31c59b902977b623f2f8a9aacc8ede368dabc6b39121e7bdc1936518a953
+        checksum/config: 68d15e3d9bbd6a3ea271b17a158479ac9758f7b8e15ea60e4ff3490ccc845248
+        checksum/init-sysctl: 3c8ac061a33089e4bb36919b6705b4f58896cf420a0a3c8e7dbd53a0747bd643
+        checksum/plugins: 5cfceec6a7cf09b256c2cb0d9d82bd92d7dcfc774f9c7e89b65f3ce802e07c6b
+        checksum/secret: 9b3fd679def0b6fd4f0e1ff574d06bbaaaa75195c6d68452a7e1e728b45d2730
       labels:
         app: sonarqube
         release: deployment-values.yaml
@@ -253,7 +253,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:2025.4.2-enterprise
+          image: sonarqube:2025.4.3-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -269,7 +269,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/deployment-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:2025.4.2-enterprise
+          image: sonarqube:2025.4.3-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -288,7 +288,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2025.4.2-enterprise
+          image: sonarqube:2025.4.3-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -305,7 +305,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.4.2
+              value: 2025.4.3
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -575,14 +575,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.2
+    chart: sonarqube-2025.4.3
     release: deployment-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: deployment-values.yaml-ui-test
-      image: "sonarqube:2025.4.2-enterprise"
+      image: "sonarqube:2025.4.3-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
