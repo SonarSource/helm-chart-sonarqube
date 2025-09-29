@@ -54,7 +54,8 @@
             }
         },
         "jdbcOverwriteJdbcPassword": {
-            "type": "secureString",
+            "type": "String",
+            "defaultValue": "sonarPass",
             "metadata": {
                 "description": "The JDBC Password to connect to the database."
             }
@@ -252,6 +253,7 @@
                 "configurationSettings": {
                     "sonarqube.monitoringPasscode": "[parameters('monitoringPasscode')]",
                     "sonarqube.jdbcOverwrite.enabled": "[parameters('jdbcOverwriteEnabled')]",
+                    "sonarqube.postgresql.enabled": "[not(parameters('jdbcOverwriteEnabled'))]",
                     "sonarqube.jdbcOverwrite.jdbcUrl": "[parameters('jdbcOverwriteJdbcUrl')]",
                     "sonarqube.jdbcOverwrite.jdbcUsername": "[parameters('jdbcOverwriteJdbcUsername')]",
                     "sonarqube.jdbcOverwrite.jdbcPassword": "[parameters('jdbcOverwriteJdbcPassword')]"
