@@ -59,10 +59,10 @@ cd ../.. # Back to azure-marketplace-k8s-app/
 
 # # 5. Push required images to the ACR_REGISTRY registry
 echo "5. Push required images to the ACR_REGISTRY registry..."
-docker tag "sonarqube:${SONARQUBE_CHART_VERSION}-enterprise" "${ACR_REGISTRY}/sonarqube:${SONARQUBE_CHART_VERSION}-enterprise"
-docker tag "bitnami/postgresql:${PSQL_VERSION}" "${ACR_REGISTRY}/bitnami/postgresql:${PSQL_VERSION}"
-docker push "${ACR_REGISTRY}/sonarqube:${SONARQUBE_CHART_VERSION}-enterprise"
-docker push "${ACR_REGISTRY}/bitnami/postgresql:${PSQL_VERSION}"
+# docker tag "sonarqube:${SONARQUBE_CHART_VERSION}-enterprise" "${ACR_REGISTRY}/sonarqube:${SONARQUBE_CHART_VERSION}-enterprise"
+docker tag "bitnamilegacy/postgresql:${PSQL_VERSION}" "${ACR_REGISTRY}/bitnamilegacy/postgresql:${PSQL_VERSION}"
+# docker push "${ACR_REGISTRY}/sonarqube:${SONARQUBE_CHART_VERSION}-enterprise"
+docker push "${ACR_REGISTRY}/bitnamilegacy/postgresql:${PSQL_VERSION}"
 
 # 6. Run CPA verify within the container
 echo "6. Running CPA verification (cpa verify)..."
@@ -75,7 +75,7 @@ echo "CPA verification complete."
 echo "7. Building the CPA bundle (cpa buildbundle)..."
 # This creates the .cnab directory and the bundle file (e.g., sonarqube.cnab)
 # in the current directory (mounted as /data in container).
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data mcr.microsoft.com/container-package-app:latest cpa buildbundle --force --directory /data
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data mcr.microsoft.com/container-package-app:latest sh -c "echo "${AZURE_ACR_PASSWORD}" | docker login "${AZURE_ACR_REGISTRY}" --username "${AZURE_ACR_USERNAME}" --password-stdin && cd /data && cpa buildbundle --force"
 echo "CPA bundle built successfully."
 echo "CPA bundle pushed to ACR successfully!"
 
