@@ -68,7 +68,7 @@ spec:
       {{- if .Values.ApplicationNodes.extraInitContainers }}
 {{ toYaml .Values.ApplicationNodes.extraInitContainers | indent 8 }}
       {{- end }}
-      {{- if .Values.postgresql.enabled }}
+      {{- if and .Values.postgresql.enabled (not (or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable)) }}
         - name: "wait-for-db"
           image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
