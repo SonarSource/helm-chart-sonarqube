@@ -41,18 +41,21 @@
         },
         "jdbcOverwriteJdbcUrl": {
             "type": "String",
+            "defaultValue": "jdbc:postgresql://host:5432/db",
             "metadata": {
                 "description": "The JDBC URL to connect to the database."
             }
         },
         "jdbcOverwriteJdbcUsername": {
             "type": "String",
+            "defaultValue": "sonarUser",
             "metadata": {
                 "description": "The JDBC Username to connect to the database."
             }
         },
         "jdbcOverwriteJdbcPassword": {
-            "type": "secureString",
+            "type": "String",
+            "defaultValue": "sonarPass",
             "metadata": {
                 "description": "The JDBC Password to connect to the database."
             }
@@ -250,6 +253,7 @@
                 "configurationSettings": {
                     "sonarqube.monitoringPasscode": "[parameters('monitoringPasscode')]",
                     "sonarqube.jdbcOverwrite.enabled": "[parameters('jdbcOverwriteEnabled')]",
+                    "sonarqube.postgresql.enabled": "[not(parameters('jdbcOverwriteEnabled'))]",
                     "sonarqube.jdbcOverwrite.jdbcUrl": "[parameters('jdbcOverwriteJdbcUrl')]",
                     "sonarqube.jdbcOverwrite.jdbcUsername": "[parameters('jdbcOverwriteJdbcUsername')]",
                     "sonarqube.jdbcOverwrite.jdbcPassword": "[parameters('jdbcOverwriteJdbcPassword')]"
