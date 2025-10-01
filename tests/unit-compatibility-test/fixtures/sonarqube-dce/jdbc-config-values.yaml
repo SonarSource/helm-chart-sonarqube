@@ -64,7 +64,20 @@ data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jdbc-config-values.yaml-sonarqube-dce
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2025.5.0
+    release: jdbc-config-values.yaml
+    heritage: Helm
+type: Opaque
+data:
+  jdbc-password: "c29uYXJQYXNz"
 ---
+# Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
@@ -403,7 +416,7 @@ spec:
       annotations:
         checksum/plugins: b82247410f2bbfb11ad2a47c23b43c22a68eb75dbe071708f9ae4d9065290128
         checksum/config: 18507372306b6fcc8daafae4a9d8686c21219df5ea0a26cf2eb808b429e41369
-        checksum/secret: 2f13f0d31c208613a349ca019d81aebb3f9fae45fc3e6ac41d1a1d052f2c11e7
+        checksum/secret: 329874a0a786d137c89509b49722ac77b05eee55e6e155ace92b8a6729825f1c
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -458,8 +471,8 @@ spec:
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: jdbc-config-values.yaml-postgresql
-                  key: postgresql-password
+                  name: jdbc-config-values.yaml-sonarqube-dce
+                  key: jdbc-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -754,7 +767,7 @@ spec:
         checksum/init-sysctl: ebfb0e598278d2989f734e142d7d4e36e8d76243b0aaffdbb35e60e2ac84a003
         checksum/init-fs: c9e4f1698cf5fc2718e0b8a300a897a7593020bc6a9d387098558b8a7eeb1bdb
         checksum/config: 18507372306b6fcc8daafae4a9d8686c21219df5ea0a26cf2eb808b429e41369
-        checksum/secret: 2f13f0d31c208613a349ca019d81aebb3f9fae45fc3e6ac41d1a1d052f2c11e7
+        checksum/secret: 329874a0a786d137c89509b49722ac77b05eee55e6e155ace92b8a6729825f1c
     spec:
       automountServiceAccountToken: false
       initContainers:

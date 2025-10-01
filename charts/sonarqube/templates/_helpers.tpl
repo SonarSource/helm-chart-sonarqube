@@ -116,17 +116,17 @@ Expand the Application Image name.
 Determine the k8s secret containing the JDBC credentials
 */}}
 {{- define "jdbc.secret" -}}
-{{- if .Values.postgresql.enabled -}}
-  {{- if .Values.postgresql.existingSecret -}}
-  {{- .Values.postgresql.existingSecret -}}
-  {{- else -}}
-  {{- template "postgresql.fullname" . -}}
-  {{- end -}}
-{{- else if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
+{{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
   {{- if .Values.jdbcOverwrite.jdbcSecretName -}}
   {{- .Values.jdbcOverwrite.jdbcSecretName -}}
   {{- else -}}
   {{- template "sonarqube.fullname" . -}}
+  {{- end -}}
+{{- else if .Values.postgresql.enabled -}}
+  {{- if .Values.postgresql.existingSecret -}}
+  {{- .Values.postgresql.existingSecret -}}
+  {{- else -}}
+  {{- template "postgresql.fullname" . -}}
   {{- end -}}
 {{- else -}}
   {{- template "sonarqube.fullname" . -}}
@@ -150,17 +150,17 @@ Determine JDBC username
 Determine the k8s secretKey contrining the JDBC password
 */}}
 {{- define "jdbc.secretPasswordKey" -}}
-{{- if and .Values.postgresql.enabled (not (or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable)) -}}
-  {{- if and .Values.postgresql.existingSecret .Values.postgresql.existingSecretPasswordKey -}}
-  {{- .Values.postgresql.existingSecretPasswordKey -}}
-  {{- else -}}
-  {{- "postgresql-password" -}}
-  {{- end -}}
-{{- else if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
+{{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
   {{- if and .Values.jdbcOverwrite.jdbcSecretName .Values.jdbcOverwrite.jdbcSecretPasswordKey -}}
   {{- .Values.jdbcOverwrite.jdbcSecretPasswordKey -}}
   {{- else -}}
   {{- "jdbc-password" -}}
+  {{- end -}}
+{{- else if and .Values.postgresql.enabled (not (or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable)) -}}
+  {{- if and .Values.postgresql.existingSecret .Values.postgresql.existingSecretPasswordKey -}}
+  {{- .Values.postgresql.existingSecretPasswordKey -}}
+  {{- else -}}
+  {{- "postgresql-password" -}}
   {{- end -}}
 {{- else -}}
   {{- "jdbc-password" -}}

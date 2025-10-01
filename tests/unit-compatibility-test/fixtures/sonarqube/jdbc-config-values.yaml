@@ -16,7 +16,20 @@ data:
   postgresql-password: "c29uYXJQYXNz"
 ---
 # Source: sonarqube/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jdbc-config-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-2025.5.0
+    release: jdbc-config-values.yaml
+    heritage: Helm
+type: Opaque
+data:
+  jdbc-password: "c29uYXJQYXNz"
 ---
+# Source: sonarqube/templates/secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
@@ -403,7 +416,7 @@ spec:
         checksum/config: 48747e959088f09166e3debbc03b872265dea9ce3b90ed3941d2890b103eb0ad
         checksum/init-sysctl: dea21e16a2abc6ec0165a5b676c69f1f9b722acacb2e1db01e148d081620b562
         checksum/plugins: 423297712aadd6633b888624206d257cde839397880248949eeb49616942f987
-        checksum/secret: bb3dcd4f25529efec32471fc3e29dc5e7a190c71647783af1bab46a23cbd765b
+        checksum/secret: 17f3e52f43329b6a19aadf5934fdad6e16b7ebdc7c0a8f5b0dc651e45384fc35
       labels:
         app: sonarqube
         release: jdbc-config-values.yaml
@@ -453,8 +466,8 @@ spec:
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: jdbc-config-values.yaml-postgresql
-                  key: postgresql-password
+                  name: jdbc-config-values.yaml-sonarqube
+                  key: jdbc-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
