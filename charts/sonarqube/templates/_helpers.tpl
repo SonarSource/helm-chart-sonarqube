@@ -71,6 +71,20 @@ Expand the Application Image name.
 {{- end }}
 {{- end -}}
 
+{{/*
+Check if Azure configuration is complete
+*/}}
+{{- define "sonarqube.azure.enabled" -}}
+{{- if and .Values.global .Values.global.azure -}}
+  {{- with .Values.global.azure -}}
+    {{- if and .identity .extension .marketplace -}}
+      {{- if and .identity.clientId .extension.resourceId .marketplace.planId -}}
+        {{- true -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
 
 {{/*
   Define the image.tag value that computes the right tag to be used as `sonarqube.image`
