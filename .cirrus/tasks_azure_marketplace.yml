@@ -2,7 +2,7 @@ build_azure_app_template: &BUILD_AZURE_APP_TEMPLATE
   ec2_instance:
     <<: *VM_TEMPLATE
   env:
-    PSQL_VERSION: 11.14.0-debian-10-r22
+    PSQL_VERSION: 11.14.0
     SQ_VERSION: 2025.2.0
   install_helm_script:
     - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
@@ -12,7 +12,7 @@ build_azure_app_template: &BUILD_AZURE_APP_TEMPLATE
     - echo "${AZURE_ACR_PASSWORD}" | docker login "${AZURE_ACR_REGISTRY}" --username "${AZURE_ACR_USERNAME}" --password-stdin
   pull_required_images_script:
     - docker pull "docker.io/sonarqube:${SQ_VERSION}-enterprise"
-    - docker pull "docker.io/bitnamilegacy/postgresql:11.14.0"
+    - docker pull "docker.io/bitnamilegacy/postgresql:${PSQL_VERSION}"
   build_app_script:
     - ./.cirrus/azure_app_verify_and_publish.sh
 
@@ -20,4 +20,4 @@ build_azure_staging_app_task:
   <<: *BUILD_AZURE_APP_TEMPLATE
   env:
     PSQL_VERSION: 11.14.0
-    SQ_VERSION: 2025.3.0
+    SQ_VERSION: 2025.5.0
