@@ -21,3 +21,17 @@ build_azure_staging_app_task:
   env:
     PSQL_VERSION: 11.14.0
     SQ_VERSION: 2025.5.0
+
+prod_app_task:
+  <<: *BUILD_AZURE_APP_TEMPLATE
+  env:
+    PSQL_VERSION: 11.14.0
+    SQ_VERSION: 2025.5.0
+
+# build_azure_prod_app_task:
+#   <<: *BUILD_AZURE_APP_TEMPLATE
+#   env:
+#     PSQL_VERSION: 11.14.0
+#     SQ_VERSION: 2025.5.0
+  # depends_on:
+  #   - build_azure_staging_app
