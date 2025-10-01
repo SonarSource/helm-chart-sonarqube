@@ -9,7 +9,7 @@ set -e # Exit immediately if a command exits with a non-zero status.
 # Version of the original SonarQube chart (e.g., 2025.3.0)
 # This should match the version in charts/sonarqube/Chart.yaml
 SONARQUBE_CHART_VERSION="${SQ_VERSION:-2025.3.0}"
-PSQL_VERSION="${PSQL_VERSION:-11.14.0-debian-10-r22}" # PostgreSQL version used in the SonarQube chart
+PSQL_VERSION="${PSQL_VERSION:-11.14.0}" # PostgreSQL version used in the SonarQube chart
 
 # Azure Container Registry (ACR) details
 # This should match the 'registryServer' in your manifest.yaml
