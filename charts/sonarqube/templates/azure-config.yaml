@@ -1,0 +1,12 @@
+{{- if include "sonarqube.azure.enabled" . }}
+{{- $azure := .Values.global.azure }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "sonarqube.fullname" . }}-azure-config
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+data:
+  CLIENT_ID: {{ $azure.identity.clientId | quote }}
+  EXTENSION_RESOURCE_ID: {{ $azure.extension.resourceId | quote }}
+  PLAN_ID: {{ $azure.marketplace.planId | quote }}
+{{- end }}
