@@ -3,7 +3,10 @@
 sonarqube:
   edition: enterprise
   monitoringPasscode: define-me
-      
+  env:
+    - name: MARKETPLACE_AZURE_BILLING
+      value: "true"
+
 global:
   azure:
     identity:
@@ -27,7 +30,7 @@ global:
       nginx:
         registry: <your_registry>.azurecr.io
         image: sonarqube
-        tag: 2025.3.0-enterprise
+        tag: 2025.5.0-enterprise
       postgresql:
         registry: <your_registry>.azurecr.io
         image: bitnami/postgresql
