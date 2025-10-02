@@ -7,6 +7,7 @@ All changes to this chart will be documented in this file.
 * Upgrade SonarQube Community Build to 25.9.0.112764
 * Update the image and readinessProbe used by postgresql after they migrated to a legacy repository
 * Support Kubernetes v1.34.0
+* Disable Postgresql when the JDBC overwrite is used
 
 ## [2025.4.0]
 * Update Chart's version to 2025.4.0
