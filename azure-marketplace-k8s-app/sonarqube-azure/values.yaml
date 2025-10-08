@@ -1,0 +1,29 @@
+# Default values for azure-marketplace-k8s-app.
+# This is a YAML-formatted file.
+sonarqube:
+  edition: enterprise
+  monitoringPasscode: define-me
+  env:
+    - name: MARKETPLACE_AZURE_BILLING
+      value: "true"
+
+global:
+  azure:
+    identity:
+      # Application's Managed Service Identity (MSI) Client ID. ClientID can be used to generate authentication token to communicate to external services like Microsoft Marketplace Metering API
+      clientId: "DONOTMODIFY" # Azure populates this value at deployment time
+    marketplace:
+      # id of the plan purchased for the Azure Marketplace Kubernetes application,to be used in usage event payload to metering api, for more information please refer: https://learn.microsoft.com/en-us/partner-center/marketplace/marketplace-metering-service-apis 
+      planId: "DONOTMODIFY" # Azure populates this value at deployment time
+    extension:
+      # resource id of the Azure Marketplace Kubernetes application,to be used in usage event payload to metering api, for more information please refer: https://learn.microsoft.com/en-us/partner-center/marketplace/marketplace-metering-service-apis 
+      resourceId: "DONOTMODIFY" # application's Azure Resource ID, Azure populates this value at deployment time
+    images:
+      sonarqube:
+        registry: __ACR_REGISTRY_PLACEHOLDER__
+        image: sonarqube
+        tag: 2025.5.0-enterprise
+      postgresql:
+        registry: __ACR_REGISTRY_PLACEHOLDER__
+        image: bitnamilegacy/postgresql
+        tag: 11.14.0
