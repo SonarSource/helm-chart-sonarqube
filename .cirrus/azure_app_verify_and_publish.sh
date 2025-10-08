@@ -24,12 +24,10 @@ APPLICATION_NAME="sonarqube"
 
 echo "--- Starting Azure Marketplace K8s App Packaging Process ---"
 
-
+cd azure-marketplace-k8s-app
 
 # 1. Clean up previous build artifacts
 echo "1. Cleaning up old build artifacts..."
-rm -rf charts/sonarqube/charts
-cd azure-marketplace-k8s-app
 # Removes:
 # - .cnab/ directory (where the bundle is built)
 # - The packaged wrapper chart (if it was created previously)
@@ -44,12 +42,8 @@ mkdir -p sonarqube-azure/charts/
 echo "2. Updating Helm dependencies for the wrapper chart (sonarqube-azure)..."
 # This command will read sonarqube-azure/Chart.yaml and package the 'sonarqube'
 # dependency (from ../charts/sonarqube) into sonarqube-azure/charts/sonarqube-${SONARQUBE_CHART_VERSION}.tgz
-cd ..
-cd charts/sonarqube
-helm dependency build
-cd ../../azure-marketplace-k8s-app
 cd sonarqube-azure
-helm dependency build
+helm dependency update
 echo "Helm dependencies updated. Packaged subchart is now in sonarqube-azure/charts/."
 
 # 3. Decompress the subchart for CPA validation
