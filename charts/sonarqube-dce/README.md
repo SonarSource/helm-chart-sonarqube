@@ -16,7 +16,7 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 Compatible SonarQube Version: `2025.5.0`
 
-Supported Kubernetes Versions: From `1.30` to `1.33`
+Supported Kubernetes Versions: From `1.30` to `1.34`
 Supported Openshift Versions: From `4.11` to `4.17`
 
 ## Installing the chart
