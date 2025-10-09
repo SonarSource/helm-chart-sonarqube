@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2025.7.0]
+* Update Chart's version to 2025.7.0
+* Support lifecycle hooks on the SonarQube container
+
 ## [2025.6.0]
 * Update Chart's version to 2025.6.0
 * Upgrade SonarQube Community Build to 25.10.0.114319

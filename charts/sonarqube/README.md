@@ -281,6 +281,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `httpsProxy`            | HTTPS proxy for downloading JMX agent and install plugins, will supersede initContainer specific https proxy variable | ``                 |
 | `noProxy`               | No proxy for downloading JMX agent and install plugins, will supersede initContainer specific no proxy variables      | ``                 |
 | `ingress-nginx.enabled` | Install Nginx Ingress Helm                                                                                            | `false`            |
+| `lifecycle`             | Lifecycle hooks to add to the SonarQube container                                                                     | `{}`               |
 
 ### NetworkPolicies
 
