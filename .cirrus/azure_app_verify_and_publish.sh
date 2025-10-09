@@ -40,21 +40,19 @@ rm -rf ../charts/sonarqube/charts
 mkdir -p sonarqube-azure/charts/
 
 
-# 2. Clean existing dependencies and rebuild from scratch
-echo "2a. Cleaning existing SonarQube chart dependencies..."
+# 2. Build all required Helm chart dependencies
+echo "2a. Build fresh SonarQube dependencies..."
 cd ../charts/sonarqube
 rm -rf charts/ Chart.lock
-echo "Existing dependencies cleaned. Rebuilding from scratch..."
-
-# 2b. Build fresh SonarQube dependencies
 helm dependency update
 echo "SonarQube dependencies rebuilt successfully."
 
-# 2c. Navigate into the wrapper chart directory and update Helm dependencies
-echo "2c. Updating Helm dependencies for the wrapper chart (sonarqube-azure)..."
+# 2b. Navigate into the wrapper chart directory and update Helm dependencies
+echo "2b. Updating Helm dependencies for the wrapper chart (sonarqube-azure)..."
 # This command will read sonarqube-azure/Chart.yaml and package the 'sonarqube'
 # dependency (from ../charts/sonarqube) into sonarqube-azure/charts/sonarqube-${SONARQUBE_CHART_VERSION}.tgz
 cd ../../azure-marketplace-k8s-app/sonarqube-azure
+rm -rf ../../charts/sonarqube/.cache/helm/repository/* # Workaround for Helm caching issues on Cirrus
 helm dependency update
 echo "Helm dependencies updated. Packaged subchart is now in sonarqube-azure/charts/."
 
