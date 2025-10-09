@@ -24,6 +24,11 @@ APPLICATION_NAME="sonarqube"
 
 echo "--- Starting Azure Marketplace K8s App Packaging Process ---"
 
+# Replace ACR registry placeholder with actual registry value
+echo "Replacing ACR registry placeholders with: ${ACR_REGISTRY}"
+sed -i "s|__ACR_REGISTRY_PLACEHOLDER__|${ACR_REGISTRY}|g" azure-marketplace-k8s-app/manifest.yaml
+sed -i "s|__ACR_REGISTRY_PLACEHOLDER__|${ACR_REGISTRY}|g" azure-marketplace-k8s-app/sonarqube-azure/values.yaml
+
 cd azure-marketplace-k8s-app
 
 # 1. Clean up previous build artifacts
@@ -59,9 +64,9 @@ cd ../.. # Back to azure-marketplace-k8s-app/
 
 # # 5. Push required images to the ACR_REGISTRY registry
 echo "5. Push required images to the ACR_REGISTRY registry..."
-# docker tag "sonarqube:${SONARQUBE_CHART_VERSION}-enterprise" "${ACR_REGISTRY}/sonarqube:${SONARQUBE_CHART_VERSION}-enterprise"
+docker tag "sonarqube:${SONARQUBE_CHART_VERSION}-enterprise" "${ACR_REGISTRY}/sonarqube:${SONARQUBE_CHART_VERSION}-enterprise"
 docker tag "bitnamilegacy/postgresql:${PSQL_VERSION}" "${ACR_REGISTRY}/bitnamilegacy/postgresql:${PSQL_VERSION}"
-# docker push "${ACR_REGISTRY}/sonarqube:${SONARQUBE_CHART_VERSION}-enterprise"
+docker push "${ACR_REGISTRY}/sonarqube:${SONARQUBE_CHART_VERSION}-enterprise"
 docker push "${ACR_REGISTRY}/bitnamilegacy/postgresql:${PSQL_VERSION}"
 
 # 6. Run CPA verify within the container
