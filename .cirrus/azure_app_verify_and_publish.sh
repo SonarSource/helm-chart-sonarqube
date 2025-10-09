@@ -34,15 +34,27 @@ echo "1. Cleaning up old build artifacts..."
 # - The charts/ directory within the wrapper chart (containing the .tgz)
 # - The Chart.lock file within the wrapper chart
 rm -rf .cnab/ "${APPLICATION_NAME}-azure-${SONARQUBE_CHART_VERSION}" sonarqube-azure/charts/ sonarqube-azure/Chart.lock
+rm -rf ../charts/sonarqube/charts
 
 # Ensure the wrapper chart's charts/ directory exists for unpacking
 mkdir -p sonarqube-azure/charts/
 
-# 2. Navigate into the wrapper chart directory and update Helm dependencies
-echo "2. Updating Helm dependencies for the wrapper chart (sonarqube-azure)..."
+
+# 2. Clean existing dependencies and rebuild from scratch
+echo "2a. Cleaning existing SonarQube chart dependencies..."
+cd ../charts/sonarqube
+rm -rf charts/ Chart.lock
+echo "Existing dependencies cleaned. Rebuilding from scratch..."
+
+# 2b. Build fresh SonarQube dependencies
+helm dependency update
+echo "SonarQube dependencies rebuilt successfully."
+
+# 2c. Navigate into the wrapper chart directory and update Helm dependencies
+echo "2c. Updating Helm dependencies for the wrapper chart (sonarqube-azure)..."
 # This command will read sonarqube-azure/Chart.yaml and package the 'sonarqube'
 # dependency (from ../charts/sonarqube) into sonarqube-azure/charts/sonarqube-${SONARQUBE_CHART_VERSION}.tgz
-cd sonarqube-azure
+cd ../../azure-marketplace-k8s-app/sonarqube-azure
 helm dependency update
 echo "Helm dependencies updated. Packaged subchart is now in sonarqube-azure/charts/."
 
