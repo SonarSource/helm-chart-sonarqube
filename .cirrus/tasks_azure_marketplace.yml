@@ -18,6 +18,7 @@ build_azure_app_template: &BUILD_AZURE_APP_TEMPLATE
 
 build_azure_staging_app_task:
   <<: *BUILD_AZURE_APP_TEMPLATE
+  only_if: $TRIGGER == "PUSH_AZURE_STAGING" || $TRIGGER == "PUSH_AZURE_PRODUCTION"
   env:
     PSQL_VERSION: 11.14.0
     SQ_VERSION: 2025.5.0
@@ -27,6 +28,7 @@ build_azure_staging_app_task:
 
 build_azure_prod_app_task:
   <<: *BUILD_AZURE_APP_TEMPLATE
+  only_if: $TRIGGER == "PUSH_AZURE_PRODUCTION"
   depends_on:
     - build_azure_staging_app
   env:
