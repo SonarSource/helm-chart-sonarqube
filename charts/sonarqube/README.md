@@ -20,7 +20,7 @@ SonarQube Community Build: `25.10.0.114319`. If you want the use a more recent S
 
 ## Kubernetes and Openshift Compatibility
 
-Supported Kubernetes Versions: From `1.30` to `1.33`
+Supported Kubernetes Versions: From `1.30` to `1.34`
 
 Supported Openshift Versions: From `4.11` to `4.17`
 
