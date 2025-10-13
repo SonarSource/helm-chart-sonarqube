@@ -9,6 +9,7 @@ set -e # Exit immediately if a command exits with a non-zero status.
 # Version of the original SonarQube chart (e.g., 2025.3.0)
 # This should match the version in charts/sonarqube/Chart.yaml
 SONARQUBE_CHART_VERSION="${SQ_VERSION:-2025.3.0}"
+SONARQUBE_IMAGE_VERSION="${SQ_IMAGE_VERSION:-2025.3.0}"
 PSQL_VERSION="${PSQL_VERSION:-11.14.0}" # PostgreSQL version used in the SonarQube chart
 
 # Azure Container Registry (ACR) details
@@ -23,6 +24,11 @@ APPLICATION_NAME="sonarqube"
 # --- Script Start ---
 
 echo "--- Starting Azure Marketplace K8s App Packaging Process ---"
+
+# Replace ACR registry placeholder with actual registry value
+echo "Replacing ACR registry placeholders with: ${ACR_REGISTRY}"
+sed -i "s|__ACR_REGISTRY_PLACEHOLDER__|${ACR_REGISTRY}|g" azure-marketplace-k8s-app/manifest.yaml
+sed -i "s|__ACR_REGISTRY_PLACEHOLDER__|${ACR_REGISTRY}|g" azure-marketplace-k8s-app/sonarqube-azure/values.yaml
 
 cd azure-marketplace-k8s-app
 
@@ -70,9 +76,9 @@ cd ../.. # Back to azure-marketplace-k8s-app/
 
 # # 5. Push required images to the ACR_REGISTRY registry
 echo "5. Push required images to the ACR_REGISTRY registry..."
-# docker tag "sonarqube:${SONARQUBE_CHART_VERSION}-enterprise" "${ACR_REGISTRY}/sonarqube:${SONARQUBE_CHART_VERSION}-enterprise"
+docker tag "sonarqube:${SONARQUBE_IMAGE_VERSION}-enterprise" "${ACR_REGISTRY}/sonarqube:${SONARQUBE_IMAGE_VERSION}-enterprise"
 docker tag "bitnamilegacy/postgresql:${PSQL_VERSION}" "${ACR_REGISTRY}/bitnamilegacy/postgresql:${PSQL_VERSION}"
-# docker push "${ACR_REGISTRY}/sonarqube:${SONARQUBE_CHART_VERSION}-enterprise"
+docker push "${ACR_REGISTRY}/sonarqube:${SONARQUBE_IMAGE_VERSION}-enterprise"
 docker push "${ACR_REGISTRY}/bitnamilegacy/postgresql:${PSQL_VERSION}"
 
 # 6. Run CPA verify within the container
