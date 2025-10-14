@@ -17,8 +17,8 @@ YAMLLINT_VERSION=1.35.1
 # renovate: datasource=pypi depName=yamale-vm packageName=yamale
 YAMALE_VERSION=6.0.0
 # renovate: datasource=github-release-attachments depName=chart-testing-vm packageName=helm/chart-testing
-CHART_TESTING_VERSION=v3.13.0
-CHART_TESTING_CHECKSUM="fcbae93a01887730054b5b0b4536b8cfbfe6010fdffccf66b8b87f5f764287d9"
+CHART_TESTING_VERSION=v3.14.0
+CHART_TESTING_CHECKSUM="d16f0583616885423826241164ce1f6589c6fe5332fa74f374ebd2bd3cb3fe1f"
 CHART_TESTING_SEMVER=$(echo ${CHART_TESTING_VERSION} | sed 's/^v//')
 curl -LO https://github.com/helm/chart-testing/releases/download/${CHART_TESTING_VERSION}/chart-testing_${CHART_TESTING_SEMVER}_linux_amd64.tar.gz
 echo "${CHART_TESTING_CHECKSUM}  chart-testing_${CHART_TESTING_SEMVER}_linux_amd64.tar.gz" | sha256sum -c
@@ -34,7 +34,7 @@ pip install "yamale==${YAMALE_VERSION}"
 
 # Install kubectl
 # renovate: datasource=github-releases depName=kubectl-vm packageName=kubernetes/kubernetes
-KUBECTL_VERSION=v1.34.0
+KUBECTL_VERSION=v1.34.1
 curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
 curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl.sha256 
 printf %s "  kubectl" >> kubectl.sha256
@@ -45,7 +45,7 @@ rm kubectl.sha256
 
 # Install helm
 # renovate: datasource=github-releases depName=helm-vm packageName=helm/helm
-HELM_VERSION=v3.18.2
+HELM_VERSION=v3.19.0
 curl -LO https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz
 tar -xf helm-${HELM_VERSION}-linux-amd64.tar.gz
 chmod +x ./linux-amd64/helm
@@ -55,8 +55,8 @@ rm helm-${HELM_VERSION}-linux-amd64.tar.gz
 
 # Install kind
 # renovate: datasource=github-release-attachments depName=kind-vm packageName=kubernetes-sigs/kind
-KIND_VERSION=v0.29.0
-KIND_CHECKSUM="c72eda46430f065fb45c5f70e7c957cc9209402ef309294821978677c8fb3284"
+KIND_VERSION=v0.30.0
+KIND_CHECKSUM="517ab7fc89ddeed5fa65abf71530d90648d9638ef0c4cde22c2c11f8097b8889"
 curl -LO https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-amd64
 echo "${KIND_CHECKSUM}  kind-linux-amd64" | sha256sum -c
 chmod +x ./kind-linux-amd64
