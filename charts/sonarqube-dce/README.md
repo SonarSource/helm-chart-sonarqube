@@ -455,6 +455,8 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.port`                                   | The Hazelcast port for communication with each application member of the cluster.                                                                                                                       | `9003`                                                                   |
 | `applicationNodes.webPort`                                   | The Hazelcast port for communication with the WebServer process. If not specified, a dynamic port will be chosen.                                                                                                                    | ``                                                                   |
 | `applicationNodes.cePort`                                   | The Hazelcast port for communication with the ComputeEngine process. If not specified, a dynamic port will be chosen                                                                                                                     | ``                                                                   |
+| `applicationNodes.lifecycle`                                     | Lifecycle hooks to add to the SonarQube container                                                                                                                                                              | `{}`                                                                   |
+
 
 ### Generic Configuration
 

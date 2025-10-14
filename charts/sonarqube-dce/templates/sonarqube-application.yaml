@@ -400,6 +400,9 @@ spec:
             {{- with .Values.ApplicationNodes.extraVolumeMounts -}}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- with .Values.ApplicationNodes.lifecycle }}
+          lifecycle: {{- toYaml . | nindent 12 }}
+          {{- end }}
     {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
     {{- end }}
