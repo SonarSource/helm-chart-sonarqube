@@ -294,6 +294,10 @@ spec:
       envFrom:
         - configMapRef:
             name: {{ include "sonarqube.fullname" . }}-jdbc-config
+        {{- if include "sonarqube.azure.enabled" . }}
+        - configMapRef:
+            name: {{ template "sonarqube.fullname" . }}-azure-config
+        {{- end }}
         {{- range .Values.extraConfig.secrets }}
         - secretRef:
             name: {{ . }}

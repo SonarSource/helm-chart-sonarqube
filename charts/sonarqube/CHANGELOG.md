@@ -8,6 +8,7 @@ All changes to this chart will be documented in this file.
 * Update the image and readinessProbe used by postgresql after they migrated to a legacy repository
 * Support Kubernetes v1.34.0
 * Disable Postgresql when the JDBC overwrite is used
+* Make SonarQube Server available as an Container App on the Azure Marketplace
 
 ## [2025.4.0]
 * Update Chart's version to 2025.4.0
