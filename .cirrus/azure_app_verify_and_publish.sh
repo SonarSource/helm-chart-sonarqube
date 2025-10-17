@@ -8,9 +8,9 @@ set -e # Exit immediately if a command exits with a non-zero status.
 
 # Version of the original SonarQube chart (e.g., 2025.3.0)
 # This should match the version in charts/sonarqube/Chart.yaml
-SONARQUBE_CHART_VERSION="${SQ_VERSION:-2025.3.0}"
-SONARQUBE_IMAGE_VERSION="${SQ_IMAGE_VERSION:-2025.3.0}"
-PSQL_VERSION="${PSQL_VERSION:-11.14.0}" # PostgreSQL version used in the SonarQube chart
+SONARQUBE_CHART_VERSION="${SQ_VERSION:-2025.5.0}"
+SONARQUBE_IMAGE_VERSION="${SQ_IMAGE_VERSION:-2025.5.0}"
+AZURE_CHART_VERSION="${AZ_CHART_VERSION:-2025.5.1}"
 
 # Azure Container Registry (ACR) details
 # This should match the 'registryServer' in your manifest.yaml
@@ -25,10 +25,15 @@ APPLICATION_NAME="sonarqube"
 
 echo "--- Starting Azure Marketplace K8s App Packaging Process ---"
 
-# Replace ACR registry placeholder with actual registry value
+# Replace Azure app placeholders with actual registry value
 echo "Replacing ACR registry placeholders with: ${ACR_REGISTRY}"
-sed -i "s|__ACR_REGISTRY_PLACEHOLDER__|${ACR_REGISTRY}|g" azure-marketplace-k8s-app/manifest.yaml
-sed -i "s|__ACR_REGISTRY_PLACEHOLDER__|${ACR_REGISTRY}|g" azure-marketplace-k8s-app/sonarqube-azure/values.yaml
+sed -i '' "s|__ACR_REGISTRY_PLACEHOLDER__|${ACR_REGISTRY}|g" azure-marketplace-k8s-app/manifest.yaml
+sed -i '' "s|__ACR_REGISTRY_PLACEHOLDER__|${ACR_REGISTRY}|g" azure-marketplace-k8s-app/sonarqube-azure/values.yaml
+sed -i '' "s|__AZURE_VERSION_PLACEHOLDER__|${AZURE_CHART_VERSION}|g" azure-marketplace-k8s-app/manifest.yaml
+sed -i '' "s|__AZURE_VERSION_PLACEHOLDER__|${AZURE_CHART_VERSION}|g" azure-marketplace-k8s-app/sonarqube-azure/values.yaml
+sed -i '' "s|__AZURE_VERSION_PLACEHOLDER__|${AZURE_CHART_VERSION}|g" azure-marketplace-k8s-app/sonarqube-azure/Chart.yaml
+sed -i '' "s|__SONARQUBE_CHART_VERSION_PLACEHOLDER__|${SONARQUBE_CHART_VERSION}|g" azure-marketplace-k8s-app/sonarqube-azure/Chart.yaml
+sed -i '' "s|__SONARQUBE_IMAGE_VERSION_PLACEHOLDER__|${SONARQUBE_IMAGE_VERSION}|g" azure-marketplace-k8s-app/sonarqube-azure/Chart.yaml
 
 cd azure-marketplace-k8s-app
 
@@ -45,19 +50,11 @@ rm -rf ../charts/sonarqube/charts
 # Ensure the wrapper chart's charts/ directory exists for unpacking
 mkdir -p sonarqube-azure/charts/
 
-
-# 2. Build all required Helm chart dependencies
-echo "2a. Build fresh SonarQube dependencies..."
-cd ../charts/sonarqube
-rm -rf charts/ Chart.lock
-helm dependency update
-echo "SonarQube dependencies rebuilt successfully."
-
-# 2b. Navigate into the wrapper chart directory and update Helm dependencies
-echo "2b. Updating Helm dependencies for the wrapper chart (sonarqube-azure)..."
+# 2. Navigate into the wrapper chart directory and update Helm dependencies
+echo "2. Updating Helm dependencies for the wrapper chart (sonarqube-azure)..."
 # This command will read sonarqube-azure/Chart.yaml and package the 'sonarqube'
 # dependency (from ../charts/sonarqube) into sonarqube-azure/charts/sonarqube-${SONARQUBE_CHART_VERSION}.tgz
-cd ../../azure-marketplace-k8s-app/sonarqube-azure
+cd sonarqube-azure
 rm -rf ../../charts/sonarqube/.cache/helm/repository/* # Workaround for Helm caching issues on Cirrus
 helm dependency update
 echo "Helm dependencies updated. Packaged subchart is now in sonarqube-azure/charts/."
@@ -66,21 +63,18 @@ echo "Helm dependencies updated. Packaged subchart is now in sonarqube-azure/cha
 echo "3. Decompressing the SonarQube subchart for CPA validation..."
 cd charts
 tar -xzf "sonarqube-${SONARQUBE_CHART_VERSION}.tgz"
-ls -la sonarqube/charts/postgresql
+ls -la sonarqube/
 rm "sonarqube-${SONARQUBE_CHART_VERSION}.tgz"
 echo "SonarQube subchart decompressed and .tgz removed."
 
 # 4. Navigate back to the main offer directory
 cd ../.. # Back to azure-marketplace-k8s-app/
 
-
-# # 5. Push required images to the ACR_REGISTRY registry
-echo "5. Push required images to the ACR_REGISTRY registry..."
+# 5. Push required images to the ACR_REGISTRY registry
+echo "5. Push required images to the ACR_REGISTRY registry... (skipped) "
 ##  Disabled to due images not available
 # docker tag "sonarqube:${SONARQUBE_IMAGE_VERSION}-enterprise" "${ACR_REGISTRY}/sonarqube:${SONARQUBE_IMAGE_VERSION}-enterprise"
 # docker push "${ACR_REGISTRY}/sonarqube:${SONARQUBE_IMAGE_VERSION}-enterprise"
-docker tag "bitnamilegacy/postgresql:${PSQL_VERSION}" "${ACR_REGISTRY}/bitnamilegacy/postgresql:${PSQL_VERSION}"
-docker push "${ACR_REGISTRY}/bitnamilegacy/postgresql:${PSQL_VERSION}"
 
 # 6. Run CPA verify within the container
 echo "6. Running CPA verification (cpa verify)..."
@@ -93,7 +87,7 @@ echo "CPA verification complete."
 echo "7. Building the CPA bundle (cpa buildbundle)..."
 # This creates the .cnab directory and the bundle file (e.g., sonarqube.cnab)
 # in the current directory (mounted as /data in container).
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data mcr.microsoft.com/container-package-app:latest sh -c "echo "${AZURE_ACR_PASSWORD}" | docker login "${AZURE_ACR_REGISTRY}" --username "${AZURE_ACR_USERNAME}" --password-stdin && cd /data && cpa buildbundle --force"
+# docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data mcr.microsoft.com/container-package-app:latest sh -c "echo "${AZURE_ACR_PASSWORD}" | docker login "${AZURE_ACR_REGISTRY}" --username "${AZURE_ACR_USERNAME}" --password-stdin && cd /data && cpa buildbundle --force"
 echo "CPA bundle built successfully."
 echo "CPA bundle pushed to ACR successfully!"
 

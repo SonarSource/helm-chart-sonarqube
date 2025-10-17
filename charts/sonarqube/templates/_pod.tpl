@@ -275,11 +275,13 @@ spec:
         - name: IS_HELM_OPENSHIFT_ENABLED
           value: "true"
         {{- end }}
+        {{- if or .Values.postgresql.enabled .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable }}
         - name: SONAR_JDBC_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ include "jdbc.secret" . }}
               key: {{ include "jdbc.secretPasswordKey" . }}
+        {{- end}}
         - name: SONAR_WEB_SYSTEMPASSCODE
           valueFrom:
             secretKeyRef:
@@ -292,8 +294,10 @@ spec:
             {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
       envFrom:
+        {{- if or .Values.postgresql.enabled .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable }}
         - configMapRef:
             name: {{ include "sonarqube.fullname" . }}-jdbc-config
+        {{- end}}
         {{- if include "sonarqube.azure.enabled" . }}
         - configMapRef:
             name: {{ template "sonarqube.fullname" . }}-azure-config
