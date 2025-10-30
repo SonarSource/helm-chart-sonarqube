@@ -6,6 +6,9 @@ on:
       - master
   pull_request:
     types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
     
 name: Main Workflow
 jobs:
@@ -25,9 +28,35 @@ jobs:
       with:
         secrets: |
           development/kv/data/next token | sq_next_token;
+          development/kv/data/sonarcloud token | sq_cloud_eu_token;
+          development/kv/data/sonarqube-us token | sq_cloud_us_token;
     - name: SonarQube Next Scan
       uses: sonarsource/sonarqube-scan-action@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).sq_next_token }}
         SONAR_HOST_URL: https://next.sonarqube.com/sonarqube/
+    - name: SonarQube Cloud EU Scan
+      if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+      uses: sonarsource/sonarqube-scan-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).sq_cloud_eu_token }}
+        SONAR_HOST_URL: https://sonarcloud.io
+    - name: SonarQube Cloud US Scan
+      if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+      uses: sonarsource/sonarqube-scan-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).sq_cloud_us_token }}
+        SONAR_HOST_URL: https://sonarqube.us
+    - name: Run IRIS Analysis
+      if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+      uses: SonarSource/unified-dogfooding-actions/run-iris@v1
+      with:
+        primary_project_key: "SonarSource_helm-chart-sonarqube"
+        primary_platform: "Next"
+        shadow1_project_key: "SonarSource_helm-chart-sonarqube"
+        shadow1_platform: "SQC-EU"
+        shadow2_project_key: "SonarSource_helm-chart-sonarqube"
+        shadow2_platform: "SQC-US"
