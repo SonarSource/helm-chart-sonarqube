@@ -8,7 +8,7 @@ This chart bootstraps an instance of the latest SonarQube Server version with a 
 
 The latest version of the chart installs the latest SonarQube version.
 
-To install the version of the chart for SonarQube 9.9 LTA, please read the section [below](#installing-the-sonarqube-99-lta-chart). Deciding between LTA and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/).
+To install SonarQube Server Long-Term Active (LTA), please read the section [below](#upgrading-to-sonarqube-server-20254-or-20251-lta). Deciding between LTA and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/).
 
 Please note that this chart only supports SonarQube Server Developer and Enterprise editions and SonarQube Community Build. For SonarQube Server Data Center Edition refer to this [chart](https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce).
 
@@ -51,11 +51,11 @@ If you want to install the SonarQube Community Build chart, please set `communit
 This chart by default installs the SonarQube Community Build's latest version available at the time of the Helm chart release.
 If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
 
-## Upgrading to SonarQube Server 2025.1 LTA
+## Upgrading to SonarQube Server 2025.4 (or 2025.1) LTA
 
-When upgrading to SonarQube Server 2025.1 LTA from a previous versions, you should read carefully [the official documentation](https://docs.sonarsource.com/sonarqube-server/2025.1/server-upgrade-and-maintenance/upgrade/determine-path/) and determine the right upgrade path based on your current SonarQube Server version.
+When upgrading to SonarQube Server 2025.4 (or 2025.1) LTA from a previous versions, you should read carefully [the official documentation](https://docs.sonarsource.com/sonarqube-server/2025.4/server-upgrade-and-maintenance/upgrade/determine-path/) and determine the right upgrade path based on your current SonarQube Server version.
 
-When upgrading to the 2025.1 LTA version, you will experience a few changes.
+When upgrading to the 2025.4 (or 2025.1) LTA version, you will experience a few changes.
 
 * The `monitoringPasscode` needs to be set by the users. Set either that or `monitoringPasscodeSecretName` and `monitoringPasscodeSecretKey`.
 * The `edition` parameter is now required to be explicitly set by the user to either `developer` or `enterprise`.

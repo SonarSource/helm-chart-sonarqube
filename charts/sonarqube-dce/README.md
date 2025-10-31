@@ -8,7 +8,7 @@ This helm chart bootstraps a SonarQube Data Center Edition cluster with a Postgr
 
 The latest version of the chart installs the latest SonarQube version.
 
-To install the version of the chart for SonarQube 9.9 LTA, please read the section [below](#installing-the-sonarqube-99-lts-chart). Deciding between LTA and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/)
+To install SonarQube Server Long-Term Active (LTA), please read the section [below](#upgrading-to-sonarqube-server-20254-or-20251-lta). Deciding between LTA and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/).
 
 Please note that this chart does NOT support SonarQube Community, Developer, and Enterprise Editions.
 
@@ -47,11 +47,11 @@ The [configuration](#configuration) section lists the parameters that can be con
 
 The default login is admin/admin.
 
-## Upgrading to SonarQube Server 2025.1 LTA
+## Upgrading to SonarQube Server 2025.4 (or 2025.1) LTA
 
-When upgrading to SonarQube Server 2025.1 LTA from a previous versions, you should read carefully [the official documentation](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/determine-path/) and determine the right upgrade path based on your current SonarQube Server version.
+When upgrading to SonarQube Server 2025.4 (or 2025.1) LTA from a previous versions, you should read carefully [the official documentation](https://docs.sonarsource.com/sonarqube-server/2025.4/server-upgrade-and-maintenance/upgrade/determine-path/) and determine the right upgrade path based on your current SonarQube Server version.
 
-When upgrading to the 2025.1 LTA version, you will experience an important change.
+When upgrading to the 2025.4 (or 2025.1) LTA version, you will experience a few changes.
 
 * The `monitoringPasscode` needs to be set by the users. Set either that or `monitoringPasscodeSecretName` and `monitoringPasscodeSecretKey`.
 
