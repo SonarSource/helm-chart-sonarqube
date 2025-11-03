@@ -8,7 +8,7 @@ This helm chart bootstraps a SonarQube Data Center Edition cluster with a Postgr
 
 The latest version of the chart installs the latest SonarQube version.
 
-To install SonarQube Server Long-Term Active (LTA), please read the section [below](#upgrading-to-sonarqube-server-20254-or-20251-lta). Deciding between LTA and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/).
+To install SonarQube Server Long-Term Active (LTA), please read the section [below](#upgrading-to-sonarqube-server-lta). Deciding between LTA and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/).
 
 Please note that this chart does NOT support SonarQube Community, Developer, and Enterprise Editions.
 
