@@ -53,7 +53,7 @@ When upgrading your SonarQube Server to a new Long-Term Active (LTA) release, yo
 * For SonarQube Server 2025.4 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.4)](https://docs.sonarsource.com/sonarqube-server/2025.4/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.1)](https://docs.sonarsource.com/sonarqube-server/2025.1/server-update-and-maintenance/release-notes-and-notices/lta-to-lta-release-upgrade-notes).
 
-When upgrading to the 2025.4 (or 2025.1) LTA version, you will experience a few changes.
+When upgrading to the 2025.1 LTA version, you will experience a few changes.
 
 * The `monitoringPasscode` needs to be set by the users. Set either that or `monitoringPasscodeSecretName` and `monitoringPasscodeSecretKey`.
 
