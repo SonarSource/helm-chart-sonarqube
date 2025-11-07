@@ -3,7 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [2025.6.0]
 * Update Chart's version to 2025.6.0
-* Upgrade SonarQube Community Build to 25.10.0.114319
+* Upgrade SonarQube Community Build to 25.11.0.114957
 * Disable Postgresql when the JDBC overwrite is used
 * Make SonarQube Server available as an Container App on the Azure Marketplace
 
