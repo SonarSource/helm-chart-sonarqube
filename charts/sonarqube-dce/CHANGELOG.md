@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [2025.6.0]
 * Update Chart's version to 2025.6.0
 * Fix the `Service` selectors
+* Disable Postgresql when the JDBC overwrite is used
 
 ## [2025.5.0]
 * Upgrade SonarQube Server to to 2025.5.0

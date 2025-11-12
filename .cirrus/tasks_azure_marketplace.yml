@@ -1,0 +1,42 @@
+build_azure_app_template: &BUILD_AZURE_APP_TEMPLATE
+  ec2_instance:
+    <<: *VM_TEMPLATE
+  env:
+    PSQL_VERSION: 11.14.0
+    SQ_VERSION: 2025.2.0
+    SQ_IMAGE_VERSION: 2025.2.0
+  install_helm_script:
+    - curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+    - chmod 700 get_helm.sh
+    - ./get_helm.sh
+  login_to_gcr_script:
+    - echo "${AZURE_ACR_PASSWORD}" | docker login "${AZURE_ACR_REGISTRY}" --username "${AZURE_ACR_USERNAME}" --password-stdin
+  pull_required_images_script:
+    - docker pull "docker.io/sonarqube:${SQ_IMAGE_VERSION}-enterprise"
+    - docker pull "docker.io/bitnamilegacy/postgresql:${PSQL_VERSION}"
+  build_app_script:
+    - ./.cirrus/azure_app_verify_and_publish.sh
+
+build_azure_staging_app_task:
+  <<: *BUILD_AZURE_APP_TEMPLATE
+  only_if: $TRIGGER == "PUSH_AZURE_STAGING" || $TRIGGER == "PUSH_AZURE_PRODUCTION"
+  env:
+    PSQL_VERSION: 11.14.0
+    SQ_VERSION: 2025.6.0
+    SQ_IMAGE_VERSION: 2025.5.0
+    AZURE_ACR_REGISTRY: "${AZURE_ACR_REGISTRY_STAGING}"
+    AZURE_ACR_USERNAME: "${AZURE_ACR_USERNAME_STAGING}"
+    AZURE_ACR_PASSWORD: "${AZURE_ACR_PASSWORD_STAGING}"
+
+build_azure_prod_app_task:
+  <<: *BUILD_AZURE_APP_TEMPLATE
+  only_if: $TRIGGER == "PUSH_AZURE_PRODUCTION"
+  depends_on:
+    - build_azure_staging_app
+  env:
+    PSQL_VERSION: 11.14.0
+    SQ_VERSION: 2025.6.0
+    SQ_IMAGE_VERSION: 2025.5.0
+    AZURE_ACR_REGISTRY: "${AZURE_ACR_REGISTRY_PRODUCTION}"
+    AZURE_ACR_USERNAME: "${AZURE_ACR_USERNAME_PRODUCTION}"
+    AZURE_ACR_PASSWORD: "${AZURE_ACR_PASSWORD_PRODUCTION}"

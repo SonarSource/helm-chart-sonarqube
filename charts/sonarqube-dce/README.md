@@ -8,7 +8,7 @@ This helm chart bootstraps a SonarQube Data Center Edition cluster with a Postgr
 
 The latest version of the chart installs the latest SonarQube version.
 
-To install the version of the chart for SonarQube 9.9 LTA, please read the section [below](#installing-the-sonarqube-99-lts-chart). Deciding between LTA and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/)
+To install SonarQube Server Long-Term Active (LTA), please read the section [below](#upgrading-to-sonarqube-server-lta). Deciding between LTA and Latest? [This may help](https://www.sonarsource.com/products/sonarqube/downloads/lts/).
 
 Please note that this chart does NOT support SonarQube Community, Developer, and Enterprise Editions.
 
@@ -16,7 +16,7 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 Compatible SonarQube Version: `2025.5.0`
 
-Supported Kubernetes Versions: From `1.30` to `1.33`
+Supported Kubernetes Versions: From `1.30` to `1.34`
 Supported Openshift Versions: From `4.11` to `4.17`
 
 ## Installing the chart
@@ -47,11 +47,13 @@ The [configuration](#configuration) section lists the parameters that can be con
 
 The default login is admin/admin.
 
-## Upgrading to SonarQube Server 2025.1 LTA
+## Upgrading to SonarQube Server LTA
 
-When upgrading to SonarQube Server 2025.1 LTA from a previous versions, you should read carefully [the official documentation](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/determine-path/) and determine the right upgrade path based on your current SonarQube Server version.
+When upgrading your SonarQube Server to a new Long-Term Active (LTA) release, you should carefully read the official upgrade documentation to determine the correct update path based on your current server version.
+* For SonarQube Server 2025.4 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.4)](https://docs.sonarsource.com/sonarqube-server/2025.4/server-update-and-maintenance/lta-to-lta-release-notes).
+* For SonarQube Server 2025.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.1)](https://docs.sonarsource.com/sonarqube-server/2025.1/server-update-and-maintenance/release-notes-and-notices/lta-to-lta-release-upgrade-notes).
 
-When upgrading to the 2025.1 LTA version, you will experience an important change.
+When upgrading to the 2025.1 LTA version, you will experience a few changes.
 
 * The `monitoringPasscode` needs to be set by the users. Set either that or `monitoringPasscodeSecretName` and `monitoringPasscodeSecretKey`.
 
