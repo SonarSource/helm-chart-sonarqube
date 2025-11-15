@@ -45,7 +45,7 @@ rm kubectl.sha256
 
 # Install helm
 # renovate: datasource=github-releases depName=helm-vm packageName=helm/helm
-HELM_VERSION=v3.18.2
+HELM_VERSION=v4.0.0
 curl -LO https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz
 tar -xf helm-${HELM_VERSION}-linux-amd64.tar.gz
 chmod +x ./linux-amd64/helm
