@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Upgrade SonarQube Community Build to 25.11.0.114957
 * Disable Postgresql when the JDBC overwrite is used
 * Make SonarQube Server available as an Container App on the Azure Marketplace
+* Fix StatefulSet version label when tag contains sha256 digest
 
 ## [2025.5.0]
 * Upgrade SonarQube Server to to 2025.5.0
