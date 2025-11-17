@@ -46,7 +46,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/part-of: sonarqube
 app.kubernetes.io/component: {{ include "sonarqube.fullname" . }}
-app.kubernetes.io/version: {{ (tpl (include "image.tag" .) . ) | trunc 63 | trimSuffix "-" | quote }}
+app.kubernetes.io/version: {{ $tag := (tpl (include "image.tag" .) . ) }}{{ if contains "@sha256:" $tag }}{{ $tag = ($tag | split "@sha256:")._0 }}{{ end }}{{ $tag | trunc 63 | trimSuffix "-" | quote }}
 {{- end -}}
 
 {{/*
