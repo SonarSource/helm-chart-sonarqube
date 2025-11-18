@@ -1,5 +1,5 @@
 ---
-# decreased replica count for cirrus CI
+# decreased replica count for CI
 
 searchNodes:
   replicaCount: 3
@@ -10,7 +10,7 @@ searchNodes:
       - name: pullsecret
 
 ApplicationNodes:
-  replicaCount: 2
+  replicaCount: 3
   jwtSecret: "mnGBJtmwRbIREqy3vSw6Cinoi2WEom9JH+iw/tXOJX4="
   image:
     repository: "sonarsource/sonarqube"
@@ -22,10 +22,21 @@ ApplicationNodes:
 
 postgresql:
   securityContext:
-    # On Cirrus, we have permissions issue if the fsGroup is not set to 1001 explicitly
+    # On CI, we have permissions issue if the fsGroup is not set to 1001 explicitly
     enabled: true
     # fsGroup and runAsUser specifications below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
     # postgresql dockerfile sets user as 1001
     fsGroup: 1001
 
 monitoringPasscode: "test"
+
+tests:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 200M
+      ephemeral-storage: 100M
+    limits:
+      cpu: 50m
+      memory: 200M
+      ephemeral-storage: 1000M

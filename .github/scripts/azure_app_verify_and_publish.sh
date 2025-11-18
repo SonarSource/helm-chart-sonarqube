@@ -58,7 +58,7 @@ echo "2b. Updating Helm dependencies for the wrapper chart (sonarqube-azure)..."
 # This command will read sonarqube-azure/Chart.yaml and package the 'sonarqube'
 # dependency (from ../charts/sonarqube) into sonarqube-azure/charts/sonarqube-${SONARQUBE_CHART_VERSION}.tgz
 cd ../../azure-marketplace-k8s-app/sonarqube-azure
-rm -rf ../../charts/sonarqube/.cache/helm/repository/* # Workaround for Helm caching issues on Cirrus
+rm -rf ../../charts/sonarqube/.cache/helm/repository/*
 helm dependency update
 echo "Helm dependencies updated. Packaged subchart is now in sonarqube-azure/charts/."
 
@@ -90,6 +90,7 @@ echo "CPA verification complete."
 
 # 7. Run CPA buildbundle within the container
 echo "7. Building the CPA bundle (cpa buildbundle)..."
+
 # This creates the .cnab directory and the bundle file (e.g., sonarqube.cnab)
 # in the current directory (mounted as /data in container).
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$(pwd)":/data mcr.microsoft.com/container-package-app:latest sh -c "echo "${AZURE_ACR_PASSWORD}" | docker login "${AZURE_ACR_REGISTRY}" --username "${AZURE_ACR_USERNAME}" --password-stdin && cd /data && cpa buildbundle --force"

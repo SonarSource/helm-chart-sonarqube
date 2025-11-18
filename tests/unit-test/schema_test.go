@@ -181,9 +181,9 @@ func TestCommunityEmptyBuildNumberEmptyTag(t *testing.T) {
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
 }
 
-// This test loads the values.yaml used by Cirrus at runtime.
-func TestCiCirrusValues(t *testing.T) {
-	helmOptions.ValuesFiles = []string{chartPath + "/ci/cirrus-values.yaml"}
+// This test loads the values.yaml used by CI at runtime.
+func TestCiValues(t *testing.T) {
+	helmOptions.ValuesFiles = []string{chartPath + "/ci/ci-values.yaml"}
 	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
 	assert.NoError(t, err)
 

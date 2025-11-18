@@ -1,0 +1,380 @@
+name: Build
+on:
+  push:
+  merge_group:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'  # Nightly builds
+  release:
+    types: [created]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ !(github.ref_name == 'master' || startsWith(github.ref_name, 'release/')) }}
+
+jobs:
+  chart-fixture-test:
+    runs-on: github-ubuntu-latest-s
+    name: Chart Fixture Test
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
+        with:
+          version: 2025.7.12
+      - uses: actions/setup-python@v5.3.0
+        with:
+          python-version: '3.x'
+          check-latest: true
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@0d28d3144d3a25ea2cc349d6e59901c4ff469b3b
+      - name: Build chart dependencies
+        run: |
+          ./.github/scripts/build_chart_dependencies.sh charts/sonarqube
+          ./.github/scripts/build_chart_dependencies.sh charts/sonarqube-dce
+      - name: Generate Helm fixtures
+        run: |
+          ./.github/scripts/generate_helm_fixtures.sh
+          git diff --exit-code
+
+  chart-schema-test:
+    runs-on: github-ubuntu-latest-s
+    name: Chart Schema Test
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
+        with:
+          version: 2025.7.12
+      - name: Install additional tools
+        run: |
+          pip install yamllint==1.37.1 yamale==6.0.0
+      - name: Build chart dependencies
+        run: |
+          ./.github/scripts/build_chart_dependencies.sh charts/sonarqube
+          ./.github/scripts/build_chart_dependencies.sh charts/sonarqube-dce
+      - name: Run schema tests
+        run: ./.github/scripts/schema_test.sh
+
+
+  static-compatibility-test:
+    runs-on: github-ubuntu-latest-s
+    name: Static Compatibility Test (${{ matrix.chart }})
+    strategy:
+      matrix:
+        chart: [sonarqube, sonarqube-dce]
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
+        with:
+          version: 2025.7.12
+      - name: Build chart dependencies
+        run: ./.github/scripts/build_chart_dependencies.sh charts/${{ matrix.chart }}
+      - name: Run unit helm compatibility test
+        run: ./.github/scripts/unit_helm_compatibility_test.sh ${{ matrix.chart }}
+
+  # Shared steps for OpenShift chart verification
+  openshift-tests:
+    runs-on: sonar-xs-public
+    needs: [chart-fixture-test, chart-schema-test, static-compatibility-test]
+    name: SonarQube OpenShift Tests
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - verifying_chart: sonarqube-dce
+            report_name: sonarqube-dce-openshift-report
+          - verifying_chart: sonarqube
+            report_name: sonarqube-openshift-report
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
+        with:
+          version: 2025.7.12
+      - id: secrets
+        uses: SonarSource/vault-action-wrapper@3.0.2
+        with:
+          secrets: |
+            development/kv/data/docker/sonardockerrw username | DOCKER_USERNAME;
+            development/kv/data/docker/sonardockerrw access_token_rwd | DOCKER_PASSWORD;
+            development/team/sonarqube/kv/data/rosa-openshift url | ROSA_OPENSHIFT_URL;
+            development/team/sonarqube/kv/data/rosa-dev username | ROSA_OPENSHIFT_USER;
+            development/team/sonarqube/kv/data/rosa-dev password | ROSA_OPENSHIFT_PASSWORD;
+      - name: Install chart-verifier
+        run: |
+          curl -LO https://github.com/redhat-certification/chart-verifier/releases/download/1.13.11/chart-verifier-1.13.11.tgz
+          echo "ad221d0e030ce820c8ecfadaa10a6d5183adbe00fcd8dee627c3fdd7e5bf37e7  chart-verifier-1.13.11.tgz" | sha256sum -c
+          tar -xf chart-verifier-1.13.11.tgz
+          mkdir -p $HOME/bin
+          mv chart-verifier $HOME/bin/
+          echo "$HOME/bin" >> $GITHUB_PATH
+      - name: Install kubectl CLI
+        uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4.0.1
+        with:
+          version: 'v1.29.0'
+      - name: Install OpenShift CLI
+        run: |
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.18.9/openshift-client-linux.tar.gz
+          echo "1e2d73c870756e3940dcb6c1112c7aa7f702a89cfdb992d11079ac852b4ea05c  openshift-client-linux.tar.gz" | sha256sum -c
+          mkdir -p /tmp/openshift
+          tar -xf openshift-client-linux.tar.gz -C /tmp/openshift
+          mkdir -p $HOME/bin
+          mv /tmp/openshift/oc $HOME/bin/
+          echo "$HOME/bin" >> $GITHUB_PATH
+          rm -rf /tmp/openshift openshift-client-linux.tar.gz
+      - name: Authenticate to OpenShift
+        env:
+          ROSA_OPENSHIFT_URL: ${{ fromJSON(steps.secrets.outputs.vault).ROSA_OPENSHIFT_URL }}
+          ROSA_OPENSHIFT_USER: ${{ fromJSON(steps.secrets.outputs.vault).ROSA_OPENSHIFT_USER }}
+          ROSA_OPENSHIFT_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ROSA_OPENSHIFT_PASSWORD }}
+        run: ./.github/scripts/openshift_auth.sh
+      - name: Setup OpenShift project
+        env:
+          DOCKER_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_PASSWORD }}
+        run: |
+          oc new-project ${{ matrix.verifying_chart }} --display-name="Test Project" --description="This is a test project for testing ${{ matrix.verifying_chart}} from GitHub Actions" || oc project ${{ matrix.verifying_chart }}
+          kubectl create secret docker-registry pullsecret --namespace ${{ matrix.verifying_chart }} --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
+          ./.github/scripts/build_chart_dependencies.sh charts/${{ matrix.verifying_chart }}
+          chart-verifier version
+      - name: Run chart verification
+        run: |
+          mkdir -p "$(pwd)/report-${{ matrix.verifying_chart}}"
+          chart-verifier verify -x images-are-certified charts/${{ matrix.verifying_chart }} --helm-install-timeout 20m -F charts/${{ matrix.verifying_chart }}/openshift-verifier/values.yaml -n ${{ matrix.verifying_chart }} --openshift-version 4.16 > "$(pwd)/report-${{ matrix.verifying_chart}}/report.yaml"
+      - name: Upload verification report
+        if: always() && ! cancelled()
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
+        with:
+          name: ${{ matrix.report_name}}
+          path: report-*/report.yaml
+      - name: Check violations
+        run: cat "report-${{ matrix.verifying_chart}}/report.yaml" | ./.github/scripts/verify_openshift.sh
+      - name: Cleanup
+        if: always()
+        run: oc delete project ${{ matrix.verifying_chart }} || true
+
+  kind-test:
+    needs: [chart-fixture-test, chart-schema-test, static-compatibility-test]
+    strategy:
+      matrix:
+        include:
+          - chart: sonarqube
+            config: ct-sonarqube-test.yaml
+            runner: github-ubuntu-latest-s
+            secrets_id: secrets
+          - chart: sonarqube-dce
+            config: ct-sonarqube-dce-test.yaml
+            runner: github-ubuntu-latest-m
+            secrets_id: dcesecrets
+    runs-on: ${{ matrix.runner }}
+    name: Kind Test (${{ matrix.chart }})
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
+        with:
+          version: 2025.7.12
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@0d28d3144d3a25ea2cc349d6e59901c4ff469b3b
+      - name: Create kind cluster
+        uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3
+      - name: Setup Kind cluster
+        run: |
+          kubectl cluster-info --context kind-chart-testing
+          kubectl get nodes
+          kubectl describe node chart-testing-control-plane
+      - name: Setup Istio
+        run: |
+          helm repo add istio https://istio-release.storage.googleapis.com/charts
+          kubectl create namespace istio-system --dry-run=client -o yaml | kubectl apply -f -
+          helm upgrade -i istio-base istio/base -n istio-system --set defaultRevision=default --set global.proxy.holdApplicationUntilProxyStarts=true --wait
+          helm upgrade -i istiod istio/istiod --set global.proxy.holdApplicationUntilProxyStarts=true --set resources.requests.cpu=100m -n istio-system --wait
+          kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
+          kubectl label namespace test istio-injection=enabled
+      - id: secrets
+        uses: SonarSource/vault-action-wrapper@3.0.2
+        with:
+          secrets: |
+            development/kv/data/docker/sonardockerrw username | DOCKER_USERNAME;
+            development/kv/data/docker/sonardockerrw access_token_rwd | DOCKER_PASSWORD;
+      - name: Setup docker registry secret
+        env:
+          DOCKER_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_PASSWORD }}
+        run: kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
+      - name: Install ArtifactHub CLI
+        run: |
+          curl -LO https://github.com/artifacthub/hub/releases/download/v1.21.0/ah_1.21.0_linux_amd64.tar.gz
+          echo "48d6b87b60baf4ee8fd5efbfec3bf5fb3ca783ab3f1dab625e64332b95df2a84  ah_1.21.0_linux_amd64.tar.gz" | sha256sum -c
+          mkdir -p /tmp/artifacthub
+          tar -xf ah_1.21.0_linux_amd64.tar.gz -C /tmp/artifacthub
+          sudo mv /tmp/artifacthub/ah /usr/local/bin/ah
+          rm -rf /tmp/artifacthub ah_1.21.0_linux_amd64.tar.gz
+      - name: Run ArtifactHub lint
+        run: ah lint
+      - name: Run chart testing
+        run: |
+          ct lint --config ${{ matrix.config }}
+          ct install --namespace test --config ${{ matrix.config }} --debug
+
+  sonarqube-packaging:
+    needs: [kind-test,openshift-tests]
+    runs-on: github-ubuntu-latest-s
+    name: ${{ matrix.chart }} Packaging
+    strategy:
+      matrix:
+        include:
+          - chart: sonarqube-dce
+          - chart: sonarqube
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
+        with:
+          version: 2025.7.12
+      - uses: SonarSource/ci-github-actions/get-build-number@v1
+        id: build-number
+      - id: secrets
+        uses: SonarSource/vault-action-wrapper@3.0.2
+        with:
+          secrets: |
+            development/github/token/SonarSource-helm-chart-sonarqube-releases token | GITHUB_TOKEN;
+            development/kv/data/sign key | SONARSOURCE_SIGN_KEY;
+            development/kv/data/sign key_id | SONARSOURCE_SIGN_KEY_ID;
+            development/kv/data/sign passphrase | SONARSOURCE_SIGN_KEY_PASSPHRASE;
+      - name: Setup signing key
+        env:
+          SONARSOURCE_SIGN_KEY: ${{ fromJSON(steps.secrets.outputs.vault).SONARSOURCE_SIGN_KEY }}
+        run: echo "$SONARSOURCE_SIGN_KEY" > /tmp/key
+      - name: Add Helm repositories
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
+          helm repo update
+      - name: Package and sign ${{ matrix.chart }} chart
+        env:
+          BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
+          GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
+          SONARSOURCE_SIGN_KEY_ID: ${{ fromJSON(steps.secrets.outputs.vault).SONARSOURCE_SIGN_KEY_ID }}
+          SONARSOURCE_SIGN_KEY_PASSPHRASE: ${{ fromJSON(steps.secrets.outputs.vault).SONARSOURCE_SIGN_KEY_PASSPHRASE }}
+        run: |
+          ./.github/scripts/package.sh ${{ matrix.chart }}
+          ./.github/scripts/sign_chart.sh ${{ matrix.chart }}
+      - name: Upload SonarQube chart artifact
+        uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
+        with:
+          name: ${{ matrix.chart }}-chart-${{ github.run_id }}
+          path: "*.tgz*"
+
+  sonarqube-push-to-repox:
+    needs: [sonarqube-packaging]
+    runs-on: github-ubuntu-latest-s
+    strategy:
+      matrix:
+        include:
+          - chart: sonarqube-dce
+          - chart: sonarqube
+    name: ${{ matrix.chart }} Push to Repox
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
+        with:
+          cache_save: false
+          version: 2025.7.12
+      - uses: SonarSource/ci-github-actions/get-build-number@v1
+        id: build-number
+      - name: Download ${{ matrix.chart }} chart artifact
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: ${{ matrix.chart }}-chart-${{ github.run_id }}
+      - id: secrets
+        uses: SonarSource/vault-action-wrapper@3.0.2
+        with:
+          secrets: |
+            development/kv/data/repox url | ARTIFACTORY_URL;
+            development/artifactory/token/SonarSource-helm-chart-sonarqube-qa-deployer access_token | ARTIFACTORY_ACCESS_TOKEN;
+      - name: Upload ${{ matrix.chart }} to Repox
+        env:
+          BUILD_NUMBER: ${{ steps.build-number.outputs.BUILD_NUMBER }}
+          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_URL }}
+          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+        run: |
+          ./.github/scripts/upload_chart.sh ${{ matrix.chart }}
+
+  trigger-release:
+    needs: [sonarqube-push-to-repox]
+    runs-on: github-ubuntu-latest-s
+    name: Trigger Release
+    permissions:
+      id-token: write
+      contents: write
+    if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
+        with:
+          cache_save: false
+          version: 2025.7.12
+      - uses: SonarSource/ci-github-actions/get-build-number@v1
+        id: build-number
+      - name: Download SonarQube chart artifact
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: sonarqube-chart-${{ github.run_id }}
+      - name: Download SonarQube DCE chart artifact
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: sonarqube-dce-chart-${{ github.run_id }}
+      - id: secrets
+        uses: SonarSource/vault-action-wrapper@3.0.2
+        with:
+          secrets: |
+            development/github/token/SonarSource-helm-chart-sonarqube-releases token | GITHUB_TOKEN;
+            development/kv/data/slack token | SLACK_TOKEN;
+      - name: Check if charts exist
+        id: check-charts
+        run: |
+          CHARTS=$(find $GITHUB_WORKSPACE -maxdepth 1 -name "*.tgz*" -type f -exec basename "{}" ";")
+          if [[ "x$CHARTS" != "x" ]]; then
+            echo "charts-exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "charts-exist=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Call release workflow
+        if: steps.check-charts.outputs.charts-exist == 'true'
+        uses: ./.github/workflows/release.yml
+        with:
+          version: ${{ github.ref_name }}
+          buildNumber: ${{ steps.build-number.outputs.BUILD_NUMBER }}

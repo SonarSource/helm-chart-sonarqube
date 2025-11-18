@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-PROJECT_ROOT=$(readlink -f "$(dirname "$0")"/..)
+PROJECT_ROOT="${GITHUB_WORKSPACE:-$(pwd)}"
 CHART_NAME="${1:-$(basename "${PWD}")}"
 
 # NOTE: CHART_PATH is set to the first argument if it is provided,
