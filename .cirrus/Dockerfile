@@ -9,7 +9,7 @@ USER root
 # Note: the v in some version is a restriction for github-release-attachments datasource, where tags are expected to start with v.
 ##
 # renovate: datasource=github-releases depName=helm packageName=helm/helm
-ARG HELM_VERSION=v3.18.2
+ARG HELM_VERSION=v4.0.1
 # renovate: datasource=github-releases depName=kubectl packageName=kubernetes/kubernetes
 ARG KUBECTL_VERSION=v1.34.0
 # renovate: datasource=pypi depName=yamllint packageName=yamllint
