@@ -87,7 +87,7 @@ jobs:
         run: ./.github/scripts/unit_helm_compatibility_test.sh ${{ matrix.chart }}
 
   # Shared steps for OpenShift chart verification
-  openshift-tests:
+  openshift-test:
     runs-on: sonar-xs-public
     needs: [chart-fixture-test, chart-schema-test, static-compatibility-test]
     name: SonarQube OpenShift Tests
@@ -239,7 +239,7 @@ jobs:
           ct install --namespace test --config ${{ matrix.config }} --debug
 
   sonarqube-packaging:
-    needs: [kind-test,openshift-tests]
+    needs: [kind-test,openshift-test]
     runs-on: github-ubuntu-latest-s
     name: ${{ matrix.chart }} Packaging
     strategy:
@@ -378,3 +378,25 @@ jobs:
         with:
           version: ${{ github.ref_name }}
           buildNumber: ${{ steps.build-number.outputs.BUILD_NUMBER }}
+
+
+  qa-validator:
+    if: always()
+    name: QA Validator
+    needs:
+      - chart-fixture-test
+      - chart-schema-test
+      - static-compatibility-test
+      - openshift-test
+      - kind-test
+      - sonarqube-packaging
+      - sonarqube-push-to-repox
+    runs-on: github-ubuntu-latest-s
+    outputs:
+      SUCCESS: ${{ steps.alls-green.outputs.success }}
+    steps:
+      - uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # v1.2.2
+        id: alls-green
+        with:
+          jobs: ${{ toJSON(needs) }}
+          allowed-skips: 'chart-fixture-test,chart-schema-test,static-compatibility-test,openshift-test,kind-test,sonarqube-packaging,sonarqube-push-to-repox'
