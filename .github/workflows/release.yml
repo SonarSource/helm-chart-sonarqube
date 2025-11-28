@@ -1,12 +1,14 @@
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       version:
         description: "Version of the release"
         required: true
+        type: string
       buildNumber:
         description: "Build number of the release"
         required: true
+        type: string
 
 name: Release
 
@@ -30,8 +32,12 @@ jobs:
         uses: actions/checkout@v3
       - name: Fetch history
         run: git fetch --prune --unshallow
+      - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
+        with:
+          cache_save: false
+          version: 2025.7.12
       - name: Promote
-        run: jfrog rt build-promote --status released "${{ github.event.repository.name }}" "${{ github.event.inputs.buildNumber }}" sonarsource-helm-releases
+        run: jf rt build-promote --status released "${{ github.event.repository.name }}" "${{ inputs.buildNumber }}" sonarsource-helm-releases
       - name: Create local repository directory
         id: local_repo
         run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> "$GITHUB_OUTPUT"
@@ -39,14 +45,14 @@ jobs:
         with:
           local-repo-dir: ${{ steps.local_repo.outputs.dir }}
           remote-repo: sonarsource-helm
-          build-number: ${{ github.event.inputs.buildNumber }}
+          build-number: ${{ inputs.buildNumber }}
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true
           file: ${{ steps.local_repo.outputs.dir }}/*
-          tag: ${{ github.event.inputs.version }}
+          tag: ${{ inputs.version }}
           overwrite: true
       - name: Configure Git
         run: |
@@ -59,4 +65,4 @@ jobs:
         with:
           repository-name: "${{ github.event.repository.name }}"
           package-path: ${{ steps.local_repo.outputs.dir }}
-          release-name: "${{ github.event.inputs.version}}"
+          release-name: "${{ inputs.version}}"

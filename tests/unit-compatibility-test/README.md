@@ -10,13 +10,13 @@ Then:
 
 ```bash
 cd charts/sonarqube
-../../.cirrus/unit_helm_compatibility_test.sh 
+../../.github/scripts/unit_helm_compatibility_test.sh 
 ```
 
 This will run the test against the 1.25 kubernetes version, you can specify another version with the ```KUBE_VERSION``` env var in the x.y.z format.
 
 ```bash
-KUBE_VERSION=1.19.6 ../../.cirrus/unit_helm_compatibility_test.sh
+KUBE_VERSION=1.19.6 ../../.github/scripts/unit_helm_compatibility_test.sh
 ```
 
 ## Fixtures

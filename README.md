@@ -1,6 +1,8 @@
 SonarQube Helm Chart
 =================
 
+[![Build](https://github.com/SonarSource/helm-chart-sonarqube/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/SonarSource/helm-chart-sonarqube/actions/workflows/build.yml)
+
 About this Repo
 ----------------
 

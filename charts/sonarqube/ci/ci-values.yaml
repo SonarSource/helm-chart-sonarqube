@@ -9,7 +9,7 @@ image:
 monitoringPasscode: "test"
 postgresql:
   securityContext:
-    # On Cirrus, we have permissions issue if the fsGroup is not set to 1001 explicitly
+    # On CI, we have permissions issue if the fsGroup is not set to 1001 explicitly
     enabled: true
     # fsGroup and runAsUser specifications below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
     # postgresql dockerfile sets user as 1001
@@ -17,3 +17,24 @@ postgresql:
   image:
     repository: "bitnamilegacy/postgresql"
     tag: 11.14.0
+
+resources:
+  limits:
+    cpu: 800m
+    memory: 6144M
+    ephemeral-storage: 512000M
+  requests:
+    cpu: 200m
+    memory: 2048M
+    ephemeral-storage: 1536M
+
+tests:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 200M
+      ephemeral-storage: 100M
+    limits:
+      cpu: 50m
+      memory: 200M
+      ephemeral-storage: 1000M

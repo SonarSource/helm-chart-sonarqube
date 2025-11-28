@@ -2,14 +2,15 @@
 
 set -xeuo pipefail
 
-: "${CIRRUS_BRANCH:?}"
-: "${BUILD_NUMBER:?}"
-: "${CIRRUS_BASE_BRANCH:=}"
+# GitHub Actions environment variables mapping
+: "${GITHUB_REF_NAME:?}"        # Current branch name
+: "${BUILD_NUMBER:?}"            # Build number from get-build-number action
+: "${GITHUB_BASE_REF:=}"         # Base branch for PRs
 
-if [[ -n "${CIRRUS_BASE_BRANCH}" ]]; then
-    TARGET_BRANCH="${CIRRUS_BASE_BRANCH}"
+if [[ -n "${GITHUB_BASE_REF}" ]]; then
+    TARGET_BRANCH="${GITHUB_BASE_REF}"
 else
-    TARGET_BRANCH="${CIRRUS_BRANCH}"
+    TARGET_BRANCH="${GITHUB_REF_NAME}"
 fi
 
 PREVIOUS_RELEASE=$(gh api "/repos/{owner}/{repo}/releases" --jq "[.[] | select(.target_commitish==\"${TARGET_BRANCH}\")][1].tag_name")
@@ -28,7 +29,8 @@ if [[ -n "${ARG_CHART_NAME}" ]] && [[ "${CHARTS[*]}" =~ ${ARG_CHART_NAME} ]]; th
 fi
 
 BUILD_METADATA="-${BUILD_NUMBER}"
-[[ ${CIRRUS_RELEASE:-} != "" ]] && BUILD_METADATA=""
+# For GitHub Actions, check if this is a tag-based release
+[[ ${GITHUB_REF_TYPE:-} == "tag" ]] && BUILD_METADATA=""
 
 echo "${CHARTS[@]}"
 
