@@ -2,6 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [2025.6.0]
+* Upgrade SonarQube Server to to 2025.6.0
 * Update Chart's version to 2025.6.0
 * Disable Postgresql when the JDBC overwrite is used
 
