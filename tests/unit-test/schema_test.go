@@ -133,7 +133,7 @@ func TestShouldUseImageTag(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarqube:2025.4.3-enterprise"
+	expectedContainerImage := "sonarqube:2025.4.4-enterprise"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
@@ -219,7 +219,7 @@ func TestDeveloperEdition(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarqube:2025.4.3-developer"
+	expectedContainerImage := "sonarqube:2025.4.4-developer"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
