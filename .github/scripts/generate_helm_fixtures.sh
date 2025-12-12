@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-KUBE_VERSION="${KUBE_VERSION:-1.25.0}"
+KUBE_VERSION="${KUBE_VERSION:-1.35.0}"
 
 echo 'Running fixtures'
 
@@ -9,7 +9,7 @@ for path in "sonarqube" "sonarqube-dce"; do
     STATIC_TEST_FOLDER="./tests/unit-compatibility-test/${path}"
     CHART_TEST_FOLDER="./charts/${path}"
 
-    if ! [ -d "$STATIC_TEST_FOLDER" ]; then
+    if ! [[ -d "$STATIC_TEST_FOLDER" ]]; then
         echo "$STATIC_TEST_FOLDER folder not found"
         echo "${path} not a valid chart path"
         exit 1
