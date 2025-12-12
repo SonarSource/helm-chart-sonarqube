@@ -435,7 +435,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: non-default-security-context-values.yaml-sonarqube
-    app.kubernetes.io/version: "2025.5.0-enterprise"
+    app.kubernetes.io/version: "2025.6.0-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -462,7 +462,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:2025.5.0-enterprise
+          image: sonarqube:2025.6.0-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -478,7 +478,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/non-default-security-context-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:2025.5.0-enterprise
+          image: sonarqube:2025.6.0-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -496,7 +496,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
         - name: inject-prometheus-exporter
-          image: sonarqube:2025.5.0-enterprise
+          image: sonarqube:2025.6.0-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -538,7 +538,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
         - name: install-plugins
-          image: sonarqube:2025.5.0-enterprise
+          image: sonarqube:2025.6.0-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
           securityContext:
@@ -582,7 +582,7 @@ spec:
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
       containers:
         - name: sonarqube
-          image: sonarqube:2025.5.0-enterprise
+          image: sonarqube:2025.6.0-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -745,7 +745,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: non-default-security-context-values.yaml-ui-test
-      image: "sonarqube:2025.5.0-enterprise"
+      image: "sonarqube:2025.6.0-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
