@@ -374,10 +374,12 @@ jobs:
           fi
       - name: Call release workflow
         if: steps.check-charts.outputs.charts-exist == 'true'
-        uses: ./.github/workflows/release.yml
-        with:
-          version: ${{ github.ref_name }}
-          buildNumber: ${{ steps.build-number.outputs.BUILD_NUMBER }}
+        env:
+          GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
+        run: |
+          gh workflow run release.yml \
+            -f version="${{ github.ref_name }}" \
+            -f buildNumber="${{ steps.build-number.outputs.BUILD_NUMBER }}"
 
 
   qa-validator:
