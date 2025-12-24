@@ -2,8 +2,8 @@ apiVersion: v2
 name: sonarqube
 description: SonarQube is a self-managed, automatic code review tool that systematically helps you deliver clean code. As a core element of our Sonar solution, SonarQube integrates into your existing workflow and detects issues in your code to help you perform continuous code inspections of your projects. The tool analyses 30+ different programming languages and integrates into your CI pipeline and DevOps platform to ensure that your code meets high-quality standards.
 type: application
-version: 2025.6.0
-appVersion: 2025.6.0
+version: 2025.6.1
+appVersion: 2025.6.1
 keywords:
   - coverage
   - security
@@ -27,23 +27,17 @@ annotations:
       url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
   artifacthub.io/changes: |
     - kind: changed
-      description: "Update Chart's appVersion to 2025.6.0"
+      description: "Update Chart's version to 2025.6.1"
     - kind: changed
-      description: "Update Chart's version to 2025.6.0"
-    - kind: changed
-      description: "Upgrade SonarQube Community Build to 25.12.0.117093"
-    - kind: changed
-      description: "Disable Postgresql when the JDBC overwrite is used"
-    - kind: added
-      description: "Make SonarQube Server available as an Container App on the Azure Marketplace"
+      description: "Update SonarQube Server to 2025.6.1"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-community
       image: sonarqube:25.12.0.117093-community
     - name: sonarqube-developer
-      image: sonarqube:2025.6.0-developer
+      image: sonarqube:2025.6.1-developer
     - name: sonarqube-enterprise
-      image: sonarqube:2025.6.0-enterprise
+      image: sonarqube:2025.6.1-enterprise
   charts.openshift.io/name: sonarqube
 dependencies:
   - name: postgresql
