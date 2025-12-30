@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # Helper function to display usage information
@@ -38,7 +37,7 @@ EXAMPLES:
     $0 sonarqube-postgresql
 
 OUTPUT:
-    Creates sonarqube_backup.sql file in current directory
+    Creates sonarqube_backup_YYYYMMDD_HHMMSS.sql file in current directory
 
 REQUIREMENTS:
     - kubectl configured and connected to cluster
@@ -119,6 +118,10 @@ fi
 
 echo "Using PostgreSQL service: $POSTGRES_SERVICE"
 
+# Generate timestamped backup filename
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+BACKUP_FILENAME="sonarqube_backup_${TIMESTAMP}.sql"
+
 echo "Starting backup using container..."
 
 # Create backup job using PostgreSQL container
@@ -127,7 +130,7 @@ kubectl run postgresql-backup-pod --rm -i --restart=Never \
   --image=bitnamilegacy/postgresql:11.14.0 \
   --namespace=$NAMESPACE \
   --env="PGPASSWORD=$PASSWORD" \
-  -- sh -c "pg_dump -h $POSTGRES_SERVICE -U $USERNAME $DATABASE_NAME" > sonarqube_backup.sql
+  -- sh -c "pg_dump -h $POSTGRES_SERVICE -U $USERNAME $DATABASE_NAME" > $BACKUP_FILENAME
 
 # Capture the exit code
 BACKUP_EXIT_CODE=$?
@@ -135,24 +138,24 @@ BACKUP_EXIT_CODE=$?
 echo "Backup pod completed"
 
 # Validate backup file
-if [[ $BACKUP_EXIT_CODE -ne 0 ]] || [[ ! -s sonarqube_backup.sql ]]; then
+if [[ $BACKUP_EXIT_CODE -ne 0 ]] || [[ ! -s $BACKUP_FILENAME ]]; then
   echo "Backup failed or file is empty"
   echo "Check service name and credentials, then try again"
-  rm -f sonarqube_backup.sql
+  rm -f $BACKUP_FILENAME
   exit 1
 fi
 
 # Show backup info
-BACKUP_SIZE=$(wc -c < sonarqube_backup.sql)
-BACKUP_LINES=$(wc -l < sonarqube_backup.sql)
+BACKUP_SIZE=$(wc -c < $BACKUP_FILENAME)
+BACKUP_LINES=$(wc -l < $BACKUP_FILENAME)
 echo "Backup size: $(($BACKUP_SIZE / 1024))KB ($BACKUP_LINES lines)"
 
-echo "Backup completed: sonarqube_backup.sql"
+echo "Backup completed: $BACKUP_FILENAME"
 echo ""
 
 echo "=== Backup Complete ==="
 echo ""
-echo "Backup file created: sonarqube_backup.sql"
+echo "Backup file created: $BACKUP_FILENAME"
 echo "Backup size: $(($BACKUP_SIZE / 1024))KB ($BACKUP_LINES lines)"
 echo ""
 echo "=== External Database Setup Example ==="
@@ -162,7 +165,7 @@ echo "# 3. Create database and user:"
 echo "#    CREATE DATABASE $DATABASE_NAME;"
 echo "#    CREATE USER $USERNAME WITH PASSWORD '$PASSWORD';"
 echo "#    GRANT ALL PRIVILEGES ON DATABASE $DATABASE_NAME TO $USERNAME;"
-echo "# 4. Restore: PGPASSWORD=$PASSWORD psql -h <endpoint> -U $USERNAME -d $DATABASE_NAME < sonarqube_backup.sql"
+echo "# 4. Restore: PGPASSWORD=$PASSWORD psql -h <endpoint> -U $USERNAME -d $DATABASE_NAME < $BACKUP_FILENAME"
 echo ""
 echo "=== SonarQube Configuration for External Database ==="
 echo "For external PostgreSQL connection, use in values.yaml:"

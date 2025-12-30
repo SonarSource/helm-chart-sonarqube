@@ -268,7 +268,7 @@ spec:
             secretKeyRef:
               name: {{ include "jdbc.secret" . }}
               key: {{ include "jdbc.secretPasswordKey" . }}
-       {{- end }}
+        {{- end }}
         - name: SONAR_WEB_SYSTEMPASSCODE
           valueFrom:
             secretKeyRef:
