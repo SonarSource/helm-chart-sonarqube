@@ -42,51 +42,10 @@ spec:
       ports:
         - port: 53
           protocol: UDP
-    {{- if .Values.postgresql.enabled }}
-    - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: postgresql
-      ports:
-        - port: 5432
-          protocol: TCP
-    {{- end }}
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
 {{- end -}}
-
-{{ if and .Values.postgresql.enabled .Values.networkPolicy.enabled }}
----
-kind: NetworkPolicy
-apiVersion: networking.k8s.io/v1
-metadata:
-  name: {{ template "sonarqube.fullname" . }}-database
-  labels: {{- include "sonarqube.labels" . | nindent 4 }}
-spec:
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: postgresql
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: {{ template "sonarqube.name" . }}
-      ports:
-        - port: 5432
-  egress:
-    - to:
-        - namespaceSelector: {}
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
-      ports:
-        - port: 53
-          protocol: UDP
-{{- end }}
 
 {{- if and .Values.networkPolicy.enabled (or .Values.networkPolicy.additionalNetworkPolicies .Values.networkPolicy.additionalNetworkPolicys) }}
 ---

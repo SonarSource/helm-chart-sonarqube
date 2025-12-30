@@ -43,19 +43,6 @@ spec:
     {{- if .Values.extraInitContainers }}
     {{- toYaml .Values.extraInitContainers | nindent 4 }}
     {{- end }}
-    {{- if and .Values.postgresql.enabled (not (or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable)) }}
-    - name: "wait-for-db"
-      image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
-      imagePullPolicy: {{ .Values.image.pullPolicy  }}
-      {{- with (include "sonarqube.initContainerSecurityContext" .) }}
-      securityContext: {{- . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.initContainers.resources }}
-      resources: {{- toYaml . | nindent 8 }}
-      {{- end }}
-      command: ["/bin/bash", "-c"]
-      args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/{{ .Release.Name }}-postgresql/5432) && exit 0; sleep 2;done; exit 1']
-    {{- end }}
     {{- if .Values.caCerts.enabled }}
     - name: ca-certs
       image: {{ default (include "sonarqube.image" $) .Values.caCerts.image }}
@@ -275,11 +262,13 @@ spec:
         - name: IS_HELM_OPENSHIFT_ENABLED
           value: "true"
         {{- end }}
+        {{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable }}
         - name: SONAR_JDBC_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ include "jdbc.secret" . }}
               key: {{ include "jdbc.secretPasswordKey" . }}
+        {{- end }}
         - name: SONAR_WEB_SYSTEMPASSCODE
           valueFrom:
             secretKeyRef:
@@ -292,8 +281,10 @@ spec:
             {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
       envFrom:
+        {{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable }}
         - configMapRef:
             name: {{ include "sonarqube.fullname" . }}-jdbc-config
+        {{- end }}
         {{- if include "sonarqube.azure.enabled" . }}
         - configMapRef:
             name: {{ template "sonarqube.fullname" . }}-azure-config

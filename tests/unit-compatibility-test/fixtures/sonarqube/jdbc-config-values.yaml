@@ -1,20 +1,4 @@
 ---
-# Source: sonarqube/charts/postgresql/templates/secrets.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: jdbc-config-values.yaml-postgresql
-  labels:
-    app.kubernetes.io/name: postgresql
-    helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: jdbc-config-values.yaml
-    app.kubernetes.io/managed-by: Helm
-  namespace: default
-type: Opaque
-data:
-  postgresql-postgres-password: "dG90bw=="
-  postgresql-password: "c29uYXJQYXNz"
----
 # Source: sonarqube/templates/secret.yaml
 apiVersion: v1
 kind: Secret
@@ -22,7 +6,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.6.0
+    chart: sonarqube-2026.1.0
     release: jdbc-config-values.yaml
     heritage: Helm
 type: Opaque
@@ -36,7 +20,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.6.0
+    chart: sonarqube-2026.1.0
     release: jdbc-config-values.yaml
     heritage: Helm
 type: Opaque
@@ -51,7 +35,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.6.0
+    chart: sonarqube-2026.1.0
     release: jdbc-config-values.yaml
     heritage: Helm
 type: Opaque
@@ -70,7 +54,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.6.0
+    chart: sonarqube-2026.1.0
     release: jdbc-config-values.yaml
     heritage: Helm
 data:
@@ -83,7 +67,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.6.0
+    chart: sonarqube-2026.1.0
     release: jdbc-config-values.yaml
     heritage: Helm
 data:
@@ -130,7 +114,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.6.0
+    chart: sonarqube-2026.1.0
     release: jdbc-config-values.yaml
     heritage: Helm
 data:
@@ -143,66 +127,12 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.6.0
+    chart: sonarqube-2026.1.0
     release: jdbc-config-values.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
   SONAR_JDBC_URL: "jdbc:postgresql://myPostgress/myDatabase?socketTimeout=1500"
----
-# Source: sonarqube/charts/postgresql/templates/svc-headless.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: jdbc-config-values.yaml-postgresql-headless
-  labels:
-    app.kubernetes.io/name: postgresql
-    helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: jdbc-config-values.yaml
-    app.kubernetes.io/managed-by: Helm
-    # Use this annotation in addition to the actual publishNotReadyAddresses
-    # field below because the annotation will stop being respected soon but the
-    # field is broken in some versions of Kubernetes:
-    # https://github.com/kubernetes/kubernetes/issues/58662
-    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-  namespace: default
-spec:
-  type: ClusterIP
-  clusterIP: None
-  # We want all pods in the StatefulSet to have their addresses published for
-  # the sake of the other Postgresql pods even before they're ready, since they
-  # have to be able to talk to each other in order to become ready.
-  publishNotReadyAddresses: true
-  ports:
-    - name: tcp-postgresql
-      port: 5432
-      targetPort: tcp-postgresql
-  selector:
-    app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: jdbc-config-values.yaml
----
-# Source: sonarqube/charts/postgresql/templates/svc.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: jdbc-config-values.yaml-postgresql
-  labels:
-    app.kubernetes.io/name: postgresql
-    helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: jdbc-config-values.yaml
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-  namespace: default
-spec:
-  type: ClusterIP
-  ports:
-    - name: tcp-postgresql
-      port: 5432
-      targetPort: tcp-postgresql
-  selector:
-    app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: jdbc-config-values.yaml
-    role: primary
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
@@ -211,7 +141,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.6.0
+    chart: sonarqube-2026.1.0
     release: jdbc-config-values.yaml
     heritage: Helm
 spec:
@@ -225,167 +155,6 @@ spec:
     app: sonarqube
     release: jdbc-config-values.yaml
 ---
-# Source: sonarqube/charts/postgresql/templates/statefulset.yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: jdbc-config-values.yaml-postgresql
-  labels:
-    app.kubernetes.io/name: postgresql
-    helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: jdbc-config-values.yaml
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/component: primary
-  annotations:
-  namespace: default
-spec:
-  serviceName: jdbc-config-values.yaml-postgresql-headless
-  replicas: 1
-  updateStrategy:
-    type: RollingUpdate
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: jdbc-config-values.yaml
-      role: primary
-  template:
-    metadata:
-      name: jdbc-config-values.yaml-postgresql
-      labels:
-        app.kubernetes.io/name: postgresql
-        helm.sh/chart: postgresql-10.15.0
-        app.kubernetes.io/instance: jdbc-config-values.yaml
-        app.kubernetes.io/managed-by: Helm
-        role: primary
-        app.kubernetes.io/component: primary
-    spec:      
-      affinity:
-        podAffinity:
-          
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/name: postgresql
-                    app.kubernetes.io/instance: jdbc-config-values.yaml
-                    app.kubernetes.io/component: primary
-                namespaces:
-                  - "default"
-                topologyKey: kubernetes.io/hostname
-              weight: 1
-        nodeAffinity:
-          
-      securityContext:
-        fsGroup: 1001
-      automountServiceAccountToken: false
-      containers:
-        - name: jdbc-config-values.yaml-postgresql
-          image: docker.io/bitnamilegacy/postgresql:11.14.0
-          imagePullPolicy: "IfNotPresent"
-          resources:
-            limits:
-              cpu: 2
-              memory: 2Gi
-            requests:
-              cpu: 100m
-              memory: 200Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
-          env:
-            - name: BITNAMI_DEBUG
-              value: "false"
-            - name: POSTGRESQL_PORT_NUMBER
-              value: "5432"
-            - name: POSTGRESQL_VOLUME_DIR
-              value: "/bitnami/postgresql"
-            - name: PGDATA
-              value: "/bitnami/postgresql/data"
-            - name: POSTGRES_POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: jdbc-config-values.yaml-postgresql
-                  key: postgresql-postgres-password
-            - name: POSTGRES_USER
-              value: "sonarUser"
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: jdbc-config-values.yaml-postgresql
-                  key: postgresql-password
-            - name: POSTGRES_DB
-              value: "sonarDB"
-            - name: POSTGRESQL_ENABLE_LDAP
-              value: "no"
-            - name: POSTGRESQL_ENABLE_TLS
-              value: "no"
-            - name: POSTGRESQL_LOG_HOSTNAME
-              value: "false"
-            - name: POSTGRESQL_LOG_CONNECTIONS
-              value: "false"
-            - name: POSTGRESQL_LOG_DISCONNECTIONS
-              value: "false"
-            - name: POSTGRESQL_PGAUDIT_LOG_CATALOG
-              value: "off"
-            - name: POSTGRESQL_CLIENT_MIN_MESSAGES
-              value: "error"
-            - name: POSTGRESQL_SHARED_PRELOAD_LIBRARIES
-              value: "pgaudit"
-          ports:
-            - name: tcp-postgresql
-              containerPort: 5432
-          livenessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            successThreshold: 1
-            failureThreshold: 6
-          readinessProbe:
-            exec:
-              command:
-              - /bin/sh
-              - -c
-              - -e
-              - |
-                exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
-                [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
-            failureThreshold: 6
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 5
-          volumeMounts:
-            - name: dshm
-              mountPath: /dev/shm
-            - name: data
-              mountPath: /bitnami/postgresql
-              subPath: 
-      volumes:
-        - name: dshm
-          emptyDir:
-            medium: Memory
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes:
-          - "ReadWriteOnce"
-        resources:
-          requests:
-            storage: "20Gi"
----
 # Source: sonarqube/templates/sonarqube-sts.yaml
 apiVersion: apps/v1
 kind: StatefulSet
@@ -393,7 +162,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.6.0
+    chart: sonarqube-2026.1.0
     release: jdbc-config-values.yaml
     heritage: Helm
     app.kubernetes.io/name: jdbc-config-values.yaml
@@ -413,10 +182,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 14295f18e48f375b848d874a0794dd7a9a85ba005e7d03b9d078c8f5771db8c6
-        checksum/init-sysctl: 8093b489362cde3a05db07b69c7ba4c507c85b3915b64b7dcbe6400b570861cc
-        checksum/plugins: 090b37769652ebf70a27e518df3dc3de2a0c124e1c6489ebaa86506d65361946
-        checksum/secret: b282f464c53aaf9591b43bfc7175f1ce311d3dd01c8fb38e7488fc3d5b3be65c
+        checksum/config: ea9175adedcb44e6e45bcf69342f3c3bffd284af705be1b3ffb18f227212d48d
+        checksum/init-sysctl: 34286f8aef8e5446132c8bbc5adc086e997052415201337e62e0e9fc5169592f
+        checksum/plugins: de3ca5ae4a0e00f2b9dfea2ca91b9db837d6077606120c7eee56d49284464bdf
+        checksum/secret: 2ae8b3d61eada79679d1425b9b20b68feafe0d3c95e51b8f6f408f3f418c4c47
       labels:
         app: sonarqube
         release: jdbc-config-values.yaml
@@ -462,7 +231,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.6.0
+              value: 2026.1.0
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -571,7 +340,7 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2025.6.0
+    chart: sonarqube-2026.1.0
     release: jdbc-config-values.yaml
     heritage: Helm
 spec:
