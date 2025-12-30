@@ -59,6 +59,8 @@ REQUIREMENTS:
     - Source PostgreSQL instance must be running and accessible
 
 EOF
+
+  return 0
 }
 
 # Default values
@@ -113,10 +115,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       # This should be the source service name
-      if [ -z "$SOURCE_SERVICE" ]; then
+      if [[ -z "$SOURCE_SERVICE" ]]; then
         SOURCE_SERVICE="$1"
       else
-        echo "Error: Multiple service names specified. Only one source service name is allowed."
+        echo "Error: Multiple service names specified. Only one source service name is allowed." >&2
         exit 1
       fi
       shift
@@ -125,8 +127,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Validate required parameters
-if [ -z "$SOURCE_SERVICE" ]; then
-  echo "Error: Source PostgreSQL service name is required"
+if [[ -z "$SOURCE_SERVICE" ]]; then
+  echo "Error: Source PostgreSQL service name is required" >&2
   echo "Usage: $0 [OPTIONS] <source_service>"
   echo "Find PostgreSQL service with: kubectl get svc -n $SOURCE_NAMESPACE | grep postgresql"
   echo "Use -h or --help for detailed usage information"
@@ -154,7 +156,7 @@ helm repo update
 
 # Install PostgreSQL with custom values
 echo "Installing PostgreSQL chart..."
-if [ -n "$VALUES_FILE" ] && [ -f "$VALUES_FILE" ]; then
+if [[ -n "$VALUES_FILE" ]] && [[ -f "$VALUES_FILE" ]]; then
   echo "Using custom values file: $VALUES_FILE"
   helm upgrade --install $NEW_RELEASE_NAME bitnami-legacy/postgresql \
     --version 10.15.0 \
@@ -178,7 +180,7 @@ else
     --wait --timeout=300s
 fi
 
-if [ $? -ne 0 ]; then
+if [[ $? -ne 0 ]]; then
   echo "Failed to install PostgreSQL chart"
   exit 1
 fi
@@ -245,12 +247,12 @@ spec:
           pg_dump -h \$SOURCE_HOST -U $USERNAME -d $DATABASE_NAME | \
           psql -h \$TARGET_HOST -U $USERNAME -d $DATABASE_NAME
           
-          if [ \${PIPESTATUS[0]} -ne 0 ]; then
+          if [[ \${PIPESTATUS[0]} -ne 0 ]]; then
             echo "Backup failed"
             exit 1
           fi
           
-          if [ \${PIPESTATUS[1]} -ne 0 ]; then
+          if [[ \${PIPESTATUS[1]} -ne 0 ]]; then
             echo "Restore failed"
             exit 1
           fi
@@ -265,7 +267,7 @@ spec:
           echo "Source tables: \$SOURCE_TABLES"
           echo "Target tables: \$TARGET_TABLES"
           
-          if [ "\$SOURCE_TABLES" != "\$TARGET_TABLES" ]; then
+          if [[ "\$SOURCE_TABLES" != "\$TARGET_TABLES" ]]; then
             echo "Table count mismatch - migration verification failed"
             exit 1
           fi
@@ -276,7 +278,7 @@ EOF
 echo "Waiting for migration job to complete..."
 kubectl wait --for=condition=complete job/postgresql-migration-job -n $TARGET_NAMESPACE --timeout=600s
 
-if [ $? -ne 0 ]; then
+if [[ $? -ne 0 ]]; then
   echo "Migration job failed, checking logs..."
   kubectl logs -n $TARGET_NAMESPACE job/postgresql-migration-job
 else

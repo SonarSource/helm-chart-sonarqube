@@ -46,6 +46,8 @@ REQUIREMENTS:
     - PostgreSQL instance must be running and accessible
 
 EOF
+
+  return 0
 }
 
 # Default values
@@ -85,10 +87,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       # This should be the postgres service name
-      if [ -z "$POSTGRES_SERVICE" ]; then
+      if [[ -z "$POSTGRES_SERVICE" ]]; then
         POSTGRES_SERVICE="$1"
       else
-        echo "Error: Multiple service names specified. Only one service name is allowed."
+        echo "Error: Multiple service names specified. Only one service name is allowed." >&2
         exit 1
       fi
       shift
@@ -107,8 +109,8 @@ echo ""
 echo "Step 1: Backing up from source PostgreSQL..."
 
 # Check if PostgreSQL service is provided
-if [ -z "$POSTGRES_SERVICE" ]; then
-  echo "Error: PostgreSQL service name is required"
+if [[ -z "$POSTGRES_SERVICE" ]]; then
+  echo "Error: PostgreSQL service name is required" >&2
   echo "Usage: $0 [OPTIONS] <postgres_service>"
   echo "Find PostgreSQL service with: kubectl get svc -n $NAMESPACE | grep postgresql"
   echo "Use -h or --help for detailed usage information"
@@ -133,7 +135,7 @@ BACKUP_EXIT_CODE=$?
 echo "Backup pod completed"
 
 # Validate backup file
-if [ $BACKUP_EXIT_CODE -ne 0 ] || [ ! -s sonarqube_backup.sql ]; then
+if [[ $BACKUP_EXIT_CODE -ne 0 ]] || [[ ! -s sonarqube_backup.sql ]]; then
   echo "Backup failed or file is empty"
   echo "Check service name and credentials, then try again"
   rm -f sonarqube_backup.sql
