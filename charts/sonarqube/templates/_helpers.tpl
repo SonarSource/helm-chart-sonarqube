@@ -60,17 +60,6 @@ Expand the Application Image name.
 {{- end -}}
 {{- end -}}
 
-{{- define "postgresql.image" -}}
-{{- if and .Values.global .Values.global.azure .Values.global.azure.images .Values.global.azure.images.postgresql }}
-  {{- /* Use Azure Marketplace image if global values are defined */ -}}
-  {{- printf "%s/%s:%s" .Values.global.azure.images.postgresql.registry .Values.global.azure.images.postgresql.image .Values.global.azure.images.postgresql.tag }}
-{{- else }}
-  {{- /* Fallback to the subchart's default image values */ -}}
-  {{- /* Assuming subchart uses .Values.image.repository and .Values.image.tag */ -}}
-  {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
-{{- end }}
-{{- end -}}
-
 {{/*
 Check if Azure configuration is complete
 */}}
@@ -124,25 +113,6 @@ Check if Azure configuration is complete
 {{- end -}}
 
 {{/*
-  Create a default fully qualified mysql/postgresql name.
-  We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-*/}}
-{{- define "postgresql.fullname" -}}
-{{- printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
-{{/*
-  Determine the hostname to use for PostgreSQL/mySQL.
-*/}}
-{{- define "postgresql.hostname" -}}
-{{- if .Values.postgresql.enabled -}}
-{{- printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s" .Values.postgresql.postgresqlServer -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
 Determine the k8s secret containing the JDBC credentials
 */}}
 {{- define "jdbc.secret" -}}
@@ -152,14 +122,6 @@ Determine the k8s secret containing the JDBC credentials
   {{- else -}}
   {{- template "sonarqube.fullname" . -}}
   {{- end -}}
-{{- else if .Values.postgresql.enabled -}}
-  {{- if .Values.postgresql.existingSecret -}}
-  {{- .Values.postgresql.existingSecret -}}
-  {{- else -}}
-  {{- template "postgresql.fullname" . -}}
-  {{- end -}}
-{{- else -}}
-  {{- template "sonarqube.fullname" . -}}
 {{- end -}}
 {{- end -}}
 
@@ -168,11 +130,7 @@ Determine JDBC username
 */}}
 {{- define "jdbc.username" -}}
 {{- if and (or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable) .Values.jdbcOverwrite.jdbcUsername -}}
-  {{- .Values.jdbcOverwrite.jdbcUsername | quote -}}
-{{- else if and .Values.postgresql.enabled .Values.postgresql.postgresqlUsername -}}
-  {{- .Values.postgresql.postgresqlUsername | quote -}}
-{{- else -}}
-  {{- .Values.postgresql.postgresqlUsername -}}
+{{- .Values.jdbcOverwrite.jdbcUsername | quote -}}
 {{- end -}}
 {{- end -}}
 
@@ -186,14 +144,6 @@ Determine the k8s secretKey contrining the JDBC password
   {{- else -}}
   {{- "jdbc-password" -}}
   {{- end -}}
-{{- else if .Values.postgresql.enabled -}}
-  {{- if and .Values.postgresql.existingSecret .Values.postgresql.existingSecretPasswordKey -}}
-  {{- .Values.postgresql.existingSecretPasswordKey -}}
-  {{- else -}}
-  {{- "postgresql-password" -}}
-  {{- end -}}
-{{- else -}}
-  {{- "jdbc-password" -}}
 {{- end -}}
 {{- end -}}
 
@@ -203,8 +153,6 @@ Determine JDBC password if internal secret is used
 {{- define "jdbc.internalSecretPasswd" -}}
 {{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
   {{- .Values.jdbcOverwrite.jdbcPassword | b64enc | quote -}}
-{{- else -}}
-  {{- .Values.postgresql.postgresqlPassword | b64enc | quote -}}
 {{- end -}}
 {{- end -}}
 

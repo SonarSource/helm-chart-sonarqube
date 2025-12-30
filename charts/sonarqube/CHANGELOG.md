@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2026.1.0]
+* Update Chart's version to 2026.1.0
+* Remove PostgreSQL embedded chart dependency and related settings
+
 ## [2025.6.0]
 * Upgrade SonarQube Server to to 2025.6.0
 * Update Chart's version to 2025.6.0

@@ -1,3 +1,4 @@
+{{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -5,8 +6,5 @@ metadata:
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 data:
   SONAR_JDBC_USERNAME: {{ template "jdbc.username" . }}
-  {{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable }}
   SONAR_JDBC_URL: {{ .Values.jdbcOverwrite.jdbcUrl | trim | quote }}
-  {{- else if and .Values.postgresql.service.port .Values.postgresql.postgresqlDatabase }}
-  SONAR_JDBC_URL: "jdbc:postgresql://{{ template "postgresql.hostname" . }}:{{- .Values.postgresql.service.port -}}/{{- .Values.postgresql.postgresqlDatabase -}}"
-  {{- end }}
+{{- end }}
