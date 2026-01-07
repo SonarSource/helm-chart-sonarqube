@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [2026.1.0]
 * Update Chart's version to 2026.1.0
+* Upgrade SonarQube Community build to 26.1.0.118079
 * Remove PostgreSQL embedded chart dependency and related settings
 
 ## [2025.6.0]
