@@ -1,7 +1,7 @@
 SonarQube Helm Chart
 =================
 
-[![Build](https://github.com/SonarSource/helm-chart-sonarqube/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/SonarSource/helm-chart-sonarqube/actions/workflows/build.yml) [![Quality Gate Status](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=SonarSource_helm-chart-sonarqube&metric=alert_status&token=sqb_8b5471dd501cf438b25e938f50307572132b3640)](https://next.sonarqube.com/sonarqube/dashboard?id=SonarSource_helm-chart-sonarqube)
+[![Build](https://github.com/SonarSource/helm-chart-sonarqube/actions/workflows/build.yml/badge.svg)](https://github.com/SonarSource/helm-chart-sonarqube/actions/workflows/build.yml) [![Quality Gate Status](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=SonarSource_helm-chart-sonarqube&metric=alert_status&token=sqb_8b5471dd501cf438b25e938f50307572132b3640)](https://next.sonarqube.com/sonarqube/dashboard?id=SonarSource_helm-chart-sonarqube)
 
 About this Repo
 ----------------
