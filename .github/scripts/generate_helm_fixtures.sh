@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-KUBE_VERSION="${KUBE_VERSION:-1.34.0}"
+KUBE_VERSION="${KUBE_VERSION:-1.35.0}"
 
 echo 'Running fixtures'
 
