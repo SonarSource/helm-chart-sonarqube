@@ -49,6 +49,6 @@ func WaitUntilPodContainersReadyE(t *testing.T, options *k8s.KubectlOptions, pod
 		logger.Logf(t, "Timedout waiting for Pod to be containersReady: %s", err)
 		return err
 	}
-	logger.Logf(t, message)
+	logger.Logf(t, "%s", message)
 	return nil
 }
