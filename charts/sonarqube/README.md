@@ -269,7 +269,10 @@ jdbcOverwrite:
 
 Please refer to the Helm upgrade section accessible [here](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade/#upgrade-from-89x-lta-to-99x-lta).
 
-## Ingress usage
+## Ingress usage (Deprecated)
+
+> **Note**: The `ingress-nginx` controller was retired in November 2025, with best-effort support ending in **March 2026**. Consequently, this chart dependency is now **deprecated**.
+We recommend migrating to the [Gateway API](https://gateway-api.sigs.k8s.io/guides/), the modern successor to Ingress. If you must continue using Ingress, please refer to the [Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) for a list of alternative controllers. A replacement for this dependency will be included in an upcoming release.
 
 ### Path
 
@@ -359,7 +362,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will supersede initContainer specific http proxy variables  | ``                 |
 | `httpsProxy`            | HTTPS proxy for downloading JMX agent and install plugins, will supersede initContainer specific https proxy variable | ``                 |
 | `noProxy`               | No proxy for downloading JMX agent and install plugins, will supersede initContainer specific no proxy variables      | ``                 |
-| `ingress-nginx.enabled` | Install Nginx Ingress Helm                                                                                            | `false`            |
+| `ingress-nginx.enabled` | (DEPRECATED) Install Nginx Ingress Helm                                                                                            | `false`            |
 
 ### NetworkPolicies
 
@@ -420,7 +423,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `service.loadBalancerSourceRanges` | Kubernetes service LB Allowed inbound IP addresses | `None`      |
 | `service.loadBalancerIP`           | Kubernetes service LB Optional fixed external IP   | `None`      |
 
-### Ingress
+### Ingress (DEPRECATED)
 
 | Parameter                      | Description                                                  | Default                                                                                                      |
 | ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |

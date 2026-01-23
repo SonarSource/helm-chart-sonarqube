@@ -8,6 +8,7 @@ All changes to this chart will be documented in this file.
 * Support Kubernetes v1.35
 * Support Openshift v4.20
 * Update ingress-nginx subchart to 4.14.1
+* Deprecate the ingress-nginx dependency
 
 ## [2025.6.0]
 * Upgrade SonarQube Server to to 2025.6.0
