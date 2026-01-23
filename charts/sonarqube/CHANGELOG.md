@@ -7,6 +7,7 @@ All changes to this chart will be documented in this file.
 * Remove PostgreSQL embedded chart dependency and related settings
 * Support Kubernetes v1.35
 * Support Openshift v4.20
+* Update ingress-nginx subchart to 4.14.1
 
 ## [2025.6.0]
 * Upgrade SonarQube Server to to 2025.6.0
