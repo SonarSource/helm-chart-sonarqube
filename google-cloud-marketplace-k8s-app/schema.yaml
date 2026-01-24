@@ -44,11 +44,6 @@ properties:
     type: string
     x-google-marketplace:
       type: MASKED_FIELD
-  jdbcOverwrite.enabled:
-    title: Connection to a database - Recommended
-    description: Connect SonarQube Server to your PostgreSQL database. The connection parameters JDBC URL, username, and password will be used. Make sure that the Embedded database option is disabled.
-    type: boolean
-    default: true
   jdbcOverwrite.jdbcUrl:
     title: JDBC URL
     description: The JDBC URL to connect to the database
@@ -64,6 +59,8 @@ properties:
     description: The password to connect to the database
     type: string
     default: ''
+    x-google-marketplace:
+        type: MASKED_FIELD
   ApplicationNodes.replicaCount:
     title: Application nodes replicas
     description: Number of replicas for the Application nodes
@@ -91,12 +88,10 @@ properties:
     default: 'true'
     enum:
       - 'true'
-  postgresql.enabled:
-    title: Embedded database - For testing purposes only
-    description: Not recommended for production, a test PostgreSQL database will be installed.
-    type: boolean
-    default: false
 required:
 - name
 - namespace
+- monitoringPasscode
 - ApplicationNodes.jwtSecret
+- jdbcOverwrite.jdbcUrl
+- jdbcOverwrite.jdbcUsername

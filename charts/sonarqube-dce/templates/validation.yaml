@@ -7,3 +7,25 @@
 {{- if or (and .Values.ApplicationNodes.jwtSecret .Values.ApplicationNodes.existingJwtSecret) (and (not .Values.ApplicationNodes.jwtSecret) (not .Values.ApplicationNodes.existingJwtSecret)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n You must set a value for either \"jwtSecret\" or \"existingJwtSecret\", but not both." -}}
 {{- end -}}
+
+{{/* Validation for jdbcOverwrite.enabled or jdbcOverwrite.enable set to false */}}
+{{- if or (eq .Values.jdbcOverwrite.enabled false) (eq .Values.jdbcOverwrite.enable false) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n jdbcOverwrite.enabled and jdbcOverwrite.enable cannot be set to false. You must provide an external database configuration." -}}
+{{- end -}}
+
+{{/* Validation for jdbcOverwrite configuration when enabled */}}
+  {{- $jdbcUrlEmpty := not .Values.jdbcOverwrite.jdbcUrl -}}
+  {{- $jdbcUsernameEmpty := not .Values.jdbcOverwrite.jdbcUsername -}}
+  {{- $jdbcPasswordEmpty := not .Values.jdbcOverwrite.jdbcPassword -}}
+  {{- $jdbcSecretEmpty := not .Values.jdbcOverwrite.jdbcSecretName -}}
+  {{- $jdbcSecretKeyEmpty := not .Values.jdbcOverwrite.jdbcSecretPasswordKey -}}
+  
+  {{- if or $jdbcUrlEmpty $jdbcUsernameEmpty (and $jdbcPasswordEmpty (or $jdbcSecretEmpty $jdbcSecretKeyEmpty)) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n You must provide:\n - jdbcOverwrite.jdbcUrl\n - jdbcOverwrite.jdbcUsername\n - jdbcOverwrite.jdbcPassword OR both jdbcOverwrite.jdbcSecretName and jdbcOverwrite.jdbcSecretPasswordKey" -}}
+  {{- end -}}
+  
+{{/* Validation for jdbcUrl - must not be the default placeholder value */}}
+  {{- if eq .Values.jdbcOverwrite.jdbcUrl "jdbc:postgresql://myPostgres/myDatabase" -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n jdbcOverwrite.jdbcUrl is still set to the default placeholder value 'jdbc:postgresql://myPostgres/myDatabase'.\n Please provide a valid JDBC URL for your PostgreSQL database." -}}
+  {{- end -}}
+

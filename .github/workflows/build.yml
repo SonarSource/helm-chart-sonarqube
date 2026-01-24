@@ -101,6 +101,10 @@ jobs:
             report_name: sonarqube-dce-openshift-report
           - verifying_chart: sonarqube
             report_name: sonarqube-openshift-report
+    env:
+      OPENSHIFT_VERSION: 4.20.12
+      CHART_VERIFIER_VERSION: 1.14.0
+      SKIP_CHART_INSTALL: false
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -118,21 +122,22 @@ jobs:
             development/team/sonarqube/kv/data/rosa-dev username | ROSA_OPENSHIFT_USER;
             development/team/sonarqube/kv/data/rosa-dev password | ROSA_OPENSHIFT_PASSWORD;
       - name: Install chart-verifier
-        run: |
-          curl -LO https://github.com/redhat-certification/chart-verifier/releases/download/1.13.11/chart-verifier-1.13.11.tgz
-          echo "ad221d0e030ce820c8ecfadaa10a6d5183adbe00fcd8dee627c3fdd7e5bf37e7  chart-verifier-1.13.11.tgz" | sha256sum -c
-          tar -xf chart-verifier-1.13.11.tgz
+        run: | 
+          curl -LO https://github.com/redhat-certification/chart-verifier/releases/download/${{ env.CHART_VERIFIER_VERSION }}/chart-verifier-${{ env.CHART_VERIFIER_VERSION }}.tgz
+          echo "48dc6eb859bcae7722808fa3234440562c17e074dfa698161644f7b372a260e8  chart-verifier-${{ env.CHART_VERIFIER_VERSION }}.tgz" | sha256sum -c
+          tar -xf chart-verifier-${{ env.CHART_VERIFIER_VERSION }}.tgz
           mkdir -p $HOME/bin
           mv chart-verifier $HOME/bin/
           echo "$HOME/bin" >> $GITHUB_PATH
       - name: Install kubectl CLI
         uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4.0.1
         with:
-          version: 'v1.29.0'
+          version: 'v1.35.0'
       - name: Install OpenShift CLI
         run: |
-          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.18.9/openshift-client-linux.tar.gz
-          echo "1e2d73c870756e3940dcb6c1112c7aa7f702a89cfdb992d11079ac852b4ea05c  openshift-client-linux.tar.gz" | sha256sum -c
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${{ env.OPENSHIFT_VERSION }}/openshift-client-linux.tar.gz
+          EXPECTED_SHA=$(curl -sL "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${{ env.OPENSHIFT_VERSION }}/sha256sum.txt" | grep "openshift-client-linux.tar.gz" | awk '{print $1}')
+          echo "${EXPECTED_SHA}  openshift-client-linux.tar.gz" | sha256sum -c
           mkdir -p /tmp/openshift
           tar -xf openshift-client-linux.tar.gz -C /tmp/openshift
           mkdir -p $HOME/bin
@@ -140,12 +145,14 @@ jobs:
           echo "$HOME/bin" >> $GITHUB_PATH
           rm -rf /tmp/openshift openshift-client-linux.tar.gz
       - name: Authenticate to OpenShift
+        if: env.SKIP_CHART_INSTALL != 'true'
         env:
           ROSA_OPENSHIFT_URL: ${{ fromJSON(steps.secrets.outputs.vault).ROSA_OPENSHIFT_URL }}
           ROSA_OPENSHIFT_USER: ${{ fromJSON(steps.secrets.outputs.vault).ROSA_OPENSHIFT_USER }}
           ROSA_OPENSHIFT_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ROSA_OPENSHIFT_PASSWORD }}
         run: ./.github/scripts/openshift_auth.sh
       - name: Setup OpenShift project
+        if: env.SKIP_CHART_INSTALL != 'true'
         env:
           DOCKER_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_PASSWORD }}
@@ -154,10 +161,17 @@ jobs:
           kubectl create secret docker-registry pullsecret --namespace ${{ matrix.verifying_chart }} --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
           ./.github/scripts/build_chart_dependencies.sh charts/${{ matrix.verifying_chart }}
           chart-verifier version
+      - name: Setup external PostgreSQL
+        if: env.SKIP_CHART_INSTALL != 'true' && matrix.verifying_chart == 'sonarqube-dce'
+        run: NAMESPACE="${{ matrix.verifying_chart }}" VALUES_FILE="charts/${{ matrix.verifying_chart }}/openshift-verifier/postgres-values.yaml" ./.github/scripts/setup_external_postgres.sh
       - name: Run chart verification
         run: |
           mkdir -p "$(pwd)/report-${{ matrix.verifying_chart}}"
-          chart-verifier verify -x images-are-certified charts/${{ matrix.verifying_chart }} --helm-install-timeout 20m -F charts/${{ matrix.verifying_chart }}/openshift-verifier/values.yaml -n ${{ matrix.verifying_chart }} --openshift-version 4.16 > "$(pwd)/report-${{ matrix.verifying_chart}}/report.yaml"
+          if [ "${{ env.SKIP_CHART_INSTALL }}" = "true" ]; then
+            chart-verifier verify -x images-are-certified -x chart-testing charts/${{ matrix.verifying_chart }} --helm-install-timeout 20m -F charts/${{ matrix.verifying_chart }}/openshift-verifier/values.yaml -n ${{ matrix.verifying_chart }} --openshift-version ${{ env.OPENSHIFT_VERSION }} > "$(pwd)/report-${{ matrix.verifying_chart}}/report.yaml"
+          else
+            chart-verifier verify -x images-are-certified charts/${{ matrix.verifying_chart }} --helm-install-timeout 20m -F charts/${{ matrix.verifying_chart }}/openshift-verifier/values.yaml -n ${{ matrix.verifying_chart }} --openshift-version ${{ env.OPENSHIFT_VERSION }} > "$(pwd)/report-${{ matrix.verifying_chart}}/report.yaml"
+          fi
       - name: Upload verification report
         if: always() && ! cancelled()
         uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
@@ -212,6 +226,9 @@ jobs:
           helm upgrade -i istiod istio/istiod --set global.proxy.holdApplicationUntilProxyStarts=true --set resources.requests.cpu=100m -n istio-system --wait
           kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
           kubectl label namespace test istio-injection=enabled
+      - name: Setup External PostgreSQL
+        if: matrix.chart == 'sonarqube-dce'
+        run: NAMESPACE=test ./.github/scripts/setup_external_postgres.sh
       - id: secrets
         uses: SonarSource/vault-action-wrapper@3.0.2
         with:

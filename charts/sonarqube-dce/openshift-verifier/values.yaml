@@ -3,12 +3,6 @@ OpenShift:
   route:
     enabled: true
 
-postgresql:
-  securityContext:
-    enabled: false
-  containerSecurityContext:
-    enabled: false
-
 searchNodes:
   replicaCount: 1
   image:
@@ -27,3 +21,11 @@ ApplicationNodes:
       - name: pullsecret
 
 monitoringPasscode: "test"
+
+# Connection to external PostgreSQL
+jdbcOverwrite:
+  enabled: true
+  jdbcUrl: "jdbc:postgresql://external-postgres-postgresql.sonarqube-dce.svc.cluster.local:5432/postgres"
+  jdbcUsername: "postgres"
+  jdbcSecretName: "external-postgres-postgresql"
+  jdbcSecretPasswordKey: "postgres-password"
