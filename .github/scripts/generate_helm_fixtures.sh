@@ -22,7 +22,7 @@ for path in "sonarqube" "sonarqube-dce"; do
         FIXTURE_STATIC_TEST_FOLDER="./tests/unit-compatibility-test/fixtures/${path}/${TEST_CASE_NAME}"
 
         echo "Entering fixture test for ${TEST_CASE_NAME}"
-        helm template --set monitoringPasscode='test'  --set applicationNodes.jwtSecret='some-secret' --set global.postgresql.postgresqlPostgresPassword='toto' --kube-version "$KUBE_VERSION" --dry-run --debug -f "$file" "${TEST_CASE_NAME}" ${CHART_TEST_FOLDER} > "${FIXTURE_STATIC_TEST_FOLDER}"
+        helm template --set monitoringPasscode='test',applicationNodes.jwtSecret='some-secret',jdbcOverwrite.jdbcUrl='jdbc:postgresql://myPostgres/myDatabase?socketTimeout=1500',jdbcOverwrite.jdbcUsername='user',jdbcOverwrite.jdbcPassword='pass'  --kube-version "$KUBE_VERSION" --dry-run --debug -f "$file" "${TEST_CASE_NAME}" ${CHART_TEST_FOLDER} > "${FIXTURE_STATIC_TEST_FOLDER}"
         echo "Ending fixture test test for ${TEST_CASE_NAME}"
     done
 

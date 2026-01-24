@@ -108,7 +108,21 @@ jobs:
           gcloud auth configure-docker gcr.io --quiet
           gcloud container clusters get-credentials sonarqube-marketplace-staging-standard --zone=europe-west1-b --project=sonarqube-marketplace-provider
           kubectl get pods -A
-          mpdev verify --deployer=$GCLOUD_REGISTRY/$GCLOUD_PRODUCT_NAME/deployer:$GCLOUD_TAG --wait_timeout=1200 --parameters='{"name":"${GCLOUD_PRODUCT_NAME}-github-test", "namespace":"test-github","ApplicationNodes.jwtSecret":"dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=", "postgresql.enabled":true, "jdbcOverwrite.enabled":false }'
+      - name: Install external postgresql for testing
+        run: |
+          kubectl create namespace test-github --dry-run=client -o yaml | kubectl apply -f -
+          NAMESPACE="test-github" ./.github/scripts/setup_external_postgres.sh
+          kubectl get pods -n test-github
+      - name: Verify with mpdev
+        run: |
+          export PATH="${BASE_FOLDER}:${PATH}"
+          POSTGRES_PASSWORD=$(kubectl get secret --namespace "test-github" "external-postgres-postgresql" -o jsonpath="{.data.postgres-password}" | base64 -d)
+          echo "::add-mask::$POSTGRES_PASSWORD"
+          mpdev verify --deployer=$GCLOUD_REGISTRY/$GCLOUD_PRODUCT_NAME/deployer:$GCLOUD_TAG --wait_timeout=1200 --parameters="{\"name\":\"${GCLOUD_PRODUCT_NAME}-github-test\", \"namespace\":\"test-github\",\"ApplicationNodes.jwtSecret\":\"dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=\", \"jdbcOverwrite.jdbcUrl\": \"jdbc:postgresql://external-postgres-postgresql.test-github.svc.cluster.local:5432/postgres\", \"jdbcOverwrite.jdbcUsername\": \"postgres\", \"jdbcOverwrite.jdbcPassword\": \"$POSTGRES_PASSWORD\", \"monitoringPasscode\": \"dGVzdA==\"}"
+      - name: Cleanup namespace
+        if: always()
+        run: |
+          kubectl delete namespace test-github --ignore-not-found=true
 
   release-gcp-prod-app:
     needs: [verify-gcp-staging-app]

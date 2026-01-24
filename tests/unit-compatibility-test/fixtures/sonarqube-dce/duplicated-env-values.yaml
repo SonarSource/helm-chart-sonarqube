@@ -33,22 +33,6 @@ spec:
     matchLabels:
       sonarqube.datacenter/type: "app"
 ---
-# Source: sonarqube-dce/charts/postgresql/templates/secrets.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: duplicated-env-values.yaml-postgresql
-  labels:
-    app.kubernetes.io/name: postgresql
-    helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: duplicated-env-values.yaml
-    app.kubernetes.io/managed-by: Helm
-  namespace: default
-type: Opaque
-data:
-  postgresql-postgres-password: "dG90bw=="
-  postgresql-password: "c29uYXJQYXNz"
----
 # Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
 kind: Secret
@@ -64,7 +48,20 @@ data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: duplicated-env-values.yaml-sonarqube-dce
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.1.0
+    release: duplicated-env-values.yaml
+    heritage: Helm
+type: Opaque
+data:
+  jdbc-password: "cGFzcw=="
 ---
+# Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
@@ -211,62 +208,8 @@ metadata:
     release: duplicated-env-values.yaml
     heritage: Helm
 data:
-  SONAR_JDBC_USERNAME: "sonarUser"
-  SONAR_JDBC_URL: "jdbc:postgresql://duplicated-env-values.yaml-postgresql:5432/sonarDB"
----
-# Source: sonarqube-dce/charts/postgresql/templates/svc-headless.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: duplicated-env-values.yaml-postgresql-headless
-  labels:
-    app.kubernetes.io/name: postgresql
-    helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: duplicated-env-values.yaml
-    app.kubernetes.io/managed-by: Helm
-    # Use this annotation in addition to the actual publishNotReadyAddresses
-    # field below because the annotation will stop being respected soon but the
-    # field is broken in some versions of Kubernetes:
-    # https://github.com/kubernetes/kubernetes/issues/58662
-    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-  namespace: default
-spec:
-  type: ClusterIP
-  clusterIP: None
-  # We want all pods in the StatefulSet to have their addresses published for
-  # the sake of the other Postgresql pods even before they're ready, since they
-  # have to be able to talk to each other in order to become ready.
-  publishNotReadyAddresses: true
-  ports:
-    - name: tcp-postgresql
-      port: 5432
-      targetPort: tcp-postgresql
-  selector:
-    app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: duplicated-env-values.yaml
----
-# Source: sonarqube-dce/charts/postgresql/templates/svc.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: duplicated-env-values.yaml-postgresql
-  labels:
-    app.kubernetes.io/name: postgresql
-    helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: duplicated-env-values.yaml
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-  namespace: default
-spec:
-  type: ClusterIP
-  ports:
-    - name: tcp-postgresql
-      port: 5432
-      targetPort: tcp-postgresql
-  selector:
-    app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: duplicated-env-values.yaml
-    role: primary
+  SONAR_JDBC_USERNAME: "user"
+  SONAR_JDBC_URL: "jdbc:postgresql://myPostgres/myDatabase?socketTimeout=1500"
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -403,28 +346,10 @@ spec:
       annotations:
         checksum/plugins: b1089ae25b857afacd757d10ba29d13af038e22b9c7899b04714034890b2db62
         checksum/config: 2af7f616142624590101b3d8e338f4697fb7b699ea3605d9851c23ac329dfa05
-        checksum/secret: abd97dd85c21247684221e6a104e4e3da18cc19781a9aead961983287ca0c590
+        checksum/secret: 5af7f5f7f129982d7ef891287de084c2f85681cc9d6f41f661822badab87f1bb
     spec:
       automountServiceAccountToken: false
       initContainers:
-        - name: "wait-for-db"
-          image: sonarqube:2025.6.0-datacenter-app
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsGroup: 0
-            runAsNonRoot: true
-            runAsUser: 1000
-            seccompProfile:
-              type: RuntimeDefault
-          resources:
-            {}
-          command: ["/bin/bash", "-c"]
-          args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/duplicated-env-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
       securityContext:
         fsGroup: 0
       containers:
@@ -481,8 +406,8 @@ spec:
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: duplicated-env-values.yaml-postgresql
-                  key: postgresql-password
+                  name: duplicated-env-values.yaml-sonarqube-dce
+                  key: jdbc-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -568,167 +493,6 @@ spec:
         emptyDir:
           {}
 ---
-# Source: sonarqube-dce/charts/postgresql/templates/statefulset.yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: duplicated-env-values.yaml-postgresql
-  labels:
-    app.kubernetes.io/name: postgresql
-    helm.sh/chart: postgresql-10.15.0
-    app.kubernetes.io/instance: duplicated-env-values.yaml
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/component: primary
-  annotations:
-  namespace: default
-spec:
-  serviceName: duplicated-env-values.yaml-postgresql-headless
-  replicas: 1
-  updateStrategy:
-    type: RollingUpdate
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: postgresql
-      app.kubernetes.io/instance: duplicated-env-values.yaml
-      role: primary
-  template:
-    metadata:
-      name: duplicated-env-values.yaml-postgresql
-      labels:
-        app.kubernetes.io/name: postgresql
-        helm.sh/chart: postgresql-10.15.0
-        app.kubernetes.io/instance: duplicated-env-values.yaml
-        app.kubernetes.io/managed-by: Helm
-        role: primary
-        app.kubernetes.io/component: primary
-    spec:      
-      affinity:
-        podAffinity:
-          
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/name: postgresql
-                    app.kubernetes.io/instance: duplicated-env-values.yaml
-                    app.kubernetes.io/component: primary
-                namespaces:
-                  - "default"
-                topologyKey: kubernetes.io/hostname
-              weight: 1
-        nodeAffinity:
-          
-      securityContext:
-        fsGroup: 1001
-      automountServiceAccountToken: false
-      containers:
-        - name: duplicated-env-values.yaml-postgresql
-          image: docker.io/bitnamilegacy/postgresql:11.14.0
-          imagePullPolicy: "IfNotPresent"
-          resources:
-            limits:
-              cpu: 2
-              memory: 2Gi
-            requests:
-              cpu: 100m
-              memory: 200Mi
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            runAsNonRoot: true
-            runAsUser: 1001
-            seccompProfile:
-              type: RuntimeDefault
-          env:
-            - name: BITNAMI_DEBUG
-              value: "false"
-            - name: POSTGRESQL_PORT_NUMBER
-              value: "5432"
-            - name: POSTGRESQL_VOLUME_DIR
-              value: "/bitnami/postgresql"
-            - name: PGDATA
-              value: "/bitnami/postgresql/data"
-            - name: POSTGRES_POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: duplicated-env-values.yaml-postgresql
-                  key: postgresql-postgres-password
-            - name: POSTGRES_USER
-              value: "sonarUser"
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: duplicated-env-values.yaml-postgresql
-                  key: postgresql-password
-            - name: POSTGRES_DB
-              value: "sonarDB"
-            - name: POSTGRESQL_ENABLE_LDAP
-              value: "no"
-            - name: POSTGRESQL_ENABLE_TLS
-              value: "no"
-            - name: POSTGRESQL_LOG_HOSTNAME
-              value: "false"
-            - name: POSTGRESQL_LOG_CONNECTIONS
-              value: "false"
-            - name: POSTGRESQL_LOG_DISCONNECTIONS
-              value: "false"
-            - name: POSTGRESQL_PGAUDIT_LOG_CATALOG
-              value: "off"
-            - name: POSTGRESQL_CLIENT_MIN_MESSAGES
-              value: "error"
-            - name: POSTGRESQL_SHARED_PRELOAD_LIBRARIES
-              value: "pgaudit"
-          ports:
-            - name: tcp-postgresql
-              containerPort: 5432
-          livenessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            successThreshold: 1
-            failureThreshold: 6
-          readinessProbe:
-            exec:
-              command:
-              - /bin/sh
-              - -c
-              - -e
-              - |
-                exec pg_isready -U "sonarUser" -d "dbname=sonarDB" -h 127.0.0.1 -p 5432
-                [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
-            failureThreshold: 6
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 5
-          volumeMounts:
-            - name: dshm
-              mountPath: /dev/shm
-            - name: data
-              mountPath: /bitnami/postgresql
-              subPath: 
-      volumes:
-        - name: dshm
-          emptyDir:
-            medium: Memory
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes:
-          - "ReadWriteOnce"
-        resources:
-          requests:
-            storage: "20Gi"
----
 # Source: sonarqube-dce/templates/sonarqube-search.yaml
 apiVersion: apps/v1
 kind: StatefulSet
@@ -777,7 +541,7 @@ spec:
         checksum/init-sysctl: 92d6a8875b7ae79aa8566e55362e3a1b7012eaf6775e7cbbd65c2468c1931b14
         checksum/init-fs: d53e0292bd2eb3873a34e2c68461352bf7197f5de104ff2e909820bf3c230c7d
         checksum/config: 2af7f616142624590101b3d8e338f4697fb7b699ea3605d9851c23ac329dfa05
-        checksum/secret: abd97dd85c21247684221e6a104e4e3da18cc19781a9aead961983287ca0c590
+        checksum/secret: 5af7f5f7f129982d7ef891287de084c2f85681cc9d6f41f661822badab87f1bb
     spec:
       automountServiceAccountToken: false
       initContainers:

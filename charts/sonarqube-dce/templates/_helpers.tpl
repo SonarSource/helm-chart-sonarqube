@@ -93,25 +93,6 @@ Expand the Application Image name.
 {{- end -}}
 
 {{/*
-  Create a default fully qualified mysql/postgresql name.
-  We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-*/}}
-{{- define "postgresql.fullname" -}}
-{{- printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
-{{/*
-  Determine the hostname to use for PostgreSQL/mySQL.
-*/}}
-{{- define "postgresql.hostname" -}}
-{{- if .Values.postgresql.enabled -}}
-{{- printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s" .Values.postgresql.postgresqlServer -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
 Determine the k8s secret containing the JDBC credentials
 */}}
 {{- define "jdbc.secret" -}}
@@ -120,12 +101,6 @@ Determine the k8s secret containing the JDBC credentials
   {{- .Values.jdbcOverwrite.jdbcSecretName -}}
   {{- else -}}
   {{- template "sonarqube.fullname" . -}}
-  {{- end -}}
-{{- else if .Values.postgresql.enabled -}}
-  {{- if .Values.postgresql.existingSecret -}}
-  {{- .Values.postgresql.existingSecret -}}
-  {{- else -}}
-  {{- template "postgresql.fullname" . -}}
   {{- end -}}
 {{- else -}}
   {{- template "sonarqube.fullname" . -}}
@@ -138,10 +113,6 @@ Determine JDBC username
 {{- define "jdbc.username" -}}
 {{- if and (or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable) .Values.jdbcOverwrite.jdbcUsername -}}
   {{- .Values.jdbcOverwrite.jdbcUsername | quote -}}
-{{- else if and .Values.postgresql.enabled .Values.postgresql.postgresqlUsername -}}
-  {{- .Values.postgresql.postgresqlUsername | quote -}}
-{{- else -}}
-  {{- .Values.postgresql.postgresqlUsername -}}
 {{- end -}}
 {{- end -}}
 
@@ -155,12 +126,6 @@ Determine the k8s secretKey containing the JDBC password
   {{- else -}}
   {{- "jdbc-password" -}}
   {{- end -}}
-{{- else if .Values.postgresql.enabled -}}
-  {{- if and .Values.postgresql.existingSecret .Values.postgresql.existingSecretPasswordKey -}}
-  {{- .Values.postgresql.existingSecretPasswordKey -}}
-  {{- else -}}
-  {{- "postgresql-password" -}}
-  {{- end -}}
 {{- else -}}
   {{- "jdbc-password" -}}
 {{- end -}}
@@ -172,8 +137,6 @@ Determine JDBC password if internal secret is used
 {{- define "jdbc.internalSecretPasswd" -}}
 {{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable -}}
   {{- .Values.jdbcOverwrite.jdbcPassword | b64enc | quote -}}
-{{- else -}}
-  {{- .Values.postgresql.postgresqlPassword | b64enc | quote -}}
 {{- end -}}
 {{- end -}}
 

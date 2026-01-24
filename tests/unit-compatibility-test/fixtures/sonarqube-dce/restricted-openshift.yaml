@@ -59,7 +59,7 @@ metadata:
     heritage: Helm
 type: Opaque
 data:
-  jdbc-password: "c2FtZQ=="
+  jdbc-password: "cGFzcw=="
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
@@ -147,8 +147,8 @@ metadata:
     release: restricted-openshift.yaml
     heritage: Helm
 data:
-  SONAR_JDBC_USERNAME: "same"
-  SONAR_JDBC_URL: "someUrl"
+  SONAR_JDBC_USERNAME: "user"
+  SONAR_JDBC_URL: "jdbc:postgresql://myPostgres/myDatabase?socketTimeout=1500"
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -285,7 +285,7 @@ spec:
       annotations:
         checksum/plugins: 5d01f5eadab7c8adf2f0662b9e725f7b4d337e669086d14cab1db16ee90695de
         checksum/config: f8c8001b4eec810b7d854e16d3e92dd465c07cf919b9a8970e730be188f1f9f0
-        checksum/secret: b6fcdc7d3e06d097fca6a0e6e41e52820ae28315cc946e11c5f5b42e52a0f0b1
+        checksum/secret: a63cee1726d372809d322e90a886b38839d72f7a6bdebbb096d41b0e25dd8f99
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -519,7 +519,7 @@ spec:
         sonarqube.datacenter/type: "search"
       annotations:
         checksum/config: f8c8001b4eec810b7d854e16d3e92dd465c07cf919b9a8970e730be188f1f9f0
-        checksum/secret: b6fcdc7d3e06d097fca6a0e6e41e52820ae28315cc946e11c5f5b42e52a0f0b1
+        checksum/secret: a63cee1726d372809d322e90a886b38839d72f7a6bdebbb096d41b0e25dd8f99
     spec:
       automountServiceAccountToken: false
       initContainers:

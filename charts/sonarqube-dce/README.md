@@ -29,6 +29,8 @@ Prior to installing the chart, please ensure that the `monitoringPasscode` and `
 echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64
 ```
 
+Please also note that the chart requires an external database. If you want to perform a quick testing, you might want to follow the steps outlined [here](#setting-up-an-external-database-for-quick-testing). You will be required to set the following values accordingly: `jdbcOverwrite.jdbcUrl`, `jdbcOverwrite.jdbcUsername`, `jdbcOverwrite.jdbcSecretName`, and `jdbcOverwrite.jdbcSecretPasswordKey`.
+
 To install the chart:
 
 ```bash
@@ -37,7 +39,11 @@ helm repo update
 kubectl create namespace sonarqube-dce
 export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64)
 export MONITORING_PASSCODE="yourPasscode"
-helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set applicationNodes.jwtSecret=$JWT_SECRET,monitoringPasscode=$MONITORING_PASSCODE
+export JDBC_URL="jdbc:postgresql://myPostgres/myDatabase"
+export JDBC_USERNAME="sonar"
+export JDBC_PASSWORD_SECRET_NAME="jdbc-secret"
+export JDBC_PASSWORD_SECRET_KEY="jdbc-password"
+helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set applicationNodes.jwtSecret=$JWT_SECRET,monitoringPasscode=$MONITORING_PASSCODE,jdbcOverwrite.jdbcUrl=$JDBC_URL,jdbcOverwrite.jdbcUsername=$JDBC_USERNAME,jdbcOverwrite.jdbcSecretName=$JDBC_PASSWORD_SECRET_NAME,jdbcOverwrite.jdbcSecretPasswordKey=$JDBC_PASSWORD_SECRET_KEY
 ```
 
 The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace.
@@ -50,12 +56,106 @@ The default login is admin/admin.
 ## Upgrading to SonarQube Server LTA
 
 When upgrading your SonarQube Server to a new Long-Term Active (LTA) release, you should carefully read the official upgrade documentation to determine the correct update path based on your current server version.
+
+* For SonarQube Server 2025.6 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.6)](https://docs.sonarsource.com/sonarqube-server/2026.1/server-update-and-maintenance/release-notes-and-notices/lta-to-lta-release-upgrade-notes).
 * For SonarQube Server 2025.4 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.4)](https://docs.sonarsource.com/sonarqube-server/2025.4/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.1)](https://docs.sonarsource.com/sonarqube-server/2025.1/server-update-and-maintenance/release-notes-and-notices/lta-to-lta-release-upgrade-notes).
 
-When upgrading to the 2025.1 LTA version, you will experience a few changes.
+When upgrading to the 2025.6 LTA version, you will experience a few changes.
 
-* The `monitoringPasscode` needs to be set by the users. Set either that or `monitoringPasscodeSecretName` and `monitoringPasscodeSecretKey`.
+* The deprecated PostgreSQL dependency has been removed. You must connect your SonarQube Server instance to an external database (`jdbcOverwrite.enabled` is set to true by default). You must set the following parameters: `jdbcOverwrite.jdbcUrl`, `jdbcOverwrite.jdbcUsername`, `jdbcOverwrite.jdbcSecretName`, and `jdbcOverwrite.jdbcSecretPasswordKey`.
+
+### Upgrade process
+
+1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/roadmap/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
+2. Change the SonarQube version on `values.yaml`
+3. Redeploy SonarQube with the same helm chart (see [Install instructions](#installing-the-chart))
+4. Browse to <http://yourSonarQubeServerURL/setup> and follow the setup instructions
+5. Reanalyze your projects to get fresh data
+
+### Upgrade from versions prior to 2026.1.0
+
+> **Note**: If you are not using the PostgreSQL dependency (`postgresql.enabled=false`), you can skip this section.
+
+> **⚠️ Important**: Users upgrading to this chart from versions before 2026.1.0 and relying on the deprecated PostgreSQL dependency **must** follow the below instructions to avoid data loss.
+
+Starting from `2026.1.0`, we removed the deprecated PostgreSQL dependency.
+
+In order to upgrade to the newest chart from one version prior to this, you need to backup your database, import it to a new database, and set the JDBC URL in the SonarQube chart.
+
+We identify two possible migrations strategies and provide two migration scripts to help you with this process. Both scripts are available in the `postgresql-migration-scripts/` directory of this chart's GitHub repository.
+
+#### Option 1: Backup and Restore to an external database (Recommended)
+
+You can perform a backup of the existing database and restore it on an exeternal and fully managed database.
+
+Use `./postgresql-backup.sh` to create a backup file for external PostgreSQL migration:
+
+```bash
+./postgresql-backup.sh [OPTIONS] <postgres_service>
+
+# Options:
+# -n namespace    Kubernetes namespace (default: sonarqube)
+# -u username     PostgreSQL username (default: sonarUser)
+# -p password     PostgreSQL password (default: sonarPass)  
+# -d database     Database name (default: sonarDB)
+# -h, --help      Show help
+
+# Examples:
+./postgresql-backup.sh sonarqube-postgresql
+./postgresql-backup.sh -n sonarqube -u myuser -p mypass -d mydb sonarqube-postgresql
+```
+
+Creates `sonarqube_backup.sql` for restoration to any external PostgreSQL service (AWS RDS, Azure Database, Google Cloud SQL, etc.).
+
+**Example restoration to AWS RDS:**
+
+```bash
+PGPASSWORD=mypassword psql -h my-rds-endpoint.amazonaws.com -U myuser -d mydb < sonarqube_backup.sql
+```
+
+#### Option 2: In-Cluster Migration to an external Postgresql chart
+
+If you wish to continue using a PostgreSQL chart to store SonarQube data, you can backup the database and restore it in a new (external) PostgreSQL chart having the same version (10.15.0).
+
+Use `postgresql-migration-k8s.sh` for a complete in-cluster migration to a new PostgreSQL chart:
+
+```bash
+./postgresql-migration-k8s.sh [OPTIONS] <source_service>
+
+# Options:
+# -s source_ns    Source namespace (default: sonarqube-new-dev)
+# -t target_ns    Target namespace (default: sonarqube-new-dev)
+# -u username     PostgreSQL username (default: sonarUser)
+# -p password     PostgreSQL password (default: sonarPass)
+# -d database     Database name (default: sonarDB)
+# -r release      New PostgreSQL release name (default: postgresql-external)
+# -f values_file  Optional custom values.yaml file for PostgreSQL chart
+
+# Examples:
+./postgresql-migration-k8s.sh sonarqube-postgresql
+./postgresql-migration-k8s.sh -s my-source-ns -t my-target-ns sonarqube-postgresql
+```
+
+This script:
+
+* Installs a new PostgreSQL chart in the target namespace
+* Migrates data directly between PostgreSQL instances within Kubernetes
+* Provides the JDBC configuration for your SonarQube values.yaml
+
+After migration, update your SonarQube configuration:
+
+```yaml
+jdbcOverwrite:
+  enabled: true
+  jdbcUrl: "jdbc:postgresql://<your-endpoint>:5432/<database>"
+  jdbcUsername: "<username>"
+  jdbcPassword: "<password>"
+```
+
+### Upgrade from the old sonarqube-lts to this chart
+
+Please refer to the Helm upgrade section accessible [here](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade/#upgrade-from-89x-lta-to-99x-lta).
 
 ## Installing previous chart versions
 
@@ -85,6 +185,20 @@ $ helm list
 NAME        REVISION    UPDATED                     STATUS      CHART            NAMESPACE
 kindly-newt 1           Mon Oct  2 15:05:44 2017    DEPLOYED    sonarqube-0.1.0  sonarqube
 $ helm delete kindly-newt
+```
+
+## Setting up an external database for quick testing
+
+In order to perform a quick testing of the chart, you can install a [postgresql chart](https://artifacthub.io/packages/helm/bitnami/postgresql) on your cluster. You can look at [this setup example](.github/scripts/setup_external_postgres.sh) to get install the chart. For more information and settings, please refer to the chart documentation.
+
+After the database is available, please set the values, as in the following example.
+
+```
+jdbcOverwrite:
+  jdbcUrl: "jdbc:postgresql://<release-name>-postgresql.<namespace>.svc.cluster.local:5432/<database-name>"
+  jdbcUsername: "<username>"
+  jdbcSecretName: "<release-name>-postgresql"
+  jdbcSecretPasswordKey: "postgres-password"
 ```
 
 ## Prerequisites and suggested settings for production
@@ -144,7 +258,6 @@ The SonarQube helm chart is packed with multiple features enabling users to inst
 Nonetheless, if you intend to run a production-grade SonarQube please follow these recommendations.
 
 * Set `ingress-nginx.enabled` to **false**. This parameter would run the nginx chart. This is useful for testing purposes only. Ingress controllers are critical Kubernetes components, we advise users to install their own.
-* Set `postgresql.enabled` to **false**. This parameter would run the postgresql pre-2022 bitnami chart. That is useful for testing purposes, however, given that the database is at the hearth of SonarQube, we advise users to be careful with it and use a well-maintained database as a service or deploy their own database on top of Kubernetes.
 * Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
 * Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
 
@@ -226,21 +339,35 @@ The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Amo
 
 Please note that `Openshift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
 
-The below command will deploy SonarQube on the Openshift Kubernetes cluster. Please note this will use the embedded postgresql database and is not recommended for production.
+The below command will deploy SonarQube on the Openshift Kubernetes cluster.
 
 ```bash
 helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
 helm repo update
 kubectl create namespace sonarqube-dce # If you dont have permissions to create the namespace, skip this step and replace all -n with an existing namespace name.
-export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64) # Please take a look at the official documentation https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/
+# Please take a look at the official documentation https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/
+export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64) 
+export MONITORING_PASSCODE="yourPasscode"
+export JDBC_URL="jdbc:postgresql://myPostgres/myDatabase"
+export JDBC_USERNAME="sonar"
+export JDBC_PASSWORD_SECRET_NAME="jdbc-secret"
+export JDBC_PASSWORD_SECRET_KEY="jdbc-password"
 helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce \
   --set applicationNodes.jwtSecret=$JWT_SECRET \
   --set OpenShift.enabled=true \
-  --set postgresql.securityContext.enabled=false \
-  --set postgresql.containerSecurityContext.enabled=false
+  --set applicationNodes.jwtSecret=$JWT_SECRET \
+  --set monitoringPasscode=$MONITORING_PASSCODE \
+  --set jdbcOverwrite.jdbcUrl=$JDBC_URL \
+  --set jdbcOverwrite.jdbcUsername=$JDBC_USERNAME \
+  --set jdbcOverwrite.jdbcSecretName=$JDBC_PASSWORD_SECRET_NAME \
+  --set jdbcOverwrite.jdbcSecretPasswordKey=$JDBC_PASSWORD_SECRET_KEY
 ```
 
 If you want to make your application publicly visible with Routes, you can set `OpenShift.route.enabled` to true. Please check the [configuration details](#openshift-1) to customize the Route base on your needs.
+
+### Setting up an external database for testing
+
+In order to perform a quick testing of the chart, you can install a [postgresql chart](https://artifacthub.io/packages/helm/bitnami/postgresql) on your cluster, then set the appropriate values in the chart. To have the postgresql chart running in Openshift, you can look at [this example values file](./openshift-verifier/postgres-values.yaml). For more information and settings, please refer to the chart documentation.
 
 ## Autoscaling
 
@@ -579,44 +706,15 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                                   | Description                                                                                                                                                   | Default                                    |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| `jdbcOverwrite.enable`                      | (DEPRECATED) Enable JDBC overwrites for external Databases (disables `postgresql.enabled`) ,Please use jdbcOverwrite.enabled instead                          | `false`                                    |
-| `jdbcOverwrite.enabled`                     | Enable JDBC overwrites for external Databases (disable `postgresql.enabled`)                                                                                  | `false`                                    |
-| `jdbcOverwrite.jdbcUrl`                     | The JDBC url to connect the external DB                                                                                                                       | `jdbc:postgresql://myPostgress/myDatabase` |
-| `jdbcOverwrite.jdbcUsername`                | The DB user that should be used for the JDBC connection                                                                                                       | `sonarUser`                                |
-| `jdbcOverwrite.jdbcPassword`                | (DEPRECATED) The DB password that should be used for the JDBC connection, please use `jdbcOverwrite.jdbcSecretName` and `jdbcOverwrite.jdbcSecretPasswordKey` | `sonarPass`                                |
+| `jdbcOverwrite.enable`                      | (DEPRECATED) Enable JDBC overwrites for external Databases. (It must be set to true)                          | `true`                                    |
+| `jdbcOverwrite.enabled`                     | (DEPRECATED) Enable JDBC overwrites for external Databases. (It must be set to true)                                                                                  | `true`                                    |
+| `jdbcOverwrite.jdbcUrl`                     | The JDBC url to connect the external DB (e.g., `jdbc:postgresql://myPostgres/myDatabase`)                                                                                                                      | `None` |
+| `jdbcOverwrite.jdbcUsername`                | The DB user that should be used for the JDBC connection                                                                                                       | `None`                                |
+| `jdbcOverwrite.jdbcPassword`                | (DEPRECATED) The DB password that should be used for the JDBC connection, please use `jdbcOverwrite.jdbcSecretName` and `jdbcOverwrite.jdbcSecretPasswordKey` | `None`                                |
 | `jdbcOverwrite.jdbcSecretName`              | Alternatively, use a pre-existing k8s secret containing the DB password                                                                                       | `None`                                     |
 | `jdbcOverwrite.jdbcSecretPasswordKey`       | If the pre-existing k8s secret is used this allows the user to overwrite the 'key' of the password property in the secret                                     | `None`                                     |
 | `jdbcOverwrite.oracleJdbcDriver.url`        | The URL of the Oracle JDBC driver to be downloaded                                                                                                            | `None`                                     |
 | `jdbcOverwrite.oracleJdbcDriver.netrcCreds` | Name of the secret containing .netrc file to use creds when downloading the Oracle JDBC driver                                                                | `None`                                     |
-
-### Bundled PostgreSQL Chart (DEPRECATED)
-
-The bundled PostgreSQL Chart is deprecated. Please see <https://artifacthub.io/packages/helm/sonarqube/sonarqube#production-use-case> for more information.
-
-| Parameter                                                | Description                                                            | Default         |
-| -------------------------------------------------------- | ---------------------------------------------------------------------- | --------------- |
-| `postgresql.enabled`                                     | Set to `false` to use external database server                         | `true`          |
-| `postgresql.existingSecret`                              | existingSecret Name of existing secret to use for PostgreSQL passwords | `nil`           |
-| `postgresql.postgresqlUsername`                          | PostgreSQL database user                                               | `sonarUser`     |
-| `postgresql.postgresqlPassword`                          | PostgreSQL database password                                           | `sonarPass`     |
-| `postgresql.postgresqlDatabase`                          | PostgreSQL database name                                               | `sonarDB`       |
-| `postgresql.service.port`                                | PostgreSQL port                                                        | `5432`          |
-| `postgresql.resources.requests.memory`                   | PostgreSQL memory request                                              | `256Mi`         |
-| `postgresql.resources.requests.cpu`                      | PostgreSQL CPU request                                                 | `250m`          |
-| `postgresql.resources.limits.memory`                     | PostgreSQL memory limit                                                | `2Gi`           |
-| `postgresql.resources.limits.cpu`                        | PostgreSQL CPU limit                                                   | `2`             |
-| `postgresql.persistence.enabled`                         | PostgreSQL persistence en/disabled                                     | `true`          |
-| `postgresql.persistence.accessMode`                      | PostgreSQL persistence accessMode                                      | `ReadWriteOnce` |
-| `postgresql.persistence.size`                            | PostgreSQL persistence size                                            | `20Gi`          |
-| `postgresql.persistence.storageClass`                    | PostgreSQL persistence storageClass                                    | `""`            |
-| `postgresql.securityContext.enabled`                     | PostgreSQL securityContext en/disabled                                 | `false`         |
-| `postgresql.securityContext.fsGroup`                     | PostgreSQL securityContext fsGroup                                     | `1001`          |
-| `postgresql.securityContext.runAsUser`                   | PostgreSQL securityContext runAsUser                                   | `1001`          |
-| `postgresql.volumePermissions.enabled`                   | PostgreSQL vol permissions en/disabled                                 | `false`         |
-| `postgresql.volumePermissions.securityContext.runAsUser` | PostgreSQL vol permissions secContext runAsUser                        | `0`             |
-| `postgresql.shmVolume.chmod.enabled`                     | PostgreSQL shared memory vol en/disabled                               | `false`         |
-| `postgresql.serivceAccount.enabled`                      | PostgreSQL service Account creation en/disabled                        | `false`         |
-| `postgresql.serivceAccount.name`                         | PostgreSQL service Account name                                        | `""`            |
 
 ### Tests
 

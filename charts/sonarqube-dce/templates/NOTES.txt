@@ -20,10 +20,6 @@
 WARNING: 
          Please note that the SonarQube images run with a non-root user (uid=1000) belonging to the root group (guid=0). In this way, the chart can support arbitrary user ids as recommended in OpenShift.
          Please visit https://docs.openshift.com/container-platform/4.14/openshift_images/create-images.html#use-uid_create-images for more information.
-{{ if .Values.postgresql.enabled }}
-WARNING: The embedded PostgreSQL is intended for evaluation only, it is DEPRECATED, and it will be REMOVED in a future release.
-         Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#production-use-case for more information.
-{{- end }}
 {{ if or (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled") }}
 WARNING: The ingress nginx controller dependency has been upgraded to a major version (4.x), please carefully read the changelogs at https://github.com/kubernetes/ingress-nginx/releases and refer to the documentation at https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/.
          Please also visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#production-use-case for more information.

@@ -20,13 +20,13 @@ ApplicationNodes:
   webPort: 4023
   cePort: 4024
 
-postgresql:
-  securityContext:
-    # On CI, we have permissions issue if the fsGroup is not set to 1001 explicitly
-    enabled: true
-    # fsGroup and runAsUser specifications below are not applied if enabled=false. enabled=false is the required setting for OpenShift "restricted SCC" to work successfully.
-    # postgresql dockerfile sets user as 1001
-    fsGroup: 1001
+# Connection to external PostgreSQL
+jdbcOverwrite:
+  enabled: true
+  jdbcUrl: "jdbc:postgresql://external-postgres-postgresql.test.svc.cluster.local:5432/postgres"
+  jdbcUsername: "postgres"
+  jdbcSecretName: "external-postgres-postgresql"
+  jdbcSecretPasswordKey: "postgres-password"
 
 monitoringPasscode: "test"
 

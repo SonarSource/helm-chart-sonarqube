@@ -46,17 +46,27 @@ properties:
     default: dGVzdA==
     x-google-marketplace:
       type: MASKED_FIELD
-  postgresql.enabled:
-    title: Enable embedded PostgreSQL
-    description: If true, PostgreSQL will be installed (not recommended for production use case)
-    type: boolean
-    default: true
-  jdbcOverwrite.enabled:
-    title: Connection to a database - Recommended
-    description: Connect SonarQube Server to your PostgreSQL database. The connection parameters JDBC URL, username, and password will be used. Make sure that the Embedded database option is disabled.
-    type: boolean
-    default: false
+  jdbcOverwrite.jdbcUrl:
+    title: JDBC URL
+    description: The JDBC URL to connect to the database
+    type: string
+    default: 'jdbc:postgresql://myPostgres/myDatabase'
+  jdbcOverwrite.jdbcUsername:
+    title: JDBC Username
+    description: The username to connect to the database
+    type: string
+    default: 'username'
+  jdbcOverwrite.jdbcPassword:
+    title: JDBC Password
+    description: The password to connect to the database
+    type: string
+    default: 'password'
+    x-google-marketplace:
+        type: MASKED_FIELD
 required:
 - name
 - namespace
+- monitoringPasscode
 - ApplicationNodes.jwtSecret
+- jdbcOverwrite.jdbcUrl
+- jdbcOverwrite.jdbcUsername
