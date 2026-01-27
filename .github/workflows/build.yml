@@ -104,7 +104,6 @@ jobs:
     env:
       OPENSHIFT_VERSION: 4.20.12
       CHART_VERIFIER_VERSION: 1.14.0
-      SKIP_CHART_INSTALL: false
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -145,14 +144,12 @@ jobs:
           echo "$HOME/bin" >> $GITHUB_PATH
           rm -rf /tmp/openshift openshift-client-linux.tar.gz
       - name: Authenticate to OpenShift
-        if: env.SKIP_CHART_INSTALL != 'true'
         env:
           ROSA_OPENSHIFT_URL: ${{ fromJSON(steps.secrets.outputs.vault).ROSA_OPENSHIFT_URL }}
           ROSA_OPENSHIFT_USER: ${{ fromJSON(steps.secrets.outputs.vault).ROSA_OPENSHIFT_USER }}
           ROSA_OPENSHIFT_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).ROSA_OPENSHIFT_PASSWORD }}
         run: ./.github/scripts/openshift_auth.sh
       - name: Setup OpenShift project
-        if: env.SKIP_CHART_INSTALL != 'true'
         env:
           DOCKER_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_PASSWORD }}
@@ -162,16 +159,12 @@ jobs:
           ./.github/scripts/build_chart_dependencies.sh charts/${{ matrix.verifying_chart }}
           chart-verifier version
       - name: Setup external PostgreSQL
-        if: env.SKIP_CHART_INSTALL != 'true' && matrix.verifying_chart == 'sonarqube-dce'
+        if: matrix.verifying_chart == 'sonarqube-dce'
         run: NAMESPACE="${{ matrix.verifying_chart }}" VALUES_FILE="charts/${{ matrix.verifying_chart }}/openshift-verifier/postgres-values.yaml" ./.github/scripts/setup_external_postgres.sh
       - name: Run chart verification
         run: |
           mkdir -p "$(pwd)/report-${{ matrix.verifying_chart}}"
-          if [ "${{ env.SKIP_CHART_INSTALL }}" = "true" ]; then
-            chart-verifier verify -x images-are-certified -x chart-testing charts/${{ matrix.verifying_chart }} --helm-install-timeout 20m -F charts/${{ matrix.verifying_chart }}/openshift-verifier/values.yaml -n ${{ matrix.verifying_chart }} --openshift-version ${{ env.OPENSHIFT_VERSION }} > "$(pwd)/report-${{ matrix.verifying_chart}}/report.yaml"
-          else
-            chart-verifier verify -x images-are-certified charts/${{ matrix.verifying_chart }} --helm-install-timeout 20m -F charts/${{ matrix.verifying_chart }}/openshift-verifier/values.yaml -n ${{ matrix.verifying_chart }} --openshift-version ${{ env.OPENSHIFT_VERSION }} > "$(pwd)/report-${{ matrix.verifying_chart}}/report.yaml"
-          fi
+          chart-verifier verify -x images-are-certified charts/${{ matrix.verifying_chart }} --helm-install-timeout 20m -F charts/${{ matrix.verifying_chart }}/openshift-verifier/values.yaml -n ${{ matrix.verifying_chart }} --openshift-version ${{ env.OPENSHIFT_VERSION }} > "$(pwd)/report-${{ matrix.verifying_chart}}/report.yaml"
       - name: Upload verification report
         if: always() && ! cancelled()
         uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
