@@ -22,7 +22,7 @@ SonarQube Community Build: `26.1.0.118079`. If you want the use a more recent So
 
 Supported Kubernetes Versions: From `1.32` to `1.35`
 
-Supported Openshift Versions: From `4.11` to `4.17`
+Supported Openshift Versions: From `4.17` to `4.20`
 
 ## Installing SonarQube Server
 
@@ -55,6 +55,7 @@ If you want the use a more recent SonarQube Community Build, please set the `com
 
 When upgrading your SonarQube Server to a new Long-Term Active (LTA) release, you should carefully read the official upgrade documentation to determine the correct update path based on your current server version.
 
+* For SonarQube Server 2025.6 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.6)](https://docs.sonarsource.com/sonarqube-server/server-2026.1-lta/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.4 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.4)](https://docs.sonarsource.com/sonarqube-server/2025.4/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.1)](https://docs.sonarsource.com/sonarqube-server/2025.1/server-update-and-maintenance/release-notes-and-notices/lta-to-lta-release-upgrade-notes).
 

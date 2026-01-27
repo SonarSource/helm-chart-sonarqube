@@ -5,7 +5,8 @@ All changes to this chart will be documented in this file.
 * Update Chart's version to 2026.1.0
 * Upgrade SonarQube Community build to 26.1.0.118079
 * Remove PostgreSQL embedded chart dependency and related settings
-* Support Kubernetes v1.35.0
+* Support Kubernetes v1.35
+* Support Openshift v4.20
 
 ## [2025.6.0]
 * Upgrade SonarQube Server to to 2025.6.0
