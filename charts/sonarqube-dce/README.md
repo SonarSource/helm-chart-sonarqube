@@ -79,17 +79,21 @@ When upgrading to the 2025.6 LTA version, you will experience a few changes.
 
 > **⚠️ Important**: Users upgrading to this chart from versions before 2026.1.0 and relying on the deprecated PostgreSQL dependency **must** follow the below instructions to avoid data loss.
 
-Starting from `2026.1.0`, we removed the deprecated PostgreSQL dependency.
+Starting from `2026.1.0`, this chart relies on the embedded H2 database for testing purposes. Therefore, we removed the deprecated PostgreSQL dependency.
 
-In order to upgrade to the newest chart from one version prior to this, you need to backup your database, import it to a new database, and set the JDBC URL in the SonarQube chart.
+In order to upgrade to the newest chart from one version prior to this, you need to 
 
-We identify two possible migrations strategies and provide two migration scripts to help you with this process. Both scripts are available in the `postgresql-migration-scripts/` directory of this chart's GitHub repository.
+1. backup your database
+2. import it to a new database
+3. set the JDBC URL in the SonarQube chart
+
+We identify the following migrations strategies and provide two example migration scripts to help you with this process. **These scripts are provided for reference and should be reviewed and adapted to your specific environment before use.** Both scripts are available in the `postgresql-migration-scripts/` directory of this chart's GitHub repository.
 
 #### Option 1: Backup and Restore to an external database (Recommended)
 
-You can perform a backup of the existing database and restore it on an exeternal and fully managed database.
+You can perform a backup of the existing database and restore it on an external and fully managed database.
 
-Use `./postgresql-backup.sh` to create a backup file for external PostgreSQL migration:
+Please check `./postgresql-backup.sh` as a reference to create your own script that makes a backup file for external PostgreSQL migration:
 
 ```bash
 ./postgresql-backup.sh [OPTIONS] <postgres_service>
@@ -118,7 +122,7 @@ PGPASSWORD=mypassword psql -h my-rds-endpoint.amazonaws.com -U myuser -d mydb < 
 
 If you wish to continue using a PostgreSQL chart to store SonarQube data, you can backup the database and restore it in a new (external) PostgreSQL chart having the same version (10.15.0).
 
-Use `postgresql-migration-k8s.sh` for a complete in-cluster migration to a new PostgreSQL chart:
+Please check `postgresql-migration-k8s.sh` as a reference to build your own script that performs an in-cluster migration to a new PostgreSQL chart:
 
 ```bash
 ./postgresql-migration-k8s.sh [OPTIONS] <source_service>
@@ -138,7 +142,6 @@ Use `postgresql-migration-k8s.sh` for a complete in-cluster migration to a new P
 ```
 
 This script:
-
 * Installs a new PostgreSQL chart in the target namespace
 * Migrates data directly between PostgreSQL instances within Kubernetes
 * Provides the JDBC configuration for your SonarQube values.yaml
@@ -358,7 +361,6 @@ export JDBC_PASSWORD_SECRET_KEY="jdbc-password"
 helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce \
   --set applicationNodes.jwtSecret=$JWT_SECRET \
   --set OpenShift.enabled=true \
-  --set applicationNodes.jwtSecret=$JWT_SECRET \
   --set monitoringPasscode=$MONITORING_PASSCODE \
   --set jdbcOverwrite.jdbcUrl=$JDBC_URL \
   --set jdbcOverwrite.jdbcUsername=$JDBC_USERNAME \

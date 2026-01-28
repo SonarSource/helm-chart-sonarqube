@@ -4,7 +4,7 @@ All changes to this chart will be documented in this file.
 ## [2026.1.0]
 * Update Chart's version to 2026.1.0
 * Support Kubernetes v1.35
-* Remove the postgresql dependency
+* Remove the PostgreSQL embedded chart dependency and related settings
 * Deprecate `jdbcOverwrite.enabled` as it is now required to connect to an external database
 * Support Openshift v4.20
 * Update ingress-nginx subchart to v4.14.1
