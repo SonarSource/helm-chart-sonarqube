@@ -26,6 +26,8 @@ Supported Openshift Versions: From `4.17` to `4.20`
 
 ## Installing SonarQube Server
 
+> **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube-server/server-installation/on-kubernetes-or-openshift/installing-helm-chart) for further information on how to install and tune the helm chart specifications.
+
 Here is an example of how to install the SonarQube Server Developer edition:
 
 ```bash
@@ -36,8 +38,8 @@ export MONITORING_PASSCODE="yourPasscode"
 helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube --set edition=developer,monitoringPasscode=$MONITORING_PASSCODE
 ```
 
-The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace.
-If you are interested in deploying SonarQube on Openshift, please check the [dedicated section](#openshift).
+The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the `sonarqube` namespace.
+If you are interested in deploying SonarQube on Openshift, please check the [dedicated section](#openshift-installation).
 
 The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
@@ -59,11 +61,7 @@ When upgrading your SonarQube Server to a new Long-Term Active (LTA) release, yo
 * For SonarQube Server 2025.4 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.4)](https://docs.sonarsource.com/sonarqube-server/2025.4/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.1)](https://docs.sonarsource.com/sonarqube-server/2025.1/server-update-and-maintenance/release-notes-and-notices/lta-to-lta-release-upgrade-notes).
 
-When upgrading to the 2025.1 LTA version, you will experience a few changes.
-
-* The `monitoringPasscode` needs to be set by the users. Set either that or `monitoringPasscodeSecretName` and `monitoringPasscodeSecretKey`.
-* The `edition` parameter is now required to be explicitly set by the user to either `developer` or `enterprise`.
-* Users that want to install the SonarQube Community Build, must set `community.enabled` to `true` (check the [dedicated section](#installing-sonarqube-community-build)).
+When upgrading to the 2025.6 LTA version, you will notice that the deprecated PostgreSQL dependency has been removed. Please check the instructions available in [this section](#upgrade-from-versions-prior-to-202610).
 
 ## Installing previous chart versions
 
@@ -194,15 +192,19 @@ To get some guidance when setting the Xmx and Xms values, please refer to this [
 
 Starting from `2026.1.0`, this chart relies on the embedded H2 database for testing purposes. Therefore, we removed the deprecated PostgreSQL dependency.
 
-In order to upgrade to the newest chart from one version prior to this, you need to backup your database, import it to a new database, and set the JDBC URL in the SonarQube chart.
+In order to upgrade to the newest chart from one version prior to this, you need to 
 
-We identify two possible migrations strategies and provide two migration scripts to help you with this process. Both scripts are available in the `postgresql-migration-scripts/` directory of this chart's GitHub repository.
+1. backup your database
+2. import it to a new database
+3. set the JDBC URL in the SonarQube chart
+
+We identify the following migrations strategies and provide two example migration scripts to help you with this process. **These scripts are provided for reference and should be reviewed and adapted to your specific environment before use.** Both scripts are available in the `postgresql-migration-scripts/` directory of this chart's GitHub repository.
 
 #### Option 1: Backup and Restore to an external database (Recommended)
 
-You can perform a backup of the existing database and restore it on an exeternal and fully managed database.
+You can perform a backup of the existing database and restore it on an external and fully managed database.
 
-Use `./postgresql-backup.sh` to create a backup file for external PostgreSQL migration:
+Please check `./postgresql-backup.sh` as a reference to create your own script that makes a backup file for external PostgreSQL migration:
 
 ```bash
 ./postgresql-backup.sh [OPTIONS] <postgres_service>
@@ -231,7 +233,7 @@ PGPASSWORD=mypassword psql -h my-rds-endpoint.amazonaws.com -U myuser -d mydb < 
 
 If you wish to continue using a PostgreSQL chart to store SonarQube data, you can backup the database and restore it in a new (external) PostgreSQL chart having the same version (10.15.0).
 
-Use `postgresql-migration-k8s.sh` for a complete in-cluster migration to a new PostgreSQL chart:
+Please check `postgresql-migration-k8s.sh` as a reference to build your own script that performs an in-cluster migration to a new PostgreSQL chart:
 
 ```bash
 ./postgresql-migration-k8s.sh [OPTIONS] <source_service>
@@ -318,14 +320,17 @@ The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Amo
 
 Please note that `Openshift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
 
-The below command will deploy SonarQube on the Openshift Kubernetes cluster.
+The below command will deploy SonarQube (developer edition) on the Openshift Kubernetes cluster.
 
 ```bash
 helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
 helm repo update
 kubectl create namespace sonarqube # If you dont have permissions to create the namespace, skip this step and replace all -n with an existing namespace name.
+export MONITORING_PASSCODE="yourPasscode"
 helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube \
-  --set OpenShift.enabled=true
+  --set OpenShift.enabled=true \
+  --set edition=developer \
+  --set monitoringPasscode=$MONITORING_PASSCODE
 ```
 
 If you want to make your application publicly visible with Routes, you can set `OpenShift.route.enabled` to true. Please check the [configuration details](#openshift-1) to customize the Route base on your needs.
