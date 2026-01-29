@@ -26,7 +26,7 @@ Supported Openshift Versions: From `4.17` to `4.20`
 
 ## Installing SonarQube Server
 
-> **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/dce/introduction/) for further information on how to install and tune the helm chart specifications.
+> **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube-server/server-installation/on-kubernetes-or-openshift/installing-helm-chart) for further information on how to install and tune the helm chart specifications.
 
 Here is an example of how to install the SonarQube Server Developer edition:
 
@@ -331,7 +331,6 @@ helm upgrade --install -n sonarqube sonarqube sonarqube/sonarqube \
   --set OpenShift.enabled=true \
   --set edition=developer \
   --set monitoringPasscode=$MONITORING_PASSCODE
-  --
 ```
 
 If you want to make your application publicly visible with Routes, you can set `OpenShift.route.enabled` to true. Please check the [configuration details](#openshift-1) to customize the Route base on your needs.
