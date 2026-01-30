@@ -601,10 +601,11 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `env`                    | Environment variables to attach to the pods                                                                           | `{}`    |
 | `annotations`            | Map of annotations to add to the pods                                                                                 | `{}`    |
 | `sonarWebContext`        | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.     | ``      |
-| `httpProxySecret`        | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will superseed every other proxy variables            | ``      |
-| `httpProxy`              | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables  | ``      |
-| `httpsProxy`             | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable | ``      |
-| `noProxy`                | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables      | ``      |
+| `proxy.enabled`     | Enable Proxy for downloading JMX agent and install plugins. When set to `true`                                     | `false`            |           |
+| `proxy.httpProxySecret`        | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will superseed every other proxy variables            | ``      |
+| `proxy.httpProxy`              | HTTP proxy for downloading JMX agent and install plugins, will superseed initContainer specific http proxy variables  | ``      |
+| `proxy.httpsProxy`             | HTTPS proxy for downloading JMX agent and install plugins, will superseed initContainer specific https proxy variable | ``      |
+| `proxy.noProxy`                | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables      | ``      |
 | `nodeEncryption.enabled` | Secure the communication between Application and Search nodes using TLS                                               | `false` |
 | `ingress-nginx.enabled`  | (DEPRECATED) Install Nginx Ingress Helm                                                                                           | `false` |
 
