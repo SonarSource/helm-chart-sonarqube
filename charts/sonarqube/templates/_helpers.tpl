@@ -275,17 +275,17 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
 - name: http_proxy
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.httpProxySecret }}
+      name: {{ .Values.proxy.httpProxySecret }}
       key: http_proxy
 - name: https_proxy
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.httpProxySecret }}
+      name: {{ .Values.proxy.httpProxySecret }}
       key: https_proxy
 - name: no_proxy
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.httpProxySecret }}
+      name: {{ .Values.proxy.httpProxySecret }}
       key: no_proxy
 {{- end -}}
 
@@ -293,7 +293,7 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
   generate prometheusExporter proxy env var
 */}}
 {{- define "sonarqube.prometheusExporterProxy.env" -}}
-{{- if .Values.httpProxySecret -}}
+{{- if .Values.proxy.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
 {{- else -}}
 - name: http_proxy
@@ -318,7 +318,7 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
   generate install-plugins proxy env var
 */}}
 {{- define "sonarqube.install-plugins-proxy.env" -}}
-{{- if .Values.httpProxySecret -}}
+{{- if .Values.proxy.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
 {{- else -}}
 - name: http_proxy

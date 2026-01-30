@@ -202,8 +202,10 @@ spec:
           mountPath: /root
         {{- end }}
       env:
+        {{- if .Values.proxy.enabled }}
         {{- with (include "sonarqube.install-plugins-proxy.env" .) }}
         {{- . | nindent 8 }}
+        {{- end }}
         {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
