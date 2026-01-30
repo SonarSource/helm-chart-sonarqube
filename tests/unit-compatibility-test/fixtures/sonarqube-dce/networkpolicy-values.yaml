@@ -475,7 +475,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: networkpolicy-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "2025.6.0-datacenter-app"
+    app.kubernetes.io/version: "2026.1.0-datacenter-app"
 spec:
   replicas: 2
   revisionHistoryLimit: 
@@ -502,7 +502,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce
-          image: sonarqube:2025.6.0-datacenter-app
+          image: sonarqube:2026.1.0-datacenter-app
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -652,7 +652,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: networkpolicy-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "2025.6.0-datacenter-search"
+    app.kubernetes.io/version: "2026.1.0-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
@@ -689,7 +689,7 @@ spec:
       automountServiceAccountToken: false
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2025.6.0-datacenter-app
+          image: sonarqube:2026.1.0-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -704,7 +704,7 @@ spec:
             - name: init-sysctl
               mountPath: /tmp/scripts/
         - name: init-fs
-          image: sonarqube:2025.6.0-datacenter-app
+          image: sonarqube:2026.1.0-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -745,7 +745,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce-search
-          image: "sonarqube:2025.6.0-datacenter-search"
+          image: "sonarqube:2026.1.0-datacenter-search"
           imagePullPolicy: IfNotPresent
           ports:
             - name: search-port
@@ -889,7 +889,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: networkpolicy-values.yaml-ui-test
-      image: "sonarqube:2025.6.0-datacenter-app"
+      image: "sonarqube:2026.1.0-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
