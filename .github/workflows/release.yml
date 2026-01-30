@@ -44,24 +44,24 @@ jobs:
         with:
           cache_save: false
           version: 2025.7.12
-      - name: Promote
-        run: jf rt build-promote --status released "${{ github.event.repository.name }}" "${{ inputs.buildNumber }}" sonarsource-helm-releases
-      - name: Create local repository directory
-        id: local_repo
-        run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> "$GITHUB_OUTPUT"
-      - uses: SonarSource/gh-action_release/download-build@v5
-        with:
-          local-repo-dir: ${{ steps.local_repo.outputs.dir }}
-          remote-repo: sonarsource-helm
-          build-number: ${{ inputs.buildNumber }}
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file_glob: true
-          file: ${{ steps.local_repo.outputs.dir }}/*
-          tag: ${{ inputs.version }}
-          overwrite: true
+      # - name: Promote
+      #   run: jf rt build-promote --status released "${{ github.event.repository.name }}" "${{ inputs.buildNumber }}" sonarsource-helm-releases
+      # - name: Create local repository directory
+      #   id: local_repo
+      #   run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> "$GITHUB_OUTPUT"
+      # - uses: SonarSource/gh-action_release/download-build@v5
+      #   with:
+      #     local-repo-dir: ${{ steps.local_repo.outputs.dir }}
+      #     remote-repo: sonarsource-helm
+      #     build-number: ${{ inputs.buildNumber }}
+      # - name: Upload binaries to release
+      #   uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13
+      #   with:
+      #     repo_token: ${{ secrets.GITHUB_TOKEN }}
+      #     file_glob: true
+      #     file: ${{ steps.local_repo.outputs.dir }}/*
+      #     tag: ${{ inputs.version }}
+      #     overwrite: true
       - name: Configure Git
         run: |
           git config user.name "$GITHUB_ACTOR"
