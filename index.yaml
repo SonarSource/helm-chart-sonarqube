@@ -4,6 +4,75 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
+          description: "Upgrade SonarQube Server to 2026.1.0"
+        - kind: changed
+          description: "Upgrade Chart's version to 2026.1.0"
+        - kind: changed
+          description: "Upgrade SonarQube Community Build to 26.1.0.118079"
+        - kind: removed
+          description: "Remove PostgreSQL embedded chart dependency and related settings"
+        - kind: added
+          description: "Support Kubernetes v1.35"
+        - kind: added
+          description: "Support RedHat Openshift v4.20"
+        - kind: security
+          description: "Update ingress-nginx subchart to v4.14.1"
+        - kind: deprecated
+          description: "Deprecate the ingress-nginx dependency"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube-community
+          image: sonarqube:26.1.0.118079-community
+        - name: sonarqube-developer
+          image: sonarqube:2026.1.0-developer
+        - name: sonarqube-enterprise
+          image: sonarqube:2026.1.0-enterprise
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
+      charts.openshift.io/name: sonarqube
+    apiVersion: v2
+    appVersion: 2026.1.0
+    created: "2026-01-30T13:39:44.912452093Z"
+    dependencies:
+    - condition: nginx.enabled,ingress-nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.14.1
+    description: SonarQube is a self-managed, automatic code review tool that systematically
+      helps you deliver clean code. As a core element of our Sonar solution, SonarQube
+      integrates into your existing workflow and detects issues in your code to help
+      you perform continuous code inspections of your projects. The tool analyses
+      30+ different programming languages and integrates into your CI pipeline and
+      DevOps platform to ensure that your code meets high-quality standards.
+    digest: 2bcb0c6697d4a74fd914c95b451604c04495df803200bbd73be0145c78239862
+    home: https://www.sonarqube.org/
+    icon: https://raw.githubusercontent.com/SonarSource/sonarqube-static-resources/master/helm/SonarQubeServerLogo.png
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: carmine.vassallo@sonarsource.com
+      name: carminevassallo
+    - email: hatem.amairi@sonarsource.com
+      name: hatem-amairi-sonarsource
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-2026.1.0-sonarqube-dce-2026.1.0/sonarqube-2026.1.0.tgz
+    version: 2026.1.0
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
           description: "Update Chart's version to 2025.6.1"
         - kind: changed
           description: "Update SonarQube Server to 2025.6.1"
@@ -3706,6 +3775,73 @@ entries:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-1.1.1+98.tgz
     version: 1.1.1+98
   sonarqube-dce:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "Upgrade SonarQube Server to to 2026.1.0"
+        - kind: changed
+          description: "Upgrade Chart's version to 2026.1.0"
+        - kind: added
+          description: "Support Kubernetes v1.35"
+        - kind: removed
+          description: "Remove the PostgreSQL embedded chart dependency and related settings"
+        - kind: deprecated
+          description: "Deprecate `jdbcOverwrite.enabled` as it is now required to connect to an external database"
+        - kind: added
+          description: "Support Openshift v4.20"
+        - kind: security
+          description: "Update ingress-nginx subchart to v4.14.1"
+        - kind: deprecated
+          description: "Deprecate the ingress-nginx dependency"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube-app
+          image: sonarqube:2026.1.0-datacenter-app
+        - name: sonarqube-search
+          image: sonarqube:2026.1.0-datacenter-search
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
+      charts.openshift.io/name: sonarqube-dce
+    apiVersion: v2
+    appVersion: 2026.1.0
+    created: "2026-01-30T13:39:44.92049826Z"
+    dependencies:
+    - condition: nginx.enabled,ingress-nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.14.1
+    description: SonarQube is a self-managed, automatic code review tool that systematically
+      helps you deliver clean code. As a core element of our Sonar solution, SonarQube
+      integrates into your existing workflow and detects issues in your code to help
+      you perform continuous code inspections of your projects. The tool analyses
+      30+ different programming languages and integrates into your CI pipeline and
+      DevOps platform to ensure that your code meets high-quality standards.
+    digest: 2dc00ee4bba801518604f76c563a1788b3e5f2e66ac3cc2931e2b7c5ed79dc6c
+    home: https://www.sonarqube.org/
+    icon: https://raw.githubusercontent.com/SonarSource/sonarqube-static-resources/master/helm/SonarQubeServerLogo.png
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: carmine.vassallo@sonarsource.com
+      name: carminevassallo
+    - email: hatem.amairi@sonarsource.com
+      name: hatem-amairi-sonarsource
+    name: sonarqube-dce
+    sources:
+    - https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-2026.1.0-sonarqube-dce-2026.1.0/sonarqube-dce-2026.1.0.tgz
+    version: 2026.1.0
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
@@ -7946,4 +8082,4 @@ entries:
     urls:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-lts-1.0.16+98.tgz
     version: 1.0.16+98
-generated: "2025-12-24T11:23:03.55690168Z"
+generated: "2026-01-30T13:39:44.904620352Z"
