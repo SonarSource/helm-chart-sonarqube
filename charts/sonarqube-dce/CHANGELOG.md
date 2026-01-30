@@ -2,7 +2,8 @@
 All changes to this chart will be documented in this file.
 
 ## [2026.1.0]
-* Update Chart's version to 2026.1.0
+* Upgrade SonarQube Server to 2026.1.0
+* Upgrade Chart's version to 2026.1.0
 * Support Kubernetes v1.35
 * Remove the PostgreSQL embedded chart dependency and related settings
 * Deprecate `jdbcOverwrite.enabled` as it is now required to connect to an external database
