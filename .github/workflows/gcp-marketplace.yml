@@ -61,7 +61,10 @@ jobs:
           DOCKER_GCLOUD_SA_KEY: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_GCLOUD_SA_KEY }}
         run: |
           export CURRENT_MINOR_VERSION=$(echo ${GCLOUD_TAG} | cut -d '.' -f 1,2)
-          docker buildx build --platform linux/amd64 --provenance=false \
+          docker buildx build --platform linux/amd64 \
+            --provenance=false \
+            --sbom=false \
+            --output type=image,oci-mediatypes=false \
             --annotation "manifest,manifest-descriptor:com.googleapis.cloudmarketplace.product.service.name=services/official-sonarqube-data-center-edition.endpoints.sonarsource-public.cloud.goog" \
             -f google-cloud-marketplace-k8s-app/Dockerfile \
             --build-arg REGISTRY=${GCLOUD_REGISTRY} \
@@ -162,7 +165,10 @@ jobs:
           DOCKER_GCLOUD_SA_KEY: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_GCLOUD_SA_KEY }}
         run: |
           export CURRENT_MINOR_VERSION=$(echo ${GCLOUD_TAG} | cut -d '.' -f 1,2)
-          docker buildx build --platform linux/amd64 --provenance=false \
+          docker buildx build --platform linux/amd64 \
+            --provenance=false \
+            --sbom=false \
+            --output type=image,oci-mediatypes=false \
             --annotation "manifest,manifest-descriptor:com.googleapis.cloudmarketplace.product.service.name=services/official-sonarqube-data-center-edition.endpoints.sonarsource-public.cloud.goog" \
             -f google-cloud-marketplace-k8s-app/Dockerfile \
             --build-arg REGISTRY=${GCLOUD_REGISTRY} \
