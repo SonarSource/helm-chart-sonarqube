@@ -1,0 +1,12 @@
+name: CI Scheduled (master nightly)
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Nightly builds
+
+jobs:
+  build:
+    name: CI
+    uses: ./.github/workflows/build.yml
+    permissions:
+      id-token: write
+      contents: write
