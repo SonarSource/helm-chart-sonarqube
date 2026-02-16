@@ -383,21 +383,21 @@ Set combined_search_env, ensuring we don't have any duplicates with our features
 {{/*
   generate Proxy env var from httpProxySecret
 */}}
-{{- define "sonarqube.proxyFromSecret" -}}
+{{- define "sonarqube.proxy.proxyFromSecret" -}}
 - name: http_proxy
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.httpProxySecret }}
+      name: {{ .Values.proxy.httpProxySecret }}
       key: http_proxy
 - name: https_proxy
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.httpProxySecret }}
+      name: {{ .Values.proxy.httpProxySecret }}
       key: https_proxy
 - name: no_proxy
   valueFrom:
     secretKeyRef:
-      name: {{ .Values.httpProxySecret }}
+      name: {{ .Values.proxy.httpProxySecret }}
       key: no_proxy
 {{- end -}}
 
@@ -405,7 +405,7 @@ Set combined_search_env, ensuring we don't have any duplicates with our features
   generate prometheusExporter proxy env var
 */}}
 {{- define "sonarqube.prometheusExporterProxy.env" -}}
-{{- if .Values.httpProxySecret -}}
+{{- if .Values.proxy.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
 {{- else -}}
 - name: http_proxy
@@ -430,7 +430,7 @@ Set combined_search_env, ensuring we don't have any duplicates with our features
   generate install-plugins proxy env var
 */}}
 {{- define "sonarqube.install-plugins-proxy.env" -}}
-{{- if .Values.httpProxySecret -}}
+{{- if .Values.proxy.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
 {{- else -}}
 - name: http_proxy

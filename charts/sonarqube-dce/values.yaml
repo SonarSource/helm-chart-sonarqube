@@ -291,9 +291,11 @@ applicationNodes:
     #     - pattern: ".*"
     # image: curlimages/curl:8.2.1
     # For use behind a corporate proxy when downloading prometheus
-    # httpProxy: ""
-    # httpsProxy: ""
-    # noProxy: ""
+    proxy:
+      enabled: false
+      # httpProxy: ""
+      # httpsProxy: ""
+      # noProxy: ""
     # Setting the security context to the default sonarqube user 1000/0
     # Reuse default initcontainers.securityContext that match restricted pod security standard
     # securityContext: {}
@@ -327,9 +329,11 @@ applicationNodes:
     install: []
 
     # For use behind a corporate proxy when downloading plugins
-    # httpProxy: ""
-    # httpsProxy: ""
-    # noProxy: ""
+    proxy:
+      enabled: false
+      # httpProxy: ""
+      # httpsProxy: ""
+      # noProxy: ""
 
     # image: curlimages/curl:8.2.1
     # resources: {}
@@ -500,10 +504,12 @@ service:
 # Those proxy settings will be propagated to the install-plugin and prometheus-exporter init containers
 # if httpProxySecret is set the other one will be ignored
 # the secret should contain exactly the keys http_proxy, https_proxy and no_proxy
-httpProxySecret: ""
-httpProxy: ""
-httpsProxy: ""
-noProxy: ""
+proxy:
+  enabled: false
+  # httpProxySecret: ""
+  # httpProxy: ""
+  # httpsProxy: ""
+  # noProxy: ""
 
 ingress:
   enabled: false
