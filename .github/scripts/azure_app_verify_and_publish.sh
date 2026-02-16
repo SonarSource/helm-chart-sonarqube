@@ -10,7 +10,6 @@ set -e # Exit immediately if a command exits with a non-zero status.
 # This should match the version in charts/sonarqube/Chart.yaml
 SONARQUBE_CHART_VERSION="${SQ_VERSION:-2025.3.0}"
 SONARQUBE_IMAGE_VERSION="${SQ_IMAGE_VERSION:-2025.3.0}"
-PSQL_VERSION="${PSQL_VERSION:-11.14.0}" # PostgreSQL version used in the SonarQube chart
 
 # Azure Container Registry (ACR) details
 # This should match the 'registryServer' in your manifest.yaml
@@ -66,7 +65,6 @@ echo "Helm dependencies updated. Packaged subchart is now in sonarqube-azure/cha
 echo "3. Decompressing the SonarQube subchart for CPA validation..."
 cd charts
 tar -xzf "sonarqube-${SONARQUBE_CHART_VERSION}.tgz"
-ls -la sonarqube/charts/postgresql
 rm "sonarqube-${SONARQUBE_CHART_VERSION}.tgz"
 echo "SonarQube subchart decompressed and .tgz removed."
 
@@ -77,9 +75,7 @@ cd ../.. # Back to azure-marketplace-k8s-app/
 # # 5. Push required images to the ACR_REGISTRY registry
 echo "5. Push required images to the ACR_REGISTRY registry..."
 docker tag "sonarqube:${SONARQUBE_IMAGE_VERSION}-enterprise" "${ACR_REGISTRY}/sonarqube:${SONARQUBE_IMAGE_VERSION}-enterprise"
-docker tag "bitnamilegacy/postgresql:${PSQL_VERSION}" "${ACR_REGISTRY}/bitnamilegacy/postgresql:${PSQL_VERSION}"
 docker push "${ACR_REGISTRY}/sonarqube:${SONARQUBE_IMAGE_VERSION}-enterprise"
-docker push "${ACR_REGISTRY}/bitnamilegacy/postgresql:${PSQL_VERSION}"
 
 # 6. Run CPA verify within the container
 echo "6. Running CPA verification (cpa verify)..."
