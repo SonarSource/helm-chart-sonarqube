@@ -5,6 +5,7 @@ All changes to this chart will be documented in this file.
 * Upgrade Chart's version to 2026.2.0
 * Update ingress-nginx subchart to 4.14.3
 * Upgrade SonarQube Community build to 26.2.0.119303
+* Support annotations in HTTPRoute
 
 ## [2026.1.0]
 * Upgrade SonarQube Server to 2026.1.0

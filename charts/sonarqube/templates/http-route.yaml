@@ -8,6 +8,10 @@ metadata:
     {{- with .Values.httproute.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
+  annotations:
+    {{- with .Values.httproute.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   parentRefs:
   - name: {{ .Values.httproute.gateway }}
