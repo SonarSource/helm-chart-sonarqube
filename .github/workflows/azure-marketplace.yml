@@ -16,7 +16,6 @@ concurrency:
   cancel-in-progress: ${{ !(github.ref_name == 'master' || startsWith(github.ref_name, 'release/')) }}
 
 env:
-  PSQL_VERSION: 11.14.0
   SQ_VERSION: 2026.1.0
   SQ_IMAGE_VERSION: 2026.1.0
 
@@ -56,7 +55,6 @@ jobs:
       - name: Pull required images
         run: |
           docker pull "docker.io/sonarqube:${SQ_IMAGE_VERSION}-enterprise"
-          docker pull "docker.io/bitnamilegacy/postgresql:${PSQL_VERSION}"
       - name: Make script executable
         run: chmod +x ./.github/scripts/azure_app_verify_and_publish.sh
       - name: Build app
@@ -103,7 +101,6 @@ jobs:
       - name: Pull required images
         run: |
           docker pull "docker.io/sonarqube:${SQ_IMAGE_VERSION}-enterprise"
-          docker pull "docker.io/bitnamilegacy/postgresql:${PSQL_VERSION}"
       - name: Make script executable
         run: chmod +x ./.github/scripts/azure_app_verify_and_publish.sh
       - name: Build app
