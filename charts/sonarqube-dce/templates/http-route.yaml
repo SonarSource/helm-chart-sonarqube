@@ -21,7 +21,7 @@ spec:
     {{- end }}
   hostnames:
     {{- with .Values.httproute.hostnames }}
-    {{ toYaml . }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
   rules:
   {{- if .Values.httproute.rules -}}
