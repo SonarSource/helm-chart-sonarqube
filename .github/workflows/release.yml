@@ -28,19 +28,19 @@ jobs:
       contents: write
     steps:
       - id: secrets
-        uses: SonarSource/vault-action-wrapper@3.0.0
+        uses: SonarSource/vault-action-wrapper@545e7cfbb5528e7009a1edcc83e073898d292627 # v3.2.0
         with:
           secrets: |
             development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | artifactory_access_token;
             development/kv/data/slack webhook | slack_webhook_url;
-      - uses: SonarSource/jfrog-setup-wrapper@3.0.0-1
+      - uses: SonarSource/jfrog-setup-wrapper@e0f353c7f1bcc7b2f663063d72b5fec7948f6815 # v3.6.0
         with:
           jfrogAccessToken: ${{ fromJSON(steps.secrets.outputs.vault).artifactory_access_token }}
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Fetch history
         run: git fetch --prune --unshallow
-      - uses: jdx/mise-action@bfb9fa0b029db830a8c570757cee683df207a6c5 # v2.4.0
+      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
         with:
           cache_save: false
           version: 2025.7.12
@@ -49,13 +49,13 @@ jobs:
       - name: Create local repository directory
         id: local_repo
         run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> "$GITHUB_OUTPUT"
-      - uses: SonarSource/gh-action_release/download-build@v5
+      - uses: SonarSource/gh-action_release/download-build@b9284ef49674428c976147100b9072f74427fbc7 # v6.3.0
         with:
           local-repo-dir: ${{ steps.local_repo.outputs.dir }}
           remote-repo: sonarsource-helm
           build-number: ${{ inputs.buildNumber }}
       - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13
+        uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2.11.2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true

@@ -19,40 +19,40 @@ jobs:
       pull-requests: read
       contents: read
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         # Disabling shallow clone is recommended for improving relevancy of reporting
         fetch-depth: 0
     - id: secrets
-      uses: SonarSource/vault-action-wrapper@3.0.0
+      uses: SonarSource/vault-action-wrapper@545e7cfbb5528e7009a1edcc83e073898d292627 # v3.2.0
       with:
         secrets: |
           development/kv/data/next token | sq_next_token;
           development/kv/data/sonarcloud token | sq_cloud_eu_token;
           development/kv/data/sonarqube-us token | sq_cloud_us_token;
     - name: SonarQube Next Scan
-      uses: sonarsource/sonarqube-scan-action@master
+      uses: sonarsource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # v7.0.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).sq_next_token }}
         SONAR_HOST_URL: https://next.sonarqube.com/sonarqube/
     - name: SonarQube Cloud EU Scan
       if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-      uses: sonarsource/sonarqube-scan-action@master
+      uses: sonarsource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # v7.0.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).sq_cloud_eu_token }}
         SONAR_HOST_URL: https://sonarcloud.io
     - name: SonarQube Cloud US Scan
       if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-      uses: sonarsource/sonarqube-scan-action@master
+      uses: sonarsource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # v7.0.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).sq_cloud_us_token }}
         SONAR_HOST_URL: https://sonarqube.us
     - name: Run IRIS Analysis
       if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-      uses: SonarSource/unified-dogfooding-actions/run-iris@v1
+      uses: SonarSource/unified-dogfooding-actions/run-iris@b256ed29572b02741155dad9e6f20735076080e4 # v1
       with:
         primary_project_key: "SonarSource_helm-chart-sonarqube"
         primary_platform: "Next"
