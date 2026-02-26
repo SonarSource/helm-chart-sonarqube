@@ -1,0 +1,44 @@
+module.exports = {
+    onboardingConfig: {
+      extends: ["config:base"],
+    },
+    platform: "github",
+    onboarding: false,
+    includeForks: false,
+    branchPrefix: "renovate/",
+    gitAuthor: "renovate bot <111297361+hashicorp-vault-sonar-prod[bot]@users.noreply.github.com>",
+    username: "hashicorp-vault-sonar-prod[bot]",
+    baseBranches: ["master"],
+    repositories: [
+      "SonarSource/helm-chart-sonarqube",
+    ],
+    rebaseWhen: "behind-base-branch",
+    rollbackPrs: true,
+    labels: ["dependencies"],
+    automerge: true,
+    includePaths: [
+      "charts/sonarqube/Chart.yaml",
+      "charts/sonarqube-dce/Chart.yaml"
+    ],
+    enabledManagers: [
+      "custom.regex","helmv3"
+    ],
+    ignoreDeps: ["postgresql"],
+    packageRules: [
+      {
+        matchManagers: ["custom.regex"],
+        excludeDepNames: ["gcloud-cli-vm","mpdev-vm"],
+        groupName: "ci-helm-dockerfile-dependencies",
+        groupSlug: "ci-helm-dockerfile-dependencies"
+      },
+      {
+        matchUpdateTypes: ["major","minor"],
+        matchDepNames: ["yamllint-vm"],
+        enabled: false
+      },
+      {
+        matchDepNames: ["gcloud-cli-vm", "mpdev-vm", "ingress-nginx"],
+        automerge: false
+      }
+    ]
+  };
