@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-PROJECT_ROOT=$(readlink -f "$(dirname "$0")"/..)
+PROJECT_ROOT="${GITHUB_WORKSPACE:-$(pwd)}"
 CHART_NAME="${1:-$(basename "${PWD}")}"
 
 # NOTE: CHART_PATH is set to the first argument if it is provided,
@@ -30,6 +30,9 @@ for file in "${STATIC_TEST_FOLDER}"/*; do
         --debug \
         --set monitoringPasscode='test' \
         --set applicationNodes.jwtSecret='some-secret' \
+        --set jdbcOverwrite.jdbcUrl='jdbc:postgresql://myPostgres/myDatabase?socketTimeout=1500' \
+        --set jdbcOverwrite.jdbcUsername='user' \
+        --set jdbcOverwrite.jdbcPassword='pass' \
         -f "${file}" "${TEST_CASE_NAME}" "${CHART_PATH}" \
     | kubeconform \
         --kubernetes-version "${KUBE_VERSION}" \

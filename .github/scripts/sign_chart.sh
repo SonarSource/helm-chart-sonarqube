@@ -3,7 +3,7 @@
 set -euo pipefail
 
 : "${SONARSOURCE_SIGN_KEY_PASSPHRASE:?}"
-: "${CIRRUS_WORKING_DIR:?}"
+: "${GITHUB_WORKSPACE:?}"           # GitHub Actions working directory
 
 # If there is a $1 argument, treat it as the chart to sign by looking for $1*.tgz* files
 # Otherwise, look for all *.tgz* files in the working directory
@@ -13,7 +13,7 @@ if [[ -n "${CHART_TO_SIGN}" ]]; then
     NAME_GLOB="${CHART_TO_SIGN}-[0-9]*.tgz*"
 fi
 
-find_charts=$(find "${CIRRUS_WORKING_DIR}" -maxdepth 1 -name "${NAME_GLOB}" -type f -exec basename "{}" ";" || exit 1)
+find_charts=$(find "${GITHUB_WORKSPACE}" -maxdepth 1 -name "${NAME_GLOB}" -type f -exec basename "{}" ";" || exit 1)
 
 CHART_TO_SIGN=()
 while IFS= read -r chart; do
