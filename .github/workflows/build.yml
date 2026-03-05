@@ -110,8 +110,6 @@ jobs:
       - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
         with:
           version: 2025.7.12
-      - name: Set up chart-testing
-        uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
       - id: secrets
         uses: SonarSource/vault-action-wrapper@545e7cfbb5528e7009a1edcc83e073898d292627 # v3.2.0
         with:
@@ -159,9 +157,6 @@ jobs:
           kubectl create secret docker-registry pullsecret --namespace ${{ matrix.verifying_chart }} --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
           ./.github/scripts/build_chart_dependencies.sh charts/${{ matrix.verifying_chart }}
           chart-verifier version
-      - name: Setup external PostgreSQL
-        if: matrix.verifying_chart == 'sonarqube-dce'
-        run: NAMESPACE="${{ matrix.verifying_chart }}" VALUES_FILE="charts/${{ matrix.verifying_chart }}/openshift-verifier/postgres-values.yaml" ./.github/scripts/setup_external_postgres.sh
       - name: Run chart verification
         run: |
           mkdir -p "$(pwd)/report-${{ matrix.verifying_chart}}"
@@ -212,6 +207,7 @@ jobs:
           kubectl cluster-info --context kind-chart-testing
           kubectl get nodes
           kubectl describe node chart-testing-control-plane
+          kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
       - id: secrets
         uses: SonarSource/vault-action-wrapper@545e7cfbb5528e7009a1edcc83e073898d292627 # v3.2.0
         with:
