@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [Unreleased]
+* Support lifecycle hooks on the SonarQube container via `lifecycle` value
+* Fix `terminationGracePeriodSeconds` not being applied to the pod spec (ref: SONAR-26367)
+
 ## [2026.2.0]
 * Upgrade Chart's version to 2026.2.0
 * Update ingress-nginx subchart to 4.14.3
