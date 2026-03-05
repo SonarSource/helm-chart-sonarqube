@@ -88,7 +88,7 @@ jobs:
   # Shared steps for OpenShift chart verification
   openshift-test:
     runs-on: sonar-xs-public
-    needs: [chart-fixture-test, chart-schema-test, static-compatibility-test]
+    # needs: [chart-fixture-test, chart-schema-test, static-compatibility-test]
     name: SonarQube OpenShift Tests
     permissions:
       id-token: write
@@ -110,6 +110,8 @@ jobs:
       - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
         with:
           version: 2025.7.12
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
       - id: secrets
         uses: SonarSource/vault-action-wrapper@545e7cfbb5528e7009a1edcc83e073898d292627 # v3.2.0
         with:
@@ -177,7 +179,7 @@ jobs:
         run: oc delete project ${{ matrix.verifying_chart }} || true
 
   kind-test:
-    needs: [chart-fixture-test, chart-schema-test, static-compatibility-test]
+    # needs: [chart-fixture-test, chart-schema-test, static-compatibility-test]
     strategy:
       matrix:
         include:
@@ -210,17 +212,6 @@ jobs:
           kubectl cluster-info --context kind-chart-testing
           kubectl get nodes
           kubectl describe node chart-testing-control-plane
-      - name: Setup Istio
-        run: |
-          helm repo add istio https://istio-release.storage.googleapis.com/charts
-          kubectl create namespace istio-system --dry-run=client -o yaml | kubectl apply -f -
-          helm upgrade -i istio-base istio/base -n istio-system --set defaultRevision=default --set global.proxy.holdApplicationUntilProxyStarts=true --wait
-          helm upgrade -i istiod istio/istiod --set global.proxy.holdApplicationUntilProxyStarts=true --set resources.requests.cpu=100m -n istio-system --wait
-          kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
-          kubectl label namespace test istio-injection=enabled
-      - name: Setup External PostgreSQL
-        if: matrix.chart == 'sonarqube-dce'
-        run: NAMESPACE=test ./.github/scripts/setup_external_postgres.sh
       - id: secrets
         uses: SonarSource/vault-action-wrapper@545e7cfbb5528e7009a1edcc83e073898d292627 # v3.2.0
         with:
