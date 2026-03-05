@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-PROJECT_ROOT=$(readlink -f "$(dirname "$0")"/..)
+PROJECT_ROOT="${GITHUB_WORKSPACE:-$(pwd)}"
 CHART_NAME="${1:-$(basename "${PWD}")}"
 
 # NOTE: CHART_PATH is set to the first argument if it is provided,
@@ -10,7 +10,7 @@ CHART_NAME="${1:-$(basename "${PWD}")}"
 CHART_PATH="${1:+charts/$1}"
 CHART_PATH="${CHART_PATH:-.}"
 
-KUBE_VERSION="${KUBE_VERSION:-1.25.0}"
+KUBE_VERSION="${KUBE_VERSION:-1.35.0}"
 STATIC_TEST_FOLDER="${PROJECT_ROOT}/tests/unit-compatibility-test/${CHART_NAME}"
 
 if ! [[ -d "${STATIC_TEST_FOLDER}" ]]; then
@@ -29,6 +29,10 @@ for file in "${STATIC_TEST_FOLDER}"/*; do
         --dry-run \
         --debug \
         --set monitoringPasscode='test' \
+        --set applicationNodes.jwtSecret='some-secret' \
+        --set jdbcOverwrite.jdbcUrl='jdbc:postgresql://myPostgres/myDatabase?socketTimeout=1500' \
+        --set jdbcOverwrite.jdbcUsername='user' \
+        --set jdbcOverwrite.jdbcPassword='pass' \
         -f "${file}" "${TEST_CASE_NAME}" "${CHART_PATH}" \
     | kubeconform \
         --kubernetes-version "${KUBE_VERSION}" \
