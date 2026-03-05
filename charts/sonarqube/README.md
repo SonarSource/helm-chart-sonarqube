@@ -301,13 +301,13 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 ### Image
 
-| Parameter           | Description                                                | Default        |
-| ------------------- | ---------------------------------------------------------- | -------------- |
-| `image.repository`  | image repository                                           | `sonarqube`    |
-| `image.tag`         | `sonarqube` image tag.                                     | `None`         |
-| `image.pullPolicy`  | Image pull policy                                          | `IfNotPresent` |
-| `image.pullSecret`  | (DEPRECATED) imagePullSecret to use for private repository | `None`         |
-| `image.pullSecrets` | imagePullSecrets to use for private repository             | `None`         |
+| Parameter           | Description                                                | Default         |
+| ------------------- | ---------------------------------------------------------- | --------------- |
+| `image.repository`  | image repository                                           | `sonarqube`     |
+| `image.tag`         | `sonarqube` image tag.                                     | see `appVersion`|
+| `image.pullPolicy`  | Image pull policy                                          | `IfNotPresent`  |
+| `image.pullSecret`  | (DEPRECATED) imagePullSecret to use for private repository | `None`          |
+| `image.pullSecrets` | imagePullSecrets to use for private repository             | `None`          |
 
 ### Security
 
