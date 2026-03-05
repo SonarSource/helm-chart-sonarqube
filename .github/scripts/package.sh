@@ -6,6 +6,7 @@ set -xeuo pipefail
 : "${GITHUB_REF_NAME:?}"        # Current branch name
 : "${BUILD_NUMBER:?}"            # Build number from get-build-number action
 : "${GITHUB_BASE_REF:=}"         # Base branch for PRs
+: "${GITHUB_REF_TYPE:=}"         # Type of ref that triggered the workflow (branch or tag)
 
 if [[ -n "${GITHUB_BASE_REF}" ]]; then
     TARGET_BRANCH="${GITHUB_BASE_REF}"
@@ -29,8 +30,7 @@ if [[ -n "${ARG_CHART_NAME}" ]] && [[ "${CHARTS[*]}" =~ ${ARG_CHART_NAME} ]]; th
 fi
 
 BUILD_METADATA="-${BUILD_NUMBER}"
-# For GitHub Actions, check if this is a tag-based release
-[[ ${GITHUB_REF_TYPE:-} == "tag" ]] && BUILD_METADATA=""
+[[ ${GITHUB_REF_TYPE} == "tag" ]] && BUILD_METADATA=""
 
 echo "${CHARTS[@]}"
 
