@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"fmt"
+
 	"github.com/gruntwork-io/terratest/modules/helm"
 	"github.com/gruntwork-io/terratest/modules/logger"
 	"helm.sh/helm/v3/pkg/chart"
@@ -180,7 +181,7 @@ func TestCommunityEmptyBuildNumberEmptyTag(t *testing.T) {
 
 // This test loads the values.yaml used by Cirrus at runtime.
 func TestCiCirrusValues(t *testing.T) {
-	helmOptions.ValuesFiles = []string{chartPath + "/ci/cirrus-values.yaml"}
+	helmOptions.ValuesFiles = []string{chartPath + "/ci/ci-values.yaml"}
 	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
 	assert.NoError(t, err)
 
