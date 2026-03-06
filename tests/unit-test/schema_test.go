@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"fmt"
+
 	"github.com/gruntwork-io/terratest/modules/helm"
 	"github.com/gruntwork-io/terratest/modules/logger"
 	"helm.sh/helm/v3/pkg/chart"
@@ -130,7 +131,7 @@ func TestShouldUseImageTag(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarqube:2025.1.5-enterprise"
+	expectedContainerImage := "sonarqube:2025.1.6-enterprise"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
@@ -180,14 +181,14 @@ func TestCommunityEmptyBuildNumberEmptyTag(t *testing.T) {
 
 // This test loads the values.yaml used by Cirrus at runtime.
 func TestCiCirrusValues(t *testing.T) {
-	helmOptions.ValuesFiles = []string{chartPath + "/ci/cirrus-values.yaml"}
+	helmOptions.ValuesFiles = []string{chartPath + "/ci/ci-values.yaml"}
 	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
 	assert.NoError(t, err)
 
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarsource/sonarqube:2025.1.5-master-enterprise"
+	expectedContainerImage := "sonarsource/sonarqube:2025.1.6-master-enterprise"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
@@ -202,7 +203,7 @@ func TestCiOpenshiftVerifierValues(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarsource/sonarqube:2025.1.5-master-enterprise"
+	expectedContainerImage := "sonarsource/sonarqube:2025.1.6-master-enterprise"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
@@ -216,7 +217,7 @@ func TestDeveloperEdition(t *testing.T) {
 	var renderedTemplate appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
 
-	expectedContainerImage := "sonarqube:2025.1.5-developer"
+	expectedContainerImage := "sonarqube:2025.1.6-developer"
 	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)

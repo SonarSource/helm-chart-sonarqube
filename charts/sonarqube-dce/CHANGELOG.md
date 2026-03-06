@@ -2,7 +2,8 @@
 All changes to this chart will be documented in this file.
 
 ## [2025.1.6]
-* Upgrade Chart's version to 2025.1.6
+* Update Chart's version to 2025.1.6
+* Upgrade SonarQube Server to 2025.1.6
 * Update ingress-nginx subchart to 4.14.3
 
 ## [2025.1.5]
