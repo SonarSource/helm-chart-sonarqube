@@ -148,8 +148,10 @@ spec:
               name: sonarqube
               subPath: data
           env:
+          {{- if or .Values.proxy.enabled .Values.applicationNodes.prometheusExporter.proxy.enabled }}
           {{- with (include "sonarqube.prometheusExporterProxy.env" .) }}
           {{- . | nindent 12 }}
+          {{- end }}
           {{- end }}
           {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
@@ -178,8 +180,10 @@ spec:
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.ApplicationNodes.plugins.resource) | indent 12 }}
           env:
+          {{- if or .Values.proxy.enabled .Values.ApplicationNodes.plugins.proxy.enabled }}
           {{- with (include "sonarqube.install-plugins-proxy.env" .) }}
           {{- . | nindent 12 }}
+          {{- end }}
           {{- end }}
           {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
