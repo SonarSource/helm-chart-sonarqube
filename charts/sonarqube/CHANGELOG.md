@@ -2,10 +2,10 @@
 All changes to this chart will be documented in this file.
 
 ## [2026.2.0]
-* Replace wget with curl in health probes
 * Upgrade Chart's version to 2026.2.0
 * Update ingress-nginx subchart to 4.14.3
 * Upgrade SonarQube Community build to 26.2.0.119303
+* Replace wget with curl in health probes
 
 ## [2026.1.0]
 * Upgrade SonarQube Server to 2026.1.0
