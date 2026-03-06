@@ -29,14 +29,16 @@ spec:
     - name: {{ .Release.Name }}-ui-test
       image: {{ .Values.tests.image | default (printf "%s:%s" .Values.ApplicationNodes.image.repository .Values.ApplicationNodes.image.tag) | quote }}
       imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}
-      command: ['wget']
+      command: ['curl']
       args: [
         '--retry-connrefused',
-        '--waitretry=1',
-        '--timeout=5',
-        '-t',
+        '--retry',
         '1200',
-        '-qO-',
+        '--retry-delay',
+        '1',
+        '--max-time',
+        '5',
+        '-s',
         '{{ template "sonarqube.fullname" . }}:{{ .Values.service.internalPort }}/api/system/status'
         ]
       resources:
