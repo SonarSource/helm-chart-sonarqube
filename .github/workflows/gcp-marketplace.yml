@@ -1,0 +1,181 @@
+name: GCP Marketplace
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  push:
+     branches:
+       - master
+       - release/*
+  workflow_dispatch:
+    inputs:
+      trigger:
+        description: 'Trigger type'
+        required: true
+        default: 'PUSH_STAGING_DEPLOYER'
+        type: choice
+        options:
+          - PUSH_STAGING_DEPLOYER
+          - PUSH_PROD_DEPLOYER
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ !(github.ref_name == 'master' || startsWith(github.ref_name, 'release/')) }}
+
+env:
+  GCLOUD_TAG: 2025.1.5 # Update this value to the desired version
+
+jobs:
+  build-gcp-staging-app:
+    runs-on: github-ubuntu-latest-s
+    name: Build GCP Staging App
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider
+      GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
+        with:
+          version: 2025.7.12
+      - id: secrets
+        uses: SonarSource/vault-action-wrapper@545e7cfbb5528e7009a1edcc83e073898d292627 # v3.2.0
+        with:
+          secrets: |
+            development/team/sonarqube/kv/data/gcp-marketplace-registry-staging key | DOCKER_GCLOUD_SA_KEY;
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - name: Login to GCR
+        env:
+          DOCKER_GCLOUD_SA_KEY: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_GCLOUD_SA_KEY }}
+        run: |
+          export DOCKER_GCLOUD_PASSWORD=$(echo ${DOCKER_GCLOUD_SA_KEY} | base64 -d)
+          docker login -u _json_key -p "$DOCKER_GCLOUD_PASSWORD" https://${GCLOUD_REGISTRY}
+      - name: Build chart dependencies
+        run: ./.github/scripts/build_chart_dependencies.sh charts/sonarqube-dce
+      - name: Build and push Docker image
+        env:
+          DOCKER_GCLOUD_SA_KEY: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_GCLOUD_SA_KEY }}
+        run: |
+          export CURRENT_MINOR_VERSION=$(echo ${GCLOUD_TAG} | cut -d '.' -f 1,2)
+          docker buildx build --platform linux/amd64 \
+            --provenance=false \
+            --sbom=false \
+            --output "type=image,push=true,oci-mediatypes=false,annotation-manifest.com.googleapis.cloudmarketplace.product.service.name=services/official-sonarqube-data-center-edition.endpoints.sonarsource-public.cloud.goog" \
+            -f google-cloud-marketplace-k8s-app/Dockerfile \
+            --build-arg REGISTRY=${GCLOUD_REGISTRY} \
+            --build-arg TAG=${GCLOUD_TAG} \
+            --tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} \
+            --tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${GCLOUD_TAG} .
+
+  verify-gcp-staging-app:
+    needs: [build-gcp-staging-app]
+    runs-on: github-ubuntu-latest-s
+    name: Verify GCP Staging App
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      BASE_FOLDER: "/home/runner/.gcp/cache"
+      HOME: "/tmp"
+      GCLOUD_CLI_VERSION: 495.0.0
+      MPDEV_VERSION: 0.12.4
+      GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider
+      GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
+        with:
+          version: 2025.7.12
+      - name: Setup GCP tools
+        run: ./.github/scripts/setup.sh
+      - id: secrets
+        uses: SonarSource/vault-action-wrapper@545e7cfbb5528e7009a1edcc83e073898d292627 # v3.2.0
+        with:
+          secrets: |
+            development/team/sonarqube/kv/data/gcp-marketplace-registry-staging key | DOCKER_GCLOUD_SA_KEY;
+      - name: Login and setup GCP
+        env:
+          DOCKER_GCLOUD_SA_KEY: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_GCLOUD_SA_KEY }}
+        run: |
+          export PATH="${BASE_FOLDER}:${PATH}"
+          echo ${DOCKER_GCLOUD_SA_KEY} | base64 -d > /tmp/key.json
+          gcloud auth activate-service-account cirrusciservice@sonarqube-marketplace-provider.iam.gserviceaccount.com --key-file /tmp/key.json --project=sonarqube-marketplace-provider
+          gcloud auth configure-docker gcr.io --quiet
+          gcloud container clusters get-credentials sonarqube-marketplace-staging-standard --zone=europe-west1-b --project=sonarqube-marketplace-provider
+          kubectl get pods -A
+          kubectl create namespace test-github --dry-run=client -o yaml | kubectl apply -f -
+      - name: Verify with mpdev
+        run: |
+          export PATH="${BASE_FOLDER}:${PATH}"
+          mpdev verify --deployer=$GCLOUD_REGISTRY/$GCLOUD_PRODUCT_NAME/deployer:$GCLOUD_TAG --wait_timeout=1200 --parameters="{\"name\":\"${GCLOUD_PRODUCT_NAME}-github-test\", \"namespace\":\"test-github\",\"ApplicationNodes.jwtSecret\":\"dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=\", \"monitoringPasscode\": \"dGVzdA==\"}"
+      - name: Cleanup namespace
+        if: always()
+        run: |
+          kubectl delete namespace test-github --ignore-not-found=true
+
+  release-gcp-prod-app:
+    needs: [verify-gcp-staging-app]
+    runs-on: github-ubuntu-latest-s
+    name: Release GCP Prod App
+    permissions:
+      id-token: write
+      contents: read
+    if: ${{ github.event.inputs.trigger == 'PUSH_PROD_DEPLOYER' }}
+    env:
+      GCLOUD_REGISTRY: gcr.io/sonarsource-public
+      GCLOUD_PRODUCT_NAME: official-sonarqube-data-center-edition
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
+        with:
+          version: 2025.7.12
+      - id: secrets
+        uses: SonarSource/vault-action-wrapper@545e7cfbb5528e7009a1edcc83e073898d292627 # v3.2.0
+        with:
+          secrets: |
+            development/team/sonarqube/kv/data/gcp-marketplace-registry-staging key | DOCKER_GCLOUD_SA_KEY;
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - name: Login to GCR
+        env:
+          DOCKER_GCLOUD_SA_KEY: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_GCLOUD_SA_KEY }}
+        run: |
+          export DOCKER_GCLOUD_PASSWORD=$(echo ${DOCKER_GCLOUD_SA_KEY} | base64 -d)
+          docker login -u _json_key -p "$DOCKER_GCLOUD_PASSWORD" https://${GCLOUD_REGISTRY}
+      - name: Build chart dependencies
+        run: ./.github/scripts/build_chart_dependencies.sh charts/sonarqube-dce
+      - name: Build and push Docker image
+        env:
+          DOCKER_GCLOUD_SA_KEY: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_GCLOUD_SA_KEY }}
+        run: |
+          export CURRENT_MINOR_VERSION=$(echo ${GCLOUD_TAG} | cut -d '.' -f 1,2)
+          docker buildx build --platform linux/amd64 \
+            --provenance=false \
+            --sbom=false \
+            --output "type=image,push=true,oci-mediatypes=false,annotation-manifest.com.googleapis.cloudmarketplace.product.service.name=services/official-sonarqube-data-center-edition.endpoints.sonarsource-public.cloud.goog" \
+            -f google-cloud-marketplace-k8s-app/Dockerfile \
+            --build-arg REGISTRY=${GCLOUD_REGISTRY} \
+            --build-arg TAG=${GCLOUD_TAG} \
+            --tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${CURRENT_MINOR_VERSION} \
+            --tag ${GCLOUD_REGISTRY}/${GCLOUD_PRODUCT_NAME}/deployer:${GCLOUD_TAG} .
+
+  notify-slack-on-failure:
+    name: Notify on Failure
+    needs: [ build-gcp-staging-app, verify-gcp-staging-app, release-gcp-prod-app ]
+    if: >-
+      always() &&
+      (needs.build-gcp-staging-app.result == 'failure' || needs.verify-gcp-staging-app.result == 'failure' || needs.release-gcp-prod-app.result == 'failure') &&
+      (github.ref_name == github.event.repository.default_branch ||
+      startsWith(github.ref_name, 'release/'))
+    permissions:
+      id-token: write
+    uses: ./.github/workflows/slack_notify.yml
+

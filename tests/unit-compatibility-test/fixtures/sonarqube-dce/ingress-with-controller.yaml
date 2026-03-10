@@ -1449,10 +1449,6 @@ spec:
       - chart-example.local
       secretName: chart-example-tls
 ---
-# Source: sonarqube-dce/charts/ingress-nginx/templates/controller-poddisruptionbudget.yaml
-# PDB is not supported for DaemonSets.
-# https://github.com/kubernetes/kubernetes/issues/108124
----
 # Source: sonarqube-dce/charts/ingress-nginx/templates/admission-webhooks/validating-webhook.yaml
 # before changing this value, check the required kubernetes version
 # https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#prerequisites
@@ -1492,6 +1488,10 @@ webhooks:
         namespace: default
         port: 443
         path: /networking/v1/ingresses
+---
+# Source: sonarqube-dce/charts/ingress-nginx/templates/controller-poddisruptionbudget.yaml
+# PDB is not supported for DaemonSets.
+# https://github.com/kubernetes/kubernetes/issues/108124
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/admission-webhooks/job-patch/serviceaccount.yaml
 apiVersion: v1
