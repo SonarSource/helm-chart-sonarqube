@@ -254,7 +254,7 @@ livenessProbe:
       - sh
       - -c
       - |
-        curl --noproxy "*" -s -o /dev/null --max-time {{ .Values.livenessProbe.timeoutSeconds }} -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:{{ .Values.service.internalPort }}{{ .Values.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
+        curl --noproxy "*" -fsS -o /dev/null --max-time {{ .Values.livenessProbe.timeoutSeconds }} -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:{{ .Values.service.internalPort }}{{ .Values.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
   initialDelaySeconds: 60
   periodSeconds: 30
   failureThreshold: 6

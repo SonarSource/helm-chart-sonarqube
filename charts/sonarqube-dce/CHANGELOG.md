@@ -5,6 +5,7 @@ All changes to this chart will be documented in this file.
 * Upgrade Chart's version to 2026.2.0
 * Update ingress-nginx subchart to 4.14.3
 * Replace wget with curl in health probes
+* Use -fsS flags in curl command in liveness and startup probes to fail on HTTP errors
 
 ## [2026.1.0]
 * Upgrade SonarQube Server to 2026.1.0
