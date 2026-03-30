@@ -14,7 +14,7 @@ Please note that this chart only supports SonarQube Server Developer and Enterpr
 
 ## Default Versions
 
-SonarQube Server Version: `2026.2.0`
+SonarQube Server Version: `2026.2.1`
 
 SonarQube Community Build: `26.3.0.120487`. If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
 
