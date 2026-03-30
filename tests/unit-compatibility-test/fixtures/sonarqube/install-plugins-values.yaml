@@ -23,7 +23,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: install-plugins-values.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: install-plugins-values.yaml
     heritage: Helm
 type: Opaque
@@ -57,7 +57,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: install-plugins-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: install-plugins-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: install-plugins-values.yaml
     heritage: Helm
 data:
@@ -133,7 +133,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: install-plugins-values.yaml
     heritage: Helm
 data:
@@ -201,7 +201,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: install-plugins-values.yaml
     heritage: Helm
 spec:
@@ -383,7 +383,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: install-plugins-values.yaml
     heritage: Helm
     app.kubernetes.io/name: install-plugins-values.yaml
@@ -391,7 +391,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: install-plugins-values.yaml-sonarqube
-    app.kubernetes.io/version: "2025.1.6-enterprise"
+    app.kubernetes.io/version: "2025.1.7-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -403,10 +403,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: b177427ad58235e35e1f870f1a85abf081e18ad1d1ae55bb8eaa418c3c8ded07
-        checksum/init-sysctl: be52c6d2481e350ca15b0797d2217544a199eb381bd1009830e38415a0585b92
-        checksum/plugins: ce03e8f5cc87bb31d6b01fc2081280b6be0e3e2cdb4a428848e9f22106ff2548
-        checksum/secret: eeb075cad756160d1b9b6e7942b66c93c0ea7b744d0ebae3acdeb6ca83461b81
+        checksum/config: 2221225bb14dbdbe0b6892a0f53831250489192331490137921401df15d2e122
+        checksum/init-sysctl: b0178cf305d7a98e1960768eb10d400a4ee1be2b1b8e27abd8e3c5b79a8db808
+        checksum/plugins: 463c5e8eed15745a506b8bedc69bb4ab99eda3413a505af7163a550bfa74eec5
+        checksum/secret: 9cf59b6564450e5e41ec1661e6b747eda480643acf01188e55cbe59feeeec409
       labels:
         app: sonarqube
         release: install-plugins-values.yaml
@@ -416,7 +416,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:2025.1.6-enterprise
+          image: sonarqube:2025.1.7-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -432,7 +432,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/install-plugins-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:2025.1.6-enterprise
+          image: sonarqube:2025.1.7-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -450,7 +450,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: ""
         - name: install-plugins
-          image: sonarqube:2025.1.6-enterprise
+          image: sonarqube:2025.1.7-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
           securityContext:
@@ -494,7 +494,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2025.1.6-enterprise
+          image: sonarqube:2025.1.7-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -511,7 +511,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.1.6
+              value: 2025.1.7
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -624,14 +624,14 @@ metadata:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: install-plugins-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: install-plugins-values.yaml-ui-test
-      image: "sonarqube:2025.1.6-enterprise"
+      image: "sonarqube:2025.1.7-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

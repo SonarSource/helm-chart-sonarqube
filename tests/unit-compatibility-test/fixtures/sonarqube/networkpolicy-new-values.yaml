@@ -6,7 +6,7 @@ metadata:
   name: networkpolicy-new-values.yaml-sonarqube-network-policy
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: networkpolicy-new-values.yaml
     heritage: Helm
 spec:
@@ -54,7 +54,7 @@ metadata:
   name: networkpolicy-new-values.yaml-sonarqube-database
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: networkpolicy-new-values.yaml
     heritage: Helm
 spec:
@@ -88,7 +88,7 @@ metadata:
   name: networkpolicy-new-values.yaml-sonarqube-additional-network-policy
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: networkpolicy-new-values.yaml
     heritage: Helm
 spec:
@@ -145,7 +145,7 @@ metadata:
   name: networkpolicy-new-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: networkpolicy-new-values.yaml
     heritage: Helm
 type: Opaque
@@ -160,7 +160,7 @@ metadata:
   name: networkpolicy-new-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: networkpolicy-new-values.yaml
     heritage: Helm
 type: Opaque
@@ -179,7 +179,7 @@ metadata:
   name: networkpolicy-new-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: networkpolicy-new-values.yaml
     heritage: Helm
 data:
@@ -192,7 +192,7 @@ metadata:
   name: networkpolicy-new-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: networkpolicy-new-values.yaml
     heritage: Helm
 data:
@@ -239,7 +239,7 @@ metadata:
   name: networkpolicy-new-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: networkpolicy-new-values.yaml
     heritage: Helm
 data:
@@ -252,7 +252,7 @@ metadata:
   name: networkpolicy-new-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: networkpolicy-new-values.yaml
     heritage: Helm
 data:
@@ -320,7 +320,7 @@ metadata:
   name: networkpolicy-new-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: networkpolicy-new-values.yaml
     heritage: Helm
 spec:
@@ -502,7 +502,7 @@ metadata:
   name: networkpolicy-new-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: networkpolicy-new-values.yaml
     heritage: Helm
     app.kubernetes.io/name: networkpolicy-new-values.yaml
@@ -510,7 +510,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: networkpolicy-new-values.yaml-sonarqube
-    app.kubernetes.io/version: "2025.1.6-enterprise"
+    app.kubernetes.io/version: "2025.1.7-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -522,10 +522,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 7677e9bcf9d85fbd970bd446bedf41676aa4c8f03ecb95bb6630490f1c72b7d2
-        checksum/init-sysctl: 9274fe5d2622a68fc44a379c53a6ed874f92712ee266ed582389cb7f7a0b8e2c
-        checksum/plugins: 1dbf65111ac25a7163b7c90f146ccb9321448861c8d9d1c45e579e900f2f539d
-        checksum/secret: ad993e1a90ece92b2729275fb105c7b141451539be17c905c1f69872a1ee714f
+        checksum/config: a02902fba453bcba650c374f9bef7774a440dd20e52701754ff96fd405f34f55
+        checksum/init-sysctl: cdbde2b488e28e0a7adbb743258ace306fb43bb6559c55f283285f3275e5668f
+        checksum/plugins: ee382e111b53e08245f1d3cfb1688ef23ae87bc052a2f48e6979a701768aa05b
+        checksum/secret: 037da91668a420c428dac1d11bac49533102ed81189768c4801312e1856a0ea5
       labels:
         app: sonarqube
         release: networkpolicy-new-values.yaml
@@ -535,7 +535,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:2025.1.6-enterprise
+          image: sonarqube:2025.1.7-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -551,7 +551,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/networkpolicy-new-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:2025.1.6-enterprise
+          image: sonarqube:2025.1.7-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -570,7 +570,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2025.1.6-enterprise
+          image: sonarqube:2025.1.7-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -587,7 +587,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.1.6
+              value: 2025.1.7
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -694,14 +694,14 @@ metadata:
     "helm.sh/hook": test-success
   labels:
     app: sonarqube
-    chart: sonarqube-2025.1.6
+    chart: sonarqube-2025.1.7
     release: networkpolicy-new-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: networkpolicy-new-values.yaml-ui-test
-      image: "sonarqube:2025.1.6-enterprise"
+      image: "sonarqube:2025.1.7-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
