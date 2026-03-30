@@ -454,6 +454,10 @@ spec:
       affinity:
 {{ toYaml .Values.searchNodes.affinity | indent 8 }}
     {{- end }}
+    {{- with .Values.searchNodes.topologySpreadConstraints }}
+      topologySpreadConstraints:
+{{ toYaml . | indent 8 }}
+    {{- end }}
       serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
       volumes:
 {{- if .Values.searchNodes.persistence.volumes }}

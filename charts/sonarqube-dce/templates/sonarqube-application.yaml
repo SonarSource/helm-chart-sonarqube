@@ -412,6 +412,10 @@ spec:
       affinity:
 {{ toYaml .Values.ApplicationNodes.affinity | indent 8 }}
     {{- end }}
+    {{- with .Values.ApplicationNodes.topologySpreadConstraints }}
+      topologySpreadConstraints:
+{{ toYaml . | indent 8 }}
+    {{- end }}
       serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
       volumes:
       {{- if or $hasMergedProps .Values.sonarSecretKey }}
