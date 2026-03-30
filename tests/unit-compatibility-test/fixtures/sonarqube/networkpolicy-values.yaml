@@ -6,7 +6,7 @@ metadata:
   name: networkpolicy-values.yaml-sonarqube-network-policy
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.1
+    chart: sonarqube-2026.1.2
     release: networkpolicy-values.yaml
     heritage: Helm
 spec:
@@ -47,7 +47,7 @@ metadata:
   name: networkpolicy-values.yaml-sonarqube-additional-network-policy
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.1
+    chart: sonarqube-2026.1.2
     release: networkpolicy-values.yaml
     heritage: Helm
 spec:
@@ -88,7 +88,7 @@ metadata:
   name: networkpolicy-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.1
+    chart: sonarqube-2026.1.2
     release: networkpolicy-values.yaml
     heritage: Helm
 type: Opaque
@@ -103,7 +103,7 @@ metadata:
   name: networkpolicy-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.1
+    chart: sonarqube-2026.1.2
     release: networkpolicy-values.yaml
     heritage: Helm
 type: Opaque
@@ -122,7 +122,7 @@ metadata:
   name: networkpolicy-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.1
+    chart: sonarqube-2026.1.2
     release: networkpolicy-values.yaml
     heritage: Helm
 data:
@@ -135,7 +135,7 @@ metadata:
   name: networkpolicy-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.1
+    chart: sonarqube-2026.1.2
     release: networkpolicy-values.yaml
     heritage: Helm
 data:
@@ -182,7 +182,7 @@ metadata:
   name: networkpolicy-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.1
+    chart: sonarqube-2026.1.2
     release: networkpolicy-values.yaml
     heritage: Helm
 data:
@@ -195,7 +195,7 @@ metadata:
   name: networkpolicy-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.1
+    chart: sonarqube-2026.1.2
     release: networkpolicy-values.yaml
     heritage: Helm
 spec:
@@ -216,7 +216,7 @@ metadata:
   name: networkpolicy-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.1
+    chart: sonarqube-2026.1.2
     release: networkpolicy-values.yaml
     heritage: Helm
     app.kubernetes.io/name: networkpolicy-values.yaml
@@ -224,7 +224,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: networkpolicy-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.1.1-enterprise"
+    app.kubernetes.io/version: "2026.1.2-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -236,10 +236,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 5ace4d2214dbb593b96a4bc46b4fbf691c6a62752a4b50c18c7588cfcaf8d107
-        checksum/init-sysctl: 5cb8e16c6a53d77b729e0fa6a7bd14a041b18bb7133938bdd264a70d126bf224
-        checksum/plugins: acbc9b2e8b7a4b473b6bb11443861c774d1a55652c5939f105bfcb54d88b285d
-        checksum/secret: 09cfd8a75883c092f539b45e10425b8bff8264c68d23875a74513215c4e334ed
+        checksum/config: a22ec79899bbc69245d2f52500cd82e70d5c1d39964852f96d516c40ed9104de
+        checksum/init-sysctl: ea6b3eb02caf7e39f4221daa9635ac977bc3b45fa26187b7f1ffd244881b9926
+        checksum/plugins: 5988b8dd2d0b46fb09471692bbb66a18006b820030c60cec37bc57845b69807b
+        checksum/secret: 6bf649ab4fd9dd499a2738673bb6e590cfa020f1c2114c12551902ed1ac8e53d
       labels:
         app: sonarqube
         release: networkpolicy-values.yaml
@@ -249,7 +249,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.1.1-enterprise
+          image: sonarqube:2026.1.2-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -268,7 +268,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2026.1.1-enterprise
+          image: sonarqube:2026.1.2-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -285,7 +285,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.1.1
+              value: 2026.1.2
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -387,14 +387,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.1
+    chart: sonarqube-2026.1.2
     release: networkpolicy-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: networkpolicy-values.yaml-ui-test
-      image: "sonarqube:2026.1.1-enterprise"
+      image: "sonarqube:2026.1.2-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
