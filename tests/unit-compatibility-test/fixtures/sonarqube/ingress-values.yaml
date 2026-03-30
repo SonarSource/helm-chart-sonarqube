@@ -23,7 +23,7 @@ metadata:
   name: ingress-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.5
+    chart: sonarqube-2025.4.6
     release: ingress-values.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: ingress-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.5
+    chart: sonarqube-2025.4.6
     release: ingress-values.yaml
     heritage: Helm
 type: Opaque
@@ -57,7 +57,7 @@ metadata:
   name: ingress-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.5
+    chart: sonarqube-2025.4.6
     release: ingress-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: ingress-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.5
+    chart: sonarqube-2025.4.6
     release: ingress-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: ingress-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.5
+    chart: sonarqube-2025.4.6
     release: ingress-values.yaml
     heritage: Helm
 data:
@@ -130,7 +130,7 @@ metadata:
   name: ingress-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.5
+    chart: sonarqube-2025.4.6
     release: ingress-values.yaml
     heritage: Helm
 data:
@@ -198,7 +198,7 @@ metadata:
   name: ingress-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.5
+    chart: sonarqube-2025.4.6
     release: ingress-values.yaml
     heritage: Helm
 spec:
@@ -380,7 +380,7 @@ metadata:
   name: ingress-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.5
+    chart: sonarqube-2025.4.6
     release: ingress-values.yaml
     heritage: Helm
     app.kubernetes.io/name: ingress-values.yaml
@@ -388,7 +388,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: ingress-values.yaml-sonarqube
-    app.kubernetes.io/version: "2025.4.5-enterprise"
+    app.kubernetes.io/version: "2025.4.6-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -400,10 +400,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: f674d3d3cff6d8d5c7afb7cc1513ccc00f5b9d6fdd29cdf4786c0a7a87d7ab58
-        checksum/init-sysctl: d5bf7b79ab95a65c4852a9f427614a562d48f021615e48ff3bcc2f852244b387
-        checksum/plugins: b78937d0845466dec3b78296eab20200da5d6c26f61330f0d6b2236d7a7ea407
-        checksum/secret: fe0027f747b07b2c03251b36dc598de16f7ce4f54272830387b0e25ffacc5f80
+        checksum/config: 2279a79dc136df8be662331704e6655c669475fda14a0c55477b2909e250c12d
+        checksum/init-sysctl: 9e08297b9e29e191e135dcba4f2b4c409a665c2a3fbef922fecd30604cd0fb53
+        checksum/plugins: f620a06300bb1e1f04569e54c6c2df32c7b89206aeaf5b070ca778d85115a2d9
+        checksum/secret: 780dcfbf45ecf4f49401e3a5362a9f1fe3f1a4164a2e3d075cb8338a04a802b8
       labels:
         app: sonarqube
         release: ingress-values.yaml
@@ -413,7 +413,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:2025.4.5-enterprise
+          image: sonarqube:2025.4.6-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -429,7 +429,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/ingress-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:2025.4.5-enterprise
+          image: sonarqube:2025.4.6-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -448,7 +448,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2025.4.5-enterprise
+          image: sonarqube:2025.4.6-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -465,7 +465,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.4.5
+              value: 2025.4.6
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -570,7 +570,7 @@ metadata:
   name: ingress-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.5
+    chart: sonarqube-2025.4.6
     release: ingress-values.yaml
     heritage: Helm
     traffic-type: external
@@ -607,14 +607,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.5
+    chart: sonarqube-2025.4.6
     release: ingress-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: ingress-values.yaml-ui-test
-      image: "sonarqube:2025.4.5-enterprise"
+      image: "sonarqube:2025.4.6-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
