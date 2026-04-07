@@ -1,13 +1,15 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2026.3.0]
+* Add `applicationNodes.topologySpreadConstraints` and `searchNodes.topologySpreadConstraints` to support spreading pods across topology domains
+
 ## [2026.2.0]
 * Upgrade Chart's version to 2026.2.0
 * Upgrade SonarQube Server to 2026.2.0
 * Update ingress-nginx subchart to 4.14.3
 * Replace wget with curl in health probes
 * Use -fS flag in curl to show errors in liveness and startup probes
-* Add `applicationNodes.topologySpreadConstraints` and `searchNodes.topologySpreadConstraints` to support spreading pods across topology domains
 
 ## [2026.1.0]
 * Upgrade SonarQube Server to 2026.1.0
