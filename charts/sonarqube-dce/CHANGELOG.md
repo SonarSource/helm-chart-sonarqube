@@ -2,7 +2,6 @@
 All changes to this chart will be documented in this file.
 
 ## [2026.2.0]
-* Add clarification note for Kubernetes and OpenShift version compatibility in README
 * Upgrade Chart's version to 2026.2.0
 * Upgrade SonarQube Server to 2026.2.0
 * Update ingress-nginx subchart to 4.14.3
