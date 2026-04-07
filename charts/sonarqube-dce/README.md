@@ -298,10 +298,8 @@ applicationNodes:
       whenUnsatisfiable: ScheduleAnyway
       labelSelector:
         matchLabels:
-          app: sonarqube-dce-app
+          app: sonarqube-dce
 ```
-
-Replace `my-sonarqube` with your Helm release name. If your cluster does not set the standard topology labels automatically, label the nodes accordingly or use the labels that exist in your environment.
 
 ### ApplicationNodes renamed to applicationNodes
 
