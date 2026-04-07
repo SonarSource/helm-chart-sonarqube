@@ -285,7 +285,7 @@ searchNodes:
       whenUnsatisfiable: DoNotSchedule
       labelSelector:
         matchLabels:
-          app: my-sonarqube-search
+          app: sonarqube-dce-search
 ```
 
 For application pods, a similar configuration can be used when you want to spread replicas across zones while keeping scheduling more flexible:
@@ -298,7 +298,7 @@ applicationNodes:
       whenUnsatisfiable: ScheduleAnyway
       labelSelector:
         matchLabels:
-          app: my-sonarqube-app
+          app: sonarqube-dce-app
 ```
 
 Replace `my-sonarqube` with your Helm release name. If your cluster does not set the standard topology labels automatically, label the nodes accordingly or use the labels that exist in your environment.
