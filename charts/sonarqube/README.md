@@ -510,10 +510,9 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `prometheusExporter.downloadURL`        | Alternative full download URL for the jmx_prometheus_javaagent.jar (overrides `prometheusExporter.version`)             | `""`                                                                   |
 | `prometheusExporter.config`             | Prometheus JMX exporter config yaml for the web process, and the CE process if `prometheusExporter.ceConfig` is not set | see `values.yaml`                                                      |
 | `prometheusExporter.ceConfig`           | Prometheus JMX exporter config yaml for the CE process (by default, `prometheusExporter.config` is used)                | `None`                                                                 |
-| `prometheusExporter.proxy.enabled`          | Enable Proxy for downloading JMX agent. When set to `true`                                                                                    | `false`                                                                   |
-| `prometheusExporter.proxy.httpProxy`          | HTTP proxy for downloading JMX agent                                                                                    | `""`                                                                   |
-| `prometheusExporter.proxy.httpsProxy`         | HTTPS proxy for downloading JMX agent                                                                                   | `""`                                                                   |
-| `prometheusExporter.proxy.noProxy`            | No proxy for downloading JMX agent                                                                                      | `""`                                                                   |
+| `prometheusExporter.httpProxy`          | HTTP proxy for downloading JMX agent                                                                                    | `""`                                                                   |
+| `prometheusExporter.httpsProxy`         | HTTPS proxy for downloading JMX agent                                                                                   | `""`                                                                   |
+| `prometheusExporter.noProxy`            | No proxy for downloading JMX agent                                                                                      | `""`                                                                   |
 | `prometheusExporter.securityContext`    | Security context for downloading the jmx agent                                                                          | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 
 ### Monitoring (Prometheus PodMonitor)
@@ -533,10 +532,9 @@ The following table lists the configurable parameters of the SonarQube chart and
 | ---------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `plugins.install`            | Link(s) to the plugin JARs to download and install                              | `[]`                                                                   |
 | `plugins.resources`          | Plugin Pod resource requests & limits                                           | `{}`                                                                   |
-| `plugins.proxy.enabled`          | Enable Proxy for install plugins. When set to `true`                       | `false`                                                                   |
-| `plugins.proxy.httpProxy`          | For use behind a corporate proxy when downloading plugins                       | `""`                                                                   |
-| `plugins.proxy.httpsProxy`         | For use behind a corporate proxy when downloading plugins                       | `""`                                                                   |
-| `plugins.proxy.noProxy`            | For use behind a corporate proxy when downloading plugins                       | `""`                                                                   |
+| `plugins.httpProxy`          | For use behind a corporate proxy when downloading plugins                       | `""`                                                                   |
+| `plugins.httpsProxy`         | For use behind a corporate proxy when downloading plugins                       | `""`                                                                   |
+| `plugins.noProxy`            | For use behind a corporate proxy when downloading plugins                       | `""`                                                                   |
 | `plugins.image`              | Image for plugins container                                                     | `"image.repository":"image.tag"`                                       |
 | `plugins.resources`          | Resources for plugins container                                                 | `{}`                                                                   |
 | `plugins.netrcCreds`         | Name of the secret containing .netrc file to use creds when downloading plugins | `""`                                                                   |
