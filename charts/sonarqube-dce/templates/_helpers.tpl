@@ -401,6 +401,7 @@ case "${host}" in *:*) host="[${host}]" ;; esac
   generate Proxy env var from httpProxySecret
 */}}
 {{- define "sonarqube.proxyFromSecret" -}}
+{{- if or (ne .Values.httpProxySecret "") -}}
 - name: http_proxy
   valueFrom:
     secretKeyRef:
@@ -417,11 +418,13 @@ case "${host}" in *:*) host="[${host}]" ;; esac
       name: {{ .Values.httpProxySecret }}
       key: no_proxy
 {{- end -}}
+{{- end -}}
 
 {{/*
   generate prometheusExporter proxy env var
 */}}
 {{- define "sonarqube.prometheusExporterProxy.env" -}}
+{{- if or (ne .Values.httpProxySecret "") (ne .Values.httpProxy "") (ne .Values.httpsProxy "") (ne .Values.ApplicationNodes.prometheusExporter.httpProxy "") (ne .Values.ApplicationNodes.prometheusExporter.httpsProxy "") -}}
 {{- if .Values.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
 {{- else -}}
@@ -442,11 +445,13 @@ case "${host}" in *:*) host="[${host}]" ;; esac
       key: PROMETHEUS-EXPORTER-NO-PROXY
 {{- end -}}
 {{- end -}}
+{{- end -}}
 
 {{/*
   generate install-plugins proxy env var
 */}}
 {{- define "sonarqube.install-plugins-proxy.env" -}}
+{{- if or (ne .Values.httpProxySecret "") (ne .Values.httpProxy "") (ne .Values.httpsProxy "") (ne .Values.ApplicationNodes.plugins.httpProxy "") (ne .Values.ApplicationNodes.plugins.httpsProxy "") }}
 {{- if .Values.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
 {{- else -}}
@@ -465,6 +470,7 @@ case "${host}" in *:*) host="[${host}]" ;; esac
     secretKeyRef:
       name: {{ template "sonarqube.fullname" . }}-http-proxies
       key: PLUGINS-NO-PROXY
+{{- end -}}
 {{- end -}}
 {{- end -}}
 

@@ -148,10 +148,8 @@ spec:
           name: sonarqube
           subPath: data
       env:
-        {{- if or (ne .Values.httpProxySecret "") (ne .Values.httpProxy "") (ne .Values.httpsProxy "") (ne .Values.prometheusExporter.httpProxy "") (ne .Values.prometheusExporter.httpsProxy "") }}
         {{- with (include "sonarqube.prometheusExporterProxy.env" .) }}
         {{- . | nindent 8 }}
-        {{- end }}
         {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
