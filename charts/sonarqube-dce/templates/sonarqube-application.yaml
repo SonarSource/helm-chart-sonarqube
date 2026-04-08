@@ -148,10 +148,8 @@ spec:
               name: sonarqube
               subPath: data
           env:
-          {{- if or (ne .Values.httpProxySecret "") (ne .Values.httpProxy "") (ne .Values.httpsProxy "") (ne .Values.ApplicationNodes.prometheusExporter.httpProxy "") (ne .Values.ApplicationNodes.prometheusExporter.httpsProxy "") }}
           {{- with (include "sonarqube.prometheusExporterProxy.env" .) }}
           {{- . | nindent 12 }}
-          {{- end }}
           {{- end }}
           {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
@@ -180,10 +178,8 @@ spec:
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.ApplicationNodes.plugins.resource) | indent 12 }}
           env:
-          {{- if or (ne .Values.httpProxySecret "") (ne .Values.httpProxy "") (ne .Values.httpsProxy "") (ne .Values.ApplicationNodes.plugins.httpProxy "") (ne .Values.ApplicationNodes.plugins.httpsProxy "") }}
           {{- with (include "sonarqube.install-plugins-proxy.env" .) }}
           {{- . | nindent 12 }}
-          {{- end }}
           {{- end }}
           {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
