@@ -19,6 +19,8 @@ Compatible SonarQube Version: `2026.2.0`
 Supported Kubernetes Versions: From `1.32` to `1.35`
 Supported Openshift Versions: From `4.17` to `4.20`
 
+**Note:** The Kubernetes version range above applies to non-OpenShift Kubernetes clusters. For OpenShift, the supported range is defined by the OpenShift versions listed here and is validated as a platform, including its embedded Kubernetes version.
+
 ## Installing the chart
 
 > **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/dce/introduction/) for further information on how to install and tune the helm chart specifications.
