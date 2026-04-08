@@ -272,7 +272,7 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
   generate Proxy env var from httpProxySecret
 */}}
 {{- define "sonarqube.proxyFromSecret" -}}
-{{- if or (ne .Values.httpProxySecret "") -}}
+{{- if (ne .Values.httpProxySecret "") -}}
 - name: http_proxy
   valueFrom:
     secretKeyRef:
