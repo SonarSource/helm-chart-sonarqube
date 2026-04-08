@@ -401,7 +401,7 @@ case "${host}" in *:*) host="[${host}]" ;; esac
   generate Proxy env var from httpProxySecret
 */}}
 {{- define "sonarqube.proxyFromSecret" -}}
-{{- if or (ne .Values.httpProxySecret "") -}}
+{{- if (ne .Values.httpProxySecret "") -}}
 - name: http_proxy
   valueFrom:
     secretKeyRef:
