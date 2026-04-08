@@ -148,7 +148,7 @@ spec:
           name: sonarqube
           subPath: data
       env:
-        {{- if or .Values.proxy.enabled .Values.prometheusExporter.proxy.enabled }}
+        {{- if or (ne .Values.httpProxySecret "") (ne .Values.httpProxy "") (ne .Values.httpsProxy "") (ne .Values.prometheusExporter.httpProxy "") (ne .Values.prometheusExporter.httpsProxy "") }}
         {{- with (include "sonarqube.prometheusExporterProxy.env" .) }}
         {{- . | nindent 8 }}
         {{- end }}
