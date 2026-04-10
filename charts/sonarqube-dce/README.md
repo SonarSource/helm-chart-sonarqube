@@ -265,6 +265,43 @@ Nonetheless, if you intend to run a production-grade SonarQube please follow the
 * Set `ingress-nginx.enabled` to **false**. This parameter would run the nginx chart. This is useful for testing purposes only. Ingress controllers are critical Kubernetes components, we advise users to install their own.
 * Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
 * Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
+* If your cluster spans multiple failure domains, configure `searchNodes.topologySpreadConstraints` to spread search pods across zones and nodes. This is especially important for search pods because they are stateful and depend on persistent volumes.
+
+#### Spreading pods across topology domains
+
+If your Kubernetes cluster spans multiple failure domains such as availability zones, we recommend configuring `topologySpreadConstraints` for SonarQube pods.
+
+For `applicationNodes`, spreading across zones or hosts improves resilience, but those pods are stateless and can usually be recreated on another eligible node when capacity is available.
+
+For `searchNodes`, spreading is more important in production. Search pods are stateful and use persistent volumes. In many Kubernetes environments, those volumes are provisioned in a single topology domain such as an availability zone. Once a PVC is bound, the search pod usually has to restart on a node in the same zone. If multiple search pods are initially placed in the same zone and that zone becomes unavailable, the search cluster may be left with fewer than two running nodes.
+
+To reduce that risk, make sure the cluster has eligible worker nodes in multiple zones, that nodes expose the labels used by your constraints, and that `searchNodes.topologySpreadConstraints` is set before installation or before scaling the search cluster. Using `whenUnsatisfiable: DoNotSchedule` for search pods is often preferable in production because it prevents silently placing multiple replicas in the same failure domain, but it also means new pods will remain pending until enough eligible nodes are available.
+
+The example below spreads search pods across availability zones by using the standard `topology.kubernetes.io/zone` label:
+
+```yaml
+searchNodes:
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          app: sonarqube-dce-search
+```
+
+For application pods, a similar configuration can be used when you want to spread replicas across zones while keeping scheduling more flexible:
+
+```yaml
+applicationNodes:
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app: sonarqube-dce
+```
 
 ### ApplicationNodes renamed to applicationNodes
 
@@ -500,6 +537,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.nodeSelector`                                | Node labels for search nodes' pods assignment, global nodeSelector takes precedence        | `{}`                                                                   |
 | `searchNodes.affinity`                                    | Node / Pod affinities for searchNodes, global affinity takes precedence                    | `{}`                                                                   |
 | `searchNodes.tolerations`                                 | List of node taints to tolerate for searchNodes, global tolerations take precedence        | `[]`                                                                   |
+| `searchNodes.topologySpreadConstraints`                   | Topology spread constraints to apply to the search pods                                    | `[]`                                                                   |
 
 ### App Nodes Configuration
 
@@ -588,6 +626,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.nodeSelector`                                  | Node labels for application nodes' pods assignment, global nodeSelector takes precedence                                                                                                                       | `{}`                                                                   |
 | `applicationNodes.affinity`                                      | Node / Pod affinities for applicationNodes, global affinity takes precedence                                                                                                                                   | `{}`                                                                   |
 | `applicationNodes.tolerations`                                   | List of node taints to tolerate for applicationNodes, global tolerations take precedence                                                                                                                       | `[]`                                                                   |
+| `applicationNodes.topologySpreadConstraints`                     | Topology spread constraints to apply to the application pods                                                                                                                                                    | `[]`                                                                   |
 | `applicationNodes.port`                                   | The Hazelcast port for communication with each application member of the cluster.                                                                                                                       | `9003`                                                                   |
 | `applicationNodes.webPort`                                   | The Hazelcast port for communication with the WebServer process. If not specified, a dynamic port will be chosen.                                                                                                                    | ``                                                                   |
 | `applicationNodes.cePort`                                   | The Hazelcast port for communication with the ComputeEngine process. If not specified, a dynamic port will be chosen                                                                                                                     | ``                                                                   |

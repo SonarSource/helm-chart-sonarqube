@@ -149,6 +149,9 @@ searchNodes:
   affinity: {}
   # if the global .Values.tolerations is set, the following one will be ignored
   tolerations: []
+  # Topology spread constraints to apply to the search pods
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+  topologySpreadConstraints: []
 
 applicationNodes:
   image:
@@ -411,6 +414,9 @@ applicationNodes:
   affinity: {}
   # if the global .Values.tolerations is set, the following one will be ignored
   tolerations: []
+  # Topology spread constraints to apply to the application pods
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+  topologySpreadConstraints: []
 
   ## The following values are used to set the ports for the Hazelcast cluster communication
   # The port used by the application nodes to communicate with each other. (If unset, it will be assigned to 9003)

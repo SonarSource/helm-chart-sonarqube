@@ -3,11 +3,11 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-search
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 spec:
   minAvailable: 2
@@ -20,11 +20,11 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-app
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 spec:
   minAvailable: 1
@@ -33,24 +33,15 @@ spec:
     matchLabels:
       sonarqube.datacenter/type: "app"
 ---
-# Source: sonarqube-dce/templates/serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: myserviceaccount
-  annotations:
-    myAnnotation: tutu
-automountServiceAccountToken: false
----
 # Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-monitoring-passcode
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-monitoring-passcode
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -60,11 +51,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce
+  name: topology-spread-constraints-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -74,11 +65,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-jwt
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-jwt
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -89,11 +80,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-http-proxies
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-http-proxies
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 type: Opaque
 stringData:
@@ -108,11 +99,11 @@ stringData:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-app-config
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-app-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -121,11 +112,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-search-config
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-search-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -134,11 +125,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-init-fs
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-init-fs
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 data:
   init_fs.sh: |-
@@ -150,11 +141,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-init-sysctl
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-init-sysctl
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -197,11 +188,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-install-plugins
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-install-plugins
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
@@ -210,11 +201,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-jdbc-config
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-jdbc-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "user"
@@ -224,11 +215,11 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce
+  name: topology-spread-constraints-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 
 spec:
@@ -240,17 +231,17 @@ spec:
       name: http
   selector:
     app: sonarqube-dce
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-headless
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 
 spec:
@@ -265,17 +256,17 @@ spec:
       name: hazelcast
   selector:
     app: sonarqube-dce
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-search
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 
 spec:
@@ -291,17 +282,17 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-search-headless
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-search-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 
 spec:
@@ -318,24 +309,24 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-app
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: serviceaccount-values.yaml
+    app.kubernetes.io/name: topology-spread-constraints-values.yaml
     sonarqube.datacenter/type: "app"
-    app.kubernetes.io/instance: serviceaccount-values.yaml
+    app.kubernetes.io/instance: topology-spread-constraints-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: serviceaccount-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: topology-spread-constraints-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "2026.2.0-datacenter-app"
 spec:
   replicas: 2
@@ -345,17 +336,17 @@ spec:
   selector:
     matchLabels:
       app: sonarqube-dce
-      release: serviceaccount-values.yaml
+      release: topology-spread-constraints-values.yaml
   template:
     metadata:
       labels:
         app: sonarqube-dce
-        release: serviceaccount-values.yaml
+        release: topology-spread-constraints-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 98926c8e40b22a22522445a104d2531837bca94c7ec23827ba6a7f6335c8a6d0
-        checksum/config: 8628742f89a065b67ab2fc901577f640c4402e8e7f4a137a0b789cd5460fc558
-        checksum/secret: 27d609b410f0c63b654a689744330c950316e605ad37e931b242e2320b49fd8f
+        checksum/plugins: 60b5d41d3a1d3c021104a0e5d1880a4418c28b8a230d568b30fb93a0b11c3285
+        checksum/config: 5837383d7c20a0837107a4aa46e302506dc460b528525b677fffa94dca510282
+        checksum/secret: 3569a493250fd0d2862b8d2c416cec6f49d9fcf60f8460484f7fd5c2e01f599e
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -393,7 +384,7 @@ spec:
             - name: SONAR_HELM_CHART_VERSION
               value: 2026.3.0
             - name: SONAR_CLUSTER_SEARCH_HOSTS
-              value: "serviceaccount-values.yaml-sonarqube-dce-search"
+              value: "topology-spread-constraints-values.yaml-sonarqube-dce-search"
             - name: SONAR_CLUSTER_KUBERNETES
               value: "true"
             - name: SONAR_CLUSTER_NODE_NAME
@@ -401,25 +392,25 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: SONAR_CLUSTER_HOSTS
-              value: "serviceaccount-values.yaml-sonarqube-dce-headless"
+              value: "topology-spread-constraints-values.yaml-sonarqube-dce-headless"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
               valueFrom:
                 secretKeyRef:
-                  name: "serviceaccount-values.yaml-sonarqube-dce-jwt"
+                  name: "topology-spread-constraints-values.yaml-sonarqube-dce-jwt"
                   key: SONAR_AUTH_JWTBASE64HS256SECRET
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: serviceaccount-values.yaml-sonarqube-dce
+                  name: topology-spread-constraints-values.yaml-sonarqube-dce
                   key: jdbc-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: serviceaccount-values.yaml-sonarqube-dce-monitoring-passcode
+                  name: topology-spread-constraints-values.yaml-sonarqube-dce-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
           envFrom:
             - configMapRef:
-                name: serviceaccount-values.yaml-sonarqube-dce-jdbc-config
+                name: topology-spread-constraints-values.yaml-sonarqube-dce-jdbc-config
           livenessProbe:
             exec:
               command:
@@ -481,12 +472,20 @@ spec:
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-      serviceAccountName: myserviceaccount
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app: sonarqube-dce
+              release: topology-spread-constraints-values.yaml
+          maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+      serviceAccountName: default
       volumes:
       
       - name: install-plugins
         configMap:
-          name: serviceaccount-values.yaml-sonarqube-dce-install-plugins
+          name: topology-spread-constraints-values.yaml-sonarqube-dce-install-plugins
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
@@ -501,34 +500,34 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: serviceaccount-values.yaml-sonarqube-dce-search
+  name: topology-spread-constraints-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: "serviceaccount-values.yaml"
+    app.kubernetes.io/name: "topology-spread-constraints-values.yaml"
     sonarqube.datacenter/type: "search"
-    app.kubernetes.io/instance: serviceaccount-values.yaml
+    app.kubernetes.io/instance: topology-spread-constraints-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: serviceaccount-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: topology-spread-constraints-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "2026.2.0-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
-  serviceName: serviceaccount-values.yaml-sonarqube-dce-search
+  serviceName: topology-spread-constraints-values.yaml-sonarqube-dce-search
   selector:
     matchLabels:
       app: sonarqube-dce-search
-      release: serviceaccount-values.yaml
+      release: topology-spread-constraints-values.yaml
   volumeClaimTemplates:
   - metadata:
-      name: serviceaccount-values.yaml-sonarqube-dce
+      name: topology-spread-constraints-values.yaml-sonarqube-dce
       labels:
-        release: serviceaccount-values.yaml
+        release: topology-spread-constraints-values.yaml
         chart: "sonarqube-dce"
-        app: "serviceaccount-values.yaml-sonarqube-dce"
+        app: "topology-spread-constraints-values.yaml-sonarqube-dce"
     spec:
       accessModes:
         - "ReadWriteOnce"
@@ -539,13 +538,13 @@ spec:
     metadata:
       labels:
         app: sonarqube-dce-search
-        release: serviceaccount-values.yaml
+        release: topology-spread-constraints-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: 3f01600dabdf1ad74e7a2c8332ea7c3e659a8ab81d4c07810d1233d94046ac4b
-        checksum/init-fs: 6086a5741cf136d29e5fa6a0f9a99b296b45ced73acc0c14bda17c49e7a528a4
-        checksum/config: 8628742f89a065b67ab2fc901577f640c4402e8e7f4a137a0b789cd5460fc558
-        checksum/secret: 27d609b410f0c63b654a689744330c950316e605ad37e931b242e2320b49fd8f
+        checksum/init-sysctl: 33ad3f3b00794814d5ad9de855469a2220d3f78cdf6aa5196713ccc72c016432
+        checksum/init-fs: f871867958c358ede50e84ebb06c5edcb2ab1b33b4a6fec497cb5f91783da3bc
+        checksum/config: 5837383d7c20a0837107a4aa46e302506dc460b528525b677fffa94dca510282
+        checksum/secret: 3569a493250fd0d2862b8d2c416cec6f49d9fcf60f8460484f7fd5c2e01f599e
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -589,16 +588,16 @@ spec:
             - name: init-fs
               mountPath: /tmp/scripts/
             - mountPath: /opt/sonarqube/certs
-              name: "serviceaccount-values.yaml-sonarqube-dce"
+              name: "topology-spread-constraints-values.yaml-sonarqube-dce"
               subPath: certs
             - mountPath: /opt/sonarqube/data
-              name: "serviceaccount-values.yaml-sonarqube-dce"
+              name: "topology-spread-constraints-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "serviceaccount-values.yaml-sonarqube-dce"
+              name: "topology-spread-constraints-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "serviceaccount-values.yaml-sonarqube-dce"
+              name: "topology-spread-constraints-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -628,9 +627,9 @@ spec:
             - name: SONAR_LOG_JSONOUTPUT
               value: "false"
             - name: SONAR_CLUSTER_ES_HOSTS
-              value: "serviceaccount-values.yaml-sonarqube-dce-search-0,serviceaccount-values.yaml-sonarqube-dce-search-1,serviceaccount-values.yaml-sonarqube-dce-search-2,"
+              value: "topology-spread-constraints-values.yaml-sonarqube-dce-search-0,topology-spread-constraints-values.yaml-sonarqube-dce-search-1,topology-spread-constraints-values.yaml-sonarqube-dce-search-2,"
             - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
-              value: "serviceaccount-values.yaml-sonarqube-dce-search-headless"
+              value: "topology-spread-constraints-values.yaml-sonarqube-dce-search-headless"
             - name: SONAR_CLUSTER_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -698,36 +697,44 @@ spec:
               type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/certs
-              name: "serviceaccount-values.yaml-sonarqube-dce"
+              name: "topology-spread-constraints-values.yaml-sonarqube-dce"
               subPath: certs
               readOnly: true
             - mountPath: /opt/sonarqube/data
-              name: "serviceaccount-values.yaml-sonarqube-dce"
+              name: "topology-spread-constraints-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "serviceaccount-values.yaml-sonarqube-dce"
+              name: "topology-spread-constraints-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "serviceaccount-values.yaml-sonarqube-dce"
+              name: "topology-spread-constraints-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
-      serviceAccountName: myserviceaccount
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app: sonarqube-dce-search
+              release: topology-spread-constraints-values.yaml
+          maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+      serviceAccountName: default
       volumes:
       
       - name: init-sysctl
         configMap:
-          name: serviceaccount-values.yaml-sonarqube-dce-init-sysctl
+          name: topology-spread-constraints-values.yaml-sonarqube-dce-init-sysctl
           items:
             - key: init_sysctl.sh
               path: init_sysctl.sh
       - name: init-fs
         configMap:
-          name: serviceaccount-values.yaml-sonarqube-dce-init-fs
+          name: topology-spread-constraints-values.yaml-sonarqube-dce-init-fs
           items:
             - key: init_fs.sh
               path: init_fs.sh
-      - name: "serviceaccount-values.yaml-sonarqube-dce"
+      - name: "topology-spread-constraints-values.yaml-sonarqube-dce"
       - name : tmp-dir
         emptyDir:
           {}
@@ -736,7 +743,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "serviceaccount-values.yaml-ui-test"
+  name: "topology-spread-constraints-values.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
     # Disable Istio sidecar injection for this test pod
@@ -744,12 +751,12 @@ metadata:
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.3.0
-    release: serviceaccount-values.yaml
+    release: topology-spread-constraints-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: serviceaccount-values.yaml-ui-test
+    - name: topology-spread-constraints-values.yaml-ui-test
       image: "sonarqube:2026.2.0-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['curl']
@@ -762,7 +769,7 @@ spec:
         '--max-time',
         '5',
         '-s',
-        'serviceaccount-values.yaml-sonarqube-dce:9000/api/system/status'
+        'topology-spread-constraints-values.yaml-sonarqube-dce:9000/api/system/status'
         ]
       resources:
         limits:
