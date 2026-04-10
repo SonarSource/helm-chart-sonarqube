@@ -267,12 +267,36 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
 {{- toJson $filteredEnv -}}
 {{- end -}}
 
+{{/*
+Check if any proxy configuration is set (all proxy types combined)
+Returns: "true" or empty string
+*/}}
+{{- define "sonarqube.hasProxyConfig" -}}
+{{- if or (.Values.httpProxy) (.Values.httpsProxy) (.Values.noProxy) (.Values.prometheusExporter.httpProxy) (.Values.prometheusExporter.httpsProxy) (.Values.prometheusExporter.noProxy) (.Values.plugins.httpProxy) (.Values.plugins.httpsProxy) (.Values.plugins.noProxy) -}}true{{- end -}}
+{{- end -}}
+
+{{/*
+Check if Prometheus exporter proxy configuration is set
+Used to determine if proxy env vars should be injected into the prometheus exporter init container
+Returns: "true" or empty string
+*/}}
+{{- define "sonarqube.hasPrometheusExporterProxyConfig" -}}
+{{- if or (.Values.httpProxy) (.Values.httpsProxy) (.Values.noProxy) (.Values.prometheusExporter.httpProxy) (.Values.prometheusExporter.httpsProxy) (.Values.prometheusExporter.noProxy) }}true{{- end -}}
+{{- end -}}
+
+{{/*
+Check if plugins proxy configuration is set
+Used to determine if proxy env vars should be injected into the install-plugins container
+Returns: "true" or empty string
+*/}}
+{{- define "sonarqube.hasPluginsProxyConfig" -}}
+{{- if or (.Values.httpProxy) (.Values.httpsProxy) (.Values.noProxy) (.Values.plugins.httpProxy) (.Values.plugins.httpsProxy) (.Values.plugins.noProxy) }}true{{- end -}}
+{{- end -}}
 
 {{/*
   generate Proxy env var from httpProxySecret
 */}}
 {{- define "sonarqube.proxyFromSecret" -}}
-{{- if (ne .Values.httpProxySecret "") -}}
 - name: http_proxy
   valueFrom:
     secretKeyRef:
@@ -289,16 +313,14 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
       name: {{ .Values.httpProxySecret }}
       key: no_proxy
 {{- end -}}
-{{- end -}}
 
 {{/*
   generate prometheusExporter proxy env var
 */}}
 {{- define "sonarqube.prometheusExporterProxy.env" -}}
-{{- if or (ne .Values.httpProxySecret "") (ne .Values.httpProxy "") (ne .Values.httpsProxy "") (ne .Values.prometheusExporter.httpProxy "") (ne .Values.prometheusExporter.httpsProxy "") -}}
 {{- if .Values.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
-{{- else -}}
+{{- else if eq (include "sonarqube.hasPrometheusExporterProxyConfig" .) "true" -}}
 - name: http_proxy
   valueFrom:
     secretKeyRef:
@@ -316,16 +338,14 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
       key: PROMETHEUS-EXPORTER-NO-PROXY
 {{- end -}}
 {{- end -}}
-{{- end -}}
 
 {{/*
   generate install-plugins proxy env var
 */}}
 {{- define "sonarqube.install-plugins-proxy.env" -}}
-{{- if or (ne .Values.httpProxySecret "") (ne .Values.httpProxy "") (ne .Values.httpsProxy "") (ne .Values.plugins.httpProxy "") (ne .Values.plugins.httpsProxy "") -}}
 {{- if .Values.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
-{{- else -}}
+{{- else if eq (include "sonarqube.hasPluginsProxyConfig" .) "true" -}}
 - name: http_proxy
   valueFrom:
     secretKeyRef:
@@ -341,7 +361,6 @@ Set combined_env, ensuring we dont have any duplicates with our features and som
     secretKeyRef:
       name: {{ template "sonarqube.fullname" . }}-http-proxies
       key: PLUGINS-NO-PROXY
-{{- end -}}
 {{- end -}}
 {{- end -}}
 
