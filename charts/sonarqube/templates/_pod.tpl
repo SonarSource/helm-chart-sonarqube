@@ -24,6 +24,7 @@ metadata:
     {{- end }}
 spec:
   automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
+  terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
   {{- with .Values.schedulerName }}
   schedulerName: {{ . }}
   {{- end }}
@@ -355,6 +356,9 @@ spec:
         {{- with .Values.extraVolumeMounts }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+      {{- with .Values.lifecycle }}
+      lifecycle: {{- toYaml . | nindent 8 }}
+      {{- end }}
   {{- with .Values.priorityClassName }}
   priorityClassName: {{ . }}
   {{- end }}
