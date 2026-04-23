@@ -1,0 +1,118 @@
+{{- if .Values.mcp.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sonarqube.mcp.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-mcp
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      {{- with .Values.mcp.annotations }}
+      annotations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: {{ include "sonarqube.name" . }}-mcp
+        release: {{ .Release.Name }}
+    spec:
+      {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret .Values.mcp.image.pullSecrets }}
+      imagePullSecrets:
+        {{- if .Values.ApplicationNodes.image.pullSecret }}
+        - name: {{ .Values.ApplicationNodes.image.pullSecret }}
+        {{- end }}
+        {{- with .Values.ApplicationNodes.image.pullSecrets }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.mcp.image.pullSecrets }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-sonarqube
+          image: {{ include "sonarqube.image" . }}
+          imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}
+          {{- with (fromYaml (include "sonarqube.initContainerSecurityContext" .)) }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - sh
+            - -c
+            - |
+              until curl -sf "http://{{ include "sonarqube.fullname" . }}:{{ .Values.service.internalPort }}/api/system/status" | grep -q '"status":"UP"'; do
+                echo "Waiting for SonarQube to be UP..."; sleep 10;
+              done
+      containers:
+        - name: mcp
+          image: {{ printf "%s:%s" .Values.mcp.image.repository (default "latest" .Values.mcp.image.tag) }}
+          imagePullPolicy: {{ .Values.mcp.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.mcp.port }}
+              protocol: TCP
+          env:
+            - name: STORAGE_PATH
+              value: /data
+            - name: SONARQUBE_URL
+              value: {{ printf "http://%s:%d" (include "sonarqube.fullname" .) (.Values.service.internalPort | int) }}
+            - name: SONARQUBE_HTTP_HOST
+              value: "0.0.0.0"
+            - name: SONARQUBE_HTTP_PORT
+              value: {{ .Values.mcp.port | quote }}
+            - name: SONARQUBE_TRANSPORT
+              value: {{ ternary "https" "http" .Values.mcp.tls.enabled }}
+            {{- if .Values.mcp.tls.enabled }}
+            - name: SONARQUBE_HTTPS_KEYSTORE_PATH
+              value: /mcp-tls/{{ .Values.mcp.tls.keystoreSecretKey }}
+            - name: SONARQUBE_HTTPS_KEYSTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mcp.tls.passwordSecretName }}
+                  key: {{ .Values.mcp.tls.passwordSecretKey }}
+            - name: SONARQUBE_HTTPS_KEYSTORE_TYPE
+              value: {{ .Values.mcp.tls.keystoreType }}
+            {{- end }}
+            {{- with .Values.mcp.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+              scheme: {{ ternary "HTTPS" "HTTP" .Values.mcp.tls.enabled }}
+            initialDelaySeconds: {{ .Values.mcp.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.mcp.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.mcp.livenessProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.mcp.livenessProbe.timeoutSeconds }}
+          {{- with .Values.mcp.containerSecurityContext }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.mcp.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: mcp-data
+              mountPath: /data
+            {{- if .Values.mcp.tls.enabled }}
+            - name: mcp-tls
+              mountPath: /mcp-tls
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: mcp-data
+          {{- if .Values.mcp.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ if .Values.mcp.persistence.existingClaim }}{{ .Values.mcp.persistence.existingClaim }}{{- else }}{{ include "sonarqube.mcp.fullname" . }}{{- end }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.mcp.tls.enabled }}
+        - name: mcp-tls
+          secret:
+            secretName: {{ .Values.mcp.tls.keystoreSecretName }}
+        {{- end }}
+{{- end }}

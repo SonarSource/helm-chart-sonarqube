@@ -643,6 +643,38 @@ and set `persistence.hostPath.path` and `persistence.hostPath.type`.
 | `extraConfig.secrets`    | A list of `Secret`s (which must contain key/value pairs)    | `[]`    |
 | `extraConfig.configmaps` | A list of `ConfigMap`s (which must contain key/value pairs) | `[]`    |
 
+### MCP (Model Context Protocol)
+
+| Parameter                              | Description                                                                                              | Default                                                                |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `mcp.enabled`                          | Deploy the SonarQube MCP server alongside SonarQube                                                     | `false`                                                                |
+| `mcp.image.repository`                 | MCP container image repository                                                                           | `mcp/sonarqube`                                                        |
+| `mcp.image.tag`                        | MCP container image tag                                                                                  | `""`                                                                   |
+| `mcp.image.pullPolicy`                 | MCP image pull policy                                                                                    | `IfNotPresent`                                                         |
+| `mcp.image.pullSecrets`                | MCP image pull secrets                                                                                   | `[]`                                                                   |
+| `mcp.port`                             | Port the MCP server listens on                                                                           | `8080`                                                                 |
+| `mcp.healthCheckInterval`              | How often SonarQube checks MCP health (seconds). Sets `SONAR_MCP_HEALTHCHECKINTERVAL` on SonarQube.     | `""`                                                                   |
+| `mcp.persistence.enabled`              | Enable persistent storage for MCP data (`/data`)                                                         | `true`                                                                 |
+| `mcp.persistence.annotations`          | Annotations for the MCP PVC                                                                              | `{}`                                                                   |
+| `mcp.persistence.existingClaim`        | Use an existing PVC instead of creating one                                                              | `""`                                                                   |
+| `mcp.persistence.storageClass`         | Storage class for the MCP PVC                                                                            | `""`                                                                   |
+| `mcp.persistence.accessMode`           | Access mode for the MCP PVC                                                                              | `ReadWriteOnce`                                                        |
+| `mcp.persistence.size`                 | Size of the MCP PVC                                                                                      | `1Gi`                                                                  |
+| `mcp.livenessProbe.initialDelaySeconds` | Initial delay before the liveness probe starts                                                          | `60`                                                                   |
+| `mcp.livenessProbe.periodSeconds`      | How often the liveness probe runs                                                                        | `30`                                                                   |
+| `mcp.livenessProbe.failureThreshold`   | Number of failures before the pod is restarted                                                           | `6`                                                                    |
+| `mcp.livenessProbe.timeoutSeconds`     | Timeout for the liveness probe                                                                           | `1`                                                                    |
+| `mcp.tls.enabled`                      | Enable TLS (HTTPS) between SonarQube and the MCP server                                                 | `false`                                                                |
+| `mcp.tls.keystoreSecretName`           | Name of the Secret containing the keystore file                                                          | `""`                                                                   |
+| `mcp.tls.keystoreSecretKey`            | Key inside the Secret that holds the keystore file                                                       | `keystore.p12`                                                         |
+| `mcp.tls.passwordSecretName`           | Name of the Secret containing the keystore password                                                      | `""`                                                                   |
+| `mcp.tls.passwordSecretKey`            | Key inside the password Secret                                                                           | `password`                                                             |
+| `mcp.tls.keystoreType`                 | Keystore format (`PKCS12` or `JKS`)                                                                     | `PKCS12`                                                               |
+| `mcp.containerSecurityContext`         | Security context for the MCP container                                                                   | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
+| `mcp.env`                              | Additional environment variables for the MCP container                                                   | `[]`                                                                   |
+| `mcp.resources`                        | CPU/memory resource requests and limits for the MCP container                                            | `{}`                                                                   |
+| `mcp.annotations`                      | Annotations for the MCP pod                                                                              | `{}`                                                                   |
+
 ### SetAdminPassword
 
 | Parameter                                    | Description                                                                                            | Default                                                                |
@@ -718,6 +750,77 @@ To enable auto-configuration of the kube worker node, set `elasticsearch.configu
 This will run `sysctl -w vm.max_map_count=262144` on the worker where the sonarqube pod(s) get scheduled. This needs to be set to `262144` but normally defaults to `65530`. Other kernel settings are recommended by the [docker image](https://hub.docker.com/_/sonarqube/#requirements), but the defaults work fine in most cases.
 
 To disable worker node configuration, set `elasticsearch.configureNode` to `false`. Note that if node configuration is not enabled, then you will likely need to also disable the Elasticsearch bootstrap checks. These can be explicitly disabled by setting `elasticsearch.bootstrapChecks` to `false`.
+
+### MCP (Model Context Protocol) Server
+
+When `mcp.enabled` is set to `true`, the chart deploys a separate MCP server pod alongside SonarQube and automatically wires the two together.
+
+**What gets deployed:**
+- A `Deployment` running the MCP container
+- A `ClusterIP` Service exposing port `8080` within the cluster
+- A `PersistentVolumeClaim` for MCP's `/data` directory (when `mcp.persistence.enabled=true`)
+
+**How the integration works:**
+
+The MCP pod waits for SonarQube to report `"status":"UP"` before starting (via an init container). Once running, SonarQube is configured to call MCP at `http://<release>-sonarqube-mcp:8080` via the `SONAR_MCP_SERVERURL` and `SONAR_MCP_ENABLED` environment variables, which the chart injects automatically.
+
+**Minimal configuration example:**
+
+```yaml
+mcp:
+  enabled: true
+  image:
+    repository: mcp/sonarqube
+    tag: "1.0.0"
+```
+
+**Accessing the MCP server locally:**
+
+```bash
+kubectl port-forward svc/<release>-sonarqube-mcp 8080:8080 -n <namespace>
+```
+
+**Persistence:**
+
+MCP uses `/data` to store its files. `mcp.persistence.enabled` defaults to `true`. For local testing only (e.g. Kind/minikube), you can disable it — but data will be lost on pod restarts:
+
+```yaml
+mcp:
+  enabled: true
+  persistence:
+    enabled: false
+```
+
+**TLS (encrypted communication):**
+
+When `mcp.tls.enabled` is set to `true`, the MCP server starts in HTTPS mode using the keystore from `mcp.tls.keystoreSecretName`. SonarQube connects to it over `https://`.
+
+If the keystore uses a self-signed certificate, SonarQube's JVM will reject the connection unless the CA certificate is trusted. Use the `caCerts` feature to import it into SonarQube's JVM truststore:
+
+1. Create a Secret containing the CA certificate in PEM format:
+
+   ```bash
+   kubectl create secret generic mcp-ca-cert \
+     --from-file=mcp-ca.crt=/path/to/ca.pem \
+     -n <namespace>
+   ```
+
+2. Reference it in your values:
+
+   ```yaml
+   mcp:
+     tls:
+       enabled: true
+       keystoreSecretName: mcp-keystore-secret
+       keystoreSecretKey: keystore.p12
+       passwordSecretName: mcp-keystore-password
+       passwordSecretKey: password
+       keystoreType: PKCS12
+
+   caCerts:
+     enabled: true
+     secret: mcp-ca-cert
+   ```
 
 ### Extra Config
 

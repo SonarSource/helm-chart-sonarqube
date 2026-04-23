@@ -762,6 +762,86 @@ extraConfig:
   secrets: []
   configmaps: []
 
+# MCP (Model Context Protocol) server deployment.
+# When enabled, a separate MCP server is deployed alongside SonarQube and
+# SonarQube application nodes are automatically configured to connect to it via
+# SONAR_MCP_ENABLED and SONAR_MCP_SERVERURL environment variables.
+mcp:
+  enabled: false
+
+  image:
+    repository: mcp/sonarqube
+    tag: ""
+    pullPolicy: IfNotPresent
+    # pullSecrets:
+    #   - name: my-repo-secret
+
+  port: 8080
+
+  # healthCheckInterval sets SONAR_MCP_HEALTHCHECKINTERVAL on the SonarQube side (in seconds).
+  # healthCheckInterval: "30"
+
+  persistence:
+    enabled: true
+    ## Set annotations on pvc
+    annotations: {}
+    ## Specify an existing volume claim instead of creating a new one.
+    ## When using this option storageClass, accessMode and size are ignored.
+    # existingClaim: ""
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    storageClass:
+    accessMode: ReadWriteOnce
+    size: 1Gi
+
+  livenessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    failureThreshold: 6
+    timeoutSeconds: 1
+
+  # Enable TLS between SonarQube and the MCP server.
+  # Requires a PKCS12 or JKS keystore stored in a Kubernetes Secret.
+  tls:
+    enabled: false
+    # Name of the Secret containing the keystore file.
+    keystoreSecretName: ""
+    # Key inside the Secret that holds the keystore file.
+    keystoreSecretKey: "keystore.p12"
+    # Name of the Secret containing the keystore password.
+    passwordSecretName: ""
+    # Key inside the password Secret.
+    passwordSecretKey: "password"
+    # Keystore format: PKCS12 or JKS.
+    keystoreType: "PKCS12"
+
+  # Set security context for the MCP container.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 0
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
+
+  # Additional environment variables for the MCP container.
+  env: []
+  # - name: MY_VAR
+  #   value: my-value
+
+  resources: {}
+  # limits:
+  #   cpu: 200m
+  #   memory: 256Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+  # Set annotations for the MCP pod.
+  annotations: {}
+
 # setAdminPassword:
 # The values can be set to define the current and the (new) custom admin passwords at the startup (the username will remain "admin")
 #  newPassword: AdminAdmin_12$
