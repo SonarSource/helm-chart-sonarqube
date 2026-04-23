@@ -272,7 +272,7 @@ Check if any proxy configuration is set (all proxy types combined)
 Returns: "true" or empty string
 */}}
 {{- define "sonarqube.hasProxyConfig" -}}
-{{- if or (.Values.httpProxy) (.Values.httpsProxy) (.Values.noProxy) (.Values.prometheusExporter.httpProxy) (.Values.prometheusExporter.httpsProxy) (.Values.prometheusExporter.noProxy) (.Values.plugins.httpProxy) (.Values.plugins.httpsProxy) (.Values.plugins.noProxy) -}}true{{- end -}}
+{{- if or (eq (include "sonarqube.hasPrometheusExporterProxyConfig" .) "true") (eq (include "sonarqube.hasPluginsProxyConfig" .) "true") -}}true{{- end -}}
 {{- end -}}
 
 {{/*
