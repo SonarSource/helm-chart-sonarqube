@@ -29,25 +29,6 @@ stringData:
   password: "admin1"
   currentPassword: "admin"
 ---
-# Source: sonarqube/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: non-default-security-context-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2026.3.0
-    release: non-default-security-context-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -205,7 +186,7 @@ spec:
         checksum/config: 4c7d9e2a0910ade6bada30e1bad33cc386dc55c56ee44beecaff94d0758ac019
         checksum/init-sysctl: df2622588950ab0194b5096728409281377c0809e81f3dfb7f69bfcfa553ec92
         checksum/plugins: 86ae04ae6617a2d264d2d3686fa909f5622f706c993821182c9a59edfa8d6296
-        checksum/secret: 6ee0372a2ed02d02e880d98bdc741acc5764bb30b9664a349804ad12232a3434
+        checksum/secret: 0e0e93bb8033fd405699d69c29808e0ceb92256fcf7c18cd62ea9a75f9307c3b
         checksum/prometheus-config: 0b1b073ef2868b029d7fbad2b17b3d2dff4a9b576b8c375dcb7ffd2756b89857
         checksum/prometheus-ce-config: 2c2782fa4a5352d2d9c3711ae34f3c240833158c61c537f075eee79038b20a02
       labels:
@@ -255,21 +236,6 @@ spec:
               name: sonarqube
               subPath: data
           env:
-            - name: http_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: non-default-security-context-values.yaml-sonarqube-http-proxies
-                  key: PROMETHEUS-EXPORTER-HTTP-PROXY
-            - name: https_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: non-default-security-context-values.yaml-sonarqube-http-proxies
-                  key: PROMETHEUS-EXPORTER-HTTPS-PROXY
-            - name: no_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: non-default-security-context-values.yaml-sonarqube-http-proxies
-                  key: PROMETHEUS-EXPORTER-NO-PROXY
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS
@@ -298,21 +264,6 @@ spec:
             - name: install-plugins
               mountPath: /tmp/scripts/
           env:
-            - name: http_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: non-default-security-context-values.yaml-sonarqube-http-proxies
-                  key: PLUGINS-HTTP-PROXY
-            - name: https_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: non-default-security-context-values.yaml-sonarqube-http-proxies
-                  key: PLUGINS-HTTPS-PROXY
-            - name: no_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: non-default-security-context-values.yaml-sonarqube-http-proxies
-                  key: PLUGINS-NO-PROXY
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS

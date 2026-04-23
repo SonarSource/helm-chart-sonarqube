@@ -14,26 +14,6 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
-# Source: sonarqube/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: host-path-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2026.3.0
-    release: host-path-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -192,7 +172,7 @@ spec:
         checksum/init-fs: 7beccb6cf08b5d08c7c1dbbb2c319494eaf9e27c9989d828a42b7052a43b765f
         checksum/init-sysctl: c9fa27efdf1aad5088f40f47318108f4e18200161107202fdaea6d4f3789d0c1
         checksum/plugins: 56b1ee6086185e44c2533e933a6966d7efe077e1ee0e19f7d40ad5a579b9faa3
-        checksum/secret: 7f770378925c8f152627b6af5815c32df93f6b1497d5099297fed9bafca37d45
+        checksum/secret: f1900d2f1852f36f23777667b6e22ff7f514f83838c0ae84399b0069abcdaddf
       labels:
         app: sonarqube
         release: host-path-values.yaml

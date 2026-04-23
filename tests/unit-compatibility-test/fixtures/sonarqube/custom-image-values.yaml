@@ -14,26 +14,6 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
-# Source: sonarqube/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: custom-image-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2026.3.0
-    release: custom-image-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -158,7 +138,7 @@ spec:
         checksum/config: c1632ab3ebacb15eddfb7b39562ed6a7948563e291e1d96e5c00fa4d0e7cdb88
         checksum/init-sysctl: 33ea765e777b8a9e81161f44e7dff1fbce3eb6f761b032f9962b038d1842befa
         checksum/plugins: 1baa9a0a3893d834a3e23925c9347febc5239c4319406dbcf11684cf5a0c9d33
-        checksum/secret: 4deb9f8cc0b80dc98b452c61d7f4df3a5c961597a48b50773e8c3eb3fc74568d
+        checksum/secret: 1c16b003c2cfb13bad97a7435a3d33fc4d39a634995e1203f74703a3e9eca1d2
       labels:
         app: sonarqube
         release: custom-image-values.yaml
