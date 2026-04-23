@@ -255,21 +255,6 @@ spec:
               name: sonarqube
               subPath: data
           env:
-            - name: http_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: non-default-security-context-values.yaml-sonarqube-http-proxies
-                  key: PROMETHEUS-EXPORTER-HTTP-PROXY
-            - name: https_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: non-default-security-context-values.yaml-sonarqube-http-proxies
-                  key: PROMETHEUS-EXPORTER-HTTPS-PROXY
-            - name: no_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: non-default-security-context-values.yaml-sonarqube-http-proxies
-                  key: PROMETHEUS-EXPORTER-NO-PROXY
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS
@@ -298,21 +283,6 @@ spec:
             - name: install-plugins
               mountPath: /tmp/scripts/
           env:
-            - name: http_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: non-default-security-context-values.yaml-sonarqube-http-proxies
-                  key: PLUGINS-HTTP-PROXY
-            - name: https_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: non-default-security-context-values.yaml-sonarqube-http-proxies
-                  key: PLUGINS-HTTPS-PROXY
-            - name: no_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: non-default-security-context-values.yaml-sonarqube-http-proxies
-                  key: PLUGINS-NO-PROXY
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS

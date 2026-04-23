@@ -405,21 +405,6 @@ spec:
               name: sonarqube
               subPath: data
           env:
-            - name: http_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
-                  key: PROMETHEUS-EXPORTER-HTTP-PROXY
-            - name: https_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
-                  key: PROMETHEUS-EXPORTER-HTTPS-PROXY
-            - name: no_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
-                  key: PROMETHEUS-EXPORTER-NO-PROXY
       securityContext:
         fsGroup: 0
       containers:
