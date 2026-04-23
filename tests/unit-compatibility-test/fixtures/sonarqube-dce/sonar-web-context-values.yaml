@@ -90,25 +90,6 @@ stringData:
   password: "admin1"
   currentPassword: "admin"
 ---
-# Source: sonarqube-dce/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sonar-web-context-values.yaml-sonarqube-dce-http-proxies
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2026.3.0
-    release: sonar-web-context-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -360,7 +341,7 @@ spec:
       annotations:
         checksum/plugins: d254af7b86f2dda97d6f2a3062f0eed54001d46770676998f430de64073c43f8
         checksum/config: 4eb313c735c058f748475692d0d8b16c56ae6a716c885c245b1014bc5782802b
-        checksum/secret: d85907a7e4cbbc90f37a66bf149696c3427e1d8b48ae4a96b4c9821f1c8f0cd2
+        checksum/secret: 0b0140d4e42906a744b78a401fef8e1e46af84336723ab950c89b8298b1a139a
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -550,7 +531,7 @@ spec:
         checksum/init-sysctl: 286459a80f574bc5b3f288b5b39cf8feb1bd66830271bd065bb958b55c07309e
         checksum/init-fs: 99d73a2b8692348ae8c3c476f59f2bccb45fea7db3f6fc5ba4cf4441d676c9e9
         checksum/config: 4eb313c735c058f748475692d0d8b16c56ae6a716c885c245b1014bc5782802b
-        checksum/secret: d85907a7e4cbbc90f37a66bf149696c3427e1d8b48ae4a96b4c9821f1c8f0cd2
+        checksum/secret: 0b0140d4e42906a744b78a401fef8e1e46af84336723ab950c89b8298b1a139a
     spec:
       automountServiceAccountToken: false
       initContainers:

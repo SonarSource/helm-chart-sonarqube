@@ -14,26 +14,6 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
-# Source: sonarqube/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: openshift-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2026.3.0
-    release: openshift-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -110,7 +90,7 @@ spec:
       annotations:
         checksum/config: 6c19968dc3e585ba8be2dd6bb29ed90117c39e8649c2d5b9bef605bedf728014
         checksum/plugins: 2a511c3e0cd848c898861ded8a637cf67930b132dec83309e2bdf84de76a073b
-        checksum/secret: 45a2ea25b852e5943c80d0e6cdf95d9a98b87d57c937d8ee1297d553534ae8ee
+        checksum/secret: aece61d65c10605c94f85ea8f58390bc20e55511edeafcf3a1bed86b8018e360
       labels:
         app: sonarqube
         release: openshift-values.yaml

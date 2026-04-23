@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [2026.3.0]
 * Upgrade Chart's version to 2026.3.0
 * Add `applicationNodes.topologySpreadConstraints` and `searchNodes.topologySpreadConstraints` to support spreading pods across topology domains
+* Render proxy Secret keys and env vars only for configured proxy values
 
 ## [2026.2.0]
 * Upgrade Chart's version to 2026.2.0
