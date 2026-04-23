@@ -321,21 +321,30 @@ Returns: "true" or empty string
 {{- if .Values.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
 {{- else if eq (include "sonarqube.hasPrometheusExporterProxyConfig" .) "true" -}}
+{{- $httpProxy := default .Values.httpProxy .Values.prometheusExporter.httpProxy -}}
+{{- $httpsProxy := default .Values.httpsProxy .Values.prometheusExporter.httpsProxy -}}
+{{- $noProxy := default .Values.noProxy .Values.prometheusExporter.noProxy -}}
+{{- if $httpProxy }}
 - name: http_proxy
   valueFrom:
     secretKeyRef:
       name: {{ template "sonarqube.fullname" . }}-http-proxies
       key: PROMETHEUS-EXPORTER-HTTP-PROXY
+{{- end }}
+{{- if $httpsProxy }}
 - name: https_proxy
   valueFrom:
     secretKeyRef:
       name: {{ template "sonarqube.fullname" . }}-http-proxies
       key: PROMETHEUS-EXPORTER-HTTPS-PROXY
+{{- end }}
+{{- if $noProxy }}
 - name: no_proxy
   valueFrom:
     secretKeyRef:
       name: {{ template "sonarqube.fullname" . }}-http-proxies
       key: PROMETHEUS-EXPORTER-NO-PROXY
+{{- end }}
 {{- end -}}
 {{- end -}}
 
@@ -346,21 +355,30 @@ Returns: "true" or empty string
 {{- if .Values.httpProxySecret -}}
 {{- include "sonarqube.proxyFromSecret" . }}
 {{- else if eq (include "sonarqube.hasPluginsProxyConfig" .) "true" -}}
+{{- $httpProxy := default .Values.httpProxy .Values.plugins.httpProxy -}}
+{{- $httpsProxy := default .Values.httpsProxy .Values.plugins.httpsProxy -}}
+{{- $noProxy := default .Values.noProxy .Values.plugins.noProxy -}}
+{{- if $httpProxy }}
 - name: http_proxy
   valueFrom:
     secretKeyRef:
       name: {{ template "sonarqube.fullname" . }}-http-proxies
       key: PLUGINS-HTTP-PROXY
+{{- end }}
+{{- if $httpsProxy }}
 - name: https_proxy
   valueFrom:
     secretKeyRef:
       name: {{ template "sonarqube.fullname" . }}-http-proxies
       key: PLUGINS-HTTPS-PROXY
+{{- end }}
+{{- if $noProxy }}
 - name: no_proxy
   valueFrom:
     secretKeyRef:
       name: {{ template "sonarqube.fullname" . }}-http-proxies
       key: PLUGINS-NO-PROXY
+{{- end }}
 {{- end -}}
 {{- end -}}
 
