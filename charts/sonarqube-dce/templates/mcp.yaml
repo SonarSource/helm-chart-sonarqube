@@ -36,7 +36,7 @@ spec:
         - name: wait-for-sonarqube
           image: {{ include "sonarqube.image" . }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}
-          {{- with (fromYaml (include "sonarqube.initContainerSecurityContext" .)) }}
+          {{- with (fromYaml (include "sonarqube.initContainersSecurityContext" .)) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           command:

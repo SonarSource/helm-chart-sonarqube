@@ -378,6 +378,17 @@ spec:
         - name: wait-for-sonarqube
           image: sonarqube:2026.2.0-datacenter-app
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           command:
             - sh
             - -c
