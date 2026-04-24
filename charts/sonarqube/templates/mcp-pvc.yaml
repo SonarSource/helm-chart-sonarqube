@@ -1,0 +1,24 @@
+{{- if and .Values.mcp.enabled .Values.mcp.persistence.enabled (not .Values.mcp.persistence.existingClaim) }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "sonarqube.mcp.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp
+  {{- with .Values.mcp.persistence.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    - {{ .Values.mcp.persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.mcp.persistence.size | quote }}
+  {{- if .Values.mcp.persistence.storageClass }}
+  {{- if (eq "-" .Values.mcp.persistence.storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: "{{ .Values.mcp.persistence.storageClass }}"
+  {{- end }}
+  {{- end }}
+{{- end }}
