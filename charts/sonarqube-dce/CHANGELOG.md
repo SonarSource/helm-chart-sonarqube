@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [2026.3.0]
 * Upgrade Chart's version to 2026.3.0
 * Add `applicationNodes.topologySpreadConstraints` and `searchNodes.topologySpreadConstraints` to support spreading pods across topology domains
+* Add MCP (Model Context Protocol) server support via `mcp.enabled`
 
 ## [2026.2.0]
 * Upgrade Chart's version to 2026.2.0

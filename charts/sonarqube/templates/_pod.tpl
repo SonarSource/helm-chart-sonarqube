@@ -279,6 +279,16 @@ spec:
               name: {{ include "sonarqube.fullname" . }}-monitoring-passcode
               key: SONAR_WEB_SYSTEMPASSCODE
             {{- end }}
+        {{- if .Values.mcp.enabled }}
+        - name: SONAR_MCP_ENABLED
+          value: "true"
+        - name: SONAR_MCP_SERVERURL
+          value: {{ printf "%s://%s:%d" (ternary "https" "http" .Values.mcp.tls.enabled) (include "sonarqube.mcp.fullname" .) (.Values.mcp.port | int) | quote }}
+        {{- if .Values.mcp.healthCheckInterval }}
+        - name: SONAR_MCP_HEALTHCHECKINTERVAL
+          value: {{ .Values.mcp.healthCheckInterval | quote }}
+        {{- end }}
+        {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
       envFrom:
         {{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable }}

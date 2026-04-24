@@ -647,3 +647,82 @@ extraConfig:
 
 # (DEPRECATED) This value is not used in the templates.
 terminationGracePeriodSeconds: 60
+
+# MCP (Model Context Protocol) server sidecar deployment.
+# When enabled, a separate MCP server is deployed alongside SonarQube and
+# SonarQube is automatically configured to connect to it via SONAR_MCP_ENABLED
+# and SONAR_MCP_SERVERURL environment variables.
+mcp:
+  enabled: false
+
+  image:
+    repository: mcp/sonarqube
+    tag: ""
+    pullPolicy: IfNotPresent
+    # pullSecrets:
+    #   - name: my-repo-secret
+
+  port: 8080
+
+  # healthCheckInterval sets SONAR_MCP_HEALTHCHECKINTERVAL on the SonarQube side (in seconds).
+  # healthCheckInterval: "30"
+
+  persistence:
+    enabled: true
+    ## Set annotations on pvc
+    annotations: {}
+    ## Specify an existing volume claim instead of creating a new one.
+    ## When using this option storageClass, accessMode and size are ignored.
+    # existingClaim: ""
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    storageClass:
+    accessMode: ReadWriteOnce
+    size: 1Gi
+
+  # Set security context for the MCP container.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 0
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
+
+  livenessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    failureThreshold: 6
+    timeoutSeconds: 1
+
+  # TLS configuration for encrypted communication between SonarQube and MCP.
+  # When enabled, the MCP server uses HTTPS transport and SonarQube connects via https://.
+  # Requires a PKCS12 or JKS keystore stored in a Kubernetes Secret.
+  tls:
+    enabled: false
+    # Secret containing the keystore file.
+    keystoreSecretName: ""
+    keystoreSecretKey: "keystore.p12"
+    # Secret containing the keystore password.
+    passwordSecretName: ""
+    passwordSecretKey: "password"
+    # Keystore type: PKCS12 or JKS.
+    keystoreType: "PKCS12"
+
+  # Additional environment variables for the MCP container.
+  env: []
+  # - name: MY_VAR
+  #   value: my-value
+
+  resources: {}
+  # limits:
+  #   cpu: 200m
+  #   memory: 256Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+  # Set annotations for the MCP pod.
+  annotations: {}

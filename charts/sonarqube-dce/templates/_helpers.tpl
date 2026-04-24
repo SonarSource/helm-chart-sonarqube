@@ -39,6 +39,13 @@
 {{- $applicationNodes }}
 {{- end -}}
 
+{{/*
+Create the fully qualified name for the MCP service.
+*/}}
+{{- define "sonarqube.mcp.fullname" -}}
+{{- printf "%s-mcp" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
 {{- define "accountDeprecation" -}}
 {{- $map1 := .Values.setAdminPassword -}}
 {{- $map2 := .Values.account -}}
