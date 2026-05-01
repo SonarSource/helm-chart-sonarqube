@@ -1,0 +1,152 @@
+# POC Configuration: SonarQube with OpenTelemetry → Tempo
+# Architecture: SonarQube (Java Agent) → OTel Collector → Tempo
+#
+# Usage: helm install sonarqube . -f values-otel-tempo-poc.yaml
+
+# ============================================================================
+# OpenTelemetry Collector - Single instance to receive and forward to Tempo
+# ============================================================================
+monitoringPasscode: "Hello_world"
+community:
+  enabled: true
+opentelemetry-collector:
+  enabled: true
+  mode: deployment
+  replicaCount: 1
+  image:
+    repository: otel/opentelemetry-collector-k8s
+  config:
+    receivers:
+      # Receive traces from SonarQube via OTLP protocol
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      # Batch traces for efficiency
+      batch:
+        timeout: 10s
+        send_batch_size: 1024
+
+      # Limit memory usage
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 512
+
+    exporters:
+      # Export to Tempo (Grafana's tracing backend)
+      otlp/tempo:
+        endpoint: "192.168.56.1:4317"  # Change to your Tempo endpoint
+        tls:
+          insecure: true  # Set to false if Tempo uses TLS
+
+      # Also log to stdout for debugging (optional - remove in production)
+      debug:
+        verbosity: detailed
+        sampling_initial: 5
+        sampling_thereafter: 200
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlp/tempo, debug]  # Remove 'debug' if you don't need logs
+
+  # Expose collector as ClusterIP service (SonarQube will connect to it)
+  service:
+    type: ClusterIP
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# ============================================================================
+# SonarQube Configuration: Add OTel Java Agent for auto-instrumentation
+# ============================================================================
+
+# Download OTel Java agent in an init container
+extraInitContainers:
+  - name: download-otel-agent
+    image: busybox:latest
+    command:
+      - sh
+      - -c
+      - |
+        echo "Downloading OpenTelemetry Java agent v2.27.0..."
+        wget -O /otel/opentelemetry-javaagent.jar \
+          https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.27.0/opentelemetry-javaagent.jar
+        echo "Download complete. File size:"
+        ls -lh /otel/opentelemetry-javaagent.jar
+    volumeMounts:
+      - name: otel-agent-jar
+        mountPath: /otel
+    securityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: false
+      runAsUser: 0
+      capabilities:
+        drop:
+          - ALL
+
+# Add volume for OTel Java agent jar
+extraVolumes:
+  - name: otel-agent-jar
+    emptyDir: {}
+
+# Mount the Java agent in SonarQube container
+extraVolumeMounts:
+  - name: otel-agent-jar
+    mountPath: /opt/otel
+    readOnly: true
+
+# Configure environment variables for OTel Java agent
+# These will be picked up automatically by the Java agent
+env:
+  # Attach Java agent to SonarQube JVM
+  - name: SONAR_WEB_JAVAOPTS
+    value: "-javaagent:/opt/otel/opentelemetry-javaagent.jar -Dotel.instrumentation.logback-appender.enabled=false -Dotel.instrumentation.logback-mdc.enabled=false"
+
+  # OpenTelemetry configuration
+  - name: OTEL_SERVICE_NAME
+    value: "sonarqube"
+
+  - name: OTEL_EXPORTER_OTLP_ENDPOINT
+    value: "http://sonarqube-opentelemetry-collector:4317"
+
+  - name: OTEL_EXPORTER_OTLP_PROTOCOL
+    value: "grpc"
+
+  - name: OTEL_TRACES_EXPORTER
+    value: "otlp"
+
+  - name: OTEL_METRICS_EXPORTER
+    value: "none"  # Disable metrics for now (focus on traces)
+
+  - name: OTEL_LOGS_EXPORTER
+    value: "none"  # Disable logs for now
+
+  # Trace sampling (1.0 = 100% for POC, reduce in production)
+  - name: OTEL_TRACES_SAMPLER
+    value: "always_on"
+
+  # Resource attributes to help identify traces in Tempo
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: "service.name=sonarqube,deployment.environment=poc"
+
+# Optional: Reduce resources for POC
+resources:
+  requests:
+    cpu: 500m
+    memory: 2Gi
+  limits:
+    cpu: 2000m
+    memory: 4Gi
