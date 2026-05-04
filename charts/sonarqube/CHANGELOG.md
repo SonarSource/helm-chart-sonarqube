@@ -12,6 +12,7 @@ All changes to this chart will be documented in this file.
 * Upgrade SonarQube Community build to 26.3.0.120487
 * Replace wget with curl in health probes
 * Use -fS flag in curl to show errors in liveness probes
+* Support annotations in HTTPRoute
 
 ## [2026.1.0]
 * Upgrade SonarQube Server to 2026.1.0
