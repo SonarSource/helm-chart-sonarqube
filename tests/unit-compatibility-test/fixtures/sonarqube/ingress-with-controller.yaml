@@ -30,26 +30,6 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
-# Source: sonarqube/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ingress-with-controller.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2026.3.0
-    release: ingress-with-controller.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube/charts/ingress-nginx/templates/controller-configmap.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -600,7 +580,7 @@ spec:
         checksum/config: c3b0c04792472cea821277e66315276100e4a420ff46145c486af269df4d65ab
         checksum/init-sysctl: f41f0f9e858015b2a55ba1f4cf8e6bf753ea754a1f85edae538d88f65b75ff45
         checksum/plugins: 9ad315704ee3c1e0867fd5edd4999977dd4784cedf262354b662c2228932a1ce
-        checksum/secret: 75488e7972ab9c5c4375ed22f8c34416f24c973422acc23b3a91a6dd473d00c4
+        checksum/secret: c2ad57264510e80860d8c0d394a16a0c41228184530de39468b5aaafdebdcc54
       labels:
         app: sonarqube
         release: ingress-with-controller.yaml

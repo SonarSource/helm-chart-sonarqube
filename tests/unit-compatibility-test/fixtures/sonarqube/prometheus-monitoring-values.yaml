@@ -14,26 +14,6 @@ type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
 ---
-# Source: sonarqube/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: prometheus-monitoring-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2026.3.0
-    release: prometheus-monitoring-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -158,7 +138,7 @@ spec:
         checksum/config: a37e19b67ef5c9f8b03368a1ddf9b5e77d6493916eae20b7704018452285537e
         checksum/init-sysctl: 2db0e063abf54ede487f5673dc8c1213ce14fe3aa495c7382350ebffea99ccf9
         checksum/plugins: e31ce94042ee0653ac6eb0ee5210f49c491f4cfce08dba6b900eddb6b1c3f584
-        checksum/secret: c1bccd480986378813474f1f960ed16b600e701d351cb356f29dc3542a3c2c28
+        checksum/secret: 594f796064da702789eae9a1e7c3cd1090f7eb3a93e107155410f023a624dcdf
       labels:
         app: sonarqube
         release: prometheus-monitoring-values.yaml

@@ -139,7 +139,7 @@ spec:
           subPath: data
       env:
         {{- with (include "sonarqube.prometheusExporterProxy.env" .) }}
-        {{- . | nindent 8 }}
+        {{- . | trim | nindent 8 }}
         {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
@@ -203,7 +203,7 @@ spec:
         {{- end }}
       env:
         {{- with (include "sonarqube.install-plugins-proxy.env" .) }}
-        {{- . | nindent 8 }}
+        {{- . | trim | nindent 8 }}
         {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}

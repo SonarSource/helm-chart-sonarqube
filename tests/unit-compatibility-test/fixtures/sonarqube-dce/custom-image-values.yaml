@@ -75,26 +75,6 @@ type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: "c29tZS1zZWNyZXQ="
 ---
-# Source: sonarqube-dce/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: custom-image-values.yaml-sonarqube-dce-http-proxies
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2026.3.0
-    release: custom-image-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -346,7 +326,7 @@ spec:
       annotations:
         checksum/plugins: 619161a855123d174a6c837273a90aa9d7d38e0c0b0d15c488d7a692a8417220
         checksum/config: 07d1aa88ebfce34107f4ba9c1b2464a793c4bc4fa272ff27f0c72089844089d3
-        checksum/secret: 500336daa12758bb94d32d79c63b2f8426617f6a5ea03696f2e60532fa039549
+        checksum/secret: d59f96861c187977ffe1b2ee52f62914f9ecf57ac978fe9a54c5a84db2a77815
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -536,7 +516,7 @@ spec:
         checksum/init-sysctl: c9071886114d6f9d74d5415c8809288aca81f05bca166aa6acaf72959038efb3
         checksum/init-fs: 47eec2e410a99ee50ba697b92b0ab5b922cdeda4d6ea266fac46f4b4f373fcae
         checksum/config: 07d1aa88ebfce34107f4ba9c1b2464a793c4bc4fa272ff27f0c72089844089d3
-        checksum/secret: 500336daa12758bb94d32d79c63b2f8426617f6a5ea03696f2e60532fa039549
+        checksum/secret: d59f96861c187977ffe1b2ee52f62914f9ecf57ac978fe9a54c5a84db2a77815
     spec:
       automountServiceAccountToken: false
       initContainers:

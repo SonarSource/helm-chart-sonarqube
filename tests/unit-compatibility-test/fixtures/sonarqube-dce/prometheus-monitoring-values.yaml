@@ -75,26 +75,6 @@ type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: "c29tZS1zZWNyZXQ="
 ---
-# Source: sonarqube-dce/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2026.3.0
-    release: prometheus-monitoring-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -376,7 +356,7 @@ spec:
       annotations:
         checksum/plugins: def3b384f744ef25ed9d8e560630d3a1146a6973cfce0010d1713a81f998e79a
         checksum/config: a27834ffa222111dc9a22a860304131d80d5ce057a7ab92689b56ef8a48bca26
-        checksum/secret: 010a81889954d6d962421dfda161cdbe0f091fcb3926c6a7c866a5fb2ca41d4f
+        checksum/secret: 5b1db222dc668473b40d40662b92e3d961ef420cb308972044912f5fe52ab5ce
         checksum/prometheus-config: a610ab1c89930873198ff776ac1848dd078ee19e4f366be6188838cc29b216c3
         checksum/prometheus-ce-config: 9e44137ee43433089d565ecba8636c2f6863b200ea02c841abe0f9bbb38c6c55
     spec:
@@ -405,21 +385,6 @@ spec:
               name: sonarqube
               subPath: data
           env:
-            - name: http_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
-                  key: PROMETHEUS-EXPORTER-HTTP-PROXY
-            - name: https_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
-                  key: PROMETHEUS-EXPORTER-HTTPS-PROXY
-            - name: no_proxy
-              valueFrom:
-                secretKeyRef:
-                  name: prometheus-monitoring-values.yaml-sonarqube-dce-http-proxies
-                  key: PROMETHEUS-EXPORTER-NO-PROXY
       securityContext:
         fsGroup: 0
       containers:
@@ -630,7 +595,7 @@ spec:
         checksum/init-sysctl: b6e4fd451abb27b8e9452ca8a33b2bb17ec28fccb702e867910dd7fe39a64f27
         checksum/init-fs: a687fb438a8b61e0012985b31d0854361b8902e52c6f60455b3f33578d8f9929
         checksum/config: a27834ffa222111dc9a22a860304131d80d5ce057a7ab92689b56ef8a48bca26
-        checksum/secret: 010a81889954d6d962421dfda161cdbe0f091fcb3926c6a7c866a5fb2ca41d4f
+        checksum/secret: 5b1db222dc668473b40d40662b92e3d961ef420cb308972044912f5fe52ab5ce
     spec:
       automountServiceAccountToken: false
       initContainers:

@@ -29,25 +29,6 @@ stringData:
   password: "admin1"
   currentPassword: "admin"
 ---
-# Source: sonarqube/templates/secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sonar-web-context-values.yaml-sonarqube-http-proxies
-  labels:
-    app: sonarqube
-    chart: sonarqube-2026.3.0
-    release: sonar-web-context-values.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -172,7 +153,7 @@ spec:
         checksum/config: 90d1c7505751fa69f23cc81c43a530115ec557ec9931e5da2217794d0a2c5e6c
         checksum/init-sysctl: 1ccb3dfdc967cd5bfef814cc430a730ca9fe966204340b92f2385693caf135ed
         checksum/plugins: 65e7f8b8381a8c57622bf0b21da4cc66b2ecfb6c6d44713f9ff1bc8cea7766a5
-        checksum/secret: 279cbab1c81379011a7a1e2dbb72c9d4303f315917ba6372e62215160d8af742
+        checksum/secret: dce8f830c668104f47821ce07e42c7a2de89cfe5fef0d810b465abc4eea8e6fa
       labels:
         app: sonarqube
         release: sonar-web-context-values.yaml

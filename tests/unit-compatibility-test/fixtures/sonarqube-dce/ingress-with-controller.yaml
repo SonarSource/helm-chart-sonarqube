@@ -91,26 +91,6 @@ type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: "c29tZS1zZWNyZXQ="
 ---
-# Source: sonarqube-dce/templates/secret.yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ingress-with-controller.yaml-sonarqube-dce-http-proxies
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2026.3.0
-    release: ingress-with-controller.yaml
-    heritage: Helm
-type: Opaque
-stringData:
-  PLUGINS-HTTP-PROXY: ""
-  PLUGINS-HTTPS-PROXY: ""
-  PLUGINS-NO-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
-  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
-  PROMETHEUS-EXPORTER-NO-PROXY: ""
----
 # Source: sonarqube-dce/charts/ingress-nginx/templates/controller-configmap.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -788,7 +768,7 @@ spec:
       annotations:
         checksum/plugins: afb6073a50670bb7a665484d2626670803367af721bb28fd2b5af8d49edfe47b
         checksum/config: 34fdb6da877b543a9e980a5ee826691cda4551cb0a8a7c87b81019d598d96f0f
-        checksum/secret: 1b6c829b2974df537ea39bb6740ed6ca8a6f7126957bcfe5bb68a2ec502d8c50
+        checksum/secret: dab1d054dd750cc6804a63d4e39d38c57a75d97327ae83acca3a05f29513f2fc
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -978,7 +958,7 @@ spec:
         checksum/init-sysctl: dd8864e21c96a5290205b6913909ee0901de9833debdf640dbaaee410febc089
         checksum/init-fs: 2266f831cacdbce042cf194d8d3e30eb43d8b173fb90d2ca24e68ad948ee3359
         checksum/config: 34fdb6da877b543a9e980a5ee826691cda4551cb0a8a7c87b81019d598d96f0f
-        checksum/secret: 1b6c829b2974df537ea39bb6740ed6ca8a6f7126957bcfe5bb68a2ec502d8c50
+        checksum/secret: dab1d054dd750cc6804a63d4e39d38c57a75d97327ae83acca3a05f29513f2fc
     spec:
       automountServiceAccountToken: false
       initContainers:
