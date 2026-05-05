@@ -5,6 +5,7 @@ All changes to this chart will be documented in this file.
 * Upgrade Chart's version to 2026.3.0
 * Upgrade SonarQube Community build to 26.4.0.121862
 * Add MCP (Model Context Protocol) server support via `mcp.enabled`
+* Fix MCP init container and SONARQUBE_URL to respect `sonarWebContext` when non-root
 
 ## [2026.2.0]
 * Upgrade Chart's version to 2026.2.0
