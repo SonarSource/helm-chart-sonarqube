@@ -43,7 +43,7 @@ spec:
             - sh
             - -c
             - |
-              until curl -sf "http://{{ include "sonarqube.fullname" . }}:{{ .Values.service.internalPort }}/api/system/status" | grep -q '"status":"UP"'; do
+              until curl -sf "http://{{ include "sonarqube.fullname" . }}:{{ .Values.service.internalPort }}{{ include "sonarqube.webcontext" . }}api/system/status" | grep -q '"status":"UP"'; do
                 echo "Waiting for SonarQube to be UP..."; sleep 10;
               done
       containers:
@@ -58,7 +58,7 @@ spec:
             - name: STORAGE_PATH
               value: /data
             - name: SONARQUBE_URL
-              value: {{ printf "http://%s:%d" (include "sonarqube.fullname" .) (.Values.service.internalPort | int) }}
+              value: {{ printf "http://%s:%d%s" (include "sonarqube.fullname" .) (.Values.service.internalPort | int) (trimSuffix "/" (include "sonarqube.webcontext" .)) }}
             - name: SONARQUBE_HTTP_HOST
               value: "0.0.0.0"
             - name: SONARQUBE_HTTP_PORT

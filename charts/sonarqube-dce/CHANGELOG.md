@@ -5,6 +5,7 @@ All changes to this chart will be documented in this file.
 * Upgrade Chart's version to 2026.3.0
 * Add `applicationNodes.topologySpreadConstraints` and `searchNodes.topologySpreadConstraints` to support spreading pods across topology domains
 * Add MCP (Model Context Protocol) server support via `mcp.enabled`
+* Fix MCP init container and SONARQUBE_URL to respect `sonarWebContext` when non-root
 
 ## [2026.2.0]
 * Upgrade Chart's version to 2026.2.0
