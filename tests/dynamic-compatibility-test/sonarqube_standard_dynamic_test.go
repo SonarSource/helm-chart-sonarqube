@@ -53,39 +53,45 @@ func TestSonarQubeChartDynamicCompatibility(t *testing.T) {
 
 	// Input values for our charts' tests
 	table := []struct {
-		name             string
-		chartName        string
-		expectedPods     int
-		values           map[string]string
-		valuesFilesPaths []string
+		name              string
+		chartName         string
+		expectedPods      int
+		requireExternalDB bool
+		values            map[string]string
+		valuesFilesPaths  []string
 	}{
-		{"standard-chart-default-values-deployment", "sonarqube", 1, map[string]string{TESTS_ENABLING_ACTION: "false",
+		{"standard-chart-default-values-deployment", "sonarqube", 1, false, map[string]string{TESTS_ENABLING_ACTION: "false",
 			"deploymentType":             "Deployment",
 			"prometheusExporter.enabled": "false", // only for deployment
 			"edition":                    "enterprise",
-			"monitoringPasscode":        "monitoringPasscode",
+			"monitoringPasscode":         "monitoringPasscode",
 		}, []string{"../../charts/sonarqube/values.yaml"}},
 
-		{"standard-chart-default-values-sts", "sonarqube", 1, map[string]string{TESTS_ENABLING_ACTION: "false",
-			"edition":                   "enterprise",
-			"monitoringPasscode":        "monitoringPasscode",
+		{"standard-chart-default-values-sts", "sonarqube", 1, false, map[string]string{TESTS_ENABLING_ACTION: "false",
+			"edition":            "enterprise",
+			"monitoringPasscode": "monitoringPasscode",
 		},
 			[]string{"../../charts/sonarqube/values.yaml"}},
 
-		{"standard-chart-all-values-deployment", "sonarqube", 1, map[string]string{TESTS_ENABLING_ACTION: "false",
+		{"standard-chart-all-values-deployment", "sonarqube", 1, false, map[string]string{TESTS_ENABLING_ACTION: "false",
 			"deploymentType":             "Deployment",
 			"prometheusExporter.enabled": "false", // only for deployment
 		}, []string{"sonarqube/all-values.yaml"}},
 
-		{"standard-chart-all-values-sts", "sonarqube", 1, map[string]string{TESTS_ENABLING_ACTION: "false"},
+		{"standard-chart-all-values-sts", "sonarqube", 1, false, map[string]string{TESTS_ENABLING_ACTION: "false"},
 			[]string{"sonarqube/all-values.yaml"}},
 
-		{"dce-chart-default-values", "sonarqube-dce", 6, map[string]string{TESTS_ENABLING_ACTION: "false",
-			"ApplicationNodes.jwtSecret": "dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=",
-			"monitoringPasscode":        "monitoringPasscode",
+		{"dce-chart-default-values", "sonarqube-dce", 6, true, map[string]string{TESTS_ENABLING_ACTION: "false",
+			"ApplicationNodes.jwtSecret":          "dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=",
+			"monitoringPasscode":                  "monitoringPasscode",
+			"jdbcOverwrite.enabled":               "true",
+			"jdbcOverwrite.jdbcUrl":               "jdbc:postgresql://" + PostgresHost + ":" + PostgresPort + "/" + PostgresDatabase,
+			"jdbcOverwrite.jdbcUsername":          PostgresUsername,
+			"jdbcOverwrite.jdbcSecretName":        PostgresSecretName,
+			"jdbcOverwrite.jdbcSecretPasswordKey": PostgresSecretPasswordKey,
 		}, []string{"../../charts/sonarqube-dce/values.yaml"}},
 
-		{"dce-chart-all-values", "sonarqube-dce", 6, map[string]string{TESTS_ENABLING_ACTION: "false",
+		{"dce-chart-all-values", "sonarqube-dce", 6, true, map[string]string{TESTS_ENABLING_ACTION: "false",
 			"ApplicationNodes.jwtSecret": "dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=",
 		}, []string{"sonarqube-dce/all-values.yaml"}},
 	}
@@ -118,6 +124,12 @@ func TestSonarQubeChartDynamicCompatibility(t *testing.T) {
 
 			// delete all resources after test execution
 			defer teardownTest(t, kubectlOptions, namespaceName)
+
+			// Install the external database first so it is reachable by the
+			// time SonarQube pods come up and run their startup probes.
+			if tc.requireExternalDB {
+				setupExternalDB(t, kubectlOptions)
+			}
 
 			// Setup the args
 			options := &helm.Options{
