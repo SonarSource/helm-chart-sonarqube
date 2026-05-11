@@ -17,8 +17,8 @@ import (
 func TestStatefulSetWithDefaultValues(t *testing.T) {
 	t.Parallel()
 	t.Run("Standard chart with default values as StatefulSet", func(t *testing.T) {
-
 		// ******* GIVEN *********
+
 		chartName := "sonarqube"
 		values := map[string]string{
 			utils.TESTS_ENABLING_ACTION: "false",
@@ -38,7 +38,6 @@ func TestStatefulSetWithDefaultValues(t *testing.T) {
 			SetValues:      values,
 			KubectlOptions: kubectlOptions,
 		}
-
 		output := helm.RenderTemplate(t, helmOptions, helmChartPath, chartName, []string{})
 
 		// ******* WHEN *********

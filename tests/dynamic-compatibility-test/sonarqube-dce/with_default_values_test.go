@@ -17,7 +17,6 @@ import (
 func TestWithDefaultValues(t *testing.T) {
 	t.Parallel()
 	t.Run("DCE chart with Default Values", func(t *testing.T) {
-
 		// ******* GIVEN *********
 
 		chartName := "sonarqube-dce"
@@ -31,7 +30,6 @@ func TestWithDefaultValues(t *testing.T) {
 			"jdbcOverwrite.jdbcSecretName":        utils.PostgresSecretName,
 			"jdbcOverwrite.jdbcSecretPasswordKey": utils.PostgresSecretPasswordKey,
 		}
-		expectedPods := 1
 		valuesFilesPaths := []string{"../../../charts/sonarqube-dce/values.yaml"}
 		namespaceName := utils.NamespaceFor(chartName)
 		helmChartPath := "../../../charts/" + chartName
@@ -54,6 +52,7 @@ func TestWithDefaultValues(t *testing.T) {
 
 		// ******* THEN *********
 
+		expectedPods := 1
 		pods := utils.CheckMinimumNumberOfRunningPods(t, kubectlOptions, expectedPods)
 		utils.CheckPodsInContainersReadyState(t, kubectlOptions, pods)
 		utils.CheckSonarQubeUpAndRunning(t, kubectlOptions, chartName)

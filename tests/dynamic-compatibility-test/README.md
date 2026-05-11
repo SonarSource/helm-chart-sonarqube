@@ -7,7 +7,7 @@ In order to execute the dynamic compatibility test locally, you need to have a k
 When the pre-requisites are fulfilled, just run:
 
 ```bash
-go test -v -timeout=0 ./..
+go test -v -timeout=0 -parallel 4 -p 4 ./...
 ```
 
 ## Schema validation tests

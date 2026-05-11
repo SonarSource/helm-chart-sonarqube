@@ -41,7 +41,6 @@ func TestWithAllValues(t *testing.T) {
 			KubectlOptions: kubectlOptions,
 			Logger:         logger.Discard,
 		}
-
 		output := helm.RenderTemplate(t, helmOptions, helmChartPath, chartName, []string{})
 
 		// ******* WHEN *********
