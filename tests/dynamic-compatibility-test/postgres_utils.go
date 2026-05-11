@@ -13,7 +13,7 @@ const (
 	postgresReleaseName = "external-postgres"
 	postgresChart       = "oci://registry-1.docker.io/bitnamicharts/postgresql"
 	postgresChartVer    = "18.2.3"
-	postgresValuesFile  = "sonarqube-dce/postgres-values.yaml"
+	postgresValuesFile  = "postgres-values.yaml"
 
 	// Service hostname produced by the Bitnami chart with the release name above.
 	// Resolves within the same namespace via cluster DNS.
@@ -30,10 +30,10 @@ const (
 	PostgresSecretPasswordKey = "password"
 )
 
-// setupExternalDB installs a Bitnami PostgreSQL release into the test
+// SetupExternalDB installs a Bitnami PostgreSQL release into the test
 // namespace and waits for the primary pod to be ready. The release is torn
 // down automatically when the namespace is deleted in the test teardown.
-func setupExternalDB(t *testing.T, kubectlOptions *k8s.KubectlOptions) {
+func SetupExternalDB(t *testing.T, kubectlOptions *k8s.KubectlOptions) {
 	options := &helm.Options{
 		ValuesFiles:    []string{postgresValuesFile},
 		KubectlOptions: kubectlOptions,

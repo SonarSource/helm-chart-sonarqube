@@ -7,7 +7,7 @@ In order to execute the dynamic compatibility test locally, you need to have a k
 When the pre-requisites are fulfilled, just run:
 
 ```bash
-go test -timeout=0 -v sonarqube_standard_dynamic_test.go pod_utils.go
+go test -v -timeout=0 ./..
 ```
 
 ## Schema validation tests
