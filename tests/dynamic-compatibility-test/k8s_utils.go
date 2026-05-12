@@ -71,23 +71,26 @@ func WaitForChartReady(t *testing.T, options *k8s.KubectlOptions, chartName stri
 	}
 }
 
-// TearDownTestSetup deletes the test namespace and waits for it to disappear.
-func TearDownTestSetup(t *testing.T, options *k8s.KubectlOptions, namespaceName string) {
-	log.Println("Tear down test setup: Remove leftovers from previous deployments in the same namespace")
-	WaitUntilNamespaceDeletedE(t, options, namespaceName)
-}
-
 // WaitUntilNamespaceDeletedE checks if the namespaceName namespace exists and,
 // in the positive case, tries to delete it.
 func WaitUntilNamespaceDeletedE(t *testing.T, options *k8s.KubectlOptions, namespaceName string) {
-	namespace, _ := k8s.GetNamespaceE(t, options, namespaceName)
+	log.Println("Delete the namespace")
+	namespace, err := k8s.GetNamespaceE(t, options, namespaceName)
+	if err != nil || namespace == nil {
+		return //namespace doesn't exist, nothing to delete
+	}
+
 	namespaceActualName := namespace.Name
 
 	for namespaceActualName == namespaceName {
 		fmt.Printf("Deleting an existing namespace: %v\n", namespaceActualName)
 		k8s.DeleteNamespaceE(t, options, namespaceActualName) // asynchronous call
 		// verify if the namespace still exists, it takes some time to delete it
-		namespace, _ = k8s.GetNamespaceE(t, options, namespaceName)
+		namespace, err = k8s.GetNamespaceE(t, options, namespaceName)
+		if err != nil || namespace == nil {
+			return //namespace doesn't exist, nothing to delete
+		}
+
 		namespaceActualName = namespace.Name
 		time.Sleep(10 * time.Second)
 	}

@@ -42,12 +42,4 @@ func SetupExternalDB(t *testing.T, kubectlOptions *k8s.KubectlOptions) {
 		},
 	}
 	helm.Install(t, options, postgresChart, postgresReleaseName)
-
-	// Belt-and-braces: --wait above already blocks on readiness, but the chart
-	// produces a StatefulSet so we double-check the primary pod directly.
-	k8s.RunKubectl(t, kubectlOptions,
-		"wait", "--for=condition=ready", "pod",
-		"-l", "app.kubernetes.io/name=postgresql",
-		"--timeout=300s",
-	)
 }

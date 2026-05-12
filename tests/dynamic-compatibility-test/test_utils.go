@@ -24,7 +24,7 @@ func RunChartTest(t *testing.T, chart ChartTestSpec) {
 	existingKubectlOptions := k8s.NewKubectlOptions("", "", "default")
 	k8s.CreateNamespace(t, existingKubectlOptions, namespaceName)
 	kubectlOptions := k8s.NewKubectlOptions("", "", namespaceName)
-	defer TearDownTestSetup(t, kubectlOptions, namespaceName)
+	defer WaitUntilNamespaceDeletedE(t, kubectlOptions, namespaceName)
 
 	if chart.RequireExternalDB {
 		SetupExternalDB(t, kubectlOptions)
