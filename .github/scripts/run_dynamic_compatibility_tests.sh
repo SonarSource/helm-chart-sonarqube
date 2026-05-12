@@ -19,6 +19,6 @@ echo ">>> Running dynamic compatibility tests"
 cd "${REPO_ROOT}/tests/dynamic-compatibility-test"
 
 
-# Execute 4 tests in a package(--parallel) and 4 packages(-p) in parallel
+# Execute 2 tests in a package(-parallel) and 2 packages(-p) in parallel
 # This helps in reducing the time taken to execute the dynamic tests
 go test -v -timeout=90m -parallel 2 -p 2 ./...
