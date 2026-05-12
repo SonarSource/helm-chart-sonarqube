@@ -12,10 +12,8 @@ import (
 	http_helper "github.com/gruntwork-io/terratest/modules/http-helper"
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/gruntwork-io/terratest/modules/random"
-	"github.com/gruntwork-io/terratest/modules/retry"
 	"github.com/stretchr/testify/require"
 
-	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -46,51 +44,36 @@ func NamespaceFor(chartName string) string {
 	return name
 }
 
-// WaitUntilPodContainersReady will query a given pod until the condition `ContainersReady` becomes true.
-// If there are errors, it will raise them.
-func WaitUntilPodContainersReady(t *testing.T, options *k8s.KubectlOptions, podName string, retries int, sleepBetweenRetries time.Duration) {
-	require.NoError(t, WaitUntilPodContainersReadyE(t, options, podName, retries, sleepBetweenRetries))
-}
-
-// WaitUntilPodContainersReadyE will query a given pod until the condition `ContainersReady` becomes true.
-func WaitUntilPodContainersReadyE(t *testing.T, options *k8s.KubectlOptions, podName string, retries int, sleepBetweenRetries time.Duration) error {
-	statusMsg := fmt.Sprintf("Wait for pod %s to be running.", podName)
-	_, err := retry.DoWithRetryE(
-		t,
-		statusMsg,
-		retries,
-		sleepBetweenRetries,
-		func() (string, error) {
-			pod, err := k8s.GetPodE(t, options, podName)
-			if err != nil {
-				return "", err
-			}
-			if !k8s.IsPodAvailable(pod) {
-				return "", k8s.NewPodNotAvailableError(pod)
-			}
-			conditions := pod.Status.Conditions
-			for _, condition := range conditions {
-				if condition.Type == "ContainersReady" {
-					//fmt.Printf("condition: %v\n", condition.Status)
-					if condition.Status == "False" {
-						return "", k8s.NewPodNotAvailableError(pod)
-					}
-				}
-			}
-			return "Pod had now containersReady set to true", nil
-		},
+// WaitForChartReady blocks until every Deployment and StatefulSet created by
+// the given Helm release is fully rolled out — i.e. its replica count matches
+// and every replica is Ready. Resources are discovered by the standard Helm
+// `release` label rather than hardcoded names, so this works for charts with
+// multiple workloads (e.g. DCE's separate app/search tiers).
+//
+// `kubectl rollout status` is the canonical Kubernetes primitive for this and
+// handles pod recreations, slow image pulls, and readiness gates without the
+// snapshot-staleness and false-positive problems of the previous custom waits.
+func WaitForChartReady(t *testing.T, options *k8s.KubectlOptions, chartName string) {
+	out, err := k8s.RunKubectlAndGetOutputE(t, options,
+		"get", "statefulset,deployment",
+		"-l", "release="+chartName,
+		"-o", "name",
 	)
-	if err != nil {
-		// logger.Logf(t, "Timedout waiting for Pod to be containersReady: %s", err)
-		return err
+	require.NoError(t, err, "failed to list workloads for release %q", chartName)
+
+	resources := strings.Fields(strings.TrimSpace(out))
+	require.NotEmpty(t, resources, "no Deployments or StatefulSets found for release %q", chartName)
+
+	for _, resource := range resources {
+		fmt.Printf("Waiting for rollout of %s\n", resource)
+		k8s.RunKubectl(t, options,
+			"rollout", "status", resource, "--timeout=15m")
 	}
-	// logger.Logf(t, "%s", message)
-	return nil
 }
 
 // TearDownTestSetup deletes the test namespace and waits for it to disappear.
 func TearDownTestSetup(t *testing.T, options *k8s.KubectlOptions, namespaceName string) {
-	log.Println("setup test: Remove leftovers from previous deployments in the same namespace")
+	log.Println("Tear down test setup: Remove leftovers from previous deployments in the same namespace")
 	WaitUntilNamespaceDeletedE(t, options, namespaceName)
 }
 
@@ -110,32 +93,19 @@ func WaitUntilNamespaceDeletedE(t *testing.T, options *k8s.KubectlOptions, names
 	}
 }
 
-// CheckMinimumNumberOfRunningPods will check if the expected number of pods is available (Jobs are excluded)
-func CheckMinimumNumberOfRunningPods(t *testing.T, kubectlOptions *k8s.KubectlOptions, expectedPods int) []corev1.Pod {
-	pods := k8s.ListPods(t, kubectlOptions, v1.ListOptions{LabelSelector: "!job-name"})
-	lenPods := len(pods)
-	for lenPods < expectedPods {
-		pods = k8s.ListPods(t, kubectlOptions, v1.ListOptions{LabelSelector: "!job-name"})
-		time.Sleep(5 * time.Second)
-		fmt.Printf("Currently,  %v pods are running\n", len(pods))
-		lenPods = len(pods)
-	}
-	return pods
-}
-
-// CheckPodsInContainersReadyState will check that all pods in the list have
-// the condition `ContainersReady` set to true.
-func CheckPodsInContainersReadyState(t *testing.T, kubectlOptions *k8s.KubectlOptions, pods []corev1.Pod) {
-	for _, pod := range pods {
-		fmt.Printf("Checking, %v\n", pod.Name)
-		WaitUntilPodContainersReady(t, kubectlOptions, pod.Name, 150, 30*time.Second)
-	}
-}
-
 // CheckSonarQubeUpAndRunning will check if the deployed sonarqube application
 // is running properly by hitting /api/system/status through a port-forward.
+//
+// For the DCE chart the label selector is narrowed to the app tier — search
+// pods carry the same `app=`/`release=` labels but don't listen on 9000.
 func CheckSonarQubeUpAndRunning(t *testing.T, kubectlOptions *k8s.KubectlOptions, chartName string) {
-	podName := k8s.ListPods(t, kubectlOptions, v1.ListOptions{LabelSelector: "app=" + chartName + ",release=" + chartName})[0].Name
+	selector := "app=" + chartName + ",release=" + chartName
+	if chartName == "sonarqube-dce" {
+		selector += ",sonarqube.datacenter/type=app"
+	}
+	pods := k8s.ListPods(t, kubectlOptions, v1.ListOptions{LabelSelector: selector})
+	require.NotEmpty(t, pods, "no pods match selector %q", selector)
+	podName := pods[0].Name
 	fmt.Printf("Opening a tunnel to %v\n", podName)
 	tunnel := k8s.NewTunnel(kubectlOptions, k8s.ResourceTypePod, podName, 0, 9000)
 	defer tunnel.Close()
