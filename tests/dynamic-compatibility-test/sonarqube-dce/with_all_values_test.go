@@ -6,7 +6,7 @@ import (
 	utils "github.com/helm-chart-sonarqube/tests/dynamic-compatibility-test"
 )
 
-func TestDceWithAllValues(t *testing.T) {
+func TestDCEWithAllValues(t *testing.T) {
 	t.Parallel()
 
 	utils.RunChartTest(t, utils.ChartTestSpec{

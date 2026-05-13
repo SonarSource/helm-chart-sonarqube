@@ -29,10 +29,6 @@ var nonNamespaceChar = regexp.MustCompile(`[^a-z0-9-]+`)
 // from the running test's name plus a short random suffix. The test name keeps
 // the namespace easy to spot in `kubectl get ns`; the random suffix means
 // concurrent runs and leftover namespaces from a crashed run never collide.
-//
-// Usage:
-//
-//	namespaceName := dyntest.NamespaceFor(t)
 func NamespaceFor(chartName string) string {
 	base := nonNamespaceChar.ReplaceAllString(strings.ToLower(chartName), "-")
 	base = strings.Trim(base, "-")
@@ -71,9 +67,9 @@ func WaitForChartReady(t *testing.T, options *k8s.KubectlOptions, chartName stri
 	}
 }
 
-// WaitUntilNamespaceDeletedE checks if the namespaceName namespace exists and,
+// DeleteNamespaceAndWait checks if the namespaceName namespace exists and,
 // in the positive case, tries to delete it.
-func WaitUntilNamespaceDeletedE(t *testing.T, options *k8s.KubectlOptions, namespaceName string) {
+func DeleteNamespaceAndWait(t *testing.T, options *k8s.KubectlOptions, namespaceName string) {
 	log.Println("Delete the namespace")
 	namespace, err := k8s.GetNamespaceE(t, options, namespaceName)
 	if err != nil || namespace == nil {

@@ -16,7 +16,6 @@ func TestStatefulSetWithDefaultValues(t *testing.T) {
 			"edition":                   "enterprise",
 			"monitoringPasscode":        "monitoringPasscode",
 		},
-		ValuesFiles:       []string{"../../../charts/sonarqube/values.yaml"},
 		RequireExternalDB: false,
 	})
 }

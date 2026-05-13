@@ -1,19 +1,30 @@
-package tests
+package dependencies
 
 import (
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/gruntwork-io/terratest/modules/helm"
 	"github.com/gruntwork-io/terratest/modules/k8s"
 )
 
+// valuesFile returns the absolute path of postgres-values.yaml that sits next to this
+// Go source file. Using runtime.Caller makes the path independent of the test
+// process's working directory — each test package runs from its own dir
+// (sonarqube/, sonarqube-dce/, …) and helm resolves --values relative to CWD,
+// so a fixed relative path would only work from one caller.
+func valuesFile() string {
+	_, thisFile, _, _ := runtime.Caller(0)
+	return filepath.Join(filepath.Dir(thisFile), "postgres-values.yaml")
+}
+
 // External Postgres install constants. These match the values hardcoded in
-// sonarqube-dce/postgres-values.yaml and the JDBC config passed to the DCE chart.
+// postgres-values.yaml and the JDBC config passed to the DCE chart.
 const (
 	postgresReleaseName = "external-postgres"
 	postgresChart       = "oci://registry-1.docker.io/bitnamicharts/postgresql"
 	postgresChartVer    = "18.2.3"
-	postgresValuesFile  = "postgres-values.yaml"
 
 	// Service hostname produced by the Bitnami chart with the release name above.
 	// Resolves within the same namespace via cluster DNS.
@@ -30,12 +41,12 @@ const (
 	PostgresSecretPasswordKey = "password"
 )
 
-// SetupExternalDB installs a Bitnami PostgreSQL release into the test
+// SetupDB installs a Bitnami PostgreSQL release into the test
 // namespace and waits for the primary pod to be ready. The release is torn
 // down automatically when the namespace is deleted in the test teardown.
-func SetupExternalDB(t *testing.T, kubectlOptions *k8s.KubectlOptions) {
+func SetupDB(t *testing.T, kubectlOptions *k8s.KubectlOptions) {
 	options := &helm.Options{
-		ValuesFiles:    []string{postgresValuesFile},
+		ValuesFiles:    []string{valuesFile()},
 		KubectlOptions: kubectlOptions,
 		ExtraArgs: map[string][]string{
 			"install": {"--version", postgresChartVer, "--wait", "--timeout", "5m"},
