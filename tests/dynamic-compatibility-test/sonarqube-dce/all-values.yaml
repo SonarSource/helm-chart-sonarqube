@@ -53,7 +53,7 @@ plugins:
 # tests/unit-compatibility-test/sonarqube-dce/jdbc-config-values.yaml # It requires an external db
 # tests/unit-compatibility-test/sonarqube-dce/networkpolicy-values.yaml
 # The chart's built-in egress rules don't include the external Postgres pod
-# we install in setupDB, so the app pods can't reach the DB unless we
+# we install in SetupDB, so the app pods can't reach the DB unless we
 # add an explicit allow rule. NetworkPolicies are additive in Kubernetes — the
 # rules from this extra policy union with the chart's defaults.
 networkPolicy:
@@ -77,12 +77,12 @@ networkPolicy:
 
 jdbcOverwrite:
   enabled: true
-  jdbcUrl: "jdbc:postgresql://external-postgres-postgresql:5432/sonar"
-  jdbcUsername: sonar
+  jdbcUrl: "jdbc:postgresql://external-postgres-postgresql:5432/postgres"
+  jdbcUsername: postgres
   # Reference the password from the Bitnami-generated secret instead of the
-  # deprecated `jdbcPassword` field. The secret is created by setupDB().
+  # deprecated `jdbcPassword` field. The secret is created by SetupDB().
   jdbcSecretName: external-postgres-postgresql
-  jdbcSecretPasswordKey: password
+  jdbcSecretPasswordKey: postgres-password
 
 # tests/unit-compatibility-test/sonarqube-dce/secret-values.yaml
 # tests/unit-compatibility-test/sonarqube-dce/service-values.yaml

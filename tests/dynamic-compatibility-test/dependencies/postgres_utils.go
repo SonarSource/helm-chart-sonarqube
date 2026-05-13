@@ -19,8 +19,9 @@ func valuesFile() string {
 	return filepath.Join(filepath.Dir(thisFile), "postgres-values.yaml")
 }
 
-// External Postgres install constants. These match the values hardcoded in
-// postgres-values.yaml and the JDBC config passed to the DCE chart.
+// External Postgres install constants. These match the Bitnami chart's
+// defaults (no auth.* overrides in postgres-values.yaml) and the JDBC config
+// passed to the DCE chart.
 const (
 	postgresReleaseName = "external-postgres"
 	postgresChart       = "oci://registry-1.docker.io/bitnamicharts/postgresql"
@@ -30,15 +31,15 @@ const (
 	// Resolves within the same namespace via cluster DNS.
 	PostgresHost     = "external-postgres-postgresql"
 	PostgresPort     = "5432"
-	PostgresDatabase = "sonar"
-	PostgresUsername = "sonar"
+	PostgresDatabase = "postgres"
+	PostgresUsername = "postgres"
 
 	// Reference the Bitnami-generated secret instead of passing the password
 	// inline — the deprecated jdbcOverwrite.jdbcPassword field should not be
 	// used. The Bitnami chart names the secret <release>-postgresql and stores
-	// the application user's password under the key "password".
+	// the postgres superuser's password under the key "postgres-password".
 	PostgresSecretName        = "external-postgres-postgresql"
-	PostgresSecretPasswordKey = "password"
+	PostgresSecretPasswordKey = "postgres-password"
 )
 
 // SetupDB installs a Bitnami PostgreSQL release into the test
