@@ -648,8 +648,8 @@ and set `persistence.hostPath.path` and `persistence.hostPath.type`.
 | Parameter                              | Description                                                                                              | Default                                                                |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `mcp.enabled`                          | Deploy the SonarQube MCP server alongside SonarQube                                                     | `false`                                                                |
-| `mcp.image.repository`                 | MCP container image repository                                                                           | `mcp/sonarqube`                                                        |
-| `mcp.image.tag`                        | MCP container image tag                                                                                  | `""`                                                                   |
+| `mcp.image.repository`                 | MCP container image repository                                                                           | `sonarsource/sonarqube-mcp`                                            |
+| `mcp.image.tag`                        | MCP container image tag                                                                                  | `"1.18.1.2664"`                                                        |
 | `mcp.image.pullPolicy`                 | MCP image pull policy                                                                                    | `IfNotPresent`                                                         |
 | `mcp.image.pullSecrets`                | MCP image pull secrets                                                                                   | `[]`                                                                   |
 | `mcp.port`                             | Port the MCP server listens on                                                                           | `8080`                                                                 |
@@ -770,8 +770,8 @@ The MCP pod waits for SonarQube to report `"status":"UP"` before starting (via a
 mcp:
   enabled: true
   image:
-    repository: mcp/sonarqube
-    tag: "1.0.0"
+    repository: sonarsource/sonarqube-mcp
+    tag: "1.18.1.2664"
 ```
 
 **Accessing the MCP server locally:**
