@@ -46,6 +46,8 @@ annotations:
       description: "Add MCP (Model Context Protocol) server support via mcp.enabled"
     - kind: fixed
       description: "Fix MCP init container and SONARQUBE_URL to respect sonarWebContext when non-root"
+    - kind: changed
+      description: "Update MCP image to sonarsource/sonarqube-mcp:1.18.1.2664"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-community
@@ -54,6 +56,8 @@ annotations:
       image: sonarqube:2026.2.0-developer
     - name: sonarqube-enterprise
       image: sonarqube:2026.2.0-enterprise
+    - name: sonarqube-mcp
+      image: sonarsource/sonarqube-mcp:1.18.1.2664
   charts.openshift.io/name: sonarqube
 dependencies:
   - name: ingress-nginx
