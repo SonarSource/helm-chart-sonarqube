@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   chart-fixture-test:
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     name: Chart Fixture Test
     permissions:
       id-token: write
@@ -41,7 +41,7 @@ jobs:
           git diff --exit-code
 
   chart-schema-test:
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     name: Chart Schema Test
     permissions:
       id-token: write
@@ -65,7 +65,7 @@ jobs:
 
 
   static-compatibility-test:
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     name: Static Compatibility Test (${{ matrix.chart }})
     strategy:
       matrix:
@@ -183,11 +183,11 @@ jobs:
         include:
           - chart: sonarqube
             config: ct-sonarqube-test.yaml
-            runner: github-ubuntu-latest-s
+            runner: warp-custom-ubuntu-24-04
             secrets_id: secrets
           - chart: sonarqube-dce
             config: ct-sonarqube-dce-test.yaml
-            runner: github-ubuntu-latest-m
+            runner: warp-custom-ubuntu-24-04
             secrets_id: dcesecrets
     runs-on: ${{ matrix.runner }}
     name: Kind Test (${{ matrix.chart }})
@@ -249,7 +249,7 @@ jobs:
 
   sonarqube-packaging:
     needs: [kind-test,openshift-test]
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     name: ${{ matrix.chart }} Packaging
     strategy:
       matrix:
@@ -302,7 +302,7 @@ jobs:
 
   sonarqube-push-to-repox:
     needs: [sonarqube-packaging]
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     strategy:
       matrix:
         include:
@@ -342,7 +342,7 @@ jobs:
 
   trigger-release:
     needs: [sonarqube-push-to-repox]
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     name: Trigger Release
     permissions:
       id-token: write
@@ -402,7 +402,7 @@ jobs:
       - kind-test
       - sonarqube-packaging
       - sonarqube-push-to-repox
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     outputs:
       SUCCESS: ${{ steps.alls-green.outputs.success }}
     steps:

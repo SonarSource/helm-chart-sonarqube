@@ -26,7 +26,7 @@ env:
 
 jobs:
   build-gcp-staging-app:
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     name: Build GCP Staging App
     permissions:
       id-token: write
@@ -73,7 +73,7 @@ jobs:
 
   verify-gcp-staging-app:
     needs: [build-gcp-staging-app]
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     name: Verify GCP Staging App
     permissions:
       id-token: write
@@ -127,7 +127,7 @@ jobs:
 
   release-gcp-prod-app:
     needs: [verify-gcp-staging-app]
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     name: Release GCP Prod App
     permissions:
       id-token: write
