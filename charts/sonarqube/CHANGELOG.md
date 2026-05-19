@@ -1,6 +1,11 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2026.1.3]
+* Upgrade Chart's version to 2026.1.3
+* Upgrade SonarQube Server to 2026.1.3
+* Fix http-route rendering when using multiple hostnames
+
 ## [2026.1.2]
 * Upgrade Chart's version to 2026.1.2
 * Upgrade SonarQube Server to 2026.1.2
