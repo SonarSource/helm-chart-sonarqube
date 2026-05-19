@@ -40,10 +40,10 @@ jobs:
             exit 1
           fi
 
-      - name: Checkout master
+      - name: Checkout default branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: master
+          ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
 
       - id: secrets
@@ -51,6 +51,7 @@ jobs:
         with:
           secrets: |
             development/github/token/SonarSource-helm-chart-sonarqube-releases token | GITHUB_TOKEN;
+            development/github/token/SonarSource-helm-chart-sonarqube-jira token | PR_GITHUB_TOKEN;
 
       - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
@@ -86,7 +87,7 @@ jobs:
           NEW_BUILD: ${{ inputs.community_build_number }}
         run: |
           set -euo pipefail
-          BRANCH="release/${JIRA_KEY}-cb-${NEW_BUILD}"
+          BRANCH="release/${JIRA_KEY}-sqcb-${NEW_BUILD}"
           if git ls-remote --exit-code --heads origin "${BRANCH}" >/dev/null 2>&1; then
             echo "ERROR: branch '${BRANCH}' already exists on origin; delete it before re-running" >&2
             exit 1
@@ -132,7 +133,7 @@ jobs:
       - name: Create pull request
         id: create_pr
         env:
-          GH_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
+          GH_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PR_GITHUB_TOKEN }}
           JIRA_KEY: ${{ inputs.jira_key }}
           NEW_BUILD: ${{ inputs.community_build_number }}
           OLD_BUILD: ${{ steps.old_build.outputs.value }}
