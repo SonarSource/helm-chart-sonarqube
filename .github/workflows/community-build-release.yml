@@ -1,0 +1,167 @@
+name: Release Community Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      community_build_number:
+        description: "New SonarQube Community Build number (e.g. 26.5.0.122743)"
+        required: true
+        type: string
+      jira_key:
+        description: "Jira release ticket key (e.g. REL-4517)"
+        required: true
+        type: string
+
+concurrency:
+  group: community-build-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: github-ubuntu-latest-s
+    name: Release Community Build
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Validate inputs
+        env:
+          COMMUNITY_BUILD_NUMBER: ${{ inputs.community_build_number }}
+          JIRA_KEY: ${{ inputs.jira_key }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${COMMUNITY_BUILD_NUMBER}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "ERROR: community_build_number '${COMMUNITY_BUILD_NUMBER}' must match ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$" >&2
+            exit 1
+          fi
+          if [[ ! "${JIRA_KEY}" =~ ^REL-[0-9]+$ ]]; then
+            echo "ERROR: jira_key '${JIRA_KEY}' must match ^REL-[0-9]+$" >&2
+            exit 1
+          fi
+
+      - name: Checkout master
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/github/token/SonarSource-helm-chart-sonarqube-releases token | GITHUB_TOKEN;
+
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        with:
+          version: 2026.3.13
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Read current community build number
+        id: old_build
+        env:
+          NEW_BUILD: ${{ inputs.community_build_number }}
+        run: |
+          set -euo pipefail
+          OLD=$(grep -E '^\s+buildNumber:' charts/sonarqube/values.yaml | head -n1 | sed -E 's/.*"([^"]+)".*/\1/')
+          if [[ -z "${OLD}" ]]; then
+            echo "ERROR: could not read current community.buildNumber from charts/sonarqube/values.yaml" >&2
+            exit 1
+          fi
+          if [[ "${OLD}" == "${NEW_BUILD}" ]]; then
+            echo "ERROR: community.buildNumber is already ${OLD}; nothing to release" >&2
+            exit 1
+          fi
+          echo "value=${OLD}" >> "$GITHUB_OUTPUT"
+          echo "Current community build: ${OLD}"
+
+      - name: Create release branch
+        id: branch
+        env:
+          JIRA_KEY: ${{ inputs.jira_key }}
+          NEW_BUILD: ${{ inputs.community_build_number }}
+        run: |
+          set -euo pipefail
+          BRANCH="release/${JIRA_KEY}-cb-${NEW_BUILD}"
+          if git ls-remote --exit-code --heads origin "${BRANCH}" >/dev/null 2>&1; then
+            echo "ERROR: branch '${BRANCH}' already exists on origin; delete it before re-running" >&2
+            exit 1
+          fi
+          git checkout -b "${BRANCH}"
+          echo "name=${BRANCH}" >> "$GITHUB_OUTPUT"
+
+      - name: Apply community-build edits
+        env:
+          OLD_BUILD: ${{ steps.old_build.outputs.value }}
+          NEW_BUILD: ${{ inputs.community_build_number }}
+        run: ./.github/scripts/bump_community_build.sh
+
+      - name: Build chart dependencies
+        run: |
+          ./.github/scripts/build_chart_dependencies.sh charts/sonarqube
+          ./.github/scripts/build_chart_dependencies.sh charts/sonarqube-dce
+
+      - name: Regenerate Helm fixtures
+        run: ./.github/scripts/generate_helm_fixtures.sh
+
+      - name: Run unit tests
+        working-directory: tests/unit-test
+        run: go test -v ./...
+
+      - name: Commit and push
+        env:
+          GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
+          JIRA_KEY: ${{ inputs.jira_key }}
+          NEW_BUILD: ${{ inputs.community_build_number }}
+          BRANCH: ${{ steps.branch.outputs.name }}
+        run: |
+          set -euo pipefail
+          git add -A
+          if git diff --staged --quiet; then
+            echo "ERROR: no changes to commit after applying edits and regenerating fixtures" >&2
+            exit 1
+          fi
+          git commit -m "${JIRA_KEY}: Release SonarQube Community Build ${NEW_BUILD}"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin "${BRANCH}"
+
+      - name: Create pull request
+        id: create_pr
+        env:
+          GH_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
+          JIRA_KEY: ${{ inputs.jira_key }}
+          NEW_BUILD: ${{ inputs.community_build_number }}
+          OLD_BUILD: ${{ steps.old_build.outputs.value }}
+          BRANCH: ${{ steps.branch.outputs.name }}
+        run: |
+          set -euo pipefail
+          PR_URL=$(gh pr create \
+            --base master \
+            --head "${BRANCH}" \
+            --title "${JIRA_KEY}: Release SonarQube Community Build ${NEW_BUILD}" \
+            --body "Release of SonarQube Community Build ${NEW_BUILD}.")
+          PR_NUMBER="${PR_URL##*/}"
+          echo "pr_url=${PR_URL}" >> "$GITHUB_OUTPUT"
+          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "Created PR ${PR_URL}"
+
+      - name: Summary
+        env:
+          PR_URL: ${{ steps.create_pr.outputs.pr_url }}
+          BRANCH: ${{ steps.branch.outputs.name }}
+          JIRA_KEY: ${{ inputs.jira_key }}
+          OLD_BUILD: ${{ steps.old_build.outputs.value }}
+          NEW_BUILD: ${{ inputs.community_build_number }}
+        run: |
+          {
+            echo "### Community Build Release"
+            echo ""
+            echo "- Jira: ${JIRA_KEY}"
+            echo "- Build: ${OLD_BUILD} → ${NEW_BUILD}"
+            echo "- Branch: \`${BRANCH}\`"
+            echo "- PR: ${PR_URL}"
+          } >> "$GITHUB_STEP_SUMMARY"
