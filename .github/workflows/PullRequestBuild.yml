@@ -1,0 +1,56 @@
+name: PR Build
+
+on:
+  pull_request:
+    branches:
+      - test-trigger
+
+concurrency:
+  group: pr-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  verify-origin:
+    name: Verify PR origin
+    runs-on: github-ubuntu-latest-s
+    # Same-repository PRs only. Pull requests opened from forks have
+    # head.repo.full_name set to the fork (e.g. "user/helm-chart-sonarqube")
+    # and will skip this job, which in turn skips the downstream build.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Confirm same-repository PR
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          echo "PR #${PR_NUMBER} originates from ${HEAD_REPO} (branch: ${HEAD_REF})."
+          echo "Build will be dispatched."
+
+      # Branches with the 'release-test/' prefix are reserved for the
+      # community-build-release workflow (.github/workflows/community-build-release.yml),
+      # which creates branches of the form 'release-test/REL-<jira>-sqcb-<build>'.
+      # Reject any PR using that prefix that does not match the convention.
+      - name: Verify community-build-release branch name
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          if [[ "${HEAD_REF}" == release-test/* ]]; then
+            if [[ ! "${HEAD_REF}" =~ ^release-test/REL-[0-9]+-sqcb-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "ERROR: branch '${HEAD_REF}' uses the reserved 'release-test/' prefix but does not match the community-build-release naming convention 'release-test/REL-<jira>-sqcb-<community-build-number>'." >&2
+              exit 1
+            fi
+            echo "Branch '${HEAD_REF}' matches the community-build-release naming convention."
+          else
+            echo "Branch '${HEAD_REF}' is not a community-build-release branch; no naming convention to enforce."
+          fi
+
+  build:
+    name: Build
+    needs: verify-origin
+    permissions:
+      id-token: write
+      contents: write
+    uses: ./.github/workflows/build.yml
+    secrets: inherit

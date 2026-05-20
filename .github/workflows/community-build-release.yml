@@ -24,6 +24,7 @@ jobs:
       id-token: write
       contents: write
       pull-requests: write
+      actions: write
     steps:
       - name: Validate inputs
         env:
@@ -43,7 +44,7 @@ jobs:
       - name: Checkout default branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          ref: test-trigger
           fetch-depth: 0
 
       - id: secrets
@@ -87,7 +88,7 @@ jobs:
           NEW_BUILD: ${{ inputs.community_build_number }}
         run: |
           set -euo pipefail
-          BRANCH="release/${JIRA_KEY}-sqcb-${NEW_BUILD}"
+          BRANCH="release-test/${JIRA_KEY}-sqcb-${NEW_BUILD}"
           if git ls-remote --exit-code --heads origin "${BRANCH}" >/dev/null 2>&1; then
             echo "ERROR: branch '${BRANCH}' already exists on origin; delete it before re-running" >&2
             exit 1
@@ -136,15 +137,14 @@ jobs:
           GH_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).PR_GITHUB_TOKEN }}
           JIRA_KEY: ${{ inputs.jira_key }}
           NEW_BUILD: ${{ inputs.community_build_number }}
-          OLD_BUILD: ${{ steps.old_build.outputs.value }}
           BRANCH: ${{ steps.branch.outputs.name }}
         run: |
           set -euo pipefail
           PR_URL=$(gh pr create \
-            --base master \
+            --base test-trigger \
             --head "${BRANCH}" \
             --title "${JIRA_KEY}: Release SonarQube Community Build ${NEW_BUILD}" \
-            --body "Release of SonarQube Community Build ${NEW_BUILD}.")
+            --body "Release of SonarQube Community Build ${NEW_BUILD}")
           PR_NUMBER="${PR_URL##*/}"
           echo "pr_url=${PR_URL}" >> "$GITHUB_OUTPUT"
           echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
