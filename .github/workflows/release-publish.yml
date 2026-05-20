@@ -1,7 +1,6 @@
 on:
-  # TODO: for testing, revert this
-  # release:
-  #   types: [published]
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       releaseTag:
@@ -25,8 +24,7 @@ jobs:
         id: tag
         env:
           RELEASE_TAG: ${{ inputs.releaseTag }}
-          # TODO: for testing, revert this
-          # EVENT_TAG: ${{ github.event.release.tag_name }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
         run: |
           if [[ -n "$RELEASE_TAG" ]]; then
             echo "value=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
