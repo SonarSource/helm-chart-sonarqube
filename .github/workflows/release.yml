@@ -1,24 +1,14 @@
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "Version of the release"
+      releaseTag:
+        description: "Tag of the Draft Release"
         required: true
       buildNumber:
-        description: "Build number of the release"
+        description: "Build number (from the Build workflow)"
         required: true
-  workflow_call:
-    inputs:
-      version:
-        description: "Version of the release"
-        required: true
-        type: string
-      buildNumber:
-        description: "Build number of the release"
-        required: true
-        type: string
 
-name: Release
+name: Release (Drafted)
 
 jobs:
   release:
@@ -32,18 +22,9 @@ jobs:
         with:
           secrets: |
             development/artifactory/token/{REPO_OWNER_NAME_DASH}-promoter access_token | artifactory_access_token;
-            development/kv/data/slack webhook | slack_webhook_url;
       - uses: SonarSource/jfrog-setup-wrapper@v3
         with:
           jfrogAccessToken: ${{ fromJSON(steps.secrets.outputs.vault).artifactory_access_token }}
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Fetch history
-        run: git fetch --prune --unshallow
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
-        with:
-          cache_save: false
-          version: 2026.3.13
       - name: Promote
         run: jf rt build-promote --status released "${{ github.event.repository.name }}" "${{ inputs.buildNumber }}" sonarsource-helm-releases
       - name: Create local repository directory
@@ -54,23 +35,25 @@ jobs:
           local-repo-dir: ${{ steps.local_repo.outputs.dir }}
           remote-repo: sonarsource-helm
           build-number: ${{ inputs.buildNumber }}
+      - name: Look up draft release
+        id: draft_release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.releaseTag }}
+        run: |
+          release_id=$(gh release view "$RELEASE_TAG" --json id,isDraft \
+            --jq 'select(.isDraft) | .id' 2>/dev/null || true)
+          if [[ -z "$release_id" ]]; then
+            echo "No draft release found with tag $RELEASE_TAG" >&2
+            exit 1
+          fi
+          echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2.11.2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true
           file: ${{ steps.local_repo.outputs.dir }}/*
-          tag: ${{ inputs.version }}
+          tag: ${{ inputs.releaseTag }}
+          release_id: ${{ steps.draft_release.outputs.release_id }}
           overwrite: true
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-      - name: Release to GitHub
-        uses: ./.github/actions/helm-index
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-        with:
-          repository-name: "${{ github.event.repository.name }}"
-          package-path: ${{ steps.local_repo.outputs.dir }}
-          release-name: "${{ inputs.version}}"

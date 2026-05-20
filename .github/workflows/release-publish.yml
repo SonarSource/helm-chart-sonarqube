@@ -1,0 +1,54 @@
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      releaseTag:
+        description: "Tag of the Release"
+        required: true
+        type: string
+
+name: Release (Published)
+
+jobs:
+  publish:
+    runs-on: github-ubuntu-latest-s
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Fetch history
+        run: git fetch --prune --unshallow
+      - name: Resolve release tag
+        id: tag
+        env:
+          RELEASE_TAG: ${{ inputs.releaseTag }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [[ -n "$RELEASE_TAG" ]]; then
+            echo "value=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=$EVENT_TAG" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Create local repository directory
+        id: local_repo
+        run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> "$GITHUB_OUTPUT"
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.tag.outputs.value }}
+          TARGET_DIR: ${{ steps.local_repo.outputs.dir }}
+        run: gh release download "$RELEASE_TAG" --dir "$TARGET_DIR" --pattern '*.tgz' --pattern '*.tgz.prov'
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+      - name: Release to GitHub
+        uses: ./.github/actions/helm-index
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        with:
+          repository-name: "${{ github.event.repository.name }}"
+          package-path: ${{ steps.local_repo.outputs.dir }}
+          release-name: ${{ steps.tag.outputs.value }}
