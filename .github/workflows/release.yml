@@ -25,16 +25,6 @@ jobs:
       - uses: SonarSource/jfrog-setup-wrapper@v3
         with:
           jfrogAccessToken: ${{ fromJSON(steps.secrets.outputs.vault).artifactory_access_token }}
-      - name: Promote
-        run: jf rt build-promote --status released "${{ github.event.repository.name }}" "${{ inputs.buildNumber }}" sonarsource-helm-releases
-      - name: Create local repository directory
-        id: local_repo
-        run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> "$GITHUB_OUTPUT"
-      - uses: SonarSource/gh-action_release/download-build@v6
-        with:
-          local-repo-dir: ${{ steps.local_repo.outputs.dir }}
-          remote-repo: sonarsource-helm
-          build-number: ${{ inputs.buildNumber }}
       - name: Look up draft release
         id: draft_release
         env:
@@ -48,6 +38,16 @@ jobs:
             exit 1
           fi
           echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
+      - name: Promote
+        run: jf rt build-promote --status released "${{ github.event.repository.name }}" "${{ inputs.buildNumber }}" sonarsource-helm-releases
+      - name: Create local repository directory
+        id: local_repo
+        run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> "$GITHUB_OUTPUT"
+      - uses: SonarSource/gh-action_release/download-build@v6
+        with:
+          local-repo-dir: ${{ steps.local_repo.outputs.dir }}
+          remote-repo: sonarsource-helm
+          build-number: ${{ inputs.buildNumber }}
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2.11.2
         with:
