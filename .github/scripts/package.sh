@@ -29,7 +29,7 @@ if [[ -n "${ARG_CHART_NAME}" ]] && [[ "${CHARTS[*]}" =~ ${ARG_CHART_NAME} ]]; th
 fi
 
 BUILD_METADATA="-${BUILD_NUMBER}"
-if [[ ${GITHUB_REF_NAME:-} == "master" || ${GITHUB_REF_NAME:-} == release/* ]]; then
+if [[ ${GITHUB_REF_NAME} == "master" || ${GITHUB_REF_NAME} == release/* ]]; then
     BUILD_METADATA=""
 fi
 
