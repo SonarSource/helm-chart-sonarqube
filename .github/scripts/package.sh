@@ -29,8 +29,9 @@ if [[ -n "${ARG_CHART_NAME}" ]] && [[ "${CHARTS[*]}" =~ ${ARG_CHART_NAME} ]]; th
 fi
 
 BUILD_METADATA="-${BUILD_NUMBER}"
-# For GitHub Actions, check if this is a tag-based release
-[[ ${GITHUB_REF_TYPE:-} == "tag" ]] && BUILD_METADATA=""
+if [[ ${GITHUB_REF_NAME:-} == "master" || ${GITHUB_REF_NAME:-} == release/* ]]; then
+    BUILD_METADATA=""
+fi
 
 echo "${CHARTS[@]}"
 
