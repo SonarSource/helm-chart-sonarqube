@@ -47,15 +47,36 @@ ingress:
 
 # tests/unit-compatibility-test/sonarqube-dce/install-plugins-values.yaml
 plugins:
- install:
+  install:
    - https://github.com/xuhuisheng/sonar-l10n-zh/releases/download/sonar-l10n-zh-plugin-25.9/sonar-l10n-zh-plugin-25.9.jar"
 
 # tests/unit-compatibility-test/sonarqube-dce/jdbc-config-values.yaml # It requires an external db
 # tests/unit-compatibility-test/sonarqube-dce/networkpolicy-values.yaml
+# The chart's built-in egress rules don't include the external Postgres pod
+# we install in SetupDB, so the app pods can't reach the DB unless we
+# add an explicit allow rule. NetworkPolicies are additive in Kubernetes — the
+# rules from this extra policy union with the chart's defaults.
 networkPolicy:
   enabled: true
   prometheusNamespace: "monitoring"
+  additionalNetworkPolicies:
+    podSelector:
+      matchLabels:
+        app: sonarqube-dce
+        sonarqube.datacenter/type: app
+    policyTypes:
+      - Egress
+    egress:
+      - to:
+          - podSelector:
+              matchLabels:
+                app.kubernetes.io/name: postgresql
+        ports:
+          - port: 5432
+            protocol: TCP
 
+jdbcOverwrite:
+  enabled: true
 
 # tests/unit-compatibility-test/sonarqube-dce/secret-values.yaml
 # tests/unit-compatibility-test/sonarqube-dce/service-values.yaml

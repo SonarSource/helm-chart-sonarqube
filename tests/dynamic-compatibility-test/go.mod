@@ -1,4 +1,4 @@
-module github.com/gruntwork-io/terratest-helm-testing-example/test
+module github.com/helm-chart-sonarqube/tests/dynamic-compatibility-test
 
 go 1.25.0
 
