@@ -51,9 +51,9 @@ jobs:
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@81c65b7cd4de9b2570615ce3aad67a41de5b1a13 # v2.11.2
         with:
+          draft: true
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file_glob: true
           file: ${{ steps.local_repo.outputs.dir }}/*
-          tag: ${{ inputs.releaseTag }}
           release_id: ${{ steps.draft_release.outputs.release_id }}
           overwrite: true
