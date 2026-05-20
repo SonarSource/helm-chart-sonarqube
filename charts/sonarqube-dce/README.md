@@ -472,9 +472,71 @@ You can generate the required certificate, create a secret, and add it to `searc
 
 Finally, do not forget to set the `searchNodes.searchAuthentication.userPassword`.
 
-## License
+### Use custom `cacerts`
 
-SonarQube Server Data Center Edition is licensed under [SonarQube Server Terms and Conditions](https://www.sonarsource.com/legal/sonarqube/terms-and-conditions/).
+In environments with air-gapped setup, especially with internal tooling (repos) and self-signed certificates it is required to provide an adequate `cacerts` which overrides the default one:
+
+1. Create a yaml file `cacerts.yaml` with a secret that contains one or more keys to represent the certificates that you want including
+
+   ```yaml
+   apiVersion: v1
+   kind: Secret
+   metadata:
+     name: my-cacerts
+   stringData:
+     cert-1.crt: |
+       xxxxxxxxxxxxxxxxxxxxxxx
+   ```
+
+2. Upload your `cacerts.yaml` to a secret in the cluster you are installing SonarQube to.
+
+   ```shell
+   kubectl apply -f cacerts.yaml
+   ```
+
+3. Set the following values of the chart:
+
+   ```yaml
+   caCerts:
+     enabled: true
+     secret: my-cacerts
+   ```
+
+### Elasticsearch Settings
+
+Since SonarQube needs Elasticsearch, some [bootstrap checks](https://www.elastic.co/guide/en/elasticsearch/reference/master/bootstrap-checks.html) of the host settings are done at start.
+
+This chart offers the option to use an initContainer in privilaged mode to automatically set certain kernel settings on the kube worker. While this can ensure proper functionality of Elasticsearch, modifying the underlying kernel settings on the Kubernetes node can impact other users. It may be best to work with your cluster administrator to either provide specific nodes with the proper kernel settings, or ensure they are set cluster wide.
+
+To enable auto-configuration of the kube worker node, set `elasticsearch.configureNode` to `true`. This is the default behavior, so you do not need to explicitly set this.
+
+This will run `sysctl -w vm.max_map_count=262144` on the worker where the sonarqube pod(s) get scheduled. This needs to be set to `262144` but normally defaults to `65530`. Other kernel settings are recommended by the [docker image](https://hub.docker.com/_/sonarqube/#requirements), but the defaults work fine in most cases.
+
+### Extra Config
+
+For environments where another tool, such as terraform or ansible, is used to provision infrastructure or passwords then setting databases addresses and credentials via helm becomes less than ideal. Ditto for environments where this config may be visible.
+
+In such environments, configuration may be read, via environment variables, from Secrets and ConfigMaps.
+
+1. Create a `ConfigMap` (or `Secret`) containing key/value pairs, as expected by SonarQube.
+
+   ```yaml
+   apiVersion: v1
+   kind: ConfigMap
+   metadata:
+     name: external-sonarqube-opts
+   data:
+     SONARQUBE_JDBC_USERNAME: foo
+     SONARQUBE_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
+   ```
+
+2. Set the following in your `values.yaml` (using the key `extraConfig.secrets` to reference `Secret`s)
+
+   ```yaml
+   extraConfig:
+     configmaps:
+       - external-sonarqube-opts
+   ```
 
 ## Configuration
 
@@ -890,68 +952,6 @@ You can also configure values for the PostgreSQL database via the PostgreSQL [Ch
 
 For overriding variables see: [Customizing the chart](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing)
 
-### Use custom `cacerts`
+## License
 
-In environments with air-gapped setup, especially with internal tooling (repos) and self-signed certificates it is required to provide an adequate `cacerts` which overrides the default one:
-
-1. Create a yaml file `cacerts.yaml` with a secret that contains one or more keys to represent the certificates that you want including
-
-   ```yaml
-   apiVersion: v1
-   kind: Secret
-   metadata:
-     name: my-cacerts
-   stringData:
-     cert-1.crt: |
-       xxxxxxxxxxxxxxxxxxxxxxx
-   ```
-
-2. Upload your `cacerts.yaml` to a secret in the cluster you are installing SonarQube to.
-
-   ```shell
-   kubectl apply -f cacerts.yaml
-   ```
-
-3. Set the following values of the chart:
-
-   ```yaml
-   caCerts:
-     enabled: true
-     secret: my-cacerts
-   ```
-
-### Elasticsearch Settings
-
-Since SonarQube needs Elasticsearch, some [bootstrap checks](https://www.elastic.co/guide/en/elasticsearch/reference/master/bootstrap-checks.html) of the host settings are done at start.
-
-This chart offers the option to use an initContainer in privilaged mode to automatically set certain kernel settings on the kube worker. While this can ensure proper functionality of Elasticsearch, modifying the underlying kernel settings on the Kubernetes node can impact other users. It may be best to work with your cluster administrator to either provide specific nodes with the proper kernel settings, or ensure they are set cluster wide.
-
-To enable auto-configuration of the kube worker node, set `elasticsearch.configureNode` to `true`. This is the default behavior, so you do not need to explicitly set this.
-
-This will run `sysctl -w vm.max_map_count=262144` on the worker where the sonarqube pod(s) get scheduled. This needs to be set to `262144` but normally defaults to `65530`. Other kernel settings are recommended by the [docker image](https://hub.docker.com/_/sonarqube/#requirements), but the defaults work fine in most cases.
-
-### Extra Config
-
-For environments where another tool, such as terraform or ansible, is used to provision infrastructure or passwords then setting databases addresses and credentials via helm becomes less than ideal. Ditto for environments where this config may be visible.
-
-In such environments, configuration may be read, via environment variables, from Secrets and ConfigMaps.
-
-1. Create a `ConfigMap` (or `Secret`) containing key/value pairs, as expected by SonarQube.
-
-   ```yaml
-   apiVersion: v1
-   kind: ConfigMap
-   metadata:
-     name: external-sonarqube-opts
-   data:
-     SONARQUBE_JDBC_USERNAME: foo
-     SONARQUBE_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
-   ```
-
-2. Set the following in your `values.yaml` (using the key `extraConfig.secrets` to reference `Secret`s)
-
-   ```yaml
-   extraConfig:
-     configmaps:
-       - external-sonarqube-opts
-   ```
+SonarQube Server Data Center Edition is licensed under [SonarQube Server Terms and Conditions](https://www.sonarsource.com/legal/sonarqube/terms-and-conditions/).
