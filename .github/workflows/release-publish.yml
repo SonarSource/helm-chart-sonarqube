@@ -1,4 +1,5 @@
 on:
+  # TODO: for testing, revert this
   # release:
   #   types: [published]
   workflow_dispatch:
@@ -24,6 +25,7 @@ jobs:
         id: tag
         env:
           RELEASE_TAG: ${{ inputs.releaseTag }}
+          # TODO: for testing, revert this
           # EVENT_TAG: ${{ github.event.release.tag_name }}
         run: |
           if [[ -n "$RELEASE_TAG" ]]; then
