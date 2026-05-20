@@ -39,7 +39,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ steps.tag.outputs.value }}
           TARGET_DIR: ${{ steps.local_repo.outputs.dir }}
-        run: gh release download "$RELEASE_TAG" --dir "$TARGET_DIR" --pattern '*.tgz' --pattern '*.tgz.prov'
+        run: |
+          gh release download "$RELEASE_TAG" --dir "$TARGET_DIR" --pattern '*.tgz' --pattern '*.tgz.prov'
+          if [[ -z "$(ls -A "$TARGET_DIR")" ]]; then
+            echo "No chart assets found for release $RELEASE_TAG" >&2
+            exit 1
+          fi
       - name: Configure Git
         run: |
           git config user.name "$GITHUB_ACTOR"
