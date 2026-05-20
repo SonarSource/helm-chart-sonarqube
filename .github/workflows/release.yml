@@ -42,7 +42,9 @@ jobs:
           fi
           echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
       - name: Promote
-        run: jf rt build-promote --status released "${{ github.event.repository.name }}" "${{ inputs.buildNumber }}" sonarsource-helm-releases
+        env:
+          BUILD_NUMBER: ${{ inputs.buildNumber }}
+        run: jf rt build-promote --status released "${{ github.event.repository.name }}" "$BUILD_NUMBER" sonarsource-helm-releases
       - name: Create local repository directory
         id: local_repo
         run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> "$GITHUB_OUTPUT"
