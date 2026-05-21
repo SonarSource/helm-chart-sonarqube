@@ -4,8 +4,6 @@ on:
   merge_group:
   workflow_dispatch:
   workflow_call:
-  release:
-    types: [created]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -22,9 +20,9 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
-          version: 2025.7.12
+          version: 2026.3.13
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.x'
@@ -50,9 +48,9 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
-          version: 2025.7.12
+          version: 2026.3.13
       - name: Install additional tools
         run: |
           pip install yamllint==1.37.1 yamale==6.0.0
@@ -77,9 +75,9 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
-          version: 2025.7.12
+          version: 2026.3.13
       - name: Build chart dependencies
         run: ./.github/scripts/build_chart_dependencies.sh charts/${{ matrix.chart }}
       - name: Run unit helm compatibility test
@@ -107,9 +105,9 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
-          version: 2025.7.12
+          version: 2026.3.13
       - id: secrets
         uses: SonarSource/vault-action-wrapper@v3
         with:
@@ -130,7 +128,7 @@ jobs:
       - name: Install kubectl CLI
         uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4.0.1
         with:
-          version: 'v1.35.0'
+          version: 'v1.35.5'
       - name: Install OpenShift CLI
         run: |
           curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${{ env.OPENSHIFT_VERSION }}/openshift-client-linux.tar.gz
@@ -195,9 +193,9 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
-          version: 2025.7.12
+          version: 2026.3.13
       - name: Set up chart-testing
         uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
       - name: Create kind cluster
@@ -257,9 +255,9 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
-          version: 2025.7.12
+          version: 2026.3.13
       - uses: SonarSource/ci-github-actions/get-build-number@v1
         id: build-number
       - id: secrets
@@ -310,10 +308,10 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
           cache_save: false
-          version: 2025.7.12
+          version: 2026.3.13
       - uses: SonarSource/ci-github-actions/get-build-number@v1
         id: build-number
       - name: Download ${{ matrix.chart }} chart artifact
@@ -334,22 +332,14 @@ jobs:
         run: |
           ./.github/scripts/upload_chart.sh ${{ matrix.chart }}
 
-  trigger-release:
+  output-build-number:
     needs: [sonarqube-push-to-repox]
     runs-on: github-ubuntu-latest-s
-    name: Trigger Release
+    name: Output Build Number
     permissions:
-      id-token: write
-      contents: write
-    if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+      contents: read
+    if: ${{ github.event_name == 'push' && (github.ref_name == 'master' || startsWith(github.ref_name, 'release/')) }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
-      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
-        with:
-          cache_save: false
-          version: 2025.7.12
       - uses: SonarSource/ci-github-actions/get-build-number@v1
         id: build-number
       - name: Download SonarQube chart artifact
@@ -360,12 +350,6 @@ jobs:
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: sonarqube-dce-chart-${{ github.run_id }}
-      - id: secrets
-        uses: SonarSource/vault-action-wrapper@v3
-        with:
-          secrets: |
-            development/github/token/SonarSource-helm-chart-sonarqube-releases token | GITHUB_TOKEN;
-            development/kv/data/slack token | SLACK_TOKEN;
       - name: Check if charts exist
         id: check-charts
         run: |
@@ -375,14 +359,10 @@ jobs:
           else
             echo "charts-exist=false" >> $GITHUB_OUTPUT
           fi
-      - name: Call release workflow
+      - name: Output build number
         if: steps.check-charts.outputs.charts-exist == 'true'
-        env:
-          GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
         run: |
-          gh workflow run release.yml \
-            -f version="${{ github.ref_name }}" \
-            -f buildNumber="${{ steps.build-number.outputs.BUILD_NUMBER }}"
+          echo "Build number: \`${{ steps.build-number.outputs.BUILD_NUMBER }}\`" >> "$GITHUB_STEP_SUMMARY"
 
 
   qa-validator:
