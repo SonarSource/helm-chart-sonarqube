@@ -4,8 +4,6 @@ on:
   merge_group:
   workflow_dispatch:
   workflow_call:
-  release:
-    types: [created]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -334,22 +332,14 @@ jobs:
         run: |
           ./.github/scripts/upload_chart.sh ${{ matrix.chart }}
 
-  trigger-release:
+  output-build-number:
     needs: [sonarqube-push-to-repox]
     runs-on: github-ubuntu-latest-s
-    name: Trigger Release
+    name: Output Build Number
     permissions:
-      id-token: write
-      contents: write
-    if: ${{ github.event_name == 'push' && github.ref_type == 'tag' }}
+      contents: read
+    if: ${{ github.event_name == 'push' && (github.ref_name == 'master' || startsWith(github.ref_name, 'release/')) }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
-      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
-        with:
-          cache_save: false
-          version: 2025.7.12
       - uses: SonarSource/ci-github-actions/get-build-number@v1
         id: build-number
       - name: Download SonarQube chart artifact
@@ -360,12 +350,6 @@ jobs:
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: sonarqube-dce-chart-${{ github.run_id }}
-      - id: secrets
-        uses: SonarSource/vault-action-wrapper@v3
-        with:
-          secrets: |
-            development/github/token/SonarSource-helm-chart-sonarqube-releases token | GITHUB_TOKEN;
-            development/kv/data/slack token | SLACK_TOKEN;
       - name: Check if charts exist
         id: check-charts
         run: |
@@ -375,14 +359,10 @@ jobs:
           else
             echo "charts-exist=false" >> $GITHUB_OUTPUT
           fi
-      - name: Call release workflow
+      - name: Output build number
         if: steps.check-charts.outputs.charts-exist == 'true'
-        env:
-          GITHUB_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
         run: |
-          gh workflow run release.yml \
-            -f version="${{ github.ref_name }}" \
-            -f buildNumber="${{ steps.build-number.outputs.BUILD_NUMBER }}"
+          echo "Build number: \`${{ steps.build-number.outputs.BUILD_NUMBER }}\`" >> "$GITHUB_STEP_SUMMARY"
 
 
   qa-validator:
