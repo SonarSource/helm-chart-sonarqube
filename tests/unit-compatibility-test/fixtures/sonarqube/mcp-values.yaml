@@ -7,7 +7,7 @@ metadata:
   name: mcp-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: mcp-values.yaml
     heritage: Helm
 type: Opaque
@@ -22,7 +22,7 @@ metadata:
   name: mcp-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: mcp-values.yaml
     heritage: Helm
 type: Opaque
@@ -41,7 +41,7 @@ metadata:
   name: mcp-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: mcp-values.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: mcp-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: mcp-values.yaml
     heritage: Helm
 data:
@@ -101,7 +101,7 @@ metadata:
   name: mcp-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: mcp-values.yaml
     heritage: Helm
 data:
@@ -114,7 +114,7 @@ metadata:
   name: mcp-values.yaml-sonarqube-mcp
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: mcp-values.yaml
     heritage: Helm
     app.kubernetes.io/component: mcp
@@ -132,7 +132,7 @@ metadata:
   name: mcp-values.yaml-sonarqube-mcp
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: mcp-values.yaml
     heritage: Helm
     app.kubernetes.io/component: mcp
@@ -154,7 +154,7 @@ metadata:
   name: mcp-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: mcp-values.yaml
     heritage: Helm
 spec:
@@ -175,7 +175,7 @@ metadata:
   name: mcp-values.yaml-sonarqube-mcp
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: mcp-values.yaml
     heritage: Helm
     app.kubernetes.io/component: mcp
@@ -193,7 +193,7 @@ spec:
     spec:
       initContainers:
         - name: wait-for-sonarqube
-          image: sonarqube:2026.3.0-enterprise
+          image: sonarqube:2026.3.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -266,7 +266,7 @@ metadata:
   name: mcp-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: mcp-values.yaml
     heritage: Helm
     app.kubernetes.io/name: mcp-values.yaml
@@ -274,7 +274,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: mcp-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.3.0-enterprise"
+    app.kubernetes.io/version: "2026.3.1-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -286,10 +286,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 6ca94996c703a808ca15e5c2c72b7830e050c4b18a38aad083905415cbb4a717
-        checksum/init-sysctl: 925f584404d2259994507019a04b374a0a56e62a8369e806ae68259abef6bf71
-        checksum/plugins: 1583426050a83b8770321e9e6cbc752e02e756624e5f8fd3758608fe91cd7817
-        checksum/secret: 61729849b8ff2829fc4daec19b9759f42bdcaae06da1353632bc90308895d3d5
+        checksum/config: f1493982c7840b35b726bcb538ee522daaec5739ac5aecc7344b786bfd69038a
+        checksum/init-sysctl: 51e163c5f58cf66b1e035cc5f0463251fd943d8badd53a0df58af386d3d4a2a3
+        checksum/plugins: fbc2972cf825735e13baf75ad34424495b080c9af89e8546fe472056dfc1f3e3
+        checksum/secret: f43e391bc212f95e2d1142e087f3394d22098fafa89c15a220552c51b3c815de
       labels:
         app: sonarqube
         release: mcp-values.yaml
@@ -299,7 +299,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.3.0-enterprise
+          image: sonarqube:2026.3.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -318,7 +318,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2026.3.0-enterprise
+          image: sonarqube:2026.3.1-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -335,7 +335,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.3.0
+              value: 2026.3.1
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -443,14 +443,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: mcp-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: mcp-values.yaml-ui-test
-      image: "sonarqube:2026.3.0-enterprise"
+      image: "sonarqube:2026.3.1-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [

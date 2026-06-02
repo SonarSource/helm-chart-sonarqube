@@ -7,7 +7,7 @@ metadata:
   name: config-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: config-values.yaml
     heritage: Helm
 type: Opaque
@@ -22,7 +22,7 @@ metadata:
   name: config-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: config-values.yaml
     heritage: Helm
 type: Opaque
@@ -41,7 +41,7 @@ metadata:
   name: config-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: config-values.yaml
     heritage: Helm
 data:
@@ -58,7 +58,7 @@ metadata:
   name: config-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: config-values.yaml
     heritage: Helm
 data:
@@ -105,7 +105,7 @@ metadata:
   name: config-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: config-values.yaml
     heritage: Helm
 data:
@@ -118,7 +118,7 @@ metadata:
   name: config-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: config-values.yaml
     heritage: Helm
 spec:
@@ -139,7 +139,7 @@ metadata:
   name: config-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: config-values.yaml
     heritage: Helm
     app.kubernetes.io/name: config-values.yaml
@@ -147,7 +147,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: config-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.3.0-enterprise"
+    app.kubernetes.io/version: "2026.3.1-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -159,10 +159,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ba61d58e4f57f32d078f27c3ba22cd699cc87d459761dc98f81a86d1a4539e1b
-        checksum/init-sysctl: c1cd1e90f9c5d4eb394a8b402b145c0275b494250b1634d8d054a59e523016bc
-        checksum/plugins: 4760da43237d1023b7e0599dd54b425a93386b09895a2fc3106251af01305f6c
-        checksum/secret: 9a04fb7a24fadcd052d13e8a804051d933ed1373149d84b1448d0d72130f45c8
+        checksum/config: 8df1f4a64c412f2c0c2126d9c845e5d4b8a93d9bd6d089753d679c912a4933aa
+        checksum/init-sysctl: bdc05c762f3ec69076b4e37b85d3bbe85afa860e78cb3504d51d39a1f4adf969
+        checksum/plugins: 933c30d875d4557651383434c54d70612b9d89f92b790dc2ace050041011445e
+        checksum/secret: eef1cd2f04af4f298a931e52e9d010b035459ca35123f122697bb5c3db210323
       labels:
         app: sonarqube
         release: config-values.yaml
@@ -172,7 +172,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.3.0-enterprise
+          image: sonarqube:2026.3.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -190,7 +190,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: ""
         - name: concat-properties
-          image: sonarqube:2026.3.0-enterprise
+          image: sonarqube:2026.3.1-enterprise
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -235,7 +235,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2026.3.0-enterprise
+          image: sonarqube:2026.3.1-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -252,7 +252,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.3.0
+              value: 2026.3.1
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -384,14 +384,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: config-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: config-values.yaml-ui-test
-      image: "sonarqube:2026.3.0-enterprise"
+      image: "sonarqube:2026.3.1-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [

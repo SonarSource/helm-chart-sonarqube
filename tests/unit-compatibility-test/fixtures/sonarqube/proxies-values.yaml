@@ -7,7 +7,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: proxies-values.yaml
     heritage: Helm
 type: Opaque
@@ -22,7 +22,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: proxies-values.yaml
     heritage: Helm
 type: Opaque
@@ -41,7 +41,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: proxies-values.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: proxies-values.yaml
     heritage: Helm
 data:
@@ -101,7 +101,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: proxies-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-prometheus-ce-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: proxies-values.yaml
     heritage: Helm
 data:
@@ -132,7 +132,7 @@ metadata:
   name: proxies-values.yaml-sonarqube-prometheus-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: proxies-values.yaml
     heritage: Helm
 data:
@@ -147,7 +147,7 @@ metadata:
   name: proxies-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: proxies-values.yaml
     heritage: Helm
 spec:
@@ -168,7 +168,7 @@ metadata:
   name: proxies-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: proxies-values.yaml
     heritage: Helm
     app.kubernetes.io/name: proxies-values.yaml
@@ -176,7 +176,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: proxies-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.3.0-enterprise"
+    app.kubernetes.io/version: "2026.3.1-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -188,12 +188,12 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: bc63211ae1b9909fa79c46c1107237b9b687346c3af74eb0e2b38051a21be5ee
-        checksum/init-sysctl: dd5da5f2bbd7640e30aaf5f99fe3973d422b2893444caa2b66112176f061a72a
-        checksum/plugins: fe92325c3d568d25dc69500260f50a43b6c802215f8339fdfc49e06dc4530b4a
-        checksum/secret: b28b6578a49f3dd54c49ff72fdaa104c003a64dcde3a117ee55bbe50d5508cfe
-        checksum/prometheus-config: 323493af79c72b0fc1e13e76cbb1487c01726ef3a0199cea2b2701c0098385ba
-        checksum/prometheus-ce-config: fc5f96c8216e1f5a4c7c4f2537f02fa2789aa005dea3ddcff8cd7e93729b1b44
+        checksum/config: 951e048c2b7343c972807809e55496f96fdfb53976c4f62f17aff18f6c091eaa
+        checksum/init-sysctl: 1ae0bac11e69c29820a53860cd379ff331660c4b4f57c60ccdb76b31cedab7b0
+        checksum/plugins: 806ac9177af47de493c51c3e935010511f970f6dd1193a1778870c62c6c63155
+        checksum/secret: f4936aaaadf958742288045b7202ea658a9d3ae6d191046d709791fd6888af45
+        checksum/prometheus-config: b3661347f25dfd065ebcf6394f1830fb62c8ea0b9c00a9ec235ec7fef307663d
+        checksum/prometheus-ce-config: 123b895f1b852cef9a8b8c10ae8d7e0d395b679337bdbed44b47bc83d4b86846
       labels:
         app: sonarqube
         release: proxies-values.yaml
@@ -203,7 +203,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.3.0-enterprise
+          image: sonarqube:2026.3.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -221,7 +221,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
         - name: inject-prometheus-exporter
-          image: sonarqube:2026.3.0-enterprise
+          image: sonarqube:2026.3.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -263,7 +263,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
         - name: install-plugins
-          image: sonarqube:2026.3.0-enterprise
+          image: sonarqube:2026.3.1-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
           securityContext:
@@ -307,7 +307,7 @@ spec:
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
       containers:
         - name: sonarqube
-          image: sonarqube:2026.3.0-enterprise
+          image: sonarqube:2026.3.1-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -330,7 +330,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.3.0
+              value: 2026.3.1
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -456,14 +456,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: proxies-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: proxies-values.yaml-ui-test
-      image: "sonarqube:2026.3.0-enterprise"
+      image: "sonarqube:2026.3.1-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [

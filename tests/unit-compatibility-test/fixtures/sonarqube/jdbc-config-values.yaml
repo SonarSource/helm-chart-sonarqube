@@ -6,7 +6,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: jdbc-config-values.yaml
     heritage: Helm
 type: Opaque
@@ -20,7 +20,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: jdbc-config-values.yaml
     heritage: Helm
 type: Opaque
@@ -35,7 +35,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: jdbc-config-values.yaml
     heritage: Helm
 type: Opaque
@@ -54,7 +54,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: jdbc-config-values.yaml
     heritage: Helm
 data:
@@ -67,7 +67,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: jdbc-config-values.yaml
     heritage: Helm
 data:
@@ -114,7 +114,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: jdbc-config-values.yaml
     heritage: Helm
 data:
@@ -127,7 +127,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: jdbc-config-values.yaml
     heritage: Helm
 data:
@@ -141,7 +141,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: jdbc-config-values.yaml
     heritage: Helm
 spec:
@@ -162,7 +162,7 @@ metadata:
   name: jdbc-config-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: jdbc-config-values.yaml
     heritage: Helm
     app.kubernetes.io/name: jdbc-config-values.yaml
@@ -170,7 +170,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: jdbc-config-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.3.0-enterprise"
+    app.kubernetes.io/version: "2026.3.1-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -182,10 +182,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: c4ed6c426c74f6367f3e7e04e4f0b7bd138b7e9207753cd2116e3805435618e7
-        checksum/init-sysctl: 221124d7259b8365a5c59ba74ec7c4fc9be9467e61ea840be8b7096e2d0d0d9f
-        checksum/plugins: 7b10b382ca6fb1ea13cb5d69915fc6d751ba2b1bdc4f92dbb5fe4db6b75c7fa2
-        checksum/secret: 4ce4d14a6221076f20cc7bf605d91b95373d70b7775d9ba14d42d285026d1eea
+        checksum/config: 45f2e44cea7c59d6d754f627f7fc400e75c3cd4071f6b38dd4a459406f30d237
+        checksum/init-sysctl: 26ba80aeb8ee0b0418fd2ccb78344a506a3c1841e6991c2089ee699cc952c938
+        checksum/plugins: 348a3cedace93e2fb351359fc36fe0516d10e3ae2dc9529c393ca4a885a43bd6
+        checksum/secret: 803711b9627fe9a7c48391436ddd621c3c83ac9b12ff1b1c9d715319a4f26c2e
       labels:
         app: sonarqube
         release: jdbc-config-values.yaml
@@ -195,7 +195,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.3.0-enterprise
+          image: sonarqube:2026.3.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -214,7 +214,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2026.3.0-enterprise
+          image: sonarqube:2026.3.1-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -231,7 +231,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.3.0
+              value: 2026.3.1
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -340,14 +340,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.3.0
+    chart: sonarqube-2026.3.1
     release: jdbc-config-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: jdbc-config-values.yaml-ui-test
-      image: "sonarqube:2026.3.0-enterprise"
+      image: "sonarqube:2026.3.1-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [
