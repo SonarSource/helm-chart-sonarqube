@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
 * Upgrade SonarQube Community build to 26.6.0.123539
+* Replace curl with wget in the prometheus-exporter init container, as curl is not available in the image
 
 ## [2026.3.1]
 * Upgrade Chart's version to 2026.3.1

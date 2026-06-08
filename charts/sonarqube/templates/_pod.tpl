@@ -132,7 +132,7 @@ spec:
       resources: {{- toYaml . | nindent 8 }}
       {{- end }}
       command: ["/bin/sh", "-c"]
-      args: ["curl -s '{{ include "prometheusExporter.downloadURL" . }}' {{ if $.Values.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v"]
+      args: ["wget '{{ include "prometheusExporter.downloadURL" . }}' {{ if $.Values.prometheusExporter.noCheckCertificate }}--no-check-certificate{{ end }} --output-document /data/jmx_prometheus_javaagent.jar -v"]
       volumeMounts:
         - mountPath: /data
           name: sonarqube
