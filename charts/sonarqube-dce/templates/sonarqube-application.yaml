@@ -172,6 +172,10 @@ spec:
             - name: plugins-netrc-file
               mountPath: /root
             {{- end }}
+            {{- if .Values.caCerts.enabled }}
+            - mountPath: /tmp/secrets/ca-certs
+              name: ca-certs
+            {{- end }}
           {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) .Values.ApplicationNodes.plugins.securityContext) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}

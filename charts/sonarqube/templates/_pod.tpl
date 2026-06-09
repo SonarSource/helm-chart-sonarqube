@@ -201,6 +201,10 @@ spec:
         - name: plugins-netrc-file
           mountPath: /root
         {{- end }}
+        {{- if .Values.caCerts.enabled }}
+        - mountPath: /tmp/secrets/ca-certs
+          name: ca-certs
+        {{- end }}
       env:
         {{- with (include "sonarqube.install-plugins-proxy.env" .) }}
         {{- . | nindent 8 }}
