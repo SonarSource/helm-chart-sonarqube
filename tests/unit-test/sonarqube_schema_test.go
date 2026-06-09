@@ -1,13 +1,11 @@
 package tests
 
 import (
-	"testing"
-
 	"fmt"
+	"testing"
 
 	"github.com/gruntwork-io/terratest/modules/helm"
 	"github.com/gruntwork-io/terratest/modules/logger"
-	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
 
 	"github.com/stretchr/testify/assert"
@@ -15,28 +13,29 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// Global variables
-// chart path
 var chartPath string = "../../charts/sonarqube"
-
-// release name
 var releaseName string = "sonarqube"
-
-// Community Build Version
 var expectedContainerImage string = "sonarqube:26.6.0.123539"
-
-// Ensure we are using the dry-run flag
-var helmOptions *helm.Options = &helm.Options{
-	ExtraArgs: map[string][]string{"install": {"--dry-run"}},
-	SetValues: map[string]string{"monitoringPasscode": "monitoring-test-passcode"}, // See SONAR-24068
-	Logger:    logger.Discard,
-}
-
-// Templates to be tested
 var sqStsTemplate []string = []string{"templates/sonarqube-sts.yaml"}
 
-// TestValidSchema tests the schema of the values.yaml file using the validations
-// inside values.schema.json
+func newSQHelmOptions() *helm.Options {
+	return &helm.Options{
+		ExtraArgs: map[string][]string{"install": {"--dry-run"}},
+		SetValues: map[string]string{"monitoringPasscode": "monitoring-test-passcode"}, // See SONAR-24068
+		Logger:    logger.Discard,
+	}
+}
+
+func renderSQStsTemplate(t *testing.T, valuesFile string, helmOptions *helm.Options) appsv1.StatefulSet {
+	t.Helper()
+	helmOptions.ValuesFiles = []string{valuesFile}
+	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
+	assert.NoError(t, err)
+	var rendered appsv1.StatefulSet
+	helm.UnmarshalK8SYaml(t, output, &rendered)
+	return rendered
+}
+
 func TestInvalidSchema(t *testing.T) {
 	table := []struct {
 		testCaseName     string
@@ -67,8 +66,9 @@ func TestInvalidSchema(t *testing.T) {
 
 	for _, test := range table {
 		t.Run(test.testCaseName, func(t *testing.T) {
-			helmOptions.ValuesFiles = test.valuesFilesPaths
-			_, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, []string{})
+			opts := newSQHelmOptions()
+			opts.ValuesFiles = test.valuesFilesPaths
+			_, err := helm.RenderTemplateE(t, opts, chartPath, releaseName, []string{})
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), test.expectedError)
 		})
@@ -76,156 +76,89 @@ func TestInvalidSchema(t *testing.T) {
 }
 
 func TestNoTagLatestCommunity(t *testing.T) {
-	helmOptions.ValuesFiles = []string{"test-cases-values/sonarqube/test-notag-latest-cb.yaml"}
-	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
-	assert.NoError(t, err)
+	rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/test-notag-latest-cb.yaml", newSQHelmOptions())
 
-	// Now we use kubernetes/client-go library to render the template output into the Deployment struct. This will
-	// ensure the Deployment resource is rendered correctly.
-	var renderedTemplate appsv1.StatefulSet
-	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
-
-	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
+	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage+"-community", actualContainers[0].Image)
 }
 
 func TestNoTagAppVersionDeveloper(t *testing.T) {
-	helmOptions.ValuesFiles = []string{"test-cases-values/sonarqube/test-notag-appVersion-developer.yaml"}
-	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
-	assert.NoError(t, err)
+	rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/test-notag-appVersion-developer.yaml", newSQHelmOptions())
 
-	var renderedTemplate appsv1.StatefulSet
-	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
-
-	// Get the appVersion from the Chart.yaml file
-	var chartMetadata *chart.Metadata
-	chartMetadata, err = chartutil.LoadChartfile(fmt.Sprintf("%s/Chart.yaml", chartPath))
+	chartMetadata, err := chartutil.LoadChartfile(fmt.Sprintf("%s/Chart.yaml", chartPath))
 	if err != nil {
 		t.Fatalf("Error loading Chart.yaml file: %s", err)
 	}
-	var appVersion string = chartMetadata.AppVersion
 
-	expectedContainerImage := fmt.Sprintf("sonarqube:%s-developer", appVersion)
-	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
+	expectedImage := fmt.Sprintf("sonarqube:%s-developer", chartMetadata.AppVersion)
+	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
+	assert.Equal(t, expectedImage, actualContainers[0].Image)
 }
 
 func TestShouldUseBuildNumber(t *testing.T) {
-	helmOptions.ValuesFiles = []string{"test-cases-values/sonarqube/test-build-number.yaml"}
-	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
-	assert.NoError(t, err)
+	rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/test-build-number.yaml", newSQHelmOptions())
 
-	var renderedTemplate appsv1.StatefulSet
-	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
-
-	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
+	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
 	assert.Equal(t, expectedContainerImage+"-community", actualContainers[0].Image)
 }
 
 func TestShouldUseImageTag(t *testing.T) {
-	helmOptions.ValuesFiles = []string{"test-cases-values/sonarqube/test-image-tag-developer.yaml"}
-	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
-	assert.NoError(t, err)
+	rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/test-image-tag-developer.yaml", newSQHelmOptions())
 
-	var renderedTemplate appsv1.StatefulSet
-	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
-
-	expectedContainerImage := "sonarqube:2026.3.1-enterprise"
-	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
+	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
+	assert.Equal(t, "sonarqube:2026.3.1-enterprise", actualContainers[0].Image)
 }
 
 func TestCustomCommunityTag(t *testing.T) {
-	helmOptions.ValuesFiles = []string{"test-cases-values/sonarqube/test-custom-image-values.yaml"}
-	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
-	assert.NoError(t, err)
+	rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/test-custom-image-values.yaml", newSQHelmOptions())
 
-	var renderedTemplate appsv1.StatefulSet
-	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
-
-	expectedContainerImage := "sonarqube:lts-community@sha256:3596d14feb065a31ce84cef60cc3ecfb7b47233ef860fd85c0d4e465f676c9f7"
-	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
+	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
+	assert.Equal(t, "sonarqube:lts-community@sha256:3596d14feb065a31ce84cef60cc3ecfb7b47233ef860fd85c0d4e465f676c9f7", actualContainers[0].Image)
 }
 
 func TestCommunityBuildNumberEmptyTag(t *testing.T) {
-	helmOptions.ValuesFiles = []string{"test-cases-values/sonarqube/test-community-build-empty-tag.yaml"}
-	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
-	assert.NoError(t, err)
+	rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/test-community-build-empty-tag.yaml", newSQHelmOptions())
 
-	var renderedTemplate appsv1.StatefulSet
-	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
-
-	expectedContainerImage := "sonarqube:12345-community"
-	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
+	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
+	assert.Equal(t, "sonarqube:12345-community", actualContainers[0].Image)
 }
 
 func TestCommunityEmptyBuildNumberEmptyTag(t *testing.T) {
-	helmOptions.ValuesFiles = []string{"test-cases-values/sonarqube/test-community-empty-build-empty-tag.yaml"}
-	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
-	assert.NoError(t, err)
-
-	var renderedTemplate appsv1.StatefulSet
-	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
-
-	expectedContainerImage := "sonarqube:community"
-	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
+	rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/test-community-empty-build-empty-tag.yaml", newSQHelmOptions())
+	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
+	assert.Equal(t, "sonarqube:community", actualContainers[0].Image)
 }
 
-// This test loads the values.yaml used by CI at runtime.
+// TestCiValues loads the values.yaml used by CI at runtime.
 func TestCiValues(t *testing.T) {
-	helmOptions.ValuesFiles = []string{chartPath + "/ci/ci-values.yaml"}
-	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
-	assert.NoError(t, err)
-
-	var renderedTemplate appsv1.StatefulSet
-	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
-
-	expectedPrivateContainerImage := "sonarsource/" + expectedContainerImage + "-master-community"
-	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
+	rendered := renderSQStsTemplate(t, chartPath+"/ci/ci-values.yaml", newSQHelmOptions())
+	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, expectedPrivateContainerImage, actualContainers[0].Image)
+	assert.Equal(t, "sonarsource/"+expectedContainerImage+"-master-community", actualContainers[0].Image)
 }
 
-// This test loads the values.yaml used by the OpenShift Verifier at runtime.
+// TestCiOpenshiftVerifierValues loads the values.yaml used by the OpenShift Verifier at runtime.
 func TestCiOpenshiftVerifierValues(t *testing.T) {
-	helmOptions.ValuesFiles = []string{chartPath + "/openshift-verifier/values.yaml"}
-	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
-	assert.NoError(t, err)
-
-	var renderedTemplate appsv1.StatefulSet
-	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
-
-	expectedPrivateContainerImage := "sonarsource/" + expectedContainerImage + "-master-community"
-	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
+	rendered := renderSQStsTemplate(t, chartPath+"/openshift-verifier/values.yaml", newSQHelmOptions())
+	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, expectedPrivateContainerImage, actualContainers[0].Image)
+	assert.Equal(t, "sonarsource/"+expectedContainerImage+"-master-community", actualContainers[0].Image)
 }
 
 func TestDeveloperEdition(t *testing.T) {
-	helmOptions.ValuesFiles = []string{"test-cases-values/sonarqube/test-developer-edition.yaml"}
-	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
-	assert.NoError(t, err)
-
-	var renderedTemplate appsv1.StatefulSet
-	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
-
-	expectedContainerImage := "sonarqube:2026.3.1-developer"
-	actualContainers := renderedTemplate.Spec.Template.Spec.Containers
+	rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/test-developer-edition.yaml", newSQHelmOptions())
+	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, expectedContainerImage, actualContainers[0].Image)
+	assert.Equal(t, "sonarqube:2026.3.1-developer", actualContainers[0].Image)
 }
 
-// This function is used by TestHostPath and TestPersistenceWithoutHostpath
 func findVolumeByName(volumes []v1.Volume, name string) *v1.Volume {
 	for _, volume := range volumes {
 		if volume.Name == name {
@@ -236,16 +169,8 @@ func findVolumeByName(volumes []v1.Volume, name string) *v1.Volume {
 }
 
 func TestHostPath(t *testing.T) {
-	helmOptions.ValuesFiles = []string{"test-cases-values/sonarqube/test-persistence-hostpath.yaml"}
-	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
-	assert.NoError(t, err)
-
-	var renderedTemplate appsv1.StatefulSet
-	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
-
-	actualVolumes := renderedTemplate.Spec.Template.Spec.Volumes
-	volume := findVolumeByName(actualVolumes, "sonarqube")
-
+	rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/test-persistence-hostpath.yaml", newSQHelmOptions())
+	volume := findVolumeByName(rendered.Spec.Template.Spec.Volumes, "sonarqube")
 	assert.NotNil(t, volume, "Volume 'sonarqube' should exist but was not found")
 	assert.NotNil(t, volume.HostPath, "sonarqube volume should have a HostPath source")
 	assert.Equal(t, "/hostPath/path", volume.HostPath.Path)
@@ -253,16 +178,8 @@ func TestHostPath(t *testing.T) {
 }
 
 func TestPersistenceWithoutHostpath(t *testing.T) {
-	helmOptions.ValuesFiles = []string{"test-cases-values/sonarqube/test-persistence-without-hostpath.yaml"}
-	output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
-	assert.NoError(t, err)
-
-	var renderedTemplate appsv1.StatefulSet
-	helm.UnmarshalK8SYaml(t, output, &renderedTemplate)
-
-	actualVolumes := renderedTemplate.Spec.Template.Spec.Volumes
-	volume := findVolumeByName(actualVolumes, "sonarqube")
-
+	rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/test-persistence-without-hostpath.yaml", newSQHelmOptions())
+	volume := findVolumeByName(rendered.Spec.Template.Spec.Volumes, "sonarqube")
 	assert.NotNil(t, volume, "Volume 'sonarqube' should exist but was not found")
 	assert.Nil(t, volume.HostPath, "sonarqube volume should NOT have a HostPath source")
 	assert.Equal(t, "sonarqube-sonarqube", volume.PersistentVolumeClaim.ClaimName)
