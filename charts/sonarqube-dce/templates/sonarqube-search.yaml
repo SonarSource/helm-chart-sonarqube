@@ -89,7 +89,9 @@ spec:
         {{- end }}
       {{- end }}
       initContainers:
-      {{- if .Values.extraInitContainers }}
+      {{- if .Values.searchNodes.extraInitContainers }}
+{{ toYaml .Values.searchNodes.extraInitContainers | indent 8 }}
+      {{- else if .Values.extraInitContainers }}
 {{ toYaml .Values.extraInitContainers | indent 8 }}
       {{- end }}
       {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}

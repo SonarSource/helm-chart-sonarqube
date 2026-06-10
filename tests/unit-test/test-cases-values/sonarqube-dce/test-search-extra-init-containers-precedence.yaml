@@ -1,0 +1,20 @@
+monitoringPasscode: test-passcode
+applicationNodes:
+  jwtSecret: dZ0EB0KxnF++nr5+4vfTCaun/eWbv6gOoXodiAMqcFo=
+jdbcOverwrite:
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+initSysctl:
+  enabled: false
+initFs:
+  enabled: false
+extraInitContainers:
+  - name: extra-init-deprecated
+    image: busybox
+    command: ['sh', '-c', 'echo hello']
+searchNodes:
+  extraInitContainers:
+    - name: extra-init-search-node
+      image: busybox
+      command: ['sh', '-c', 'echo hello']

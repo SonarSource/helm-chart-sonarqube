@@ -143,6 +143,14 @@ searchNodes:
   ##   command: ['sh', '-c', 'echo Hello && sleep 3600']
   ##
   extraContainers: []
+  ## Array of extra init containers to run before the sonarqube search container
+  ##
+  ## Example:
+  ## - name: my-init-container
+  ##   image: busybox
+  ##   command: ['sh', '-c', 'echo Hello']
+  ##
+  extraInitContainers: []
   # if the global .Values.nodeSelector is set, the following one will be ignored
   nodeSelector: {}
   # if the global .Values.affinity is set, the following one will be ignored
@@ -371,7 +379,7 @@ applicationNodes:
       memory: 4096M
       ephemeral-storage: 1536M
 
-  ## Array of extra containers to run alongside the sonarqube search container
+  ## Array of extra containers to run alongside the sonarqube application container
   ##
   ## Example:
   ## - name: myapp-container
@@ -379,6 +387,14 @@ applicationNodes:
   ##   command: ['sh', '-c', 'echo Hello && sleep 3600']
   ##
   extraContainers: []
+  ## Array of extra init containers to run before the sonarqube application container
+  ##
+  ## Example:
+  ## - name: my-init-container
+  ##   image: busybox
+  ##   command: ['sh', '-c', 'echo Hello']
+  ##
+  extraInitContainers: []
   ## Array of extra volumes and VolumeMounts to add to the SonarQube deployment
   extraVolumes: []
   extraVolumeMounts: []
@@ -607,8 +623,9 @@ initContainers:
   # the initContainer does not take as much resources.
   resources: {}
 
+# (DEPRECATED) Please use searchNodes.extraInitContainers or applicationNodes.extraInitContainers instead.
+# Kept for backward compatibility: when set, applies to the search nodes.
 extraInitContainers: {}
-# Extra init containers to e.g. download required artifacts
 
 ## Provide a secret containing one or more certificate files in the keys that will be added to cacerts
 ## The cacerts file will be set via SONARQUBE_WEB_JVM_OPTS and SONAR_CE_JAVAOPTS
