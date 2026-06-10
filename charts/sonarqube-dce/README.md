@@ -409,6 +409,22 @@ helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce \
 
 If you want to make your application publicly visible with Routes, you can set `OpenShift.route.enabled` to true. Please check the [configuration details](#openshift-1) to customize the Route base on your needs.
 
+### Defunct (zombie) processes from probes
+
+The default `readinessProbe` and `livenessProbe` are `exec` probes that fork short-lived processes inside the container on every invocation (the `readinessProbe` runs `curl` piped into `grep`, the `livenessProbe` runs `curl`). On some OpenShift / kubelet versions, when a probe exceeds its `timeoutSeconds` (default `1`) the kubelet kills the probe's parent shell before its child processes finish. Those children are then reparented to PID 1 (the SonarQube JVM, which does not reap them) and remain as defunct (`<defunct>` / zombie) processes. Because the probe runs throughout the pod's lifecycle, these can slowly accumulate and, in extreme cases, approach the pod's thread/process limit.
+
+If you observe a growing number of defunct processes on the application pods, increase the probe timeout to give the command enough time to complete before the kubelet kills it, for example:
+
+```yaml
+applicationNodes:
+  readinessProbe:
+    timeoutSeconds: 10
+  livenessProbe:
+    timeoutSeconds: 10
+```
+
+A value comfortably above `1` second prevents the probe command from being killed mid-execution and stops the accumulation of defunct processes.
+
 ### Setting up an external database for testing
 
 In order to perform a quick testing of the chart, you can install a [postgresql chart](https://artifacthub.io/packages/helm/bitnami/postgresql) on your cluster, then set the appropriate values in the chart. To have the postgresql chart running in Openshift, you can look at [this example values file](./openshift-verifier/postgres-values.yaml). For more information and settings, please refer to the chart documentation.
