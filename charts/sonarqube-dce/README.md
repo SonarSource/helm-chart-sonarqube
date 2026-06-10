@@ -411,7 +411,7 @@ If you want to make your application publicly visible with Routes, you can set `
 
 ### Defunct (zombie) processes from probes
 
-The default `readinessProbe` and `livenessProbe` are `exec` probes that fork short-lived processes (`curl`, `grep`) inside the container on every invocation. On some OpenShift / kubelet versions, when a probe exceeds its `timeoutSeconds` (default `1`) the kubelet kills the probe's parent shell before its child processes finish. Those children are then reparented to PID 1 (the SonarQube JVM, which does not reap them) and remain as defunct (`<defunct>` / zombie) processes. Because the probe runs throughout the pod's lifecycle, these can slowly accumulate and, in extreme cases, approach the pod's thread/process limit.
+The default `readinessProbe` and `livenessProbe` are `exec` probes that fork short-lived processes inside the container on every invocation (the `readinessProbe` runs `curl` piped into `grep`, the `livenessProbe` runs `curl`). On some OpenShift / kubelet versions, when a probe exceeds its `timeoutSeconds` (default `1`) the kubelet kills the probe's parent shell before its child processes finish. Those children are then reparented to PID 1 (the SonarQube JVM, which does not reap them) and remain as defunct (`<defunct>` / zombie) processes. Because the probe runs throughout the pod's lifecycle, these can slowly accumulate and, in extreme cases, approach the pod's thread/process limit.
 
 If you observe a growing number of defunct processes on the application pods, increase the probe timeout to give the command enough time to complete before the kubelet kills it, for example:
 
