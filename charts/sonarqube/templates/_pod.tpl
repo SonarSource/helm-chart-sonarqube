@@ -48,7 +48,7 @@ spec:
       image: {{ default (include "sonarqube.image" $) .Values.caCerts.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
       command: ["sh"]
-      args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
+      args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; for f in /tmp/secrets/ca-certs/*; do cat \"$f\"; echo; done > /tmp/certs/ca-bundle.pem; fi;"]
       {{- with (include "sonarqube.initContainerSecurityContext" .) }}
       securityContext: {{- . | nindent 8 }}
       {{- end }}
@@ -202,8 +202,10 @@ spec:
           mountPath: /root
         {{- end }}
         {{- if .Values.caCerts.enabled }}
-        - mountPath: /tmp/secrets/ca-certs
-          name: ca-certs
+        - mountPath: /tmp/certs
+          name: sonarqube
+          subPath: certs
+          readOnly: true
         {{- end }}
       env:
         {{- with (include "sonarqube.install-plugins-proxy.env" .) }}
@@ -233,8 +235,10 @@ spec:
           mountPath: /root
         {{- end }}
       {{- if .Values.caCerts.enabled }}
-        - mountPath: /tmp/secrets/ca-certs
-          name: ca-certs
+        - mountPath: /tmp/certs
+          name: sonarqube
+          subPath: certs
+          readOnly: true
       {{- end }}
       env:
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}

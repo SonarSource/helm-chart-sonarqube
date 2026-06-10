@@ -108,7 +108,7 @@ data:
   install_oracle_jdbc_driver.sh: |-
       rm -f /opt/sonarqube/extensions/jdbc-driver/oracle/*
       cd /opt/sonarqube/extensions/jdbc-driver/oracle
-      curl --cacert /tmp/secrets/ca-certs/* --netrc-file /root/.netrc -fsSLO https://download.oracle.com/otn-pub/otn_software/jdbc/2113/ojdbc11.jar
+      curl --cacert /tmp/certs/ca-bundle.pem --netrc-file /root/.netrc -fsSLO https://download.oracle.com/otn-pub/otn_software/jdbc/2113/ojdbc11.jar
 ---
 # Source: sonarqube/templates/install-plugins.yaml
 apiVersion: v1
@@ -187,7 +187,7 @@ spec:
           image: sonarqube:2026.3.1-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh"]
-          args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
+          args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; for f in /tmp/secrets/ca-certs/*; do cat \"$f\"; echo; done > /tmp/certs/ca-bundle.pem; fi;"]
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -253,8 +253,10 @@ spec:
               mountPath: /tmp/scripts/
             - name: oracle-jdbc-driver-netrc-file
               mountPath: /root
-            - mountPath: /tmp/secrets/ca-certs
-              name: ca-certs
+            - mountPath: /tmp/certs
+              name: sonarqube
+              subPath: certs
+              readOnly: true
           env:
             - name: SONAR_WEB_CONTEXT
               value: /
