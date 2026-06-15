@@ -122,6 +122,9 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+      rm -f /opt/sonarqube/extensions/plugins/*
+      cd /opt/sonarqube/extensions/plugins
+      curl --cacert /tmp/certs/ca-bundle.pem   -fsSLO "https://binaries.sonarsource.com/plugins/org/sonarsource/java/sonar-java-plugin/3.4/sonar-java-plugin-3.4.jar"
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
@@ -173,7 +176,7 @@ spec:
       annotations:
         checksum/config: f8aa11f39a0e5d00b8b50d9eaf3ed699745188e09567c2c1c63fc269353a7b50
         checksum/init-sysctl: 6b529bd8bcc2d60623f4c142ecf474354b0898e76dadc0bc6958c77afe788443
-        checksum/plugins: 11b3085442c8fe26074ef53cf7874d8e729fadd1af33b0f50cd3c5865fddaecf
+        checksum/plugins: aa778a5be8a9c931ff4f4db1a6f2ceeea2ab86e76fe4540ef665495a72a2e047
         checksum/secret: 2c83f97b3e967ed3bb7af7f9ab9c1602c9aecf8b0b67c8df5491c6d4265bf3b2
       labels:
         app: sonarqube
@@ -224,6 +227,53 @@ spec:
             - name: init-sysctl
               mountPath: /tmp/scripts/
           env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
+            - name: SONAR_CE_JAVAOPTS
+              value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
+        - name: install-plugins
+          image: sonarqube:2026.3.1-enterprise
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/extensions/plugins
+              name: sonarqube
+              subPath: extensions/plugins
+            - name: install-plugins
+              mountPath: /tmp/scripts/
+            - mountPath: /tmp/certs
+              name: sonarqube
+              subPath: certs
+              readOnly: true
+          env:
+            - name: http_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: ca-certificates-configmap.yaml-sonarqube-http-proxies
+                  key: PLUGINS-HTTP-PROXY
+            - name: https_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: ca-certificates-configmap.yaml-sonarqube-http-proxies
+                  key: PLUGINS-HTTPS-PROXY
+            - name: no_proxy
+              valueFrom:
+                secretKeyRef:
+                  name: ca-certificates-configmap.yaml-sonarqube-http-proxies
+                  key: PLUGINS-NO-PROXY
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS
@@ -381,6 +431,12 @@ spec:
             items:
               - key: init_sysctl.sh
                 path: init_sysctl.sh
+        - name: install-plugins
+          configMap:
+            name: ca-certificates-configmap.yaml-sonarqube-install-plugins
+            items:
+              - key: install_plugins.sh
+                path: install_plugins.sh
         - name: install-oracle-jdbc-driver
           configMap:
             name: ca-certificates-configmap.yaml-sonarqube-install-oracle-jdbc-driver
