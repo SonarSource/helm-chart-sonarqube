@@ -6,6 +6,8 @@ All changes to this chart will be documented in this file.
 * Upgrade SonarQube Community build to 26.6.0.123539
 * Add `searchNodes.extraInitContainers` and `applicationNodes.extraInitContainers` to allow per-node-type extra init containers
 * Deprecate root-level `extraInitContainers` in favour of the node-specific values
+* Add CA certificate support with multi-cert bundling to `install-plugins` init container for plugin downloads from servers using self-signed or private CA certificates
+* Fix multi-cert CA bundle handling in `install-oracle-jdbc-driver` init container
 
 ## [2026.3.1]
 * Upgrade Chart's version to 2026.3.1
