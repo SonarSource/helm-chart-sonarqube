@@ -19,6 +19,12 @@ spec:
     {{- toYaml . | nindent 4 }}
     {{- end }}
   {{- end }}
+  {{- with .Values.nodeSelector }}
+  nodeSelector: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.tolerations }}
+  tolerations: {{- toYaml . | nindent 4 }}
+  {{- end }}
   containers:
     - name: {{ .Release.Name }}-ui-test
       image: {{ .Values.tests.image | default (include "sonarqube.image" .) | quote }}
