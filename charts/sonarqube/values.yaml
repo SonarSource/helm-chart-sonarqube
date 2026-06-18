@@ -153,12 +153,16 @@ ingress-nginx:
 httproute:
   enabled: false
   # gateway: my-gateway
+  # sectionName: http # adding section name for choose http or https routing
   # gatewayNamespace: my-gateway-namespace # optional
   # labels:
   #   somelabel: somevalue
+  # # Optional: only if your setup requires overriding the defaults
+  # gatewayKind: Gateway            
+  # gatewayGroup: gateway.networking.k8s.io
   # hostnames:
   #   - sonarqube.your-org.com
-  # The rules are optional, by default we will create one with the SonarWebContext prefix and the SonarQube service values
+  # # The rules are optional, by default we will create one with the SonarWebContext prefix and the SonarQube service values
   # rules:
   # - matches:
   #   - path:
@@ -167,6 +171,8 @@ httproute:
   #   backendRefs:
   #   - name: my-service1
   #     port: 8080
+  #   timeouts:
+  #     request: 30s
 
 ingress:
   enabled: false
