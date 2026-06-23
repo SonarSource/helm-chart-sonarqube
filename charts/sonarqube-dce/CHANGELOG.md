@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2025.4.8]
+* Update Chart's version to 2025.4.8
+* Fix `ca-certs` init container failing with "keytool: Permission denied" on base images whose JVM keystore is read-only, by making the keystore working copy writable
+
 ## [2025.4.7]
 * Update Chart's version to 2025.4.7
 * Upgrade SonarQube Server to 2025.4.7
