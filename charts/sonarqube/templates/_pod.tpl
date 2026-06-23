@@ -47,8 +47,18 @@ spec:
     - name: ca-certs
       image: {{ default (include "sonarqube.image" $) .Values.caCerts.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
-      command: ["sh"]
-      args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; for f in /tmp/secrets/ca-certs/*; do cat \"$f\"; echo; done > /tmp/certs/ca-bundle.pem; fi;"]
+      command: ["sh", "-c"]
+      args:
+        - |
+          cp -f "${JAVA_HOME}/lib/security/cacerts" /tmp/certs/cacerts
+          chmod u+w /tmp/certs/cacerts
+          if [ "$(ls /tmp/secrets/ca-certs)" ]; then
+            for f in /tmp/secrets/ca-certs/*; do
+              keytool -importcert -file "${f}" -alias "$(basename "${f}")" \
+                -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt
+            done
+            for f in /tmp/secrets/ca-certs/*; do cat "$f"; echo; done > /tmp/certs/ca-bundle.pem
+          fi
       {{- with (include "sonarqube.initContainerSecurityContext" .) }}
       securityContext: {{- . | nindent 8 }}
       {{- end }}
