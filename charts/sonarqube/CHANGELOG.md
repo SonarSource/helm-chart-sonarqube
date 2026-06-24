@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2026.4.1]
+* Upgrade Chart's version to 2026.4.1
+* Apply chart-level `nodeSelector` and `tolerations` to the Helm UI test pod
+
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
 * Upgrade SonarQube Community build to 26.6.0.123539
