@@ -3,7 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
-* Upgrade SonarQube Community build to 26.6.0.123539
+* Upgrade SonarQube Community build to 26.7.0.124771
 * Add CA certificate support with multi-cert bundling to `install-plugins` init container for plugin downloads from servers using self-signed or private CA certificates
 * Fix multi-cert CA bundle handling in `install-oracle-jdbc-driver` init container
 * Fix `ca-certs` init container failing with "keytool: Permission denied" on base images whose JVM keystore is read-only, by making the keystore working copy writable
