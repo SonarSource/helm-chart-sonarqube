@@ -35,6 +35,8 @@ spec:
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
+        - ipBlock:
+            cidr: "::/0"
       ports:
         - port: 9000
           protocol: TCP
@@ -49,6 +51,8 @@ spec:
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
+        - ipBlock:
+            cidr: "::/0"
       ports:
         - port: 9000
           protocol: TCP
@@ -539,6 +543,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: SONAR_CLUSTER_NODE_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
             - name: SONAR_CLUSTER_HOSTS
               value: "networkpolicy-values.yaml-sonarqube-dce-headless"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
@@ -565,7 +573,9 @@ spec:
               - sh
               - -c
               - |-
-                host="$(hostname -i || echo '127.0.0.1')"
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
                 curl --noproxy "*" -fsS -o /dev/null --max-time 1 -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
             failureThreshold: 6
             initialDelaySeconds: 0
@@ -580,7 +590,9 @@ spec:
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
-                host="$(hostname -i || echo '127.0.0.1')"
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
                 if curl --noproxy "*" -s http://${host}:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
                   exit 0
                 fi
@@ -774,6 +786,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: SONAR_CLUSTER_NODE_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           livenessProbe:
             exec:
               command:
@@ -782,7 +798,9 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered live if http call returns 200
-                host="$(hostname -i || echo '127.0.0.1')"
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
                 if curl --noproxy "*" -sS "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
@@ -799,7 +817,9 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
-                host="$(hostname -i || echo '127.0.0.1')"
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
                 if curl --noproxy "*" -s "http://${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
@@ -816,7 +836,9 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered started if http call returns 200
-                host="$(hostname -i || echo '127.0.0.1')"
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
                 if curl --noproxy "*" -sS "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
