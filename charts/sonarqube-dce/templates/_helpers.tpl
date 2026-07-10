@@ -388,6 +388,16 @@ Set combined_search_env, ensuring we don't have any duplicates with our features
 {{- end -}}
 
 {{/*
+Node address for exec probes: the pod IP from `hostname -i`, IPv6 bracket-wrapped for the URL,
+falling back to `localhost`.
+*/}}
+{{- define "sonarqube.probeHostScript" -}}
+host="$(hostname -i | awk '{print $1}')"
+host="${host:-localhost}"
+case "${host}" in *:*) host="[${host}]" ;; esac
+{{- end -}}
+
+{{/*
   generate Proxy env var from httpProxySecret
 */}}
 {{- define "sonarqube.proxyFromSecret" -}}
