@@ -1,0 +1,126 @@
+{{- if .Values.agenticHarness.enabled }}
+{{- $storage := .Values.agenticHarness.orchestrator.storage }}
+{{- $storageSecretName := $storage.existingSecret | default (printf "%s-storage" (include "sonarqube.agentic.orchestrator.fullname" .)) }}
+{{- $storageAccessKeyKey := "access-key" }}
+{{- $storageSecretKeyKey := "secret-key" }}
+{{- if $storage.existingSecret }}
+{{- $storageAccessKeyKey = $storage.existingSecretAccessKeyKey | default "access-key" }}
+{{- $storageSecretKeyKey = $storage.existingSecretSecretKeyKey | default "secret-key" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sonarqube.agentic.orchestrator.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agentic-orchestrator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-agentic-orchestrator
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      {{- with .Values.agenticHarness.orchestrator.annotations }}
+      annotations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: {{ include "sonarqube.name" . }}-agentic-orchestrator
+        release: {{ .Release.Name }}
+    spec:
+      {{- if or .Values.image.pullSecrets .Values.image.pullSecret .Values.agenticHarness.orchestrator.image.pullSecrets }}
+      imagePullSecrets:
+        {{- if .Values.image.pullSecret }}
+        - name: {{ .Values.image.pullSecret }}
+        {{- end }}
+        {{- with .Values.image.pullSecrets }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.agenticHarness.orchestrator.image.pullSecrets }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-sonarqube
+          image: {{ include "sonarqube.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with (fromYaml (include "sonarqube.initContainerSecurityContext" .)) }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - sh
+            - -c
+            - |
+              until curl -sf "http://{{ include "sonarqube.fullname" . }}:{{ .Values.service.internalPort }}{{ include "sonarqube.webcontext" . }}api/system/status" | grep -q '"status":"UP"'; do
+                echo "Waiting for SonarQube to be UP..."; sleep 10;
+              done
+      containers:
+        - name: agentic-orchestrator
+          image: {{ printf "%s:%s" .Values.agenticHarness.orchestrator.image.repository (default "latest" .Values.agenticHarness.orchestrator.image.tag) }}
+          imagePullPolicy: {{ .Values.agenticHarness.orchestrator.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.agenticHarness.orchestrator.port }}
+              protocol: TCP
+          env:
+            - name: SERVER_PORT
+              value: {{ .Values.agenticHarness.orchestrator.port | quote }}
+            # The orchestrator always persists to SonarQube's own database — same connection info,
+            # reshaped for the orchestrator's CORE_DB_* config (see the
+            # sonarqube.agentic.dbEndpoint/dbName helpers for why this can't just envFrom the
+            # existing jdbc-config ConfigMap directly).
+            - name: CORE_DB_READ_WRITE_ENDPOINT
+              value: {{ include "sonarqube.agentic.dbEndpoint" . | quote }}
+            - name: CORE_DB_NAME
+              value: {{ include "sonarqube.agentic.dbName" . | quote }}
+            - name: CORE_DB_USERNAME
+              value: {{ template "jdbc.username" . }}
+            - name: CORE_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "jdbc.secret" . }}
+                  key: {{ include "jdbc.secretPasswordKey" . }}
+            # Object storage the orchestrator uploads job artifacts to / presigns URLs against.
+            # Customer-provided infrastructure — not deployed by this chart. Credentials always
+            # come from a Secret (existingSecret, or the internal one this chart generates from
+            # storage.accessKey/secretKey) — never rendered as a plaintext env value.
+            - name: AGENTIC_STORAGE_ENDPOINT
+              value: {{ $storage.endpoint | quote }}
+            - name: AGENTIC_STORAGE_REGION
+              value: {{ $storage.region | quote }}
+            - name: AGENTIC_STORAGE_BUCKET
+              value: {{ $storage.bucket | quote }}
+            - name: AGENTIC_STORAGE_PATH_STYLE
+              value: {{ $storage.pathStyleAccess | quote }}
+            - name: AGENTIC_STORAGE_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $storageSecretName }}
+                  key: {{ $storageAccessKeyKey }}
+            - name: AGENTIC_STORAGE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $storageSecretName }}
+                  key: {{ $storageSecretKeyKey }}
+            # The orchestrator currently supports pushing to a single Agentic Runtime target; it
+            # has no family-aware routing today, so this always points at the hunter runtime.
+            - name: AGENTIC_RUNTIME_PUSH_URL
+              value: {{ printf "http://%s:%d/jobs" (include "sonarqube.agentic.runtime.fullname" (dict "root" $ "family" "hunter")) (int .Values.agenticHarness.runtimes.hunter.port) | quote }}
+            {{- with .Values.agenticHarness.orchestrator.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: {{ .Values.agenticHarness.orchestrator.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.agenticHarness.orchestrator.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.agenticHarness.orchestrator.livenessProbe.failureThreshold }}
+            timeoutSeconds: {{ .Values.agenticHarness.orchestrator.livenessProbe.timeoutSeconds }}
+          {{- with .Values.agenticHarness.orchestrator.containerSecurityContext }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.agenticHarness.orchestrator.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

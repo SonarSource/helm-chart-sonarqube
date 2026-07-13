@@ -1,0 +1,90 @@
+{{- if .Values.agenticHarness.enabled }}
+{{- range $family, $cfg := .Values.agenticHarness.runtimes }}
+{{- if $cfg.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sonarqube.agentic.runtime.fullname" (dict "root" $ "family" $family) }}
+  labels: {{- include "sonarqube.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: agentic-runtime-{{ $family }}
+spec:
+  replicas: {{ $cfg.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" $ }}-agentic-runtime-{{ $family }}
+      release: {{ $.Release.Name }}
+  template:
+    metadata:
+      {{- with $cfg.annotations }}
+      annotations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: {{ include "sonarqube.name" $ }}-agentic-runtime-{{ $family }}
+        release: {{ $.Release.Name }}
+    spec:
+      {{- with $cfg.runtimeClassName }}
+      runtimeClassName: {{ . }}
+      {{- end }}
+      {{- if or $.Values.image.pullSecrets $.Values.image.pullSecret $cfg.image.pullSecrets }}
+      imagePullSecrets:
+        {{- if $.Values.image.pullSecret }}
+        - name: {{ $.Values.image.pullSecret }}
+        {{- end }}
+        {{- with $.Values.image.pullSecrets }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with $cfg.image.pullSecrets }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: agentic-runtime
+          image: {{ printf "%s:%s" $cfg.image.repository (default "latest" $cfg.image.tag) }}
+          imagePullPolicy: {{ $cfg.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $cfg.port }}
+              protocol: TCP
+          env:
+            - name: SERVER_PORT
+              value: {{ $cfg.port | quote }}
+            - name: AGENT_FAMILY
+              value: {{ $family | quote }}
+            {{- with $cfg.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: {{ $cfg.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ $cfg.livenessProbe.periodSeconds }}
+            failureThreshold: {{ $cfg.livenessProbe.failureThreshold }}
+            timeoutSeconds: {{ $cfg.livenessProbe.timeoutSeconds }}
+          {{- with $cfg.containerSecurityContext }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $cfg.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sonarqube.agentic.runtime.fullname" (dict "root" $ "family" $family) }}
+  labels: {{- include "sonarqube.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: agentic-runtime-{{ $family }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ $cfg.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ include "sonarqube.name" $ }}-agentic-runtime-{{ $family }}
+    release: {{ $.Release.Name }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

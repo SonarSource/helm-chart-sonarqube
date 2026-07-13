@@ -316,6 +316,30 @@ If a Prometheus Operator is deployed in your cluster, you can enable a PodMonito
 
 If running on OpenShift, make sure your account has permissions to create PodMonitor resources under the monitoring.coreos.com/v1 apiVersion.
 
+## Agentic Harness
+
+The chart can optionally deploy the Agentic Unified Harness alongside SonarQube Server: an Agent
+Orchestrator and one or more sandboxed Agentic Job Runtimes (today, just `hunter`). Enable it with
+`agenticHarness.enabled=true` (requires `jdbcOverwrite.enabled=true` — enforced at install time)
+— see the `agenticHarness` block in `values.yaml` for the full set of options.
+
+- The orchestrator always persists to the same database as SonarQube itself; there is no separate
+  DB configuration for it.
+- Object storage (`agenticHarness.orchestrator.storage`) and SCM connectivity are customer-provided
+  infrastructure — the chart does not deploy or manage either, only configures the orchestrator to
+  reach them.
+- `sonar.hunteragent.orchestrator.url` is wired automatically (via `sonarProperties`) to point at
+  the orchestrator Service, unless you've already set that key yourself.
+- Each entry under `agenticHarness.runtimes` becomes its own Deployment+Service; add a new agentic
+  job family with a values change only, no template change needed.
+- `agenticHarness.networkPolicy.enabled` defaults to **true**: the orchestrator can reach only
+  SonarQube, the runtimes, and its `egressAllow` list (SCM/storage); each runtime can reach only
+  its `egressAllow` list (LLM/storage) — never SonarQube, SCM, or other runtimes. Because
+  Kubernetes `NetworkPolicy` matches CIDRs, not hostnames, `runtimes.hunter.egressAllow` ships
+  Anthropic's own documented, stable CIDR by default; override it for your real LLM provider, and
+  fill in `orchestrator.egressAllow` for your SCM/storage endpoints (empty by default — there's no
+  universal default for those).
+
 ## OpenShift installation
 
 The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).

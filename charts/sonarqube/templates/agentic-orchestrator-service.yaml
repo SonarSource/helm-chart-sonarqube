@@ -1,0 +1,18 @@
+{{- if .Values.agenticHarness.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sonarqube.agentic.orchestrator.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agentic-orchestrator
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.agenticHarness.orchestrator.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ include "sonarqube.name" . }}-agentic-orchestrator
+    release: {{ .Release.Name }}
+{{- end }}

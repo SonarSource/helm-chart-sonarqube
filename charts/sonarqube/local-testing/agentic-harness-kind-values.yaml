@@ -1,0 +1,101 @@
+# Test values for exercising the Agentic Harness end to end on a local `kind` cluster.
+# See README.md in this folder for the full setup sequence (provision Postgres/MinIO, build and
+# `kind load` the images referenced below, then `helm install` with this file).
+#
+# Service names below are Bitnami chart defaults for the release names used in README.md's
+# commands (external-postgres / external-minio) — verify with `kubectl get svc -n sonarqube`
+# after running the setup scripts if you used different release names.
+
+# The real distribution built for this harness is an Enterprise build with the hunter-agent
+# capability baked in (see agentic-workflows/private/integration-harness/sonarqube/) — not the
+# public Docker Hub "sonarqube" image, which doesn't have that capability at all.
+edition: enterprise
+image:
+  repository: agentic-sonarqube
+  tag: local
+  pullPolicy: IfNotPresent
+
+monitoringPasscode: local-kind-testing
+
+jdbcOverwrite:
+  enabled: true
+  jdbcUrl: "jdbc:postgresql://external-postgres-postgresql.sonarqube.svc.cluster.local:5432/sonarqube"
+  jdbcUsername: sonarqube
+  jdbcPassword: sonarqube
+
+agenticHarness:
+  enabled: true
+
+  orchestrator:
+    image:
+      repository: agentic-orchestrator
+      tag: local
+      pullPolicy: IfNotPresent
+    storage:
+      endpoint: "http://external-minio.sonarqube.svc.cluster.local:9000"
+      accessKey: minioadmin
+      secretKey: minioadmin
+    # The orchestrator connects directly to the same DB as SonarQube (no override — see
+    # values.yaml comments) and to storage — both are in-cluster Services here, so they need
+    # podSelector entries, not cidr (ipBlock can't target a ClusterIP on any CNI — see
+    # egressAllow's comment in values.yaml). GitHub's CIDR range below is for the demo's own git
+    # clone (REPO_URL defaults to github.com/octocat/Hello-World) — fetch the current list with
+    # `curl -s https://api.github.com/meta | jq .web` and update if clone starts failing again.
+    egressAllow:
+      - podSelector:
+          matchLabels: {app.kubernetes.io/name: postgresql, app.kubernetes.io/instance: external-postgres, app.kubernetes.io/component: primary}
+        ports: [5432]
+      - podSelector:
+          matchLabels: {app: external-minio}
+        ports: [9000]
+      - cidr: 192.30.252.0/22
+        ports: [443]
+      - cidr: 185.199.108.0/22
+        ports: [443]
+      - cidr: 140.82.112.0/20
+        ports: [443]
+      - cidr: 143.55.64.0/20
+        ports: [443]
+      - cidr: 2a0a:a440::/29
+        ports: [443]
+      - cidr: 2606:50c0::/32
+        ports: [443]
+
+  runtimes:
+    hunter:
+      image:
+        repository: agentic-hunter-runtime
+        tag: local
+        pullPolicy: IfNotPresent
+      # No EGRESS_PROXY_HOST set: the runtime image now connects directly when unset (patched to
+      # match NetworkPolicy-based egress control, which has no forward-proxy component — see
+      # mocks/runtime/src/main/java/.../RuntimeApplication.java). No API key configured, so
+      # Anthropic legitimately returns an auth-error body — that still counts as a working call.
+      env:
+        - name: LLM_URL
+          value: "https://api.anthropic.com/v1/messages"
+      # Storage (MinIO) is an in-cluster Service here too — see orchestrator.egressAllow's
+      # comment above for why that needs podSelector, not cidr.
+      egressAllow:
+        - podSelector:
+            matchLabels: {app: external-minio}
+          ports: [9000]
+        - cidr: 160.79.104.0/23
+          ports: [443]
+        - cidr: 2607:6bc0::/48
+          ports: [443]
+      # The mock runtime's Dockerfile declares `USER app` (uid/gid 10001), not the chart's
+      # uid-1000 default — override to match, or the JRE trust store (chowned to app:app for
+      # custom CA import) is unwritable by the actual runtime user.
+      containerSecurityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+
+  # Requires a CNI with real ipBlock/CIDR NetworkPolicy support — stock kindnet doesn't have it
+  # (confirmed: a CIDR rule for the in-cluster Postgres Service's ClusterIP was silently dropped
+  # while an equivalent podSelector rule for the same pod worked), even on this cluster's custom
+  # node image, which enforces podSelector/namespaceSelector peers but not ipBlock ones. Install
+  # Calico (see local-testing/README.md's cluster setup section) to get full enforcement, then this
+  # default (true) is safe to leave as-is.
+  networkPolicy:
+    enabled: true

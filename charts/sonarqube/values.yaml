@@ -726,3 +726,141 @@ mcp:
 
   # Set annotations for the MCP pod.
   annotations: {}
+
+# Agentic Unified Harness: an Agent Orchestrator plus one or more sandboxed Agentic Job Runtimes
+# (e.g. Hunter, Remediation), network-segmented so runtimes can reach only an LLM endpoint and
+# object storage, never SonarQube/SCM/each other directly. See SONAR-30824.
+agenticHarness:
+  enabled: false
+
+  orchestrator:
+    image:
+      repository: ""
+      tag: ""
+      pullPolicy: IfNotPresent
+      # pullSecrets:
+      #   - name: my-repo-secret
+
+    port: 8080
+
+    # The orchestrator always persists to the SAME database as SonarQube itself (reuses the
+    # chart's own jdbcOverwrite/internal DB secret) — there is no separate DB config here.
+    # Requires jdbcOverwrite.enabled=true; enforced by templates/validation.yaml.
+
+    # Object storage the orchestrator uploads job artifacts to and presigns URLs against
+    # (MinIO on-prem, S3 in cloud — same client code path either way). This is customer-provided
+    # infrastructure, like SCM below, not something this chart deploys.
+    storage:
+      endpoint: ""          # blank targets real AWS S3; set to a MinIO/S3-compatible URL otherwise
+      region: us-east-1
+      bucket: agentic-jobs
+      accessKey: ""
+      secretKey: ""
+      # existingSecret: ""          # alternative to accessKey/secretKey above
+      # existingSecretAccessKeyKey: "access-key"
+      # existingSecretSecretKeyKey: "secret-key"
+      pathStyleAccess: true
+
+    # Additional environment variables for the orchestrator container (e.g. SCM tokens).
+    env: []
+    # - name: MY_VAR
+    #   value: my-value
+
+    # NetworkPolicy egress allowlist for destinations NetworkPolicy can't reach by hostname (SCM,
+    # storage — see storage.endpoint above). Egress to SonarQube and the runtimes is wired
+    # automatically and does not need an entry here. Keep this in sync with storage.endpoint /
+    # your SCM host — NetworkPolicy matches CIDRs, not hostnames. Empty by default: SCM is
+    # customer-specific, so there's no universal default (e.g. following the demo scripts'
+    # git-clone-from-github.com as-is with networkPolicy.enabled=true needs GitHub's current
+    # range added here yourself — see https://api.github.com/meta).
+    #
+    # Each entry is either `cidr` (for a genuinely external endpoint) or `podSelector` (for a
+    # destination that's itself a Kubernetes Service — e.g. a self-hosted, in-cluster DB or S3
+    # gateway). `cidr`/`ipBlock` cannot target a Service's ClusterIP on any CNI: kube-proxy DNATs
+    # to the backing pod IP before NetworkPolicy enforcement sees the packet, so the CIDR never
+    # matches the pod's real (and unpredictable) IP. `podSelector` matches pods directly instead,
+    # sidestepping that entirely. `namespaceSelector` is optional and defaults to the same
+    # namespace as this release.
+    egressAllow: []
+    # - cidr: 10.0.0.0/8
+    #   ports: [443]
+    # - podSelector:
+    #     matchLabels: {app: my-in-cluster-minio}
+    #   ports: [9000]
+
+    resources: {}
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 0
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop: ["ALL"]
+
+    livenessProbe:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      failureThreshold: 6
+      timeoutSeconds: 1
+
+    annotations: {}
+
+  # One entry per agentic job family. Only "hunter" ships today — remediation-agent-orchestrator
+  # has no real implementation yet. Add a new map entry (values-only change, no template change)
+  # once a second family is real.
+  runtimes:
+    hunter:
+      enabled: true
+      image:
+        repository: ""
+        tag: ""
+        pullPolicy: IfNotPresent
+      replicas: 1
+      port: 8081
+      env: []
+      # NetworkPolicy egress allowlist: LLM + storage endpoint, each entry `cidr` or `podSelector`
+      # (see orchestrator.egressAllow's comment for the full explanation and why an in-cluster
+      # Service needs podSelector, not cidr). Defaults to Anthropic's documented, stable inbound
+      # CIDR (i.e. what a client egresses *to*) — https://platform.claude.com/docs/en/api/ip-addresses
+      # — matching this harness's real local test target. Override with your actual LLM provider's
+      # endpoint range in production (e.g. Bedrock/Azure OpenAI/Vertex AI private or regional
+      # endpoints).
+      egressAllow:
+        - cidr: 160.79.104.0/23
+          ports: [443]
+        - cidr: 2607:6bc0::/48
+          ports: [443]
+      resources: {}
+      # Defaults assume a uid-1000 image, matching the reference orchestrator. runAsNonRoot
+      # requires a numeric runAsUser whenever an image declares its user by name (Dockerfile
+      # `USER app` rather than `USER 1000`) — Kubernetes can't resolve a name to verify it's
+      # non-root, so override runAsUser/runAsGroup here to match your own image's actual uid/gid
+      # if it differs (check the image's Dockerfile).
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop: ["ALL"]
+      # Empty by default. Set to wire in a sandboxing RuntimeClass (e.g. gVisor, Kata) once one is
+      # available — no chart change needed later. No real sandboxing exists anywhere in the
+      # current prototype either.
+      runtimeClassName: ""
+      livenessProbe:
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        failureThreshold: 6
+        timeoutSeconds: 1
+      annotations: {}
+
+  # NetworkPolicy segmentation for the harness: orchestrator <-> SonarQube/runtimes/SCM/storage;
+  # each runtime <-> LLM/storage only. Separate toggle from the main networkPolicy.enabled above.
+  # Defaults to true (unlike the main one) because runtimes.hunter.egressAllow already ships a
+  # working default for this harness's real LLM target — see there.
+  networkPolicy:
+    enabled: true

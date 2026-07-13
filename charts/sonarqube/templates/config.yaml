@@ -8,6 +8,9 @@ data:
   {{- range $key, $val := .Values.sonarProperties }}
     {{ $key }}={{ $val }}
   {{- end }}
+  {{- if and .Values.agenticHarness.enabled (not (and .Values.sonarProperties (hasKey .Values.sonarProperties "sonar.hunteragent.orchestrator.url"))) }}
+    sonar.hunteragent.orchestrator.url=http://{{ include "sonarqube.agentic.orchestrator.fullname" . }}:{{ .Values.agenticHarness.orchestrator.port }}
+  {{- end }}
   {{- if not .Values.elasticsearch.bootstrapChecks }}
     sonar.es.bootstrap.checks.disable=true
   {{- end }}

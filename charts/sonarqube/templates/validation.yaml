@@ -27,3 +27,10 @@ It is used to validate the values.yaml file before the installation starts.
         {{- include "sonarqube.fail" "The 'edition' must be either 'developer' or 'enterprise'." -}}
     {{- end -}}
 {{- end -}}
+
+{{/*
+* Validates the Agentic Harness has a database to persist to.
+*/}}
+{{- if and .Values.agenticHarness.enabled (not (or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable)) -}}
+    {{- include "sonarqube.fail" "agenticHarness.enabled requires jdbcOverwrite.enabled=true — the Agentic Orchestrator always persists to SonarQube's own database and has no database of its own to fall back to." -}}
+{{- end -}}

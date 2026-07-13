@@ -91,7 +91,7 @@ spec:
       env:
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
-    {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
+    {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey .Values.agenticHarness.enabled (not .Values.elasticsearch.bootstrapChecks) }}
     - name: concat-properties
       image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -112,7 +112,7 @@ spec:
       volumeMounts:
         - mountPath: /tmp/result
           name: concat-dir
-        {{- if or .Values.sonarProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
+        {{- if or .Values.sonarProperties .Values.sonarSecretKey .Values.agenticHarness.enabled (not .Values.elasticsearch.bootstrapChecks) }}
         - mountPath: /tmp/props/sonar.properties
           name: config
           subPath: sonar.properties
@@ -353,7 +353,7 @@ spec:
           subPath: logs
         - mountPath: /tmp
           name: tmp-dir
-        {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
+        {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey .Values.agenticHarness.enabled (not .Values.elasticsearch.bootstrapChecks) }}
         - mountPath: {{ .Values.sonarqubeFolder }}/conf/
           name: concat-dir
         {{- end }}
@@ -406,7 +406,7 @@ spec:
     {{- with .Values.extraVolumes }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-    {{- if or .Values.sonarProperties .Values.sonarSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
+    {{- if or .Values.sonarProperties .Values.sonarSecretKey .Values.agenticHarness.enabled ( not .Values.elasticsearch.bootstrapChecks) }}
     - name: config
       configMap:
         name: {{ include "sonarqube.fullname" . }}-config
@@ -506,7 +506,7 @@ spec:
       {{- end }}
     - name : tmp-dir
       emptyDir: {{- toYaml .Values.emptyDir | nindent 8 }}
-      {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
+      {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey .Values.agenticHarness.enabled ( not .Values.elasticsearch.bootstrapChecks) }}
     - name : concat-dir
       emptyDir: {{- toYaml .Values.emptyDir | nindent 8 }}
       {{- end }}

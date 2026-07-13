@@ -432,6 +432,40 @@ Create the fully qualified name for the MCP service.
 {{- printf "%s-mcp" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/*
+Create the fully qualified name for the Agentic Harness orchestrator.
+*/}}
+{{- define "sonarqube.agentic.orchestrator.fullname" -}}
+{{- printf "%s-agentic-orchestrator" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Create the fully qualified name for an Agentic Harness runtime, parameterized by family name.
+Usage: {{ include "sonarqube.agentic.runtime.fullname" (dict "root" $ "family" $family) }}
+*/}}
+{{- define "sonarqube.agentic.runtime.fullname" -}}
+{{- printf "%s-agentic-runtime-%s" (include "sonarqube.fullname" .root) .family | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+The orchestrator always uses SonarQube's own database, so it needs the same connection info in
+the shape its own config expects (CORE_DB_READ_WRITE_ENDPOINT = bare host:port, CORE_DB_NAME =
+bare db name) rather than a single JDBC URL. jdbcOverwrite.jdbcUrl is always a plain values.yaml
+string (never secret-backed — only the password is), so it's safe to parse at template time.
+Assumes jdbcOverwrite.enabled/enable is true; templates/validation.yaml enforces this when
+agenticHarness.enabled is true, since the Agentic Harness has no DB of its own to fall back to,
+same as the main SonarQube pod has none without it.
+*/}}
+{{- define "sonarqube.agentic.dbEndpoint" -}}
+{{- $withoutScheme := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" .Values.jdbcOverwrite.jdbcUrl "" -}}
+{{- regexFind "^[^/?]+" $withoutScheme -}}
+{{- end -}}
+
+{{- define "sonarqube.agentic.dbName" -}}
+{{- $withoutScheme := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://[^/]+/" .Values.jdbcOverwrite.jdbcUrl "" -}}
+{{- regexFind "^[^?]+" $withoutScheme -}}
+{{- end -}}
+
 {{- define "accountDeprecation" -}}
 {{- $map1 := .Values.setAdminPassword -}}
 {{- $map2 := .Values.account -}}

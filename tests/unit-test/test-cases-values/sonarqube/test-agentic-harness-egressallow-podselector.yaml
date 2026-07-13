@@ -1,0 +1,32 @@
+community:
+  enabled: true
+
+jdbcOverwrite:
+  enabled: true
+  jdbcUrl: "jdbc:postgresql://postgres.example.svc:5432/sonarqube?currentSchema=public"
+  jdbcUsername: sonarqube
+  jdbcPassword: sonarqube
+
+agenticHarness:
+  enabled: true
+  orchestrator:
+    image:
+      repository: example/agentic-orchestrator
+      tag: "1.0.0"
+    storage:
+      accessKey: mykey
+      secretKey: mysecret
+    egressAllow:
+      - podSelector:
+          matchLabels: {app: my-in-cluster-minio}
+        ports: [9000]
+      - podSelector:
+          matchLabels: {app: my-in-cluster-db}
+        namespaceSelector:
+          matchLabels: {kubernetes.io/metadata.name: other-ns}
+        ports: [5432]
+  runtimes:
+    hunter:
+      image:
+        repository: example/hunter-runtime
+        tag: "1.0.0"

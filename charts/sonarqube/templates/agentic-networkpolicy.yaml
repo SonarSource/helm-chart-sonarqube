@@ -1,0 +1,132 @@
+{{- if and .Values.agenticHarness.enabled .Values.agenticHarness.networkPolicy.enabled }}
+# Orchestrator: reachable only from SonarQube. May reach SonarQube, each enabled runtime, and its
+# egressAllow list (SCM/storage — see values.yaml comments on why this is CIDR-based, not
+# hostname-based). Nothing else.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "sonarqube.agentic.orchestrator.fullname" . }}-network-policy
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-agentic-orchestrator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ include "sonarqube.name" . }}
+              release: {{ .Release.Name }}
+      ports:
+        - port: {{ .Values.agenticHarness.orchestrator.port }}
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ include "sonarqube.name" . }}
+              release: {{ .Release.Name }}
+      ports:
+        - port: {{ .Values.service.internalPort }}
+    {{- range $family, $cfg := .Values.agenticHarness.runtimes }}
+    {{- if $cfg.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ include "sonarqube.name" $ }}-agentic-runtime-{{ $family }}
+              release: {{ $.Release.Name }}
+      ports:
+        - port: {{ $cfg.port }}
+    {{- end }}
+    {{- end }}
+    {{- range .Values.agenticHarness.orchestrator.egressAllow }}
+    - to:
+        {{- if .cidr }}
+        - ipBlock:
+            cidr: {{ .cidr }}
+        {{- else if .podSelector }}
+        - podSelector:
+            matchLabels: {{- toYaml .podSelector.matchLabels | nindent 14 }}
+          {{- with .namespaceSelector }}
+          namespaceSelector:
+            matchLabels: {{- toYaml .matchLabels | nindent 16 }}
+          {{- end }}
+        {{- end }}
+      {{- with .ports }}
+      ports:
+        {{- range . }}
+        - port: {{ . }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+{{- range $family, $cfg := .Values.agenticHarness.runtimes }}
+{{- if $cfg.enabled }}
+---
+# Runtime "{{ $family }}": reachable only from the orchestrator. May reach only its egressAllow
+# list (LLM/storage) — never SonarQube, SCM, the orchestrator, or other runtimes.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "sonarqube.agentic.runtime.fullname" (dict "root" $ "family" $family) }}-network-policy
+  labels: {{- include "sonarqube.labels" $ | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ include "sonarqube.name" $ }}-agentic-runtime-{{ $family }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ include "sonarqube.name" $ }}-agentic-orchestrator
+              release: {{ $.Release.Name }}
+      ports:
+        - port: {{ $cfg.port }}
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    {{- range $cfg.egressAllow }}
+    - to:
+        {{- if .cidr }}
+        - ipBlock:
+            cidr: {{ .cidr }}
+        {{- else if .podSelector }}
+        - podSelector:
+            matchLabels: {{- toYaml .podSelector.matchLabels | nindent 14 }}
+          {{- with .namespaceSelector }}
+          namespaceSelector:
+            matchLabels: {{- toYaml .matchLabels | nindent 16 }}
+          {{- end }}
+        {{- end }}
+      {{- with .ports }}
+      ports:
+        {{- range . }}
+        - port: {{ . }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
