@@ -158,6 +158,46 @@ jdbcOverwrite:
   jdbcPassword: "<password>"
 ```
 
+### Upgrade from versions prior to 2026.4.0 (Ingress to Gateway API)
+
+> **Note**: If you are not using `ingress.enabled` or the `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart, you can skip this section.
+
+> **⚠️ Important**: Starting from `2026.4.0`, this chart no longer supports `ingress.enabled` and the deprecated `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart. `httproute.enabled` (Gateway API) has been available since before this removal, so you can adopt it on your current chart version, side-by-side with your existing ingress, before upgrading past `2026.4.0`.
+
+We provide a migration script to help with this: `nginx-to-istio-migration.sh`, available in the `gateway-api-migration-scripts/` directory of this chart's GitHub repository. **This script is provided for reference and should be reviewed and adapted to your specific environment before use.**
+
+By default (`--mode generate`), the script never touches your live release. It reads your current Helm values (from the live release, or a local file with `--values-file`), detects your existing ingress/ingress-nginx configuration (hostnames, TLS, nginx annotations, and any LoadBalancer Service annotations already set under `ingress-nginx.controller.service.annotations`), and writes two files into an output directory (default: `gateway-api-migration-<release-name>/`, override with `--output-dir`):
+* a Gateway API `Gateway` manifest reusing your existing LoadBalancer Service annotations as-is — `--cloud aws|gcp|onprem` only selects which `--aws-*`/`--gcp-*`/`--metallb-pool` flags apply on top to add or override specific keys; nothing is invented on your behalf
+* a complete replacement `values.yaml` with `ingress`/`ingress-nginx` removed and `httproute` added (including an explicit `backendRefs` rule), everything else preserved as-is from your current release values
+
+```bash
+./nginx-to-istio-migration.sh --cloud aws --release-name sonarqube --namespace sonarqube-dce \
+  --chart-flavor sonarqube-dce --aws-subnets subnet-abc,subnet-def
+
+# Options:
+# --cloud aws|gcp|onprem   Target environment (REQUIRED)
+# --mode generate|apply    generate: render files only (default)
+#                          apply: also install Gateway API CRDs + Istio and
+#                          apply the Gateway
+# --namespace ns           Kubernetes namespace of the release (default: sonarqube)
+# --release-name name      Helm release name (default: sonarqube)
+# --chart-flavor flavor    sonarqube|sonarqube-dce (default: sonarqube)
+# --values-file path       Read values from a local file instead of the live release
+# --hostnames h1,h2        Override auto-detected hostnames
+# --output-dir dir         Directory to write generated files into (default: gateway-api-migration-<release-name>)
+# --aws-subnets ids        Comma-separated subnet IDs. Only required if not
+#                          already set via ingress-nginx.controller.service.annotations
+# -h, --help               Show all options
+```
+
+With `--mode apply`, the script additionally installs the Gateway API CRDs and Istio (unless `--skip-istio`) and applies the generated `Gateway` manifest, so the Gateway exists before you upgrade. In either mode, the script only ever prints the next-step command — it does not run it for you:
+
+```bash
+helm upgrade sonarqube sonarqube/sonarqube-dce -f gateway-api-migration-sonarqube/values-gateway-api-sonarqube.yaml -n sonarqube-dce
+```
+
+Run that command yourself once you've reviewed the generated files and are ready to switch your release over to Gateway API.
+
 ### Upgrade from the old sonarqube-lts to this chart
 
 Please refer to the Helm upgrade section accessible [here](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade/#upgrade-from-89x-lta-to-99x-lta).
