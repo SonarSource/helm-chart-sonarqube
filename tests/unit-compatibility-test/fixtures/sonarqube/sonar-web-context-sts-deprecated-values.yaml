@@ -309,6 +309,29 @@ spec:
           emptyDir:
             {}
 ---
+# Source: sonarqube/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sonar-web-context-sts-deprecated-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.4.0
+    release: sonar-web-context-sts-deprecated-values.yaml
+    heritage: Helm
+spec:
+  rules:
+  - host: sonarqube.your-org.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: sonar-web-context-sts-deprecated-values.yaml-sonarqube
+            port:
+              number: 9000
+        path: /sonarqube-ingress/
+        pathType: ImplementationSpecific
+---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1
 kind: Pod

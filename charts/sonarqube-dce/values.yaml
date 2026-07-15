@@ -472,7 +472,7 @@ OpenShift:
     # labels:
     #  external: 'true'
 
-# will be used as default for ingress path and probes path, will be injected in .Values.env as SONAR_WEB_CONTEXT
+# will be used as default for ingress/httproute path and probes path, will be injected in .Values.env as SONAR_WEB_CONTEXT
 # if .Values.ApplicationNodes.env.SONAR_WEB_CONTEXT is set, this value will be ignored
 sonarWebContext: ""
 
@@ -513,6 +513,35 @@ httpProxySecret: ""
 httpProxy: ""
 httpsProxy: ""
 noProxy: ""
+
+ingress:
+  enabled: false
+  # Used to create an Ingress record.
+  hosts:
+    - name: sonarqube.your-org.com
+  #     Different clouds or configurations might need /* as the default path
+  #     path: /
+      # For additional control over serviceName and servicePort
+      # serviceName: someService
+      # servicePort: somePort
+      # the pathType can be one of the following values: Exact|Prefix|ImplementationSpecific(default)
+      # pathType: ImplementationSpecific
+  annotations: {}
+  # kubernetes.io/tls-acme: "true"
+
+  # Set the ingressClassName on the ingress record. Required, since this chart
+  # no longer bundles an ingress-nginx controller to default it from.
+  # ingressClassName: nginx
+
+# Additional labels for Ingress manifest file
+  # labels:
+  #  traffic-type: external
+  #  traffic-type: internal
+  tls: []
+  # Secrets must be manually created in the namespace. To generate a self-signed certificate (and private key) and then create the secret in the cluster please refer to your ingress controller's documentation.
+  # - secretName: chart-example-tls
+  #   hosts:
+  #     - chart-example.local
 
 # Affinity for pod assignment
 # Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity

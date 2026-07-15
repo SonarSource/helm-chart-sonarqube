@@ -1,0 +1,39 @@
+{{- if .Values.ingress.enabled -}}
+{{- $serviceName := include "sonarqube.fullname" . -}}
+{{- $servicePort := .Values.service.externalPort -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ template "sonarqube.fullname" . }}
+  labels:
+    {{- include "sonarqube.labels" . | nindent 4 }}
+    {{- with .Values.ingress.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- range $key, $value := . }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.ingressClassName }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  rules:
+  {{- range .Values.ingress.hosts }}
+  - host: {{ printf "%s" .name }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: {{ default $serviceName .serviceName }}
+            port:
+              number: {{ default $servicePort .servicePort }}
+        path: {{ .path | default (include "sonarqube.webcontext" $) }}
+        pathType: {{ default "ImplementationSpecific" .pathType }}
+  {{- end }}
+  {{- with .Values.ingress.tls }}
+  tls: {{- toYaml . | nindent 4 }}
+  {{- end -}}
+{{- end }}
