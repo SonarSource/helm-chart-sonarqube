@@ -220,11 +220,34 @@ validate_args() {
     echo "Error: --chart-flavor must be one of sonarqube|sonarqube-dce, got '$CHART_FLAVOR'" >&2
     exit 1
   fi
+}
+
+# Checks that the CLI tools this run actually needs are on PATH, so we fail
+# fast instead of partway through with a generic "command not found".
+check_prerequisites() {
+  echo "Checking prerequisites..."
 
   if ! command -v yq >/dev/null 2>&1; then
     echo "Error: yq (mikefarah/yq, v4+) is required but was not found on PATH" >&2
     exit 1
   fi
+
+  if [[ -z "$VALUES_FILE" ]] || [[ "$MODE" == "apply" ]]; then
+    if ! command -v helm >/dev/null 2>&1; then
+      echo "Error: helm is required (to read the live release values and/or install Istio) but was not found on PATH" >&2
+      exit 1
+    fi
+  fi
+
+  if [[ "$MODE" == "apply" ]]; then
+    if ! command -v kubectl >/dev/null 2>&1; then
+      echo "Error: kubectl is required for --mode apply but was not found on PATH" >&2
+      exit 1
+    fi
+  fi
+
+  echo "All required tools found"
+  echo ""
 }
 
 set_derived_defaults() {
@@ -269,10 +292,6 @@ load_current_values() {
     cp "$VALUES_FILE" "$CURRENT_VALUES_FILE"
     echo "Using local values file: $VALUES_FILE"
   else
-    if ! command -v helm >/dev/null 2>&1; then
-      echo "Error: helm is required when --values-file is not provided" >&2
-      exit 1
-    fi
     helm get values "$RELEASE_NAME" -n "$NAMESPACE" -o yaml > "$CURRENT_VALUES_FILE"
     if [[ $? -ne 0 ]] || [[ ! -s "$CURRENT_VALUES_FILE" ]]; then
       echo "Error: failed to read values for release '$RELEASE_NAME' in namespace '$NAMESPACE'" >&2
@@ -582,15 +601,6 @@ install_gateway_api_and_istio() {
     return 0
   fi
 
-  if ! command -v kubectl >/dev/null 2>&1; then
-    echo "Error: kubectl is required for --mode apply" >&2
-    exit 1
-  fi
-  if ! command -v helm >/dev/null 2>&1; then
-    echo "Error: helm is required for --mode apply" >&2
-    exit 1
-  fi
-
   echo "Applying Gateway API CRDs..."
   kubectl get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1
   if [[ $? -ne 0 ]]; then
@@ -651,6 +661,7 @@ print_apply_complete() {
 main() {
   parse_args "$@"
   validate_args
+  check_prerequisites
   set_derived_defaults
   trap 'rm -f "$CURRENT_VALUES_FILE"; rmdir "$OUTPUT_DIR" 2>/dev/null' EXIT
   print_run_summary
