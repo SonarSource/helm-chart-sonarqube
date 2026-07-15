@@ -13,6 +13,7 @@ All changes to this chart will be documented in this file.
 * Add IPv6 support: resolve the DCE cluster node address from the pod IP (IPv4 or IPv6)
 * Fix DCE health probes for IPv6
 * Fix NetworkPolicy blocking IPv6 egress by allowing `::/0`
+* **Breaking**: Remove support for `ingress.enabled` and the deprecated `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart. Use `httproute.enabled` (Gateway API) or manage an Ingress/Gateway externally instead
 
 ## [2026.3.1]
 * Upgrade Chart's version to 2026.3.1

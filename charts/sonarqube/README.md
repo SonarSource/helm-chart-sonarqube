@@ -152,7 +152,6 @@ The SonarQube helm chart is packed with multiple features enabling users to inst
 
 Nonetheless, if you intend to run a production-grade SonarQube please follow these recommendations.
 
-* Set `ingress-nginx.enabled` to **false**. This parameter would run the nginx chart. This is useful for testing purposes only. Ingress controllers are critical Kubernetes components, we advise users to install their own.
 * Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
 * Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
 
@@ -273,32 +272,10 @@ jdbcOverwrite:
 
 Please refer to the Helm upgrade section accessible [here](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade/#upgrade-from-89x-lta-to-99x-lta).
 
-## Ingress usage (Deprecated)
+## Exposing SonarQube (Ingress removed)
 
-> **Note**: The `ingress-nginx` controller was retired in November 2025, with best-effort support ending in **March 2026**. Consequently, this chart dependency is now **deprecated**.
-We recommend migrating to the [Gateway API](https://gateway-api.sigs.k8s.io/guides/), the modern successor to Ingress. If you must continue using Ingress, please refer to the [Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) for a list of alternative controllers. A replacement for this dependency will be included in an upcoming release.
-
-### Path
-
-Some cloud may need the path to be `/*` instead of `/.` Try this first if you are having issues getting traffic through the ingress.
-
-### Default Backend
-
-if you use GCP as a cloud provider you need to set a default backend to avoid useless default backend created by the gce controller. To add this default backend you must set "ingress.class" annotation with "gce" or "gce-internal" value.
-
-Example:
-
-```yaml
----
-ingress:
-  enabled: true
-  hosts:
-    - name: sonarqube.example.com
-      path: "/*"
-  annotations:
-    kubernetes.io/ingress.class: "gce-internal"
-    kubernetes.io/ingress.allow-http: "false"
-```
+> **Note**: Support for the built-in `ingress.enabled` Ingress resource and the `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart has been removed, following the retirement of the ingress-nginx controller in November 2025.
+We recommend migrating to the [Gateway API](https://gateway-api.sigs.k8s.io/guides/) via `httproute.enabled` (see the `httproute.*` values below). If you must continue using an Ingress resource, please manage it outside of this chart, or refer to the [Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) for a list of alternative controllers.
 
 ## Monitoring
 
@@ -514,12 +491,11 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `edition`               | SonarQube Edition to use (`developer` or `enterprise`).                                                               | `None`             |
 | `community.enabled`     | Install SonarQube Community Build. When set to `true`, `edition` must not be set.                                     | `false`            |
 | `community.buildNumber` | The SonarQube Community Build number to install                                                                       | `26.7.0.124771`    |
-| `sonarWebContext`       | SonarQube web context, also serve as default value for `ingress.path`, `account.sonarWebContext` and probes path.     | ``                 |
+| `sonarWebContext`       | SonarQube web context, also serve as default value for `httproute` path and probes path.                              | ``                 |
 | `httpProxySecret`       | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will supersede every other proxy variables            | ``                 |
 | `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will supersede initContainer specific http proxy variables  | ``                 |
 | `httpsProxy`            | HTTPS proxy for downloading JMX agent and install plugins, will supersede initContainer specific https proxy variable | ``                 |
 | `noProxy`               | No proxy for downloading JMX agent and install plugins, will supersede initContainer specific no proxy variables      | ``                 |
-| `ingress-nginx.enabled` | (DEPRECATED) Install Nginx Ingress Helm                                                                                            | `false`            |
 
 ### NetworkPolicies
 
@@ -579,20 +555,6 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `service.annotations`              | Kubernetes service annotations                     | `None`      |
 | `service.loadBalancerSourceRanges` | Kubernetes service LB Allowed inbound IP addresses | `None`      |
 | `service.loadBalancerIP`           | Kubernetes service LB Optional fixed external IP   | `None`      |
-
-### Ingress (DEPRECATED)
-
-| Parameter                      | Description                                                  | Default                                                                                                      |
-| ------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `nginx.enabled`                | (DEPRECATED) please use `ingress-nginx.enabled`              | `false`                                                                                                      |
-| `ingress.labels`               | Ingress additional labels                                    | `{}`                                                                                                         |
-| `ingress.hosts[0].name`        | Hostname to your SonarQube installation                      | `sonarqube.your-org.com`                                                                                     |
-| `ingress.hosts[0].path`        | Path within the URL structure                                | `/`                                                                                                          |
-| `ingress.hosts[0].serviceName` | Optional field to override the default serviceName of a path | `None`                                                                                                       |
-| `ingress.hosts[0].servicePort` | Optional field to override the default servicePort of a path | `None`                                                                                                       |
-| `ingress.tls`                  | Ingress secrets for TLS certificates                         | `[]`                                                                                                         |
-| `ingress.ingressClassName`     | Optional field to configure ingress class name               | `None` OR `nginx` if `nginx.enabled` or `ingress-nginx.enabled`                                              |
-| `ingress.annotations`          | Field to add extra annotations to the ingress                | {`nginx.ingress.kubernetes.io/proxy-body-size: "64m"`} if `ingress-nginx.enabled=true or nginx.enabled=true` |
 
 ### HttpRoute
 

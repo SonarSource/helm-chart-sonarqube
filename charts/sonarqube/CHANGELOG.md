@@ -9,6 +9,7 @@ All changes to this chart will be documented in this file.
 * Fix multi-cert CA bundle handling in `install-oracle-jdbc-driver` init container
 * Fix `ca-certs` init container failing with "keytool: Permission denied" on base images whose JVM keystore is read-only, by making the keystore working copy writable
 * Fix NetworkPolicy blocking IPv6 egress by allowing `::/0`
+* **Breaking**: Remove support for `ingress.enabled` and the deprecated `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart. Use `httproute.enabled` (Gateway API) or manage an Ingress/Gateway externally instead
 
 ## [2026.3.1]
 * Upgrade Chart's version to 2026.3.1

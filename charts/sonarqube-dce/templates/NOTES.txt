@@ -1,9 +1,5 @@
 1. Get the application URL by running these commands:
-{{- if .Values.ingress.enabled }}
-{{- range .Values.ingress.hosts }}
-  http://{{ .name }}
-{{- end }}
-{{- else if contains "NodePort" .Values.service.type }}
+{{- if contains "NodePort" .Values.service.type }}
   export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ template "sonarqube.fullname" . }})
   export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
   echo http://$NODE_IP:$NODE_PORT
@@ -20,10 +16,6 @@
 WARNING: 
          Please note that the SonarQube images run with a non-root user (uid=1000) belonging to the root group (guid=0). In this way, the chart can support arbitrary user ids as recommended in OpenShift.
          Please visit https://docs.openshift.com/container-platform/4.14/openshift_images/create-images.html#use-uid_create-images for more information.
-{{ if or (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled") }}
-WARNING: The ingress-nginx controller dependency is deprecated. A replacement for this dependency will be included in a future release.
-         Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#ingress-use-cases for more information.
-{{- end }}
 {{ if hasKey .Values.logging "jsonOutput" }}
 WARNING: The logging.jsonOutput value is deprecated in favor of the ENV var SONAR_LOG_JSONOUTPUT or the sonar.properties's sonar.log.jsonOutput.
 {{ end }}

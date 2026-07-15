@@ -52,6 +52,8 @@ annotations:
       description: "Fix multi-cert CA bundle handling in install-oracle-jdbc-driver init container"
     - kind: fixed
       description: "Fix NetworkPolicy blocking IPv6 egress"
+    - kind: removed
+      description: "Remove support for ingress.enabled and the deprecated ingress-nginx.enabled/nginx.enabled ingress-nginx controller subchart; use httproute or an externally managed Ingress/Gateway instead"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-community
@@ -63,8 +65,3 @@ annotations:
     - name: sonarqube-mcp
       image: sonarsource/sonarqube-mcp:1.22.0.3040
   charts.openshift.io/name: sonarqube
-dependencies:
-  - name: ingress-nginx
-    version: 4.14.3
-    repository: https://kubernetes.github.io/ingress-nginx
-    condition: nginx.enabled,ingress-nginx.enabled
