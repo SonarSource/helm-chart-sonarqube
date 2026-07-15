@@ -414,7 +414,7 @@ mcp:
   enabled: true
   image:
     repository: sonarsource/sonarqube-mcp
-    tag: "1.18.1.2664"
+    tag: "1.22.0.3040"
 ```
 
 **Accessing the MCP server locally:**
@@ -799,7 +799,7 @@ and set `persistence.hostPath.path` and `persistence.hostPath.type`.
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `mcp.enabled`                          | Deploy the SonarQube MCP server alongside SonarQube                                                     | `false`                                                                |
 | `mcp.image.repository`                 | MCP container image repository                                                                           | `sonarsource/sonarqube-mcp`                                            |
-| `mcp.image.tag`                        | MCP container image tag                                                                                  | `"1.18.1.2664"`                                                        |
+| `mcp.image.tag`                        | MCP container image tag                                                                                  | `"1.22.0.3040"`                                                        |
 | `mcp.image.pullPolicy`                 | MCP image pull policy                                                                                    | `IfNotPresent`                                                         |
 | `mcp.image.pullSecrets`                | MCP image pull secrets                                                                                   | `[]`                                                                   |
 | `mcp.port`                             | Port the MCP server listens on                                                                           | `8080`                                                                 |
