@@ -7,6 +7,7 @@ All changes to this chart will be documented in this file.
 * Add CA certificate support with multi-cert bundling to `install-plugins` init container for plugin downloads from servers using self-signed or private CA certificates
 * Fix multi-cert CA bundle handling in `install-oracle-jdbc-driver` init container
 * Fix `ca-certs` init container failing with "keytool: Permission denied" on base images whose JVM keystore is read-only, by making the keystore working copy writable
+* Fix NetworkPolicy blocking IPv6 egress by allowing `::/0`
 
 ## [2026.3.1]
 * Upgrade Chart's version to 2026.3.1
