@@ -1,6 +1,11 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2026.5.0]
+* Upgrade Chart's version to 2026.5.0
+* **Breaking**: Remove the deprecated `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart dependency. `ingress.enabled` remains supported for use with a self-managed ingress controller; `httproute.enabled` (Gateway API) is also available
+* Add `gateway-api-migration-scripts/nginx-to-istio-migration.sh` to help migrate from the bundled ingress-nginx controller to Gateway API
+
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
 * Upgrade SonarQube Server to 2026.4.0
@@ -9,10 +14,6 @@ All changes to this chart will be documented in this file.
 * Fix multi-cert CA bundle handling in `install-oracle-jdbc-driver` init container
 * Fix `ca-certs` init container failing with "keytool: Permission denied" on base images whose JVM keystore is read-only, by making the keystore working copy writable
 * Fix NetworkPolicy blocking IPv6 egress by allowing `::/0`
-* **Breaking**: Remove support for `ingress.enabled` and the deprecated `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart. Use `httproute.enabled` (Gateway API) or manage an Ingress/Gateway externally instead
-* Add `gateway-api-migration-scripts/nginx-to-istio-migration.sh` to help migrate from ingress-nginx to Gateway API
-* **Breaking**: Remove the deprecated `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart dependency. `ingress.enabled` remains supported for use with a self-managed ingress controller; `httproute.enabled` (Gateway API) is also available
-* Add `gateway-api-migration-scripts/nginx-to-istio-migration.sh` to help migrate from the bundled ingress-nginx controller to Gateway API
 
 ## [2026.3.1]
 * Upgrade Chart's version to 2026.3.1

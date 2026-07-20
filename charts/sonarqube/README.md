@@ -268,11 +268,11 @@ jdbcOverwrite:
   jdbcPassword: "<password>"
 ```
 
-### Upgrade from versions prior to 2026.4.0 (ingress-nginx controller subchart removed)
+### Upgrade from versions prior to 2026.5.0 (ingress-nginx controller subchart removed)
 
 > **Note**: If you are not using the `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart, you can skip this section. `ingress.enabled` (the plain `Ingress` resource, for use with your own controller) remains supported and needs no migration.
 
-> **⚠️ Important**: Starting from `2026.4.0`, this chart no longer bundles the deprecated `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart, following the retirement of the ingress-nginx controller. `httproute.enabled` (Gateway API) has been available since before this removal, so you can adopt it on your current chart version, side-by-side with your existing ingress, before upgrading past `2026.4.0`. Alternatively, you can switch to `ingress.enabled` with a self-managed ingress controller.
+> **⚠️ Important**: Starting from `2026.5.0`, this chart no longer bundles the deprecated `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart, following the retirement of the ingress-nginx controller. `httproute.enabled` (Gateway API) has been available since before this removal, so you can adopt it on your current chart version, side-by-side with your existing ingress, before upgrading past `2026.5.0`. Alternatively, you can switch to `ingress.enabled` with a self-managed ingress controller.
 
 We provide a migration script to help with this: `nginx-to-istio-migration.sh`, available in the `gateway-api-migration-scripts/` directory of this chart's GitHub repository. **This script is provided for reference and should be reviewed and adapted to your specific environment before use.**
 
