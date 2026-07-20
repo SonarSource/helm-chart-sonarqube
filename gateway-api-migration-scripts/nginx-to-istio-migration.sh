@@ -40,6 +40,11 @@ OPTIONS:
     --gateway-namespace ns   Namespace for the generated Gateway (default: <namespace>)
     --output-dir dir         Directory to write generated files into (default:
                               gateway-api-migration-<release-name>)
+    --kube-context name      kubeconfig context to use for any live cluster read
+                              (helm get values) and, in --mode apply, for
+                              installing Istio and applying the Gateway.
+                              Defaults to kubectl's current-context. Always
+                              printed before use, and confirmed before apply.
     --aws-subnets ids        Comma-separated subnet IDs for the AWS NLB. REQUIRED
                               for --cloud aws, unless already set via
                               ingress-nginx.controller.service.annotations
@@ -91,6 +96,7 @@ HOSTNAMES=""
 GATEWAY_NAME=""
 GATEWAY_NAMESPACE=""
 OUTPUT_DIR=""
+KUBE_CONTEXT=""
 AWS_SUBNETS=""
 AWS_SCHEME=""
 AWS_CERT_ARN=""
@@ -115,6 +121,11 @@ TLS_ENABLED="false"
 TLS_MODE=""
 TLS_SECRET_NAME=""
 ANNOTATIONS_YAML="{}"
+
+# Resolved by resolve_kube_context; empty until then
+ACTIVE_KUBE_CONTEXT=""
+KUBECTL_CTX_ARGS=()
+HELM_CTX_ARGS=()
 
 parse_args() {
   while [[ $# -gt 0 ]]; do
@@ -165,6 +176,10 @@ parse_args() {
         ;;
       --output-dir)
         OUTPUT_DIR="$2"
+        shift 2
+        ;;
+      --kube-context)
+        KUBE_CONTEXT="$2"
         shift 2
         ;;
       --aws-subnets)
@@ -255,6 +270,49 @@ check_prerequisites() {
   echo ""
 }
 
+# Resolves which kube-context this run will use for any live cluster read
+# (helm get values) or, in --mode apply, for installing Istio/applying the
+# Gateway: either the explicit --kube-context, or kubectl's current-context.
+# Always printed so the operator can catch a wrong-cluster kubeconfig before
+# anything happens. Skipped entirely when nothing will touch a cluster (i.e.
+# --values-file was given and --mode generate).
+resolve_kube_context() {
+  if [[ -n "$VALUES_FILE" ]] && [[ "$MODE" == "generate" ]]; then
+    return 0
+  fi
+
+  if [[ -n "$KUBE_CONTEXT" ]]; then
+    ACTIVE_KUBE_CONTEXT="$KUBE_CONTEXT"
+  else
+    ACTIVE_KUBE_CONTEXT=$(kubectl config current-context 2>/dev/null)
+  fi
+
+  if [[ -z "$ACTIVE_KUBE_CONTEXT" ]]; then
+    echo "Error: could not resolve a kube-context (no --kube-context given and no current-context set in kubeconfig)" >&2
+    exit 1
+  fi
+
+  KUBECTL_CTX_ARGS=(--context "$ACTIVE_KUBE_CONTEXT")
+  HELM_CTX_ARGS=(--kube-context "$ACTIVE_KUBE_CONTEXT")
+
+  echo "Using kube-context: $ACTIVE_KUBE_CONTEXT"
+  echo ""
+}
+
+# Fails fast unless the operator explicitly confirms the resolved kube-context
+# is the intended cluster, before Istio is installed/upgraded or the Gateway
+# is applied.
+confirm_apply_target() {
+  local reply
+  echo "About to install/upgrade Istio and apply the Gateway manifest against kube-context '$ACTIVE_KUBE_CONTEXT', namespace '$GATEWAY_NAMESPACE'."
+  read -r -p "Continue? [y/N] " reply
+  if [[ ! "$reply" =~ ^[Yy]$ ]]; then
+    echo "Aborted." >&2
+    exit 1
+  fi
+  echo ""
+}
+
 set_derived_defaults() {
   GATEWAY_NAME="${GATEWAY_NAME:-$RELEASE_NAME}"
   GATEWAY_NAMESPACE="${GATEWAY_NAMESPACE:-$NAMESPACE}"
@@ -297,7 +355,7 @@ load_current_values() {
     cp "$VALUES_FILE" "$CURRENT_VALUES_FILE"
     echo "Using local values file: $VALUES_FILE"
   else
-    helm get values "$RELEASE_NAME" -n "$NAMESPACE" -o yaml > "$CURRENT_VALUES_FILE"
+    helm "${HELM_CTX_ARGS[@]}" get values "$RELEASE_NAME" -n "$NAMESPACE" -o yaml > "$CURRENT_VALUES_FILE"
     if [[ $? -ne 0 ]] || [[ ! -s "$CURRENT_VALUES_FILE" ]]; then
       echo "Error: failed to read values for release '$RELEASE_NAME' in namespace '$NAMESPACE'" >&2
       rm -f "$CURRENT_VALUES_FILE"
@@ -307,6 +365,26 @@ load_current_values() {
   fi
 
   echo ""
+}
+
+# Detects a release that's already fully on Gateway API (httproute.enabled, and
+# no ingress/ingress-nginx config left to remove) so re-running this script is a
+# clean no-op instead of failing later on missing ingress.hosts/annotations.
+check_already_migrated() {
+  local httproute_enabled ingress_enabled ingress_nginx_enabled nginx_enabled
+
+  httproute_enabled=$(yq '.httproute.enabled // false' "$CURRENT_VALUES_FILE" 2>/dev/null)
+  ingress_enabled=$(yq '.ingress.enabled // false' "$CURRENT_VALUES_FILE" 2>/dev/null)
+  ingress_nginx_enabled=$(yq '.["ingress-nginx"].enabled // false' "$CURRENT_VALUES_FILE" 2>/dev/null)
+  nginx_enabled=$(yq '.nginx.enabled // false' "$CURRENT_VALUES_FILE" 2>/dev/null)
+
+  if [[ "$httproute_enabled" == "true" ]] \
+    && [[ "$ingress_enabled" != "true" ]] \
+    && [[ "$ingress_nginx_enabled" != "true" ]] \
+    && [[ "$nginx_enabled" != "true" ]]; then
+    echo "This release already has httproute.enabled=true and no ingress/ingress-nginx config left — it looks like the migration was already applied. Nothing to do."
+    exit 0
+  fi
 }
 
 # Refines $BACKEND_SERVICE (initially "<release-name>-<chart-flavor>", set in
@@ -764,9 +842,9 @@ install_gateway_api_and_istio() {
   fi
 
   echo "Applying Gateway API CRDs..."
-  kubectl get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1
+  kubectl "${KUBECTL_CTX_ARGS[@]}" get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1
   if [[ $? -ne 0 ]]; then
-    kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/standard-install.yaml"
+    kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/standard-install.yaml"
   else
     echo "Gateway API CRDs already present, skipping"
   fi
@@ -774,10 +852,10 @@ install_gateway_api_and_istio() {
   helm repo add istio https://istio-release.storage.googleapis.com/charts >/dev/null 2>&1
   helm repo update istio >/dev/null 2>&1
 
-  kubectl create namespace istio-system --dry-run=client -o yaml | kubectl apply -f -
+  kubectl "${KUBECTL_CTX_ARGS[@]}" create namespace istio-system --dry-run=client -o yaml | kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f -
 
   echo "Installing istio-base..."
-  helm upgrade --install istio-base istio/base -n istio-system --wait --timeout=300s
+  helm "${HELM_CTX_ARGS[@]}" upgrade --install istio-base istio/base -n istio-system --wait --timeout=300s
   if [[ $? -ne 0 ]]; then
     echo "Error: failed to install istio-base" >&2
     rm -f "$CURRENT_VALUES_FILE"
@@ -785,7 +863,7 @@ install_gateway_api_and_istio() {
   fi
 
   echo "Installing istiod..."
-  helm upgrade --install istiod istio/istiod -n istio-system --wait --timeout=300s
+  helm "${HELM_CTX_ARGS[@]}" upgrade --install istiod istio/istiod -n istio-system --wait --timeout=300s
   if [[ $? -ne 0 ]]; then
     echo "Error: failed to install istiod" >&2
     rm -f "$CURRENT_VALUES_FILE"
@@ -799,8 +877,8 @@ install_gateway_api_and_istio() {
 apply_gateway_manifest() {
   echo "Step 6: Applying Gateway manifest..."
 
-  kubectl create namespace "$GATEWAY_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
-  kubectl apply -f "$GATEWAY_FILE"
+  kubectl "${KUBECTL_CTX_ARGS[@]}" create namespace "$GATEWAY_NAMESPACE" --dry-run=client -o yaml | kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f -
+  kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f "$GATEWAY_FILE"
   if [[ $? -ne 0 ]]; then
     echo "Error: failed to apply $GATEWAY_FILE" >&2
     rm -f "$CURRENT_VALUES_FILE"
@@ -827,8 +905,10 @@ main() {
   set_derived_defaults
   trap 'rm -f "$CURRENT_VALUES_FILE"; rmdir "$OUTPUT_DIR" 2>/dev/null' EXIT
   print_run_summary
+  resolve_kube_context
 
   load_current_values
+  check_already_migrated
   resolve_backend_service
   introspect_ingress
   validate_cloud_requirements
@@ -840,6 +920,7 @@ main() {
     exit 0
   fi
 
+  confirm_apply_target
   install_gateway_api_and_istio
   apply_gateway_manifest
   print_apply_complete
