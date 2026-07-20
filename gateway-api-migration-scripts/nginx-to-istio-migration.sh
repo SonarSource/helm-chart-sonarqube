@@ -109,6 +109,11 @@ NEXT_STEP_CMD=""
 
 # Filled in by introspect_ingress
 TLS_ENABLED="false"
+# "lb": TLS terminated upstream (e.g. AWS NLB via ACM annotation) -- Envoy receives
+#       already-decrypted HTTP, so the HTTPS listener must stay protocol HTTP.
+# "terminate": TLS terminated by Envoy itself using a k8s Secret (mirrors ingress.tls).
+TLS_MODE=""
+TLS_SECRET_NAME=""
 ANNOTATIONS_YAML="{}"
 
 parse_args() {
@@ -310,10 +315,10 @@ introspect_ingress() {
   echo "Step 2: Introspecting existing ingress configuration..."
 
   detect_hostnames
+  detect_existing_lb_annotations
   detect_tls
   detect_ingress_nginx_subchart
   check_nginx_annotations
-  detect_existing_lb_annotations
 
   echo ""
 }
@@ -335,11 +340,29 @@ detect_hostnames() {
 }
 
 detect_tls() {
+  if [[ "$CLOUD" == "aws" ]]; then
+    local ssl_cert_present
+    ssl_cert_present=$(echo "$ANNOTATIONS_YAML" | yq '.["service.beta.kubernetes.io/aws-load-balancer-ssl-cert"] // ""' - 2>/dev/null)
+    if [[ -n "$ssl_cert_present" ]] && [[ "$ssl_cert_present" != "null" ]]; then
+      TLS_ENABLED="true"
+      TLS_MODE="lb"
+      echo "Detected an existing aws-load-balancer-ssl-cert annotation — TLS is terminated at the NLB using an ACM cert, not by the ingress controller pod. The generated Gateway's HTTPS listener will stay protocol HTTP since Envoy receives already-decrypted traffic."
+      return 0
+    fi
+  fi
+
   local tls_count
   tls_count=$(yq '.ingress.tls | length' "$CURRENT_VALUES_FILE" 2>/dev/null)
   if [[ "$tls_count" -gt 0 ]] 2>/dev/null; then
     TLS_ENABLED="true"
-    echo "Detected TLS termination on the existing ingress (ingress.tls) — the generated Gateway will include an HTTPS listener"
+    TLS_MODE="terminate"
+    TLS_SECRET_NAME=$(yq '.ingress.tls[0].secretName // ""' "$CURRENT_VALUES_FILE" 2>/dev/null)
+    if [[ -n "$TLS_SECRET_NAME" ]] && [[ "$TLS_SECRET_NAME" != "null" ]]; then
+      echo "Detected TLS termination via ingress.tls (secretName: $TLS_SECRET_NAME) — the generated Gateway will include an HTTPS listener terminating TLS using that Secret"
+    else
+      TLS_SECRET_NAME=""
+      echo "Detected ingress.tls entries but no secretName set — the generated Gateway will include an HTTPS listener, but you must manually set tls.certificateRefs" >&2
+    fi
   fi
 }
 
@@ -368,9 +391,19 @@ detect_existing_lb_annotations() {
   ANNOTATIONS_YAML="$detected"
 }
 
-# Sets/overrides a single key on a YAML/JSON map passed on stdin, returned on stdout
+# Sets/overrides a single key on a YAML/JSON map passed on stdin, returned on stdout.
+# Logs (to stderr, so it never pollutes the returned YAML) whether this is adding a
+# new annotation or overriding one already detected on the existing Service, and which
+# flag triggered it.
 merge_annotation() {
-  local yaml="$1" key="$2" value="$3"
+  local yaml="$1" key="$2" value="$3" flag="$4"
+  local existing
+  existing=$(echo "$yaml" | yq ".[\"$key\"] // \"\"" -)
+  if [[ -n "$existing" ]] && [[ "$existing" != "null" ]]; then
+    echo "  [$flag] overriding existing annotation $key (was \"$existing\") -> \"$value\"" >&2
+  else
+    echo "  [$flag] adding annotation $key -> \"$value\"" >&2
+  fi
   echo "$yaml" | yq ".[\"$key\"] = \"$value\"" -
 }
 
@@ -432,20 +465,21 @@ build_gateway_annotations() {
 
   case "$CLOUD" in
     aws)
-      [[ -n "$AWS_SUBNETS" ]] && annotations=$(merge_annotation "$annotations" "service.beta.kubernetes.io/aws-load-balancer-subnets" "$AWS_SUBNETS")
-      [[ -n "$AWS_SCHEME" ]] && annotations=$(merge_annotation "$annotations" "service.beta.kubernetes.io/aws-load-balancer-scheme" "$AWS_SCHEME")
+      [[ -n "$AWS_SUBNETS" ]] && annotations=$(merge_annotation "$annotations" "service.beta.kubernetes.io/aws-load-balancer-subnets" "$AWS_SUBNETS" "--aws-subnets")
+      [[ -n "$AWS_SCHEME" ]] && annotations=$(merge_annotation "$annotations" "service.beta.kubernetes.io/aws-load-balancer-scheme" "$AWS_SCHEME" "--aws-scheme")
       if [[ -n "$AWS_CERT_ARN" ]]; then
-        annotations=$(merge_annotation "$annotations" "service.beta.kubernetes.io/aws-load-balancer-ssl-cert" "$AWS_CERT_ARN")
-        annotations=$(merge_annotation "$annotations" "service.beta.kubernetes.io/aws-load-balancer-ssl-ports" "443")
+        annotations=$(merge_annotation "$annotations" "service.beta.kubernetes.io/aws-load-balancer-ssl-cert" "$AWS_CERT_ARN" "--aws-cert-arn")
+        annotations=$(merge_annotation "$annotations" "service.beta.kubernetes.io/aws-load-balancer-ssl-ports" "443" "--aws-cert-arn")
         TLS_ENABLED="true"
+        TLS_MODE="lb"
       fi
       ;;
     gcp)
-      [[ "$GCP_INTERNAL" == "true" ]] && annotations=$(merge_annotation "$annotations" "networking.gke.io/load-balancer-type" "Internal")
-      [[ -n "$GCP_STATIC_IP" ]] && annotations=$(merge_annotation "$annotations" "networking.gke.io/load-balancer-ip-addresses" "$GCP_STATIC_IP")
+      [[ "$GCP_INTERNAL" == "true" ]] && annotations=$(merge_annotation "$annotations" "networking.gke.io/load-balancer-type" "Internal" "--gcp-internal")
+      [[ -n "$GCP_STATIC_IP" ]] && annotations=$(merge_annotation "$annotations" "networking.gke.io/load-balancer-ip-addresses" "$GCP_STATIC_IP" "--gcp-static-ip")
       ;;
     onprem)
-      [[ -n "$METALLB_POOL" ]] && annotations=$(merge_annotation "$annotations" "metallb.io/address-pool" "$METALLB_POOL")
+      [[ -n "$METALLB_POOL" ]] && annotations=$(merge_annotation "$annotations" "metallb.io/address-pool" "$METALLB_POOL" "--metallb-pool")
       if [[ -z "$METALLB_POOL" ]] && [[ "$annotations" == "{}" ]]; then
         echo "No --metallb-pool given and no existing LoadBalancer Service annotations detected; the generated Gateway will have no load-balancer annotations. This is expected for NodePort + external hardware LB setups — attach it manually." >&2
       fi
@@ -487,11 +521,27 @@ write_gateway_manifest() {
     if [[ "$TLS_ENABLED" == "true" ]]; then
       echo "  - name: https"
       echo "    port: 443"
-      echo "    protocol: HTTP"
+      if [[ "$TLS_MODE" == "lb" ]]; then
+        echo "    protocol: HTTP"
+      else
+        echo "    protocol: HTTPS"
+      fi
       echo "    hostname: $first_hostname"
       echo "    allowedRoutes:"
       echo "      namespaces:"
       echo "        from: All"
+      if [[ "$TLS_MODE" == "terminate" ]]; then
+        echo "    tls:"
+        echo "      mode: Terminate"
+        echo "      certificateRefs:"
+        if [[ -n "$TLS_SECRET_NAME" ]]; then
+          echo "      - name: $TLS_SECRET_NAME"
+          echo "        kind: Secret"
+        else
+          echo "      - name: REPLACE_ME_TLS_SECRET_NAME # TODO: no ingress.tls.secretName detected; set to the Secret holding your TLS cert"
+          echo "        kind: Secret"
+        fi
+      fi
     fi
   } > "$GATEWAY_FILE"
 }
