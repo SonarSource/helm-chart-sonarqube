@@ -59,10 +59,10 @@ assert_present "${CHART_DIR}/openshift-verifier/values.yaml" "tag: \"${OLD_BUILD
 sed -i "s|tag: \"${OLD_BUILD}-master-community\"|tag: \"${NEW_BUILD}-master-community\"|" \
     "${CHART_DIR}/openshift-verifier/values.yaml"
 
-# tests/unit-test/schema_test.go — expectedContainerImage constant
-assert_present tests/unit-test/schema_test.go "expectedContainerImage string = \"sonarqube:${OLD_BUILD}\""
+# tests/unit-test/sonarqube_schema_test.go — expectedContainerImage constant
+assert_present tests/unit-test/sonarqube_schema_test.go "expectedContainerImage string = \"sonarqube:${OLD_BUILD}\""
 sed -i "s|expectedContainerImage string = \"sonarqube:${OLD_BUILD}\"|expectedContainerImage string = \"sonarqube:${NEW_BUILD}\"|" \
-    tests/unit-test/schema_test.go
+    tests/unit-test/sonarqube_schema_test.go
 
 # tests/unit-test/test-cases-values/sonarqube/test-build-number.yaml
 assert_present tests/unit-test/test-cases-values/sonarqube/test-build-number.yaml "buildNumber: \"${OLD_BUILD}\""
