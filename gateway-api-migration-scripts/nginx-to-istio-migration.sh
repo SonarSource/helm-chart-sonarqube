@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Helper function to display usage information
 show_help() {
   cat << EOF
@@ -320,8 +322,7 @@ set_derived_defaults() {
   BACKEND_SERVICE="${RELEASE_NAME}-${CHART_FLAVOR}"
   OUTPUT_DIR="${OUTPUT_DIR:-gateway-api-migration-${RELEASE_NAME}}"
 
-  mkdir -p "$OUTPUT_DIR"
-  if [[ $? -ne 0 ]]; then
+  if ! mkdir -p "$OUTPUT_DIR"; then
     echo "Error: failed to create output directory '$OUTPUT_DIR'" >&2
     exit 1
   fi
@@ -355,8 +356,7 @@ load_current_values() {
     cp "$VALUES_FILE" "$CURRENT_VALUES_FILE"
     echo "Using local values file: $VALUES_FILE"
   else
-    helm "${HELM_CTX_ARGS[@]}" get values "$RELEASE_NAME" -n "$NAMESPACE" -o yaml > "$CURRENT_VALUES_FILE"
-    if [[ $? -ne 0 ]] || [[ ! -s "$CURRENT_VALUES_FILE" ]]; then
+    if ! helm "${HELM_CTX_ARGS[@]}" get values "$RELEASE_NAME" -n "$NAMESPACE" -o yaml > "$CURRENT_VALUES_FILE" || [[ ! -s "$CURRENT_VALUES_FILE" ]]; then
       echo "Error: failed to read values for release '$RELEASE_NAME' in namespace '$NAMESPACE'" >&2
       rm -f "$CURRENT_VALUES_FILE"
       exit 1
@@ -429,7 +429,7 @@ introspect_ingress() {
 detect_hostnames() {
   if [[ -z "$HOSTNAMES" ]]; then
     local detected
-    detected=$(yq '.ingress.hosts[].name' "$CURRENT_VALUES_FILE" 2>/dev/null | grep -v '^null$' | grep -v '^$' | paste -sd, -)
+    detected=$(yq '.ingress.hosts[].name' "$CURRENT_VALUES_FILE" 2>/dev/null | grep -v '^null$' | grep -v '^$' | paste -sd, - || true)
     if [[ -n "$detected" ]]; then
       HOSTNAMES="$detected"
       echo "Detected hostname(s) from ingress.hosts: $HOSTNAMES"
@@ -444,6 +444,13 @@ detect_hostnames() {
 
 detect_tls() {
   if [[ "$CLOUD" == "aws" ]]; then
+    if [[ -n "$AWS_CERT_ARN" ]]; then
+      TLS_ENABLED="true"
+      TLS_MODE="lb"
+      echo "--aws-cert-arn given — TLS will be terminated at the NLB using that ACM cert, not by the ingress controller pod. The generated Gateway's HTTPS listener will stay protocol HTTP since Envoy receives already-decrypted traffic."
+      return 0
+    fi
+
     local ssl_cert_present
     ssl_cert_present=$(echo "$ANNOTATIONS_YAML" | yq '.["service.beta.kubernetes.io/aws-load-balancer-ssl-cert"] // ""' - 2>/dev/null)
     if [[ -n "$ssl_cert_present" ]] && [[ "$ssl_cert_present" != "null" ]]; then
@@ -522,7 +529,7 @@ merge_annotation() {
 check_nginx_annotations() {
   echo "Checking nginx.ingress.kubernetes.io/* annotations for Gateway API equivalents..."
   local annotation_keys
-  annotation_keys=$(yq '.ingress.annotations | keys | .[]' "$CURRENT_VALUES_FILE" 2>/dev/null | grep -v '^null$')
+  annotation_keys=$(yq '.ingress.annotations | keys | .[]' "$CURRENT_VALUES_FILE" 2>/dev/null | grep -v '^null$' || true)
   if [[ -z "$annotation_keys" ]]; then
     echo "No ingress.annotations found"
     return 0
@@ -574,7 +581,7 @@ check_ingress_nginx_controller_properties() {
   fi
 
   local config_keys
-  config_keys=$(yq '(.["ingress-nginx"].controller.config // .nginx.controller.config // {}) | keys | .[]' "$CURRENT_VALUES_FILE" 2>/dev/null | grep -v '^null$')
+  config_keys=$(yq '(.["ingress-nginx"].controller.config // .nginx.controller.config // {}) | keys | .[]' "$CURRENT_VALUES_FILE" 2>/dev/null | grep -v '^null$' || true)
   if [[ -n "$config_keys" ]]; then
     found="true"
     while IFS= read -r key; do
@@ -608,8 +615,10 @@ validate_cloud_requirements() {
 # whatever LoadBalancer Service annotations the customer already has
 # ($ANNOTATIONS_YAML, from detect_existing_lb_annotations) and only
 # adding/overriding keys explicitly requested via CLI flags. Never invents
-# annotations the customer didn't already have or ask for. May set
-# TLS_ENABLED=true (e.g. when an AWS cert ARN is given). Result is echoed.
+# annotations the customer didn't already have or ask for. Must not set
+# TLS_ENABLED/TLS_MODE here — this runs via command substitution, so any
+# variable assignment happens in a subshell and is lost; TLS state is
+# decided upfront in detect_tls instead. Result is echoed.
 build_gateway_annotations() {
   local annotations="$ANNOTATIONS_YAML"
 
@@ -620,8 +629,6 @@ build_gateway_annotations() {
       if [[ -n "$AWS_CERT_ARN" ]]; then
         annotations=$(merge_annotation "$annotations" "service.beta.kubernetes.io/aws-load-balancer-ssl-cert" "$AWS_CERT_ARN" "--aws-cert-arn")
         annotations=$(merge_annotation "$annotations" "service.beta.kubernetes.io/aws-load-balancer-ssl-ports" "443" "--aws-cert-arn")
-        TLS_ENABLED="true"
-        TLS_MODE="lb"
       fi
       ;;
     gcp)
@@ -644,9 +651,13 @@ build_gateway_annotations() {
   echo "$annotations" | yq 'to_entries | .[] | "    " + .key + ": \"" + (.value | tostring) + "\""' - 2>/dev/null
 }
 
+# Listeners intentionally omit "hostname:" (matching all hosts) rather than
+# pinning to a single hostname: a Gateway API HTTPRoute can only attach to a
+# listener if its hostnames intersect, and the generated HTTPRoute carries
+# every configured hostname (see render_values_yaml) — pinning the listener
+# to one hostname would silently stop routing the others.
 write_gateway_manifest() {
-  local first_hostname="$1"
-  local gateway_annotations="$2"
+  local gateway_annotations="$1"
 
   {
     echo "apiVersion: gateway.networking.k8s.io/v1"
@@ -664,7 +675,6 @@ write_gateway_manifest() {
     echo "  - name: http"
     echo "    port: 80"
     echo "    protocol: HTTP"
-    echo "    hostname: $first_hostname"
     echo "    allowedRoutes:"
     echo "      namespaces:"
     echo "        from: All"
@@ -676,7 +686,6 @@ write_gateway_manifest() {
       else
         echo "    protocol: HTTPS"
       fi
-      echo "    hostname: $first_hostname"
       echo "    allowedRoutes:"
       echo "      namespaces:"
       echo "        from: All"
@@ -740,12 +749,9 @@ write_tls_reference_grant() {
 render_gateway_manifest() {
   echo "Step 3: Rendering Gateway manifest ($GATEWAY_FILE)..."
 
-  local hostname_list first_hostname gateway_annotations
-  hostname_list=$(echo "$HOSTNAMES" | tr ',' '\n')
-  first_hostname=$(echo "$hostname_list" | head -n1)
-
+  local gateway_annotations
   gateway_annotations=$(build_gateway_annotations)
-  write_gateway_manifest "$first_hostname" "$gateway_annotations"
+  write_gateway_manifest "$gateway_annotations"
 
   echo "Gateway manifest written to $GATEWAY_FILE"
   echo ""
@@ -842,8 +848,7 @@ install_gateway_api_and_istio() {
   fi
 
   echo "Applying Gateway API CRDs..."
-  kubectl "${KUBECTL_CTX_ARGS[@]}" get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1
-  if [[ $? -ne 0 ]]; then
+  if ! kubectl "${KUBECTL_CTX_ARGS[@]}" get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; then
     kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/standard-install.yaml"
   else
     echo "Gateway API CRDs already present, skipping"
@@ -855,16 +860,14 @@ install_gateway_api_and_istio() {
   kubectl "${KUBECTL_CTX_ARGS[@]}" create namespace istio-system --dry-run=client -o yaml | kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f -
 
   echo "Installing istio-base..."
-  helm "${HELM_CTX_ARGS[@]}" upgrade --install istio-base istio/base -n istio-system --wait --timeout=300s
-  if [[ $? -ne 0 ]]; then
+  if ! helm "${HELM_CTX_ARGS[@]}" upgrade --install istio-base istio/base -n istio-system --wait --timeout=300s; then
     echo "Error: failed to install istio-base" >&2
     rm -f "$CURRENT_VALUES_FILE"
     exit 1
   fi
 
   echo "Installing istiod..."
-  helm "${HELM_CTX_ARGS[@]}" upgrade --install istiod istio/istiod -n istio-system --wait --timeout=300s
-  if [[ $? -ne 0 ]]; then
+  if ! helm "${HELM_CTX_ARGS[@]}" upgrade --install istiod istio/istiod -n istio-system --wait --timeout=300s; then
     echo "Error: failed to install istiod" >&2
     rm -f "$CURRENT_VALUES_FILE"
     exit 1
@@ -878,8 +881,7 @@ apply_gateway_manifest() {
   echo "Step 6: Applying Gateway manifest..."
 
   kubectl "${KUBECTL_CTX_ARGS[@]}" create namespace "$GATEWAY_NAMESPACE" --dry-run=client -o yaml | kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f -
-  kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f "$GATEWAY_FILE"
-  if [[ $? -ne 0 ]]; then
+  if ! kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f "$GATEWAY_FILE"; then
     echo "Error: failed to apply $GATEWAY_FILE" >&2
     rm -f "$CURRENT_VALUES_FILE"
     exit 1
@@ -903,7 +905,7 @@ main() {
   validate_args
   check_prerequisites
   set_derived_defaults
-  trap 'rm -f "$CURRENT_VALUES_FILE"; rmdir "$OUTPUT_DIR" 2>/dev/null' EXIT
+  trap 'ec=$?; rm -f "$CURRENT_VALUES_FILE"; rmdir "$OUTPUT_DIR" 2>/dev/null || true; exit $ec' EXIT
   print_run_summary
   resolve_kube_context
 
