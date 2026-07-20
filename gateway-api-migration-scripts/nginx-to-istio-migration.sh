@@ -87,11 +87,13 @@ EOF
 }
 
 # Defaults
+readonly DEFAULT_CHART_FLAVOR="sonarqube"
+readonly MODE_GENERATE="generate"
 CLOUD=""
-MODE="generate"
-NAMESPACE="sonarqube"
-RELEASE_NAME="sonarqube"
-CHART_FLAVOR="sonarqube"
+MODE="$MODE_GENERATE"
+NAMESPACE="$DEFAULT_CHART_FLAVOR"
+RELEASE_NAME="$DEFAULT_CHART_FLAVOR"
+CHART_FLAVOR="$DEFAULT_CHART_FLAVOR"
 CHART_REF=""
 VALUES_FILE=""
 HOSTNAMES=""
@@ -130,8 +132,10 @@ KUBECTL_CTX_ARGS=()
 HELM_CTX_ARGS=()
 
 parse_args() {
+  local opt
   while [[ $# -gt 0 ]]; do
-    case $1 in
+    opt="$1"
+    case "$opt" in
       -h|--help)
         show_help
         exit 0
@@ -213,7 +217,7 @@ parse_args() {
         shift
         ;;
       *)
-        echo "Unknown option: $1" >&2
+        echo "Unknown option: $opt" >&2
         echo "Use -h or --help for usage information" >&2
         exit 1
         ;;
@@ -233,12 +237,12 @@ validate_args() {
     exit 1
   fi
 
-  if [[ "$MODE" != "generate" ]] && [[ "$MODE" != "apply" ]]; then
+  if [[ "$MODE" != "$MODE_GENERATE" ]] && [[ "$MODE" != "apply" ]]; then
     echo "Error: --mode must be one of generate|apply, got '$MODE'" >&2
     exit 1
   fi
 
-  if [[ "$CHART_FLAVOR" != "sonarqube" ]] && [[ "$CHART_FLAVOR" != "sonarqube-dce" ]]; then
+  if [[ "$CHART_FLAVOR" != "$DEFAULT_CHART_FLAVOR" ]] && [[ "$CHART_FLAVOR" != "sonarqube-dce" ]]; then
     echo "Error: --chart-flavor must be one of sonarqube|sonarqube-dce, got '$CHART_FLAVOR'" >&2
     exit 1
   fi
@@ -254,18 +258,14 @@ check_prerequisites() {
     exit 1
   fi
 
-  if [[ -z "$VALUES_FILE" ]] || [[ "$MODE" == "apply" ]]; then
-    if ! command -v helm >/dev/null 2>&1; then
-      echo "Error: helm is required (to read the live release values and/or install Istio) but was not found on PATH" >&2
-      exit 1
-    fi
+  if { [[ -z "$VALUES_FILE" ]] || [[ "$MODE" == "apply" ]]; } && ! command -v helm >/dev/null 2>&1; then
+    echo "Error: helm is required (to read the live release values and/or install Istio) but was not found on PATH" >&2
+    exit 1
   fi
 
-  if [[ "$MODE" == "apply" ]]; then
-    if ! command -v kubectl >/dev/null 2>&1; then
-      echo "Error: kubectl is required for --mode apply but was not found on PATH" >&2
-      exit 1
-    fi
+  if [[ "$MODE" == "apply" ]] && ! command -v kubectl >/dev/null 2>&1; then
+    echo "Error: kubectl is required for --mode apply but was not found on PATH" >&2
+    exit 1
   fi
 
   echo "All required tools found"
@@ -279,7 +279,7 @@ check_prerequisites() {
 # anything happens. Skipped entirely when nothing will touch a cluster (i.e.
 # --values-file was given and --mode generate).
 resolve_kube_context() {
-  if [[ -n "$VALUES_FILE" ]] && [[ "$MODE" == "generate" ]]; then
+  if [[ -n "$VALUES_FILE" ]] && [[ "$MODE" == "$MODE_GENERATE" ]]; then
     return 0
   fi
 
@@ -641,6 +641,10 @@ build_gateway_annotations() {
         echo "No --metallb-pool given and no existing LoadBalancer Service annotations detected; the generated Gateway will have no load-balancer annotations. This is expected for NodePort + external hardware LB setups — attach it manually." >&2
       fi
       ;;
+    *)
+      echo "Error: unexpected --cloud value '$CLOUD' (validate_args should have rejected this)" >&2
+      exit 1
+      ;;
   esac
 
   if [[ "$annotations" == "{}" ]]; then
@@ -917,7 +921,7 @@ main() {
   render_gateway_manifest
   render_values_yaml
 
-  if [[ "$MODE" == "generate" ]]; then
+  if [[ "$MODE" == "$MODE_GENERATE" ]]; then
     print_generate_complete
     exit 0
   fi
