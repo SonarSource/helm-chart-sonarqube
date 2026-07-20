@@ -25,3 +25,8 @@ WARNING: The logging.jsonOutput value is deprecated in favor of the ENV var SONA
 {{ end }}
 WARNING: If your values' file contains values under "ApplicationNodes", please note that this key is DEPRECATED and should be renamed to "applicationNodes".
          Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#applicationnodes-renamed-to-applicationnodes for more information.
+{{ if or (.Values.nginx | default dict).enabled ((index .Values "ingress-nginx") | default dict).enabled }}
+WARNING: This chart no longer bundles the ingress-nginx controller. Setting nginx.enabled/ingress-nginx.enabled no longer has any effect.
+         Run gateway-api-migration-scripts/nginx-to-istio-migration.sh to migrate to Gateway API using Istio (the controller our script sets up), or set httproute.enabled and bring your own Gateway API controller of choice, or set ingress.enabled and bring your own self-managed ingress controller.
+         Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#ingress-usage for more information.
+{{- end }}

@@ -309,6 +309,30 @@ load_current_values() {
   echo ""
 }
 
+# Refines $BACKEND_SERVICE (initially "<release-name>-<chart-flavor>", set in
+# set_derived_defaults) using any nameOverride/fullnameOverride found in the
+# loaded values, mirroring the chart's own "sonarqube.fullname" helper:
+# fullnameOverride wins outright; otherwise "<release-name>-<nameOverride or
+# chart-flavor>". Without this, an override on the live release would make the
+# generated backendRefs point at a Service that doesn't exist.
+resolve_backend_service() {
+  local fullname_override
+  fullname_override=$(yq '.fullnameOverride // ""' "$CURRENT_VALUES_FILE" 2>/dev/null)
+  if [[ -n "$fullname_override" ]] && [[ "$fullname_override" != "null" ]]; then
+    BACKEND_SERVICE="${fullname_override:0:63}"
+    echo "Detected fullnameOverride: $BACKEND_SERVICE -- using it as the backendRefs service name"
+    return 0
+  fi
+
+  local name_override
+  name_override=$(yq '.nameOverride // ""' "$CURRENT_VALUES_FILE" 2>/dev/null)
+  if [[ -n "$name_override" ]] && [[ "$name_override" != "null" ]]; then
+    BACKEND_SERVICE="${RELEASE_NAME}-${name_override}"
+    BACKEND_SERVICE="${BACKEND_SERVICE:0:63}"
+    echo "Detected nameOverride: $name_override -- backend service resolved to $BACKEND_SERVICE"
+  fi
+}
+
 # Step 2: detect hostnames/TLS/annotations from the existing ingress config.
 # Populates/validates $HOSTNAMES and sets $TLS_ENABLED.
 introspect_ingress() {
@@ -319,6 +343,7 @@ introspect_ingress() {
   detect_tls
   detect_ingress_nginx_subchart
   check_nginx_annotations
+  check_ingress_nginx_controller_properties
 
   echo ""
 }
@@ -363,6 +388,15 @@ detect_tls() {
       TLS_SECRET_NAME=""
       echo "Detected ingress.tls entries but no secretName set — the generated Gateway will include an HTTPS listener, but you must manually set tls.certificateRefs" >&2
     fi
+    return 0
+  fi
+
+  local target_port_https
+  target_port_https=$(yq '(.["ingress-nginx"].controller.service.targetPorts.https // .nginx.controller.service.targetPorts.https // "") | tostring' "$CURRENT_VALUES_FILE" 2>/dev/null)
+  if [[ -n "$target_port_https" ]] && [[ "$target_port_https" != "null" ]] && [[ "$target_port_https" != "https" ]]; then
+    TLS_ENABLED="true"
+    TLS_MODE="lb"
+    echo "Detected ingress-nginx.controller.service.targetPorts.https: $target_port_https (not \"https\") — TLS is terminated upstream of the ingress controller pod, so the generated Gateway's HTTPS listener will stay protocol HTTP since Envoy receives already-decrypted traffic."
   fi
 }
 
@@ -436,6 +470,44 @@ check_nginx_annotations() {
         ;;
     esac
   done <<< "$annotation_keys"
+}
+
+# Flags commonly-set ingress-nginx.controller.* properties (beyond the
+# service.annotations already reused verbatim, and targetPorts.https already
+# handled in detect_tls) that have no automatic Gateway API/Istio equivalent.
+# Informational only, like check_nginx_annotations -- never written to the
+# generated files.
+check_ingress_nginx_controller_properties() {
+  echo "Checking ingress-nginx.controller.* properties for Gateway API equivalents..."
+  local found="false"
+
+  local source_ranges
+  source_ranges=$(yq '(.["ingress-nginx"].controller.service.loadBalancerSourceRanges // .nginx.controller.service.loadBalancerSourceRanges // []) | length' "$CURRENT_VALUES_FILE" 2>/dev/null)
+  if [[ "$source_ranges" -gt 0 ]] 2>/dev/null; then
+    found="true"
+    echo "  [MANUAL] controller.service.loadBalancerSourceRanges -> no Gateway API equivalent; restrict source IPs with an Istio AuthorizationPolicy, or an externalTrafficPolicy/LB-level rule"
+  fi
+
+  local traffic_policy
+  traffic_policy=$(yq '.["ingress-nginx"].controller.service.externalTrafficPolicy // .nginx.controller.service.externalTrafficPolicy // ""' "$CURRENT_VALUES_FILE" 2>/dev/null)
+  if [[ -n "$traffic_policy" ]] && [[ "$traffic_policy" != "null" ]]; then
+    found="true"
+    echo "  [MANUAL] controller.service.externalTrafficPolicy: $traffic_policy -> not carried over automatically; set the same value on the istio-ingressgateway Service if client source IP preservation matters"
+  fi
+
+  local config_keys
+  config_keys=$(yq '(.["ingress-nginx"].controller.config // .nginx.controller.config // {}) | keys | .[]' "$CURRENT_VALUES_FILE" 2>/dev/null | grep -v '^null$')
+  if [[ -n "$config_keys" ]]; then
+    found="true"
+    while IFS= read -r key; do
+      [[ -z "$key" ]] && continue
+      echo "  [MANUAL] controller.config.$key -> global nginx ConfigMap setting, not covered by this script; check whether an Istio equivalent (EnvoyFilter, mesh config, or per-route Gateway API filter) is needed"
+    done <<< "$config_keys"
+  fi
+
+  if [[ "$found" == "false" ]]; then
+    echo "No loadBalancerSourceRanges, externalTrafficPolicy, or controller.config overrides found"
+  fi
 }
 
 # Fails fast (before any file is written) if a cloud-required annotation is
@@ -541,9 +613,49 @@ write_gateway_manifest() {
           echo "      - name: REPLACE_ME_TLS_SECRET_NAME # TODO: no ingress.tls.secretName detected; set to the Secret holding your TLS cert"
           echo "        kind: Secret"
         fi
+        # The Secret lives in the app namespace ($NAMESPACE), detected from
+        # ingress.tls.secretName. If the Gateway lives elsewhere
+        # (--gateway-namespace), it must reference the Secret across
+        # namespaces explicitly, which also requires a ReferenceGrant in the
+        # Secret's namespace (see write_tls_reference_grant).
+        if [[ "$GATEWAY_NAMESPACE" != "$NAMESPACE" ]]; then
+          echo "        namespace: $NAMESPACE"
+        fi
       fi
     fi
   } > "$GATEWAY_FILE"
+
+  if [[ "$TLS_MODE" == "terminate" ]] && [[ "$GATEWAY_NAMESPACE" != "$NAMESPACE" ]]; then
+    write_tls_reference_grant
+  fi
+}
+
+# Appends a ReferenceGrant (to $GATEWAY_FILE, as a second YAML document) that
+# permits the Gateway in $GATEWAY_NAMESPACE to reference the TLS Secret sitting
+# in $NAMESPACE. Without this, cross-namespace certificateRefs are rejected by
+# the Gateway API implementation regardless of the explicit "namespace:" field.
+write_tls_reference_grant() {
+  local secret_name="${TLS_SECRET_NAME:-REPLACE_ME_TLS_SECRET_NAME}"
+
+  echo "Cross-namespace TLS detected (Gateway in $GATEWAY_NAMESPACE, Secret in $NAMESPACE) — appending a ReferenceGrant in $NAMESPACE to $GATEWAY_FILE"
+
+  {
+    echo "---"
+    echo "apiVersion: gateway.networking.k8s.io/v1beta1"
+    echo "kind: ReferenceGrant"
+    echo "metadata:"
+    echo "  name: ${GATEWAY_NAME}-tls-secret"
+    echo "  namespace: $NAMESPACE"
+    echo "spec:"
+    echo "  from:"
+    echo "  - group: gateway.networking.k8s.io"
+    echo "    kind: Gateway"
+    echo "    namespace: $GATEWAY_NAMESPACE"
+    echo "  to:"
+    echo "  - group: \"\""
+    echo "    kind: Secret"
+    echo "    name: $secret_name"
+  } >> "$GATEWAY_FILE"
 }
 
 # Step 3: render the Gateway manifest
@@ -717,6 +829,7 @@ main() {
   print_run_summary
 
   load_current_values
+  resolve_backend_service
   introspect_ingress
   validate_cloud_requirements
   render_gateway_manifest
