@@ -9,27 +9,41 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
-  parentRefs:
-  - name: {{ .Values.httproute.gateway }}
-    {{- if .Values.httproute.gatewayNamespace }}
-    namespace: {{ .Values.httproute.gatewayNamespace }}
-    {{- end }}
   hostnames:
     {{- with .Values.httproute.hostnames }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  rules:
-  {{- if .Values.httproute.rules -}}
-    {{- with .Values.httproute.rules -}}
-    {{ toYaml . | nindent 4 }}
+  parentRefs:
+    {{- if .Values.httproute.parentRefs }}
+    {{- toYaml .Values.httproute.parentRefs | nindent 4 }}
+    {{- else }}
+    - name: {{ .Values.httproute.gateway }}
+      {{- if .Values.httproute.gatewayNamespace }}
+      namespace: {{ .Values.httproute.gatewayNamespace }}
+      {{- end }}
+      {{- if .Values.httproute.sectionName }}
+      sectionName: {{ .Values.httproute.sectionName }}
+      {{- end }}
+      {{- if .Values.httproute.gatewayKind }}
+      kind: {{ .Values.httproute.gatewayKind }}
+      {{- end }}
+      {{- if .Values.httproute.gatewayGroup }}
+      group: {{ .Values.httproute.gatewayGroup }}
+      {{- end }}
     {{- end }}
-  {{- else }}
-  - matches:
-    - path:
-        type: PathPrefix
-        value: {{ include "sonarqube.webcontext" . }}
-    backendRefs:
-    - name: {{ include "sonarqube.fullname" . }}
-      port: {{ .Values.service.externalPort }}
-  {{- end }}
+  rules:
+    {{- if .Values.httproute.rules }}
+    {{- toYaml .Values.httproute.rules | nindent 4 }}
+    {{- else }}
+    - backendRefs:
+        - group: {{ .Values.service.group | default "" | quote }}
+          kind: {{ .Values.service.kind | default "Service" }}
+          name: {{ include "sonarqube.fullname" . }}
+          port: {{ .Values.service.externalPort | default 9000 }}
+          weight: {{ .Values.httproute.weight | default 1 }}
+      matches:
+        - path:
+            type: {{ .Values.httproute.matchType | default "PathPrefix" }}
+            value: {{ include "sonarqube.webcontext" . | quote }}
+    {{- end }}
 {{- end }}
