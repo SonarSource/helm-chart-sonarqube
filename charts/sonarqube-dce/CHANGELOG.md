@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
+* Upgrade SonarQube Server to 2026.4.0
 * Upgrade SonarQube Community build to 26.6.0.123539
 * Add `searchNodes.extraInitContainers` and `applicationNodes.extraInitContainers` to allow per-node-type extra init containers
 * Deprecate root-level `extraInitContainers` in favour of the node-specific values
