@@ -162,7 +162,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: ca-certificates-configmap.yaml-sonarqube
-    app.kubernetes.io/version: "2026.3.1-enterprise"
+    app.kubernetes.io/version: "2026.4.0-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -187,7 +187,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: ca-certs
-          image: sonarqube:2026.3.1-enterprise
+          image: sonarqube:2026.4.0-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-c"]
           args:
@@ -226,7 +226,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: init-sysctl
-          image: sonarqube:2026.3.1-enterprise
+          image: sonarqube:2026.4.0-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -244,7 +244,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: install-plugins
-          image: sonarqube:2026.3.1-enterprise
+          image: sonarqube:2026.4.0-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
           securityContext:
@@ -291,7 +291,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: install-oracle-jdbc-driver
-          image: sonarqube:2026.3.1-enterprise
+          image: sonarqube:2026.4.0-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
           securityContext:
@@ -326,7 +326,7 @@ spec:
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
       containers:
         - name: sonarqube
-          image: sonarqube:2026.3.1-enterprise
+          image: sonarqube:2026.4.0-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -478,7 +478,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: ca-certificates-configmap.yaml-ui-test
-      image: "sonarqube:2026.3.1-enterprise"
+      image: "sonarqube:2026.4.0-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [
