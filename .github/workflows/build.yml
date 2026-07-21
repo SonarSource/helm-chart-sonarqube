@@ -280,7 +280,6 @@ jobs:
         run: echo "$SONARSOURCE_SIGN_KEY" > /tmp/key
       - name: Add Helm repositories
         run: |
-          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
           helm repo add bitnami-pre2022 https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
           helm repo update
       - name: Package and sign ${{ matrix.chart }} chart

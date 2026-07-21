@@ -19,6 +19,10 @@ DESCRIPTION:
 
     This script never runs "helm upgrade" against your SonarQube release. It
     only ever prints the command for you to run yourself, once you're ready.
+    If the ingress-nginx controller is still enabled, the printed next steps
+    remind you to verify Istio is handling traffic correctly while both
+    controllers run in parallel, before running that "helm upgrade" (which
+    removes the ingress-nginx controller).
 
 USAGE:
     $0 --cloud aws|gcp|onprem [OPTIONS]
@@ -27,7 +31,7 @@ OPTIONS:
     --cloud aws|gcp|onprem   Target environment, selects Gateway annotations (REQUIRED)
     --mode generate|apply    generate: render files only (default)
                              apply: also install Gateway API CRDs + Istio (unless
-                             --skip-istio) and kubectl apply the Gateway manifest
+                             --skip-istio) and create the Gateway manifest K8s resource
     --namespace ns           Kubernetes namespace of the release (default: sonarqube)
     --release-name name      Helm release name (default: sonarqube)
     --chart-flavor flavor    sonarqube|sonarqube-dce, used to derive the backend
@@ -58,6 +62,9 @@ OPTIONS:
     --metallb-pool pool      MetalLB address pool name (on-prem only)
     --skip-istio             Assume Gateway API CRDs and Istio are already
                               installed (apply mode only)
+    --verbose                Show detailed diagnostics for every step, not
+                              just the outcome. Failing steps always show
+                              their diagnostics regardless of this flag.
     -h, --help               Show this help message and exit
 
 EXAMPLES:
@@ -108,6 +115,7 @@ GCP_INTERNAL="false"
 GCP_STATIC_IP=""
 METALLB_POOL=""
 SKIP_ISTIO="false"
+VERBOSE="false"
 
 # Derived, computed once flags are parsed/validated
 BACKEND_SERVICE=""
@@ -126,10 +134,79 @@ TLS_MODE=""
 TLS_SECRET_NAME=""
 ANNOTATIONS_YAML="{}"
 
+# Set by detect_ingress_nginx_subchart once the ingress-nginx/nginx subchart
+# is known to be enabled in $CURRENT_VALUES_FILE
+NGINX_CONTROLLER_PRESENT="false"
+
 # Resolved by resolve_kube_context; empty until then
 ACTIVE_KUBE_CONTEXT=""
 KUBECTL_CTX_ARGS=()
 HELM_CTX_ARGS=()
+
+# Console output helpers ----------------------------------------------------
+# Every step prints inside a left-bordered block. Outcome lines (summary/warn)
+# are always visible. Diagnostic lines (detail) are buffered and only shown
+# immediately with --verbose, or dumped automatically if the step's block
+# ends in die() -- so a failure is never missing the context that led to it.
+DETAIL_BUFFER=()
+
+box_top() {
+  printf '┌─ %s\n' "$1"
+}
+
+box_line() {
+  printf '│  %s\n' "$1"
+}
+
+box_warn() {
+  printf '│  ⚠ %s\n' "$1"
+}
+
+box_bottom() {
+  printf '└─\n'
+  echo ""
+}
+
+# Outcome line: always visible.
+summary() {
+  box_line "$1"
+}
+
+# Actionable/manual-followup line: always visible.
+warn() {
+  box_warn "$1"
+}
+
+# Diagnostic line: visible immediately with --verbose, otherwise buffered and
+# only surfaced if this step later fails.
+detail() {
+  if [[ "$VERBOSE" == "true" ]]; then
+    box_line "$1"
+  else
+    DETAIL_BUFFER+=("$1")
+  fi
+}
+
+# Closes a step's block on success, discarding any buffered detail lines.
+end_section() {
+  DETAIL_BUFFER=()
+  box_bottom
+}
+
+# Flushes any buffered detail lines, then prints the error and exits. Ensures
+# a failure always shows exactly the diagnostics that led to it.
+die() {
+  if [[ ${#DETAIL_BUFFER[@]} -gt 0 ]]; then
+    local line
+    for line in "${DETAIL_BUFFER[@]}"; do
+      box_line "$line"
+    done
+    DETAIL_BUFFER=()
+  fi
+  box_warn "Error: $1"
+  box_bottom
+  exit 1
+}
 
 parse_args() {
   local opt
@@ -216,6 +293,10 @@ parse_args() {
         SKIP_ISTIO="true"
         shift
         ;;
+      --verbose)
+        VERBOSE="true"
+        shift
+        ;;
       *)
         echo "Unknown option: $opt" >&2
         echo "Use -h or --help for usage information" >&2
@@ -251,25 +332,22 @@ validate_args() {
 # Checks that the CLI tools this run actually needs are on PATH, so we fail
 # fast instead of partway through with a generic "command not found".
 check_prerequisites() {
-  echo "Checking prerequisites..."
+  box_top "Checking prerequisites"
 
   if ! command -v yq >/dev/null 2>&1; then
-    echo "Error: yq (mikefarah/yq, v4+) is required but was not found on PATH" >&2
-    exit 1
+    die "yq (mikefarah/yq, v4+) is required but was not found on PATH"
   fi
 
   if { [[ -z "$VALUES_FILE" ]] || [[ "$MODE" == "apply" ]]; } && ! command -v helm >/dev/null 2>&1; then
-    echo "Error: helm is required (to read the live release values and/or install Istio) but was not found on PATH" >&2
-    exit 1
+    die "helm is required (to read the live release values and/or install Istio) but was not found on PATH"
   fi
 
   if [[ "$MODE" == "apply" ]] && ! command -v kubectl >/dev/null 2>&1; then
-    echo "Error: kubectl is required for --mode apply but was not found on PATH" >&2
-    exit 1
+    die "kubectl is required for --mode apply but was not found on PATH"
   fi
 
-  echo "All required tools found"
-  echo ""
+  summary "All required tools found"
+  end_section
 }
 
 # Resolves which kube-context this run will use for any live cluster read
@@ -283,6 +361,8 @@ resolve_kube_context() {
     return 0
   fi
 
+  box_top "Resolving kube-context"
+
   if [[ -n "$KUBE_CONTEXT" ]]; then
     ACTIVE_KUBE_CONTEXT="$KUBE_CONTEXT"
   else
@@ -290,15 +370,14 @@ resolve_kube_context() {
   fi
 
   if [[ -z "$ACTIVE_KUBE_CONTEXT" ]]; then
-    echo "Error: could not resolve a kube-context (no --kube-context given and no current-context set in kubeconfig)" >&2
-    exit 1
+    die "could not resolve a kube-context (no --kube-context given and no current-context set in kubeconfig)"
   fi
 
   KUBECTL_CTX_ARGS=(--context "$ACTIVE_KUBE_CONTEXT")
   HELM_CTX_ARGS=(--kube-context "$ACTIVE_KUBE_CONTEXT")
 
-  echo "Using kube-context: $ACTIVE_KUBE_CONTEXT"
-  echo ""
+  summary "Using kube-context: $ACTIVE_KUBE_CONTEXT"
+  end_section
 }
 
 # Fails fast unless the operator explicitly confirms the resolved kube-context
@@ -306,7 +385,7 @@ resolve_kube_context() {
 # is applied.
 confirm_apply_target() {
   local reply
-  echo "About to install/upgrade Istio and apply the Gateway manifest against kube-context '$ACTIVE_KUBE_CONTEXT', namespace '$GATEWAY_NAMESPACE'."
+  echo "About to install/upgrade Istio and apply the Gateway resource to your Kubernetes cluster (kube-context '$ACTIVE_KUBE_CONTEXT', namespace '$GATEWAY_NAMESPACE')."
   read -r -p "Continue? [y/N] " reply
   if [[ ! "$reply" =~ ^[Yy]$ ]]; then
     echo "Aborted." >&2
@@ -334,37 +413,35 @@ set_derived_defaults() {
 }
 
 print_run_summary() {
-  echo "=== Ingress-NGINX to Gateway API (Istio) Migration ==="
-  echo "Cloud: $CLOUD"
-  echo "Mode: $MODE"
-  echo "Namespace: $NAMESPACE"
-  echo "Release: $RELEASE_NAME"
-  echo "Chart flavor: $CHART_FLAVOR (backend service: ${BACKEND_SERVICE}:${BACKEND_PORT})"
-  echo "Output directory: $OUTPUT_DIR"
-  echo ""
+  box_top "Ingress-NGINX to Gateway API (Istio) Migration"
+  summary "Cloud: $CLOUD"
+  summary "Mode: $MODE"
+  summary "Namespace: $NAMESPACE"
+  summary "Release: $RELEASE_NAME"
+  summary "Chart flavor: $CHART_FLAVOR (backend service: ${BACKEND_SERVICE}:${BACKEND_PORT})"
+  summary "Output directory: $OUTPUT_DIR"
+  end_section
 }
 
 # Step 1: load the customer's current Helm values into $CURRENT_VALUES_FILE
 load_current_values() {
-  echo "Step 1: Loading current Helm values..."
+  box_top "Step 1: Loading current Helm values"
 
   if [[ -n "$VALUES_FILE" ]]; then
     if [[ ! -f "$VALUES_FILE" ]]; then
-      echo "Error: --values-file '$VALUES_FILE' does not exist" >&2
-      exit 1
+      die "--values-file '$VALUES_FILE' does not exist"
     fi
     cp "$VALUES_FILE" "$CURRENT_VALUES_FILE"
-    echo "Using local values file: $VALUES_FILE"
+    summary "Using local values file: $VALUES_FILE"
   else
     if ! helm "${HELM_CTX_ARGS[@]}" get values "$RELEASE_NAME" -n "$NAMESPACE" -o yaml > "$CURRENT_VALUES_FILE" || [[ ! -s "$CURRENT_VALUES_FILE" ]]; then
-      echo "Error: failed to read values for release '$RELEASE_NAME' in namespace '$NAMESPACE'" >&2
       rm -f "$CURRENT_VALUES_FILE"
-      exit 1
+      die "failed to read values for release '$RELEASE_NAME' in namespace '$NAMESPACE'"
     fi
-    echo "Loaded live values for release '$RELEASE_NAME' in namespace '$NAMESPACE'"
+    summary "Loaded live values for release '$RELEASE_NAME' in namespace '$NAMESPACE'"
   fi
 
-  echo ""
+  end_section
 }
 
 # Detects a release that's already fully on Gateway API (httproute.enabled, and
@@ -382,7 +459,9 @@ check_already_migrated() {
     && [[ "$ingress_enabled" != "true" ]] \
     && [[ "$ingress_nginx_enabled" != "true" ]] \
     && [[ "$nginx_enabled" != "true" ]]; then
-    echo "This release already has httproute.enabled=true and no ingress/ingress-nginx config left — it looks like the migration was already applied. Nothing to do."
+    box_top "Already migrated"
+    summary "This release already has httproute.enabled=true and no ingress/ingress-nginx config left — it looks like the migration was already applied. Nothing to do."
+    end_section
     exit 0
   fi
 }
@@ -398,7 +477,9 @@ resolve_backend_service() {
   fullname_override=$(yq '.fullnameOverride // ""' "$CURRENT_VALUES_FILE" 2>/dev/null)
   if [[ -n "$fullname_override" ]] && [[ "$fullname_override" != "null" ]]; then
     BACKEND_SERVICE="${fullname_override:0:63}"
-    echo "Detected fullnameOverride: $BACKEND_SERVICE -- using it as the backendRefs service name"
+    box_top "Resolving backend service name"
+    summary "Detected fullnameOverride: $BACKEND_SERVICE -- using it as the backendRefs service name"
+    end_section
     return 0
   fi
 
@@ -407,14 +488,16 @@ resolve_backend_service() {
   if [[ -n "$name_override" ]] && [[ "$name_override" != "null" ]]; then
     BACKEND_SERVICE="${RELEASE_NAME}-${name_override}"
     BACKEND_SERVICE="${BACKEND_SERVICE:0:63}"
-    echo "Detected nameOverride: $name_override -- backend service resolved to $BACKEND_SERVICE"
+    box_top "Resolving backend service name"
+    summary "Detected nameOverride: $name_override -- backend service resolved to $BACKEND_SERVICE"
+    end_section
   fi
 }
 
 # Step 2: detect hostnames/TLS/annotations from the existing ingress config.
 # Populates/validates $HOSTNAMES and sets $TLS_ENABLED.
 introspect_ingress() {
-  echo "Step 2: Introspecting existing ingress configuration..."
+  box_top "Step 2: Introspecting existing ingress configuration"
 
   detect_hostnames
   detect_existing_lb_annotations
@@ -423,7 +506,7 @@ introspect_ingress() {
   check_nginx_annotations
   check_ingress_nginx_controller_properties
 
-  echo ""
+  end_section
 }
 
 detect_hostnames() {
@@ -432,13 +515,12 @@ detect_hostnames() {
     detected=$(yq '.ingress.hosts[].name' "$CURRENT_VALUES_FILE" 2>/dev/null | grep -v '^null$' | grep -v '^$' | paste -sd, - || true)
     if [[ -n "$detected" ]]; then
       HOSTNAMES="$detected"
-      echo "Detected hostname(s) from ingress.hosts: $HOSTNAMES"
+      summary "Detected hostname(s) from ingress.hosts: $HOSTNAMES"
     else
-      echo "Error: no hostnames found in ingress.hosts and --hostnames was not provided" >&2
-      exit 1
+      die "no hostnames found in ingress.hosts and --hostnames was not provided"
     fi
   else
-    echo "Using hostnames: $HOSTNAMES"
+    summary "Using hostnames: $HOSTNAMES"
   fi
 }
 
@@ -447,7 +529,7 @@ detect_tls() {
     if [[ -n "$AWS_CERT_ARN" ]]; then
       TLS_ENABLED="true"
       TLS_MODE="lb"
-      echo "--aws-cert-arn given — TLS will be terminated at the NLB using that ACM cert, not by the ingress controller pod. The generated Gateway's HTTPS listener will stay protocol HTTP since Envoy receives already-decrypted traffic."
+      summary "--aws-cert-arn given — TLS will be terminated at the NLB using that ACM cert, not by the ingress controller pod. The generated Gateway's HTTPS listener will stay protocol HTTP since Envoy receives already-decrypted traffic."
       return 0
     fi
 
@@ -456,7 +538,7 @@ detect_tls() {
     if [[ -n "$ssl_cert_present" ]] && [[ "$ssl_cert_present" != "null" ]]; then
       TLS_ENABLED="true"
       TLS_MODE="lb"
-      echo "Detected an existing aws-load-balancer-ssl-cert annotation — TLS is terminated at the NLB using an ACM cert, not by the ingress controller pod. The generated Gateway's HTTPS listener will stay protocol HTTP since Envoy receives already-decrypted traffic."
+      summary "Detected an existing aws-load-balancer-ssl-cert annotation — TLS is terminated at the NLB using an ACM cert, not by the ingress controller pod. The generated Gateway's HTTPS listener will stay protocol HTTP since Envoy receives already-decrypted traffic."
       return 0
     fi
   fi
@@ -468,10 +550,10 @@ detect_tls() {
     TLS_MODE="terminate"
     TLS_SECRET_NAME=$(yq '.ingress.tls[0].secretName // ""' "$CURRENT_VALUES_FILE" 2>/dev/null)
     if [[ -n "$TLS_SECRET_NAME" ]] && [[ "$TLS_SECRET_NAME" != "null" ]]; then
-      echo "Detected TLS termination via ingress.tls (secretName: $TLS_SECRET_NAME) — the generated Gateway will include an HTTPS listener terminating TLS using that Secret"
+      summary "Detected TLS termination via ingress.tls (secretName: $TLS_SECRET_NAME) — the generated Gateway will include an HTTPS listener terminating TLS using that Secret"
     else
       TLS_SECRET_NAME=""
-      echo "Detected ingress.tls entries but no secretName set — the generated Gateway will include an HTTPS listener, but you must manually set tls.certificateRefs" >&2
+      warn "Detected ingress.tls entries but no secretName set — the generated Gateway will include an HTTPS listener, but you must manually set tls.certificateRefs"
     fi
     return 0
   fi
@@ -481,13 +563,14 @@ detect_tls() {
   if [[ -n "$target_port_https" ]] && [[ "$target_port_https" != "null" ]] && [[ "$target_port_https" != "https" ]]; then
     TLS_ENABLED="true"
     TLS_MODE="lb"
-    echo "Detected ingress-nginx.controller.service.targetPorts.https: $target_port_https (not \"https\") — TLS is terminated upstream of the ingress controller pod, so the generated Gateway's HTTPS listener will stay protocol HTTP since Envoy receives already-decrypted traffic."
+    summary "Detected ingress-nginx.controller.service.targetPorts.https: $target_port_https (not \"https\") — TLS is terminated upstream of the ingress controller pod, so the generated Gateway's HTTPS listener will stay protocol HTTP since Envoy receives already-decrypted traffic."
   fi
 }
 
 detect_ingress_nginx_subchart() {
   if [[ "$(yq '.["ingress-nginx"].enabled' "$CURRENT_VALUES_FILE" 2>/dev/null)" == "true" ]] || [[ "$(yq '.nginx.enabled' "$CURRENT_VALUES_FILE" 2>/dev/null)" == "true" ]]; then
-    echo "Detected the ingress-nginx controller subchart enabled — it will be removed from the generated values.yaml"
+    NGINX_CONTROLLER_PRESENT="true"
+    summary "Detected the ingress-nginx controller subchart enabled — it will be removed from the generated values.yaml"
   fi
 }
 
@@ -500,38 +583,42 @@ detect_existing_lb_annotations() {
   detected=$(yq '(.["ingress-nginx"].controller.service.annotations // .nginx.controller.service.annotations // {})' "$CURRENT_VALUES_FILE" 2>/dev/null)
 
   if [[ -z "$detected" ]] || [[ "$detected" == "{}" ]] || [[ "$detected" == "null" ]]; then
-    echo "No existing LoadBalancer Service annotations found (checked ingress-nginx.controller.service.annotations / nginx.controller.service.annotations)"
+    detail "No existing LoadBalancer Service annotations found (checked ingress-nginx.controller.service.annotations / nginx.controller.service.annotations)"
     ANNOTATIONS_YAML="{}"
     return 0
   fi
 
-  echo "Detected existing LoadBalancer Service annotations — reusing them on the generated Gateway:"
-  echo "$detected" | sed 's/^/  /'
+  summary "Detected existing LoadBalancer Service annotations — reusing them on the generated Gateway"
+  local line
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    detail "  $line"
+  done <<< "$detected"
   ANNOTATIONS_YAML="$detected"
 }
 
 # Sets/overrides a single key on a YAML/JSON map passed on stdin, returned on stdout.
 # Logs (to stderr, so it never pollutes the returned YAML) whether this is adding a
 # new annotation or overriding one already detected on the existing Service, and which
-# flag triggered it.
+# flag triggered it. Runs inside a command substitution ($(...)) so it must not use the
+# box_*/summary/detail helpers, which write to stdout and would corrupt the return value.
 merge_annotation() {
   local yaml="$1" key="$2" value="$3" flag="$4"
   local existing
   existing=$(echo "$yaml" | yq ".[\"$key\"] // \"\"" -)
   if [[ -n "$existing" ]] && [[ "$existing" != "null" ]]; then
-    echo "  [$flag] overriding existing annotation $key (was \"$existing\") -> \"$value\"" >&2
+    echo "│  ⚠ [$flag] overriding existing annotation $key (was \"$existing\") -> \"$value\"" >&2
   else
-    echo "  [$flag] adding annotation $key -> \"$value\"" >&2
+    echo "│  [$flag] adding annotation $key -> \"$value\"" >&2
   fi
   echo "$yaml" | yq ".[\"$key\"] = \"$value\"" -
 }
 
 check_nginx_annotations() {
-  echo "Checking nginx.ingress.kubernetes.io/* annotations for Gateway API equivalents..."
   local annotation_keys
   annotation_keys=$(yq '.ingress.annotations | keys | .[]' "$CURRENT_VALUES_FILE" 2>/dev/null | grep -v '^null$' || true)
   if [[ -z "$annotation_keys" ]]; then
-    echo "No ingress.annotations found"
+    detail "No ingress.annotations found"
     return 0
   fi
 
@@ -539,19 +626,19 @@ check_nginx_annotations() {
     [[ -z "$key" ]] && continue
     case "$key" in
       "nginx.ingress.kubernetes.io/ssl-redirect")
-        echo "  [OK] $key -> covered natively by the Gateway's HTTP+HTTPS listeners, no action needed"
+        detail "[OK] $key -> covered natively by the Gateway's HTTP+HTTPS listeners, no action needed"
         ;;
       "nginx.ingress.kubernetes.io/rewrite-target"|"nginx.ingress.kubernetes.io/configuration-snippet")
-        echo "  [MANUAL] $key -> no automatic equivalent; add a custom httproute.rules entry with a RequestRedirect/URLRewrite filter"
+        warn "$key -> no automatic equivalent; add a custom httproute.rules entry with a RequestRedirect/URLRewrite filter"
         ;;
       "nginx.ingress.kubernetes.io/proxy-body-size")
-        echo "  [MANUAL] $key -> no Gateway API equivalent; requires a follow-up Istio EnvoyFilter"
+        warn "$key -> no Gateway API equivalent; requires a follow-up Istio EnvoyFilter"
         ;;
       "nginx.ingress.kubernetes.io/whitelist-source-range")
-        echo "  [MANUAL] $key -> no Gateway API equivalent; requires a follow-up Istio AuthorizationPolicy"
+        warn "$key -> no Gateway API equivalent; requires a follow-up Istio AuthorizationPolicy"
         ;;
       *)
-        echo "  [UNKNOWN] $key -> not recognized by this script, review manually"
+        warn "$key -> not recognized by this script, review manually"
         ;;
     esac
   done <<< "$annotation_keys"
@@ -563,21 +650,20 @@ check_nginx_annotations() {
 # Informational only, like check_nginx_annotations -- never written to the
 # generated files.
 check_ingress_nginx_controller_properties() {
-  echo "Checking ingress-nginx.controller.* properties for Gateway API equivalents..."
   local found="false"
 
   local source_ranges
   source_ranges=$(yq '(.["ingress-nginx"].controller.service.loadBalancerSourceRanges // .nginx.controller.service.loadBalancerSourceRanges // []) | length' "$CURRENT_VALUES_FILE" 2>/dev/null)
   if [[ "$source_ranges" -gt 0 ]] 2>/dev/null; then
     found="true"
-    echo "  [MANUAL] controller.service.loadBalancerSourceRanges -> no Gateway API equivalent; restrict source IPs with an Istio AuthorizationPolicy, or an externalTrafficPolicy/LB-level rule"
+    warn "controller.service.loadBalancerSourceRanges -> no Gateway API equivalent; restrict source IPs with an Istio AuthorizationPolicy, or an externalTrafficPolicy/LB-level rule"
   fi
 
   local traffic_policy
   traffic_policy=$(yq '.["ingress-nginx"].controller.service.externalTrafficPolicy // .nginx.controller.service.externalTrafficPolicy // ""' "$CURRENT_VALUES_FILE" 2>/dev/null)
   if [[ -n "$traffic_policy" ]] && [[ "$traffic_policy" != "null" ]]; then
     found="true"
-    echo "  [MANUAL] controller.service.externalTrafficPolicy: $traffic_policy -> not carried over automatically; set the same value on the istio-ingressgateway Service if client source IP preservation matters"
+    warn "controller.service.externalTrafficPolicy: $traffic_policy -> not carried over automatically; set the same value on the istio-ingressgateway Service if client source IP preservation matters"
   fi
 
   local config_keys
@@ -586,12 +672,12 @@ check_ingress_nginx_controller_properties() {
     found="true"
     while IFS= read -r key; do
       [[ -z "$key" ]] && continue
-      echo "  [MANUAL] controller.config.$key -> global nginx ConfigMap setting, not covered by this script; check whether an Istio equivalent (EnvoyFilter, mesh config, or per-route Gateway API filter) is needed"
+      warn "controller.config.$key -> global nginx ConfigMap setting, not covered by this script; check whether an Istio equivalent (EnvoyFilter, mesh config, or per-route Gateway API filter) is needed"
     done <<< "$config_keys"
   fi
 
   if [[ "$found" == "false" ]]; then
-    echo "No loadBalancerSourceRanges, externalTrafficPolicy, or controller.config overrides found"
+    detail "No loadBalancerSourceRanges, externalTrafficPolicy, or controller.config overrides found"
   fi
 }
 
@@ -604,9 +690,8 @@ validate_cloud_requirements() {
     local subnets_present
     subnets_present=$(echo "$ANNOTATIONS_YAML" | yq '.["service.beta.kubernetes.io/aws-load-balancer-subnets"] // ""' - 2>/dev/null)
     if [[ -z "$AWS_SUBNETS" ]] && [[ -z "$subnets_present" ]]; then
-      echo "Error: no service.beta.kubernetes.io/aws-load-balancer-subnets annotation found on the existing ingress-nginx controller Service, and --aws-subnets was not provided" >&2
-      echo "Re-run with --aws-subnets subnet-abc,subnet-def" >&2
-      exit 1
+      box_top "Validating cloud requirements"
+      die "no service.beta.kubernetes.io/aws-load-balancer-subnets annotation found on the existing ingress-nginx controller Service, and --aws-subnets was not provided. Re-run with --aws-subnets subnet-abc,subnet-def"
     fi
   fi
 }
@@ -638,7 +723,7 @@ build_gateway_annotations() {
     onprem)
       [[ -n "$METALLB_POOL" ]] && annotations=$(merge_annotation "$annotations" "metallb.io/address-pool" "$METALLB_POOL" "--metallb-pool")
       if [[ -z "$METALLB_POOL" ]] && [[ "$annotations" == "{}" ]]; then
-        echo "No --metallb-pool given and no existing LoadBalancer Service annotations detected; the generated Gateway will have no load-balancer annotations. This is expected for NodePort + external hardware LB setups — attach it manually." >&2
+        echo "│  ⚠ No --metallb-pool given and no existing LoadBalancer Service annotations detected; the generated Gateway will have no load-balancer annotations. This is expected for NodePort + external hardware LB setups — attach it manually." >&2
       fi
       ;;
     *)
@@ -728,7 +813,7 @@ write_gateway_manifest() {
 write_tls_reference_grant() {
   local secret_name="${TLS_SECRET_NAME:-REPLACE_ME_TLS_SECRET_NAME}"
 
-  echo "Cross-namespace TLS detected (Gateway in $GATEWAY_NAMESPACE, Secret in $NAMESPACE) — appending a ReferenceGrant in $NAMESPACE to $GATEWAY_FILE"
+  summary "Cross-namespace TLS detected (Gateway in $GATEWAY_NAMESPACE, Secret in $NAMESPACE) — appending a ReferenceGrant in $NAMESPACE to $GATEWAY_FILE"
 
   {
     echo "---"
@@ -751,14 +836,14 @@ write_tls_reference_grant() {
 
 # Step 3: render the Gateway manifest
 render_gateway_manifest() {
-  echo "Step 3: Rendering Gateway manifest ($GATEWAY_FILE)..."
+  box_top "Step 3: Rendering Gateway manifest"
 
   local gateway_annotations
   gateway_annotations=$(build_gateway_annotations)
   write_gateway_manifest "$gateway_annotations"
 
-  echo "Gateway manifest written to $GATEWAY_FILE"
-  echo ""
+  summary "Written to $GATEWAY_FILE"
+  end_section
 }
 
 # Mirrors the chart's "sonarqube.webcontext" helper: env SONAR_WEB_CONTEXT >
@@ -803,7 +888,7 @@ hostnames_to_yaml_array() {
 # Step 4: render the replacement values.yaml (ingress/ingress-nginx removed,
 # httproute added, everything else preserved from $CURRENT_VALUES_FILE)
 render_values_yaml() {
-  echo "Step 4: Rendering replacement values.yaml ($NEW_VALUES_FILE)..."
+  box_top "Step 4: Rendering replacement values.yaml"
 
   local hostname_list hostnames_yaml_array webcontext
   hostname_list=$(echo "$HOSTNAMES" | tr ',' '\n')
@@ -815,51 +900,59 @@ render_values_yaml() {
   yq -i ".httproute.enabled = true | .httproute.gateway = \"$GATEWAY_NAME\" | .httproute.gatewayNamespace = \"$GATEWAY_NAMESPACE\" | .httproute.hostnames = ${hostnames_yaml_array}" "$NEW_VALUES_FILE"
   yq -i ".httproute.rules = [{\"matches\": [{\"path\": {\"type\": \"PathPrefix\", \"value\": \"$webcontext\"}}], \"backendRefs\": [{\"name\": \"$BACKEND_SERVICE\", \"port\": $BACKEND_PORT}]}]" "$NEW_VALUES_FILE"
 
-  echo "Removed: ingress, ingress-nginx, nginx"
-  echo "Added: httproute (enabled, gateway: $GATEWAY_NAME, gatewayNamespace: $GATEWAY_NAMESPACE, hostnames: $HOSTNAMES)"
-  echo "Added: httproute.rules with an explicit backendRefs entry targeting ${BACKEND_SERVICE}:${BACKEND_PORT} (path prefix: $webcontext)"
-  echo "Everything else from your current values was preserved."
-  echo ""
-  echo "Note: if any [MANUAL] annotation above needs a custom rule (e.g. a redirect or"
-  echo "rewrite filter), add it under httproute.rules in $NEW_VALUES_FILE, alongside the"
-  echo "generated backendRefs entry."
-  echo ""
+  summary "Written to $NEW_VALUES_FILE"
+  detail "Removed: ingress, ingress-nginx, nginx"
+  detail "Added: httproute (enabled, gateway: $GATEWAY_NAME, gatewayNamespace: $GATEWAY_NAMESPACE, hostnames: $HOSTNAMES)"
+  detail "Added: httproute.rules with an explicit backendRefs entry targeting ${BACKEND_SERVICE}:${BACKEND_PORT} (path prefix: $webcontext)"
+  detail "Everything else from your current values was preserved"
+  warn "if any [MANUAL] annotation flagged above needs a custom rule (e.g. a redirect or rewrite filter), add it under httproute.rules in $NEW_VALUES_FILE, alongside the generated backendRefs entry"
+  end_section
 }
 
 print_generate_complete() {
-  echo "=== Generate Complete ==="
-  echo ""
-  echo "Files written:"
-  echo "  - $GATEWAY_FILE"
-  echo "  - $NEW_VALUES_FILE"
-  echo ""
-  echo "Next steps:"
-  echo "  1. Review $GATEWAY_FILE and $NEW_VALUES_FILE"
-  echo "  2. Apply the Gateway (kubectl apply -f $GATEWAY_FILE) once Istio is installed,"
-  echo "     or re-run this script with --mode apply"
-  echo "  3. When ready, run:"
-  echo "     $NEXT_STEP_CMD"
-  echo ""
-  echo "Important:"
-  echo "Please update your source-controlled values.yaml with the contents of"
-  echo "$NEW_VALUES_FILE, so future 'helm upgrade' runs keep using it."
+  box_top "Generate Complete"
+  summary "Files written:"
+  summary "  - $GATEWAY_FILE"
+  summary "  - $NEW_VALUES_FILE"
+  summary ""
+  summary "Next steps:"
+  summary ""
+  summary "  1. Review $GATEWAY_FILE and $NEW_VALUES_FILE"
+  summary ""
+  summary "  2. Apply the Gateway (kubectl apply -f $GATEWAY_FILE) once Istio is installed,"
+  summary "     or re-run this script with --mode apply"
+  summary ""
+  if [[ "$NGINX_CONTROLLER_PRESENT" == "true" ]]; then
+    summary "  3. The ingress-nginx controller is still running alongside Istio — verify Istio is"
+    summary "     handling traffic correctly before proceeding with the helm upgrade below,"
+    summary "     which will remove the ingress-nginx controller"
+    summary ""
+    summary "  4. When ready, run:"
+  else
+    summary "  3. When ready, run:"
+  fi
+  summary "     $NEXT_STEP_CMD"
+  summary ""
+  warn "Please update your source-controlled values.yaml with the contents of $NEW_VALUES_FILE, so future 'helm upgrade' runs keep using it."
+  summary ""
+  end_section
 }
 
 # Step 5: (apply mode only) install Gateway API CRDs + Istio unless --skip-istio
 install_gateway_api_and_istio() {
-  echo "Step 5: Installing Gateway API CRDs and Istio..."
+  box_top "Step 5: Installing Gateway API CRDs and Istio"
 
   if [[ "$SKIP_ISTIO" == "true" ]]; then
-    echo "--skip-istio set, assuming Gateway API CRDs and Istio are already installed"
-    echo ""
+    summary "--skip-istio set, assuming Gateway API CRDs and Istio are already installed"
+    end_section
     return 0
   fi
 
-  echo "Applying Gateway API CRDs..."
+  detail "Applying Gateway API CRDs..."
   if ! kubectl "${KUBECTL_CTX_ARGS[@]}" get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; then
     kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/standard-install.yaml"
   else
-    echo "Gateway API CRDs already present, skipping"
+    detail "Gateway API CRDs already present, skipping"
   fi
 
   helm repo add istio https://istio-release.storage.googleapis.com/charts >/dev/null 2>&1
@@ -867,49 +960,45 @@ install_gateway_api_and_istio() {
 
   kubectl "${KUBECTL_CTX_ARGS[@]}" create namespace istio-system --dry-run=client -o yaml | kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f -
 
-  echo "Installing istio-base..."
+  detail "Installing istio-base..."
   if ! helm "${HELM_CTX_ARGS[@]}" upgrade --install istio-base istio/base -n istio-system --wait --timeout=300s; then
-    echo "Error: failed to install istio-base" >&2
     rm -f "$CURRENT_VALUES_FILE"
-    exit 1
+    die "failed to install istio-base"
   fi
 
-  echo "Installing istiod..."
+  detail "Installing istiod..."
   if ! helm "${HELM_CTX_ARGS[@]}" upgrade --install istiod istio/istiod -n istio-system --wait --timeout=300s; then
-    echo "Error: failed to install istiod" >&2
     rm -f "$CURRENT_VALUES_FILE"
-    exit 1
+    die "failed to install istiod"
   fi
 
-  echo ""
+  summary "Gateway API CRDs and Istio (base + istiod) installed"
+  end_section
 }
 
 # Step 6: (apply mode only) apply the generated Gateway manifest
 apply_gateway_manifest() {
-  echo "Step 6: Applying Gateway manifest..."
+  box_top "Step 6: Applying Gateway manifest"
 
   kubectl "${KUBECTL_CTX_ARGS[@]}" create namespace "$GATEWAY_NAMESPACE" --dry-run=client -o yaml | kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f -
   if ! kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f "$GATEWAY_FILE"; then
-    echo "Error: failed to apply $GATEWAY_FILE" >&2
     rm -f "$CURRENT_VALUES_FILE"
-    exit 1
+    die "failed to apply $GATEWAY_FILE"
   fi
+
+  summary "Applied $GATEWAY_FILE"
+  end_section
 }
 
 print_apply_complete() {
-  echo ""
-  echo "=== Apply Complete ==="
-  echo ""
-  echo "Files written:"
-  echo "  - $GATEWAY_FILE (applied to the cluster)"
-  echo "  - $NEW_VALUES_FILE"
-  echo ""
-  echo "Next step: when ready, run:"
-  echo "$NEXT_STEP_CMD"
-  echo ""
-  echo "Important:"
-  echo "Please update your source-controlled values.yaml with the contents of"
-  echo "$NEW_VALUES_FILE, so future 'helm upgrade' runs keep using it."
+  box_top "Apply Complete"
+  summary "Files written:"
+  summary "  - $GATEWAY_FILE (applied to the cluster)"
+  summary "  - $NEW_VALUES_FILE"
+  summary "Next step: when ready, run:"
+  summary "$NEXT_STEP_CMD"
+  warn "Please update your source-controlled values.yaml with the contents of $NEW_VALUES_FILE, so future 'helm upgrade' runs keep using it."
+  end_section
 }
 
 main() {
