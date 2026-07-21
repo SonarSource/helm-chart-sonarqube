@@ -839,6 +839,10 @@ print_generate_complete() {
   echo "     or re-run this script with --mode apply"
   echo "  3. When ready, run:"
   echo "     $NEXT_STEP_CMD"
+  echo ""
+  echo "Important:"
+  echo "Please update your source-controlled values.yaml with the contents of"
+  echo "$NEW_VALUES_FILE, so future 'helm upgrade' runs keep using it."
 }
 
 # Step 5: (apply mode only) install Gateway API CRDs + Istio unless --skip-istio
@@ -853,7 +857,7 @@ install_gateway_api_and_istio() {
 
   echo "Applying Gateway API CRDs..."
   if ! kubectl "${KUBECTL_CTX_ARGS[@]}" get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1; then
-    kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/standard-install.yaml"
+    kubectl "${KUBECTL_CTX_ARGS[@]}" apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/standard-install.yaml"
   else
     echo "Gateway API CRDs already present, skipping"
   fi
@@ -902,6 +906,10 @@ print_apply_complete() {
   echo ""
   echo "Next step: when ready, run:"
   echo "$NEXT_STEP_CMD"
+  echo ""
+  echo "Important:"
+  echo "Please update your source-controlled values.yaml with the contents of"
+  echo "$NEW_VALUES_FILE, so future 'helm upgrade' runs keep using it."
 }
 
 main() {
