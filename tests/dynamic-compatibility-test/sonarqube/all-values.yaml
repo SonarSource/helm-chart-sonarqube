@@ -27,6 +27,19 @@ sonarProperties:
 elasticsearch:
   bootstrapChecks: false
 
+# tests/unit-compatibility-test/sonarqube/ingress-values.yaml
+ingress:
+  enabled: true
+  hosts:
+  - name: sonarqube.ourorg.com
+    path: /
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+  labels:
+    traffic-type: external
+
 # tests/unit-compatibility-test/sonarqube/install-plugins-values.yaml
 plugins:
  install:

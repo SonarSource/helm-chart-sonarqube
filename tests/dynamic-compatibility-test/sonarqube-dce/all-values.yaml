@@ -32,6 +32,19 @@ ApplicationNodes:
     sonar.log.level: DEBUG
   jwtSecret: someSecret
 
+# tests/unit-compatibility-test/sonarqube-dce/ingress-values.yaml
+ingress:
+  enabled: true
+  hosts:
+  - name: sonarqube.ourorg.com
+    path: /
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+  labels:
+    traffic-type: external
+
 # tests/unit-compatibility-test/sonarqube-dce/install-plugins-values.yaml
 plugins:
   install:
