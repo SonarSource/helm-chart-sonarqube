@@ -151,15 +151,18 @@ HELM_CTX_ARGS=()
 DETAIL_BUFFER=()
 
 box_top() {
-  printf '┌─ %s\n' "$1"
+  local title="$1"
+  printf '┌─ %s\n' "$title"
 }
 
 box_line() {
-  printf '│  %s\n' "$1"
+  local line="$1"
+  printf '│  %s\n' "$line"
 }
 
 box_warn() {
-  printf '│  ⚠ %s\n' "$1"
+  local message="$1"
+  printf '│  ⚠ %s\n' "$message"
 }
 
 box_bottom() {
@@ -169,21 +172,24 @@ box_bottom() {
 
 # Outcome line: always visible.
 summary() {
-  box_line "$1"
+  local line="$1"
+  box_line "$line"
 }
 
 # Actionable/manual-followup line: always visible.
 warn() {
-  box_warn "$1"
+  local message="$1"
+  box_warn "$message"
 }
 
 # Diagnostic line: visible immediately with --verbose, otherwise buffered and
 # only surfaced if this step later fails.
 detail() {
+  local line="$1"
   if [[ "$VERBOSE" == "true" ]]; then
-    box_line "$1"
+    box_line "$line"
   else
-    DETAIL_BUFFER+=("$1")
+    DETAIL_BUFFER+=("$line")
   fi
 }
 
@@ -196,6 +202,7 @@ end_section() {
 # Flushes any buffered detail lines, then prints the error and exits. Ensures
 # a failure always shows exactly the diagnostics that led to it.
 die() {
+  local message="$1"
   if [[ ${#DETAIL_BUFFER[@]} -gt 0 ]]; then
     local line
     for line in "${DETAIL_BUFFER[@]}"; do
@@ -203,7 +210,7 @@ die() {
     done
     DETAIL_BUFFER=()
   fi
-  box_warn "Error: $1"
+  box_warn "Error: $message"
   box_bottom
   exit 1
 }
@@ -995,6 +1002,11 @@ print_apply_complete() {
   summary "Files written:"
   summary "  - $GATEWAY_FILE (applied to the cluster)"
   summary "  - $NEW_VALUES_FILE"
+  if [[ "$NGINX_CONTROLLER_PRESENT" == "true" ]]; then
+    summary "The ingress-nginx controller is still running alongside Istio — verify Istio is"
+    summary "handling traffic correctly before proceeding with the helm upgrade below,"
+    summary "which will remove the ingress-nginx controller"
+  fi
   summary "Next step: when ready, run:"
   summary "$NEXT_STEP_CMD"
   warn "Please update your source-controlled values.yaml with the contents of $NEW_VALUES_FILE, so future 'helm upgrade' runs keep using it."
