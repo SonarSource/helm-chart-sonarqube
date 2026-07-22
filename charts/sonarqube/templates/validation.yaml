@@ -27,3 +27,22 @@ It is used to validate the values.yaml file before the installation starts.
         {{- include "sonarqube.fail" "The 'edition' must be either 'developer' or 'enterprise'." -}}
     {{- end -}}
 {{- end -}}
+
+{{/*
+* Validates the gVisor toggles (agenticHarness.gvisor.*).
+*/}}
+{{- $gvisor := .Values.agenticHarness.gvisor -}}
+{{- if and $gvisor.installer.enabled (not $gvisor.enabled) -}}
+    {{- include "sonarqube.fail" "agenticHarness.gvisor.installer.enabled=true requires agenticHarness.gvisor.enabled=true — the installer provisions runsc for the RuntimeClass, which is only created when gvisor.enabled is true." -}}
+{{- end -}}
+{{- if $gvisor.enabled -}}
+    {{- if not $gvisor.runtimeClassName -}}
+        {{- include "sonarqube.fail" "agenticHarness.gvisor.enabled=true requires a non-empty agenticHarness.gvisor.runtimeClassName." -}}
+    {{- end -}}
+    {{- if not $gvisor.handler -}}
+        {{- include "sonarqube.fail" "agenticHarness.gvisor.enabled=true requires a non-empty agenticHarness.gvisor.handler (the containerd runtime handler)." -}}
+    {{- end -}}
+{{- end -}}
+{{- if and $gvisor.installer.enabled (not $gvisor.installer.image.repository) -}}
+    {{- include "sonarqube.fail" "agenticHarness.gvisor.installer.enabled=true requires a non-empty agenticHarness.gvisor.installer.image.repository." -}}
+{{- end -}}

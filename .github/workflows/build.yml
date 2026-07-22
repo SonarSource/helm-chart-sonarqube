@@ -203,6 +203,8 @@ jobs:
         uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
       - name: Create kind cluster
         uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1.14.0
+        with:
+          config: .github/kind-config.yaml
       - name: Setup Kind cluster
         run: |
           kubectl cluster-info --context kind-chart-testing
@@ -244,6 +246,22 @@ jobs:
         run: |
           ct lint --config ${{ matrix.config }}
           ct install --namespace test --config ${{ matrix.config }} --debug
+      - name: Verify gVisor installed on the cluster
+        run: |
+          # Wait until the installer has labeled at least one node with gvisor.enabled=true, or fail after 2 minutes. 
+          # The installer DaemonSet runs on all worker nodes (empty tolerations = it does not tolerate the control-plane taint), 
+          # so at least one node should be labeled.
+          for _ in $(seq 1 24); do
+            [ -n "$(kubectl get nodes -l gvisor.enabled=true -o name 2>/dev/null)" ] && break
+            sleep 5
+          done
+          echo "=== nodes (gvisor.enabled column) ==="
+          kubectl get nodes -L gvisor.enabled
+          if [ -z "$(kubectl get nodes -l gvisor.enabled=true -o name 2>/dev/null)" ]; then
+            echo "::error::gVisor installer did not label any node — the installer DaemonSet failed" >&2
+            exit 1
+          fi
+          echo "gVisor verified: the installer registered runsc and labeled its node during ct install."
 
   sonarqube-packaging:
     needs: [kind-test,openshift-test]

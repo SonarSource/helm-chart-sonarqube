@@ -896,6 +896,45 @@ and set `persistence.hostPath.path` and `persistence.hostPath.type`.
 
 For overriding variables see: [Customizing the chart](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing)
 
+## gVisor sandboxing
+
+Optionally run workloads under the [gVisor](https://gvisor.dev/) (`runsc`) sandbox, via two
+**off-by-default** toggles under `agenticHarness.gvisor` (nested there because the agentic job
+runtimes are its main consumer; the feature is self-contained and any pod can use it):
+
+- **`enabled`** creates a cluster-scoped `RuntimeClass` (default name `gvisor`). Nothing is attached
+  to it automatically — opt a pod in with `runtimeClassName: gvisor`. Assumes `runsc` is already on
+  your nodes (out-of-band: node bootstrap, custom AMI, GKE Sandbox, Bottlerocket) and adds no
+  privileged workload. `RuntimeClass` is cluster-scoped, so give each release a distinct
+  `runtimeClassName` if you install more than one.
+- **`installer.enabled`** *additionally* deploys a **privileged** DaemonSet that installs `runsc`,
+  registers the containerd runtime, and labels each node once ready (requires `enabled=true`).
+  **Self-managed nodes only** — not managed control planes (GKE Autopilot, most managed EKS/AKS); on
+  GKE use GKE Sandbox instead. It mounts the host filesystem and restarts containerd, validating the
+  new config first and rolling back / failing closed on any problem, so a node is only labeled once
+  containerd is confirmed to serve `runsc`. Pods requesting the RuntimeClass stay `Pending` until a
+  node is labeled — expected, not a failure. Idempotent: nodes with `runsc` already provisioned are
+  left untouched except for the label.
+
+| Parameter | Description | Default |
+| --------- | ----------- | ------- |
+| `agenticHarness.gvisor.enabled` | Create the `RuntimeClass` and enable gVisor wiring | `false` |
+| `agenticHarness.gvisor.runtimeClassName` | Name of the cluster-scoped `RuntimeClass` | `gvisor` |
+| `agenticHarness.gvisor.handler` | containerd runtime handler the `RuntimeClass` targets | `runsc` |
+| `agenticHarness.gvisor.nodeSelector` | `RuntimeClass` scheduling selector, and the label the installer applies when ready (set `null` to disable pinning) | `{gvisor.enabled: "true"}` |
+| `agenticHarness.gvisor.installer.enabled` | Deploy the privileged installer DaemonSet (requires `gvisor.enabled=true`) | `false` |
+| `agenticHarness.gvisor.installer.image.repository` | Installer image repository | `debian` |
+| `agenticHarness.gvisor.installer.image.tag` | Installer image tag | `stable-slim` |
+| `agenticHarness.gvisor.installer.image.pullPolicy` | Installer image pull policy | `IfNotPresent` |
+| `agenticHarness.gvisor.installer.runscVersion` | Pinned gVisor release to install | `"20260706"` |
+| `agenticHarness.gvisor.installer.containerdConfigPath` | Path to the node's containerd config | `/etc/containerd/config.toml` |
+| `agenticHarness.gvisor.installer.runscConfig.network` | `runsc` network mode written to `runsc.toml` | `host` |
+| `agenticHarness.gvisor.installer.runscConfig.overlay2` | `runsc` overlay2 setting written to `runsc.toml` | `root:self,size=50g` |
+| `agenticHarness.gvisor.installer.resources` | Installer container resource requests/limits | `{}` |
+| `agenticHarness.gvisor.installer.nodeSelector` | Which nodes to install on (empty = all) | `{}` |
+| `agenticHarness.gvisor.installer.tolerations` | Installer DaemonSet tolerations | `[{operator: Exists}]` |
+| `agenticHarness.gvisor.installer.annotations` | Installer pod annotations | `{}` |
+
 ## License
 
 SonarQube Community Build is released under the [GNU Lesser General Public License, Version 3.0⁠,](http://www.gnu.org/licenses/lgpl.txt) and packaged with [SSALv1](https://www.sonarsource.com/license/ssal/) analyzers. SonarQube Server Developer and Enterprise are licensed under [SonarQube Server Terms and Conditions](https://www.sonarsource.com/legal/sonarqube/terms-and-conditions/).

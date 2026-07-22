@@ -1,0 +1,458 @@
+{{- if .Values.agenticHarness.gvisor.enabled }}
+{{- $gvisor := .Values.agenticHarness.gvisor }}
+{{- $installer := $gvisor.installer }}
+# gVisor (runsc) sandboxing for the Agentic Job Runtimes. gvisor.enabled renders the RuntimeClass
+# below, assuming runsc is installed out-of-band. gvisor.installer.enabled additionally renders a
+# privileged, host-mutating DaemonSet that installs it — a deliberately different trust tier from
+# the hardened runtimes; self-managed nodes only. See values.yaml for details.
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: {{ $gvisor.runtimeClassName }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agentic-gvisor
+handler: {{ $gvisor.handler }}
+{{- with $gvisor.nodeSelector }}
+scheduling:
+  nodeSelector: {{- toYaml . | nindent 4 }}
+{{- end }}
+{{- if $installer.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agentic-gvisor
+---
+# The installer patches a label onto its own Node so the RuntimeClass scheduler only admits runtime
+# pods once runsc is actually ready there. RBAC has no "own node only" scoping primitive, so this
+# grant is cluster-scoped: any pod using this ServiceAccount can get/patch ANY node, not just the
+# one it runs on. Accepted trust surface for this deliberately privileged, host-mutating installer.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agentic-gvisor
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agentic-gvisor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agentic-gvisor
+data:
+  # Container entrypoint. Runs in the installer pod, copies the host-facing scripts onto the node,
+  # and drives them via `chroot /host` so they use the node's own wget/systemctl/containerd.
+  run.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "[gvisor-installer] node=${NODE_NAME}"
+    mkdir -p /host/opt/gvisor
+    cp /scripts/install-gvisor.sh /host/opt/gvisor/install-gvisor.sh
+    cp /scripts/label-node.sh /host/opt/gvisor/label-node.sh
+    chmod +x /host/opt/gvisor/install-gvisor.sh /host/opt/gvisor/label-node.sh
+    echo "[gvisor-installer] running installer in host context"
+    chroot /host /bin/bash /opt/gvisor/install-gvisor.sh
+    {{- if $gvisor.nodeSelector }}
+    echo "[gvisor-installer] labeling node ${NODE_NAME}"
+    SA=/var/run/secrets/kubernetes.io/serviceaccount
+    mkdir -p /host/tmp/gvisor-sa
+    # EXIT trap (not a plain rm after the call) so the token is scrubbed from the host even if
+    # label-node.sh fails under set -e.
+    trap 'rm -rf /host/tmp/gvisor-sa' EXIT
+    cp "${SA}/token" /host/tmp/gvisor-sa/token
+    cp "${SA}/ca.crt" /host/tmp/gvisor-sa/ca.crt
+    chroot /host /bin/bash /opt/gvisor/label-node.sh
+    {{- end }}
+    echo "[gvisor-installer] done; idling to keep the DaemonSet pod Running"
+    exec tail -f /dev/null
+  # Runs on the host (via chroot). Idempotent and version-aware: skips the download when runsc is
+  # already present, and only appends the containerd runtime handler when not already registered.
+  # Validates the config before ever restarting into it, verifies containerd is actually healthy
+  # afterwards, and rolls back on any failure so a broken node is never left worse than it was found.
+  install-gvisor.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    CONTAINERD_CONFIG="{{ $installer.containerdConfigPath }}"
+    CONTAINERD_BACKUP="${CONTAINERD_CONFIG}.sonarqube-runsc.bak"
+    RUNSC_CONFIG="/etc/containerd/runsc.toml"
+    # Records that containerd was actually restarted for runsc. Presence of the config block on disk
+    # is NOT proof the running daemon loaded it (a restart may have failed on an earlier run), so we
+    # track a confirmed restart separately and retry until it succeeds.
+    RESTART_SENTINEL="/etc/containerd/.sonarqube-runsc-restarted"
+    GVISOR_RELEASE="{{ $installer.runscVersion }}"
+    RUNSC_HANDLER="{{ $gvisor.handler }}"
+    RUNSC_MARKER="ConfigPath = \"${RUNSC_CONFIG}\""
+    RUNSC_CONFIG_HEADER="# Managed by SonarQube Helm chart (agentic gVisor installer)"
+
+    echo "[install-gvisor] starting (release ${GVISOR_RELEASE})"
+
+    # Polls containerd's own state after a restart: is-active alone catches a crash-after-fork that a
+    # 0 exit from `systemctl restart` would mask, and crictl (when present) confirms CRI is actually
+    # serving the given runtime handler. Pass an empty handler to only require CRI to be up (used by
+    # recovery below, where a rollback has just removed the runsc handler). Only ever invoked from an
+    # `if`, so it can loop and test freely without tripping `set -e` in the caller.
+    wait_for_containerd_healthy() {
+      local handler="$1" deadline=$((SECONDS + 30))
+      while [[ "${SECONDS}" -lt "${deadline}" ]]; do
+        if nsenter -t 1 -m -u -i -n -p -- systemctl is-active --quiet containerd; then
+          if ! command -v crictl >/dev/null 2>&1; then
+            [[ -n "${handler}" ]] && echo "[install-gvisor] crictl unavailable; containerd is-active but \"${handler}\" could not be positively confirmed"
+            return 0
+          fi
+          if crictl_info="$(crictl info 2>/dev/null)"; then
+            if [[ -z "${handler}" ]] || grep -q "\"${handler}\"" <<<"${crictl_info}"; then
+              return 0
+            fi
+          fi
+        fi
+        sleep 2
+      done
+      return 1
+    }
+
+    # File-only rollback: restores config.toml to its pre-run state without restarting containerd.
+    # Used before any restart happens (the config-dump preflight below), so the still-running daemon
+    # is never touched. Every risky command here is individually guarded so this function always
+    # returns 0 and is safe to call as a bare statement under `set -e`.
+    rollback_config() {
+      if [[ "${config_preexisted}" == true ]]; then
+        if cp -a "${CONTAINERD_BACKUP}" "${CONTAINERD_CONFIG}"; then
+          echo "[install-gvisor] restored ${CONTAINERD_CONFIG} from backup"
+        else
+          echo "[install-gvisor] WARNING: failed to restore ${CONTAINERD_CONFIG} from ${CONTAINERD_BACKUP}" >&2
+        fi
+      else
+        rm -f "${CONTAINERD_CONFIG}"
+        echo "[install-gvisor] removed ${CONTAINERD_CONFIG} seeded by this run"
+      fi
+    }
+
+    # Full recovery after a restart has already happened: rolls the config back, restarts containerd
+    # once more, and confirms it comes back healthy (handler check intentionally skipped — rollback
+    # removes runsc, so a healthy daemon here means "restored", not "runsc loaded"). Note: when the
+    # runsc block already existed on disk from a prior run (restart_needed set by the crictl-unknown
+    # or handler-absent branches below, not by a fresh append this run), there is no fresh mutation to
+    # revert; this still fails closed (CRITICAL + exit) rather than leaving containerd broken. Always
+    # reaches its final log line and returns 0, so it is safe to call as a bare statement too.
+    rollback_and_recover() {
+      rollback_config
+      echo "[install-gvisor] restarting containerd to recover from a failed runsc install"
+      nsenter -t 1 -m -u -i -n -p -- systemctl restart containerd || true
+      if wait_for_containerd_healthy ""; then
+        echo "[install-gvisor] node restored to its pre-install state; containerd healthy"
+      else
+        echo "[install-gvisor] CRITICAL: containerd did not recover even after rollback; backup at ${CONTAINERD_BACKUP} (or this run seeded ${CONTAINERD_CONFIG} directly — remove it manually); manual intervention required" >&2
+      fi
+    }
+
+    # Install runsc + containerd shim into /usr/local/bin, world-readable/executable (runsc re-execs
+    # itself as an unprivileged user). Skipped if already present.
+    if command -v runsc >/dev/null 2>&1; then
+      echo "[install-gvisor] runsc already present, skipping download"
+    else
+      workdir="$(mktemp -d)"
+      pushd "${workdir}" >/dev/null
+      (
+        set -e
+        ARCH="$(uname -m)"
+        URL="https://storage.googleapis.com/gvisor/releases/release/${GVISOR_RELEASE}/${ARCH}"
+        # Fetch over HTTPS without following redirects — a redirect could serve the download from an
+        # insecure/attacker-controlled location (the sha512 check below is the backstop regardless).
+        # Prefer curl (present on more node images, e.g. kind's); fall back to wget.
+        if command -v curl >/dev/null 2>&1; then
+          fetch() { curl --fail --silent --show-error --proto '=https' -o "$2" "$1"; }
+        elif command -v wget >/dev/null 2>&1; then
+          fetch() { wget --max-redirect=0 --quiet -O "$2" "$1"; }
+        else
+          echo "[install-gvisor] ERROR: need curl or wget on the node to download runsc" >&2
+          exit 1
+        fi
+        for f in runsc runsc.sha512 containerd-shim-runsc-v1 containerd-shim-runsc-v1.sha512; do
+          fetch "${URL}/${f}" "${f}"
+        done
+        sha512sum -c runsc.sha512 -c containerd-shim-runsc-v1.sha512
+        rm -f -- *.sha512
+        chmod a+rx runsc containerd-shim-runsc-v1
+        mv runsc containerd-shim-runsc-v1 /usr/local/bin
+      )
+      popd >/dev/null
+      rm -rf "${workdir}"
+      echo "[install-gvisor] installed runsc to /usr/local/bin"
+    fi
+
+    # Write the runsc runtime config (flags passed to the shim via ConfigPath below). Only touch it
+    # when absent or previously written by us, so a runsc.toml provisioned out-of-band stays intact.
+    if [[ ! -f "${RUNSC_CONFIG}" ]] || head -1 "${RUNSC_CONFIG}" | grep -qF "${RUNSC_CONFIG_HEADER}"; then
+      {
+        echo "${RUNSC_CONFIG_HEADER}"
+        echo "[runsc_config]"
+    {{- range $k, $v := $installer.runscConfig }}
+        echo '  {{ $k }} = "{{ $v }}"'
+    {{- end }}
+      } > "${RUNSC_CONFIG}"
+      echo "[install-gvisor] wrote ${RUNSC_CONFIG}"
+    else
+      echo "[install-gvisor] ${RUNSC_CONFIG} exists and was not created by this installer; leaving it untouched"
+    fi
+
+    # Register the runsc runtime with containerd. Seed from `containerd config default` first if no
+    # config file exists yet — appending to a missing file would drop the default runtime/sandbox
+    # image. Skip if already registered; otherwise back up the file, append only the runsc tables
+    # (never a `version =` line, picking the CRI plugin path for containerd's config v2 vs v3), and
+    # validate the result parses before ever restarting into it — a malformed append is caught here,
+    # while the daemon is still running on its old, unmodified config.
+    restart_needed=false
+    config_preexisted=true
+    if [[ ! -f "${CONTAINERD_CONFIG}" ]]; then
+      echo "[install-gvisor] ${CONTAINERD_CONFIG} not found; seeding from 'containerd config default'"
+      mkdir -p "$(dirname "${CONTAINERD_CONFIG}")"
+      containerd config default > "${CONTAINERD_CONFIG}"
+      config_preexisted=false
+    fi
+    if grep -qF "${RUNSC_MARKER}" "${CONTAINERD_CONFIG}"; then
+      echo "[install-gvisor] runsc block already present in ${CONTAINERD_CONFIG}"
+    else
+      if [[ "${config_preexisted}" == true ]]; then
+        cp -a "${CONTAINERD_CONFIG}" "${CONTAINERD_BACKUP}"
+      fi
+
+      config_version="$(grep -E '^[[:space:]]*version[[:space:]]*=' "${CONTAINERD_CONFIG}" | head -1 | grep -oE '[0-9]+' | head -1 || true)"
+      if [[ -z "${config_version}" ]]; then
+        containerd_major="$(containerd --version 2>/dev/null | grep -oE 'v[0-9]+' | head -1 | tr -d 'v' || true)"
+        if [[ -n "${containerd_major}" ]] && [[ "${containerd_major}" -ge 2 ]] 2>/dev/null; then
+          config_version=3
+        else
+          config_version=2
+        fi
+        echo "[install-gvisor] no version line in ${CONTAINERD_CONFIG}; inferred config version=${config_version} from containerd major ${containerd_major:-unknown}"
+      else
+        echo "[install-gvisor] detected containerd config version=${config_version}"
+      fi
+
+      if [[ "${config_version}" -ge 3 ]] 2>/dev/null; then
+        cri_plugin='io.containerd.cri.v1.runtime'
+      else
+        cri_plugin='io.containerd.grpc.v1.cri'
+      fi
+      echo "[install-gvisor] registering runsc runtime under plugin \"${cri_plugin}\""
+
+      cat >>"${CONTAINERD_CONFIG}" <<EOF
+
+    # gVisor sandbox runtime (managed by SonarQube Helm chart)
+    [plugins."${cri_plugin}".containerd.runtimes.${RUNSC_HANDLER}]
+      runtime_type = "io.containerd.runsc.v1"
+    [plugins."${cri_plugin}".containerd.runtimes.${RUNSC_HANDLER}.options]
+      TypeUrl = "io.containerd.runsc.v1.options"
+      ConfigPath = "${RUNSC_CONFIG}"
+    EOF
+      echo "[install-gvisor] added runsc runtime to ${CONTAINERD_CONFIG}"
+
+      gvisor_dump_err="$(mktemp)"
+      if ! containerd --config "${CONTAINERD_CONFIG}" config dump >/dev/null 2>"${gvisor_dump_err}"; then
+        echo "[install-gvisor] ERROR: ${CONTAINERD_CONFIG} failed to parse after appending the runsc block; aborting before restart" >&2
+        cat "${gvisor_dump_err}" >&2
+        rm -f "${gvisor_dump_err}"
+        rollback_config
+        exit 1
+      fi
+      rm -f "${gvisor_dump_err}"
+
+      restart_needed=true
+    fi
+
+    # Decide whether containerd needs restarting to load the runsc handler. nsenter (needs hostPID)
+    # is used because systemctl can't reach the host's systemd bus from this chroot. Config on disk
+    # doesn't prove containerd loaded it, so prefer crictl's live view of the running daemon, falling
+    # back to a restart sentinel when crictl is unavailable.
+    if [[ "${restart_needed}" != true ]]; then
+      runsc_state=unknown
+      if command -v crictl >/dev/null 2>&1; then
+        # Ask the running containerd directly; a crictl error leaves the state "unknown".
+        if crictl_info="$(crictl info 2>/dev/null)"; then
+          if grep -q "\"${RUNSC_HANDLER}\"" <<<"${crictl_info}"; then
+            runsc_state=loaded
+          else
+            runsc_state=absent
+          fi
+        fi
+      fi
+      case "${runsc_state}" in
+        loaded)
+          echo "[install-gvisor] running containerd already exposes the \"${RUNSC_HANDLER}\" runtime; no restart needed"
+          ;;
+        absent)
+          echo "[install-gvisor] running containerd does not expose \"${RUNSC_HANDLER}\" yet; restart required"
+          restart_needed=true
+          ;;
+        unknown)
+          # Fall back to sentinel + config ownership: only retry on nodes this installer owns, since
+          # out-of-band nodes already have runsc loaded and must not be bounced.
+          owned_by_us=false
+          if [[ -f "${RUNSC_CONFIG}" ]] && head -1 "${RUNSC_CONFIG}" | grep -qF "${RUNSC_CONFIG_HEADER}"; then
+            owned_by_us=true
+          fi
+          if [[ "${owned_by_us}" == true && ! -f "${RESTART_SENTINEL}" ]]; then
+            echo "[install-gvisor] crictl unavailable; installer-owned node without restart sentinel — restarting to be safe"
+            restart_needed=true
+          else
+            echo "[install-gvisor] crictl unavailable; leaving containerd as-is (out-of-band runsc, or restart already recorded)"
+          fi
+          ;;
+      esac
+    fi
+
+    # Restart and verify before ever labeling the node: a restart command exiting 0 is not proof
+    # containerd came back (it can crash-loop immediately after), so gate the sentinel on
+    # wait_for_containerd_healthy actually confirming the runsc handler is live. Any failure here —
+    # the restart command itself, or the post-restart health check — rolls the config back and
+    # retries once more before failing closed; `set -e` then aborts before labeling, so a labeled
+    # node can always actually run runsc.
+    if [[ "${restart_needed}" == true ]]; then
+      echo "[install-gvisor] restarting containerd to load the runsc runtime"
+      if ! nsenter -t 1 -m -u -i -n -p -- systemctl restart containerd; then
+        echo "[install-gvisor] ERROR: systemctl restart containerd failed" >&2
+        rollback_and_recover || true
+        exit 1
+      fi
+      if wait_for_containerd_healthy "${RUNSC_HANDLER}"; then
+        touch "${RESTART_SENTINEL}"
+        echo "[install-gvisor] containerd restarted and healthy; runsc runtime active"
+      else
+        echo "[install-gvisor] ERROR: containerd not healthy after restart (runsc \"${RUNSC_HANDLER}\" not confirmed)" >&2
+        rollback_and_recover || true
+        exit 1
+      fi
+    else
+      echo "[install-gvisor] containerd already serving runsc; nothing to do"
+    fi
+
+    echo "[install-gvisor] done"
+  # Runs on the host after a successful install: labels this Node so the RuntimeClass scheduler
+  # admits runtime pods here, using the mounted ServiceAccount token (curl, or wget as fallback).
+  label-node.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    TOKEN="$(cat /tmp/gvisor-sa/token)"
+    CACERT="/tmp/gvisor-sa/ca.crt"
+    API="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS:-443}"
+    PATCH='{{ dict "metadata" (dict "labels" $gvisor.nodeSelector) | toJson }}'
+    if command -v curl >/dev/null 2>&1; then
+      curl --fail --silent --show-error --cacert "${CACERT}" \
+        -H "Authorization: Bearer ${TOKEN}" \
+        -H "Content-Type: application/strategic-merge-patch+json" \
+        -X PATCH --data "${PATCH}" \
+        "${API}/api/v1/nodes/${NODE_NAME}" >/dev/null
+    else
+      wget -q --ca-certificate="${CACERT}" \
+        --header="Authorization: Bearer ${TOKEN}" \
+        --header="Content-Type: application/strategic-merge-patch+json" \
+        --method=PATCH --body-data="${PATCH}" \
+        -O- "${API}/api/v1/nodes/${NODE_NAME}" >/dev/null
+    fi
+    echo "[label-node] labeled ${NODE_NAME}"
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agentic-gvisor
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-agentic-gvisor-installer
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      {{- with $installer.annotations }}
+      annotations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app: {{ include "sonarqube.name" . }}-agentic-gvisor-installer
+        release: {{ .Release.Name }}
+    spec:
+      # Needed so `nsenter -t 1` can reach the host's systemd to restart containerd; chroot alone
+      # cannot reach the host systemd bus.
+      hostPID: true
+      serviceAccountName: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+      {{- /* Global image pull secrets are addressed nil-safely (default the image map to an empty
+             dict first) so this template also renders in charts with no top-level .Values.image —
+             e.g. the DCE chart, which keys images per node group. */}}
+      {{- $globalImage := .Values.image | default dict }}
+      {{- $globalPullSecret := $globalImage.pullSecret | default "" }}
+      {{- $globalPullSecrets := $globalImage.pullSecrets | default list }}
+      {{- if or $globalPullSecrets $globalPullSecret $installer.image.pullSecrets }}
+      imagePullSecrets:
+        {{- if $globalPullSecret }}
+        - name: {{ $globalPullSecret }}
+        {{- end }}
+        {{- with $globalPullSecrets }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with $installer.image.pullSecrets }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- with $installer.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $installer.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: gvisor-installer
+          image: {{ printf "%s:%s" $installer.image.repository (default "latest" $installer.image.tag) }}
+          imagePullPolicy: {{ $installer.image.pullPolicy }}
+          command: ["/bin/bash", "/scripts/run.sh"]
+          # Privileged by design: mounts the host filesystem to install runsc and restart containerd.
+          # The deliberate trust-tier exception called out in values.yaml — not hardened like the runtimes.
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: host-root
+              mountPath: /host
+            - name: scripts
+              mountPath: /scripts
+          {{- with $installer.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: host-root
+          hostPath:
+            path: /
+            type: Directory
+        - name: scripts
+          configMap:
+            name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+            defaultMode: 0755
+{{- end }}
+{{- end }}
