@@ -110,7 +110,7 @@ func TestShouldUseImageTag(t *testing.T) {
 
 	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, "sonarqube:2026.3.1-enterprise", actualContainers[0].Image)
+	assert.Equal(t, "sonarqube:2026.4.0-enterprise", actualContainers[0].Image)
 }
 
 func TestCustomCommunityTag(t *testing.T) {
@@ -156,7 +156,7 @@ func TestDeveloperEdition(t *testing.T) {
 	rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/test-developer-edition.yaml", newSQHelmOptions())
 	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, "sonarqube:2026.3.1-developer", actualContainers[0].Image)
+	assert.Equal(t, "sonarqube:2026.4.0-developer", actualContainers[0].Image)
 }
 
 func findVolumeByName(volumes []v1.Volume, name string) *v1.Volume {
