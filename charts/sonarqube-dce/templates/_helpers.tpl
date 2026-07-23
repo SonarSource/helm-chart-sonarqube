@@ -46,6 +46,14 @@ Create the fully qualified name for the MCP service.
 {{- printf "%s-mcp" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/*
+Create the fully qualified name for the Agentic Harness gVisor installer.
+Usage: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+*/}}
+{{- define "sonarqube.agentic.gvisor.fullname" -}}
+{{- printf "%s-agentic-gvisor-installer" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
 {{- define "accountDeprecation" -}}
 {{- $map1 := .Values.setAdminPassword -}}
 {{- $map2 := .Values.account -}}
