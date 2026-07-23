@@ -714,3 +714,45 @@ mcp:
 
   # Set annotations for the MCP pod.
   annotations: {}
+
+# gVisor (runsc) sandboxing for untrusted workloads. Nested under `agenticHarness` because the
+# agentic job runtimes (shipped separately) are its primary consumer, but it is fully usable on its
+# own: it installs runsc on nodes and/or creates a cluster-scoped RuntimeClass that ANY pod can opt
+# into via `runtimeClassName`. Nothing in this chart auto-attaches to it. Both toggles are off by
+# default. See README ("gVisor sandboxing") for caveats — notably the installer is self-managed
+# nodes only and runs a privileged, host-mutating DaemonSet.
+agenticHarness:
+  gvisor:
+    enabled: false
+    # Name of the RuntimeClass created + referenced by runtimes. RuntimeClass is cluster-scoped:
+    # installing this chart as multiple releases/namespaces with the same value will collide
+    # (the second install fails, RuntimeClass owned by the first release) — give each release a
+    # distinct runtimeClassName if you do that.
+    runtimeClassName: gvisor
+    handler: runsc                    # containerd runtime handler
+    # RuntimeClass.scheduling.nodeSelector, and (when installer.enabled) the label the installer
+    # applies once runsc is ready. Use `null`, not `{}`, to disable node pinning — Helm merges maps.
+    nodeSelector:
+      gvisor.enabled: "true"
+    installer:
+      enabled: false                  # deploy the privileged installer DaemonSet (needs gvisor.enabled)
+      image:
+        repository: debian
+        tag: stable-slim
+        pullPolicy: IfNotPresent
+        # pullSecrets:
+        #   - name: my-repo-secret
+      # Pinned gVisor release for reproducible installs (not "latest"); bump deliberately.
+      # See https://github.com/google/gvisor/tags for the release list.
+      runscVersion: "20260706"
+      containerdConfigPath: /etc/containerd/config.toml
+      # Rendered to /etc/containerd/runsc.toml. network=host avoids gVisor's netstack breaking
+      # cluster DNS/kube-proxy — unrelated to Kubernetes hostNetwork; pod isolation is unaffected.
+      runscConfig:
+        network: host
+        overlay2: "root:self,size=50g"
+      resources: {}
+      nodeSelector: {}                # which nodes to install on (empty = all)
+      tolerations:                    # run everywhere incl. tainted/control-plane nodes
+        - operator: Exists
+      annotations: {}

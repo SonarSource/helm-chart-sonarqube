@@ -29,3 +29,20 @@
 {{- fail "\n ** The values.yaml file is not valid. ** \n jdbcOverwrite.jdbcUrl is still set to the default placeholder value 'jdbc:postgresql://myPostgres/myDatabase'.\n Please provide a valid JDBC URL for your PostgreSQL database." -}}
   {{- end -}}
 
+{{/* Validation for the gVisor toggles (agenticHarness.gvisor.*). The sub-options are only checked
+     when gVisor is enabled: with gvisor.enabled=false the whole feature renders nothing, so a
+     leftover installer.enabled (e.g. a base values file overlaid by one that disables gVisor) is
+     inert and must not fail the install. */}}
+{{- $gvisor := .Values.agenticHarness.gvisor -}}
+{{- if $gvisor.enabled -}}
+  {{- if not $gvisor.runtimeClassName -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agenticHarness.gvisor.enabled=true requires a non-empty agenticHarness.gvisor.runtimeClassName." -}}
+  {{- end -}}
+  {{- if not $gvisor.handler -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agenticHarness.gvisor.enabled=true requires a non-empty agenticHarness.gvisor.handler (the containerd runtime handler)." -}}
+  {{- end -}}
+  {{- if and $gvisor.installer.enabled (not $gvisor.installer.image.repository) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agenticHarness.gvisor.installer.enabled=true requires a non-empty agenticHarness.gvisor.installer.image.repository." -}}
+  {{- end -}}
+{{- end -}}
+
