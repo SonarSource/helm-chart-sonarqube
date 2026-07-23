@@ -20,12 +20,13 @@
 WARNING: 
          Please note that the SonarQube images run with a non-root user (uid=1000) belonging to the root group (guid=0). In this way, the chart can support arbitrary user ids as recommended in OpenShift.
          Please visit https://docs.openshift.com/container-platform/4.14/openshift_images/create-images.html#use-uid_create-images for more information.
-{{ if or (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled") }}
-WARNING: The ingress-nginx controller dependency is deprecated. A replacement for this dependency will be included in a future release.
-         Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#ingress-use-cases for more information.
-{{- end }}
 {{ if hasKey .Values.logging "jsonOutput" }}
 WARNING: The logging.jsonOutput value is deprecated in favor of the ENV var SONAR_LOG_JSONOUTPUT or the sonar.properties's sonar.log.jsonOutput.
 {{ end }}
 WARNING: If your values' file contains values under "ApplicationNodes", please note that this key is DEPRECATED and should be renamed to "applicationNodes".
          Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#applicationnodes-renamed-to-applicationnodes for more information.
+{{ if or (.Values.nginx | default dict).enabled ((index .Values "ingress-nginx") | default dict).enabled }}
+WARNING: This chart no longer bundles the ingress-nginx controller. Setting nginx.enabled/ingress-nginx.enabled no longer has any effect.
+         Run gateway-api-migration-scripts/nginx-to-istio-migration.sh to migrate to Gateway API using Istio (the controller our script sets up), or set httproute.enabled and bring your own Gateway API controller of choice, or set ingress.enabled and bring your own self-managed ingress controller.
+         Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#ingress-usage for more information.
+{{- end }}
