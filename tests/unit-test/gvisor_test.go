@@ -252,18 +252,15 @@ func TestGvisorInstallerSafetyNets(t *testing.T) {
 	}
 }
 
-// The four invalid toggle combinations must each fail closed at template time with a specific message.
+// The three invalid toggle combinations must each fail closed at template time with a specific
+// message. (installer.enabled without gvisor.enabled is intentionally NOT here: gvisor.enabled=false
+// renders nothing, so the leftover installer flag is inert and must not fail — see validation.yaml.)
 func TestGvisorValidationToggles(t *testing.T) {
 	cases := []struct {
 		name          string
 		fixture       string
 		expectedError string
 	}{
-		{
-			name:          "installer without gvisor.enabled",
-			fixture:       "gvisor-installer-without-gvisor.yaml",
-			expectedError: "agenticHarness.gvisor.installer.enabled=true requires agenticHarness.gvisor.enabled=true",
-		},
 		{
 			name:          "empty runtimeClassName",
 			fixture:       "gvisor-empty-runtimeclassname.yaml",
