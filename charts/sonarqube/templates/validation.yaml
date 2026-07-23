@@ -29,12 +29,12 @@ It is used to validate the values.yaml file before the installation starts.
 {{- end -}}
 
 {{/*
-* Validates the gVisor toggles (agenticHarness.gvisor.*).
+* Validates the gVisor toggles (agenticHarness.gvisor.*). The sub-options are only checked when
+* gVisor is enabled: with gvisor.enabled=false the whole feature renders nothing, so a leftover
+* installer.enabled (e.g. a base values file overlaid by one that disables gVisor) is inert and
+* must not fail the install.
 */}}
 {{- $gvisor := .Values.agenticHarness.gvisor -}}
-{{- if and $gvisor.installer.enabled (not $gvisor.enabled) -}}
-    {{- include "sonarqube.fail" "agenticHarness.gvisor.installer.enabled=true requires agenticHarness.gvisor.enabled=true — the installer provisions runsc for the RuntimeClass, which is only created when gvisor.enabled is true." -}}
-{{- end -}}
 {{- if $gvisor.enabled -}}
     {{- if not $gvisor.runtimeClassName -}}
         {{- include "sonarqube.fail" "agenticHarness.gvisor.enabled=true requires a non-empty agenticHarness.gvisor.runtimeClassName." -}}
@@ -42,7 +42,7 @@ It is used to validate the values.yaml file before the installation starts.
     {{- if not $gvisor.handler -}}
         {{- include "sonarqube.fail" "agenticHarness.gvisor.enabled=true requires a non-empty agenticHarness.gvisor.handler (the containerd runtime handler)." -}}
     {{- end -}}
-{{- end -}}
-{{- if and $gvisor.installer.enabled (not $gvisor.installer.image.repository) -}}
-    {{- include "sonarqube.fail" "agenticHarness.gvisor.installer.enabled=true requires a non-empty agenticHarness.gvisor.installer.image.repository." -}}
+    {{- if and $gvisor.installer.enabled (not $gvisor.installer.image.repository) -}}
+        {{- include "sonarqube.fail" "agenticHarness.gvisor.installer.enabled=true requires a non-empty agenticHarness.gvisor.installer.image.repository." -}}
+    {{- end -}}
 {{- end -}}
