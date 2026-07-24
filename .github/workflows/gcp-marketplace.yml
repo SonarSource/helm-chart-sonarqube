@@ -128,8 +128,10 @@ jobs:
   # Mirrors Google's functionality test: no external database and no parameter override, so the
   # deployer relies on the data-test schema defaults and the /data-test/chart PostgreSQL overlay.
   # mpdev verify provisions and tears down its own ephemeral apptest-* namespace.
+  # Runs after (not alongside) verify-gcp-staging-app so only one DCE stack occupies the
+  # autoscaling staging cluster at a time, avoiding node-cap contention.
   verify-gcp-staging-app-selfcontained:
-    needs: [build-gcp-staging-app]
+    needs: [verify-gcp-staging-app]
     runs-on: github-ubuntu-latest-s
     name: Verify GCP Staging App (self-contained)
     permissions:
