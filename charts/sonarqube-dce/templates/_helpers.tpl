@@ -589,3 +589,112 @@ User-provided properties take precedence over automatically generated ones.
 {{- end -}}
 {{- toYaml $merged -}}
 {{- end -}}
+
+{{/*
+Create the fully qualified name for the Agentic Harness orchestrator.
+*/}}
+{{- define "sonarqube.agentic.orchestrator.fullname" -}}
+{{- printf "%s-agentic-orchestrator" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Create the fully qualified name for an Agentic Job Runtime family.
+Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
+*/}}
+{{- define "sonarqube.agentic.runtime.fullname" -}}
+{{- printf "%s-agentic-runtime-%s" (include "sonarqube.fullname" .ctx) .family | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Name of the ServiceAccount for the Agentic Harness orchestrator.
+When agenticHarness.serviceAccount.create is true, use the pinned orchestrator.serviceAccount.name
+(defaulting to the orchestrator fullname). Otherwise fall back to the main SonarQube ServiceAccount,
+so deployments that don't opt in to dedicated agentic SAs are unaffected.
+*/}}
+{{- define "sonarqube.agentic.orchestrator.serviceAccountName" -}}
+{{- if .Values.agenticHarness.serviceAccount.create -}}
+{{- dig "serviceAccount" "name" "" .Values.agenticHarness.orchestrator | default (include "sonarqube.agentic.orchestrator.fullname" .) -}}
+{{- else -}}
+{{- include "sonarqube.serviceAccountName" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Name of the ServiceAccount for an Agentic Job Runtime family.
+Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
+Same create / pinned-name / fallback logic as the orchestrator helper above.
+*/}}
+{{- define "sonarqube.agentic.runtime.serviceAccountName" -}}
+{{- $ctx := .ctx -}}
+{{- $family := .family -}}
+{{- if $ctx.Values.agenticHarness.serviceAccount.create -}}
+{{- dig "serviceAccount" "name" "" (get $ctx.Values.agenticHarness.runtimes $family) | default (include "sonarqube.agentic.runtime.fullname" (dict "ctx" $ctx "family" $family)) -}}
+{{- else -}}
+{{- include "sonarqube.serviceAccountName" $ctx -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+URL the app nodes use to reach the shared Agent Orchestrator.
+*/}}
+{{- define "sonarqube.agentic.orchestrator.url" -}}
+{{- printf "http://%s:%d" (include "sonarqube.agentic.orchestrator.fullname" .) (int .Values.agenticHarness.orchestrator.port) -}}
+{{- end -}}
+
+{{/*
+In-cluster URL of the SonarQube service the Agentic Orchestrator talks to (AGENTIC_SONARQUBE_URL
+and the wait-for-sonarqube init container). Always the co-deployed SonarQube service; honours the
+web context path.
+*/}}
+{{- define "sonarqube.agentic.sonarqube.url" -}}
+{{- printf "http://%s:%d%s" (include "sonarqube.fullname" .) (int .Values.service.externalPort) (trimSuffix "/" (include "sonarqube.webcontext" .)) -}}
+{{- end -}}
+
+{{/*
+Push URL the orchestrator uses to dispatch jobs to one Agentic Job Runtime family.
+Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
+*/}}
+{{- define "sonarqube.agentic.runtime.pushUrl" -}}
+{{- $port := (get .ctx.Values.agenticHarness.runtimes .family).port -}}
+{{- printf "http://%s:%d/jobs" (include "sonarqube.agentic.runtime.fullname" .) (int $port) -}}
+{{- end -}}
+
+{{/*
+Parse the host:port endpoint out of jdbcOverwrite.jdbcUrl (jdbc:postgresql://host:port/db[?params]),
+for the Agentic Orchestrator's CORE_DB_READ_WRITE_ENDPOINT env, since it reuses SonarQube's own DB.
+*/}}
+{{- define "sonarqube.agentic.jdbc.endpoint" -}}
+{{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" .Values.jdbcOverwrite.jdbcUrl "" -}}
+{{- (splitn "/" 2 $stripped)._0 -}}
+{{- end -}}
+
+{{/*
+Parse the database name out of jdbcOverwrite.jdbcUrl (jdbc:postgresql://host:port/db[?params]),
+for the Agentic Orchestrator's CORE_DB_NAME env.
+*/}}
+{{- define "sonarqube.agentic.jdbc.dbname" -}}
+{{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" .Values.jdbcOverwrite.jdbcUrl "" -}}
+{{- $rest := (splitn "/" 2 $stripped)._1 | default "" -}}
+{{- regexReplaceAll "\\?.*$" $rest "" -}}
+{{- end -}}
+
+{{/*
+Render a single NetworkPolicy egress peer for one agenticHarness `egressAllow` entry
+(either `{ cidr }` or `{ podSelector [, namespaceSelector] }`). A NetworkPolicy ipBlock rule
+can never target a Service's ClusterIP - kube-proxy DNATs to the backing pod IP before policy
+enforcement sees the packet - so in-cluster dependencies must use podSelector, not cidr.
+Output is unindented; callers should pipe through `indent`/`nindent` to place it under a `to:` list.
+*/}}
+{{- define "sonarqube.agentic.egressAllow.peer" -}}
+{{- if .cidr -}}
+- ipBlock:
+    cidr: {{ .cidr }}
+{{- else -}}
+- podSelector:
+{{ toYaml .podSelector | indent 4 }}
+{{- if .namespaceSelector }}
+  namespaceSelector:
+{{ toYaml .namespaceSelector | indent 4 }}
+{{- end }}
+{{- end }}
+{{- end }}

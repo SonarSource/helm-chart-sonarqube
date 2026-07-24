@@ -31,6 +31,7 @@ spec:
   selector:
     app: {{ template "sonarqube.name" . }}
     release: {{ .Release.Name }}
+    sonarqube.datacenter/type: "app"
   {{- if eq .Values.service.type "LoadBalancer" }}
   {{- if .Values.service.loadBalancerSourceRanges }}
   loadBalancerSourceRanges:
@@ -90,6 +91,7 @@ spec:
   selector:
     app: {{ template "sonarqube.name" . }}
     release: {{ .Release.Name }}
+    sonarqube.datacenter/type: "app"
 
 
 ---
