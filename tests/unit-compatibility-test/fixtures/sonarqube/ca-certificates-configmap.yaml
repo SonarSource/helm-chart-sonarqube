@@ -7,7 +7,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.3
+    chart: sonarqube-2026.1.4
     release: ca-certificates-configmap.yaml
     heritage: Helm
 type: Opaque
@@ -22,7 +22,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.3
+    chart: sonarqube-2026.1.4
     release: ca-certificates-configmap.yaml
     heritage: Helm
 type: Opaque
@@ -41,7 +41,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.3
+    chart: sonarqube-2026.1.4
     release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.3
+    chart: sonarqube-2026.1.4
     release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
@@ -101,7 +101,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-install-oracle-jdbc-driver
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.3
+    chart: sonarqube-2026.1.4
     release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.3
+    chart: sonarqube-2026.1.4
     release: ca-certificates-configmap.yaml
     heritage: Helm
 data:
@@ -130,7 +130,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.3
+    chart: sonarqube-2026.1.4
     release: ca-certificates-configmap.yaml
     heritage: Helm
 spec:
@@ -151,7 +151,7 @@ metadata:
   name: ca-certificates-configmap.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.3
+    chart: sonarqube-2026.1.4
     release: ca-certificates-configmap.yaml
     heritage: Helm
     app.kubernetes.io/name: ca-certificates-configmap.yaml
@@ -159,7 +159,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: ca-certificates-configmap.yaml-sonarqube
-    app.kubernetes.io/version: "2026.1.3-enterprise"
+    app.kubernetes.io/version: "2026.1.4-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -171,10 +171,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: b277c1d01bae042b1200857d01a34a059dfca9ea76e9389be370c7e7d479ee27
-        checksum/init-sysctl: 27409e284ca8926c813b00eff8a7954635c79fad91aafe014e26cf6cda6311fa
-        checksum/plugins: d4c4074bdaa5576c294de091a70a6cb2ee0801b9a9e0e40791355a6921c598a4
-        checksum/secret: 181d71db109aee5bdf65c2dfff2a612aee5dcd6a75df580d5c4cbad3ed9072bb
+        checksum/config: e484e6d83f8b5aac4220b085b0fecc5f28dec488e92b00fd051e1e10ec44094d
+        checksum/init-sysctl: 1ea9efceb03dc124f208903102eff2e009c4107f2898694f01d7c3884e0a5bc7
+        checksum/plugins: 2add927c8e9d31dee88962e2f4582dd839f42d8c55e2df9898a4eae122706d5a
+        checksum/secret: c5ad8cf24da0eea9e8f4e48c0de4411ea755803d0479ab6e4efe838317f5d42c
       labels:
         app: sonarqube
         release: ca-certificates-configmap.yaml
@@ -184,7 +184,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: ca-certs
-          image: sonarqube:2026.1.3-enterprise
+          image: sonarqube:2026.1.4-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh"]
           args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
@@ -213,7 +213,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: init-sysctl
-          image: sonarqube:2026.1.3-enterprise
+          image: sonarqube:2026.1.4-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -231,7 +231,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: install-oracle-jdbc-driver
-          image: sonarqube:2026.1.3-enterprise
+          image: sonarqube:2026.1.4-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
           securityContext:
@@ -264,7 +264,7 @@ spec:
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
       containers:
         - name: sonarqube
-          image: sonarqube:2026.1.3-enterprise
+          image: sonarqube:2026.1.4-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -281,7 +281,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.1.3
+              value: 2026.1.4
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -403,14 +403,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.3
+    chart: sonarqube-2026.1.4
     release: ca-certificates-configmap.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: ca-certificates-configmap.yaml-ui-test
-      image: "sonarqube:2026.1.3-enterprise"
+      image: "sonarqube:2026.1.4-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
