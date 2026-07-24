@@ -1079,17 +1079,19 @@ print_apply_complete() {
   fi
   summary "  - $NEW_VALUES_FILE"
   summary ""
-  summary "Verify Istio is handling traffic correctly, e.g. port-forward the Istio ingress"
-  summary "gateway Service (kubectl port-forward -n istio-system svc/istio-ingressgateway"
-  summary "8080:80) and curl it with the Host header set to your hostname -- or use whatever"
-  summary "else fits your setup (its LoadBalancer URL, a temporary DNS record, etc.)"
-  summary ""
   if [[ "$NGINX_CONTROLLER_PRESENT" == "true" ]]; then
     summary "Coexistence step -- run this on the last chart version that still bundles"
     summary "ingress-nginx ($COEXIST_CHART_VERSION), so ingress-nginx keeps running"
     summary "alongside Istio instead of being pruned by a newer chart:"
     summary "$COEXIST_STEP_CMD"
     summary ""
+  fi
+  summary "Verify Istio is handling traffic correctly, e.g. port-forward the Istio ingress"
+  summary "gateway Service (kubectl port-forward -n istio-system svc/istio-ingressgateway"
+  summary "8080:80) and curl it with the Host header set to your hostname -- or use whatever"
+  summary "else fits your setup (its LoadBalancer URL, a temporary DNS record, etc.)"
+  summary ""
+  if [[ "$NGINX_CONTROLLER_PRESENT" == "true" ]]; then
     summary "Once verified, run the cutover step below to move to the target chart"
     summary "version and remove the ingress-nginx controller:"
   else
