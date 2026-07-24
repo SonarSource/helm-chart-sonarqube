@@ -125,8 +125,56 @@ jobs:
         run: |
           kubectl delete namespace test-github --ignore-not-found=true
 
-  release-gcp-prod-app:
+  # Mirrors Google's functionality test: no external database and no parameter override, so the
+  # deployer relies on the data-test schema defaults and the /data-test/chart PostgreSQL overlay.
+  # mpdev verify provisions and tears down its own ephemeral apptest-* namespace.
+  # Runs after (not alongside) verify-gcp-staging-app so only one DCE stack occupies the
+  # autoscaling staging cluster at a time, avoiding node-cap contention.
+  verify-gcp-staging-app-selfcontained:
     needs: [verify-gcp-staging-app]
+    runs-on: github-ubuntu-latest-s
+    name: Verify GCP Staging App (self-contained)
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      BASE_FOLDER: "/home/runner/.gcp/cache"
+      HOME: "/tmp"
+      GCLOUD_CLI_VERSION: 495.0.0
+      MPDEV_VERSION: 0.12.4
+      GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider
+      GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+        with:
+          version: 2026.3.13
+      - name: Setup GCP tools
+        run: ./.github/scripts/setup.sh
+      - id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/team/sonarqube/kv/data/gcp-marketplace-registry-staging key | DOCKER_GCLOUD_SA_KEY;
+      - name: Login and setup GCP
+        env:
+          DOCKER_GCLOUD_SA_KEY: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_GCLOUD_SA_KEY }}
+        run: |
+          export PATH="${BASE_FOLDER}:${PATH}"
+          echo ${DOCKER_GCLOUD_SA_KEY} | base64 -d > /tmp/key.json
+          gcloud auth activate-service-account cirrusciservice@sonarqube-marketplace-provider.iam.gserviceaccount.com --key-file /tmp/key.json --project=sonarqube-marketplace-provider
+          gcloud auth configure-docker gcr.io --quiet
+          gcloud container clusters get-credentials sonarqube-marketplace-staging-standard --zone=europe-west1-b --project=sonarqube-marketplace-provider
+          kubectl get pods -A
+      - name: Verify with mpdev (self-contained)
+        run: |
+          export PATH="${BASE_FOLDER}:${PATH}"
+          mpdev verify --deployer=$GCLOUD_REGISTRY/$GCLOUD_PRODUCT_NAME/deployer:$GCLOUD_TAG --wait_timeout=1200
+
+  release-gcp-prod-app:
+    needs: [verify-gcp-staging-app, verify-gcp-staging-app-selfcontained]
     runs-on: github-ubuntu-latest-s
     name: Release GCP Prod App
     permissions:
@@ -175,10 +223,10 @@ jobs:
 
   notify-slack-on-failure:
     name: Notify on Failure
-    needs: [ build-gcp-staging-app, verify-gcp-staging-app, release-gcp-prod-app ]
+    needs: [ build-gcp-staging-app, verify-gcp-staging-app, verify-gcp-staging-app-selfcontained, release-gcp-prod-app ]
     if: >-
       always() &&
-      (needs.build-gcp-staging-app.result == 'failure' || needs.verify-gcp-staging-app.result == 'failure' || needs.release-gcp-prod-app.result == 'failure') &&
+      (needs.build-gcp-staging-app.result == 'failure' || needs.verify-gcp-staging-app.result == 'failure' || needs.verify-gcp-staging-app-selfcontained.result == 'failure' || needs.release-gcp-prod-app.result == 'failure') &&
       (github.ref_name == github.event.repository.default_branch ||
       startsWith(github.ref_name, 'release/'))
     permissions:
