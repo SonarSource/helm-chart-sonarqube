@@ -847,6 +847,220 @@ mcp:
   # Set annotations for the MCP pod.
   annotations: {}
 
+# SonarQube Unified Agentic Harness: Agent Orchestrator (one, shared) + per-family Agentic Job
+# Runtimes (hunter, remediation). Requires jdbcOverwrite (always true in DCE) to reuse the
+# SonarQube DB, and real orchestrator/runtime images before enabling.
+agenticHarness:
+  enabled: false
+
+  # Render NetworkPolicies for the (untrusted) runtime families only, independent of the top-level
+  # `networkPolicy.enabled`. This locks down each runtime's egress to DNS, the orchestrator, and its
+  # own `egressAllow` entries - without imposing a NetworkPolicy on the orchestrator or the SonarQube
+  # app/search nodes. The runtime NetworkPolicies also render when `networkPolicy.enabled` is true.
+  runtimeNetworkPolicy:
+    enabled: false
+
+  # gVisor (runsc) sandboxing for untrusted workloads. The agentic job runtimes are its primary
+  # consumer (agentic-runtime.yaml sets runtimeClassName when gvisor.enabled). It installs runsc on
+  # nodes and/or creates a cluster-scoped RuntimeClass that pods opt into. Both toggles off by
+  # default. See README ("gVisor sandboxing"); the installer is self-managed nodes only and runs a
+  # privileged, host-mutating DaemonSet.
+  gvisor:
+    enabled: false
+    # Name of the RuntimeClass created + referenced by runtimes. RuntimeClass is cluster-scoped:
+    # installing this chart as multiple releases/namespaces with the same value will collide
+    # (the second install fails, RuntimeClass owned by the first release) — give each release a
+    # distinct runtimeClassName if you do that.
+    runtimeClassName: gvisor
+    handler: runsc                    # containerd runtime handler
+    # RuntimeClass.scheduling.nodeSelector, and (when installer.enabled) the label the installer
+    # applies once runsc is ready. Use `null`, not `{}`, to disable node pinning — Helm merges maps.
+    nodeSelector:
+      gvisor.enabled: "true"
+    installer:
+      enabled: false                  # deploy the privileged installer DaemonSet (needs gvisor.enabled)
+      image:
+        repository: debian
+        tag: stable-slim
+        pullPolicy: IfNotPresent
+        # pullSecrets:
+        #   - name: my-repo-secret
+      # Pinned gVisor release for reproducible installs (not "latest"); bump deliberately.
+      # See https://github.com/google/gvisor/tags for the release list.
+      runscVersion: "20260706"
+      containerdConfigPath: /etc/containerd/config.toml
+      # Rendered to /etc/containerd/runsc.toml. network=host avoids gVisor's netstack breaking
+      # cluster DNS/kube-proxy — unrelated to Kubernetes hostNetwork; pod isolation is unaffected.
+      runscConfig:
+        network: host
+        overlay2: "root:self,size=50g"
+      resources: {}
+      nodeSelector: {}                # which nodes to install on (empty = all)
+      tolerations:                    # run everywhere incl. tainted/control-plane nodes
+        - operator: Exists
+      annotations: {}
+
+  # Dedicated ServiceAccounts for the agentic workloads. When create=true, one ServiceAccount is
+  # rendered per component (the orchestrator plus each enabled runtime family) instead of sharing
+  # the main SonarQube ServiceAccount, so each can bind its own cloud identity (e.g. an AWS IAM role
+  # via IRSA) through annotations. When create=false the agentic pods keep using the main
+  # `serviceAccount` (backwards-compatible default).
+  serviceAccount:
+    create: false
+    automountToken: false
+    # Annotations applied to every agentic ServiceAccount, e.g.
+    #   eks.amazonaws.com/role-arn: arn:aws:iam::<account>:role/approles/agentic-orchestrator-<env>
+    annotations: {}
+
+  orchestrator:
+    image:
+      repository: ""
+      tag: ""
+      pullPolicy: IfNotPresent
+      # pullSecrets:
+      #   - name: my-repo-secret
+    port: 8080
+    replicaCount: 1
+    resources: {}
+    securityContext: {}
+
+    # ServiceAccount for the orchestrator pod (rendered only when agenticHarness.serviceAccount.create
+    # is true). `name` pins the SA name so an external IAM trust policy can reference an exact k8s
+    # subject; defaults to <fullname>-agentic-orchestrator. `annotations` merge over (and win against)
+    # the shared agenticHarness.serviceAccount.annotations.
+    serviceAccount:
+      name: ""
+      annotations: {}
+
+    # Object storage (S3/MinIO) for the shared job folder -> AGENTIC_STORAGE_* env
+    storage:
+      # Custom S3 endpoint (e.g. MinIO). Leave blank for real AWS S3 so the SDK uses its regional
+      # endpoint. pathStyle should be true for MinIO, false for AWS S3 (virtual-hosted style).
+      endpoint: ""
+      region: us-east-1
+      bucket: agentic-jobs
+      pathStyle: true
+      # Credentials. Leave accessKey/secretKey/existingSecret all blank for credential-less access:
+      # the orchestrator's AWS SDK then falls back to its default credential chain (the pod's IAM
+      # identity - node instance role, or IRSA via agenticHarness.serviceAccount annotations).
+      # Inline access/secret key; ignored when existingSecret is set
+      accessKey: ""
+      secretKey: ""
+      # Existing secret providing AGENTIC_STORAGE_ACCESS_KEY / AGENTIC_STORAGE_SECRET_KEY
+      existingSecret: ""
+
+    # Bearer token for AGENTIC_SONARQUBE_URL's /api/issues/search, used by the remediation
+    # dispatcher to enrich issues before pushing a job. Blank -> anonymous access (fails against a
+    # SonarQube instance that requires auth; the remediation job then fails at dispatch).
+    sonarqubeToken:
+      # Inline token; ignored when existingSecret is set -> AGENTIC_SONARQUBE_TOKEN
+      token: ""
+      # Existing secret providing the token
+      existingSecret: ""
+      # Key within existingSecret; defaults to AGENTIC_SONARQUBE_TOKEN
+      existingSecretKey: ""
+
+    # Remediation flow: push a fix branch and open a PR via the GitHub REST API. No token is
+    # configured here: since SONAR-30903 the orchestrator obtains a short-lived GitHub App
+    # installation token from SonarQube on demand (via sonarqubeToken above), right
+    # before each git operation. Configure a GitHub App DevOps integration on SonarQube and bind
+    # the project for the PR flow to succeed.
+    github:
+      # AGENTIC_GITHUB_API_BASE_URL; blank -> orchestrator's own default (real api.github.com).
+      # Override for GitHub Enterprise Server, or to point at a local mock.
+      apiBaseUrl: ""
+
+    # Extra egress destinations for the orchestrator NetworkPolicy (DB / storage / SCM),
+    # in addition to the runtimes and the SonarQube app nodes which are always allowed.
+    # Each entry is either { cidr } or { podSelector [, namespaceSelector] } - use podSelector
+    # for in-cluster dependencies, since a NetworkPolicy ipBlock can never match a Service's
+    # ClusterIP (kube-proxy DNATs before policy enforcement sees the packet).
+    # Optional `ports` ([{ port, protocol }]) scopes the rule; omit to allow all ports to the peer.
+    # Scope broad CIDRs (e.g. 0.0.0.0/0 for S3 over presigned URLs) to `port: 443` so they don't
+    # reopen all egress.
+    egressAllow: []
+    # - cidr: 10.0.0.0/8
+    #   ports:
+    #     - port: 443
+    #       protocol: TCP
+    # - podSelector:
+    #     matchLabels:
+    #       app: my-in-cluster-db
+    #   namespaceSelector:
+    #     matchLabels:
+    #       kubernetes.io/metadata.name: db-namespace
+
+  # One Deployment+Service per enabled family. Each gets its own push URL from the orchestrator.
+  runtimes:
+    hunter:
+      enabled: false
+      image:
+        repository: ""
+        tag: ""
+        pullPolicy: IfNotPresent
+      port: 8090
+      # >1 enables the L4 429 re-routing: the Service is a load-balanced ClusterIP (not
+      # headless) so a rejected request's retry gets a fresh TCP handshake routed to another
+      # replica by kube-proxy.
+      replicaCount: 1
+      resources: {}
+      securityContext: {}
+      # ServiceAccount for this runtime family (rendered only when agenticHarness.serviceAccount.create
+      # is true). `name` pins the SA name for an external IAM trust policy; defaults to
+      # <fullname>-agentic-runtime-hunter. `annotations` merge over the shared
+      # agenticHarness.serviceAccount.annotations.
+      serviceAccount:
+        name: ""
+        annotations: {}
+      # Extra env vars for the runtime container. The chart only sets `port` on the Service /
+      # containerPort - it does not assume a listen-port convention for arbitrary runtime images
+      # (Spring Boot images read SERVER_PORT; others may hardcode their port or use something
+      # else), so set whatever env var your image needs here to make it actually listen on
+      # `port`. Also where you'd set an image-specific LLM endpoint override, etc.
+      env: []
+      # - name: SERVER_PORT
+      #   value: "8090"
+      # Extra volumes/mounts for the runtime container/pod - e.g. a custom CA cert for a network
+      # that TLS-inspects egress to the LLM endpoint (the JVM/language runtime's own trust store is
+      # separate from the OS's, so a system-level fix alone isn't enough; mount the cert here and
+      # have the image import it at startup, same idea as charts/sonarqube-dce's caCerts feature).
+      extraVolumes: []
+      # - name: custom-ca
+      #   secret:
+      #     secretName: my-runtime-custom-ca
+      extraVolumeMounts: []
+      # - name: custom-ca
+      #   mountPath: /custom-ca
+      #   readOnly: true
+      # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes.
+      # Add the CIDR(s) of your LLM provider; e.g. Anthropic publishes 160.79.104.0/23.
+      egressAllow: []
+      # - cidr: 160.79.104.0/23
+    remediation:
+      enabled: false  # enable once the remediation runtime image is available
+      image:
+        repository: ""
+        tag: ""
+        pullPolicy: IfNotPresent
+      port: 8090
+      replicaCount: 1
+      resources: {}
+      securityContext: {}
+      # ServiceAccount for this runtime family (rendered only when agenticHarness.serviceAccount.create
+      # is true). `name` pins the SA name for an external IAM trust policy; defaults to
+      # <fullname>-agentic-runtime-remediation. `annotations` merge over the shared
+      # agenticHarness.serviceAccount.annotations.
+      serviceAccount:
+        name: ""
+        annotations: {}
+      env: []
+      extraVolumes: []
+      extraVolumeMounts: []
+      # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes.
+      # Add the CIDR(s) of your LLM provider; e.g. Anthropic publishes 160.79.104.0/23.
+      egressAllow: []
+      # - cidr: 160.79.104.0/23
+
 # setAdminPassword:
 # The values can be set to define the current and the (new) custom admin passwords at the startup (the username will remain "admin")
 #  newPassword: AdminAdmin_12$
@@ -893,45 +1107,3 @@ mcp:
 
 # (DEPRECATED) This value is not used in the templates.
 terminationGracePeriodSeconds: 60
-
-# gVisor (runsc) sandboxing for untrusted workloads. Nested under `agenticHarness` because the
-# agentic job runtimes (shipped separately) are its primary consumer, but it is fully usable on its
-# own: it installs runsc on nodes and/or creates a cluster-scoped RuntimeClass that ANY pod can opt
-# into via `runtimeClassName`. Nothing in this chart auto-attaches to it. Both toggles are off by
-# default. See README ("gVisor sandboxing") for caveats — notably the installer is self-managed
-# nodes only and runs a privileged, host-mutating DaemonSet.
-agenticHarness:
-  gvisor:
-    enabled: false
-    # Name of the RuntimeClass created + referenced by runtimes. RuntimeClass is cluster-scoped:
-    # installing this chart as multiple releases/namespaces with the same value will collide
-    # (the second install fails, RuntimeClass owned by the first release) — give each release a
-    # distinct runtimeClassName if you do that.
-    runtimeClassName: gvisor
-    handler: runsc                    # containerd runtime handler
-    # RuntimeClass.scheduling.nodeSelector, and (when installer.enabled) the label the installer
-    # applies once runsc is ready. Use `null`, not `{}`, to disable node pinning — Helm merges maps.
-    nodeSelector:
-      gvisor.enabled: "true"
-    installer:
-      enabled: false                  # deploy the privileged installer DaemonSet (needs gvisor.enabled)
-      image:
-        repository: debian
-        tag: stable-slim
-        pullPolicy: IfNotPresent
-        # pullSecrets:
-        #   - name: my-repo-secret
-      # Pinned gVisor release for reproducible installs (not "latest"); bump deliberately.
-      # See https://github.com/google/gvisor/tags for the release list.
-      runscVersion: "20260706"
-      containerdConfigPath: /etc/containerd/config.toml
-      # Rendered to /etc/containerd/runsc.toml. network=host avoids gVisor's netstack breaking
-      # cluster DNS/kube-proxy — unrelated to Kubernetes hostNetwork; pod isolation is unaffected.
-      runscConfig:
-        network: host
-        overlay2: "root:self,size=50g"
-      resources: {}
-      nodeSelector: {}                # which nodes to install on (empty = all)
-      tolerations:                    # run everywhere incl. tainted/control-plane nodes
-        - operator: Exists
-      annotations: {}

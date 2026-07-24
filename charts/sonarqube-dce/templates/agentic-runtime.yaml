@@ -1,0 +1,112 @@
+{{- if .Values.agenticHarness.enabled }}
+{{- range $family, $cfg := .Values.agenticHarness.runtimes }}
+{{- if $cfg.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sonarqube.agentic.runtime.fullname" (dict "ctx" $ "family" $family) }}
+  labels:
+    app: {{ template "sonarqube.name" $ }}
+    chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    release: {{ $.Release.Name }}
+    heritage: {{ $.Release.Service }}
+    sonarqube.agentic/component: runtime
+    sonarqube.agentic/family: {{ $family }}
+spec:
+  replicas: {{ $cfg.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "sonarqube.name" $ }}
+      sonarqube.agentic/component: runtime
+      sonarqube.agentic/family: {{ $family }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "sonarqube.name" $ }}
+        release: {{ $.Release.Name }}
+        sonarqube.agentic/component: runtime
+        sonarqube.agentic/family: {{ $family }}
+    spec:
+      {{- /* Run the (untrusted) runtimes under the gVisor RuntimeClass when enabled. The
+             RuntimeClass' own scheduling.nodeSelector pins these pods to runsc-ready nodes. */}}
+      {{- if $.Values.agenticHarness.gvisor.enabled }}
+      runtimeClassName: {{ $.Values.agenticHarness.gvisor.runtimeClassName }}
+      {{- end }}
+      automountServiceAccountToken: {{ if $.Values.agenticHarness.serviceAccount.create }}{{ $.Values.agenticHarness.serviceAccount.automountToken }}{{ else }}{{ $.Values.serviceAccount.automountToken }}{{ end }}
+      {{- if or $cfg.image.pullSecrets $cfg.image.pullSecret }}
+      imagePullSecrets:
+        {{- if $cfg.image.pullSecret }}
+        - name: {{ $cfg.image.pullSecret }}
+        {{- end }}
+        {{- if $cfg.image.pullSecrets }}
+{{ toYaml $cfg.image.pullSecrets | indent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- with $cfg.securityContext }}
+      securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: agentic-runtime
+          image: "{{ $cfg.image.repository }}:{{ $cfg.image.tag }}"
+          imagePullPolicy: {{ $cfg.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $cfg.port }}
+              protocol: TCP
+          {{- with $cfg.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $cfg.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $cfg.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- if $.Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml $.Values.nodeSelector | indent 8 }}
+      {{- end }}
+      {{- if $.Values.tolerations }}
+      tolerations:
+{{ toYaml $.Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if $.Values.affinity }}
+      affinity:
+{{ toYaml $.Values.affinity | indent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "sonarqube.agentic.runtime.serviceAccountName" (dict "ctx" $ "family" $family) }}
+      {{- with $cfg.extraVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sonarqube.agentic.runtime.fullname" (dict "ctx" $ "family" $family) }}
+  labels:
+    app: {{ template "sonarqube.name" $ }}
+    chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    release: {{ $.Release.Name }}
+    heritage: {{ $.Release.Service }}
+    sonarqube.agentic/component: runtime
+    sonarqube.agentic/family: {{ $family }}
+spec:
+  # Deliberately a load-balanced ClusterIP, not headless: on an HTTP 429 the runtime drops the
+  # socket so a retry's fresh TCP handshake gets re-routed by kube-proxy to another replica.
+  type: ClusterIP
+  ports:
+    - port: {{ $cfg.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ template "sonarqube.name" $ }}
+    sonarqube.agentic/component: runtime
+    sonarqube.agentic/family: {{ $family }}
+{{- end }}
+{{- end }}
+{{- end }}
