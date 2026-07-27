@@ -60,17 +60,28 @@ spec:
           env:
             - name: SERVER_PORT
               value: {{ .Values.agenticHarness.orchestrator.port | quote }}
+            {{- /* CORE DB (SonarQube's database) connection for the orchestrator. Each field is
+                   independently configurable via agenticHarness.orchestrator.coreDb, defaulting to
+                   the shared jdbcOverwrite so it targets the same DB as SonarQube out of the box.
+                   Decoupling matters for the password: SonarQube may store an encrypted `{aes-gcm}`
+                   value the orchestrator can't decrypt, or a chart-managed secret your GitOps
+                   doesn't apply — point coreDb.passwordSecret{Name,Key} at a usable secret. */}}
+            {{- $coreDb := .Values.agenticHarness.orchestrator.coreDb }}
             - name: CORE_DB_READ_WRITE_ENDPOINT
-              value: {{ include "sonarqube.agentic.jdbc.endpoint" . | quote }}
+              value: {{ $coreDb.endpoint | default (include "sonarqube.agentic.jdbc.endpoint" .) | quote }}
             - name: CORE_DB_NAME
-              value: {{ include "sonarqube.agentic.jdbc.dbname" . | quote }}
+              value: {{ $coreDb.name | default (include "sonarqube.agentic.jdbc.dbname" .) | quote }}
             - name: CORE_DB_USERNAME
+              {{- if $coreDb.username }}
+              value: {{ $coreDb.username | quote }}
+              {{- else }}
               value: {{ template "jdbc.username" . }}
+              {{- end }}
             - name: CORE_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ template "jdbc.secret" . }}
-                  key: {{ template "jdbc.secretPasswordKey" . }}
+                  name: {{ $coreDb.passwordSecretName | default (include "jdbc.secret" .) }}
+                  key: {{ $coreDb.passwordSecretKey | default (include "jdbc.secretPasswordKey" .) }}
             - name: AGENTIC_STORAGE_ENDPOINT
               value: {{ .Values.agenticHarness.orchestrator.storage.endpoint | quote }}
             - name: AGENTIC_STORAGE_REGION
