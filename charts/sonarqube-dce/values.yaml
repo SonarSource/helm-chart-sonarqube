@@ -1044,7 +1044,17 @@ agenticHarness:
         pullPolicy: IfNotPresent
       port: 8090
       replicaCount: 1
-      resources: {}
+      # Defaults sized for the SonarQube Remediation Agent (SQRA), which clones repos and runs the
+      # agent/LLM loop. Override for your workload.
+      resources:
+        requests:
+          cpu: "1"
+          memory: 2Gi
+          ephemeral-storage: 10Gi
+        limits:
+          cpu: "4"
+          memory: 8Gi
+          ephemeral-storage: 50Gi
       securityContext: {}
       # ServiceAccount for this runtime family (rendered only when agenticHarness.serviceAccount.create
       # is true). `name` pins the SA name for an external IAM trust policy; defaults to

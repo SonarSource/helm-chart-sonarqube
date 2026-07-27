@@ -815,6 +815,15 @@ spec:
               value: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
             - name: REMEDIATION_RULE_INFO_ENDPOINT
               value: http://agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator:8080/remediation-agent/rule-info
+          resources:
+            limits:
+              cpu: "4"
+              ephemeral-storage: 50Gi
+              memory: 8Gi
+            requests:
+              cpu: "1"
+              ephemeral-storage: 10Gi
+              memory: 2Gi
       serviceAccountName: remediation-agent-runtime
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
