@@ -54,7 +54,19 @@ spec:
             - name: http
               containerPort: {{ $cfg.port }}
               protocol: TCP
-          {{- with $cfg.env }}
+          {{- /* Auto-wire the remediation runtime's two required env vars so users don't hand-set
+                 them: REMEDIATION_SCRIPT_PATH switches the image into remediation mode, and
+                 REMEDIATION_RULE_INFO_ENDPOINT points at the in-cluster orchestrator. User-provided
+                 env (e.g. ANTHROPIC_API_KEY) is appended last and overrides these if repeated. */}}
+          {{- $autoEnv := list }}
+          {{- if eq $family "remediation" }}
+          {{- with $cfg.remediationScriptPath }}
+          {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_SCRIPT_PATH" "value" .) }}
+          {{- end }}
+          {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_RULE_INFO_ENDPOINT" "value" (printf "%s/remediation-agent/rule-info" (include "sonarqube.agentic.orchestrator.url" $))) }}
+          {{- end }}
+          {{- $mergedEnv := concat $autoEnv ($cfg.env | default list) }}
+          {{- with $mergedEnv }}
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}

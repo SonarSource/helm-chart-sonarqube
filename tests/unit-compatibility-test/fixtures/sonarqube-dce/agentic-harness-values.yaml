@@ -810,6 +810,11 @@ spec:
             - name: http
               containerPort: 8090
               protocol: TCP
+          env:
+            - name: REMEDIATION_SCRIPT_PATH
+              value: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
+            - name: REMEDIATION_RULE_INFO_ENDPOINT
+              value: http://agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator:8080/remediation-agent/rule-info
       serviceAccountName: remediation-agent-runtime
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
@@ -851,6 +856,42 @@ spec:
     spec:
       automountServiceAccountToken: false
       initContainers:
+        - name: concat-properties
+          image: sonarqube:2026.4.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          command: 
+          - sh
+          - -c
+          - |
+            #!/bin/sh
+            if [ -f /tmp/props/sonar.properties ]; then
+              cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/secret.properties ]; then
+              cat /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
+              awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+          volumeMounts:
+            - mountPath: /tmp/props/sonar.properties
+              name: config
+              subPath: sonar.properties
+            - mountPath: /tmp/result
+              name: concat-dir
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
       securityContext:
         fsGroup: 0
       containers:
@@ -913,6 +954,10 @@ spec:
                 secretKeyRef:
                   name: agentic-harness-values.yaml-sonarqube-dce-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
+            - name: SONAR_HUNTERAGENT_ORCHESTRATOR_URL
+              value: "http://agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator:8080"
+            - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
+              value: "http://agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator:8080"
           envFrom:
             - configMapRef:
                 name: agentic-harness-values.yaml-sonarqube-dce-jdbc-config
@@ -970,6 +1015,9 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
+            - mountPath: /opt/sonarqube/conf/sonar.properties
+              subPath: sonar.properties
+              name: concat-dir
             - mountPath: /opt/sonarqube/data
               name: sonarqube
               subPath: data
@@ -983,6 +1031,12 @@ spec:
               name: tmp-dir
       serviceAccountName: default
       volumes:
+      - name: config
+        configMap:
+          name: agentic-harness-values.yaml-sonarqube-dce-app-config
+          items:
+          - key: sonar.properties
+            path: sonar.properties
       
       - name: install-plugins
         configMap:
@@ -994,6 +1048,9 @@ spec:
         emptyDir:
           {}
       - name : tmp-dir
+        emptyDir:
+          {}
+      - name : concat-dir
         emptyDir:
           {}
 ---

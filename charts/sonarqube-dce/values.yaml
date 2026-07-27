@@ -1053,6 +1053,11 @@ agenticHarness:
       serviceAccount:
         name: ""
         annotations: {}
+      # Path to the remediation-agent entrypoint inside the image; the chart exposes it as
+      # REMEDIATION_SCRIPT_PATH, which switches the runtime into remediation mode. Override if the
+      # image relocates it (e.g. a Python version bump); set to "" to omit the env var entirely.
+      # (REMEDIATION_RULE_INFO_ENDPOINT is also auto-wired, derived from the Agent Orchestrator URL.)
+      remediationScriptPath: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
       env: []
       extraVolumes: []
       extraVolumeMounts: []
