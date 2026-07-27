@@ -932,6 +932,19 @@ agenticHarness:
       name: ""
       annotations: {}
 
+    # CORE DB (SonarQube's database) connection for the orchestrator (CORE_DB_* env). Fully decoupled
+    # from SonarQube's own jdbcOverwrite: each field below defaults to the jdbcOverwrite-derived value
+    # (so out of the box the orchestrator targets the same DB as SonarQube), but can be set explicitly.
+    # In particular the password must be a value the orchestrator can use directly - SonarQube may
+    # store an encrypted `{aes-gcm}` password it can't decrypt, or a chart-managed secret your GitOps
+    # doesn't apply - so point passwordSecretName/passwordSecretKey at a usable secret.
+    coreDb:
+      endpoint: ""            # host:port; default parsed from jdbcOverwrite.jdbcUrl
+      name: ""                # database name; default parsed from jdbcOverwrite.jdbcUrl
+      username: ""            # default jdbcOverwrite.jdbcUsername
+      passwordSecretName: ""  # default: the jdbcOverwrite-derived secret name
+      passwordSecretKey: ""   # default: the jdbcOverwrite-derived password key
+
     # Object storage (S3/MinIO) for the shared job folder -> AGENTIC_STORAGE_* env
     storage:
       # Custom S3 endpoint (e.g. MinIO). Leave blank for real AWS S3 so the SDK uses its regional

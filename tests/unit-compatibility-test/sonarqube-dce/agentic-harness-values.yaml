@@ -23,6 +23,11 @@ agenticHarness:
     port: 8080
     serviceAccount:
       name: agent-orchestrator
+    # CORE DB password decoupled from SonarQube's jdbc secret (e.g. an encrypted value the
+    # orchestrator can't use); endpoint/name/username fall back to jdbcOverwrite.
+    coreDb:
+      passwordSecretName: core-db
+      passwordSecretKey: password
     # Credential-less storage: no accessKey/secretKey -> the orchestrator omits the static-key env
     # and relies on the pod IAM identity (IRSA).
     storage:
