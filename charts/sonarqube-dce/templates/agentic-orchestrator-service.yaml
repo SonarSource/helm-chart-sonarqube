@@ -1,0 +1,22 @@
+{{- if .Values.agenticHarness.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sonarqube.agentic.orchestrator.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agentic/component: orchestrator
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.agenticHarness.orchestrator.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ template "sonarqube.name" . }}
+    sonarqube.agentic/component: orchestrator
+{{- end }}

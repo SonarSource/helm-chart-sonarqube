@@ -29,6 +29,25 @@
 {{- fail "\n ** The values.yaml file is not valid. ** \n jdbcOverwrite.jdbcUrl is still set to the default placeholder value 'jdbc:postgresql://myPostgres/myDatabase'.\n Please provide a valid JDBC URL for your PostgreSQL database." -}}
   {{- end -}}
 
+{{/* Validation for the Agentic Harness, when enabled */}}
+{{- if .Values.agenticHarness.enabled -}}
+  {{- if not .Values.agenticHarness.orchestrator.image.repository -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agenticHarness.enabled is true but agenticHarness.orchestrator.image.repository is not set." -}}
+  {{- end -}}
+  {{- $enabledRuntimes := list -}}
+  {{- range $family, $cfg := .Values.agenticHarness.runtimes -}}
+    {{- if $cfg.enabled -}}
+      {{- $enabledRuntimes = append $enabledRuntimes $family -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if not $enabledRuntimes -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agenticHarness.enabled is true but no agenticHarness.runtimes.<family>.enabled is set to true." -}}
+  {{- end -}}
+  {{- if not .Values.agenticHarness.orchestrator.storage.bucket -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agenticHarness.enabled is true but agenticHarness.orchestrator.storage.bucket is not set." -}}
+  {{- end -}}
+{{- end -}}
+
 {{/* Validation for the gVisor toggles (agenticHarness.gvisor.*). The sub-options are only checked
      when gVisor is enabled: with gvisor.enabled=false the whole feature renders nothing, so a
      leftover installer.enabled (e.g. a base values file overlaid by one that disables gVisor) is

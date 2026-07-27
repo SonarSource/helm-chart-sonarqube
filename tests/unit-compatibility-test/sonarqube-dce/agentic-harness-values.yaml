@@ -1,0 +1,60 @@
+# Exercises the Agentic Harness resources: Agent Orchestrator (Deployment/Service/Secret),
+# a runtime family (Deployment/Service), dedicated ServiceAccounts (IRSA annotations), the
+# orchestrator + per-runtime NetworkPolicies (incl. egressAllow with ports), credential-less S3
+# storage (no static keys), and the gVisor RuntimeClass wired onto the runtime.
+networkPolicy:
+  enabled: true
+
+agenticHarness:
+  enabled: true
+  runtimeNetworkPolicy:
+    enabled: true
+  gvisor:
+    enabled: true
+  serviceAccount:
+    create: true
+    automountToken: true
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agentic-orchestrator
+  orchestrator:
+    image:
+      repository: example.com/unifiedagenticharness/agentorchestrator
+      tag: "1.0.0"
+    port: 8080
+    serviceAccount:
+      name: agent-orchestrator
+    # Credential-less storage: no accessKey/secretKey -> the orchestrator omits the static-key env
+    # and relies on the pod IAM identity (IRSA).
+    storage:
+      endpoint: ""
+      region: eu-west-1
+      bucket: agentic-artifacts
+      pathStyle: false
+    sonarqubeToken:
+      token: "squ_example000000000000000000000000000000"
+    egressAllow:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: postgresql
+            app.kubernetes.io/instance: external-postgres
+      - cidr: 10.0.0.0/8
+        ports:
+          - port: 443
+            protocol: TCP
+  runtimes:
+    remediation:
+      enabled: true
+      serviceAccount:
+        name: remediation-agent-runtime
+      image:
+        repository: example.com/unifiedagenticharness/remediationagent
+        tag: "1.0.0"
+      egressAllow:
+        - cidr: 160.79.104.0/23
+          ports:
+            - port: 443
+              protocol: TCP
+        - cidr: 0.0.0.0/0
+          ports:
+            - port: 443
+              protocol: TCP

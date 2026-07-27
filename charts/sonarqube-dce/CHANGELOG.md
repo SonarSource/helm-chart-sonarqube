@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * **Breaking**: Remove the deprecated `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart dependency. `ingress.enabled` remains supported for use with a self-managed ingress controller; `httproute.enabled` (Gateway API) is also available
 * Add `gateway-api-migration-scripts/nginx-to-istio-migration.sh` to help migrate from the bundled ingress-nginx controller to Gateway API
 * Add optional gVisor (runsc) sandboxing for the Agentic Job Runtimes
+* Add the SonarQube Unified Agentic Harness (Agent Orchestrator and per-family Agentic Job Runtimes) via `agenticHarness.enabled`
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0

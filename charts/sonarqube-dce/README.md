@@ -963,6 +963,77 @@ If the keystore uses a self-signed certificate, SonarQube's JVM will reject the 
      secret: mcp-ca-cert
    ```
 
+### Agentic Harness
+
+The optional SonarQube Unified Agentic Harness — an Agent Orchestrator plus one Deployment/Service per enabled runtime family (`hunter`, `remediation`) — enabled via `agenticHarness.enabled`. When enabled, the chart also points the SonarQube app nodes at the orchestrator (via the `SONAR_HUNTERAGENT_ORCHESTRATOR_URL` / `SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL` env vars).
+
+**gVisor sandboxing.** The (untrusted) runtimes can run under the [gVisor](https://gvisor.dev/) (`runsc`) sandbox, via two **off-by-default** toggles under `agenticHarness.gvisor` (the feature is self-contained — any pod can also opt in with `runtimeClassName: gvisor`):
+
+- **`gvisor.enabled`** creates a cluster-scoped `RuntimeClass` (default name `gvisor`) and runs the agentic runtimes under it. Assumes `runsc` is already on your nodes (out-of-band: node bootstrap, custom AMI, GKE Sandbox, Bottlerocket) and adds no privileged workload. `RuntimeClass` is cluster-scoped, so give each release a distinct `runtimeClassName` if you install more than one.
+- **`gvisor.installer.enabled`** *additionally* deploys a **privileged** DaemonSet that installs `runsc`, registers the containerd runtime, and labels each node once ready (requires `gvisor.enabled=true`). **Self-managed nodes only** — not managed control planes (GKE Autopilot, most managed EKS/AKS); on GKE use GKE Sandbox instead. It mounts the host filesystem and restarts containerd, validating the new config first and rolling back / failing closed on any problem, so a node is only labeled once containerd is confirmed to serve `runsc`. Pods requesting the RuntimeClass stay `Pending` until a node is labeled — expected, not a failure. Idempotent: nodes with `runsc` already provisioned are left untouched except for the label.
+
+| Parameter                                                        | Description                                                                                                                              | Default                                                                        |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `agenticHarness.enabled`                                         | Deploy the Agent Orchestrator and the enabled runtime families                                                                           | `false`                                                                        |
+| `agenticHarness.runtimeNetworkPolicy.enabled`                    | Render NetworkPolicies for the (untrusted) runtimes only, independent of the top-level `networkPolicy.enabled`                           | `false`                                                                        |
+| `agenticHarness.gvisor.enabled`                                  | Create the gVisor `RuntimeClass` and run the runtimes under it                                                                           | `false`                                                                        |
+| `agenticHarness.gvisor.runtimeClassName`                         | Name of the cluster-scoped `RuntimeClass`                                                                                               | `gvisor`                                                                       |
+| `agenticHarness.gvisor.handler`                                  | containerd runtime handler the `RuntimeClass` targets                                                                                   | `runsc`                                                                        |
+| `agenticHarness.gvisor.nodeSelector`                             | `RuntimeClass` scheduling selector, and the label the installer applies when ready (set `null` to disable pinning)                      | `{gvisor.enabled: "true"}`                                                     |
+| `agenticHarness.gvisor.installer.enabled`                        | Deploy the privileged installer DaemonSet (requires `gvisor.enabled=true`)                                                              | `false`                                                                        |
+| `agenticHarness.gvisor.installer.image.repository`               | Installer image repository                                                                                                              | `debian`                                                                       |
+| `agenticHarness.gvisor.installer.image.tag`                      | Installer image tag                                                                                                                      | `stable-slim`                                                                  |
+| `agenticHarness.gvisor.installer.image.pullPolicy`               | Installer image pull policy                                                                                                              | `IfNotPresent`                                                                 |
+| `agenticHarness.gvisor.installer.runscVersion`                   | Pinned gVisor release to install                                                                                                        | `"20260706"`                                                                   |
+| `agenticHarness.gvisor.installer.containerdConfigPath`           | Path to the node's containerd config                                                                                                    | `/etc/containerd/config.toml`                                                  |
+| `agenticHarness.gvisor.installer.runscConfig.network`            | `runsc` network mode written to `runsc.toml`                                                                                            | `host`                                                                         |
+| `agenticHarness.gvisor.installer.runscConfig.overlay2`           | `runsc` overlay2 setting written to `runsc.toml`                                                                                        | `root:self,size=50g`                                                           |
+| `agenticHarness.gvisor.installer.resources`                      | Installer container resource requests/limits                                                                                            | `{}`                                                                           |
+| `agenticHarness.gvisor.installer.nodeSelector`                   | Which nodes to install on (empty = all)                                                                                                 | `{}`                                                                           |
+| `agenticHarness.gvisor.installer.tolerations`                    | Installer DaemonSet tolerations                                                                                                         | `[{operator: Exists}]`                                                         |
+| `agenticHarness.gvisor.installer.annotations`                    | Installer pod annotations                                                                                                               | `{}`                                                                           |
+| `agenticHarness.serviceAccount.create`                           | Create a dedicated ServiceAccount per agentic component (orchestrator + each runtime) instead of sharing the main one                    | `false`                                                                        |
+| `agenticHarness.serviceAccount.automountToken`                   | Mount the SA token into the agentic pods (required for IRSA)                                                                              | `false`                                                                        |
+| `agenticHarness.serviceAccount.annotations`                      | Annotations applied to every agentic ServiceAccount (e.g. an IRSA role ARN)                                                              | `{}`                                                                           |
+| `agenticHarness.orchestrator.image.repository`                   | Agent Orchestrator image repository (required when enabled)                                                                              | `""`                                                                           |
+| `agenticHarness.orchestrator.image.tag`                          | Agent Orchestrator image tag                                                                                                             | `""`                                                                           |
+| `agenticHarness.orchestrator.image.pullPolicy`                   | Agent Orchestrator image pull policy                                                                                                     | `IfNotPresent`                                                                 |
+| `agenticHarness.orchestrator.image.pullSecrets`                  | imagePullSecrets for the orchestrator image                                                                                              | `nil`                                                                          |
+| `agenticHarness.orchestrator.port`                               | Port the orchestrator listens on (also set as `SERVER_PORT`)                                                                             | `8080`                                                                         |
+| `agenticHarness.orchestrator.replicaCount`                       | Orchestrator replica count                                                                                                               | `1`                                                                            |
+| `agenticHarness.orchestrator.resources`                          | Orchestrator container resources                                                                                                         | `{}`                                                                           |
+| `agenticHarness.orchestrator.securityContext`                    | Orchestrator pod security context                                                                                                        | `{}`                                                                           |
+| `agenticHarness.orchestrator.serviceAccount.name`                | Pin the orchestrator SA name (defaults to `<fullname>-agentic-orchestrator`)                                                             | `""`                                                                           |
+| `agenticHarness.orchestrator.serviceAccount.annotations`         | Extra annotations merged onto the orchestrator SA                                                                                        | `{}`                                                                           |
+| `agenticHarness.orchestrator.storage.endpoint`                   | Object-storage endpoint; blank = real AWS S3 regional endpoint                                                                           | `""`                                                                           |
+| `agenticHarness.orchestrator.storage.region`                     | Object-storage region                                                                                                                    | `us-east-1`                                                                    |
+| `agenticHarness.orchestrator.storage.bucket`                     | Object-storage bucket for the shared job artifacts (required when enabled)                                                               | `agentic-jobs`                                                                 |
+| `agenticHarness.orchestrator.storage.pathStyle`                  | Path-style addressing (`true` for MinIO, `false` for AWS S3)                                                                             | `true`                                                                         |
+| `agenticHarness.orchestrator.storage.accessKey`                  | Inline S3 access key; leave blank for credential-less access (pod IAM role / IRSA)                                                       | `""`                                                                           |
+| `agenticHarness.orchestrator.storage.secretKey`                  | Inline S3 secret key; leave blank for credential-less access                                                                             | `""`                                                                           |
+| `agenticHarness.orchestrator.storage.existingSecret`             | Existing secret providing `AGENTIC_STORAGE_ACCESS_KEY` / `AGENTIC_STORAGE_SECRET_KEY`                                                     | `""`                                                                           |
+| `agenticHarness.orchestrator.sonarqubeToken.token`               | Inline SonarQube token for the orchestrator (`AGENTIC_SONARQUBE_TOKEN`)                                                                   | `""`                                                                           |
+| `agenticHarness.orchestrator.sonarqubeToken.existingSecret`      | Existing secret providing the SonarQube token                                                                                            | `""`                                                                           |
+| `agenticHarness.orchestrator.sonarqubeToken.existingSecretKey`   | Key within `existingSecret` (defaults to `AGENTIC_SONARQUBE_TOKEN`)                                                                       | `""`                                                                           |
+| `agenticHarness.orchestrator.github.apiBaseUrl`                  | `AGENTIC_GITHUB_API_BASE_URL`; blank = the orchestrator's default (real api.github.com)                                                  | `""`                                                                           |
+| `agenticHarness.orchestrator.egressAllow`                        | Extra egress peers for the orchestrator NetworkPolicy — each `{cidr}` or `{podSelector[,namespaceSelector]}`, with optional `ports`      | `[]`                                                                           |
+| `agenticHarness.runtimes.<family>.enabled`                       | Deploy this runtime family (`hunter`, `remediation`)                                                                                     | `false`                                                                        |
+| `agenticHarness.runtimes.<family>.image.repository`              | Runtime image repository (required when the family is enabled)                                                                           | `""`                                                                           |
+| `agenticHarness.runtimes.<family>.image.tag`                     | Runtime image tag                                                                                                                        | `""`                                                                           |
+| `agenticHarness.runtimes.<family>.image.pullPolicy`              | Runtime image pull policy                                                                                                                | `IfNotPresent`                                                                 |
+| `agenticHarness.runtimes.<family>.port`                          | Runtime container / Service port                                                                                                         | `8090`                                                                         |
+| `agenticHarness.runtimes.<family>.replicaCount`                  | Runtime replica count (`>1` enables L4 429 re-routing across replicas)                                                                   | `1`                                                                            |
+| `agenticHarness.runtimes.<family>.resources`                     | Runtime container resources (`remediation` ships sized defaults — see below; `hunter` is unset)                                          | `{}`                                                                           |
+| `agenticHarness.runtimes.<family>.securityContext`               | Runtime pod security context                                                                                                             | `{}`                                                                           |
+| `agenticHarness.runtimes.<family>.serviceAccount.name`           | Pin the runtime SA name (defaults to `<fullname>-agentic-runtime-<family>`)                                                              | `""`                                                                           |
+| `agenticHarness.runtimes.<family>.serviceAccount.annotations`    | Extra annotations merged onto the runtime SA                                                                                             | `{}`                                                                           |
+| `agenticHarness.runtimes.<family>.env`                           | Extra env vars for the runtime container                                                                                                 | `[]`                                                                           |
+| `agenticHarness.runtimes.<family>.extraVolumes`                  | Extra volumes for the runtime pod                                                                                                        | `[]`                                                                           |
+| `agenticHarness.runtimes.<family>.extraVolumeMounts`             | Extra volume mounts for the runtime container                                                                                            | `[]`                                                                           |
+| `agenticHarness.runtimes.<family>.egressAllow`                   | Extra egress peers for the runtime NetworkPolicy (same shape as the orchestrator's)                                                      | `[]`                                                                           |
+| `agenticHarness.runtimes.remediation.remediationScriptPath`      | Remediation-agent entrypoint exposed as `REMEDIATION_SCRIPT_PATH` (`REMEDIATION_RULE_INFO_ENDPOINT` is derived from the orchestrator URL); `""` omits the env var | `/home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py` |
+| `agenticHarness.runtimes.remediation.resources`                  | Resources for the SonarQube Remediation Agent (SQRA) runtime, sized for repo clone + agent/LLM loop                                      | requests `1` CPU / `2Gi` / `10Gi`, limits `4` CPU / `8Gi` / `50Gi`             |
+
 ### ExtraConfig
 
 | Parameter                | Description                                                 | Default |
@@ -1006,45 +1077,6 @@ If the keystore uses a self-signed certificate, SonarQube's JVM will reject the 
 You can also configure values for the PostgreSQL database via the PostgreSQL [Chart](https://hub.helm.sh/charts/bitnami/postgresql)
 
 For overriding variables see: [Customizing the chart](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing)
-
-## gVisor sandboxing
-
-Optionally run workloads under the [gVisor](https://gvisor.dev/) (`runsc`) sandbox, via two
-**off-by-default** toggles under `agenticHarness.gvisor` (nested there because the agentic job
-runtimes are its main consumer; the feature is self-contained and any pod can use it):
-
-- **`enabled`** creates a cluster-scoped `RuntimeClass` (default name `gvisor`). Nothing is attached
-  to it automatically — opt a pod in with `runtimeClassName: gvisor`. Assumes `runsc` is already on
-  your nodes (out-of-band: node bootstrap, custom AMI, GKE Sandbox, Bottlerocket) and adds no
-  privileged workload. `RuntimeClass` is cluster-scoped, so give each release a distinct
-  `runtimeClassName` if you install more than one.
-- **`installer.enabled`** *additionally* deploys a **privileged** DaemonSet that installs `runsc`,
-  registers the containerd runtime, and labels each node once ready (requires `enabled=true`).
-  **Self-managed nodes only** — not managed control planes (GKE Autopilot, most managed EKS/AKS); on
-  GKE use GKE Sandbox instead. It mounts the host filesystem and restarts containerd, validating the
-  new config first and rolling back / failing closed on any problem, so a node is only labeled once
-  containerd is confirmed to serve `runsc`. Pods requesting the RuntimeClass stay `Pending` until a
-  node is labeled — expected, not a failure. Idempotent: nodes with `runsc` already provisioned are
-  left untouched except for the label.
-
-| Parameter | Description | Default |
-| --------- | ----------- | ------- |
-| `agenticHarness.gvisor.enabled` | Create the `RuntimeClass` and enable gVisor wiring | `false` |
-| `agenticHarness.gvisor.runtimeClassName` | Name of the cluster-scoped `RuntimeClass` | `gvisor` |
-| `agenticHarness.gvisor.handler` | containerd runtime handler the `RuntimeClass` targets | `runsc` |
-| `agenticHarness.gvisor.nodeSelector` | `RuntimeClass` scheduling selector, and the label the installer applies when ready (set `null` to disable pinning) | `{gvisor.enabled: "true"}` |
-| `agenticHarness.gvisor.installer.enabled` | Deploy the privileged installer DaemonSet (requires `gvisor.enabled=true`) | `false` |
-| `agenticHarness.gvisor.installer.image.repository` | Installer image repository | `debian` |
-| `agenticHarness.gvisor.installer.image.tag` | Installer image tag | `stable-slim` |
-| `agenticHarness.gvisor.installer.image.pullPolicy` | Installer image pull policy | `IfNotPresent` |
-| `agenticHarness.gvisor.installer.runscVersion` | Pinned gVisor release to install | `"20260706"` |
-| `agenticHarness.gvisor.installer.containerdConfigPath` | Path to the node's containerd config | `/etc/containerd/config.toml` |
-| `agenticHarness.gvisor.installer.runscConfig.network` | `runsc` network mode written to `runsc.toml` | `host` |
-| `agenticHarness.gvisor.installer.runscConfig.overlay2` | `runsc` overlay2 setting written to `runsc.toml` | `root:self,size=50g` |
-| `agenticHarness.gvisor.installer.resources` | Installer container resource requests/limits | `{}` |
-| `agenticHarness.gvisor.installer.nodeSelector` | Which nodes to install on (empty = all) | `{}` |
-| `agenticHarness.gvisor.installer.tolerations` | Installer DaemonSet tolerations | `[{operator: Exists}]` |
-| `agenticHarness.gvisor.installer.annotations` | Installer pod annotations | `{}` |
 
 ## License
 
