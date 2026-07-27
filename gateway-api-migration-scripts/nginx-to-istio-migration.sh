@@ -16,13 +16,22 @@ DESCRIPTION:
         what's already there — nothing is invented on your behalf)
       - a complete replacement values.yaml with ingress/ingress-nginx removed
         and httproute added, everything else preserved
+      - if the ingress-nginx controller is still enabled, an additional
+        "coexistence" values.yaml that keeps ingress-nginx as-is and only adds
+        httproute, so both controllers can route traffic in parallel
 
     This script never runs "helm upgrade" against your SonarQube release. It
-    only ever prints the command for you to run yourself, once you're ready.
-    If the ingress-nginx controller is still enabled, the printed next steps
-    remind you to verify Istio is handling traffic correctly while both
-    controllers run in parallel, before running that "helm upgrade" (which
-    removes the ingress-nginx controller).
+    only ever prints the commands for you to run yourself, once you're ready.
+    If the ingress-nginx controller is still enabled, two "helm upgrade"
+    commands are printed instead of one:
+      1. a coexistence upgrade, pinned to --coexist-chart-version (the last
+         chart version that still bundles the ingress-nginx subchart — newer
+         chart versions drop that subchart entirely regardless of values, so
+         staying on the old chart version here is what actually keeps
+         ingress-nginx running), using the coexistence values.yaml
+      2. once you've verified Istio is handling traffic correctly, the
+         cutover upgrade to the target chart version, which removes the
+         ingress-nginx controller
 
 USAGE:
     $0 --cloud aws|gcp|onprem [OPTIONS]
@@ -38,6 +47,12 @@ OPTIONS:
                              service name (default: sonarqube)
     --chart-ref ref          Chart reference used only in the printed next-step
                              "helm upgrade" command (default: sonarqube/<chart-flavor>)
+    --coexist-chart-version  Chart version used only in the printed coexistence-step
+                             "helm upgrade" command, when the ingress-nginx controller
+                             is still enabled. Must be the last chart version that
+                             still bundles the ingress-nginx subchart, since newer
+                             chart versions drop it entirely regardless of values
+                             (default: 2026.4.0)
     --values-file path       Read values from this local file instead of
                               "helm get values <release> -n <namespace>"
     --hostnames h1,h2        Hostnames for the Gateway/HTTPRoute. Auto-detected
@@ -102,6 +117,8 @@ NAMESPACE="$DEFAULT_CHART_FLAVOR"
 RELEASE_NAME="$DEFAULT_CHART_FLAVOR"
 CHART_FLAVOR="$DEFAULT_CHART_FLAVOR"
 CHART_REF=""
+readonly DEFAULT_COEXIST_CHART_VERSION="2026.4.0"
+COEXIST_CHART_VERSION="$DEFAULT_COEXIST_CHART_VERSION"
 VALUES_FILE=""
 HOSTNAMES=""
 GATEWAY_NAME=""
@@ -124,6 +141,8 @@ CURRENT_VALUES_FILE=""
 GATEWAY_FILE=""
 NEW_VALUES_FILE=""
 NEXT_STEP_CMD=""
+COEXIST_VALUES_FILE=""
+COEXIST_STEP_CMD=""
 
 # Filled in by introspect_ingress
 TLS_ENABLED="false"
@@ -246,6 +265,10 @@ parse_args() {
         ;;
       --chart-ref)
         CHART_REF="$2"
+        shift 2
+        ;;
+      --coexist-chart-version)
+        COEXIST_CHART_VERSION="$2"
         shift 2
         ;;
       --values-file)
@@ -417,6 +440,8 @@ set_derived_defaults() {
   GATEWAY_FILE="${OUTPUT_DIR}/gateway-${RELEASE_NAME}.yaml"
   NEW_VALUES_FILE="${OUTPUT_DIR}/values-gateway-api-${RELEASE_NAME}.yaml"
   NEXT_STEP_CMD="helm upgrade $RELEASE_NAME $CHART_REF -f $NEW_VALUES_FILE -n $NAMESPACE"
+  COEXIST_VALUES_FILE="${OUTPUT_DIR}/values-coexist-${RELEASE_NAME}.yaml"
+  COEXIST_STEP_CMD="helm upgrade $RELEASE_NAME $CHART_REF --version $COEXIST_CHART_VERSION -f $COEXIST_VALUES_FILE -n $NAMESPACE"
 }
 
 print_run_summary() {
@@ -892,8 +917,25 @@ hostnames_to_yaml_array() {
   echo "${yaml_array}]"
 }
 
+# Adds httproute (enabled + gateway/hostnames/rules) to the values file at
+# $1, using the hostnames/webcontext computed by the caller. Shared by the
+# coexistence values (ingress-nginx left untouched) and the final cutover
+# values (ingress/ingress-nginx/nginx removed).
+add_httproute_to_values() {
+  local target_file="$1" hostnames_yaml_array="$2" webcontext="$3"
+
+  yq -i ".httproute.enabled = true | .httproute.gateway = \"$GATEWAY_NAME\" | .httproute.gatewayNamespace = \"$GATEWAY_NAMESPACE\" | .httproute.hostnames = ${hostnames_yaml_array}" "$target_file"
+  yq -i ".httproute.rules = [{\"matches\": [{\"path\": {\"type\": \"PathPrefix\", \"value\": \"$webcontext\"}}], \"backendRefs\": [{\"name\": \"$BACKEND_SERVICE\", \"port\": $BACKEND_PORT}]}]" "$target_file"
+}
+
 # Step 4: render the replacement values.yaml (ingress/ingress-nginx removed,
-# httproute added, everything else preserved from $CURRENT_VALUES_FILE)
+# httproute added, everything else preserved from $CURRENT_VALUES_FILE). If
+# ingress-nginx is still enabled, also renders a coexistence values.yaml that
+# leaves ingress-nginx running and only adds httproute, so both controllers
+# can route traffic in parallel while Istio is verified -- the cutover
+# values.yaml above must be applied on a chart version that still bundles
+# ingress-nginx (see --coexist-chart-version) for the coexistence to actually
+# hold, since newer chart versions drop that subchart regardless of values.
 render_values_yaml() {
   box_top "Step 4: Rendering replacement values.yaml"
 
@@ -902,10 +944,15 @@ render_values_yaml() {
   hostnames_yaml_array=$(hostnames_to_yaml_array "$hostname_list")
   webcontext=$(compute_webcontext)
 
+  if [[ "$NGINX_CONTROLLER_PRESENT" == "true" ]]; then
+    cp "$CURRENT_VALUES_FILE" "$COEXIST_VALUES_FILE"
+    add_httproute_to_values "$COEXIST_VALUES_FILE" "$hostnames_yaml_array" "$webcontext"
+    summary "Written to $COEXIST_VALUES_FILE (ingress-nginx left enabled, httproute added -- for the coexistence step, applied with --coexist-chart-version $COEXIST_CHART_VERSION)"
+  fi
+
   cp "$CURRENT_VALUES_FILE" "$NEW_VALUES_FILE"
   yq -i 'del(.ingress) | del(.["ingress-nginx"]) | del(.nginx)' "$NEW_VALUES_FILE"
-  yq -i ".httproute.enabled = true | .httproute.gateway = \"$GATEWAY_NAME\" | .httproute.gatewayNamespace = \"$GATEWAY_NAMESPACE\" | .httproute.hostnames = ${hostnames_yaml_array}" "$NEW_VALUES_FILE"
-  yq -i ".httproute.rules = [{\"matches\": [{\"path\": {\"type\": \"PathPrefix\", \"value\": \"$webcontext\"}}], \"backendRefs\": [{\"name\": \"$BACKEND_SERVICE\", \"port\": $BACKEND_PORT}]}]" "$NEW_VALUES_FILE"
+  add_httproute_to_values "$NEW_VALUES_FILE" "$hostnames_yaml_array" "$webcontext"
 
   summary "Written to $NEW_VALUES_FILE"
   detail "Removed: ingress, ingress-nginx, nginx"
@@ -920,27 +967,53 @@ print_generate_complete() {
   box_top "Generate Complete"
   summary "Files written:"
   summary "  - $GATEWAY_FILE"
+  if [[ "$NGINX_CONTROLLER_PRESENT" == "true" ]]; then
+    summary "  - $COEXIST_VALUES_FILE"
+  fi
   summary "  - $NEW_VALUES_FILE"
   summary ""
   summary "Next steps:"
   summary ""
-  summary "  1. Review $GATEWAY_FILE and $NEW_VALUES_FILE"
-  summary ""
-  summary "  2. Apply the Gateway (kubectl apply -f $GATEWAY_FILE) once Istio is installed,"
-  summary "     or re-run this script with --mode apply"
-  summary ""
   if [[ "$NGINX_CONTROLLER_PRESENT" == "true" ]]; then
-    summary "  3. The ingress-nginx controller is still running alongside Istio — verify Istio is"
-    summary "     handling traffic correctly before proceeding with the helm upgrade below,"
-    summary "     which will remove the ingress-nginx controller"
+    summary "  1. Review $GATEWAY_FILE, $COEXIST_VALUES_FILE, and $NEW_VALUES_FILE"
+    summary ""
+    summary "  2. Apply the Gateway (kubectl apply -f $GATEWAY_FILE) once Istio is installed,"
+    summary "     or re-run this script with --mode apply. Keep $GATEWAY_FILE around afterwards"
+    summary "     (e.g. commit it to version control) -- you'll need it to re-apply the Gateway"
+    summary "     to this or another cluster later"
+    summary ""
+    summary "  3. Coexistence step -- run this on the last chart version that still bundles"
+    summary "     ingress-nginx ($COEXIST_CHART_VERSION), so ingress-nginx keeps running"
+    summary "     alongside Istio instead of being pruned by a newer chart:"
+    summary "     $COEXIST_STEP_CMD"
+    summary ""
+    summary "  4. Verify Istio is handling traffic correctly, e.g. port-forward the Istio ingress"
+    summary "     gateway Service (kubectl port-forward -n istio-system svc/istio-ingressgateway"
+    summary "     8080:80) and curl it with the Host header set to your hostname -- or use"
+    summary "     whatever else fits your setup (its LoadBalancer URL, a temporary DNS record, etc.)"
+    summary ""
+    summary "  5. Cutover step -- once verified, run this to move to the target chart"
+    summary "     version and remove the ingress-nginx controller:"
+    summary "     $NEXT_STEP_CMD"
+  else
+    summary "  1. Review $GATEWAY_FILE and $NEW_VALUES_FILE"
+    summary ""
+    summary "  2. Apply the Gateway (kubectl apply -f $GATEWAY_FILE) once Istio is installed,"
+    summary "     or re-run this script with --mode apply. Keep $GATEWAY_FILE around afterwards"
+    summary "     (e.g. commit it to version control) -- you'll need it to re-apply the Gateway"
+    summary "     to this or another cluster later"
+    summary ""
+    summary "  3. Verify Istio is handling traffic correctly, e.g. port-forward the Istio ingress"
+    summary "     gateway Service (kubectl port-forward -n istio-system svc/istio-ingressgateway"
+    summary "     8080:80) and curl it with the Host header set to your hostname -- or use"
+    summary "     whatever else fits your setup (its LoadBalancer URL, a temporary DNS record, etc.)"
     summary ""
     summary "  4. When ready, run:"
-  else
-    summary "  3. When ready, run:"
+    summary "     $NEXT_STEP_CMD"
   fi
-  summary "     $NEXT_STEP_CMD"
   summary ""
   warn "Please update your source-controlled values.yaml with the contents of $NEW_VALUES_FILE, so future 'helm upgrade' runs keep using it."
+  warn "Please also keep $GATEWAY_FILE under version control -- it's not managed by helm upgrade, so it's the only record of the Gateway you'll need to re-apply it later (this or another cluster, disaster recovery, etc.)"
   summary ""
   end_section
 }
@@ -1001,15 +1074,32 @@ print_apply_complete() {
   box_top "Apply Complete"
   summary "Files written:"
   summary "  - $GATEWAY_FILE (applied to the cluster)"
-  summary "  - $NEW_VALUES_FILE"
   if [[ "$NGINX_CONTROLLER_PRESENT" == "true" ]]; then
-    summary "The ingress-nginx controller is still running alongside Istio — verify Istio is"
-    summary "handling traffic correctly before proceeding with the helm upgrade below,"
-    summary "which will remove the ingress-nginx controller"
+    summary "  - $COEXIST_VALUES_FILE"
   fi
-  summary "Next step: when ready, run:"
+  summary "  - $NEW_VALUES_FILE"
+  summary ""
+  if [[ "$NGINX_CONTROLLER_PRESENT" == "true" ]]; then
+    summary "Coexistence step -- run this on the last chart version that still bundles"
+    summary "ingress-nginx ($COEXIST_CHART_VERSION), so ingress-nginx keeps running"
+    summary "alongside Istio instead of being pruned by a newer chart:"
+    summary "$COEXIST_STEP_CMD"
+    summary ""
+  fi
+  summary "Verify Istio is handling traffic correctly, e.g. port-forward the Istio ingress"
+  summary "gateway Service (kubectl port-forward -n istio-system svc/istio-ingressgateway"
+  summary "8080:80) and curl it with the Host header set to your hostname -- or use whatever"
+  summary "else fits your setup (its LoadBalancer URL, a temporary DNS record, etc.)"
+  summary ""
+  if [[ "$NGINX_CONTROLLER_PRESENT" == "true" ]]; then
+    summary "Once verified, run the cutover step below to move to the target chart"
+    summary "version and remove the ingress-nginx controller:"
+  else
+    summary "Next step: once verified, run:"
+  fi
   summary "$NEXT_STEP_CMD"
   warn "Please update your source-controlled values.yaml with the contents of $NEW_VALUES_FILE, so future 'helm upgrade' runs keep using it."
+  warn "Please also keep $GATEWAY_FILE under version control -- it's not managed by helm upgrade, so it's the only record of the Gateway you'll need to re-apply it later (this or another cluster, disaster recovery, etc.)"
   end_section
 }
 

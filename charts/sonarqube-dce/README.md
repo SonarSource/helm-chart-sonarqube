@@ -166,8 +166,9 @@ jdbcOverwrite:
 
 We provide a migration script to help with this: `nginx-to-istio-migration.sh`, available in the `gateway-api-migration-scripts/` directory of this chart's GitHub repository. **This script is provided for reference and should be reviewed and adapted to your specific environment before use.**
 
-By default (`--mode generate`), the script never touches your live release. It reads your current Helm values (from the live release, or a local file with `--values-file`), detects your existing ingress/ingress-nginx configuration (hostnames, TLS, nginx annotations, and any LoadBalancer Service annotations already set under `ingress-nginx.controller.service.annotations`), and writes two files into an output directory (default: `gateway-api-migration-<release-name>/`, override with `--output-dir`):
+By default (`--mode generate`), the script never touches your live release. It reads your current Helm values (from the live release, or a local file with `--values-file`), detects your existing ingress/ingress-nginx configuration (hostnames, TLS, nginx annotations, and any LoadBalancer Service annotations already set under `ingress-nginx.controller.service.annotations`), and writes into an output directory (default: `gateway-api-migration-<release-name>/`, override with `--output-dir`):
 * a Gateway API `Gateway` manifest reusing your existing LoadBalancer Service annotations as-is — `--cloud aws|gcp|onprem` only selects which `--aws-*`/`--gcp-*`/`--metallb-pool` flags apply on top to add or override specific keys; nothing is invented on your behalf
+* if the ingress-nginx controller is still enabled, a `values-coexist-<release-name>.yaml` that keeps `ingress`/`ingress-nginx` exactly as-is and only adds `httproute`, so both controllers can route traffic in parallel while you verify Istio
 * a complete replacement `values.yaml` with `ingress`/`ingress-nginx` removed and `httproute` added (including an explicit `backendRefs` rule), everything else preserved as-is from your current release values
 
 ```bash
@@ -187,16 +188,40 @@ By default (`--mode generate`), the script never touches your live release. It r
 # --output-dir dir         Directory to write generated files into (default: gateway-api-migration-<release-name>)
 # --aws-subnets ids        Comma-separated subnet IDs. Only required if not
 #                          already set via ingress-nginx.controller.service.annotations
+# --coexist-chart-version  Chart version for the coexistence helm upgrade below,
+#                          when ingress-nginx is still enabled (default: 2026.4.0,
+#                          the last chart version that still bundles it)
 # -h, --help               Show all options
 ```
 
-With `--mode apply`, the script additionally installs the Gateway API CRDs and Istio (unless `--skip-istio`) and applies the generated `Gateway` manifest, so the Gateway exists before you upgrade. In either mode, the script only ever prints the next-step command — it does not run it for you:
+With `--mode apply`, the script additionally installs the Gateway API CRDs and Istio (unless `--skip-istio`) and applies the generated `Gateway` manifest, so the Gateway exists before you upgrade. In either mode, the script only ever prints the next-step command(s) — it does not run them for you.
+
+**Keep the generated `Gateway` manifest** (e.g. commit it to version control) — it isn't managed by `helm upgrade`, so it's your only record for re-applying it later (this or another cluster, disaster recovery, etc.).
+
+If the ingress-nginx controller is still enabled, two `helm upgrade` commands are printed instead of one, since newer chart versions drop the `ingress-nginx` subchart entirely regardless of values:
+
+```bash
+# 1. Coexistence step — pinned to --coexist-chart-version, the last chart version
+#    that still bundles ingress-nginx, so it keeps running alongside Istio
+helm upgrade sonarqube sonarqube/sonarqube-dce --version 2026.4.0 -f gateway-api-migration-sonarqube/values-coexist-sonarqube.yaml -n sonarqube-dce
+
+# 2. Verify Istio is handling traffic correctly, e.g. port-forward the Istio
+#    ingress gateway Service (kubectl port-forward -n istio-system svc/istio-ingressgateway 8080:80)
+#    and curl it with the Host header set to your hostname — or use whatever else
+#    fits your setup (its LoadBalancer URL, a temporary DNS record, etc.)
+
+# 3. Cutover step — once verified, moves to the target chart version and removes
+#    the ingress-nginx controller
+helm upgrade sonarqube sonarqube/sonarqube-dce -f gateway-api-migration-sonarqube/values-gateway-api-sonarqube.yaml -n sonarqube-dce
+```
+
+Otherwise, a single `helm upgrade` is printed:
 
 ```bash
 helm upgrade sonarqube sonarqube/sonarqube-dce -f gateway-api-migration-sonarqube/values-gateway-api-sonarqube.yaml -n sonarqube-dce
 ```
 
-Run that command yourself once you've reviewed the generated files and are ready to switch your release over to Gateway API.
+Run these commands yourself once you've reviewed the generated files and are ready to switch your release over to Gateway API.
 
 ### Upgrade from the old sonarqube-lts to this chart
 
