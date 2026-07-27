@@ -1,0 +1,148 @@
+{{- if .Values.agenticHarness.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sonarqube.agentic.orchestrator.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agentic/component: orchestrator
+spec:
+  replicas: {{ .Values.agenticHarness.orchestrator.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "sonarqube.name" . }}
+      sonarqube.agentic/component: orchestrator
+  template:
+    metadata:
+      labels:
+        app: {{ template "sonarqube.name" . }}
+        release: {{ .Release.Name }}
+        sonarqube.agentic/component: orchestrator
+    spec:
+      automountServiceAccountToken: {{ if .Values.agenticHarness.serviceAccount.create }}{{ .Values.agenticHarness.serviceAccount.automountToken }}{{ else }}{{ .Values.serviceAccount.automountToken }}{{ end }}
+      {{- if or .Values.agenticHarness.orchestrator.image.pullSecrets .Values.agenticHarness.orchestrator.image.pullSecret }}
+      imagePullSecrets:
+        {{- if .Values.agenticHarness.orchestrator.image.pullSecret }}
+        - name: {{ .Values.agenticHarness.orchestrator.image.pullSecret }}
+        {{- end }}
+        {{- if .Values.agenticHarness.orchestrator.image.pullSecrets }}
+{{ toYaml .Values.agenticHarness.orchestrator.image.pullSecrets | indent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.agenticHarness.orchestrator.securityContext }}
+      securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-sonarqube
+          image: {{ include "sonarqube.image" . }}
+          imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}
+          {{- with (fromYaml (include "sonarqube.initContainersSecurityContext" .)) }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - sh
+            - -c
+            - |
+              until curl -sf "{{ include "sonarqube.agentic.sonarqube.url" . }}/api/system/status" | grep -q '"status":"UP"'; do
+                echo "Waiting for SonarQube to be UP..."; sleep 10;
+              done
+      containers:
+        - name: agentic-orchestrator
+          image: "{{ .Values.agenticHarness.orchestrator.image.repository }}:{{ .Values.agenticHarness.orchestrator.image.tag }}"
+          imagePullPolicy: {{ .Values.agenticHarness.orchestrator.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.agenticHarness.orchestrator.port }}
+              protocol: TCP
+          env:
+            - name: SERVER_PORT
+              value: {{ .Values.agenticHarness.orchestrator.port | quote }}
+            - name: CORE_DB_READ_WRITE_ENDPOINT
+              value: {{ include "sonarqube.agentic.jdbc.endpoint" . | quote }}
+            - name: CORE_DB_NAME
+              value: {{ include "sonarqube.agentic.jdbc.dbname" . | quote }}
+            - name: CORE_DB_USERNAME
+              value: {{ template "jdbc.username" . }}
+            - name: CORE_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "jdbc.secret" . }}
+                  key: {{ template "jdbc.secretPasswordKey" . }}
+            - name: AGENTIC_STORAGE_ENDPOINT
+              value: {{ .Values.agenticHarness.orchestrator.storage.endpoint | quote }}
+            - name: AGENTIC_STORAGE_REGION
+              value: {{ .Values.agenticHarness.orchestrator.storage.region | quote }}
+            - name: AGENTIC_STORAGE_BUCKET
+              value: {{ .Values.agenticHarness.orchestrator.storage.bucket | quote }}
+            - name: AGENTIC_STORAGE_PATH_STYLE
+              value: {{ .Values.agenticHarness.orchestrator.storage.pathStyle | quote }}
+            {{- /* Inject static storage keys only when provided (inline or via existingSecret). When
+                   none are set, the env vars are omitted so the orchestrator's AWS SDK falls back to
+                   its default credential chain - i.e. the pod's IAM identity (node instance role or
+                   IRSA) for credential-less access to a real S3 bucket. */}}
+            {{- if or .Values.agenticHarness.orchestrator.storage.accessKey .Values.agenticHarness.orchestrator.storage.secretKey .Values.agenticHarness.orchestrator.storage.existingSecret }}
+            - name: AGENTIC_STORAGE_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.agenticHarness.orchestrator.storage.existingSecret }}
+                  key: AGENTIC_STORAGE_ACCESS_KEY
+            - name: AGENTIC_STORAGE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.agenticHarness.orchestrator.storage.existingSecret }}
+                  key: AGENTIC_STORAGE_SECRET_KEY
+            {{- end }}
+            - name: AGENTIC_SONARQUBE_URL
+              value: {{ include "sonarqube.agentic.sonarqube.url" . | quote }}
+            {{- if or .Values.agenticHarness.orchestrator.sonarqubeToken.token .Values.agenticHarness.orchestrator.sonarqubeToken.existingSecret }}
+            - name: AGENTIC_SONARQUBE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.agenticHarness.orchestrator.sonarqubeToken.existingSecret }}
+                  key: {{ .Values.agenticHarness.orchestrator.sonarqubeToken.existingSecretKey | default "AGENTIC_SONARQUBE_TOKEN" }}
+            {{- end }}
+            {{- range $family, $cfg := .Values.agenticHarness.runtimes }}
+            {{- if $cfg.enabled }}
+            - name: AGENTIC_{{ $family | upper }}_RUNTIME_PUSH_URL
+              value: {{ include "sonarqube.agentic.runtime.pushUrl" (dict "ctx" $ "family" $family) | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.agenticHarness.orchestrator.github.apiBaseUrl }}
+            - name: AGENTIC_GITHUB_API_BASE_URL
+              value: {{ .Values.agenticHarness.orchestrator.github.apiBaseUrl | quote }}
+            {{- end }}
+            {{- /* No AGENTIC_GITHUB_TOKEN: since SONAR-30903 the orchestrator obtains a short-lived
+                   GitHub App installation token from SonarQube on demand (via AGENTIC_SONARQUBE_URL/
+                   TOKEN), not from a static env var. */}}
+          {{- with .Values.agenticHarness.orchestrator.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | indent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "sonarqube.agentic.orchestrator.serviceAccountName" . }}
+{{- end }}

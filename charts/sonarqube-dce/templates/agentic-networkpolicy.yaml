@@ -1,0 +1,155 @@
+{{- if and .Values.networkPolicy.enabled .Values.agenticHarness.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "sonarqube.agentic.orchestrator.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agentic/component: orchestrator
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ template "sonarqube.name" . }}
+      sonarqube.agentic/component: orchestrator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ template "sonarqube.name" . }}
+              sonarqube.datacenter/type: app
+      ports:
+        - port: {{ .Values.agenticHarness.orchestrator.port }}
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ template "sonarqube.name" . }}
+              sonarqube.agentic/component: runtime
+      ports:
+        - port: {{ .Values.agenticHarness.orchestrator.port }}
+          protocol: TCP
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    {{- range $family, $cfg := .Values.agenticHarness.runtimes }}
+    {{- if $cfg.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ template "sonarqube.name" $ }}
+              sonarqube.agentic/component: runtime
+              sonarqube.agentic/family: {{ $family }}
+      ports:
+        - port: {{ $cfg.port }}
+          protocol: TCP
+    {{- end }}
+    {{- end }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ template "sonarqube.name" . }}
+              sonarqube.datacenter/type: app
+      ports:
+        - port: 9000
+          protocol: TCP
+    {{- range .Values.agenticHarness.orchestrator.egressAllow }}
+    - to:
+{{ include "sonarqube.agentic.egressAllow.peer" . | indent 8 }}
+      {{- with .ports }}
+      ports:
+        {{- range . }}
+        - port: {{ .port }}
+          {{- with .protocol }}
+          protocol: {{ . }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+{{- end }}
+
+{{- /* Runtime NetworkPolicies render on the global networkPolicy.enabled OR the dedicated
+       runtimeNetworkPolicy.enabled, so the (untrusted) runtimes can be locked down on their own
+       without imposing a NetworkPolicy on the orchestrator or the SonarQube app/search nodes. */}}
+{{- if and (or .Values.networkPolicy.enabled .Values.agenticHarness.runtimeNetworkPolicy.enabled) .Values.agenticHarness.enabled }}
+{{- range $family, $cfg := .Values.agenticHarness.runtimes }}
+{{- if $cfg.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "sonarqube.agentic.runtime.fullname" (dict "ctx" $ "family" $family) }}
+  labels:
+    app: {{ template "sonarqube.name" $ }}
+    chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    release: {{ $.Release.Name }}
+    heritage: {{ $.Release.Service }}
+    sonarqube.agentic/component: runtime
+    sonarqube.agentic/family: {{ $family }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ template "sonarqube.name" $ }}
+      sonarqube.agentic/component: runtime
+      sonarqube.agentic/family: {{ $family }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ template "sonarqube.name" $ }}
+              sonarqube.agentic/component: orchestrator
+      ports:
+        - port: {{ $cfg.port }}
+          protocol: TCP
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ template "sonarqube.name" $ }}
+              sonarqube.agentic/component: orchestrator
+      ports:
+        - port: {{ $.Values.agenticHarness.orchestrator.port }}
+          protocol: TCP
+    {{- range $cfg.egressAllow }}
+    - to:
+{{ include "sonarqube.agentic.egressAllow.peer" . | indent 8 }}
+      {{- with .ports }}
+      ports:
+        {{- range . }}
+        - port: {{ .port }}
+          {{- with .protocol }}
+          protocol: {{ . }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -100,7 +100,7 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      {{- $hasMergedProps := or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.port .Values.ApplicationNodes.webPort .Values.ApplicationNodes.cePort }}
+      {{- $hasMergedProps := or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.port .Values.ApplicationNodes.webPort .Values.ApplicationNodes.cePort .Values.agenticHarness.enabled }}
       {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
           image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
@@ -340,6 +340,15 @@ spec:
                 secretKeyRef:
                   name: "{{ template "search.ksPassword" . }}"
                   key: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
+            {{- end }}
+            {{- /* Point the agent capabilities at the in-cluster Agent Orchestrator. Set as env vars
+                   (SonarQube maps SONAR_* env to the sonar.hunteragent/remediationagent.orchestrator.url
+                   properties), auto-wired whenever the harness is enabled. */}}
+            {{- if .Values.agenticHarness.enabled }}
+            - name: SONAR_HUNTERAGENT_ORCHESTRATOR_URL
+              value: {{ include "sonarqube.agentic.orchestrator.url" . | quote }}
+            - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
+              value: {{ include "sonarqube.agentic.orchestrator.url" . | quote }}
             {{- end }}
           envFrom:
             - configMapRef:
