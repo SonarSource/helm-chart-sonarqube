@@ -39,6 +39,16 @@ spec:
         - port: 9000
           protocol: TCP
 {{ end }}
+{{- if .Values.agenticHarness.enabled }}
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ template "sonarqube.name" . }}
+              sonarqube.agentic/component: orchestrator
+      ports:
+        - port: 9000
+          protocol: TCP
+{{- end }}
   egress:
     - to:
         - podSelector:
@@ -70,6 +80,16 @@ spec:
       ports:
         - port: 9000
           protocol: TCP
+    {{- if .Values.agenticHarness.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ template "sonarqube.name" . }}
+              sonarqube.agentic/component: orchestrator
+      ports:
+        - port: {{ .Values.agenticHarness.orchestrator.port }}
+          protocol: TCP
+    {{- end }}
 
 ---
 apiVersion: networking.k8s.io/v1
