@@ -14,6 +14,11 @@ import (
 
 var marketplaceTestSchemaPath string = "../../google-cloud-marketplace-k8s-app/data-test/schema.yaml"
 
+// DCE chart under test. On later branches these are declared in sonarqube_dce_schema_test.go,
+// which this branch predates, so they are defined here to keep the package building.
+var dceChartPath string = "../../charts/sonarqube-dce"
+var dceReleaseName string = "sonarqube-dce"
+
 // Placeholder rejected by charts/sonarqube-dce/templates/validation.yaml.
 var rejectedJdbcPlaceholder string = "jdbc:postgresql://myPostgres/myDatabase"
 
