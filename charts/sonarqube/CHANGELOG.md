@@ -5,6 +5,7 @@ All changes to this chart will be documented in this file.
 * Upgrade Chart's version to 2026.5.0
 * **Breaking**: Remove the deprecated `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart dependency. `ingress.enabled` remains supported for use with a self-managed ingress controller; `httproute.enabled` (Gateway API) is also available
 * Add `gateway-api-migration-scripts/nginx-to-istio-migration.sh` to help migrate from the bundled ingress-nginx controller to Gateway API
+* Support annotations in HTTPRoute
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
@@ -34,7 +35,6 @@ All changes to this chart will be documented in this file.
 * Upgrade SonarQube Community build to 26.3.0.120487
 * Replace wget with curl in health probes
 * Use -fS flag in curl to show errors in liveness probes
-* Support annotations in HTTPRoute
 
 ## [2026.1.0]
 * Upgrade SonarQube Server to 2026.1.0
