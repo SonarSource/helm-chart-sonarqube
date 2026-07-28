@@ -22,6 +22,14 @@ RUN cat /data/schema.yaml \
         > /data/schema.yaml.new \
         && mv /data/schema.yaml.new /data/schema.yaml
 
+# Test-only chart overlay (ephemeral PostgreSQL), merged into the chart only
+# during the functionality test (create_manifests.sh --mode=test).
+COPY google-cloud-marketplace-k8s-app/data-test/chart /tmp/test-chart.tmp/chart
+RUN tar -czvf /tmp/test-chart.tar.gz -C /tmp/test-chart.tmp chart \
+        && mkdir -p /data-test/chart \
+        && mv /tmp/test-chart.tar.gz /data-test/chart/chart.tar.gz \
+        && rm -Rf /tmp/test-chart.tmp
+
 COPY google-cloud-marketplace-k8s-app/data-test/schema.yaml /data-test/schema.yaml
 # Provide registry prefix and tag for default values for images.
 # Might not be needed on V2 schema
