@@ -7,6 +7,7 @@ All changes to this chart will be documented in this file.
 * Add `gateway-api-migration-scripts/nginx-to-istio-migration.sh` to help migrate from the bundled ingress-nginx controller to Gateway API
 * Add optional gVisor (runsc) sandboxing for the Agentic Job Runtimes
 * Add the SonarQube Unified Agentic Harness (Agent Orchestrator and per-family Agentic Job Runtimes) via `agenticHarness.enabled`
+* Auto-wire the hunter Agentic Job Runtime's `SCRIPT_PATH` (detection mode) from `agenticHarness.runtimes.hunter.scriptPath`, symmetric with the remediation runtime's `REMEDIATION_SCRIPT_PATH`
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
