@@ -7,7 +7,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: install-plugins-values.yaml
     heritage: Helm
 type: Opaque
@@ -22,7 +22,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: install-plugins-values.yaml
     heritage: Helm
 type: Opaque
@@ -41,7 +41,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: install-plugins-values.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: install-plugins-values.yaml
     heritage: Helm
 data:
@@ -101,7 +101,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: install-plugins-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: install-plugins-values.yaml
     heritage: Helm
 spec:
@@ -138,7 +138,7 @@ metadata:
   name: install-plugins-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: install-plugins-values.yaml
     heritage: Helm
     app.kubernetes.io/name: install-plugins-values.yaml
@@ -146,7 +146,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: install-plugins-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.1.4-enterprise"
+    app.kubernetes.io/version: "2026.1.5-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -158,10 +158,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: be6a65c0914f61eba898287c66fd696ef5144f6f8293177c27ede440d59ec094
-        checksum/init-sysctl: daa4850129e4918bdf2ea55353a9c6aeba4d7f9f162104f61d44388d2375c61c
-        checksum/plugins: 108a1cbe30a2edbd156a3941d3b08c89a546cdc34a53a7298ea3fbd5a01d7092
-        checksum/secret: 77fade6354fcdca5245707151ad65d74a7b03ef8722f9494c1ac8b204db3a7ba
+        checksum/config: bc727339d3cd7c472bef4f7e06f15ac3dd17003f25a2d8d1c2df207cb239db23
+        checksum/init-sysctl: 9a58b37a2539035df33b57f7abb219106fafe994a10c042f48256d2c0d884e6c
+        checksum/plugins: 7cdbd94230287b8ddf4daa472c071ed835853d75036e4003df3f8bd32bda819c
+        checksum/secret: 80db80cd330a43604a34437a980cb0d5084dfe8750da98ab638f1515b93fef0c
       labels:
         app: sonarqube
         release: install-plugins-values.yaml
@@ -171,7 +171,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.1.4-enterprise
+          image: sonarqube:2026.1.5-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -189,7 +189,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: ""
         - name: install-plugins
-          image: sonarqube:2026.1.4-enterprise
+          image: sonarqube:2026.1.5-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
           securityContext:
@@ -233,7 +233,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2026.1.4-enterprise
+          image: sonarqube:2026.1.5-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -250,7 +250,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.1.4
+              value: 2026.1.5
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -358,14 +358,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: install-plugins-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: install-plugins-values.yaml-ui-test
-      image: "sonarqube:2026.1.4-enterprise"
+      image: "sonarqube:2026.1.5-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [

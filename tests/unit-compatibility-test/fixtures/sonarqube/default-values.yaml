@@ -7,7 +7,7 @@ metadata:
   name: default-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: default-values.yaml
     heritage: Helm
 type: Opaque
@@ -22,7 +22,7 @@ metadata:
   name: default-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: default-values.yaml
     heritage: Helm
 type: Opaque
@@ -41,7 +41,7 @@ metadata:
   name: default-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: default-values.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: default-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: default-values.yaml
     heritage: Helm
 data:
@@ -101,7 +101,7 @@ metadata:
   name: default-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: default-values.yaml
     heritage: Helm
 data:
@@ -114,7 +114,7 @@ metadata:
   name: default-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: default-values.yaml
     heritage: Helm
 spec:
@@ -135,7 +135,7 @@ metadata:
   name: default-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: default-values.yaml
     heritage: Helm
     app.kubernetes.io/name: default-values.yaml
@@ -143,7 +143,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: default-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.1.4-enterprise"
+    app.kubernetes.io/version: "2026.1.5-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -155,10 +155,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 7af4c3011d3cf0568ab88f08cbc3672f3a018c254d0c82c7cad412df0e280efe
-        checksum/init-sysctl: cd44574fb6d0200c3212ce574a566a5974cd39bd7e40a190cdd2bb9770ac76df
-        checksum/plugins: 3690f40697b2ff3c96dd12f222c8fb67f9c42b86b1c3b89628b30f51d0195515
-        checksum/secret: 8eee94d8449065bc67e0ee6d2c78e465d76824d64b2bb2baa8d1d977f542f3d3
+        checksum/config: aca6e927e738ef2a4180c907bd9a915ed825588e62da5bcaff9c05ee34d30dc9
+        checksum/init-sysctl: a5cd586d7179c07b5590ec7764a270ef0d367076b73a926706a69c842dc7a8f3
+        checksum/plugins: 70af3943c3e461b2b82b81d84cccefe3f14dac2b37cd4a53d91fb5fc208dd59f
+        checksum/secret: c9d9ff797017af01ac9e73981a3561775ee195b47d811e8f1f96fb3e05e58e17
       labels:
         app: sonarqube
         release: default-values.yaml
@@ -168,7 +168,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.1.4-enterprise
+          image: sonarqube:2026.1.5-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -187,7 +187,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2026.1.4-enterprise
+          image: sonarqube:2026.1.5-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -204,7 +204,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.1.4
+              value: 2026.1.5
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -306,14 +306,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: default-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: default-values.yaml-ui-test
-      image: "sonarqube:2026.1.4-enterprise"
+      image: "sonarqube:2026.1.5-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
