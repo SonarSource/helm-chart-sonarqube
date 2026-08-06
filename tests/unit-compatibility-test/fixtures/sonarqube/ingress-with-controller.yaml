@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx
-  namespace: default
+  namespace: sonarqube
 automountServiceAccountToken: true
 ---
 # Source: sonarqube/templates/secret.yaml
@@ -23,7 +23,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: ingress-with-controller.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: ingress-with-controller.yaml
     heritage: Helm
 type: Opaque
@@ -63,7 +63,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx-controller
-  namespace: default
+  namespace: sonarqube
 data:
 ---
 # Source: sonarqube/templates/config.yaml
@@ -73,7 +73,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: ingress-with-controller.yaml
     heritage: Helm
 data:
@@ -86,7 +86,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: ingress-with-controller.yaml
     heritage: Helm
 data:
@@ -133,7 +133,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: ingress-with-controller.yaml
     heritage: Helm
 data:
@@ -242,7 +242,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: ingress-with-controller.yaml-ingress-nginx
-    namespace: default
+    namespace: sonarqube
 ---
 # Source: sonarqube/charts/ingress-nginx/templates/controller-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -257,7 +257,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx
-  namespace: default
+  namespace: sonarqube
 rules:
   - apiGroups:
       - ""
@@ -351,7 +351,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx
-  namespace: default
+  namespace: sonarqube
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -359,7 +359,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: ingress-with-controller.yaml-ingress-nginx
-    namespace: default
+    namespace: sonarqube
 ---
 # Source: sonarqube/charts/ingress-nginx/templates/controller-service-webhook.yaml
 apiVersion: v1
@@ -374,7 +374,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx-controller-admission
-  namespace: default
+  namespace: sonarqube
 spec:
   type: ClusterIP
   ports:
@@ -401,7 +401,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx-controller
-  namespace: default
+  namespace: sonarqube
 spec:
   type: LoadBalancer
   ipFamilyPolicy: SingleStack
@@ -430,7 +430,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: ingress-with-controller.yaml
     heritage: Helm
 spec:
@@ -457,7 +457,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx-controller
-  namespace: default
+  namespace: sonarqube
 spec:
   selector:
     matchLabels:
@@ -577,7 +577,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: ingress-with-controller.yaml
     heritage: Helm
     app.kubernetes.io/name: ingress-with-controller.yaml
@@ -585,7 +585,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: ingress-with-controller.yaml-sonarqube
-    app.kubernetes.io/version: "2026.1.4-enterprise"
+    app.kubernetes.io/version: "2026.1.5-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -597,10 +597,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: aea0424b29adeb587362915debaf72a5a8e38087af0405369449231025ae2f15
-        checksum/init-sysctl: 38ed0afca52a973f0e41caeb8fd8104c609f484b04dd8d25e22ec23f74f78939
-        checksum/plugins: 4a3b03e4798edb310f61389c2a5df245a1c828941048e5d3d796b91d71c24a89
-        checksum/secret: 29d826072ca6f0977ed5fdccddd1df86c8f8c5033ef56a17ed6e8d4202ffc17f
+        checksum/config: 935f927b85198dfe8335815abe08d3456584cbfba00d57862d28d98323ca2458
+        checksum/init-sysctl: 9d899b172e7e2494530e739576942ba2efc57b7d42b37ba31ad04fe3b44b8903
+        checksum/plugins: fd3bc3c15a5aedb04312944a422a6407fb9be9ecdfb53b919a956ea7a56442a5
+        checksum/secret: 657250efcf6d0cc385892ef6eac1edfdbd73ccaf68529f19bd5d51ff5a0b1ade
       labels:
         app: sonarqube
         release: ingress-with-controller.yaml
@@ -610,7 +610,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.1.4-enterprise
+          image: sonarqube:2026.1.5-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -629,7 +629,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2026.1.4-enterprise
+          image: sonarqube:2026.1.5-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -646,7 +646,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.1.4
+              value: 2026.1.5
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -760,7 +760,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: ingress-with-controller.yaml
     heritage: Helm
     traffic-type: external
@@ -822,7 +822,7 @@ webhooks:
     clientConfig:
       service:
         name: ingress-with-controller.yaml-ingress-nginx-controller-admission
-        namespace: default
+        namespace: sonarqube
         port: 443
         path: /networking/v1/ingresses
 ---
@@ -835,7 +835,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ingress-with-controller.yaml-ingress-nginx-admission
-  namespace: default
+  namespace: sonarqube
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -897,14 +897,14 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: ingress-with-controller.yaml-ingress-nginx-admission
-    namespace: default
+    namespace: sonarqube
 ---
 # Source: sonarqube/charts/ingress-nginx/templates/admission-webhooks/job-patch/role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: ingress-with-controller.yaml-ingress-nginx-admission
-  namespace: default
+  namespace: sonarqube
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -930,7 +930,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: ingress-with-controller.yaml-ingress-nginx-admission
-  namespace: default
+  namespace: sonarqube
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -949,7 +949,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: ingress-with-controller.yaml-ingress-nginx-admission
-    namespace: default
+    namespace: sonarqube
 ---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1
@@ -962,14 +962,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.4
+    chart: sonarqube-2026.1.5
     release: ingress-with-controller.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: ingress-with-controller.yaml-ui-test
-      image: "sonarqube:2026.1.4-enterprise"
+      image: "sonarqube:2026.1.5-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
@@ -997,7 +997,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: ingress-with-controller.yaml-ingress-nginx-admission-create
-  namespace: default
+  namespace: sonarqube
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -1059,7 +1059,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: ingress-with-controller.yaml-ingress-nginx-admission-patch
-  namespace: default
+  namespace: sonarqube
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
