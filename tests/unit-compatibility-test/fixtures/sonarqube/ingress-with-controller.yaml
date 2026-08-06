@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx
-  namespace: sonarqube
+  namespace: default
 automountServiceAccountToken: true
 ---
 # Source: sonarqube/templates/secret.yaml
@@ -63,7 +63,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx-controller
-  namespace: sonarqube
+  namespace: default
 data:
 ---
 # Source: sonarqube/templates/config.yaml
@@ -242,7 +242,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: ingress-with-controller.yaml-ingress-nginx
-    namespace: sonarqube
+    namespace: default
 ---
 # Source: sonarqube/charts/ingress-nginx/templates/controller-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -257,7 +257,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx
-  namespace: sonarqube
+  namespace: default
 rules:
   - apiGroups:
       - ""
@@ -351,7 +351,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx
-  namespace: sonarqube
+  namespace: default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -359,7 +359,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: ingress-with-controller.yaml-ingress-nginx
-    namespace: sonarqube
+    namespace: default
 ---
 # Source: sonarqube/charts/ingress-nginx/templates/controller-service-webhook.yaml
 apiVersion: v1
@@ -374,7 +374,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx-controller-admission
-  namespace: sonarqube
+  namespace: default
 spec:
   type: ClusterIP
   ports:
@@ -401,7 +401,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx-controller
-  namespace: sonarqube
+  namespace: default
 spec:
   type: LoadBalancer
   ipFamilyPolicy: SingleStack
@@ -457,7 +457,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: ingress-with-controller.yaml-ingress-nginx-controller
-  namespace: sonarqube
+  namespace: default
 spec:
   selector:
     matchLabels:
@@ -822,7 +822,7 @@ webhooks:
     clientConfig:
       service:
         name: ingress-with-controller.yaml-ingress-nginx-controller-admission
-        namespace: sonarqube
+        namespace: default
         port: 443
         path: /networking/v1/ingresses
 ---
@@ -835,7 +835,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ingress-with-controller.yaml-ingress-nginx-admission
-  namespace: sonarqube
+  namespace: default
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -897,14 +897,14 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: ingress-with-controller.yaml-ingress-nginx-admission
-    namespace: sonarqube
+    namespace: default
 ---
 # Source: sonarqube/charts/ingress-nginx/templates/admission-webhooks/job-patch/role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: ingress-with-controller.yaml-ingress-nginx-admission
-  namespace: sonarqube
+  namespace: default
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -930,7 +930,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: ingress-with-controller.yaml-ingress-nginx-admission
-  namespace: sonarqube
+  namespace: default
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -949,7 +949,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: ingress-with-controller.yaml-ingress-nginx-admission
-    namespace: sonarqube
+    namespace: default
 ---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1
@@ -997,7 +997,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: ingress-with-controller.yaml-ingress-nginx-admission-create
-  namespace: sonarqube
+  namespace: default
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -1059,7 +1059,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: ingress-with-controller.yaml-ingress-nginx-admission-patch
-  namespace: sonarqube
+  namespace: default
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
