@@ -7,7 +7,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.4.0
+    chart: sonarqube-2026.4.1
     release: http-routes-default-values.yaml
     heritage: Helm
 type: Opaque
@@ -22,7 +22,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.4.0
+    chart: sonarqube-2026.4.1
     release: http-routes-default-values.yaml
     heritage: Helm
 type: Opaque
@@ -41,7 +41,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.4.0
+    chart: sonarqube-2026.4.1
     release: http-routes-default-values.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.4.0
+    chart: sonarqube-2026.4.1
     release: http-routes-default-values.yaml
     heritage: Helm
 data:
@@ -101,7 +101,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.4.0
+    chart: sonarqube-2026.4.1
     release: http-routes-default-values.yaml
     heritage: Helm
 data:
@@ -114,7 +114,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.4.0
+    chart: sonarqube-2026.4.1
     release: http-routes-default-values.yaml
     heritage: Helm
 spec:
@@ -135,7 +135,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.4.0
+    chart: sonarqube-2026.4.1
     release: http-routes-default-values.yaml
     heritage: Helm
     app.kubernetes.io/name: http-routes-default-values.yaml
@@ -143,7 +143,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: http-routes-default-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.4.0-enterprise"
+    app.kubernetes.io/version: "2026.4.1-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -155,10 +155,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 6aa60f78497d3cf4449bc300b32eab39e7b08c6c993deedb943e4523762410c3
-        checksum/init-sysctl: 67bf6b909eca710d101ec5e143dfaf7d9a80848b31b012d19eea575eccd01adc
-        checksum/plugins: 4aeb1b7e7a66381560c4330b5371ff9c5dae758209b6ffc426d59c1253ad6cc8
-        checksum/secret: 22442916643a2ec84f993df0df7161bb3c987b4cbcfab490260881cf5974956f
+        checksum/config: b47fb42d0aa46efa8fb405b96249bd35f22b8b886430ab2186be11a756f4e13e
+        checksum/init-sysctl: 35c33590b9f3f75a9260e9dfb235146e4d279f5ef6257f37959d4b2f95f55cf4
+        checksum/plugins: bc1bc77ad80fc2280d7b890d2b112c5f2bf89220225258c396fde90bd9cc1e74
+        checksum/secret: 6edf4c23abab6683015c0d8a360fa2d20bc9809bf024ee9903fcd2a2b78c2bab
       labels:
         app: sonarqube
         release: http-routes-default-values.yaml
@@ -168,7 +168,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.4.0-enterprise
+          image: sonarqube:2026.4.1-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -187,7 +187,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2026.4.0-enterprise
+          image: sonarqube:2026.4.1-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -204,7 +204,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.4.0
+              value: 2026.4.1
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -302,7 +302,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-http-route
   labels:
     app: sonarqube
-    chart: sonarqube-2026.4.0
+    chart: sonarqube-2026.4.1
     release: http-routes-default-values.yaml
     heritage: Helm
     custom: toto
@@ -331,14 +331,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.4.0
+    chart: sonarqube-2026.4.1
     release: http-routes-default-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: http-routes-default-values.yaml-ui-test
-      image: "sonarqube:2026.4.0-enterprise"
+      image: "sonarqube:2026.4.1-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [
