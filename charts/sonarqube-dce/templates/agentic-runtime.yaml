@@ -54,11 +54,18 @@ spec:
             - name: http
               containerPort: {{ $cfg.port }}
               protocol: TCP
-          {{- /* Auto-wire the remediation runtime's two required env vars so users don't hand-set
-                 them: REMEDIATION_SCRIPT_PATH switches the image into remediation mode, and
-                 REMEDIATION_RULE_INFO_ENDPOINT points at the in-cluster orchestrator. User-provided
-                 env (e.g. ANTHROPIC_API_KEY) is appended last and overrides these if repeated. */}}
+          {{- /* Auto-wire each family's mode-switch env var so users don't hand-set it. The hunter
+                 runtime reads SCRIPT_PATH (detection mode); the remediation runtime reads
+                 REMEDIATION_SCRIPT_PATH plus REMEDIATION_RULE_INFO_ENDPOINT, which points at the
+                 in-cluster orchestrator (hunter never calls the orchestrator for rule-info, so it
+                 gets no such var). User-provided env (e.g. ANTHROPIC_API_KEY) is appended last and
+                 overrides these if repeated. */}}
           {{- $autoEnv := list }}
+          {{- if eq $family "hunter" }}
+          {{- with $cfg.scriptPath }}
+          {{- $autoEnv = append $autoEnv (dict "name" "SCRIPT_PATH" "value" .) }}
+          {{- end }}
+          {{- end }}
           {{- if eq $family "remediation" }}
           {{- with $cfg.remediationScriptPath }}
           {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_SCRIPT_PATH" "value" .) }}

@@ -924,6 +924,11 @@ agenticHarness:
     resources: {}
     securityContext: {}
 
+    # Enable the orchestrator's internal scheduler. When true, injects
+    # SONAR_AGENTIC_ORCHESTRATOR_SCHEDULER_ENABLED=true on the orchestrator container.
+    scheduler:
+      enabled: false
+
     # ServiceAccount for the orchestrator pod (rendered only when agenticHarness.serviceAccount.create
     # is true). `name` pins the SA name so an external IAM trust policy can reference an exact k8s
     # subject; defaults to <fullname>-agentic-orchestrator. `annotations` merge over (and win against)
@@ -1025,6 +1030,12 @@ agenticHarness:
       serviceAccount:
         name: ""
         annotations: {}
+      # Path to the detection-agent entrypoint inside the image; the chart exposes it as
+      # SCRIPT_PATH, which switches the runtime into hunter/detection mode (symmetric with
+      # remediation's remediationScriptPath -> REMEDIATION_SCRIPT_PATH). Override if the image
+      # relocates it; set to "" to omit the env var entirely. Unlike remediation, the hunter
+      # runtime never calls the orchestrator for rule-info, so no rule-info endpoint is wired.
+      scriptPath: /home/agent/app/.venv/bin/detection-agent
       # Extra env vars for the runtime container. The chart only sets `port` on the Service /
       # containerPort - it does not assume a listen-port convention for arbitrary runtime images
       # (Spring Boot images read SERVER_PORT; others may hardcode their port or use something

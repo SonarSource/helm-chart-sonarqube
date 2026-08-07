@@ -8,6 +8,7 @@ All changes to this chart will be documented in this file.
 * Update MCP image to `sonarsource/sonarqube-mcp:1.27.0.4335`
 * Add optional gVisor (runsc) sandboxing for the Agentic Job Runtimes
 * Add the SonarQube Unified Agentic Harness (Agent Orchestrator and per-family Agentic Job Runtimes) via `agenticHarness.enabled`
+* Auto-wire the hunter Agentic Job Runtime's `SCRIPT_PATH` (detection mode) from `agenticHarness.runtimes.hunter.scriptPath`, symmetric with the remediation runtime's `REMEDIATION_SCRIPT_PATH`
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
