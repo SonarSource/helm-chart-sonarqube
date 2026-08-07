@@ -60,6 +60,10 @@ spec:
           env:
             - name: SERVER_PORT
               value: {{ .Values.agenticHarness.orchestrator.port | quote }}
+            {{- if .Values.agenticHarness.orchestrator.scheduler.enabled }}
+            - name: SONAR_AGENTIC_ORCHESTRATOR_SCHEDULER_ENABLED
+              value: "true"
+            {{- end }}
             {{- /* CORE DB (SonarQube's database) connection for the orchestrator. Each field is
                    independently configurable via agenticHarness.orchestrator.coreDb, defaulting to
                    the shared jdbcOverwrite so it targets the same DB as SonarQube out of the box.

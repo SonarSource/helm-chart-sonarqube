@@ -924,6 +924,11 @@ agenticHarness:
     resources: {}
     securityContext: {}
 
+    # Enable the orchestrator's internal scheduler. When true, injects
+    # SONAR_AGENTIC_ORCHESTRATOR_SCHEDULER_ENABLED=true on the orchestrator container.
+    scheduler:
+      enabled: false
+
     # ServiceAccount for the orchestrator pod (rendered only when agenticHarness.serviceAccount.create
     # is true). `name` pins the SA name so an external IAM trust policy can reference an exact k8s
     # subject; defaults to <fullname>-agentic-orchestrator. `annotations` merge over (and win against)
