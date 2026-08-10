@@ -1008,6 +1008,12 @@ agenticHarness:
     #     matchLabels:
     #       kubernetes.io/metadata.name: db-namespace
 
+  # Agentic Analysis is deployed and versioned independently of this chart (no Deployment/Service
+  # rendered here) - this is just the URL SonarQube polls directly for health (GET <url>/health),
+  # the same way it already does for MCP servers. Blank disables health polling.
+  agenticAnalysis:
+    url: ""
+
   # One Deployment+Service per enabled family. Each gets its own push URL from the orchestrator.
   runtimes:
     hunter:

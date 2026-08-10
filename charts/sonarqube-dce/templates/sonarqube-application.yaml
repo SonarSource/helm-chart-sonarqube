@@ -350,6 +350,13 @@ spec:
             - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
               value: {{ include "sonarqube.agentic.orchestrator.url" . | quote }}
             {{- end }}
+            {{- /* Agentic Analysis is deployed independently of this chart - just tell SonarQube where
+                   to poll it for health (sonar.agenticanalysis.url), same SONAR_* env-to-property
+                   mapping as above. Rendered only when a URL is actually configured. */}}
+            {{- if .Values.agenticHarness.agenticAnalysis.url }}
+            - name: SONAR_AGENTICANALYSIS_URL
+              value: {{ .Values.agenticHarness.agenticAnalysis.url | quote }}
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ template "sonarqube.fullname" . }}-jdbc-config
