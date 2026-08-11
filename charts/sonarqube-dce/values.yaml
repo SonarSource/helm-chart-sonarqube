@@ -1008,9 +1008,11 @@ agenticHarness:
     #     matchLabels:
     #       kubernetes.io/metadata.name: db-namespace
 
-  # Agentic Analysis is deployed and versioned independently of this chart (no Deployment/Service
-  # rendered here) - this is just the URL SonarQube polls directly for health (GET <url>/health),
-  # the same way it already does for MCP servers. Blank disables health polling.
+  # Agentic Analysis (aka "Vortex") is deployed and versioned independently of this chart (no
+  # Deployment/Service rendered here) - this is just the URL SonarQube polls directly for health
+  # (GET <url>/health), the same way it already does for MCP servers. Sets SONAR_VORTEX_ANALYSIS_URL,
+  # reusing the sonar.vortex.analysis.url property the mutualized analyzer client already reads
+  # (see SONAR-31376) rather than inventing a new one. Blank disables health polling.
   agenticAnalysis:
     url: ""
 
