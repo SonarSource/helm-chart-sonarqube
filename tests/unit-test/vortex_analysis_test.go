@@ -178,6 +178,54 @@ func TestVortexAnalysisUsesRecreateStrategy(t *testing.T) {
 	assert.Equal(t, appsv1.RecreateDeploymentStrategyType, deployment.Spec.Strategy.Type)
 }
 
+// Only the Vortex analysis image pull secrets are applied. The application nodes' ones are not
+// reused, so the pod never references registry credentials that were not configured for it.
+func TestVortexAnalysisPullSecrets(t *testing.T) {
+	podSpec := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Spec
+
+	var names []string
+	for _, s := range podSpec.ImagePullSecrets {
+		names = append(names, s.Name)
+	}
+	assert.Equal(t, []string{"vortex-secret", "vortex-secret-list"}, names,
+		"only the Vortex analysis pull secrets may be applied")
+}
+
+// Vortex analysis can be scheduled apart from the SonarQube pods through its own nodeSelector,
+// affinity and tolerations.
+func TestVortexAnalysisScheduling(t *testing.T) {
+	podSpec := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Spec
+
+	assert.Equal(t, map[string]string{"vortex": "true"}, podSpec.NodeSelector)
+
+	require.Len(t, podSpec.Tolerations, 1)
+	assert.Equal(t, "vortex", podSpec.Tolerations[0].Key)
+
+	require.NotNil(t, podSpec.Affinity)
+	require.NotNil(t, podSpec.Affinity.NodeAffinity)
+	terms := podSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+	require.Len(t, terms, 1)
+	require.Len(t, terms[0].MatchExpressions, 1)
+	assert.Equal(t, "vortex", terms[0].MatchExpressions[0].Key)
+}
+
+// The global settings take precedence over the Vortex analysis ones, matching how the application
+// and search nodes behave.
+func TestVortexAnalysisGlobalSchedulingWins(t *testing.T) {
+	podSpec := vortexDeployment(t, "vortex-analysis-global-scheduling.yaml").Spec.Template.Spec
+
+	assert.Equal(t, map[string]string{"global": "true"}, podSpec.NodeSelector)
+
+	require.Len(t, podSpec.Tolerations, 1)
+	assert.Equal(t, "global", podSpec.Tolerations[0].Key)
+
+	require.NotNil(t, podSpec.Affinity)
+	terms := podSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+	require.Len(t, terms, 1)
+	require.Len(t, terms[0].MatchExpressions, 1)
+	assert.Equal(t, "global", terms[0].MatchExpressions[0].Key)
+}
+
 // The pod can take several minutes to become ready on a first start, so the startup probe must allow
 // for that before the liveness probe begins.
 func TestVortexAnalysisProbes(t *testing.T) {

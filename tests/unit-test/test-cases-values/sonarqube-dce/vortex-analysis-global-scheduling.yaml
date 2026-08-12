@@ -1,38 +1,38 @@
 monitoringPasscode: test-passcode
 applicationNodes:
   jwtSecret: test-jwt-secret
-  image:
-    pullSecret: app-node-secret
-    pullSecrets:
-      - name: app-node-secret-list
 jdbcOverwrite:
   jdbcUrl: jdbc:postgresql://test-host:5432/testdb
   jdbcUsername: test-user
   jdbcPassword: test-password
-networkPolicy:
-  enabled: true
-# Vortex analysis enabled, with no Agentic Harness configured.
+# Global scheduling settings alongside the Vortex analysis ones, which they take precedence over.
+nodeSelector:
+  global: "true"
+tolerations:
+  - key: global
+    operator: Exists
+    effect: NoSchedule
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: global
+              operator: In
+              values: ["true"]
 vortexAnalysis:
   enabled: true
   image:
     repository: example.com/a3s/analysis/proxysqs
     tag: "7593"
-    pullSecret: vortex-secret
-    pullSecrets:
-      - name: vortex-secret-list
   sonarqubeToken:
-    token: "squ_example000000000000000000000000000000"
-  env:
-    - name: MY_VAR
-      value: my-value
-  networkPolicy:
-    egressAllow:
-      - cidr: 10.0.0.0/8
-        ports:
-          - port: 443
-            protocol: TCP
+    existingSecret: my-vortex-token
   nodeSelector:
     vortex: "true"
+  tolerations:
+    - key: vortex
+      operator: Exists
+      effect: NoSchedule
   affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
@@ -41,7 +41,3 @@ vortexAnalysis:
               - key: vortex
                 operator: In
                 values: ["true"]
-  tolerations:
-    - key: vortex
-      operator: Exists
-      effect: NoSchedule

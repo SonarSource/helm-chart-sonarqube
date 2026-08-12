@@ -27,13 +27,10 @@ spec:
         release: {{ .Release.Name }}
     spec:
       automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
-      {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret $vortex.image.pullSecrets }}
+      {{- if or $vortex.image.pullSecret $vortex.image.pullSecrets }}
       imagePullSecrets:
-        {{- if .Values.ApplicationNodes.image.pullSecret }}
-        - name: {{ .Values.ApplicationNodes.image.pullSecret }}
-        {{- end }}
-        {{- with .Values.ApplicationNodes.image.pullSecrets }}
-        {{- toYaml . | nindent 8 }}
+        {{- if $vortex.image.pullSecret }}
+        - name: {{ $vortex.image.pullSecret }}
         {{- end }}
         {{- with $vortex.image.pullSecrets }}
         {{- toYaml . | nindent 8 }}
@@ -89,14 +86,23 @@ spec:
       {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- else if $vortex.nodeSelector }}
+      nodeSelector:
+{{ toYaml $vortex.nodeSelector | indent 8 }}
       {{- end }}
       {{- if .Values.tolerations }}
       tolerations:
 {{ toYaml .Values.tolerations | indent 8 }}
+      {{- else if $vortex.tolerations }}
+      tolerations:
+{{ toYaml $vortex.tolerations | indent 8 }}
       {{- end }}
       {{- if .Values.affinity }}
       affinity:
 {{ toYaml .Values.affinity | indent 8 }}
+      {{- else if $vortex.affinity }}
+      affinity:
+{{ toYaml $vortex.affinity | indent 8 }}
       {{- end }}
       {{- with $vortex.extraVolumes }}
       volumes:

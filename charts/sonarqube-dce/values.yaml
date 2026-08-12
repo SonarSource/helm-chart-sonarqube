@@ -857,6 +857,7 @@ vortexAnalysis:
     repository: ""
     tag: ""
     pullPolicy: IfNotPresent
+    # pullSecret: my-repo-secret
     # pullSecrets:
     #   - name: my-repo-secret
 
@@ -910,6 +911,13 @@ vortexAnalysis:
 
   extraVolumes: []
   extraVolumeMounts: []
+
+  # if the global .Values.nodeSelector is set, the following one will be ignored
+  nodeSelector: {}
+  # if the global .Values.affinity is set, the following one will be ignored
+  affinity: {}
+  # if the global .Values.tolerations is set, the following one will be ignored
+  tolerations: []
 
   # Set annotations for the Vortex analysis pod.
   annotations: {}
