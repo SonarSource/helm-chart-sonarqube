@@ -64,7 +64,15 @@
                             "type": "boolean"
                         },
                         "egressAllow": {
-                            "type": "array"
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "anyOf": [
+                                    { "required": ["cidr"] },
+                                    { "required": ["podSelector"] },
+                                    { "required": ["namespaceSelector"] }
+                                ]
+                            }
                         }
                     }
                 },

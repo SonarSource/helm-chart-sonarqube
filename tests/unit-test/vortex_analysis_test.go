@@ -282,6 +282,29 @@ func TestVortexAnalysisNetworkPolicy(t *testing.T) {
 	assert.Equal(t, "10.0.0.0/8", policy.Spec.Egress[2].To[0].IPBlock.CIDR)
 }
 
+// An egressAllow entry may carry a podSelector, a namespaceSelector or both; each shape must become
+// one peer, since two peers would widen the rule instead of narrowing it.
+func TestVortexAnalysisEgressAllowSelectors(t *testing.T) {
+	output, err := renderVortex(t, "vortex-analysis-existing-secret.yaml", "templates/vortex-analysis-networkpolicy.yaml")
+	require.NoError(t, err)
+
+	var policy networkingv1.NetworkPolicy
+	helm.UnmarshalK8SYaml(t, output, &policy)
+	require.Len(t, policy.Spec.Egress, 4, "DNS, the app nodes and the two egressAllow entries")
+
+	namespaceOnly := policy.Spec.Egress[2]
+	require.Len(t, namespaceOnly.To, 1)
+	assert.Nil(t, namespaceOnly.To[0].PodSelector, "a namespaceSelector entry must not emit an empty podSelector")
+	assert.Equal(t, "egress-gateway", namespaceOnly.To[0].NamespaceSelector.MatchLabels["kubernetes.io/metadata.name"])
+
+	both := policy.Spec.Egress[3]
+	require.Len(t, both.To, 1, "both selectors must combine into a single peer")
+	assert.Equal(t, "proxy", both.To[0].PodSelector.MatchLabels["app"])
+	assert.Equal(t, "egress-gateway", both.To[0].NamespaceSelector.MatchLabels["kubernetes.io/metadata.name"])
+	require.Len(t, both.Ports, 1)
+	assert.Equal(t, int32(8443), both.Ports[0].Port.IntVal)
+}
+
 // The dedicated toggle renders the pod's policy without the top-level networkPolicy.enabled.
 func TestVortexAnalysisStandaloneNetworkPolicyToggle(t *testing.T) {
 	output, err := renderVortex(t, "vortex-analysis-existing-secret.yaml", "templates/vortex-analysis-networkpolicy.yaml")

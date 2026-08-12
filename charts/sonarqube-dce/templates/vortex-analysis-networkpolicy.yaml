@@ -48,12 +48,10 @@ spec:
         - ipBlock:
             cidr: {{ .cidr }}
       {{- else }}
-        - podSelector:
-{{ toYaml .podSelector | indent 12 }}
-        {{- if .namespaceSelector }}
-          namespaceSelector:
-{{ toYaml .namespaceSelector | indent 12 }}
-        {{- end }}
+        {{- $peer := dict }}
+        {{- with .podSelector }}{{ $peer = set $peer "podSelector" . }}{{ end }}
+        {{- with .namespaceSelector }}{{ $peer = set $peer "namespaceSelector" . }}{{ end }}
+        {{- list $peer | toYaml | nindent 8 }}
       {{- end }}
       {{- with .ports }}
       ports:
