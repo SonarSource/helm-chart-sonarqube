@@ -963,6 +963,40 @@ If the keystore uses a self-signed certificate, SonarQube's JVM will reject the 
      secret: mcp-ca-cert
    ```
 
+### Vortex Analysis
+
+| Parameter                                       | Description                                                                                                     | Default                                                                |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `vortexAnalysis.enabled`                        | Deploy the Vortex analysis service and set `sonar.vortex.analysis.url` on the app nodes                          | `false`                                                                |
+| `vortexAnalysis.image.repository`               | Vortex analysis image repository (required when enabled)                                                         | `""`                                                                   |
+| `vortexAnalysis.image.tag`                      | Vortex analysis image tag (required when enabled)                                                                | `""`                                                                   |
+| `vortexAnalysis.image.pullPolicy`               | Vortex analysis image pull policy                                                                                | `IfNotPresent`                                                         |
+| `vortexAnalysis.image.pullSecret`               | imagePullSecret for the Vortex analysis image                                                                    | `nil`                                                                  |
+| `vortexAnalysis.image.pullSecrets`              | imagePullSecrets for the Vortex analysis image                                                                   | `nil`                                                                  |
+| `vortexAnalysis.port`                           | Port the container / Service serves HTTP on                                                                      | `8080`                                                                 |
+| `vortexAnalysis.replicaCount`                   | Vortex analysis replica count                                                                                    | `1`                                                                    |
+| `vortexAnalysis.strategy`                       | Deployment update strategy; `Recreate` avoids running two pods at once during an upgrade                         | `{type: Recreate}`                                                     |
+| `vortexAnalysis.sonarqubeToken.token`           | Inline SonarQube token for the callback (`VORTEX_ANALYSIS_SONARQUBE_TOKEN`); required unless `existingSecret` is set | `""`                                                                |
+| `vortexAnalysis.sonarqubeToken.existingSecret`  | Existing secret providing the callback token; required unless `token` is set                                     | `""`                                                                   |
+| `vortexAnalysis.sonarqubeToken.existingSecretKey` | Key within `existingSecret` (defaults to `VORTEX_ANALYSIS_SONARQUBE_TOKEN`)                                     | `""`                                                                   |
+| `vortexAnalysis.networkPolicy.enabled`          | Render a NetworkPolicy for the analysis pod, independent of the top-level `networkPolicy.enabled`                | `false`                                                                |
+| `vortexAnalysis.networkPolicy.egressAllow`      | Extra egress peers — each a `cidr`, a `podSelector`, a `namespaceSelector` or both selectors, with optional `ports` | `[]`                                                                |
+| `vortexAnalysis.containerSecurityContext`       | Security context for the Vortex analysis container                                                               | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
+| `vortexAnalysis.env`                            | Additional environment variables for the Vortex analysis container                                               | `[]`                                                                   |
+| `vortexAnalysis.resources`                      | CPU/memory resource requests and limits for the Vortex analysis container                                        | `{}`                                                                   |
+| `vortexAnalysis.extraVolumes`                   | Extra volumes for the Vortex analysis pod                                                                        | `[]`                                                                   |
+| `vortexAnalysis.extraVolumeMounts`              | Extra volume mounts for the Vortex analysis container                                                            | `[]`                                                                   |
+| `vortexAnalysis.nodeSelector`                   | Node labels for the Vortex analysis pod; ignored when the global `nodeSelector` is set                            | `{}`                                                                   |
+| `vortexAnalysis.affinity`                       | Affinity for the Vortex analysis pod; ignored when the global `affinity` is set                                   | `{}`                                                                   |
+| `vortexAnalysis.tolerations`                    | Tolerations for the Vortex analysis pod; ignored when the global `tolerations` is set                             | `[]`                                                                   |
+| `vortexAnalysis.annotations`                    | Annotations for the Vortex analysis pod                                                                          | `{}`                                                                   |
+
+When `vortexAnalysis.enabled` is set to `true`, the chart deploys a separate Vortex analysis pod alongside the SonarQube application nodes and automatically wires the two together via the `SONAR_VORTEX_ANALYSIS_URL` environment variable, which sets the `sonar.vortex.analysis.url` property. SonarQube then sends analysis requests to it. While it is disabled, SonarQube sends none.
+
+Vortex analysis calls the SonarQube Web API, so a token is required: set either `vortexAnalysis.sonarqubeToken.token` or `vortexAnalysis.sonarqubeToken.existingSecret`.
+
+The pod can take several minutes to become ready on a first start, while it loads its analyzers.
+
 ### Agentic Harness
 
 The optional SonarQube Unified Agentic Harness — an Agent Orchestrator plus one Deployment/Service per enabled runtime family (`hunter`, `remediation`) — enabled via `agenticHarness.enabled`. When enabled, the chart also points the SonarQube app nodes at the orchestrator (via the `SONAR_HUNTERAGENT_ORCHESTRATOR_URL` / `SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL` env vars).
