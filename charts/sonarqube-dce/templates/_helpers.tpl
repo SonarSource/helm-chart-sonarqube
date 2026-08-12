@@ -47,6 +47,21 @@ Create the fully qualified name for the MCP service.
 {{- end -}}
 
 {{/*
+Create the fully qualified name for the Vortex analysis service.
+Usage: {{ include "sonarqube.vortexAnalysis.fullname" . }}
+*/}}
+{{- define "sonarqube.vortexAnalysis.fullname" -}}
+{{- printf "%s-vortex-analysis" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+URL the application nodes use to reach Vortex analysis (the sonar.vortex.analysis.url property).
+*/}}
+{{- define "sonarqube.vortexAnalysis.url" -}}
+{{- printf "http://%s:%d" (include "sonarqube.vortexAnalysis.fullname" .) (int .Values.vortexAnalysis.port) -}}
+{{- end -}}
+
+{{/*
 Create the fully qualified name for the Agentic Harness gVisor installer.
 Usage: {{ include "sonarqube.agentic.gvisor.fullname" . }}
 */}}
