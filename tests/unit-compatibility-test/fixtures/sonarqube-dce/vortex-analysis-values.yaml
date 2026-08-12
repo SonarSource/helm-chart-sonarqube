@@ -180,6 +180,10 @@ spec:
       ports:
         - port: 443
           protocol: TCP
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: egress-gateway
 ---
 # Source: sonarqube-dce/templates/pod-disruption-budget.yaml
 apiVersion: policy/v1
@@ -740,13 +744,16 @@ spec:
       release: vortex-analysis-values.yaml
   template:
     metadata:
+      annotations:
+        checksum/secret: e9ce314f74664ae45316a0b0f5f8a84e0df098b9440817d2b29281afe6ab02f5
       labels:
         app: sonarqube-dce-vortex-analysis
         release: vortex-analysis-values.yaml
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: vortex-analysis
-          image: example.com/a3s/analysis/proxysqs:7593
+          image: "example.com/a3s/analysis/proxysqs:7593"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
