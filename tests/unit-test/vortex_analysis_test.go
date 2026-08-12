@@ -251,6 +251,29 @@ func TestVortexAnalysisRequiresImageRepository(t *testing.T) {
 	assert.Contains(t, err.Error(), "vortexAnalysis.image.repository is not set")
 }
 
+// The remaining settings the service cannot start without: an image tag, since the reference is
+// built verbatim, and a token, since every Web API call needs one.
+func TestVortexAnalysisRequiresTagAndToken(t *testing.T) {
+	for name, tc := range map[string]struct {
+		unset    map[string]string
+		expected string
+	}{
+		"image tag": {map[string]string{"vortexAnalysis.image.tag": ""}, "vortexAnalysis.image.tag is not set"},
+		"token":     {map[string]string{"vortexAnalysis.sonarqubeToken.token": ""}, "no token is set"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			opts := &helm.Options{
+				Logger:      logger.Discard,
+				ValuesFiles: []string{"test-cases-values/sonarqube-dce/vortex-analysis-enabled.yaml"},
+				SetValues:   tc.unset,
+			}
+			_, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/vortex-analysis.yaml"})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.expected)
+		})
+	}
+}
+
 // Reachable only from the application nodes, and allowed out only to DNS, the application nodes and
 // any configured egressAllow entries.
 func TestVortexAnalysisNetworkPolicy(t *testing.T) {

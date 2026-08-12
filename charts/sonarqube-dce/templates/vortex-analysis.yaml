@@ -41,7 +41,7 @@ spec:
       {{- end }}
       containers:
         - name: vortex-analysis
-          image: {{ printf "%s:%s" $vortex.image.repository (default "latest" $vortex.image.tag) }}
+          image: "{{ $vortex.image.repository }}:{{ $vortex.image.tag }}"
           imagePullPolicy: {{ $vortex.image.pullPolicy }}
           {{- with $vortex.containerSecurityContext }}
           securityContext: {{- toYaml . | nindent 12 }}
