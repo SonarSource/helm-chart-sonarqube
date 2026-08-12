@@ -1,0 +1,66 @@
+{{- /* The matching rules on the SonarQube application nodes are in networkpolicy.yaml. */}}
+{{- if and .Values.vortexAnalysis.enabled (or .Values.networkPolicy.enabled .Values.vortexAnalysis.networkPolicy.enabled) }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "sonarqube.vortexAnalysis.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vortex-analysis
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-vortex-analysis
+      release: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ template "sonarqube.name" . }}
+              sonarqube.datacenter/type: app
+      ports:
+        - port: {{ .Values.vortexAnalysis.port }}
+          protocol: TCP
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ template "sonarqube.name" . }}
+              sonarqube.datacenter/type: app
+      ports:
+        - port: {{ .Values.service.internalPort }}
+          protocol: TCP
+    {{- range .Values.vortexAnalysis.networkPolicy.egressAllow }}
+    - to:
+      {{- if .cidr }}
+        - ipBlock:
+            cidr: {{ .cidr }}
+      {{- else }}
+        {{- $peer := dict }}
+        {{- with .podSelector }}{{ $peer = set $peer "podSelector" . }}{{ end }}
+        {{- with .namespaceSelector }}{{ $peer = set $peer "namespaceSelector" . }}{{ end }}
+        {{- list $peer | toYaml | nindent 8 }}
+      {{- end }}
+      {{- with .ports }}
+      ports:
+        {{- range . }}
+        - port: {{ .port }}
+          {{- with .protocol }}
+          protocol: {{ . }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+{{- end }}
