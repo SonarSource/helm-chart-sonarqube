@@ -143,6 +143,35 @@ func TestVortexAnalysisContainerEnv(t *testing.T) {
 		"user-supplied env must come last so it overrides the auto-wired vars")
 }
 
+// The pod talks to the Web API with its own token and never to the Kubernetes API, so it must not
+// get a ServiceAccount token mounted.
+func TestVortexAnalysisDoesNotAutomountServiceAccountToken(t *testing.T) {
+	podSpec := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Spec
+	require.NotNil(t, podSpec.AutomountServiceAccountToken)
+	assert.False(t, *podSpec.AutomountServiceAccountToken)
+}
+
+// The token reaches the container through secretKeyRef, which is only read at startup. Without a
+// checksum annotation, rotating it would leave the running pod on the old token.
+func TestVortexAnalysisRollsOnTokenChange(t *testing.T) {
+	annotations := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Annotations
+	checksum, ok := annotations["checksum/secret"]
+	require.True(t, ok, "the pod template must carry a checksum of the token Secret")
+
+	// A different token must produce a different pod template, so the upgrade rolls the pod.
+	opts := &helm.Options{
+		Logger:      logger.Discard,
+		ValuesFiles: []string{"test-cases-values/sonarqube-dce/vortex-analysis-enabled.yaml"},
+		SetValues:   map[string]string{"vortexAnalysis.sonarqubeToken.token": "squ_rotated0000000000000000000000000000000"},
+	}
+	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/vortex-analysis.yaml"})
+	require.NoError(t, err)
+
+	var rotated appsv1.Deployment
+	helm.UnmarshalK8SYaml(t, output, &rotated)
+	assert.NotEqual(t, checksum, rotated.Spec.Template.Annotations["checksum/secret"])
+}
+
 // Recreate rather than the default RollingUpdate, so an upgrade never runs two pods at once.
 func TestVortexAnalysisUsesRecreateStrategy(t *testing.T) {
 	deployment := vortexDeployment(t, "vortex-analysis-enabled.yaml")

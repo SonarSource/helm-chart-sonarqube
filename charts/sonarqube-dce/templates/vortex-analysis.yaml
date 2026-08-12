@@ -17,13 +17,16 @@ spec:
       release: {{ .Release.Name }}
   template:
     metadata:
-      {{- with $vortex.annotations }}
-      annotations: {{- toYaml . | nindent 8 }}
-      {{- end }}
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/vortex-analysis-secret.yaml") . | sha256sum }}
+        {{- with $vortex.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       labels:
         app: {{ include "sonarqube.name" . }}-vortex-analysis
         release: {{ .Release.Name }}
     spec:
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
       {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret $vortex.image.pullSecrets }}
       imagePullSecrets:
         {{- if .Values.ApplicationNodes.image.pullSecret }}
