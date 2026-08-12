@@ -296,45 +296,100 @@ func TestVortexAnalysisStandaloneNetworkPolicyToggle(t *testing.T) {
 	require.Error(t, err)
 }
 
-// The application nodes' own policy needs matching rules, otherwise they could neither reach Vortex
-// analysis nor accept its calls back to the Web API.
-func TestVortexAnalysisAppNodeNetworkPolicy(t *testing.T) {
-	output, err := renderVortex(t, "vortex-analysis-enabled.yaml", "templates/networkpolicy.yaml")
-	require.NoError(t, err)
-
-	var policy networkingv1.NetworkPolicy
-	var found bool
-	for _, doc := range vortexDocs(output) {
+// vortexAppNodePolicy picks the application nodes' policy out of a networkpolicy.yaml render.
+func vortexAppNodePolicy(t *testing.T, manifest string) networkingv1.NetworkPolicy {
+	t.Helper()
+	for _, doc := range vortexDocs(manifest) {
 		if vortexDocKind(doc) != "NetworkPolicy" {
 			continue
 		}
 		var candidate networkingv1.NetworkPolicy
 		helm.UnmarshalK8SYaml(t, doc, &candidate)
 		if candidate.Spec.PodSelector.MatchLabels["sonarqube.datacenter/type"] == "app" {
-			policy = candidate
-			found = true
+			return candidate
 		}
 	}
-	require.True(t, found, "the app-node NetworkPolicy must render")
+	require.FailNow(t, "the app-node NetworkPolicy must render")
+	return networkingv1.NetworkPolicy{}
+}
 
+func vortexSelectsApp(peers []networkingv1.NetworkPolicyPeer, appLabel string) bool {
+	for _, peer := range peers {
+		if peer.PodSelector != nil && peer.PodSelector.MatchLabels["app"] == appLabel {
+			return true
+		}
+	}
+	return false
+}
+
+// Ports of the ingress rule admitting appLabel, or nil when no rule does.
+func vortexIngressPorts(rules []networkingv1.NetworkPolicyIngressRule, appLabel string) []networkingv1.NetworkPolicyPort {
+	for _, rule := range rules {
+		if vortexSelectsApp(rule.From, appLabel) {
+			return rule.Ports
+		}
+	}
+	return nil
+}
+
+// Ports of the egress rule targeting appLabel, or nil when no rule does.
+func vortexEgressPorts(rules []networkingv1.NetworkPolicyEgressRule, appLabel string) []networkingv1.NetworkPolicyPort {
+	for _, rule := range rules {
+		if vortexSelectsApp(rule.To, appLabel) {
+			return rule.Ports
+		}
+	}
+	return nil
+}
+
+// The application nodes' own policy needs matching rules, otherwise they could neither reach Vortex
+// analysis nor accept its calls back to the Web API.
+func TestVortexAnalysisAppNodeNetworkPolicy(t *testing.T) {
+	output, err := renderVortex(t, "vortex-analysis-enabled.yaml", "templates/networkpolicy.yaml")
+	require.NoError(t, err)
+
+	policy := vortexAppNodePolicy(t, output)
 	vortexPodLabel := "sonarqube-dce" + vortexFullnameSuffix
-	var ingressFromVortex, egressToVortex bool
-	for _, rule := range policy.Spec.Ingress {
-		for _, peer := range rule.From {
-			if peer.PodSelector != nil && peer.PodSelector.MatchLabels["app"] == vortexPodLabel {
-				ingressFromVortex = true
-			}
-		}
+
+	ingress := vortexIngressPorts(policy.Spec.Ingress, vortexPodLabel)
+	require.Len(t, ingress, 1, "the app nodes must accept the analysis callback")
+	assert.Equal(t, int32(9000), ingress[0].Port.IntVal)
+
+	egress := vortexEgressPorts(policy.Spec.Egress, vortexPodLabel)
+	require.Len(t, egress, 1, "the app nodes must be allowed to reach the service on its port")
+	assert.Equal(t, int32(8080), egress[0].Port.IntVal)
+}
+
+// Two different ports are in play and mixing them up silently breaks the callback: the URL goes
+// through the SonarQube Service, which listens on service.externalPort, while the NetworkPolicy
+// rules are evaluated after the Service DNAT and so must use the container's service.internalPort.
+func TestVortexAnalysisFollowsServicePorts(t *testing.T) {
+	ports := map[string]string{"service.externalPort": "80", "service.internalPort": "9500"}
+	opts := &helm.Options{
+		Logger:      logger.Discard,
+		ValuesFiles: []string{"test-cases-values/sonarqube-dce/vortex-analysis-enabled.yaml"},
+		SetValues:   ports,
 	}
-	for _, rule := range policy.Spec.Egress {
-		for _, peer := range rule.To {
-			if peer.PodSelector != nil && peer.PodSelector.MatchLabels["app"] == vortexPodLabel {
-				egressToVortex = true
-				require.Len(t, rule.Ports, 1)
-				assert.Equal(t, int32(8080), rule.Ports[0].Port.IntVal)
-			}
-		}
-	}
-	assert.True(t, ingressFromVortex, "the app nodes must accept the analysis callback on 9000")
-	assert.True(t, egressToVortex, "the app nodes must be allowed to reach the service on its port")
+
+	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/vortex-analysis.yaml"})
+	require.NoError(t, err)
+	var deployment appsv1.Deployment
+	helm.UnmarshalK8SYaml(t, output, &deployment)
+	url := vortexContainerEnv(deployment.Spec.Template.Spec.Containers[0])["VORTEX_ANALYSIS_SONARQUBE_URL"]
+	assert.Equal(t, "http://"+dceReleaseName+"-sonarqube-dce:80", url.Value,
+		"the callback URL must use the Service port")
+
+	output, err = helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/vortex-analysis-networkpolicy.yaml"})
+	require.NoError(t, err)
+	var policy networkingv1.NetworkPolicy
+	helm.UnmarshalK8SYaml(t, output, &policy)
+	egress := vortexEgressPorts(policy.Spec.Egress, "sonarqube-dce")
+	require.Len(t, egress, 1)
+	assert.Equal(t, int32(9500), egress[0].Port.IntVal, "egress must use the app container port")
+
+	output, err = helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/networkpolicy.yaml"})
+	require.NoError(t, err)
+	ingress := vortexIngressPorts(vortexAppNodePolicy(t, output).Spec.Ingress, "sonarqube-dce"+vortexFullnameSuffix)
+	require.Len(t, ingress, 1)
+	assert.Equal(t, int32(9500), ingress[0].Port.IntVal, "ingress must use the app container port")
 }

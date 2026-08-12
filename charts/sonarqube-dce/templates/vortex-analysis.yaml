@@ -52,7 +52,7 @@ spec:
               protocol: TCP
           env:
             - name: VORTEX_ANALYSIS_SONARQUBE_URL
-              value: {{ printf "http://%s:%d%s" (include "sonarqube.fullname" .) (int .Values.service.internalPort) (trimSuffix "/" (include "sonarqube.webcontext" .)) | quote }}
+              value: {{ printf "http://%s:%d%s" (include "sonarqube.fullname" .) (int .Values.service.externalPort) (trimSuffix "/" (include "sonarqube.webcontext" .)) | quote }}
             {{- if or $vortex.sonarqubeToken.token $vortex.sonarqubeToken.existingSecret }}
             - name: VORTEX_ANALYSIS_SONARQUBE_TOKEN
               valueFrom:

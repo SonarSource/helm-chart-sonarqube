@@ -56,7 +56,7 @@ spec:
               app: {{ include "sonarqube.name" . }}-vortex-analysis
               release: {{ .Release.Name }}
       ports:
-        - port: 9000
+        - port: {{ .Values.service.internalPort }}
           protocol: TCP
 {{- end }}
   egress:
