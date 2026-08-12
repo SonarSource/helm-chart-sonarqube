@@ -325,6 +325,10 @@ spec:
               value: {{ .Values.mcp.healthCheckInterval | quote }}
             {{- end }}
             {{- end }}
+            {{- if .Values.vortexAnalysis.enabled }}
+            - name: SONAR_VORTEX_ANALYSIS_URL
+              value: {{ include "sonarqube.vortexAnalysis.url" . | quote }}
+            {{- end }}
             {{- if .Values.searchNodes.searchAuthentication.enabled }}
             - name: SONAR_CLUSTER_SEARCH_PASSWORD
               valueFrom:

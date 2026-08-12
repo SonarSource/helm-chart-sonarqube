@@ -847,6 +847,73 @@ mcp:
   # Set annotations for the MCP pod.
   annotations: {}
 
+# Sonar Vortex analysis: an analysis service that SonarQube calls on demand to analyse individual
+# files. When enabled, the chart points the SonarQube application nodes at it via the
+# sonar.vortex.analysis.url property.
+vortexAnalysis:
+  enabled: false
+
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: IfNotPresent
+    # pullSecrets:
+    #   - name: my-repo-secret
+
+  port: 8080
+
+  replicaCount: 1
+
+  # Update strategy for the Vortex analysis Deployment. Recreate avoids running two pods at once
+  # during an upgrade.
+  strategy:
+    type: Recreate
+
+  # Token Vortex analysis uses to call the SonarQube Web API. Required for analysis to succeed.
+  sonarqubeToken:
+    # The token itself. Ignored when existingSecret is set.
+    token: ""
+    # Name of an existing Secret containing the token.
+    existingSecret: ""
+    # Key inside existingSecret. Defaults to VORTEX_ANALYSIS_SONARQUBE_TOKEN.
+    existingSecretKey: ""
+
+  # Restrict traffic to and from the Vortex analysis pod, independently of the top-level
+  # networkPolicy.enabled.
+  networkPolicy:
+    enabled: false
+    # Additional egress destinations, each either { cidr } or { podSelector [, namespaceSelector] },
+    # with optional ports. Use podSelector for destinations inside the cluster.
+    egressAllow: []
+    # - cidr: 10.0.0.0/8
+    #   ports:
+    #     - port: 443
+    #       protocol: TCP
+
+  # Set security context for the Vortex analysis container.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 0
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
+
+  # Additional environment variables for the Vortex analysis container.
+  env: []
+  # - name: MY_VAR
+  #   value: my-value
+
+  resources: {}
+
+  extraVolumes: []
+  extraVolumeMounts: []
+
+  # Set annotations for the Vortex analysis pod.
+  annotations: {}
+
 # SonarQube Unified Agentic Harness: Agent Orchestrator (one, shared) + per-family Agentic Job
 # Runtimes (hunter, remediation). Requires jdbcOverwrite (always true in DCE) to reuse the
 # SonarQube DB, and real orchestrator/runtime images before enabling.

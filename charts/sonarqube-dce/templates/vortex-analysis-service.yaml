@@ -1,0 +1,18 @@
+{{- if .Values.vortexAnalysis.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sonarqube.vortexAnalysis.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vortex-analysis
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.vortexAnalysis.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ include "sonarqube.name" . }}-vortex-analysis
+    release: {{ .Release.Name }}
+{{- end }}

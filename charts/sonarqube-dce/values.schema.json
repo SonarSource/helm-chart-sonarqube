@@ -1,6 +1,93 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "properties": {
+        "vortexAnalysis": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "repository": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": ["string", "number"]
+                        },
+                        "pullPolicy": {
+                            "type": "string",
+                            "enum": ["Always", "IfNotPresent", "Never"]
+                        },
+                        "pullSecrets": {
+                            "type": "array"
+                        }
+                    }
+                },
+                "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "replicaCount": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "strategy": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": ["Recreate", "RollingUpdate"]
+                        }
+                    }
+                },
+                "sonarqubeToken": {
+                    "type": "object",
+                    "properties": {
+                        "token": {
+                            "type": "string"
+                        },
+                        "existingSecret": {
+                            "type": "string"
+                        },
+                        "existingSecretKey": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "networkPolicy": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "egressAllow": {
+                            "type": "array"
+                        }
+                    }
+                },
+                "containerSecurityContext": {
+                    "type": "object"
+                },
+                "env": {
+                    "type": "array"
+                },
+                "resources": {
+                    "type": "object"
+                },
+                "extraVolumes": {
+                    "type": "array"
+                },
+                "extraVolumeMounts": {
+                    "type": "array"
+                },
+                "annotations": {
+                    "type": "object"
+                }
+            }
+        },
         "networkPolicy": {
             "type": "object",
             "properties": {

@@ -49,6 +49,16 @@ spec:
         - port: 9000
           protocol: TCP
 {{- end }}
+{{- if .Values.vortexAnalysis.enabled }}
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ include "sonarqube.name" . }}-vortex-analysis
+              release: {{ .Release.Name }}
+      ports:
+        - port: 9000
+          protocol: TCP
+{{- end }}
   egress:
     - to:
         - podSelector:
@@ -88,6 +98,16 @@ spec:
               sonarqube.agentic/component: orchestrator
       ports:
         - port: {{ .Values.agenticHarness.orchestrator.port }}
+          protocol: TCP
+    {{- end }}
+    {{- if .Values.vortexAnalysis.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ include "sonarqube.name" . }}-vortex-analysis
+              release: {{ .Release.Name }}
+      ports:
+        - port: {{ .Values.vortexAnalysis.port }}
           protocol: TCP
     {{- end }}
 

@@ -1,0 +1,26 @@
+monitoringPasscode: test-passcode
+applicationNodes:
+  jwtSecret: test-jwt-secret
+jdbcOverwrite:
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+networkPolicy:
+  enabled: true
+# Vortex analysis enabled, with no Agentic Harness configured.
+vortexAnalysis:
+  enabled: true
+  image:
+    repository: example.com/a3s/analysis/proxysqs
+    tag: "7593"
+  sonarqubeToken:
+    token: "squ_example000000000000000000000000000000"
+  env:
+    - name: MY_VAR
+      value: my-value
+  networkPolicy:
+    egressAllow:
+      - cidr: 10.0.0.0/8
+        ports:
+          - port: 443
+            protocol: TCP

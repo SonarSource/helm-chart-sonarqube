@@ -48,6 +48,13 @@
   {{- end -}}
 {{- end -}}
 
+{{/* Validation for Vortex analysis, when enabled */}}
+{{- if .Values.vortexAnalysis.enabled -}}
+  {{- if not .Values.vortexAnalysis.image.repository -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.image.repository is not set." -}}
+  {{- end -}}
+{{- end -}}
+
 {{/* Validation for the gVisor toggles (agenticHarness.gvisor.*). The sub-options are only checked
      when gVisor is enabled: with gvisor.enabled=false the whole feature renders nothing, so a
      leftover installer.enabled (e.g. a base values file overlaid by one that disables gVisor) is
