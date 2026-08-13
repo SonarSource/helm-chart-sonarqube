@@ -308,6 +308,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+    sonar.vortex.analysis.url=http://vortex-analysis-values.yaml-sonarqube-dce-vortex-analysis:8080
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
@@ -570,11 +571,47 @@ spec:
         sonarqube.datacenter/type: "app"
       annotations:
         checksum/plugins: 596e48ecd041ecc6eb4dbbd6293b6ef67a07ead44f365d133a2919bc5838e8ab
-        checksum/config: 5040ab2ed56baa1079bb3f77bab6b4ef218f8b679608f677967b574506adfa89
+        checksum/config: 1a086dd53db67c85b0e2d544885bb083b994aec56568f8a8411c324bc6053fc9
         checksum/secret: 2592e9f1ca6d4b9e0e54df80f95e2bf61bfa6910b9d61709bed080233891c2b6
     spec:
       automountServiceAccountToken: false
       initContainers:
+        - name: concat-properties
+          image: sonarqube:2026.4.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          command: 
+          - sh
+          - -c
+          - |
+            #!/bin/sh
+            if [ -f /tmp/props/sonar.properties ]; then
+              cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/secret.properties ]; then
+              cat /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
+              awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+          volumeMounts:
+            - mountPath: /tmp/props/sonar.properties
+              name: config
+              subPath: sonar.properties
+            - mountPath: /tmp/result
+              name: concat-dir
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
       securityContext:
         fsGroup: 0
       containers:
@@ -696,6 +733,9 @@ spec:
             seccompProfile:
               type: RuntimeDefault
           volumeMounts:
+            - mountPath: /opt/sonarqube/conf/sonar.properties
+              subPath: sonar.properties
+              name: concat-dir
             - mountPath: /opt/sonarqube/data
               name: sonarqube
               subPath: data
@@ -709,6 +749,12 @@ spec:
               name: tmp-dir
       serviceAccountName: default
       volumes:
+      - name: config
+        configMap:
+          name: vortex-analysis-values.yaml-sonarqube-dce-app-config
+          items:
+          - key: sonar.properties
+            path: sonar.properties
       
       - name: install-plugins
         configMap:
@@ -720,6 +766,9 @@ spec:
         emptyDir:
           {}
       - name : tmp-dir
+        emptyDir:
+          {}
+      - name : concat-dir
         emptyDir:
           {}
 ---
@@ -843,7 +892,7 @@ spec:
       annotations:
         checksum/init-sysctl: 3116085162a6a884158da280c3a8a49a9843a3e13bd752e92c2912d3882f9587
         checksum/init-fs: ea76c3593a1c40f72946ae87e60080fc012232ecae1d4f4a3ddf5232bf9f2535
-        checksum/config: 5040ab2ed56baa1079bb3f77bab6b4ef218f8b679608f677967b574506adfa89
+        checksum/config: 1a086dd53db67c85b0e2d544885bb083b994aec56568f8a8411c324bc6053fc9
         checksum/secret: 2592e9f1ca6d4b9e0e54df80f95e2bf61bfa6910b9d61709bed080233891c2b6
     spec:
       automountServiceAccountToken: false

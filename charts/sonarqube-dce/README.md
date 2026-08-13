@@ -965,6 +965,11 @@ If the keystore uses a self-signed certificate, SonarQube's JVM will reject the 
 
 ### Vortex Analysis
 
+`sonar.vortex.analysis.url` (like the Agent Orchestrator URLs below) is set both as a pod env var
+and as a real line in the rendered `conf/sonar.properties` — SonarQube's `Configuration` API only
+honours a `SONAR_*` env var override for a property that already has a `conf/sonar.properties`
+line, so the env var alone is silently ignored by anything reading it that way (SONAR-31416).
+
 | Parameter                                       | Description                                                                                                     | Default                                                                |
 | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | `vortexAnalysis.enabled`                        | Deploy the Vortex analysis service and set `sonar.vortex.analysis.url` on the app nodes                          | `false`                                                                |
@@ -999,7 +1004,7 @@ The pod can take several minutes to become ready on a first start, while it load
 
 ### Agentic Harness
 
-The optional SonarQube Unified Agentic Harness — an Agent Orchestrator plus one Deployment/Service per enabled runtime family (`hunter`, `remediation`) — enabled via `agenticHarness.enabled`. When enabled, the chart also points the SonarQube app nodes at the orchestrator (via the `SONAR_HUNTERAGENT_ORCHESTRATOR_URL` / `SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL` env vars).
+The optional SonarQube Unified Agentic Harness — an Agent Orchestrator plus one Deployment/Service per enabled runtime family (`hunter`, `remediation`) — enabled via `agenticHarness.enabled`. When enabled, the chart also points the SonarQube app nodes at the orchestrator, both via the `SONAR_HUNTERAGENT_ORCHESTRATOR_URL` / `SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL` env vars and as real `sonar.hunteragent.orchestrator.url` / `sonar.remediationagent.orchestrator.url` lines in the rendered `conf/sonar.properties` — see the note under [Vortex Analysis](#vortex-analysis) for why both are needed (SONAR-31416).
 
 **gVisor sandboxing.** The (untrusted) runtimes can run under the [gVisor](https://gvisor.dev/) (`runsc`) sandbox, via two **off-by-default** toggles under `agenticHarness.gvisor` (the feature is self-contained — any pod can also opt in with `runtimeClassName: gvisor`):
 
