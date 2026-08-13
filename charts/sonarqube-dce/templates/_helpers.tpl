@@ -587,15 +587,36 @@ Hazelcast ports (port, webPort, cePort) are configured, ensuring proper cluster 
 {{- end -}}
 
 {{/*
-Merge user-provided sonarProperties with automatically generated Hazelcast properties.
-User-provided properties take precedence over automatically generated ones.
+Also give these properties a real conf/sonar.properties line — the pod env vars set further down
+aren't picked up by plain Configuration.get() consumers (SONAR-31416). Additive: env vars stay too,
+for consumers like hunter-agent-unified-app that read them via Spring instead.
+*/}}
+{{- define "sonarqube.agenticHealthProperties" -}}
+{{- $props := dict -}}
+{{- if .Values.agenticHarness.enabled -}}
+{{- $_ := set $props "sonar.hunteragent.orchestrator.url" (include "sonarqube.agentic.orchestrator.url" .) -}}
+{{- $_ := set $props "sonar.remediationagent.orchestrator.url" (include "sonarqube.agentic.orchestrator.url" .) -}}
+{{- end -}}
+{{- if .Values.vortexAnalysis.enabled -}}
+{{- $_ := set $props "sonar.vortex.analysis.url" (include "sonarqube.vortexAnalysis.url" .) -}}
+{{- end -}}
+{{- toYaml $props -}}
+{{- end -}}
+
+{{/*
+Merge user-provided sonarProperties with automatically generated properties (Hazelcast, agentic).
+User-provided properties take precedence.
 */}}
 {{- define "sonarqube.mergedSonarProperties" -}}
 {{- $hazelcastProps := fromYaml (include "sonarqube.hazelcastProperties" .) | default dict -}}
+{{- $agenticHealthProps := fromYaml (include "sonarqube.agenticHealthProperties" .) | default dict -}}
 {{- $userProps := .Values.ApplicationNodes.sonarProperties | default dict -}}
 {{- $merged := dict -}}
 {{- /* Start with automatically generated properties */}}
 {{- range $key, $val := $hazelcastProps -}}
+  {{- $_ := set $merged $key $val -}}
+{{- end -}}
+{{- range $key, $val := $agenticHealthProps -}}
   {{- $_ := set $merged $key $val -}}
 {{- end -}}
 {{- /* User properties override automatic ones */}}

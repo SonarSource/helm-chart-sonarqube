@@ -100,7 +100,7 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      {{- $hasMergedProps := or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.port .Values.ApplicationNodes.webPort .Values.ApplicationNodes.cePort .Values.agenticHarness.enabled }}
+      {{- $hasMergedProps := or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.port .Values.ApplicationNodes.webPort .Values.ApplicationNodes.cePort .Values.agenticHarness.enabled .Values.vortexAnalysis.enabled }}
       {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
           image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
@@ -325,6 +325,7 @@ spec:
               value: {{ .Values.mcp.healthCheckInterval | quote }}
             {{- end }}
             {{- end }}
+            {{- /* Also given a conf/sonar.properties line via mergedSonarProperties (SONAR-31416). */}}
             {{- if .Values.vortexAnalysis.enabled }}
             - name: SONAR_VORTEX_ANALYSIS_URL
               value: {{ include "sonarqube.vortexAnalysis.url" . | quote }}
@@ -345,9 +346,9 @@ spec:
                   name: "{{ template "search.ksPassword" . }}"
                   key: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
             {{- end }}
-            {{- /* Point the agent capabilities at the in-cluster Agent Orchestrator. Set as env vars
-                   (SonarQube maps SONAR_* env to the sonar.hunteragent/remediationagent.orchestrator.url
-                   properties), auto-wired whenever the harness is enabled. */}}
+            {{- /* Points the agent capabilities at the in-cluster Agent Orchestrator. Also given a
+                   conf/sonar.properties line via mergedSonarProperties (SONAR-31416); env var kept
+                   for consumers reading it via Spring instead (e.g. hunter-agent-unified-app). */}}
             {{- if .Values.agenticHarness.enabled }}
             - name: SONAR_HUNTERAGENT_ORCHESTRATOR_URL
               value: {{ include "sonarqube.agentic.orchestrator.url" . | quote }}
