@@ -154,6 +154,52 @@ func TestVortexAnalysisStorageEnv(t *testing.T) {
 	assert.Equal(t, "agentic-artifacts", env["SONAR_AGENTIC_STORAGE_BUCKET"].Value)
 	assert.Equal(t, "eu-west-1", env["SONAR_AGENTIC_STORAGE_REGION"].Value)
 	assert.Equal(t, "false", env["SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS"].Value)
+	assert.Equal(t, "", env["SONAR_AGENTIC_STORAGE_ENDPOINT"].Value)
+
+	_, hasAccessKey := env["SONAR_AGENTIC_STORAGE_ACCESS_KEY"]
+	_, hasSecretKey := env["SONAR_AGENTIC_STORAGE_SECRET_KEY"]
+	assert.False(t, hasAccessKey, "no static credentials configured, so the AWS SDK must fall back to its default credential chain")
+	assert.False(t, hasSecretKey)
+}
+
+// A custom endpoint (e.g. MinIO) with inline static credentials becomes a chart-managed Secret.
+func TestVortexAnalysisStorageCredentials(t *testing.T) {
+	container := vortexDeployment(t, "vortex-analysis-storage-credentials.yaml").Spec.Template.Spec.Containers[0]
+	env := vortexContainerEnv(container)
+
+	assert.Equal(t, "http://minio.speedboat-test-xx.svc:9000", env["SONAR_AGENTIC_STORAGE_ENDPOINT"].Value)
+
+	accessKey := env["SONAR_AGENTIC_STORAGE_ACCESS_KEY"]
+	require.NotNil(t, accessKey.ValueFrom)
+	require.NotNil(t, accessKey.ValueFrom.SecretKeyRef)
+	assert.Equal(t, dceReleaseName+"-sonarqube-dce"+vortexFullnameSuffix, accessKey.ValueFrom.SecretKeyRef.Name)
+	assert.Equal(t, "SONAR_AGENTIC_STORAGE_ACCESS_KEY", accessKey.ValueFrom.SecretKeyRef.Key)
+
+	secretKey := env["SONAR_AGENTIC_STORAGE_SECRET_KEY"]
+	require.NotNil(t, secretKey.ValueFrom)
+	assert.Equal(t, "SONAR_AGENTIC_STORAGE_SECRET_KEY", secretKey.ValueFrom.SecretKeyRef.Key)
+
+	output, err := renderVortex(t, "vortex-analysis-storage-credentials.yaml", "templates/vortex-analysis-secret.yaml")
+	require.NoError(t, err)
+	var secret corev1.Secret
+	helm.UnmarshalK8SYaml(t, output, &secret)
+	assert.Equal(t, "minioadmin", string(secret.Data["SONAR_AGENTIC_STORAGE_ACCESS_KEY"]))
+	assert.Equal(t, "miniosecret", string(secret.Data["SONAR_AGENTIC_STORAGE_SECRET_KEY"]))
+}
+
+// An existingSecret for the storage credentials is referenced directly, with no chart-managed Secret.
+func TestVortexAnalysisStorageExistingSecret(t *testing.T) {
+	deployment := vortexDeployment(t, "vortex-analysis-storage-existing-secret.yaml")
+	env := vortexContainerEnv(deployment.Spec.Template.Spec.Containers[0])
+
+	accessKey := env["SONAR_AGENTIC_STORAGE_ACCESS_KEY"]
+	require.NotNil(t, accessKey.ValueFrom)
+	assert.Equal(t, "my-minio-credentials", accessKey.ValueFrom.SecretKeyRef.Name)
+	assert.Equal(t, "SONAR_AGENTIC_STORAGE_ACCESS_KEY", accessKey.ValueFrom.SecretKeyRef.Key)
+
+	output, err := renderVortex(t, "vortex-analysis-storage-existing-secret.yaml", "templates/vortex-analysis-secret.yaml")
+	require.Error(t, err, "no Secret may be rendered when both the token and the storage credentials come from an existingSecret")
+	assert.Empty(t, strings.TrimSpace(output))
 }
 
 // By default the pod talks to the Web API with its own token and never to the Kubernetes API, so

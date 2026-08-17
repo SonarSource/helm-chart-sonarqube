@@ -887,6 +887,15 @@ vortexAnalysis:
     region: ""
     # false for AWS S3, true for most S3-compatible endpoints (e.g. MinIO).
     pathStyleAccess: false
+    # Custom S3-compatible endpoint (e.g. MinIO). Leave blank for real AWS S3.
+    endpoint: ""
+    # Credentials for that endpoint. Leave accessKey/secretKey/existingSecret all blank for
+    # credential-less access: the AWS SDK then falls back to its default credential chain (the
+    # pod's own IAM identity - node instance role, or IRSA via vortexAnalysis.serviceAccount).
+    accessKey: ""
+    secretKey: ""
+    # Existing secret providing SONAR_AGENTIC_STORAGE_ACCESS_KEY / SONAR_AGENTIC_STORAGE_SECRET_KEY
+    existingSecret: ""
 
   # ServiceAccount for the Vortex analysis pod, independent of the top-level serviceAccount.
   serviceAccount:
