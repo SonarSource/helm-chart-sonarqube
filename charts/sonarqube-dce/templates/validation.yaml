@@ -70,6 +70,9 @@
   {{- if not $storage.region -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.storage.region is not set." -}}
   {{- end -}}
+  {{- if and (not $storage.existingSecret) (or $storage.accessKey $storage.secretKey) (not (and $storage.accessKey $storage.secretKey)) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but only one of vortexAnalysis.storage.accessKey / vortexAnalysis.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
+  {{- end -}}
 {{- end -}}
 
 {{/* Validation for the gVisor toggles (agenticHarness.gvisor.*). The sub-options are only checked

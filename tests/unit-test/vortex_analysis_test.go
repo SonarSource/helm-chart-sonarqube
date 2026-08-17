@@ -392,6 +392,10 @@ func TestVortexAnalysisRequiresTagAndToken(t *testing.T) {
 		"storage type":   {map[string]string{"vortexAnalysis.storage.type": ""}, "vortexAnalysis.storage.type is not set"},
 		"storage bucket": {map[string]string{"vortexAnalysis.storage.bucket": ""}, "vortexAnalysis.storage.bucket is not set"},
 		"storage region": {map[string]string{"vortexAnalysis.storage.region": ""}, "vortexAnalysis.storage.region is not set"},
+		"storage partial credentials": {
+			map[string]string{"vortexAnalysis.storage.accessKey": "only-access-key"},
+			"only one of vortexAnalysis.storage.accessKey / vortexAnalysis.storage.secretKey is set",
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			opts := &helm.Options{
