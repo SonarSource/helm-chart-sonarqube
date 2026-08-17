@@ -60,6 +60,16 @@
   {{- if and (not $token.token) (not $token.existingSecret) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but no token is set. You must provide either vortexAnalysis.sonarqubeToken.token or vortexAnalysis.sonarqubeToken.existingSecret." -}}
   {{- end -}}
+  {{- $storage := .Values.vortexAnalysis.storage -}}
+  {{- if not $storage.type -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.storage.type is not set." -}}
+  {{- end -}}
+  {{- if not $storage.bucket -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.storage.bucket is not set." -}}
+  {{- end -}}
+  {{- if not $storage.region -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.storage.region is not set." -}}
+  {{- end -}}
 {{- end -}}
 
 {{/* Validation for the gVisor toggles (agenticHarness.gvisor.*). The sub-options are only checked

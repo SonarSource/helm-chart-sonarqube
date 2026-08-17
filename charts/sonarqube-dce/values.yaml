@@ -879,6 +879,22 @@ vortexAnalysis:
     # Key inside existingSecret. Defaults to VORTEX_ANALYSIS_SONARQUBE_TOKEN.
     existingSecretKey: ""
 
+  # S3-compatible object storage for Agentic Analysis context restoration. Must point at the same
+  # bucket SonarQube Server writes context to (sonar.agentic.storage.*).
+  storage:
+    type: S3
+    bucket: ""
+    region: ""
+    # false for AWS S3, true for most S3-compatible endpoints (e.g. MinIO).
+    pathStyleAccess: false
+
+  # ServiceAccount for the Vortex analysis pod, independent of the top-level serviceAccount.
+  serviceAccount:
+    create: false
+    name: ""
+    automountToken: false
+    annotations: {}
+
   # Restrict traffic to and from the Vortex analysis pod, independently of the top-level
   # networkPolicy.enabled.
   networkPolicy:

@@ -26,7 +26,8 @@ spec:
         app: {{ include "sonarqube.name" . }}-vortex-analysis
         release: {{ .Release.Name }}
     spec:
-      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
+      serviceAccountName: {{ include "sonarqube.vortexAnalysis.serviceAccountName" . }}
+      automountServiceAccountToken: {{ $vortex.serviceAccount.automountToken }}
       {{- if or $vortex.image.pullSecret $vortex.image.pullSecrets }}
       imagePullSecrets:
         {{- if $vortex.image.pullSecret }}
@@ -57,6 +58,14 @@ spec:
                   name: {{ default (include "sonarqube.vortexAnalysis.fullname" .) $vortex.sonarqubeToken.existingSecret }}
                   key: {{ $vortex.sonarqubeToken.existingSecretKey | default "VORTEX_ANALYSIS_SONARQUBE_TOKEN" }}
             {{- end }}
+            - name: SONAR_AGENTIC_STORAGE_TYPE
+              value: {{ $vortex.storage.type | quote }}
+            - name: SONAR_AGENTIC_STORAGE_BUCKET
+              value: {{ $vortex.storage.bucket | quote }}
+            - name: SONAR_AGENTIC_STORAGE_REGION
+              value: {{ $vortex.storage.region | quote }}
+            - name: SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS
+              value: {{ $vortex.storage.pathStyleAccess | quote }}
             {{- with $vortex.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
