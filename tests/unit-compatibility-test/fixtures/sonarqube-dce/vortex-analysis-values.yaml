@@ -799,6 +799,7 @@ spec:
         app: sonarqube-dce-vortex-analysis
         release: vortex-analysis-values.yaml
     spec:
+      serviceAccountName: default
       automountServiceAccountToken: false
       containers:
         - name: vortex-analysis
@@ -826,6 +827,14 @@ spec:
                 secretKeyRef:
                   name: vortex-analysis-values.yaml-sonarqube-dce-vortex-analysis
                   key: VORTEX_ANALYSIS_SONARQUBE_TOKEN
+            - name: SONAR_AGENTIC_STORAGE_TYPE
+              value: "S3"
+            - name: SONAR_AGENTIC_STORAGE_BUCKET
+              value: "agentic-artifacts"
+            - name: SONAR_AGENTIC_STORAGE_REGION
+              value: "eu-west-1"
+            - name: SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS
+              value: "false"
             - name: MY_VAR
               value: my-value
           startupProbe:
