@@ -982,6 +982,8 @@ agenticHarness:
       image:
         repository: debian
         tag: stable-slim
+        # Pinned for a reproducible pull; bump deliberately. Set to "" to use repository:tag.
+        digest: sha256:1710bde34461551a19a47c787885ec9ad7058d9a5bead2affb8d088fa2f8502b
         pullPolicy: IfNotPresent
         # pullSecrets:
         #   - name: my-repo-secret
@@ -994,7 +996,13 @@ agenticHarness:
       runscConfig:
         network: host
         overlay2: "root:self,size=50g"
-      resources: {}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
       nodeSelector: {}                # which nodes to install on (empty = all)
       tolerations:                    # run everywhere incl. tainted/control-plane nodes
         - operator: Exists
@@ -1021,8 +1029,27 @@ agenticHarness:
       #   - name: my-repo-secret
     port: 8080
     replicaCount: 1
-    resources: {}
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+        ephemeral-storage: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+        ephemeral-storage: 2Gi
     securityContext: {}
+
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      runAsUser: 900
+      runAsGroup: 900
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop: ["ALL"]
+      readOnlyRootFilesystem: true
 
     # Enable the orchestrator's internal scheduler. When true, injects
     # SONAR_AGENTIC_ORCHESTRATOR_SCHEDULER_ENABLED=true on the orchestrator container.
@@ -1109,6 +1136,7 @@ agenticHarness:
     #       kubernetes.io/metadata.name: db-namespace
 
   # One Deployment+Service per enabled family. Each gets its own push URL from the orchestrator.
+  # Process-count limits aren't set here - use your node's kubelet configuration (podPidsLimit).
   runtimes:
     hunter:
       enabled: false
@@ -1123,6 +1151,16 @@ agenticHarness:
       replicaCount: 1
       resources: {}
       securityContext: {}
+      # No readOnlyRootFilesystem: the image needs its home directory writable.
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop: ["ALL"]
       # ServiceAccount for this runtime family (rendered only when agenticHarness.serviceAccount.create
       # is true). `name` pins the SA name for an external IAM trust policy; defaults to
       # <fullname>-agentic-runtime-hunter. `annotations` merge over the shared
@@ -1180,6 +1218,16 @@ agenticHarness:
           memory: 8Gi
           ephemeral-storage: 50Gi
       securityContext: {}
+      # No readOnlyRootFilesystem: the image needs its home directory writable.
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop: ["ALL"]
       # ServiceAccount for this runtime family (rendered only when agenticHarness.serviceAccount.create
       # is true). `name` pins the SA name for an external IAM trust policy; defaults to
       # <fullname>-agentic-runtime-remediation. `annotations` merge over the shared
