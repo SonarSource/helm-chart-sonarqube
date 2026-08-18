@@ -1025,6 +1025,8 @@ agenticHarness:
       repository: ""
       tag: ""
       pullPolicy: IfNotPresent
+      # For the orchestrator's own image only; its wait-for-sonarqube init container pulls the
+      # SonarQube image instead, and always gets ApplicationNodes.image.pullSecret(s) for that.
       # pullSecrets:
       #   - name: my-repo-secret
     port: 8080
