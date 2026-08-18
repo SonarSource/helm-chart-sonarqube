@@ -143,12 +143,92 @@ func TestVortexAnalysisContainerEnv(t *testing.T) {
 		"user-supplied env must come last so it overrides the auto-wired vars")
 }
 
-// The pod talks to the Web API with its own token and never to the Kubernetes API, so it must not
-// get a ServiceAccount token mounted.
+// Context restoration reads from an S3-compatible object store, wired via the SONAR_AGENTIC_STORAGE_*
+// env vars (SONAR-31587). They must resolve to the same bucket SonarQube Server writes the context
+// items to, or restoration silently finds nothing.
+func TestVortexAnalysisStorageEnv(t *testing.T) {
+	container := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Spec.Containers[0]
+	env := vortexContainerEnv(container)
+
+	assert.Equal(t, "S3", env["SONAR_AGENTIC_STORAGE_TYPE"].Value)
+	assert.Equal(t, "agentic-artifacts", env["SONAR_AGENTIC_STORAGE_BUCKET"].Value)
+	assert.Equal(t, "eu-west-1", env["SONAR_AGENTIC_STORAGE_REGION"].Value)
+	assert.Equal(t, "false", env["SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS"].Value)
+	assert.Equal(t, "", env["SONAR_AGENTIC_STORAGE_ENDPOINT"].Value)
+
+	_, hasAccessKey := env["SONAR_AGENTIC_STORAGE_ACCESS_KEY"]
+	_, hasSecretKey := env["SONAR_AGENTIC_STORAGE_SECRET_KEY"]
+	assert.False(t, hasAccessKey, "no static credentials configured, so the AWS SDK must fall back to its default credential chain")
+	assert.False(t, hasSecretKey)
+}
+
+// A custom endpoint (e.g. MinIO) with inline static credentials becomes a chart-managed Secret.
+func TestVortexAnalysisStorageCredentials(t *testing.T) {
+	container := vortexDeployment(t, "vortex-analysis-storage-credentials.yaml").Spec.Template.Spec.Containers[0]
+	env := vortexContainerEnv(container)
+
+	assert.Equal(t, "http://minio.speedboat-test-xx.svc:9000", env["SONAR_AGENTIC_STORAGE_ENDPOINT"].Value)
+
+	accessKey := env["SONAR_AGENTIC_STORAGE_ACCESS_KEY"]
+	require.NotNil(t, accessKey.ValueFrom)
+	require.NotNil(t, accessKey.ValueFrom.SecretKeyRef)
+	assert.Equal(t, dceReleaseName+"-sonarqube-dce"+vortexFullnameSuffix, accessKey.ValueFrom.SecretKeyRef.Name)
+	assert.Equal(t, "SONAR_AGENTIC_STORAGE_ACCESS_KEY", accessKey.ValueFrom.SecretKeyRef.Key)
+
+	secretKey := env["SONAR_AGENTIC_STORAGE_SECRET_KEY"]
+	require.NotNil(t, secretKey.ValueFrom)
+	assert.Equal(t, "SONAR_AGENTIC_STORAGE_SECRET_KEY", secretKey.ValueFrom.SecretKeyRef.Key)
+
+	output, err := renderVortex(t, "vortex-analysis-storage-credentials.yaml", "templates/vortex-analysis-secret.yaml")
+	require.NoError(t, err)
+	var secret corev1.Secret
+	helm.UnmarshalK8SYaml(t, output, &secret)
+	assert.Equal(t, "minioadmin", string(secret.Data["SONAR_AGENTIC_STORAGE_ACCESS_KEY"]))
+	assert.Equal(t, "miniosecret", string(secret.Data["SONAR_AGENTIC_STORAGE_SECRET_KEY"]))
+}
+
+// An existingSecret for the storage credentials is referenced directly, with no chart-managed Secret.
+func TestVortexAnalysisStorageExistingSecret(t *testing.T) {
+	deployment := vortexDeployment(t, "vortex-analysis-storage-existing-secret.yaml")
+	env := vortexContainerEnv(deployment.Spec.Template.Spec.Containers[0])
+
+	accessKey := env["SONAR_AGENTIC_STORAGE_ACCESS_KEY"]
+	require.NotNil(t, accessKey.ValueFrom)
+	assert.Equal(t, "my-minio-credentials", accessKey.ValueFrom.SecretKeyRef.Name)
+	assert.Equal(t, "SONAR_AGENTIC_STORAGE_ACCESS_KEY", accessKey.ValueFrom.SecretKeyRef.Key)
+
+	output, err := renderVortex(t, "vortex-analysis-storage-existing-secret.yaml", "templates/vortex-analysis-secret.yaml")
+	require.Error(t, err, "no Secret may be rendered when both the token and the storage credentials come from an existingSecret")
+	assert.Empty(t, strings.TrimSpace(output))
+}
+
+// By default the pod talks to the Web API with its own token and never to the Kubernetes API, so
+// it must not get a ServiceAccount token mounted, and it uses "default" rather than a pinned name.
 func TestVortexAnalysisDoesNotAutomountServiceAccountToken(t *testing.T) {
 	podSpec := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Spec
 	require.NotNil(t, podSpec.AutomountServiceAccountToken)
 	assert.False(t, *podSpec.AutomountServiceAccountToken)
+	assert.Equal(t, "default", podSpec.ServiceAccountName)
+}
+
+// A dedicated, IRSA-annotated ServiceAccount (SONAR-31587) lets the pod reach real S3 for context
+// restoration instead of falling back to the node's own AWS identity.
+func TestVortexAnalysisServiceAccount(t *testing.T) {
+	podSpec := vortexDeployment(t, "vortex-analysis-serviceaccount.yaml").Spec.Template.Spec
+	assert.Equal(t, dceReleaseName+"-sonarqube-dce"+vortexFullnameSuffix, podSpec.ServiceAccountName)
+	require.NotNil(t, podSpec.AutomountServiceAccountToken)
+	assert.True(t, *podSpec.AutomountServiceAccountToken)
+
+	output, err := renderVortex(t, "vortex-analysis-serviceaccount.yaml", "templates/vortex-analysis-serviceaccount.yaml")
+	require.NoError(t, err)
+
+	var sa corev1.ServiceAccount
+	helm.UnmarshalK8SYaml(t, output, &sa)
+	assert.Equal(t, podSpec.ServiceAccountName, sa.Name)
+	assert.Equal(t, "arn:aws:iam::123456789012:role/vortex-analysis", sa.Annotations["eks.amazonaws.com/role-arn"])
+
+	_, err = renderVortex(t, "vortex-analysis-enabled.yaml", "templates/vortex-analysis-serviceaccount.yaml")
+	require.Error(t, err, "no ServiceAccount may render when vortexAnalysis.serviceAccount.create is false")
 }
 
 // The token reaches the container through secretKeyRef, which is only read at startup. Without a
@@ -300,14 +380,22 @@ func TestVortexAnalysisRequiresImageRepository(t *testing.T) {
 }
 
 // The remaining settings the service cannot start without: an image tag, since the reference is
-// built verbatim, and a token, since every Web API call needs one.
+// built verbatim, a token, since every Web API call needs one, and the storage settings backing
+// context restoration, which have to resolve to the store SonarQube Server writes the items to.
 func TestVortexAnalysisRequiresTagAndToken(t *testing.T) {
 	for name, tc := range map[string]struct {
 		unset    map[string]string
 		expected string
 	}{
-		"image tag": {map[string]string{"vortexAnalysis.image.tag": ""}, "vortexAnalysis.image.tag is not set"},
-		"token":     {map[string]string{"vortexAnalysis.sonarqubeToken.token": ""}, "no token is set"},
+		"image tag":      {map[string]string{"vortexAnalysis.image.tag": ""}, "vortexAnalysis.image.tag is not set"},
+		"token":          {map[string]string{"vortexAnalysis.sonarqubeToken.token": ""}, "no token is set"},
+		"storage type":   {map[string]string{"vortexAnalysis.storage.type": ""}, "vortexAnalysis.storage.type is not set"},
+		"storage bucket": {map[string]string{"vortexAnalysis.storage.bucket": ""}, "vortexAnalysis.storage.bucket is not set"},
+		"storage region": {map[string]string{"vortexAnalysis.storage.region": ""}, "vortexAnalysis.storage.region is not set"},
+		"storage partial credentials": {
+			map[string]string{"vortexAnalysis.storage.accessKey": "only-access-key"},
+			"only one of vortexAnalysis.storage.accessKey / vortexAnalysis.storage.secretKey is set",
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			opts := &helm.Options{

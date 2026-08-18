@@ -26,7 +26,8 @@ spec:
         app: {{ include "sonarqube.name" . }}-vortex-analysis
         release: {{ .Release.Name }}
     spec:
-      automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
+      serviceAccountName: {{ include "sonarqube.vortexAnalysis.serviceAccountName" . }}
+      automountServiceAccountToken: {{ $vortex.serviceAccount.automountToken }}
       {{- if or $vortex.image.pullSecret $vortex.image.pullSecrets }}
       imagePullSecrets:
         {{- if $vortex.image.pullSecret }}
@@ -56,6 +57,32 @@ spec:
                 secretKeyRef:
                   name: {{ default (include "sonarqube.vortexAnalysis.fullname" .) $vortex.sonarqubeToken.existingSecret }}
                   key: {{ $vortex.sonarqubeToken.existingSecretKey | default "VORTEX_ANALYSIS_SONARQUBE_TOKEN" }}
+            {{- end }}
+            - name: SONAR_AGENTIC_STORAGE_TYPE
+              value: {{ $vortex.storage.type | quote }}
+            - name: SONAR_AGENTIC_STORAGE_BUCKET
+              value: {{ $vortex.storage.bucket | quote }}
+            - name: SONAR_AGENTIC_STORAGE_REGION
+              value: {{ $vortex.storage.region | quote }}
+            - name: SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS
+              value: {{ $vortex.storage.pathStyleAccess | quote }}
+            - name: SONAR_AGENTIC_STORAGE_ENDPOINT
+              value: {{ $vortex.storage.endpoint | quote }}
+            {{- /* Inject static storage keys only when provided (inline or via existingSecret). When
+                   none are set, the env vars are omitted so the AWS SDK falls back to its default
+                   credential chain - i.e. the pod's IAM identity (node instance role or IRSA) for
+                   credential-less access to a real S3 bucket. */}}
+            {{- if or $vortex.storage.accessKey $vortex.storage.secretKey $vortex.storage.existingSecret }}
+            - name: SONAR_AGENTIC_STORAGE_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.vortexAnalysis.fullname" .) $vortex.storage.existingSecret }}
+                  key: SONAR_AGENTIC_STORAGE_ACCESS_KEY
+            - name: SONAR_AGENTIC_STORAGE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.vortexAnalysis.fullname" .) $vortex.storage.existingSecret }}
+                  key: SONAR_AGENTIC_STORAGE_SECRET_KEY
             {{- end }}
             {{- with $vortex.env }}
             {{- toYaml . | nindent 12 }}

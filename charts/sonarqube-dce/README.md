@@ -984,6 +984,18 @@ line, so the env var alone is silently ignored by anything reading it that way (
 | `vortexAnalysis.sonarqubeToken.token`           | Inline SonarQube token for the callback (`VORTEX_ANALYSIS_SONARQUBE_TOKEN`); required unless `existingSecret` is set | `""`                                                                |
 | `vortexAnalysis.sonarqubeToken.existingSecret`  | Existing secret providing the callback token; required unless `token` is set                                     | `""`                                                                   |
 | `vortexAnalysis.sonarqubeToken.existingSecretKey` | Key within `existingSecret` (defaults to `VORTEX_ANALYSIS_SONARQUBE_TOKEN`)                                     | `""`                                                                   |
+| `vortexAnalysis.storage.type`                   | Object storage backend for Agentic Analysis context restoration (`SONAR_AGENTIC_STORAGE_TYPE`); required          | `S3`                                                                   |
+| `vortexAnalysis.storage.bucket`                 | Bucket holding Agentic Analysis context items (`SONAR_AGENTIC_STORAGE_BUCKET`); required                          | `""`                                                                   |
+| `vortexAnalysis.storage.region`                 | AWS region of the bucket (`SONAR_AGENTIC_STORAGE_REGION`); required                                               | `""`                                                                   |
+| `vortexAnalysis.storage.pathStyleAccess`        | Path-style S3 access (`SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS`); `false` for AWS S3, `true` for most S3-compatible endpoints | `false`                                                     |
+| `vortexAnalysis.storage.endpoint`               | Custom S3-compatible endpoint (`SONAR_AGENTIC_STORAGE_ENDPOINT`, e.g. MinIO); blank for real AWS S3   | `""`                                                                   |
+| `vortexAnalysis.storage.accessKey`              | Inline access key for `endpoint` above; ignored when `existingSecret` is set                                      | `""`                                                                   |
+| `vortexAnalysis.storage.secretKey`              | Inline secret key for `endpoint` above; ignored when `existingSecret` is set                                      | `""`                                                                   |
+| `vortexAnalysis.storage.existingSecret`         | Existing secret providing `SONAR_AGENTIC_STORAGE_ACCESS_KEY` / `SONAR_AGENTIC_STORAGE_SECRET_KEY`                 | `""`                                                                   |
+| `vortexAnalysis.serviceAccount.create`          | Create a dedicated ServiceAccount for the Vortex analysis pod, independent of the top-level `serviceAccount`      | `false`                                                                |
+| `vortexAnalysis.serviceAccount.name`            | Name of that ServiceAccount; defaults to the Vortex analysis fullname when `create` is true                       | `""`                                                                   |
+| `vortexAnalysis.serviceAccount.automountToken`  | Automount the ServiceAccount token into the pod; needed for IRSA                                                  | `false`                                                                |
+| `vortexAnalysis.serviceAccount.annotations`     | Annotations for that ServiceAccount (e.g. `eks.amazonaws.com/role-arn` for IRSA)                                  | `{}`                                                                   |
 | `vortexAnalysis.networkPolicy.enabled`          | Render a NetworkPolicy for the analysis pod, independent of the top-level `networkPolicy.enabled`                | `false`                                                                |
 | `vortexAnalysis.networkPolicy.egressAllow`      | Extra egress peers — each a `cidr`, a `podSelector`, a `namespaceSelector` or both selectors, with optional `ports` | `[]`                                                                |
 | `vortexAnalysis.containerSecurityContext`       | Security context for the Vortex analysis container                                                               | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
@@ -999,6 +1011,8 @@ line, so the env var alone is silently ignored by anything reading it that way (
 When `vortexAnalysis.enabled` is set to `true`, the chart deploys a separate Vortex analysis pod alongside the SonarQube application nodes and automatically wires the two together via the `SONAR_VORTEX_ANALYSIS_URL` environment variable, which sets the `sonar.vortex.analysis.url` property. SonarQube then sends analysis requests to it. While it is disabled, SonarQube sends none.
 
 Vortex analysis calls the SonarQube Web API, so a token is required: set either `vortexAnalysis.sonarqubeToken.token` or `vortexAnalysis.sonarqubeToken.existingSecret`.
+
+Context restoration also requires an S3-compatible object store matching `sonar.agentic.storage.*`: set `vortexAnalysis.storage.bucket` and `vortexAnalysis.storage.region`, and, if needed, `vortexAnalysis.serviceAccount` for IRSA access to it.
 
 The pod can take several minutes to become ready on a first start, while it loads its analyzers.
 
