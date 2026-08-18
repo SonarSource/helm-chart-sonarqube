@@ -62,6 +62,18 @@ URL the application nodes use to reach Vortex analysis (the sonar.vortex.analysi
 {{- end -}}
 
 {{/*
+Name of the ServiceAccount for the Vortex analysis pod. Same create / pinned-name / "default"
+fallback logic as sonarqube.serviceAccountName, but independent of it.
+*/}}
+{{- define "sonarqube.vortexAnalysis.serviceAccountName" -}}
+{{- if .Values.vortexAnalysis.serviceAccount.create -}}
+    {{ default (include "sonarqube.vortexAnalysis.fullname" .) .Values.vortexAnalysis.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.vortexAnalysis.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Create the fully qualified name for the Agentic Harness gVisor installer.
 Usage: {{ include "sonarqube.agentic.gvisor.fullname" . }}
 */}}
