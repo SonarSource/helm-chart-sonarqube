@@ -1,0 +1,26 @@
+monitoringPasscode: test-passcode
+applicationNodes:
+  jwtSecret: test-jwt-secret
+jdbcOverwrite:
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+agenticHarness:
+  enabled: true
+  orchestrator:
+    image:
+      repository: example.com/agentic/orchestrator
+      tag: "42"
+    storage:
+      bucket: agentic-jobs
+  runtimes:
+    hunter:
+      enabled: true
+      image:
+        repository: example.com/agentic/hunter
+        tag: "1"
+    remediation:
+      enabled: true
+      image:
+        repository: example.com/agentic/remediation
+        tag: "1"

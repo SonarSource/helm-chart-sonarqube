@@ -53,6 +53,10 @@ spec:
         - name: agentic-orchestrator
           image: "{{ .Values.agenticHarness.orchestrator.image.repository }}:{{ .Values.agenticHarness.orchestrator.image.tag }}"
           imagePullPolicy: {{ .Values.agenticHarness.orchestrator.image.pullPolicy }}
+          {{- $orchestratorSecurityContext := .Values.agenticHarness.orchestrator.containerSecurityContext | default dict }}
+          {{- with $orchestratorSecurityContext }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.agenticHarness.orchestrator.port }}
@@ -135,6 +139,11 @@ spec:
           {{- with .Values.agenticHarness.orchestrator.resources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          {{- end }}
           readinessProbe:
             httpGet:
               path: /health
@@ -160,4 +169,9 @@ spec:
 {{ toYaml .Values.affinity | indent 8 }}
       {{- end }}
       serviceAccountName: {{ include "sonarqube.agentic.orchestrator.serviceAccountName" . }}
+      {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- end }}
 {{- end }}
