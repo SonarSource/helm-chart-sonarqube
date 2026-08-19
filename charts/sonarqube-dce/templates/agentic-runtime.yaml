@@ -1,5 +1,5 @@
-{{- if .Values.agenticHarness.enabled }}
-{{- range $family, $cfg := .Values.agenticHarness.runtimes }}
+{{- $runtimes := dict "hunter" .Values.hunterAgent "remediation" .Values.remediationAgent -}}
+{{- range $family, $cfg := $runtimes }}
 {{- if $cfg.enabled }}
 ---
 apiVersion: apps/v1
@@ -31,9 +31,9 @@ spec:
       {{- /* Run the (untrusted) runtimes under the gVisor RuntimeClass when enabled. The
              RuntimeClass' own scheduling.nodeSelector pins these pods to runsc-ready nodes. */}}
       {{- if eq (include "sonarqube.agentic.gvisor.enabled" $) "true" }}
-      runtimeClassName: {{ $.Values.agenticHarness.gvisor.runtimeClassName }}
+      runtimeClassName: {{ $.Values.gvisor.runtimeClassName }}
       {{- end }}
-      automountServiceAccountToken: {{ if $.Values.agenticHarness.serviceAccount.create }}{{ $.Values.agenticHarness.serviceAccount.automountToken }}{{ else }}{{ $.Values.serviceAccount.automountToken }}{{ end }}
+      automountServiceAccountToken: {{ if $cfg.serviceAccount.create }}{{ $cfg.serviceAccount.automountToken }}{{ else }}{{ $.Values.serviceAccount.automountToken }}{{ end }}
       {{- if or $cfg.image.pullSecrets $cfg.image.pullSecret }}
       imagePullSecrets:
         {{- if $cfg.image.pullSecret }}
@@ -129,6 +129,5 @@ spec:
     app: {{ template "sonarqube.name" $ }}
     sonarqube.agentic/component: runtime
     sonarqube.agentic/family: {{ $family }}
-{{- end }}
 {{- end }}
 {{- end }}
