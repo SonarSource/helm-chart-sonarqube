@@ -3,11 +3,11 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator
+  name: agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     sonarqube.agentic/component: orchestrator
 spec:
@@ -79,11 +79,11 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-agentic-runtime-remed
+  name: agentic-pack-values.yaml-sonarqube-dce-agentic-runtime-remediat
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     sonarqube.agentic/component: runtime
     sonarqube.agentic/family: remediation
@@ -141,11 +141,11 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-app
+  name: agentic-pack-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 spec:
   podSelector:
@@ -160,7 +160,7 @@ spec:
         - podSelector:
             matchLabels:
               app: sonarqube-dce
-              release: agentic-harness-values.yaml
+              release: agentic-pack-values.yaml
               sonarqube.datacenter/type: app
 
     - from:
@@ -168,6 +168,14 @@ spec:
             matchLabels:
               app: sonarqube-dce
               sonarqube.agentic/component: orchestrator
+      ports:
+        - port: 9000
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce-vortex-analysis
+              release: agentic-pack-values.yaml
       ports:
         - port: 9000
           protocol: TCP
@@ -210,16 +218,24 @@ spec:
       ports:
         - port: 8080
           protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce-vortex-analysis
+              release: agentic-pack-values.yaml
+      ports:
+        - port: 8080
+          protocol: TCP
 ---
 # Source: sonarqube-dce/templates/networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-search
+  name: agentic-pack-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 spec:
   podSelector:
@@ -265,15 +281,63 @@ spec:
         - port: 9002
           protocol: TCP
 ---
+# Source: sonarqube-dce/templates/vortex-analysis-networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agentic-pack-values.yaml-sonarqube-dce-vortex-analysis
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: agentic-pack-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: vortex-analysis
+spec:
+  podSelector:
+    matchLabels:
+      app: sonarqube-dce-vortex-analysis
+      release: agentic-pack-values.yaml
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce
+              sonarqube.datacenter/type: app
+      ports:
+        - port: 8080
+          protocol: TCP
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce
+              sonarqube.datacenter/type: app
+      ports:
+        - port: 9000
+          protocol: TCP
+---
 # Source: sonarqube-dce/templates/pod-disruption-budget.yaml
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-search
+  name: agentic-pack-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 spec:
   minAvailable: 2
@@ -286,11 +350,11 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-app
+  name: agentic-pack-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 spec:
   minAvailable: 1
@@ -303,11 +367,11 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-agentic-gvisor-instal
+  name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     app.kubernetes.io/component: agentic-gvisor
 ---
@@ -319,7 +383,7 @@ metadata:
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     sonarqube.agentic/component: orchestrator
   annotations:
@@ -334,7 +398,7 @@ metadata:
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     sonarqube.agentic/component: runtime
     sonarqube.agentic/family: remediation
@@ -346,11 +410,11 @@ automountServiceAccountToken: true
 apiVersion: v1
 kind: Secret
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator
+  name: agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     sonarqube.agentic/component: orchestrator
 type: Opaque
@@ -361,11 +425,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-monitoring-passcode
+  name: agentic-pack-values.yaml-sonarqube-dce-monitoring-passcode
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -375,11 +439,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce
+  name: agentic-pack-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -389,11 +453,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-jwt
+  name: agentic-pack-values.yaml-sonarqube-dce-jwt
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -404,11 +468,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-http-proxies
+  name: agentic-pack-values.yaml-sonarqube-dce-http-proxies
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 type: Opaque
 stringData:
@@ -419,15 +483,30 @@ stringData:
   PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
   PROMETHEUS-EXPORTER-NO-PROXY: ""
 ---
+# Source: sonarqube-dce/templates/vortex-analysis-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: agentic-pack-values.yaml-sonarqube-dce-vortex-analysis
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: agentic-pack-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: vortex-analysis
+type: Opaque
+data:
+  VORTEX_ANALYSIS_SONARQUBE_TOKEN: "c3F1X2V4YW1wbGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+---
 # Source: sonarqube-dce/templates/agentic-gvisor.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-agentic-gvisor-instal
+  name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     app.kubernetes.io/component: agentic-gvisor
 data:
@@ -744,26 +823,27 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-app-config
+  name: agentic-pack-values.yaml-sonarqube-dce-app-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
-    sonar.hunteragent.orchestrator.url=http://agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator:8080
-    sonar.remediationagent.orchestrator.url=http://agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator:8080
+    sonar.hunteragent.orchestrator.url=http://agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator:8080
+    sonar.remediationagent.orchestrator.url=http://agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator:8080
+    sonar.vortex.analysis.url=http://agentic-pack-values.yaml-sonarqube-dce-vortex-analysis:8080
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-search-config
+  name: agentic-pack-values.yaml-sonarqube-dce-search-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -772,11 +852,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-init-fs
+  name: agentic-pack-values.yaml-sonarqube-dce-init-fs
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 data:
   init_fs.sh: |-
@@ -788,11 +868,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-init-sysctl
+  name: agentic-pack-values.yaml-sonarqube-dce-init-sysctl
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -835,11 +915,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-install-plugins
+  name: agentic-pack-values.yaml-sonarqube-dce-install-plugins
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
@@ -848,11 +928,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-jdbc-config
+  name: agentic-pack-values.yaml-sonarqube-dce-jdbc-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "user"
@@ -866,11 +946,11 @@ data:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-agentic-gvisor-instal
+  name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     app.kubernetes.io/component: agentic-gvisor
 rules:
@@ -882,31 +962,31 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-agentic-gvisor-instal
+  name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     app.kubernetes.io/component: agentic-gvisor
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: agentic-harness-values.yaml-sonarqube-dce-agentic-gvisor-instal
+  name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
 subjects:
   - kind: ServiceAccount
-    name: agentic-harness-values.yaml-sonarqube-dce-agentic-gvisor-instal
+    name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
     namespace: default
 ---
 # Source: sonarqube-dce/templates/agentic-orchestrator-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator
+  name: agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     sonarqube.agentic/component: orchestrator
 spec:
@@ -924,11 +1004,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-agentic-runtime-remed
+  name: agentic-pack-values.yaml-sonarqube-dce-agentic-runtime-remediat
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     sonarqube.agentic/component: runtime
     sonarqube.agentic/family: remediation
@@ -950,11 +1030,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce
+  name: agentic-pack-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 
 spec:
@@ -966,18 +1046,18 @@ spec:
       name: http
   selector:
     app: sonarqube-dce
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     sonarqube.datacenter/type: "app"
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-headless
+  name: agentic-pack-values.yaml-sonarqube-dce-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 
 spec:
@@ -992,18 +1072,18 @@ spec:
       name: hazelcast
   selector:
     app: sonarqube-dce
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     sonarqube.datacenter/type: "app"
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-search
+  name: agentic-pack-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 
 spec:
@@ -1019,17 +1099,17 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-search-headless
+  name: agentic-pack-values.yaml-sonarqube-dce-search-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 
 spec:
@@ -1046,34 +1126,56 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
+---
+# Source: sonarqube-dce/templates/vortex-analysis-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentic-pack-values.yaml-sonarqube-dce-vortex-analysis
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: agentic-pack-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: vortex-analysis
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: sonarqube-dce-vortex-analysis
+    release: agentic-pack-values.yaml
 ---
 # Source: sonarqube-dce/templates/agentic-gvisor.yaml
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-agentic-gvisor-instal
+  name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     app.kubernetes.io/component: agentic-gvisor
 spec:
   selector:
     matchLabels:
       app: sonarqube-dce-agentic-gvisor-installer
-      release: agentic-harness-values.yaml
+      release: agentic-pack-values.yaml
   template:
     metadata:
       labels:
         app: sonarqube-dce-agentic-gvisor-installer
-        release: agentic-harness-values.yaml
+        release: agentic-pack-values.yaml
     spec:
       # Needed so `nsenter -t 1` can reach the host's systemd to restart containerd; chroot alone
       # cannot reach the host systemd bus.
       hostPID: true
-      serviceAccountName: agentic-harness-values.yaml-sonarqube-dce-agentic-gvisor-instal
+      serviceAccountName: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
       tolerations:
         - operator: Exists
       containers:
@@ -1112,18 +1214,18 @@ spec:
             type: Directory
         - name: scripts
           configMap:
-            name: agentic-harness-values.yaml-sonarqube-dce-agentic-gvisor-instal
+            name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
             defaultMode: 0755
 ---
 # Source: sonarqube-dce/templates/agentic-orchestrator.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator
+  name: agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     sonarqube.agentic/component: orchestrator
 spec:
@@ -1136,7 +1238,7 @@ spec:
     metadata:
       labels:
         app: sonarqube-dce
-        release: agentic-harness-values.yaml
+        release: agentic-pack-values.yaml
         sonarqube.agentic/component: orchestrator
     spec:
       automountServiceAccountToken: true
@@ -1159,7 +1261,7 @@ spec:
             - sh
             - -c
             - |
-              until curl -sf "http://agentic-harness-values.yaml-sonarqube-dce:9000/api/system/status" | grep -q '"status":"UP"'; do
+              until curl -sf "http://agentic-pack-values.yaml-sonarqube-dce:9000/api/system/status" | grep -q '"status":"UP"'; do
                 echo "Waiting for SonarQube to be UP..."; sleep 10;
               done
       containers:
@@ -1204,14 +1306,14 @@ spec:
             - name: AGENTIC_STORAGE_PATH_STYLE
               value: "false"
             - name: AGENTIC_SONARQUBE_URL
-              value: "http://agentic-harness-values.yaml-sonarqube-dce:9000"
+              value: "http://agentic-pack-values.yaml-sonarqube-dce:9000"
             - name: AGENTIC_SONARQUBE_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator
+                  name: agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator
                   key: AGENTIC_SONARQUBE_TOKEN
             - name: AGENTIC_REMEDIATION_RUNTIME_PUSH_URL
-              value: "http://agentic-harness-values.yaml-sonarqube-dce-agentic-runtime-remed:8090/jobs"
+              value: "http://agentic-pack-values.yaml-sonarqube-dce-agentic-runtime-remediat:8090/jobs"
           resources:
             limits:
               cpu: "1"
@@ -1245,11 +1347,11 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-agentic-runtime-remed
+  name: agentic-pack-values.yaml-sonarqube-dce-agentic-runtime-remediat
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     sonarqube.agentic/component: runtime
     sonarqube.agentic/family: remediation
@@ -1264,7 +1366,7 @@ spec:
     metadata:
       labels:
         app: sonarqube-dce
-        release: agentic-harness-values.yaml
+        release: agentic-pack-values.yaml
         sonarqube.agentic/component: runtime
         sonarqube.agentic/family: remediation
     spec:
@@ -1292,7 +1394,7 @@ spec:
             - name: REMEDIATION_SCRIPT_PATH
               value: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
             - name: REMEDIATION_RULE_INFO_ENDPOINT
-              value: http://agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator:8080/remediation-agent/rule-info
+              value: http://agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator:8080/remediation-agent/rule-info
           resources:
             limits:
               cpu: "4"
@@ -1308,18 +1410,18 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-app
+  name: agentic-pack-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: agentic-harness-values.yaml
+    app.kubernetes.io/name: agentic-pack-values.yaml
     sonarqube.datacenter/type: "app"
-    app.kubernetes.io/instance: agentic-harness-values.yaml
+    app.kubernetes.io/instance: agentic-pack-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: agentic-harness-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: agentic-pack-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "2026.4.0-datacenter-app"
 spec:
   replicas: 2
@@ -1329,17 +1431,17 @@ spec:
   selector:
     matchLabels:
       app: sonarqube-dce
-      release: agentic-harness-values.yaml
+      release: agentic-pack-values.yaml
   template:
     metadata:
       labels:
         app: sonarqube-dce
-        release: agentic-harness-values.yaml
+        release: agentic-pack-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 2f44a0e3371059960ff78807ae04f02d79251bc98c6eaeeb1d79f54a70770f42
-        checksum/config: e36c9a9939b8e3763877daf3eb332a41c52f4d6cad2e0495ab539866b1a620d2
-        checksum/secret: d9d496f23922e9a5bf972fc5e7942d18374d91bb473215a43ebd3ffb8c5d3d9c
+        checksum/plugins: c385a4b4aedaa62ad51bc4dd43343eb8684d1f96a065324bc125c1f48aae2aad
+        checksum/config: 2122632839de2e799c072ca510206fed78932cace75eb98eefce05512c02efe9
+        checksum/secret: 704e3b5f601b4acea8b7e253eb3d57b6c8c2bbfc3f1a64c04533fb945bafaa21
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -1413,7 +1515,7 @@ spec:
             - name: SONAR_HELM_CHART_VERSION
               value: 2026.5.0
             - name: SONAR_CLUSTER_SEARCH_HOSTS
-              value: "agentic-harness-values.yaml-sonarqube-dce-search"
+              value: "agentic-pack-values.yaml-sonarqube-dce-search"
             - name: SONAR_CLUSTER_KUBERNETES
               value: "true"
             - name: SONAR_CLUSTER_NODE_NAME
@@ -1425,29 +1527,31 @@ spec:
                 fieldRef:
                   fieldPath: status.podIP
             - name: SONAR_CLUSTER_HOSTS
-              value: "agentic-harness-values.yaml-sonarqube-dce-headless"
+              value: "agentic-pack-values.yaml-sonarqube-dce-headless"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
               valueFrom:
                 secretKeyRef:
-                  name: "agentic-harness-values.yaml-sonarqube-dce-jwt"
+                  name: "agentic-pack-values.yaml-sonarqube-dce-jwt"
                   key: SONAR_AUTH_JWTBASE64HS256SECRET
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: agentic-harness-values.yaml-sonarqube-dce
+                  name: agentic-pack-values.yaml-sonarqube-dce
                   key: jdbc-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: agentic-harness-values.yaml-sonarqube-dce-monitoring-passcode
+                  name: agentic-pack-values.yaml-sonarqube-dce-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
+            - name: SONAR_VORTEX_ANALYSIS_URL
+              value: "http://agentic-pack-values.yaml-sonarqube-dce-vortex-analysis:8080"
             - name: SONAR_HUNTERAGENT_ORCHESTRATOR_URL
-              value: "http://agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator:8080"
+              value: "http://agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator:8080"
             - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
-              value: "http://agentic-harness-values.yaml-sonarqube-dce-agentic-orchestrator:8080"
+              value: "http://agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator:8080"
           envFrom:
             - configMapRef:
-                name: agentic-harness-values.yaml-sonarqube-dce-jdbc-config
+                name: agentic-pack-values.yaml-sonarqube-dce-jdbc-config
           livenessProbe:
             exec:
               command:
@@ -1520,14 +1624,14 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: agentic-harness-values.yaml-sonarqube-dce-app-config
+          name: agentic-pack-values.yaml-sonarqube-dce-app-config
           items:
           - key: sonar.properties
             path: sonar.properties
       
       - name: install-plugins
         configMap:
-          name: agentic-harness-values.yaml-sonarqube-dce-install-plugins
+          name: agentic-pack-values.yaml-sonarqube-dce-install-plugins
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
@@ -1541,38 +1645,120 @@ spec:
         emptyDir:
           {}
 ---
+# Source: sonarqube-dce/templates/vortex-analysis.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentic-pack-values.yaml-sonarqube-dce-vortex-analysis
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: agentic-pack-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: vortex-analysis
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sonarqube-dce-vortex-analysis
+      release: agentic-pack-values.yaml
+  template:
+    metadata:
+      annotations:
+        checksum/secret: 6f90f8cc5df0d3ed7c876fb3c7d26343fe15b8d1b8e4177ba971a8ed1a122a0f
+      labels:
+        app: sonarqube-dce-vortex-analysis
+        release: agentic-pack-values.yaml
+    spec:
+      serviceAccountName: default
+      automountServiceAccountToken: false
+      containers:
+        - name: vortex-analysis
+          image: "example.com/vortex/analysis:1"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: VORTEX_ANALYSIS_SONARQUBE_URL
+              value: "http://agentic-pack-values.yaml-sonarqube-dce:9000"
+            - name: VORTEX_ANALYSIS_SONARQUBE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: agentic-pack-values.yaml-sonarqube-dce-vortex-analysis
+                  key: VORTEX_ANALYSIS_SONARQUBE_TOKEN
+            - name: SONAR_AGENTIC_STORAGE_TYPE
+              value: "S3"
+            - name: SONAR_AGENTIC_STORAGE_BUCKET
+              value: "vortex-artifacts"
+            - name: SONAR_AGENTIC_STORAGE_REGION
+              value: "eu-west-1"
+            - name: SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS
+              value: "false"
+            - name: SONAR_AGENTIC_STORAGE_ENDPOINT
+              value: ""
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+---
 # Source: sonarqube-dce/templates/sonarqube-search.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: agentic-harness-values.yaml-sonarqube-dce-search
+  name: agentic-pack-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: "agentic-harness-values.yaml"
+    app.kubernetes.io/name: "agentic-pack-values.yaml"
     sonarqube.datacenter/type: "search"
-    app.kubernetes.io/instance: agentic-harness-values.yaml
+    app.kubernetes.io/instance: agentic-pack-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: agentic-harness-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: agentic-pack-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "2026.4.0-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
-  serviceName: agentic-harness-values.yaml-sonarqube-dce-search
+  serviceName: agentic-pack-values.yaml-sonarqube-dce-search
   selector:
     matchLabels:
       app: sonarqube-dce-search
-      release: agentic-harness-values.yaml
+      release: agentic-pack-values.yaml
   volumeClaimTemplates:
   - metadata:
-      name: agentic-harness-values.yaml-sonarqube-dce
+      name: agentic-pack-values.yaml-sonarqube-dce
       labels:
-        release: agentic-harness-values.yaml
+        release: agentic-pack-values.yaml
         chart: "sonarqube-dce"
-        app: "agentic-harness-values.yaml-sonarqube-dce"
+        app: "agentic-pack-values.yaml-sonarqube-dce"
     spec:
       accessModes:
         - "ReadWriteOnce"
@@ -1583,13 +1769,13 @@ spec:
     metadata:
       labels:
         app: sonarqube-dce-search
-        release: agentic-harness-values.yaml
+        release: agentic-pack-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: 8127bc8e082fd962c0c33f2b8760eb5ed117f700c7aa97b041a9c08fb598b2ff
-        checksum/init-fs: c4ea9d2620a163ff1d3bd0decff182ad1f0c71ab44a9c1e3add63a5e168f5078
-        checksum/config: e36c9a9939b8e3763877daf3eb332a41c52f4d6cad2e0495ab539866b1a620d2
-        checksum/secret: d9d496f23922e9a5bf972fc5e7942d18374d91bb473215a43ebd3ffb8c5d3d9c
+        checksum/init-sysctl: 48984fefbca804adff3080e6d8de92b55dc4d18e45e68500098515d6f269d103
+        checksum/init-fs: b897430b48cc08872fc3b6d6f5aed36612fa12646496d95e7d8d6045ea87dd14
+        checksum/config: 2122632839de2e799c072ca510206fed78932cace75eb98eefce05512c02efe9
+        checksum/secret: 704e3b5f601b4acea8b7e253eb3d57b6c8c2bbfc3f1a64c04533fb945bafaa21
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -1633,16 +1819,16 @@ spec:
             - name: init-fs
               mountPath: /tmp/scripts/
             - mountPath: /opt/sonarqube/certs
-              name: "agentic-harness-values.yaml-sonarqube-dce"
+              name: "agentic-pack-values.yaml-sonarqube-dce"
               subPath: certs
             - mountPath: /opt/sonarqube/data
-              name: "agentic-harness-values.yaml-sonarqube-dce"
+              name: "agentic-pack-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "agentic-harness-values.yaml-sonarqube-dce"
+              name: "agentic-pack-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "agentic-harness-values.yaml-sonarqube-dce"
+              name: "agentic-pack-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -1672,9 +1858,9 @@ spec:
             - name: SONAR_LOG_JSONOUTPUT
               value: "false"
             - name: SONAR_CLUSTER_ES_HOSTS
-              value: "agentic-harness-values.yaml-sonarqube-dce-search-0,agentic-harness-values.yaml-sonarqube-dce-search-1,agentic-harness-values.yaml-sonarqube-dce-search-2,"
+              value: "agentic-pack-values.yaml-sonarqube-dce-search-0,agentic-pack-values.yaml-sonarqube-dce-search-1,agentic-pack-values.yaml-sonarqube-dce-search-2,"
             - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
-              value: "agentic-harness-values.yaml-sonarqube-dce-search-headless"
+              value: "agentic-pack-values.yaml-sonarqube-dce-search-headless"
             - name: SONAR_CLUSTER_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -1752,17 +1938,17 @@ spec:
               type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/certs
-              name: "agentic-harness-values.yaml-sonarqube-dce"
+              name: "agentic-pack-values.yaml-sonarqube-dce"
               subPath: certs
               readOnly: true
             - mountPath: /opt/sonarqube/data
-              name: "agentic-harness-values.yaml-sonarqube-dce"
+              name: "agentic-pack-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "agentic-harness-values.yaml-sonarqube-dce"
+              name: "agentic-pack-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "agentic-harness-values.yaml-sonarqube-dce"
+              name: "agentic-pack-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -1771,17 +1957,17 @@ spec:
       
       - name: init-sysctl
         configMap:
-          name: agentic-harness-values.yaml-sonarqube-dce-init-sysctl
+          name: agentic-pack-values.yaml-sonarqube-dce-init-sysctl
           items:
             - key: init_sysctl.sh
               path: init_sysctl.sh
       - name: init-fs
         configMap:
-          name: agentic-harness-values.yaml-sonarqube-dce-init-fs
+          name: agentic-pack-values.yaml-sonarqube-dce-init-fs
           items:
             - key: init_fs.sh
               path: init_fs.sh
-      - name: "agentic-harness-values.yaml-sonarqube-dce"
+      - name: "agentic-pack-values.yaml-sonarqube-dce"
       - name : tmp-dir
         emptyDir:
           {}
@@ -1798,7 +1984,7 @@ metadata:
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
     app.kubernetes.io/component: agentic-gvisor
 handler: runsc
@@ -1810,7 +1996,7 @@ scheduling:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "agentic-harness-values.yaml-ui-test"
+  name: "agentic-pack-values.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
     # Disable Istio sidecar injection for this test pod
@@ -1818,12 +2004,12 @@ metadata:
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-harness-values.yaml
+    release: agentic-pack-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: agentic-harness-values.yaml-ui-test
+    - name: agentic-pack-values.yaml-ui-test
       image: "sonarqube:2026.4.0-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['curl']
@@ -1836,7 +2022,7 @@ spec:
         '--max-time',
         '5',
         '-s',
-        'agentic-harness-values.yaml-sonarqube-dce:9000/api/system/status'
+        'agentic-pack-values.yaml-sonarqube-dce:9000/api/system/status'
         ]
       resources:
         limits:
