@@ -739,6 +739,8 @@ agenticHarness:
       image:
         repository: debian
         tag: stable-slim
+        # Pinned for a reproducible pull; bump deliberately. Set to "" to use repository:tag.
+        digest: sha256:1710bde34461551a19a47c787885ec9ad7058d9a5bead2affb8d088fa2f8502b
         pullPolicy: IfNotPresent
         # pullSecrets:
         #   - name: my-repo-secret
@@ -751,7 +753,13 @@ agenticHarness:
       runscConfig:
         network: host
         overlay2: "root:self,size=50g"
-      resources: {}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
       nodeSelector: {}                # which nodes to install on (empty = all)
       tolerations:                    # run everywhere incl. tainted/control-plane nodes
         - operator: Exists

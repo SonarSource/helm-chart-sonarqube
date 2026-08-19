@@ -200,12 +200,14 @@ func TestGvisorInstallerDaemonSet(t *testing.T) {
 
 			require.Len(t, podSpec.Containers, 1)
 			container := podSpec.Containers[0]
-			assert.Equal(t, "debian:stable-slim", container.Image)
+			assert.Equal(t, "debian@sha256:1710bde34461551a19a47c787885ec9ad7058d9a5bead2affb8d088fa2f8502b", container.Image)
 			require.NotNil(t, container.SecurityContext)
 			require.NotNil(t, container.SecurityContext.Privileged)
 			assert.True(t, *container.SecurityContext.Privileged)
 			require.NotNil(t, container.SecurityContext.RunAsUser)
 			assert.Equal(t, int64(0), *container.SecurityContext.RunAsUser)
+			assert.Equal(t, "100m", container.Resources.Requests.Cpu().String())
+			assert.Equal(t, "500m", container.Resources.Limits.Cpu().String())
 
 			volumes := map[string]corev1.Volume{}
 			for _, v := range podSpec.Volumes {
@@ -217,6 +219,25 @@ func TestGvisorInstallerDaemonSet(t *testing.T) {
 			require.Contains(t, volumes, "scripts")
 			require.NotNil(t, volumes["scripts"].ConfigMap)
 			assert.True(t, strings.HasSuffix(volumes["scripts"].ConfigMap.Name, gvisorInstallerSuffix))
+		})
+	}
+}
+
+// Clearing installer.image.digest falls back to repository:tag (SONAR-31656).
+func TestGvisorInstallerImageDigestFallback(t *testing.T) {
+	for _, c := range gvisorChartCases() {
+		t.Run(c.name, func(t *testing.T) {
+			output, err := renderGvisor(t, c, "gvisor-installer-tag-fallback.yaml")
+			require.NoError(t, err)
+
+			var daemonSet appsv1.DaemonSet
+			for _, doc := range splitGvisorDocs(output) {
+				if strings.Contains(doc, "kind: DaemonSet") {
+					helm.UnmarshalK8SYaml(t, doc, &daemonSet)
+				}
+			}
+			require.Len(t, daemonSet.Spec.Template.Spec.Containers, 1)
+			assert.Equal(t, "debian:stable-slim", daemonSet.Spec.Template.Spec.Containers[0].Image)
 		})
 	}
 }

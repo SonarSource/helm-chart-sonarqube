@@ -424,7 +424,11 @@ spec:
       {{- end }}
       containers:
         - name: gvisor-installer
+          {{- if $installer.image.digest }}
+          image: {{ printf "%s@%s" $installer.image.repository $installer.image.digest }}
+          {{- else }}
           image: {{ printf "%s:%s" $installer.image.repository (default "latest" $installer.image.tag) }}
+          {{- end }}
           imagePullPolicy: {{ $installer.image.pullPolicy }}
           command: ["/bin/bash", "/scripts/run.sh"]
           # Privileged by design: mounts the host filesystem to install runsc and restart containerd.

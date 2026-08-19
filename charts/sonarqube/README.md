@@ -924,13 +924,14 @@ runtimes are its main consumer; the feature is self-contained and any pod can us
 | `agenticHarness.gvisor.nodeSelector` | `RuntimeClass` scheduling selector, and the label the installer applies when ready (set `null` to disable pinning) | `{gvisor.enabled: "true"}` |
 | `agenticHarness.gvisor.installer.enabled` | Deploy the privileged installer DaemonSet (requires `gvisor.enabled=true`) | `false` |
 | `agenticHarness.gvisor.installer.image.repository` | Installer image repository | `debian` |
-| `agenticHarness.gvisor.installer.image.tag` | Installer image tag | `stable-slim` |
+| `agenticHarness.gvisor.installer.image.tag` | Installer image tag (human-readable; ignored once `digest` is set) | `stable-slim` |
+| `agenticHarness.gvisor.installer.image.digest` | Pinned installer image digest, for a reproducible pull; blank falls back to `repository:tag` | pinned `debian:stable-slim` digest |
 | `agenticHarness.gvisor.installer.image.pullPolicy` | Installer image pull policy | `IfNotPresent` |
 | `agenticHarness.gvisor.installer.runscVersion` | Pinned gVisor release to install | `"20260706"` |
 | `agenticHarness.gvisor.installer.containerdConfigPath` | Path to the node's containerd config | `/etc/containerd/config.toml` |
 | `agenticHarness.gvisor.installer.runscConfig.network` | `runsc` network mode written to `runsc.toml` | `host` |
 | `agenticHarness.gvisor.installer.runscConfig.overlay2` | `runsc` overlay2 setting written to `runsc.toml` | `root:self,size=50g` |
-| `agenticHarness.gvisor.installer.resources` | Installer container resource requests/limits | `{}` |
+| `agenticHarness.gvisor.installer.resources` | Installer container resource requests/limits | requests `100m` / `128Mi`, limits `500m` / `256Mi` |
 | `agenticHarness.gvisor.installer.nodeSelector` | Which nodes to install on (empty = all) | `{}` |
 | `agenticHarness.gvisor.installer.tolerations` | Installer DaemonSet tolerations | `[{operator: Exists}]` |
 | `agenticHarness.gvisor.installer.annotations` | Installer pod annotations | `{}` |
