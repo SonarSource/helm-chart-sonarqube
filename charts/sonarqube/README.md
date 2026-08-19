@@ -896,57 +896,6 @@ and set `persistence.hostPath.path` and `persistence.hostPath.type`.
 
 For overriding variables see: [Customizing the chart](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing)
 
-## gVisor sandboxing
-
-This chart creates the `RuntimeClass` on by default via `agenticHarness.gvisor` (nested there
-because the agentic job runtimes shipped separately are its main consumer; the feature is
-self-contained and any pod in the cluster can use it — this chart does not attach it to any of its
-own workloads):
-
-- **`enabled`** (default `true`) creates a cluster-scoped `RuntimeClass` (default name `gvisor`).
-  Nothing is attached to it automatically — opt a pod in with `runtimeClassName: gvisor`. Assumes
-  `runsc` is already on your nodes (out-of-band: node bootstrap, custom AMI, GKE Sandbox,
-  Bottlerocket). `RuntimeClass` is cluster-scoped, so give each release a distinct
-  `runtimeClassName` if you install more than one.
-- **`installer.enabled`** (default `true`) *additionally* deploys a **privileged** DaemonSet that
-  installs `runsc` and labels each node once ready. **Self-managed nodes only**. **On fully-managed,
-  no-node-access compute** (GKE Autopilot, Fargate-style EKS/AKS profiles) this can't run at all —
-  use the provider's own sandbox where one exists (GKE Sandbox on GKE; AWS and Azure have no
-  equivalent) or provision `runsc` via a custom node image. Standard EKS/AKS managed node groups
-  aren't restricted this way. Pods requesting the RuntimeClass stay `Pending` until a node is
-  labeled — expected, not a failure. Idempotent.
-
-**Opting out.** Set `agenticHarness.gvisor.enabled=false` if you don't want the `RuntimeClass`
-created at all, or just `installer.enabled=false` to keep it but skip the privileged DaemonSet (e.g.
-on the fully-managed compute above). This chart doesn't schedule anything onto the RuntimeClass
-itself — any workload from another source (e.g. the DCE chart's agentic runtimes) relying on it
-falls back to the standard container runtime instead. See the DCE chart's README for the isolation
-trade-off that matters when the agentic runtimes are actually in play.
-
-**Version pin.** The `runsc` release the installer downloads (`installer.runscVersion`) is pinned
-and must be bumped deliberately, in the same change as any other gVisor-related update to this
-chart — never left to float to "latest".
-
-| Parameter | Description | Default |
-| --------- | ----------- | ------- |
-| `agenticHarness.gvisor.enabled` | Create the `RuntimeClass` and enable gVisor wiring | `true` |
-| `agenticHarness.gvisor.runtimeClassName` | Name of the cluster-scoped `RuntimeClass` | `gvisor` |
-| `agenticHarness.gvisor.handler` | containerd runtime handler the `RuntimeClass` targets | `runsc` |
-| `agenticHarness.gvisor.nodeSelector` | `RuntimeClass` scheduling selector, and the label the installer applies when ready (set `null` to disable pinning) | `{gvisor.enabled: "true"}` |
-| `agenticHarness.gvisor.installer.enabled` | Deploy the privileged installer DaemonSet (requires `gvisor.enabled=true`) | `true` |
-| `agenticHarness.gvisor.installer.image.repository` | Installer image repository | `debian` |
-| `agenticHarness.gvisor.installer.image.tag` | Installer image tag (human-readable; ignored once `digest` is set) | `stable-slim` |
-| `agenticHarness.gvisor.installer.image.digest` | Pinned installer image digest, for a reproducible pull; blank falls back to `repository:tag` | pinned `debian:stable-slim` digest |
-| `agenticHarness.gvisor.installer.image.pullPolicy` | Installer image pull policy | `IfNotPresent` |
-| `agenticHarness.gvisor.installer.runscVersion` | Pinned gVisor release to install | `"20260706"` |
-| `agenticHarness.gvisor.installer.containerdConfigPath` | Path to the node's containerd config | `/etc/containerd/config.toml` |
-| `agenticHarness.gvisor.installer.runscConfig.network` | `runsc` network mode written to `runsc.toml` | `host` |
-| `agenticHarness.gvisor.installer.runscConfig.overlay2` | `runsc` overlay2 setting written to `runsc.toml` | `root:self,size=50g` |
-| `agenticHarness.gvisor.installer.resources` | Installer container resource requests/limits | requests `100m` / `128Mi`, limits `500m` / `256Mi` |
-| `agenticHarness.gvisor.installer.nodeSelector` | Which nodes to install on (empty = all) | `{}` |
-| `agenticHarness.gvisor.installer.tolerations` | Installer DaemonSet tolerations | `[{operator: Exists}]` |
-| `agenticHarness.gvisor.installer.annotations` | Installer pod annotations | `{}` |
-
 ## License
 
 SonarQube Community Build is released under the [GNU Lesser General Public License, Version 3.0⁠,](http://www.gnu.org/licenses/lgpl.txt) and packaged with [SSALv1](https://www.sonarsource.com/license/ssal/) analyzers. SonarQube Server Developer and Enterprise are licensed under [SonarQube Server Terms and Conditions](https://www.sonarsource.com/legal/sonarqube/terms-and-conditions/).
