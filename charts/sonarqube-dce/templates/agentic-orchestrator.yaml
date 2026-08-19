@@ -1,3 +1,5 @@
+{{ $applicationNodes := fromYaml (include "applicationNodes" . ) }}
+{{ $_ := set .Values "ApplicationNodes" $applicationNodes }}
 {{- if .Values.agenticHarness.enabled }}
 apiVersion: apps/v1
 kind: Deployment
@@ -23,13 +25,21 @@ spec:
         sonarqube.agentic/component: orchestrator
     spec:
       automountServiceAccountToken: {{ if .Values.agenticHarness.serviceAccount.create }}{{ .Values.agenticHarness.serviceAccount.automountToken }}{{ else }}{{ .Values.serviceAccount.automountToken }}{{ end }}
-      {{- if or .Values.agenticHarness.orchestrator.image.pullSecrets .Values.agenticHarness.orchestrator.image.pullSecret }}
+      {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret .Values.agenticHarness.orchestrator.image.pullSecrets .Values.agenticHarness.orchestrator.image.pullSecret }}
       imagePullSecrets:
+        {{- /* The wait-for-sonarqube init container below pulls the SonarQube image, so it needs the
+               application nodes' pull secrets too - the orchestrator's own only cover its own image. */}}
+        {{- if .Values.ApplicationNodes.image.pullSecret }}
+        - name: {{ .Values.ApplicationNodes.image.pullSecret }}
+        {{- end }}
+        {{- with .Values.ApplicationNodes.image.pullSecrets }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
         {{- if .Values.agenticHarness.orchestrator.image.pullSecret }}
         - name: {{ .Values.agenticHarness.orchestrator.image.pullSecret }}
         {{- end }}
         {{- if .Values.agenticHarness.orchestrator.image.pullSecrets }}
-{{ toYaml .Values.agenticHarness.orchestrator.image.pullSecrets | indent 8 }}
+        {{- toYaml .Values.agenticHarness.orchestrator.image.pullSecrets | nindent 8 }}
         {{- end }}
       {{- end }}
       {{- with .Values.agenticHarness.orchestrator.securityContext }}

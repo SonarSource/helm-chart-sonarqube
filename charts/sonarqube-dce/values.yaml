@@ -1025,6 +1025,8 @@ agenticHarness:
       repository: ""
       tag: ""
       pullPolicy: IfNotPresent
+      # For the orchestrator's own image only; its wait-for-sonarqube init container pulls the
+      # SonarQube image instead, and always gets ApplicationNodes.image.pullSecret(s) for that.
       # pullSecrets:
       #   - name: my-repo-secret
     port: 8080
@@ -1194,8 +1196,10 @@ agenticHarness:
       # - name: custom-ca
       #   mountPath: /custom-ca
       #   readOnly: true
-      # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes.
-      # Add the CIDR(s) of your LLM provider; e.g. Anthropic publishes 160.79.104.0/23.
+      # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
+      # covering agenticHarness.orchestrator.storage, jobs fail at the first artifact download (real
+      # AWS S3 has no fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the
+      # CIDR(s) of your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
       egressAllow: []
       # - cidr: 160.79.104.0/23
     remediation:
@@ -1243,8 +1247,10 @@ agenticHarness:
       env: []
       extraVolumes: []
       extraVolumeMounts: []
-      # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes.
-      # Add the CIDR(s) of your LLM provider; e.g. Anthropic publishes 160.79.104.0/23.
+      # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
+      # covering agenticHarness.orchestrator.storage, jobs fail at the first artifact download (real
+      # AWS S3 has no fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the
+      # CIDR(s) of your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
       egressAllow: []
       # - cidr: 160.79.104.0/23
 

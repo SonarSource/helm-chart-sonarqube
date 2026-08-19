@@ -1096,7 +1096,7 @@ The optional SonarQube Unified Agentic Harness — an Agent Orchestrator plus on
 | `agenticHarness.runtimes.remediation.remediationScriptPath`      | Remediation-agent entrypoint exposed as `REMEDIATION_SCRIPT_PATH` (`REMEDIATION_RULE_INFO_ENDPOINT` is derived from the orchestrator URL); `""` omits the env var | `/home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py` |
 | `agenticHarness.runtimes.remediation.resources`                  | Resources for the SonarQube Remediation Agent (SQRA) runtime, sized for repo clone + agent/LLM loop                                      | requests `1` CPU / `2Gi` / `10Gi`, limits `4` CPU / `8Gi` / `50Gi`             |
 
-Each runtime reads/writes job artifacts directly against `agenticHarness.orchestrator.storage` via presigned URLs, bypassing the orchestrator. With `runtimeNetworkPolicy.enabled` (or the top-level `networkPolicy.enabled`), add a peer covering it to that family's `egressAllow`, or jobs fail at the first artifact download.
+Each runtime also reads/writes job artifacts directly against `agenticHarness.orchestrator.storage` via presigned URLs, bypassing the orchestrator. With `runtimeNetworkPolicy.enabled` (or the top-level `networkPolicy.enabled`), add a peer covering it to that family's `egressAllow`, or jobs fail at the first artifact download.
 
 Process-count limits for the runtimes are a node/kubelet setting (`podPidsLimit`), not something a Kubernetes `LimitRange` can express, so they're outside this chart's scope.
 
