@@ -906,25 +906,20 @@ own workloads):
 - **`enabled`** (default `true`) creates a cluster-scoped `RuntimeClass` (default name `gvisor`).
   Nothing is attached to it automatically — opt a pod in with `runtimeClassName: gvisor`. Assumes
   `runsc` is already on your nodes (out-of-band: node bootstrap, custom AMI, GKE Sandbox,
-  Bottlerocket) and adds no privileged workload. `RuntimeClass` is cluster-scoped, so give each
-  release a distinct `runtimeClassName` if you install more than one. **On fully-managed,
-  no-node-access compute** (GKE Autopilot, Fargate-style EKS/AKS profiles) the installer below
-  can't run at all — use the provider's own sandbox where one exists (GKE Sandbox on GKE; AWS and
-  Azure have no equivalent) or provision `runsc` via a custom node image instead. Standard EKS/AKS
-  managed node groups aren't restricted this way — the installer works there like on any
-  self-managed node.
-- **`installer.enabled`** (default `false`) *additionally* deploys a **privileged** DaemonSet that
-  installs `runsc`, registers the containerd runtime, and labels each node once ready (requires
-  `enabled=true`). **Self-managed nodes only** — not managed control planes. It mounts the host
-  filesystem and restarts containerd, validating the new config first and rolling back / failing
-  closed on any problem, so a node is only labeled once containerd is confirmed to serve `runsc`.
-  Pods requesting the RuntimeClass stay `Pending` until a node is labeled — expected, not a failure.
-  Idempotent: nodes with `runsc` already provisioned are left untouched except for the label.
+  Bottlerocket). `RuntimeClass` is cluster-scoped, so give each release a distinct
+  `runtimeClassName` if you install more than one.
+- **`installer.enabled`** (default `true`) *additionally* deploys a **privileged** DaemonSet that
+  installs `runsc` and labels each node once ready. **Self-managed nodes only**. **On fully-managed,
+  no-node-access compute** (GKE Autopilot, Fargate-style EKS/AKS profiles) this can't run at all —
+  use the provider's own sandbox where one exists (GKE Sandbox on GKE; AWS and Azure have no
+  equivalent) or provision `runsc` via a custom node image. Standard EKS/AKS managed node groups
+  aren't restricted this way. Pods requesting the RuntimeClass stay `Pending` until a node is
+  labeled — expected, not a failure. Idempotent.
 
 **Opting out.** Set `agenticHarness.gvisor.enabled=false` if you don't want the `RuntimeClass`
-created at all. This chart doesn't itself schedule anything onto it, so the only consequence here is
-that no pod in the cluster can opt into `runtimeClassName: gvisor` through this release — any
-workload from another source (e.g. the DCE chart's agentic runtimes) relying on it for isolation
+created at all, or just `installer.enabled=false` to keep it but skip the privileged DaemonSet (e.g.
+on the fully-managed compute above). This chart doesn't schedule anything onto the RuntimeClass
+itself — any workload from another source (e.g. the DCE chart's agentic runtimes) relying on it
 falls back to the standard container runtime instead. See the DCE chart's README for the isolation
 trade-off that matters when the agentic runtimes are actually in play.
 
@@ -938,7 +933,7 @@ chart — never left to float to "latest".
 | `agenticHarness.gvisor.runtimeClassName` | Name of the cluster-scoped `RuntimeClass` | `gvisor` |
 | `agenticHarness.gvisor.handler` | containerd runtime handler the `RuntimeClass` targets | `runsc` |
 | `agenticHarness.gvisor.nodeSelector` | `RuntimeClass` scheduling selector, and the label the installer applies when ready (set `null` to disable pinning) | `{gvisor.enabled: "true"}` |
-| `agenticHarness.gvisor.installer.enabled` | Deploy the privileged installer DaemonSet (requires `gvisor.enabled=true`) | `false` |
+| `agenticHarness.gvisor.installer.enabled` | Deploy the privileged installer DaemonSet (requires `gvisor.enabled=true`) | `true` |
 | `agenticHarness.gvisor.installer.image.repository` | Installer image repository | `debian` |
 | `agenticHarness.gvisor.installer.image.tag` | Installer image tag (human-readable; ignored once `digest` is set) | `stable-slim` |
 | `agenticHarness.gvisor.installer.image.digest` | Pinned installer image digest, for a reproducible pull; blank falls back to `repository:tag` | pinned `debian:stable-slim` digest |

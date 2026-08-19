@@ -718,10 +718,8 @@ mcp:
 # gVisor (runsc) sandboxing for untrusted workloads. Nested under `agenticHarness` because the
 # agentic job runtimes (shipped separately) are its primary consumer, but it is fully usable on its
 # own: it installs runsc on nodes and/or creates a cluster-scoped RuntimeClass that ANY pod can opt
-# into via `runtimeClassName`. Nothing in this chart auto-attaches to it. `enabled` is on by default
-# (assumes runsc is already on your nodes out-of-band); `installer.enabled` stays off by default
-# since it deploys a privileged, host-mutating DaemonSet, self-managed nodes only. See README
-# ("gVisor sandboxing") for the opt-out and its trade-off.
+# into via `runtimeClassName`. Nothing in this chart auto-attaches to it. Both toggles are on by
+# default. See README ("gVisor sandboxing") for the opt-out and its trade-off.
 agenticHarness:
   gvisor:
     enabled: true
@@ -736,7 +734,7 @@ agenticHarness:
     nodeSelector:
       gvisor.enabled: "true"
     installer:
-      enabled: false                  # deploy the privileged installer DaemonSet (needs gvisor.enabled)
+      enabled: true                   # deploy the privileged installer DaemonSet (needs gvisor.enabled)
       image:
         repository: debian
         tag: stable-slim

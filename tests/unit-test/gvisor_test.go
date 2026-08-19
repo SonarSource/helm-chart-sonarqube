@@ -115,27 +115,61 @@ func TestGvisorRuntimeClass(t *testing.T) {
 	}
 }
 
-// gvisor.enabled defaults to true (SONAR-31686): a values file that never mentions
-// agenticHarness.gvisor at all must still render the RuntimeClass, wired to the values defaults.
-func TestGvisorEnabledByDefault(t *testing.T) {
-	for _, c := range gvisorChartCases() {
-		t.Run(c.name, func(t *testing.T) {
-			output, err := renderGvisor(t, c, "gvisor-default.yaml")
-			require.NoError(t, err)
+// On the standard chart, gvisor.enabled/installer.enabled default to true independently — no
+// agenticHarness.enabled to gate against.
+func TestGvisorStandaloneChartEnabledByDefault(t *testing.T) {
+	c := gvisorChartCases()[0] // sonarqube
+	output, err := renderGvisor(t, c, "gvisor-default.yaml")
+	require.NoError(t, err)
 
-			assert.Contains(t, output, "kind: RuntimeClass")
-			var runtimeClass nodev1.RuntimeClass
-			for _, doc := range splitGvisorDocs(output) {
-				if strings.Contains(doc, "kind: RuntimeClass") {
-					helm.UnmarshalK8SYaml(t, doc, &runtimeClass)
-				}
-			}
-			assert.Equal(t, "gvisor", runtimeClass.Name)
-			assert.Equal(t, "runsc", runtimeClass.Handler)
-			// installer.enabled stays off by default even though enabled defaults to true.
-			assert.NotContains(t, output, "kind: DaemonSet")
-		})
+	assert.Contains(t, output, "kind: RuntimeClass")
+	assert.Contains(t, output, "kind: DaemonSet")
+}
+
+// On the DCE chart, gvisor.enabled/installer.enabled default to true but only take effect when
+// agenticHarness.enabled is also true (SONAR-31686) — a non-agentic install must render nothing.
+func TestGvisorDCEDefaultRequiresAgenticPack(t *testing.T) {
+	c := gvisorChartCases()[1] // sonarqube-dce
+	output, err := renderGvisor(t, c, "gvisor-default.yaml")
+	require.Error(t, err, "agentic-gvisor.yaml must render nothing without agenticHarness.enabled")
+	assert.Empty(t, strings.TrimSpace(output))
+}
+
+// With the agentic pack on, gVisor and its installer follow their own true defaults.
+func TestGvisorDCEFollowsAgenticPackByDefault(t *testing.T) {
+	c := gvisorChartCases()[1] // sonarqube-dce
+	output, err := renderGvisor(t, c, "gvisor-default-pack-enabled.yaml")
+	require.NoError(t, err)
+
+	var runtimeClass nodev1.RuntimeClass
+	for _, doc := range splitGvisorDocs(output) {
+		if strings.Contains(doc, "kind: RuntimeClass") {
+			helm.UnmarshalK8SYaml(t, doc, &runtimeClass)
+		}
 	}
+	assert.Equal(t, "gvisor", runtimeClass.Name)
+	assert.Equal(t, "runsc", runtimeClass.Handler)
+	assert.Contains(t, output, "kind: DaemonSet")
+	assert.Contains(t, output, "kind: ServiceAccount")
+	assert.Contains(t, output, "kind: ClusterRole")
+	assert.Contains(t, output, "kind: ConfigMap")
+}
+
+// off/off/off: pack, gvisor and installer all explicitly false must render nothing (SONAR-31686).
+func TestGvisorDCEAllOffExplicit(t *testing.T) {
+	c := gvisorChartCases()[1] // sonarqube-dce
+	output, err := renderGvisor(t, c, "gvisor-all-off-explicit.yaml")
+	require.Error(t, err)
+	assert.Empty(t, strings.TrimSpace(output))
+}
+
+// on + off = off: the pack being on does not force gVisor on — an explicit gvisor.enabled=false
+// still renders nothing at all (SONAR-31686).
+func TestGvisorDCEExplicitDisableOverridesPack(t *testing.T) {
+	c := gvisorChartCases()[1] // sonarqube-dce
+	output, err := renderGvisor(t, c, "gvisor-disabled-pack-enabled.yaml")
+	require.Error(t, err)
+	assert.Empty(t, strings.TrimSpace(output))
 }
 
 // The opt-out (SONAR-31686): explicitly setting enabled=false must render nothing at all, not just

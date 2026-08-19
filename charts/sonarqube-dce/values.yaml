@@ -960,12 +960,8 @@ agenticHarness:
   runtimeNetworkPolicy:
     enabled: false
 
-  # gVisor (runsc) sandboxing for untrusted workloads. The agentic job runtimes are its primary
-  # consumer (agentic-runtime.yaml sets runtimeClassName when gvisor.enabled). It installs runsc on
-  # nodes and/or creates a cluster-scoped RuntimeClass that pods opt into. `enabled` is on by
-  # default (assumes runsc is already on your nodes out-of-band); `installer.enabled` stays off by
-  # default since it deploys a privileged, host-mutating DaemonSet, self-managed nodes only. See
-  # README ("gVisor sandboxing") for the opt-out and its trade-off.
+  # gVisor (runsc) sandboxing for untrusted workloads. Both toggles below only take effect when
+  # agenticHarness.enabled is also true. See README ("gVisor sandboxing").
   gvisor:
     enabled: true
     # Name of the RuntimeClass created + referenced by runtimes. RuntimeClass is cluster-scoped:
@@ -979,7 +975,7 @@ agenticHarness:
     nodeSelector:
       gvisor.enabled: "true"
     installer:
-      enabled: false                  # deploy the privileged installer DaemonSet (needs gvisor.enabled)
+      enabled: true                   # deploy the privileged installer DaemonSet (needs gvisor.enabled)
       image:
         repository: debian
         tag: stable-slim

@@ -35,7 +35,7 @@ It is used to validate the values.yaml file before the installation starts.
 * must not fail the install.
 */}}
 {{- $gvisor := .Values.agenticHarness.gvisor -}}
-{{- if $gvisor.enabled -}}
+{{- if eq (include "sonarqube.agentic.gvisor.enabled" .) "true" -}}
     {{- if not $gvisor.runtimeClassName -}}
         {{- include "sonarqube.fail" "agenticHarness.gvisor.enabled=true requires a non-empty agenticHarness.gvisor.runtimeClassName." -}}
     {{- end -}}
