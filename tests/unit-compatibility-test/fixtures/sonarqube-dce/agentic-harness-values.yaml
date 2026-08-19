@@ -726,6 +726,17 @@ spec:
         - name: agentic-orchestrator
           image: "example.com/unifiedagenticharness/agentorchestrator:1.0.0"
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 900
+            runAsNonRoot: true
+            runAsUser: 900
+            seccompProfile:
+              type: RuntimeDefault
           ports:
             - name: http
               containerPort: 8080
@@ -761,6 +772,18 @@ spec:
                   key: AGENTIC_SONARQUBE_TOKEN
             - name: AGENTIC_REMEDIATION_RUNTIME_PUSH_URL
               value: "http://agentic-harness-values.yaml-sonarqube-dce-agentic-runtime-remed:8090/jobs"
+          resources:
+            limits:
+              cpu: "1"
+              ephemeral-storage: 2Gi
+              memory: 1Gi
+            requests:
+              cpu: 250m
+              ephemeral-storage: 512Mi
+              memory: 512Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           readinessProbe:
             httpGet:
               path: /health
@@ -774,6 +797,9 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 30
       serviceAccountName: agent-orchestrator
+      volumes:
+        - name: tmp
+          emptyDir: {}
 ---
 # Source: sonarqube-dce/templates/agentic-runtime.yaml
 apiVersion: apps/v1
@@ -808,6 +834,16 @@ spec:
         - name: agentic-runtime
           image: "example.com/unifiedagenticharness/remediationagent:1.0.0"
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
           ports:
             - name: http
               containerPort: 8090
