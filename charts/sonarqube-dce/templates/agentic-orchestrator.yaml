@@ -1,3 +1,5 @@
+{{ $applicationNodes := fromYaml (include "applicationNodes" . ) }}
+{{ $_ := set .Values "ApplicationNodes" $applicationNodes }}
 {{- if .Values.agenticHarness.enabled }}
 apiVersion: apps/v1
 kind: Deployment
