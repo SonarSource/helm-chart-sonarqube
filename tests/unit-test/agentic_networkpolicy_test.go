@@ -44,10 +44,11 @@ func runtimeNetworkPolicy(t *testing.T, family string, setValues map[string]stri
 
 // A runtime reads/writes job artifacts directly against object storage via presigned URLs, so its
 // NetworkPolicy needs its own egress to reach it. The chart can't resolve
-// agenticHarness.orchestrator.storage to a peer on its own, so egressAllow must cover it - this is
-// documented on runtimes.<family>.egressAllow in values.yaml, not enforced by the render
-// (SONAR-31525).
+// orchestrator.storage to a peer on its own, so egressAllow must cover it - this is
+// documented on <hunterAgent|remediationAgent>.egressAllow in values.yaml, not enforced by the
+// render (SONAR-31525).
 func TestAgenticRuntimeNetworkPolicyEgressAllow(t *testing.T) {
+	valuesKey := map[string]string{"hunter": "hunterAgent", "remediation": "remediationAgent"}
 	for _, family := range []string{"hunter", "remediation"} {
 		t.Run(family+": empty egressAllow renders no extra egress rule", func(t *testing.T) {
 			policy := runtimeNetworkPolicy(t, family, nil)
@@ -56,9 +57,9 @@ func TestAgenticRuntimeNetworkPolicyEgressAllow(t *testing.T) {
 
 		t.Run(family+": egressAllow entries render as given", func(t *testing.T) {
 			policy := runtimeNetworkPolicy(t, family, map[string]string{
-				"agenticHarness.runtimes." + family + ".egressAllow[0].cidr":              "0.0.0.0/0",
-				"agenticHarness.runtimes." + family + ".egressAllow[0].ports[0].port":     "443",
-				"agenticHarness.runtimes." + family + ".egressAllow[0].ports[0].protocol": "TCP",
+				valuesKey[family] + ".egressAllow[0].cidr":              "0.0.0.0/0",
+				valuesKey[family] + ".egressAllow[0].ports[0].port":     "443",
+				valuesKey[family] + ".egressAllow[0].ports[0].protocol": "TCP",
 			})
 
 			require.Len(t, policy.Spec.Egress, 3, "DNS, the orchestrator, and the one egressAllow entry")
