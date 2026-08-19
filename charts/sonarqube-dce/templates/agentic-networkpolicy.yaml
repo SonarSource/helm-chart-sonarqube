@@ -137,6 +137,10 @@ spec:
       ports:
         - port: {{ $.Values.agenticHarness.orchestrator.port }}
           protocol: TCP
+    {{- /* The runtime reads/writes job artifacts directly against object storage via presigned URLs,
+           bypassing the orchestrator, so it needs its own egress to reach it - the chart has no way to
+           resolve agenticHarness.orchestrator.storage to a NetworkPolicy peer, so egressAllow must
+           cover it (see the comment on runtimes.<family>.egressAllow in values.yaml). */}}
     {{- range $cfg.egressAllow }}
     - to:
 {{ include "sonarqube.agentic.egressAllow.peer" . | indent 8 }}
