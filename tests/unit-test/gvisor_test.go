@@ -115,6 +115,41 @@ func TestGvisorRuntimeClass(t *testing.T) {
 	}
 }
 
+// gvisor.enabled defaults to true (SONAR-31686): a values file that never mentions
+// agenticHarness.gvisor at all must still render the RuntimeClass, wired to the values defaults.
+func TestGvisorEnabledByDefault(t *testing.T) {
+	for _, c := range gvisorChartCases() {
+		t.Run(c.name, func(t *testing.T) {
+			output, err := renderGvisor(t, c, "gvisor-default.yaml")
+			require.NoError(t, err)
+
+			assert.Contains(t, output, "kind: RuntimeClass")
+			var runtimeClass nodev1.RuntimeClass
+			for _, doc := range splitGvisorDocs(output) {
+				if strings.Contains(doc, "kind: RuntimeClass") {
+					helm.UnmarshalK8SYaml(t, doc, &runtimeClass)
+				}
+			}
+			assert.Equal(t, "gvisor", runtimeClass.Name)
+			assert.Equal(t, "runsc", runtimeClass.Handler)
+			// installer.enabled stays off by default even though enabled defaults to true.
+			assert.NotContains(t, output, "kind: DaemonSet")
+		})
+	}
+}
+
+// The opt-out (SONAR-31686): explicitly setting enabled=false must render nothing at all, not just
+// skip the installer.
+func TestGvisorDisabledRendersNothing(t *testing.T) {
+	for _, c := range gvisorChartCases() {
+		t.Run(c.name, func(t *testing.T) {
+			output, err := renderGvisor(t, c, "gvisor-disabled.yaml")
+			require.Error(t, err, "agentic-gvisor.yaml must render nothing when gvisor.enabled is false")
+			assert.Empty(t, strings.TrimSpace(output))
+		})
+	}
+}
+
 // gvisor.enabled WITHOUT installer.enabled must render only the RuntimeClass — the privileged,
 // host-mutating installer resources are a deliberately separate trust tier gated on installer.enabled.
 func TestGvisorRuntimeClassOnlyWithoutInstaller(t *testing.T) {

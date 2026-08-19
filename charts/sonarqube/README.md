@@ -898,27 +898,43 @@ For overriding variables see: [Customizing the chart](https://helm.sh/docs/intro
 
 ## gVisor sandboxing
 
-Optionally run workloads under the [gVisor](https://gvisor.dev/) (`runsc`) sandbox, via two
-**off-by-default** toggles under `agenticHarness.gvisor` (nested there because the agentic job
-runtimes are its main consumer; the feature is self-contained and any pod can use it):
+This chart creates the `RuntimeClass` on by default via `agenticHarness.gvisor` (nested there
+because the agentic job runtimes shipped separately are its main consumer; the feature is
+self-contained and any pod in the cluster can use it — this chart does not attach it to any of its
+own workloads):
 
-- **`enabled`** creates a cluster-scoped `RuntimeClass` (default name `gvisor`). Nothing is attached
-  to it automatically — opt a pod in with `runtimeClassName: gvisor`. Assumes `runsc` is already on
-  your nodes (out-of-band: node bootstrap, custom AMI, GKE Sandbox, Bottlerocket) and adds no
-  privileged workload. `RuntimeClass` is cluster-scoped, so give each release a distinct
-  `runtimeClassName` if you install more than one.
-- **`installer.enabled`** *additionally* deploys a **privileged** DaemonSet that installs `runsc`,
-  registers the containerd runtime, and labels each node once ready (requires `enabled=true`).
-  **Self-managed nodes only** — not managed control planes (GKE Autopilot, most managed EKS/AKS); on
-  GKE use GKE Sandbox instead. It mounts the host filesystem and restarts containerd, validating the
-  new config first and rolling back / failing closed on any problem, so a node is only labeled once
-  containerd is confirmed to serve `runsc`. Pods requesting the RuntimeClass stay `Pending` until a
-  node is labeled — expected, not a failure. Idempotent: nodes with `runsc` already provisioned are
-  left untouched except for the label.
+- **`enabled`** (default `true`) creates a cluster-scoped `RuntimeClass` (default name `gvisor`).
+  Nothing is attached to it automatically — opt a pod in with `runtimeClassName: gvisor`. Assumes
+  `runsc` is already on your nodes (out-of-band: node bootstrap, custom AMI, GKE Sandbox,
+  Bottlerocket) and adds no privileged workload. `RuntimeClass` is cluster-scoped, so give each
+  release a distinct `runtimeClassName` if you install more than one. **On fully-managed,
+  no-node-access compute** (GKE Autopilot, Fargate-style EKS/AKS profiles) the installer below
+  can't run at all — use the provider's own sandbox where one exists (GKE Sandbox on GKE; AWS and
+  Azure have no equivalent) or provision `runsc` via a custom node image instead. Standard EKS/AKS
+  managed node groups aren't restricted this way — the installer works there like on any
+  self-managed node.
+- **`installer.enabled`** (default `false`) *additionally* deploys a **privileged** DaemonSet that
+  installs `runsc`, registers the containerd runtime, and labels each node once ready (requires
+  `enabled=true`). **Self-managed nodes only** — not managed control planes. It mounts the host
+  filesystem and restarts containerd, validating the new config first and rolling back / failing
+  closed on any problem, so a node is only labeled once containerd is confirmed to serve `runsc`.
+  Pods requesting the RuntimeClass stay `Pending` until a node is labeled — expected, not a failure.
+  Idempotent: nodes with `runsc` already provisioned are left untouched except for the label.
+
+**Opting out.** Set `agenticHarness.gvisor.enabled=false` if you don't want the `RuntimeClass`
+created at all. This chart doesn't itself schedule anything onto it, so the only consequence here is
+that no pod in the cluster can opt into `runtimeClassName: gvisor` through this release — any
+workload from another source (e.g. the DCE chart's agentic runtimes) relying on it for isolation
+falls back to the standard container runtime instead. See the DCE chart's README for the isolation
+trade-off that matters when the agentic runtimes are actually in play.
+
+**Version pin.** The `runsc` release the installer downloads (`installer.runscVersion`) is pinned
+and must be bumped deliberately, in the same change as any other gVisor-related update to this
+chart — never left to float to "latest".
 
 | Parameter | Description | Default |
 | --------- | ----------- | ------- |
-| `agenticHarness.gvisor.enabled` | Create the `RuntimeClass` and enable gVisor wiring | `false` |
+| `agenticHarness.gvisor.enabled` | Create the `RuntimeClass` and enable gVisor wiring | `true` |
 | `agenticHarness.gvisor.runtimeClassName` | Name of the cluster-scoped `RuntimeClass` | `gvisor` |
 | `agenticHarness.gvisor.handler` | containerd runtime handler the `RuntimeClass` targets | `runsc` |
 | `agenticHarness.gvisor.nodeSelector` | `RuntimeClass` scheduling selector, and the label the installer applies when ready (set `null` to disable pinning) | `{gvisor.enabled: "true"}` |
