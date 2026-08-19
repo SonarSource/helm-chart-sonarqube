@@ -37,7 +37,7 @@ spec:
         - name: {{ .Values.agenticHarness.orchestrator.image.pullSecret }}
         {{- end }}
         {{- if .Values.agenticHarness.orchestrator.image.pullSecrets }}
-{{ toYaml .Values.agenticHarness.orchestrator.image.pullSecrets | indent 8 }}
+        {{- toYaml .Values.agenticHarness.orchestrator.image.pullSecrets | nindent 8 }}
         {{- end }}
       {{- end }}
       {{- with .Values.agenticHarness.orchestrator.securityContext }}
