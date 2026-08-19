@@ -92,3 +92,43 @@ func TestAgenticOrchestratorResources(t *testing.T) {
 	assert.Equal(t, "1Gi", container.Resources.Limits.Memory().String())
 	assert.Equal(t, "2Gi", container.Resources.Limits.StorageEphemeral().String())
 }
+
+func agenticOrchestratorPullSecretNames(deployment appsv1.Deployment) []string {
+	var names []string
+	for _, s := range deployment.Spec.Template.Spec.ImagePullSecrets {
+		names = append(names, s.Name)
+	}
+	return names
+}
+
+// The wait-for-sonarqube init container pulls the SonarQube image, so it needs the application
+// nodes' pull secrets, not just the orchestrator's own (SONAR-31523).
+func TestAgenticOrchestratorPullSecrets(t *testing.T) {
+	t.Run("none configured renders no imagePullSecrets", func(t *testing.T) {
+		assert.Empty(t, agenticOrchestratorPullSecretNames(renderAgenticOrchestrator(t, nil)))
+	})
+
+	t.Run("application nodes' pull secret and list reach the pod", func(t *testing.T) {
+		names := agenticOrchestratorPullSecretNames(renderAgenticOrchestrator(t, map[string]string{
+			"applicationNodes.image.pullSecret":          "app-secret",
+			"applicationNodes.image.pullSecrets[0].name": "app-secret-list",
+		}))
+		assert.Equal(t, []string{"app-secret", "app-secret-list"}, names)
+	})
+
+	t.Run("orchestrator's own pull secret and list still apply", func(t *testing.T) {
+		names := agenticOrchestratorPullSecretNames(renderAgenticOrchestrator(t, map[string]string{
+			"agenticHarness.orchestrator.image.pullSecret":          "orch-secret",
+			"agenticHarness.orchestrator.image.pullSecrets[0].name": "orch-secret-list",
+		}))
+		assert.Equal(t, []string{"orch-secret", "orch-secret-list"}, names)
+	})
+
+	t.Run("both combine, application nodes first", func(t *testing.T) {
+		names := agenticOrchestratorPullSecretNames(renderAgenticOrchestrator(t, map[string]string{
+			"applicationNodes.image.pullSecret":            "app-secret",
+			"agenticHarness.orchestrator.image.pullSecret": "orch-secret",
+		}))
+		assert.Equal(t, []string{"app-secret", "orch-secret"}, names)
+	})
+}
