@@ -81,6 +81,15 @@ Usage: {{ include "sonarqube.agentic.gvisor.fullname" . }}
 {{- printf "%s-agentic-gvisor-installer" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{/*
+Effective agenticHarness.gvisor.enabled: requires agenticHarness.enabled too, so gVisor only ever
+renders for agentic installs.
+Usage: {{ include "sonarqube.agentic.gvisor.enabled" . }}
+*/}}
+{{- define "sonarqube.agentic.gvisor.enabled" -}}
+{{- and .Values.agenticHarness.enabled .Values.agenticHarness.gvisor.enabled -}}
+{{- end -}}
+
 {{- define "accountDeprecation" -}}
 {{- $map1 := .Values.setAdminPassword -}}
 {{- $map2 := .Values.account -}}
