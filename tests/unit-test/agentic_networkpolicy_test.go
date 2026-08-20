@@ -42,6 +42,48 @@ func runtimeNetworkPolicy(t *testing.T, family string, setValues map[string]stri
 	return networkingv1.NetworkPolicy{}
 }
 
+// The ingress rule that lets the Agent Orchestrator reach the application pods must follow
+// service.internalPort, not a hardcoded value, or it silently breaks for anyone changing it.
+func TestCoreNetworkPolicyOrchestratorIngressPort(t *testing.T) {
+	opts := &helm.Options{
+		Logger: logger.Discard,
+		SetValues: map[string]string{
+			"monitoringPasscode":            "test-passcode",
+			"applicationNodes.jwtSecret":    "test-jwt-secret",
+			"jdbcOverwrite.jdbcUrl":         "jdbc:postgresql://test-host:5432/testdb",
+			"jdbcOverwrite.jdbcUsername":    "test-user",
+			"jdbcOverwrite.jdbcPassword":    "test-password",
+			"networkPolicy.enabled":         "true",
+			"orchestrator.enabled":          "true",
+			"orchestrator.image.repository": "example.com/agentic/orchestrator",
+			"orchestrator.storage.bucket":   "agentic-jobs",
+			"service.internalPort":          "9999",
+		},
+	}
+	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/networkpolicy.yaml"})
+	require.NoError(t, err)
+
+	var policy networkingv1.NetworkPolicy
+	for _, doc := range strings.Split(output, "\n---") {
+		if strings.Contains(doc, "-app\n") {
+			helm.UnmarshalK8SYaml(t, doc, &policy)
+		}
+	}
+	require.NotEmpty(t, policy.Name)
+
+	var fromOrchestrator *networkingv1.NetworkPolicyIngressRule
+	for i := range policy.Spec.Ingress {
+		rule := policy.Spec.Ingress[i]
+		if len(rule.From) == 1 && rule.From[0].PodSelector != nil &&
+			rule.From[0].PodSelector.MatchLabels["app"] == "sonarqube-dce-agentic-orchestrator" {
+			fromOrchestrator = &rule
+		}
+	}
+	require.NotNil(t, fromOrchestrator, "expected an ingress rule from the Agent Orchestrator")
+	require.Len(t, fromOrchestrator.Ports, 1)
+	assert.Equal(t, int32(9999), fromOrchestrator.Ports[0].Port.IntVal)
+}
+
 // A runtime reads/writes job artifacts directly against object storage via presigned URLs, so its
 // NetworkPolicy needs its own egress to reach it. The chart can't resolve
 // orchestrator.storage to a peer on its own, so networkPolicy.egressAllow must cover it - this is
@@ -71,4 +113,26 @@ func TestAgenticRuntimeNetworkPolicyEgressAllow(t *testing.T) {
 			assert.Equal(t, int32(443), last.Ports[0].Port.IntVal)
 		})
 	}
+}
+
+// A podSelector-only egressAllow entry (no namespaceSelector) must not render a stray
+// `namespaceSelector: null` peer alongside it - only the keys actually given.
+func TestAgenticRuntimeNetworkPolicyEgressAllowPodSelectorNoNullKeys(t *testing.T) {
+	setValues := map[string]string{
+		"hunterAgent.networkPolicy.egressAllow[0].podSelector.matchLabels.app": "some-dependency",
+	}
+
+	// Asserted on the rendered YAML, not the parsed peer: `namespaceSelector: null` unmarshals to
+	// the same nil pointer as an absent key, so a typed check can't tell the two apart.
+	output, err := renderAgenticRuntimeNetworkPolicy(t, setValues)
+	require.NoError(t, err)
+	assert.NotContains(t, output, "namespaceSelector: null")
+
+	policy := runtimeNetworkPolicy(t, "hunter", setValues)
+	require.Len(t, policy.Spec.Egress, 3, "DNS, the orchestrator, and the one egressAllow entry")
+	last := policy.Spec.Egress[2]
+	require.Len(t, last.To, 1)
+	require.NotNil(t, last.To[0].PodSelector)
+	assert.Equal(t, map[string]string{"app": "some-dependency"}, last.To[0].PodSelector.MatchLabels)
+	assert.Nil(t, last.To[0].IPBlock)
 }

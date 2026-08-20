@@ -1,0 +1,43 @@
+monitoringPasscode: test-passcode
+applicationNodes:
+  jwtSecret: test-jwt-secret
+jdbcOverwrite:
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+# Global scheduling settings alongside the orchestrator's own, which take precedence over them.
+nodeSelector:
+  global: "true"
+tolerations:
+  - key: global
+    operator: Exists
+    effect: NoSchedule
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: global
+              operator: In
+              values: ["true"]
+orchestrator:
+  enabled: true
+  image:
+    repository: example.com/agentic/orchestrator
+    tag: "42"
+  storage:
+    bucket: agentic-jobs
+  nodeSelector:
+    orchestrator: "true"
+  tolerations:
+    - key: orchestrator
+      operator: Exists
+      effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: orchestrator
+                operator: In
+                values: ["true"]

@@ -38,6 +38,131 @@ func renderAgenticRuntime(t *testing.T, family string, setValues map[string]stri
 	return appsv1.Deployment{}
 }
 
+// renderAgenticRuntimeService renders templates/agentic/runtime-service.yaml and returns the
+// Service for family - both hunter and remediation are enabled in the fixture, so it emits one
+// Service document per family.
+func renderAgenticRuntimeService(t *testing.T, family string, setValues map[string]string) corev1.Service {
+	t.Helper()
+	opts := &helm.Options{
+		Logger:      logger.Discard,
+		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-runtimes-enabled.yaml"},
+		SetValues:   setValues,
+	}
+	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic/runtime-service.yaml"})
+	require.NoError(t, err)
+
+	for _, doc := range strings.Split(output, "\n---") {
+		if strings.TrimSpace(doc) == "" || !strings.Contains(doc, "kind: Service") {
+			continue
+		}
+		var service corev1.Service
+		helm.UnmarshalK8SYaml(t, doc, &service)
+		if service.Labels["sonarqube.agentic/family"] == family {
+			return service
+		}
+	}
+	require.FailNowf(t, "no Service rendered", "family %q", family)
+	return corev1.Service{}
+}
+
+// Off by default, so an existing install picks up nothing new until hunterAgent/remediationAgent
+// is enabled.
+func TestAgenticRuntimeDisabledByDefault(t *testing.T) {
+	for _, tpl := range []string{
+		"templates/agentic/runtime.yaml",
+		"templates/agentic/runtime-service.yaml",
+	} {
+		opts := &helm.Options{
+			Logger:      logger.Discard,
+			ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-all-disabled.yaml"},
+		}
+		output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{tpl})
+		require.Error(t, err, "%s must render nothing when neither runtime is enabled", tpl)
+		assert.Empty(t, strings.TrimSpace(output))
+	}
+}
+
+// Each runtime's Service must select its own Deployment's pods, not the other family's - a label
+// typo or a shared selector here silently yields no endpoints or cross-routes traffic.
+func TestAgenticRuntimeService(t *testing.T) {
+	for _, family := range []string{"hunter", "remediation"} {
+		t.Run(family, func(t *testing.T) {
+			service := renderAgenticRuntimeService(t, family, nil)
+			podLabels := renderAgenticRuntime(t, family, nil).Spec.Template.Labels
+
+			require.NotEmpty(t, service.Spec.Selector)
+			for k, v := range service.Spec.Selector {
+				assert.Equal(t, v, podLabels[k], "Service selector %q must match the pod labels", k)
+			}
+		})
+	}
+}
+
+// Each runtime can be scheduled apart from the SonarQube pods, and its own scheduling settings
+// take precedence over the chart's global ones.
+func TestAgenticRuntimeSchedulingWinsOverGlobal(t *testing.T) {
+	for _, family := range []string{"hunter", "remediation"} {
+		t.Run(family, func(t *testing.T) {
+			opts := &helm.Options{
+				Logger:      logger.Discard,
+				ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-runtimes-global-scheduling.yaml"},
+			}
+			output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic/runtime.yaml"})
+			require.NoError(t, err)
+
+			var podSpec corev1.PodSpec
+			for _, doc := range strings.Split(output, "\n---") {
+				if strings.TrimSpace(doc) == "" || !strings.Contains(doc, "kind: Deployment") {
+					continue
+				}
+				var deployment appsv1.Deployment
+				helm.UnmarshalK8SYaml(t, doc, &deployment)
+				if deployment.Labels["sonarqube.agentic/family"] == family {
+					podSpec = deployment.Spec.Template.Spec
+				}
+			}
+
+			assert.Equal(t, map[string]string{family: "true"}, podSpec.NodeSelector)
+
+			require.Len(t, podSpec.Tolerations, 1)
+			assert.Equal(t, family, podSpec.Tolerations[0].Key)
+
+			require.NotNil(t, podSpec.Affinity)
+			require.NotNil(t, podSpec.Affinity.NodeAffinity)
+			terms := podSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			require.Len(t, terms, 1)
+			require.Len(t, terms[0].MatchExpressions, 1)
+			assert.Equal(t, family, terms[0].MatchExpressions[0].Key)
+		})
+	}
+}
+
+// Both runtimes' probes default on; hunter's readiness endpoint differs from its liveness one.
+func TestAgenticRuntimeProbes(t *testing.T) {
+	cases := []struct {
+		family        string
+		readinessPath string
+		livenessPath  string
+	}{
+		{"hunter", "/readyz", "/health"},
+		{"remediation", "/readyz", "/health"},
+	}
+
+	for _, c := range cases {
+		t.Run(c.family, func(t *testing.T) {
+			container := renderAgenticRuntime(t, c.family, nil).Spec.Template.Spec.Containers[0]
+
+			require.NotNil(t, container.ReadinessProbe)
+			require.NotNil(t, container.ReadinessProbe.HTTPGet)
+			assert.Equal(t, c.readinessPath, container.ReadinessProbe.HTTPGet.Path)
+
+			require.NotNil(t, container.LivenessProbe)
+			require.NotNil(t, container.LivenessProbe.HTTPGet)
+			assert.Equal(t, c.livenessPath, container.LivenessProbe.HTTPGet.Path)
+		})
+	}
+}
+
 // Neither runtime sets readOnlyRootFilesystem: the images need their home directory writable.
 func TestAgenticRuntimeContainerSecurityContext(t *testing.T) {
 	cases := []struct {

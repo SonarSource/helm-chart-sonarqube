@@ -1,0 +1,17 @@
+monitoringPasscode: test-passcode
+applicationNodes:
+  jwtSecret: test-jwt-secret
+jdbcOverwrite:
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+orchestrator:
+  enabled: true
+  image:
+    repository: example.com/agentorchestrator
+hunterAgent:
+  enabled: true
+  image:
+    repository: example.com/hunteragent
+  nodeSelector:
+    gvisor.enabled: "false"

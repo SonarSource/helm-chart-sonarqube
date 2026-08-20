@@ -57,3 +57,46 @@ func TestRemediationAgentRequiresVortexAnalysis(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "remediationAgent.enabled is true but vortexAnalysis.enabled is not true")
 }
+
+// orchestratorCoreDbBase covers everything orchestrator.enabled needs besides the CORE DB
+// settings under test, so only the derivation logic can fail.
+func orchestratorCoreDbBase() map[string]string {
+	return map[string]string{
+		"orchestrator.enabled":          "true",
+		"orchestrator.image.repository": "example.com/agentic/orchestrator",
+		"orchestrator.storage.bucket":   "agentic-jobs",
+	}
+}
+
+// With no orchestrator.coreDb set at all, the endpoint and name are derived from
+// jdbcOverwrite.jdbcUrl.
+func TestOrchestratorCoreDbDerivedFromJdbcOverwrite(t *testing.T) {
+	output, err := renderWithValidation(t, orchestratorCoreDbBase())
+	require.NoError(t, err)
+	assert.Contains(t, output, `value: "test-host:5432"`)
+	assert.Contains(t, output, `value: "testdb"`)
+}
+
+// jdbcOverwrite.jdbcUrl with no database path segment can't yield a name, and
+// orchestrator.coreDb.name is not set either, so the render must fail rather than deploy with an
+// empty CORE_DB_NAME.
+func TestOrchestratorRequiresCoreDbNameWhenNotDerivable(t *testing.T) {
+	values := orchestratorCoreDbBase()
+	values["jdbcOverwrite.jdbcUrl"] = "jdbc:postgresql://test-host:5432"
+	_, err := renderWithValidation(t, values)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "the CORE DB name could not be derived from jdbcOverwrite.jdbcUrl and orchestrator.coreDb.name is not set")
+}
+
+// Explicit orchestrator.coreDb.endpoint/name take precedence and let the render succeed even when
+// jdbcOverwrite.jdbcUrl alone wouldn't be derivable.
+func TestOrchestratorCoreDbExplicitOverridesTakePrecedence(t *testing.T) {
+	values := orchestratorCoreDbBase()
+	values["jdbcOverwrite.jdbcUrl"] = "jdbc:postgresql://test-host:5432"
+	values["orchestrator.coreDb.endpoint"] = "explicit-host:5432"
+	values["orchestrator.coreDb.name"] = "explicitdb"
+	output, err := renderWithValidation(t, values)
+	require.NoError(t, err)
+	assert.Contains(t, output, `value: "explicit-host:5432"`)
+	assert.Contains(t, output, `value: "explicitdb"`)
+}

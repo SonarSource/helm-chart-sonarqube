@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/gruntwork-io/terratest/modules/helm"
@@ -91,6 +92,83 @@ func TestAgenticOrchestratorResources(t *testing.T) {
 	assert.Equal(t, "1", container.Resources.Limits.Cpu().String())
 	assert.Equal(t, "1Gi", container.Resources.Limits.Memory().String())
 	assert.Equal(t, "2Gi", container.Resources.Limits.StorageEphemeral().String())
+}
+
+// Off by default, so an existing install picks up nothing new until orchestrator.enabled is set.
+func TestAgenticOrchestratorDisabledByDefault(t *testing.T) {
+	for _, tpl := range []string{
+		"templates/agentic/orchestrator.yaml",
+		"templates/agentic/orchestrator-service.yaml",
+	} {
+		opts := &helm.Options{
+			Logger:      logger.Discard,
+			ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-all-disabled.yaml"},
+		}
+		output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{tpl})
+		require.Error(t, err, "%s must render nothing when orchestrator.enabled is false", tpl)
+		assert.Empty(t, strings.TrimSpace(output))
+	}
+}
+
+// The Service must select the Deployment's pods — a label typo here silently yields no endpoints.
+func TestAgenticOrchestratorService(t *testing.T) {
+	opts := &helm.Options{
+		Logger:      logger.Discard,
+		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-orchestrator-enabled.yaml"},
+	}
+	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic/orchestrator-service.yaml"})
+	require.NoError(t, err)
+
+	var service corev1.Service
+	helm.UnmarshalK8SYaml(t, output, &service)
+	require.NotEmpty(t, service.Name)
+
+	podLabels := renderAgenticOrchestrator(t, nil).Spec.Template.Labels
+	require.NotEmpty(t, service.Spec.Selector)
+	for k, v := range service.Spec.Selector {
+		assert.Equal(t, v, podLabels[k], "Service selector %q must match the pod labels", k)
+	}
+}
+
+// The Agent Orchestrator can be scheduled apart from the SonarQube pods, and its own scheduling
+// settings take precedence over the chart's global ones.
+func TestAgenticOrchestratorSchedulingWinsOverGlobal(t *testing.T) {
+	opts := &helm.Options{
+		Logger:      logger.Discard,
+		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-orchestrator-global-scheduling.yaml"},
+	}
+	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic/orchestrator.yaml"})
+	require.NoError(t, err)
+	var deployment appsv1.Deployment
+	helm.UnmarshalK8SYaml(t, output, &deployment)
+	podSpec := deployment.Spec.Template.Spec
+
+	assert.Equal(t, map[string]string{"orchestrator": "true"}, podSpec.NodeSelector)
+
+	require.Len(t, podSpec.Tolerations, 1)
+	assert.Equal(t, "orchestrator", podSpec.Tolerations[0].Key)
+
+	require.NotNil(t, podSpec.Affinity)
+	require.NotNil(t, podSpec.Affinity.NodeAffinity)
+	terms := podSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+	require.Len(t, terms, 1)
+	require.Len(t, terms[0].MatchExpressions, 1)
+	assert.Equal(t, "orchestrator", terms[0].MatchExpressions[0].Key)
+}
+
+// Both probes default on, against the health endpoint the orchestrator's own source exposes.
+func TestAgenticOrchestratorProbes(t *testing.T) {
+	container := renderAgenticOrchestrator(t, nil).Spec.Template.Spec.Containers[0]
+
+	for name, probe := range map[string]*corev1.Probe{
+		"readiness": container.ReadinessProbe,
+		"liveness":  container.LivenessProbe,
+	} {
+		require.NotNil(t, probe, "%s probe must be set", name)
+		require.NotNil(t, probe.HTTPGet, "%s probe must be an HTTP GET", name)
+		assert.Equal(t, "/health", probe.HTTPGet.Path)
+		assert.Equal(t, "http", probe.HTTPGet.Port.StrVal)
+	}
 }
 
 func agenticOrchestratorPullSecretNames(deployment appsv1.Deployment) []string {

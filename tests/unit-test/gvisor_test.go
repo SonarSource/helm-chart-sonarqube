@@ -297,6 +297,11 @@ func TestGvisorValidationToggles(t *testing.T) {
 			fixture:       "gvisor-installer-empty-image-repo.yaml",
 			expectedError: "gvisor.installer.enabled=true requires a non-empty gvisor.installer.image.repository",
 		},
+		{
+			name:          "runtime nodeSelector conflicts with gvisor.nodeSelector",
+			fixture:       "gvisor-nodeselector-conflict.yaml",
+			expectedError: `hunterAgent's effective nodeSelector conflicts with gvisor.nodeSelector on key "gvisor.enabled" ("false" vs "true")`,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
