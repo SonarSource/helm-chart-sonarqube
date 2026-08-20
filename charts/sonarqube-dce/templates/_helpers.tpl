@@ -863,3 +863,34 @@ affinity:
 {{ toYaml . | indent 2 }}
 {{- end }}
 {{- end -}}
+
+{{/*
+Render one HTTP probe (readiness or liveness) from a probes.<kind> block.
+Parameters (dict): probe (required, the probes.<kind> values block)
+Usage: {{- with (include "sonarqube.agentic.probe" (dict "probe" .Values.orchestrator.probes.readiness)) }}
+          readinessProbe:
+{{ . | indent 12 }}
+          {{- end }}
+*/}}
+{{- define "sonarqube.agentic.probe" -}}
+{{- if .probe.enabled -}}
+httpGet:
+  path: {{ .probe.path }}
+  port: http
+{{- with .probe.initialDelaySeconds }}
+initialDelaySeconds: {{ . }}
+{{- end }}
+{{- with .probe.periodSeconds }}
+periodSeconds: {{ . }}
+{{- end }}
+{{- with .probe.timeoutSeconds }}
+timeoutSeconds: {{ . }}
+{{- end }}
+{{- with .probe.successThreshold }}
+successThreshold: {{ . }}
+{{- end }}
+{{- with .probe.failureThreshold }}
+failureThreshold: {{ . }}
+{{- end }}
+{{- end -}}
+{{- end -}}

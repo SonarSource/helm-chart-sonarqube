@@ -155,18 +155,14 @@ spec:
             - name: tmp
               mountPath: /tmp
           {{- end }}
+          {{- with (include "sonarqube.agentic.probe" (dict "probe" .Values.orchestrator.probes.readiness)) }}
           readinessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 5
-            periodSeconds: 10
+{{ . | indent 12 }}
+          {{- end }}
+          {{- with (include "sonarqube.agentic.probe" (dict "probe" .Values.orchestrator.probes.liveness)) }}
           livenessProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 30
+{{ . | indent 12 }}
+          {{- end }}
       {{- with (include "sonarqube.agentic.scheduling" (dict "ctx" . "component" .Values.orchestrator)) }}
 {{ . | indent 6 }}
       {{- end }}

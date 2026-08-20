@@ -974,6 +974,18 @@ orchestrator:
       ephemeral-storage: 2Gi
   securityContext: {}
 
+  probes:
+    readiness:
+      enabled: true
+      path: /health
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      enabled: true
+      path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 30
+
   containerSecurityContext:
     allowPrivilegeEscalation: false
     runAsNonRoot: true
@@ -1078,6 +1090,17 @@ hunterAgent:
   annotations: {}
   resources: {}
   securityContext: {}
+  probes:
+    readiness:
+      enabled: true
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      enabled: true
+      path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 30
   # No readOnlyRootFilesystem: the image needs its home directory writable.
   containerSecurityContext:
     allowPrivilegeEscalation: false
@@ -1166,6 +1189,17 @@ remediationAgent:
       memory: 8Gi
       ephemeral-storage: 50Gi
   securityContext: {}
+  probes:
+    readiness:
+      enabled: true
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      enabled: true
+      path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 30
   # No readOnlyRootFilesystem: the image needs its home directory writable.
   containerSecurityContext:
     allowPrivilegeEscalation: false

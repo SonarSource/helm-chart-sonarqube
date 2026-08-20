@@ -87,6 +87,14 @@ spec:
           {{- with $cfg.resources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with (include "sonarqube.agentic.probe" (dict "probe" $cfg.probes.readiness)) }}
+          readinessProbe:
+{{ . | indent 12 }}
+          {{- end }}
+          {{- with (include "sonarqube.agentic.probe" (dict "probe" $cfg.probes.liveness)) }}
+          livenessProbe:
+{{ . | indent 12 }}
+          {{- end }}
           {{- with $cfg.extraVolumeMounts }}
           volumeMounts:
             {{- toYaml . | nindent 12 }}
