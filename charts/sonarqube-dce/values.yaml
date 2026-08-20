@@ -951,6 +951,13 @@ orchestrator:
     #   - name: my-repo-secret
   port: 8080
   replicaCount: 1
+  # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
+  revisionHistoryLimit: ""
+  # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
+  strategy: {}
+  # Extra labels/annotations for the orchestrator pod.
+  podLabels: {}
+  annotations: {}
   resources:
     requests:
       cpu: 250m
@@ -1051,6 +1058,13 @@ hunterAgent:
   # headless) so a rejected request's retry gets a fresh TCP handshake routed to another
   # replica by kube-proxy.
   replicaCount: 1
+  # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
+  revisionHistoryLimit: ""
+  # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
+  strategy: {}
+  # Extra labels/annotations for this runtime's pod.
+  podLabels: {}
+  annotations: {}
   resources: {}
   securityContext: {}
   # No readOnlyRootFilesystem: the image needs its home directory writable.
@@ -1116,6 +1130,13 @@ remediationAgent:
     pullPolicy: IfNotPresent
   port: 8090
   replicaCount: 1
+  # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
+  revisionHistoryLimit: ""
+  # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
+  strategy: {}
+  # Extra labels/annotations for this runtime's pod.
+  podLabels: {}
+  annotations: {}
   # Defaults sized for the SonarQube Remediation Agent (SQRA), which clones repos and runs the
   # agent/LLM loop. Override for your workload.
   resources:

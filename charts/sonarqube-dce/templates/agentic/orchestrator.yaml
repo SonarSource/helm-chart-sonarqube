@@ -14,15 +14,27 @@ metadata:
     app.kubernetes.io/component: agentic-orchestrator
 spec:
   replicas: {{ .Values.orchestrator.replicaCount }}
+  {{- with .Values.orchestrator.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ . }}
+  {{- end }}
+  {{- with .Values.orchestrator.strategy }}
+  strategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels: {{- include "sonarqube.agentic.orchestrator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
         checksum/secret: {{ include (print $.Template.BasePath "/agentic/orchestrator-secret.yaml") . | sha256sum }}
+        {{- with .Values.orchestrator.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       labels:
         {{- include "sonarqube.agentic.orchestrator.selectorLabels" . | nindent 8 }}
         sonarqube.agentic/component: orchestrator
+        {{- with .Values.orchestrator.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       automountServiceAccountToken: {{ include "sonarqube.agentic.automountServiceAccountToken" (dict "ctx" . "serviceAccount" .Values.orchestrator.serviceAccount) }}
       {{- /* The wait-for-sonarqube init container below pulls the SonarQube image, so it needs the

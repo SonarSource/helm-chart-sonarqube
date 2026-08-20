@@ -15,14 +15,27 @@ metadata:
     app.kubernetes.io/component: agentic-runtime-{{ $family }}
 spec:
   replicas: {{ $cfg.replicaCount }}
+  {{- with $cfg.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ . }}
+  {{- end }}
+  {{- with $cfg.strategy }}
+  strategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels: {{- include "sonarqube.agentic.runtime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 6 }}
   template:
     metadata:
+      {{- with $cfg.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       labels:
         {{- include "sonarqube.agentic.runtime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 8 }}
         sonarqube.agentic/component: runtime
         sonarqube.agentic/family: {{ $family }}
+        {{- with $cfg.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- /* Run the (untrusted) runtimes under the gVisor RuntimeClass when enabled. The
              RuntimeClass' own scheduling.nodeSelector pins these pods to runsc-ready nodes. */}}
