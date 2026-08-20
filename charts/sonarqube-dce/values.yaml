@@ -1118,9 +1118,17 @@ hunterAgent:
     name: ""
     automountToken: false
     annotations: {}
-  # Restrict traffic to and from this runtime, independently of the top-level networkPolicy.enabled.
+  # Restrict traffic to and from this runtime.
   networkPolicy:
     enabled: false
+    # Additional egress destinations, each a cidr, a podSelector, a namespaceSelector or both
+    # selectors, with optional ports. Use the selectors for destinations inside the cluster.
+    # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
+    # covering orchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
+    # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of
+    # your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
+    egressAllow: []
+    # - cidr: 160.79.104.0/23
   # Path to the detection-agent entrypoint inside the image; the chart exposes it as
   # SCRIPT_PATH, which switches the runtime into hunter/detection mode (symmetric with
   # remediation's remediationScriptPath -> REMEDIATION_SCRIPT_PATH). Override if the image
@@ -1147,12 +1155,6 @@ hunterAgent:
   # - name: custom-ca
   #   mountPath: /custom-ca
   #   readOnly: true
-  # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
-  # covering orchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
-  # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of your
-  # LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
-  egressAllow: []
-  # - cidr: 160.79.104.0/23
 
 # Agentic Job Runtime that remediates issues. Requires orchestrator.enabled AND
 # vortexAnalysis.enabled - see validation.yaml.
@@ -1217,9 +1219,17 @@ remediationAgent:
     name: ""
     automountToken: false
     annotations: {}
-  # Restrict traffic to and from this runtime, independently of the top-level networkPolicy.enabled.
+  # Restrict traffic to and from this runtime.
   networkPolicy:
     enabled: false
+    # Additional egress destinations, each a cidr, a podSelector, a namespaceSelector or both
+    # selectors, with optional ports. Use the selectors for destinations inside the cluster.
+    # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
+    # covering orchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
+    # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of
+    # your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
+    egressAllow: []
+    # - cidr: 160.79.104.0/23
   # Path to the remediation-agent entrypoint inside the image; the chart exposes it as
   # REMEDIATION_SCRIPT_PATH, which switches the runtime into remediation mode. Override if the
   # image relocates it (e.g. a Python version bump); set to "" to omit the env var entirely.
@@ -1228,12 +1238,6 @@ remediationAgent:
   env: []
   extraVolumes: []
   extraVolumeMounts: []
-  # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
-  # covering orchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
-  # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of your
-  # LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
-  egressAllow: []
-  # - cidr: 160.79.104.0/23
 
 # gVisor (runsc) sandboxing for the Agentic Job Runtimes. Renders only when gvisor.enabled is true
 # AND at least one of hunterAgent.enabled / remediationAgent.enabled is true. See README ("gVisor
