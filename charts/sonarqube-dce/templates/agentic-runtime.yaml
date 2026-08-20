@@ -98,30 +98,5 @@ spec:
       volumes:
         {{- toYaml . | nindent 8 }}
       {{- end }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "sonarqube.agentic.runtime.fullname" (dict "ctx" $ "family" $family) }}
-  labels:
-    app: {{ template "sonarqube.name" $ }}
-    chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
-    release: {{ $.Release.Name }}
-    heritage: {{ $.Release.Service }}
-    sonarqube.agentic/component: runtime
-    sonarqube.agentic/family: {{ $family }}
-spec:
-  # Deliberately a load-balanced ClusterIP, not headless: on an HTTP 429 the runtime drops the
-  # socket so a retry's fresh TCP handshake gets re-routed by kube-proxy to another replica.
-  type: ClusterIP
-  ports:
-    - port: {{ $cfg.port }}
-      targetPort: http
-      protocol: TCP
-      name: http
-  selector:
-    app: {{ template "sonarqube.name" $ }}
-    sonarqube.agentic/component: runtime
-    sonarqube.agentic/family: {{ $family }}
 {{- end }}
 {{- end }}
