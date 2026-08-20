@@ -80,7 +80,7 @@
      leftover installer.enabled (e.g. a base values file overlaid by one that disables gVisor) is
      inert and must not fail the install. */}}
 {{- $gvisor := .Values.agenticHarness.gvisor -}}
-{{- if $gvisor.enabled -}}
+{{- if eq (include "sonarqube.agentic.gvisor.enabled" .) "true" -}}
   {{- if not $gvisor.runtimeClassName -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agenticHarness.gvisor.enabled=true requires a non-empty agenticHarness.gvisor.runtimeClassName." -}}
   {{- end -}}

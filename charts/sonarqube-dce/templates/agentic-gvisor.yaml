@@ -1,4 +1,4 @@
-{{- if .Values.agenticHarness.gvisor.enabled }}
+{{- if eq (include "sonarqube.agentic.gvisor.enabled" .) "true" }}
 {{- $gvisor := .Values.agenticHarness.gvisor }}
 {{- $installer := $gvisor.installer }}
 # gVisor (runsc) sandboxing for the Agentic Job Runtimes. gvisor.enabled renders the RuntimeClass
