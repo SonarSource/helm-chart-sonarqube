@@ -100,7 +100,7 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      {{- $hasMergedProps := or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.port .Values.ApplicationNodes.webPort .Values.ApplicationNodes.cePort .Values.agenticHarness.enabled .Values.vortexAnalysis.enabled }}
+      {{- $hasMergedProps := or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.port .Values.ApplicationNodes.webPort .Values.ApplicationNodes.cePort .Values.orchestrator.enabled .Values.vortexAnalysis.enabled }}
       {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
           image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
@@ -349,7 +349,7 @@ spec:
             {{- /* Points the agent capabilities at the in-cluster Agent Orchestrator. Also given a
                    conf/sonar.properties line via mergedSonarProperties (SONAR-31416); env var kept
                    for consumers reading it via Spring instead (e.g. hunter-agent-unified-app). */}}
-            {{- if .Values.agenticHarness.enabled }}
+            {{- if .Values.orchestrator.enabled }}
             - name: SONAR_HUNTERAGENT_ORCHESTRATOR_URL
               value: {{ include "sonarqube.agentic.orchestrator.url" . | quote }}
             - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL

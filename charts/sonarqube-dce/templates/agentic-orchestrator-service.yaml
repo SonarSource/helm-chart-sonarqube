@@ -1,4 +1,4 @@
-{{- if .Values.agenticHarness.enabled }}
+{{- if .Values.orchestrator.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -12,7 +12,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.agenticHarness.orchestrator.port }}
+    - port: {{ .Values.orchestrator.port }}
       targetPort: http
       protocol: TCP
       name: http

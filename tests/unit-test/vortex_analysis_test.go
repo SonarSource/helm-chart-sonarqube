@@ -14,7 +14,8 @@ import (
 )
 
 // Vortex analysis is a standalone service deployed alongside SonarQube, like the MCP server, and is
-// independent of the Agentic Harness. It exists only on the Data Center chart for now.
+// independent of the orchestrator/hunterAgent/remediationAgent. It exists only on the Data Center
+// chart for now.
 
 const vortexFullnameSuffix = "-vortex-analysis"
 
@@ -80,8 +81,8 @@ func TestVortexAnalysisDisabledByDefault(t *testing.T) {
 	}
 }
 
-// It must render with no agenticHarness block configured at all.
-func TestVortexAnalysisIndependentOfAgenticHarness(t *testing.T) {
+// It must render with no orchestrator/hunterAgent/remediationAgent configured at all.
+func TestVortexAnalysisIndependentOfAgenticComponents(t *testing.T) {
 	deployment := vortexDeployment(t, "vortex-analysis-enabled.yaml")
 	assert.Equal(t, dceReleaseName+"-sonarqube-dce"+vortexFullnameSuffix, deployment.Name)
 	assert.Equal(t, "vortex-analysis", deployment.Labels["app.kubernetes.io/component"])

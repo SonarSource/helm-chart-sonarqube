@@ -74,7 +74,7 @@ fallback logic as sonarqube.serviceAccountName, but independent of it.
 {{- end -}}
 
 {{/*
-Create the fully qualified name for the Agentic Harness gVisor installer.
+Create the fully qualified name for the gVisor installer.
 Usage: {{ include "sonarqube.agentic.gvisor.fullname" . }}
 */}}
 {{- define "sonarqube.agentic.gvisor.fullname" -}}
@@ -82,12 +82,12 @@ Usage: {{ include "sonarqube.agentic.gvisor.fullname" . }}
 {{- end -}}
 
 {{/*
-Effective agenticHarness.gvisor.enabled: requires agenticHarness.enabled too, so gVisor only ever
-renders for agentic installs.
+Effective gvisor.enabled: requires at least one of hunterAgent.enabled / remediationAgent.enabled
+too, so gVisor only ever renders when there's a runtime to sandbox.
 Usage: {{ include "sonarqube.agentic.gvisor.enabled" . }}
 */}}
 {{- define "sonarqube.agentic.gvisor.enabled" -}}
-{{- and .Values.agenticHarness.enabled .Values.agenticHarness.gvisor.enabled -}}
+{{- and .Values.gvisor.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
 {{- end -}}
 
 {{- define "accountDeprecation" -}}
@@ -614,7 +614,7 @@ for consumers like hunter-agent-unified-app that read them via Spring instead.
 */}}
 {{- define "sonarqube.agenticHealthProperties" -}}
 {{- $props := dict -}}
-{{- if .Values.agenticHarness.enabled -}}
+{{- if .Values.orchestrator.enabled -}}
 {{- $_ := set $props "sonar.hunteragent.orchestrator.url" (include "sonarqube.agentic.orchestrator.url" .) -}}
 {{- $_ := set $props "sonar.remediationagent.orchestrator.url" (include "sonarqube.agentic.orchestrator.url" .) -}}
 {{- end -}}
@@ -648,7 +648,7 @@ User-provided properties take precedence.
 {{- end -}}
 
 {{/*
-Create the fully qualified name for the Agentic Harness orchestrator.
+Create the fully qualified name for the Agent Orchestrator.
 */}}
 {{- define "sonarqube.agentic.orchestrator.fullname" -}}
 {{- printf "%s-agentic-orchestrator" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
@@ -663,14 +663,14 @@ Parameters (dict): ctx (required, the root context '.'), family (required, the r
 {{- end -}}
 
 {{/*
-Name of the ServiceAccount for the Agentic Harness orchestrator.
-When agenticHarness.serviceAccount.create is true, use the pinned orchestrator.serviceAccount.name
+Name of the ServiceAccount for the Agent Orchestrator.
+When orchestrator.serviceAccount.create is true, use the pinned orchestrator.serviceAccount.name
 (defaulting to the orchestrator fullname). Otherwise fall back to the main SonarQube ServiceAccount,
 so deployments that don't opt in to dedicated agentic SAs are unaffected.
 */}}
 {{- define "sonarqube.agentic.orchestrator.serviceAccountName" -}}
-{{- if .Values.agenticHarness.serviceAccount.create -}}
-{{- dig "serviceAccount" "name" "" .Values.agenticHarness.orchestrator | default (include "sonarqube.agentic.orchestrator.fullname" .) -}}
+{{- if .Values.orchestrator.serviceAccount.create -}}
+{{- default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.orchestrator.serviceAccount.name -}}
 {{- else -}}
 {{- include "sonarqube.serviceAccountName" . -}}
 {{- end -}}
@@ -684,8 +684,10 @@ Same create / pinned-name / fallback logic as the orchestrator helper above.
 {{- define "sonarqube.agentic.runtime.serviceAccountName" -}}
 {{- $ctx := .ctx -}}
 {{- $family := .family -}}
-{{- if $ctx.Values.agenticHarness.serviceAccount.create -}}
-{{- dig "serviceAccount" "name" "" (get $ctx.Values.agenticHarness.runtimes $family) | default (include "sonarqube.agentic.runtime.fullname" (dict "ctx" $ctx "family" $family)) -}}
+{{- $runtimes := dict "hunter" $ctx.Values.hunterAgent "remediation" $ctx.Values.remediationAgent -}}
+{{- $cfg := get $runtimes $family -}}
+{{- if $cfg.serviceAccount.create -}}
+{{- default (include "sonarqube.agentic.runtime.fullname" (dict "ctx" $ctx "family" $family)) $cfg.serviceAccount.name -}}
 {{- else -}}
 {{- include "sonarqube.serviceAccountName" $ctx -}}
 {{- end -}}
@@ -695,7 +697,7 @@ Same create / pinned-name / fallback logic as the orchestrator helper above.
 URL the app nodes use to reach the shared Agent Orchestrator.
 */}}
 {{- define "sonarqube.agentic.orchestrator.url" -}}
-{{- printf "http://%s:%d" (include "sonarqube.agentic.orchestrator.fullname" .) (int .Values.agenticHarness.orchestrator.port) -}}
+{{- printf "http://%s:%d" (include "sonarqube.agentic.orchestrator.fullname" .) (int .Values.orchestrator.port) -}}
 {{- end -}}
 
 {{/*
@@ -712,7 +714,8 @@ Push URL the orchestrator uses to dispatch jobs to one Agentic Job Runtime famil
 Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
 */}}
 {{- define "sonarqube.agentic.runtime.pushUrl" -}}
-{{- $port := (get .ctx.Values.agenticHarness.runtimes .family).port -}}
+{{- $runtimes := dict "hunter" .ctx.Values.hunterAgent "remediation" .ctx.Values.remediationAgent -}}
+{{- $port := (get $runtimes .family).port -}}
 {{- printf "http://%s:%d/jobs" (include "sonarqube.agentic.runtime.fullname" .) (int $port) -}}
 {{- end -}}
 
@@ -736,7 +739,7 @@ for the Agentic Orchestrator's CORE_DB_NAME env.
 {{- end -}}
 
 {{/*
-Render a single NetworkPolicy egress peer for one agenticHarness `egressAllow` entry
+Render a single NetworkPolicy egress peer for one `egressAllow` entry
 (either `{ cidr }` or `{ podSelector [, namespaceSelector] }`). A NetworkPolicy ipBlock rule
 can never target a Service's ClusterIP - kube-proxy DNATs to the backing pod IP before policy
 enforcement sees the packet - so in-cluster dependencies must use podSelector, not cidr.

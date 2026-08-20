@@ -63,17 +63,18 @@ func TestGvisorRuntimeClass(t *testing.T) {
 	assert.Equal(t, map[string]string{"gvisor.enabled": "true"}, runtimeClass.Scheduling.NodeSelector)
 }
 
-// gvisor.enabled/installer.enabled default to true but only take effect when agenticHarness.enabled
-// is also true (SONAR-31686) — a non-agentic install must render nothing.
-func TestGvisorDefaultRequiresAgenticPack(t *testing.T) {
+// gvisor.enabled/installer.enabled default to true but only take effect when at least one of
+// hunterAgent.enabled / remediationAgent.enabled is also true (SONAR-31689) — an install with
+// neither agent enabled must render nothing.
+func TestGvisorDefaultRequiresAnAgent(t *testing.T) {
 	output, err := renderGvisor(t, "gvisor-default.yaml")
-	require.Error(t, err, "agentic-gvisor.yaml must render nothing without agenticHarness.enabled")
+	require.Error(t, err, "agentic-gvisor.yaml must render nothing without hunterAgent/remediationAgent enabled")
 	assert.Empty(t, strings.TrimSpace(output))
 }
 
-// With the agentic pack on, gVisor and its installer follow their own true defaults.
-func TestGvisorFollowsAgenticPackByDefault(t *testing.T) {
-	output, err := renderGvisor(t, "gvisor-default-pack-enabled.yaml")
+// With hunterAgent enabled, gVisor and its installer follow their own true defaults.
+func TestGvisorFollowsHunterAgentByDefault(t *testing.T) {
+	output, err := renderGvisor(t, "gvisor-hunter-only.yaml")
 	require.NoError(t, err)
 
 	var runtimeClass nodev1.RuntimeClass
@@ -90,23 +91,44 @@ func TestGvisorFollowsAgenticPackByDefault(t *testing.T) {
 	assert.Contains(t, output, "kind: ConfigMap")
 }
 
-// off/off/off: pack, gvisor and installer all explicitly false must render nothing (SONAR-31686).
+// remediationAgent alone (no hunterAgent) must also bring gVisor up by default — the render
+// condition is an OR across both agents, not hunter-specific (SONAR-31689).
+func TestGvisorFollowsRemediationAgentByDefault(t *testing.T) {
+	output, err := renderGvisor(t, "gvisor-remediation-only.yaml")
+	require.NoError(t, err)
+
+	var runtimeClass nodev1.RuntimeClass
+	for _, doc := range splitGvisorDocs(output) {
+		if strings.Contains(doc, "kind: RuntimeClass") {
+			helm.UnmarshalK8SYaml(t, doc, &runtimeClass)
+		}
+	}
+	assert.Equal(t, "gvisor", runtimeClass.Name)
+	assert.Equal(t, "runsc", runtimeClass.Handler)
+	assert.Contains(t, output, "kind: DaemonSet")
+	assert.Contains(t, output, "kind: ServiceAccount")
+	assert.Contains(t, output, "kind: ClusterRole")
+	assert.Contains(t, output, "kind: ConfigMap")
+}
+
+// off/off/off: no agent enabled, gvisor and installer both explicitly false, must render nothing
+// (SONAR-31689).
 func TestGvisorAllOffExplicit(t *testing.T) {
 	output, err := renderGvisor(t, "gvisor-all-off-explicit.yaml")
 	require.Error(t, err)
 	assert.Empty(t, strings.TrimSpace(output))
 }
 
-// on + off = off: the pack being on does not force gVisor on — an explicit gvisor.enabled=false
-// still renders nothing at all (SONAR-31686).
-func TestGvisorExplicitDisableOverridesPack(t *testing.T) {
-	output, err := renderGvisor(t, "gvisor-disabled-pack-enabled.yaml")
+// on + off = off: hunterAgent being enabled does not force gVisor on — an explicit
+// gvisor.enabled=false still renders nothing at all (SONAR-31689).
+func TestGvisorExplicitDisableOverridesAgent(t *testing.T) {
+	output, err := renderGvisor(t, "gvisor-disabled-hunter-enabled.yaml")
 	require.Error(t, err)
 	assert.Empty(t, strings.TrimSpace(output))
 }
 
-// The opt-out (SONAR-31686): explicitly setting enabled=false must render nothing at all, not just
-// skip the installer.
+// The opt-out: explicitly setting enabled=false must render nothing at all, not just skip the
+// installer.
 func TestGvisorDisabledRendersNothing(t *testing.T) {
 	output, err := renderGvisor(t, "gvisor-disabled.yaml")
 	require.Error(t, err, "agentic-gvisor.yaml must render nothing when gvisor.enabled is false")
@@ -263,17 +285,17 @@ func TestGvisorValidationToggles(t *testing.T) {
 		{
 			name:          "empty runtimeClassName",
 			fixture:       "gvisor-empty-runtimeclassname.yaml",
-			expectedError: "agenticHarness.gvisor.enabled=true requires a non-empty agenticHarness.gvisor.runtimeClassName",
+			expectedError: "gvisor.enabled=true requires a non-empty gvisor.runtimeClassName",
 		},
 		{
 			name:          "empty handler",
 			fixture:       "gvisor-empty-handler.yaml",
-			expectedError: "agenticHarness.gvisor.enabled=true requires a non-empty agenticHarness.gvisor.handler",
+			expectedError: "gvisor.enabled=true requires a non-empty gvisor.handler",
 		},
 		{
 			name:          "installer with empty image repository",
 			fixture:       "gvisor-installer-empty-image-repo.yaml",
-			expectedError: "agenticHarness.gvisor.installer.enabled=true requires a non-empty agenticHarness.gvisor.installer.image.repository",
+			expectedError: "gvisor.installer.enabled=true requires a non-empty gvisor.installer.image.repository",
 		},
 	}
 	for _, tc := range cases {
