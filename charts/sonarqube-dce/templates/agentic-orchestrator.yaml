@@ -25,22 +25,11 @@ spec:
         sonarqube.agentic/component: orchestrator
     spec:
       automountServiceAccountToken: {{ if .Values.orchestrator.serviceAccount.create }}{{ .Values.orchestrator.serviceAccount.automountToken }}{{ else }}{{ .Values.serviceAccount.automountToken }}{{ end }}
-      {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret .Values.orchestrator.image.pullSecrets .Values.orchestrator.image.pullSecret }}
-      imagePullSecrets:
-        {{- /* The wait-for-sonarqube init container below pulls the SonarQube image, so it needs the
-               application nodes' pull secrets too - the orchestrator's own only cover its own image. */}}
-        {{- if .Values.ApplicationNodes.image.pullSecret }}
-        - name: {{ .Values.ApplicationNodes.image.pullSecret }}
-        {{- end }}
-        {{- with .Values.ApplicationNodes.image.pullSecrets }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- if .Values.orchestrator.image.pullSecret }}
-        - name: {{ .Values.orchestrator.image.pullSecret }}
-        {{- end }}
-        {{- if .Values.orchestrator.image.pullSecrets }}
-        {{- toYaml .Values.orchestrator.image.pullSecrets | nindent 8 }}
-        {{- end }}
+      {{- /* The wait-for-sonarqube init container below pulls the SonarQube image, so it needs the
+             application nodes' pull secrets too - the orchestrator's own only cover its own image. */}}
+      {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list .Values.ApplicationNodes.image .Values.orchestrator.image) }}
+      {{- if $pullSecrets }}
+      imagePullSecrets: {{- $pullSecrets | nindent 8 }}
       {{- end }}
       {{- with .Values.orchestrator.securityContext }}
       securityContext: {{- toYaml . | nindent 8 }}

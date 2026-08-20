@@ -33,14 +33,9 @@ spec:
       runtimeClassName: {{ $.Values.gvisor.runtimeClassName }}
       {{- end }}
       automountServiceAccountToken: {{ if $cfg.serviceAccount.create }}{{ $cfg.serviceAccount.automountToken }}{{ else }}{{ $.Values.serviceAccount.automountToken }}{{ end }}
-      {{- if or $cfg.image.pullSecrets $cfg.image.pullSecret }}
-      imagePullSecrets:
-        {{- if $cfg.image.pullSecret }}
-        - name: {{ $cfg.image.pullSecret }}
-        {{- end }}
-        {{- if $cfg.image.pullSecrets }}
-{{ toYaml $cfg.image.pullSecrets | indent 8 }}
-        {{- end }}
+      {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list $cfg.image) }}
+      {{- if $pullSecrets }}
+      imagePullSecrets: {{- $pullSecrets | nindent 8 }}
       {{- end }}
       {{- with $cfg.securityContext }}
       securityContext: {{- toYaml . | nindent 8 }}

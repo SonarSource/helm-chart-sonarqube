@@ -28,14 +28,9 @@ spec:
     spec:
       serviceAccountName: {{ include "sonarqube.vortexAnalysis.serviceAccountName" . }}
       automountServiceAccountToken: {{ $vortex.serviceAccount.automountToken }}
-      {{- if or $vortex.image.pullSecret $vortex.image.pullSecrets }}
-      imagePullSecrets:
-        {{- if $vortex.image.pullSecret }}
-        - name: {{ $vortex.image.pullSecret }}
-        {{- end }}
-        {{- with $vortex.image.pullSecrets }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+      {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list $vortex.image) }}
+      {{- if $pullSecrets }}
+      imagePullSecrets: {{- $pullSecrets | nindent 8 }}
       {{- end }}
       containers:
         - name: vortex-analysis

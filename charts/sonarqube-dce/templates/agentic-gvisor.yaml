@@ -398,23 +398,11 @@ spec:
       # cannot reach the host systemd bus.
       hostPID: true
       serviceAccountName: {{ include "sonarqube.agentic.gvisor.fullname" . }}
-      {{- /* Global image pull secrets are addressed nil-safely (default the image map to an empty
-             dict first) so this template also renders in charts with no top-level .Values.image —
-             e.g. the DCE chart, which keys images per node group. */}}
-      {{- $globalImage := .Values.image | default dict }}
-      {{- $globalPullSecret := $globalImage.pullSecret | default "" }}
-      {{- $globalPullSecrets := $globalImage.pullSecrets | default list }}
-      {{- if or $globalPullSecrets $globalPullSecret $installer.image.pullSecrets }}
-      imagePullSecrets:
-        {{- if $globalPullSecret }}
-        - name: {{ $globalPullSecret }}
-        {{- end }}
-        {{- with $globalPullSecrets }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with $installer.image.pullSecrets }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+      {{- /* .Values.image is unset in this chart, which keys images per node group; passed anyway
+             so this template stays portable to charts that do define a top-level image. */}}
+      {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list .Values.image $installer.image) }}
+      {{- if $pullSecrets }}
+      imagePullSecrets: {{- $pullSecrets | nindent 8 }}
       {{- end }}
       {{- with $installer.nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}

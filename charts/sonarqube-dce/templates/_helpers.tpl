@@ -765,3 +765,26 @@ Output is unindented; callers should pipe through `indent`/`nindent` to place it
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{/*
+Render the `imagePullSecrets` list items for one or more image blocks, each optionally providing
+`pullSecret` (string) and/or `pullSecrets` (list), in the order given - callers combine e.g. the
+application nodes' image with their own. Nil-safe against an image block the chart doesn't define
+(e.g. a top-level .Values.image). Output is unindented and empty when no source has anything.
+Usage: {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list .Values.a.image .Values.b.image) }}
+*/}}
+{{- define "sonarqube.agentic.imagePullSecrets" -}}
+{{- $refs := list -}}
+{{- range . -}}
+{{- $img := . | default dict -}}
+{{- with $img.pullSecret -}}
+{{- $refs = append $refs (dict "name" .) -}}
+{{- end -}}
+{{- range ($img.pullSecrets | default list) -}}
+{{- $refs = append $refs . -}}
+{{- end -}}
+{{- end -}}
+{{- with $refs -}}
+{{- toYaml . -}}
+{{- end -}}
+{{- end -}}
