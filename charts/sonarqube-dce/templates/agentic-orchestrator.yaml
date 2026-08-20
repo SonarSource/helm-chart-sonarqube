@@ -133,8 +133,7 @@ spec:
                   name: {{ default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.orchestrator.sonarqubeToken.existingSecret }}
                   key: {{ .Values.orchestrator.sonarqubeToken.existingSecretKey | default "AGENTIC_SONARQUBE_TOKEN" }}
             {{- end }}
-            {{- $runtimes := dict "hunter" .Values.hunterAgent "remediation" .Values.remediationAgent -}}
-            {{- range $family, $cfg := $runtimes }}
+            {{- range $family, $cfg := fromYaml (include "sonarqube.agentic.runtimes" .) }}
             {{- if $cfg.enabled }}
             - name: AGENTIC_{{ $family | upper }}_RUNTIME_PUSH_URL
               value: {{ include "sonarqube.agentic.runtime.pushUrl" (dict "ctx" $ "family" $family) | quote }}

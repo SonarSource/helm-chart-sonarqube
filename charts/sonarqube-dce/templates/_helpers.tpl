@@ -663,6 +663,15 @@ Parameters (dict): ctx (required, the root context '.'), family (required, the r
 {{- end -}}
 
 {{/*
+The two Agentic Job Runtime families, keyed by name, for templates that iterate over both.
+Usage: {{- range $family, $cfg := fromYaml (include "sonarqube.agentic.runtimes" .) }}
+*/}}
+{{- define "sonarqube.agentic.runtimes" -}}
+hunter: {{- .Values.hunterAgent | toYaml | nindent 2 }}
+remediation: {{- .Values.remediationAgent | toYaml | nindent 2 }}
+{{- end -}}
+
+{{/*
 Name of the ServiceAccount for the Agent Orchestrator.
 When orchestrator.serviceAccount.create is true, use the pinned orchestrator.serviceAccount.name
 (defaulting to the orchestrator fullname). Otherwise fall back to the main SonarQube ServiceAccount,
@@ -684,8 +693,7 @@ Same create / pinned-name / fallback logic as the orchestrator helper above.
 {{- define "sonarqube.agentic.runtime.serviceAccountName" -}}
 {{- $ctx := .ctx -}}
 {{- $family := .family -}}
-{{- $runtimes := dict "hunter" $ctx.Values.hunterAgent "remediation" $ctx.Values.remediationAgent -}}
-{{- $cfg := get $runtimes $family -}}
+{{- $cfg := get (fromYaml (include "sonarqube.agentic.runtimes" $ctx)) $family -}}
 {{- if $cfg.serviceAccount.create -}}
 {{- default (include "sonarqube.agentic.runtime.fullname" (dict "ctx" $ctx "family" $family)) $cfg.serviceAccount.name -}}
 {{- else -}}
@@ -714,8 +722,7 @@ Push URL the orchestrator uses to dispatch jobs to one Agentic Job Runtime famil
 Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
 */}}
 {{- define "sonarqube.agentic.runtime.pushUrl" -}}
-{{- $runtimes := dict "hunter" .ctx.Values.hunterAgent "remediation" .ctx.Values.remediationAgent -}}
-{{- $port := (get $runtimes .family).port -}}
+{{- $port := (get (fromYaml (include "sonarqube.agentic.runtimes" .ctx)) .family).port -}}
 {{- printf "http://%s:%d/jobs" (include "sonarqube.agentic.runtime.fullname" .) (int $port) -}}
 {{- end -}}
 

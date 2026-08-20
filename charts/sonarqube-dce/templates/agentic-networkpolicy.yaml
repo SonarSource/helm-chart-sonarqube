@@ -46,8 +46,7 @@ spec:
           protocol: UDP
         - port: 53
           protocol: TCP
-    {{- $runtimes := dict "hunter" .Values.hunterAgent "remediation" .Values.remediationAgent -}}
-    {{- range $family, $cfg := $runtimes }}
+    {{- range $family, $cfg := fromYaml (include "sonarqube.agentic.runtimes" .) }}
     {{- if $cfg.enabled }}
     - to:
         - podSelector:
@@ -86,8 +85,7 @@ spec:
 {{- /* Runtime NetworkPolicies render on the global networkPolicy.enabled OR each runtime's own
        dedicated networkPolicy.enabled, so the (untrusted) runtimes can be locked down on their own
        without imposing a NetworkPolicy on the orchestrator or the SonarQube app/search nodes. */}}
-{{- $runtimes := dict "hunter" .Values.hunterAgent "remediation" .Values.remediationAgent -}}
-{{- range $family, $cfg := $runtimes }}
+{{- range $family, $cfg := fromYaml (include "sonarqube.agentic.runtimes" .) }}
 {{- if and $cfg.enabled (or $.Values.networkPolicy.enabled $cfg.networkPolicy.enabled) }}
 ---
 apiVersion: networking.k8s.io/v1

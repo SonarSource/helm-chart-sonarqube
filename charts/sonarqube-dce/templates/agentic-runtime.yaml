@@ -1,5 +1,4 @@
-{{- $runtimes := dict "hunter" .Values.hunterAgent "remediation" .Values.remediationAgent -}}
-{{- range $family, $cfg := $runtimes }}
+{{- range $family, $cfg := fromYaml (include "sonarqube.agentic.runtimes" .) }}
 {{- if $cfg.enabled }}
 ---
 apiVersion: apps/v1
