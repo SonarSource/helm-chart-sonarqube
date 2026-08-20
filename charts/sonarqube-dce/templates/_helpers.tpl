@@ -709,7 +709,7 @@ URL the app nodes use to reach the shared Agent Orchestrator.
 {{- end -}}
 
 {{/*
-In-cluster URL of the SonarQube service the Agentic Orchestrator talks to (AGENTIC_SONARQUBE_URL
+In-cluster URL of the SonarQube service the Agent Orchestrator talks to (AGENTIC_SONARQUBE_URL
 and the wait-for-sonarqube init container). Always the co-deployed SonarQube service; honours the
 web context path.
 */}}
@@ -728,7 +728,7 @@ Parameters (dict): ctx (required, the root context '.'), family (required, the r
 
 {{/*
 Parse the host:port endpoint out of jdbcOverwrite.jdbcUrl (jdbc:postgresql://host:port/db[?params]),
-for the Agentic Orchestrator's CORE_DB_READ_WRITE_ENDPOINT env, since it reuses SonarQube's own DB.
+for the Agent Orchestrator's CORE_DB_READ_WRITE_ENDPOINT env, since it reuses SonarQube's own DB.
 */}}
 {{- define "sonarqube.agentic.jdbc.endpoint" -}}
 {{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" .Values.jdbcOverwrite.jdbcUrl "" -}}
@@ -737,7 +737,7 @@ for the Agentic Orchestrator's CORE_DB_READ_WRITE_ENDPOINT env, since it reuses 
 
 {{/*
 Parse the database name out of jdbcOverwrite.jdbcUrl (jdbc:postgresql://host:port/db[?params]),
-for the Agentic Orchestrator's CORE_DB_NAME env.
+for the Agent Orchestrator's CORE_DB_NAME env.
 */}}
 {{- define "sonarqube.agentic.jdbc.dbname" -}}
 {{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" .Values.jdbcOverwrite.jdbcUrl "" -}}
