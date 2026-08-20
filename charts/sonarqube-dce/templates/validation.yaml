@@ -96,5 +96,19 @@
   {{- if and $gvisor.installer.enabled (not $gvisor.installer.image.repository) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.installer.enabled=true requires a non-empty gvisor.installer.image.repository." -}}
   {{- end -}}
+  {{/* The RuntimeClass merges gvisor.nodeSelector into each runtime pod's own nodeSelector; a
+       shared key with different values makes the pod unschedulable at admission. */}}
+  {{- range $family, $cfg := fromYaml (include "sonarqube.agentic.runtimes" $) -}}
+    {{- if $cfg.enabled -}}
+      {{- $effective := default $.Values.nodeSelector $cfg.nodeSelector -}}
+      {{- range $key, $val := $gvisor.nodeSelector -}}
+        {{/* toString both sides: a non-string label value would otherwise make ne fail with a raw
+             Go template type error instead of a readable message. */}}
+        {{- if and (hasKey $effective $key) (ne (toString (index $effective $key)) (toString $val)) -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n %sAgent's effective nodeSelector conflicts with gvisor.nodeSelector on key %q (%q vs %q)." $family $key (toString (index $effective $key)) (toString $val)) -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
 {{- end -}}
 

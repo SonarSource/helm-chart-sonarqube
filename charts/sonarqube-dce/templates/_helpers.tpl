@@ -821,19 +821,45 @@ own serviceAccount block)
 {{- end -}}
 
 {{/*
-The SonarQube application image config (repository/tag/pullPolicy/pullSecret(s)) - this chart keys
-it as applicationNodes.image; charts/sonarqube keys the equivalent as a single top-level
-.Values.image, so a port there defines this the same way for its own shape.
+The SonarQube application image config: repository/tag/pullPolicy/pullSecret(s).
 */}}
 {{- define "sonarqube.agentic.sonarqubeImage" -}}
 {{- (fromYaml (include "applicationNodes" .)).image | toYaml -}}
 {{- end -}}
 
 {{/*
-Security context for the wait-for-sonarqube init container - this chart names the underlying
-helper sonarqube.initContainersSecurityContext (plural); charts/sonarqube names its equivalent
-sonarqube.initContainerSecurityContext (singular).
+Security context for the wait-for-sonarqube init container.
 */}}
 {{- define "sonarqube.agentic.initContainerSecurityContext" -}}
 {{- include "sonarqube.initContainersSecurityContext" . -}}
+{{- end -}}
+
+{{/*
+Render nodeSelector/tolerations/affinity for an agentic workload: the component's own value wins
+when set (whole field, not merged), else the chart's global one.
+Parameters (dict): ctx (required, the root context '.'), component (required, the component's own
+values block, providing nodeSelector/tolerations/affinity)
+Usage: {{- with (include "sonarqube.agentic.scheduling" (dict "ctx" $ "component" .Values.orchestrator)) }}
+{{ . | indent 6 }}
+      {{- end }}
+*/}}
+{{- define "sonarqube.agentic.scheduling" -}}
+{{- trimPrefix "\n" (include "sonarqube.agentic.scheduling.render" .) -}}
+{{- end -}}
+
+{{- define "sonarqube.agentic.scheduling.render" -}}
+{{- $ctx := .ctx -}}
+{{- $component := .component -}}
+{{- with default $ctx.Values.nodeSelector $component.nodeSelector }}
+nodeSelector:
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- with default $ctx.Values.tolerations $component.tolerations }}
+tolerations:
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- with default $ctx.Values.affinity $component.affinity }}
+affinity:
+{{ toYaml . | indent 2 }}
+{{- end }}
 {{- end -}}

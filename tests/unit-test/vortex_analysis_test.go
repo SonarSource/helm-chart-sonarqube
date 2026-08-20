@@ -289,21 +289,20 @@ func TestVortexAnalysisScheduling(t *testing.T) {
 	assert.Equal(t, "vortex", terms[0].MatchExpressions[0].Key)
 }
 
-// The global settings take precedence over the Vortex analysis ones, matching how the application
-// and search nodes behave.
-func TestVortexAnalysisGlobalSchedulingWins(t *testing.T) {
+// Vortex analysis's own scheduling settings take precedence over the chart's global ones.
+func TestVortexAnalysisSchedulingWinsOverGlobal(t *testing.T) {
 	podSpec := vortexDeployment(t, "vortex-analysis-global-scheduling.yaml").Spec.Template.Spec
 
-	assert.Equal(t, map[string]string{"global": "true"}, podSpec.NodeSelector)
+	assert.Equal(t, map[string]string{"vortex": "true"}, podSpec.NodeSelector)
 
 	require.Len(t, podSpec.Tolerations, 1)
-	assert.Equal(t, "global", podSpec.Tolerations[0].Key)
+	assert.Equal(t, "vortex", podSpec.Tolerations[0].Key)
 
 	require.NotNil(t, podSpec.Affinity)
 	terms := podSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
 	require.Len(t, terms, 1)
 	require.Len(t, terms[0].MatchExpressions, 1)
-	assert.Equal(t, "global", terms[0].MatchExpressions[0].Key)
+	assert.Equal(t, "vortex", terms[0].MatchExpressions[0].Key)
 }
 
 // The pod can take several minutes to become ready on a first start, so the startup probe must allow

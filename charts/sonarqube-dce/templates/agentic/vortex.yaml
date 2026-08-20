@@ -105,26 +105,8 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-      {{- if .Values.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.nodeSelector | indent 8 }}
-      {{- else if $vortex.nodeSelector }}
-      nodeSelector:
-{{ toYaml $vortex.nodeSelector | indent 8 }}
-      {{- end }}
-      {{- if .Values.tolerations }}
-      tolerations:
-{{ toYaml .Values.tolerations | indent 8 }}
-      {{- else if $vortex.tolerations }}
-      tolerations:
-{{ toYaml $vortex.tolerations | indent 8 }}
-      {{- end }}
-      {{- if .Values.affinity }}
-      affinity:
-{{ toYaml .Values.affinity | indent 8 }}
-      {{- else if $vortex.affinity }}
-      affinity:
-{{ toYaml $vortex.affinity | indent 8 }}
+      {{- with (include "sonarqube.agentic.scheduling" (dict "ctx" . "component" $vortex)) }}
+{{ . | indent 6 }}
       {{- end }}
       {{- with $vortex.extraVolumes }}
       volumes:
