@@ -5,19 +5,17 @@ jdbcOverwrite:
   jdbcUrl: jdbc:postgresql://test-host:5432/testdb
   jdbcUsername: test-user
   jdbcPassword: test-password
-agenticHarness:
+orchestrator:
   enabled: true
-  orchestrator:
-    image:
-      repository: example.com/agentorchestrator
-  runtimes:
-    hunter:
-      enabled: true
-      image:
-        repository: example.com/hunteragent
-  gvisor:
+  image:
+    repository: example.com/agentorchestrator
+hunterAgent:
+  enabled: true
+  image:
+    repository: example.com/hunteragent
+gvisor:
+  enabled: true
+  installer:
     enabled: true
-    installer:
-      enabled: true
-      image:
-        digest: ""
+    image:
+      digest: ""

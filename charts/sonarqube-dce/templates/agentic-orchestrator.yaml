@@ -1,6 +1,6 @@
 {{ $applicationNodes := fromYaml (include "applicationNodes" . ) }}
 {{ $_ := set .Values "ApplicationNodes" $applicationNodes }}
-{{- if .Values.agenticHarness.enabled }}
+{{- if .Values.orchestrator.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,7 +12,7 @@ metadata:
     heritage: {{ .Release.Service }}
     sonarqube.agentic/component: orchestrator
 spec:
-  replicas: {{ .Values.agenticHarness.orchestrator.replicaCount }}
+  replicas: {{ .Values.orchestrator.replicaCount }}
   selector:
     matchLabels:
       app: {{ template "sonarqube.name" . }}
@@ -24,8 +24,8 @@ spec:
         release: {{ .Release.Name }}
         sonarqube.agentic/component: orchestrator
     spec:
-      automountServiceAccountToken: {{ if .Values.agenticHarness.serviceAccount.create }}{{ .Values.agenticHarness.serviceAccount.automountToken }}{{ else }}{{ .Values.serviceAccount.automountToken }}{{ end }}
-      {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret .Values.agenticHarness.orchestrator.image.pullSecrets .Values.agenticHarness.orchestrator.image.pullSecret }}
+      automountServiceAccountToken: {{ if .Values.orchestrator.serviceAccount.create }}{{ .Values.orchestrator.serviceAccount.automountToken }}{{ else }}{{ .Values.serviceAccount.automountToken }}{{ end }}
+      {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret .Values.orchestrator.image.pullSecrets .Values.orchestrator.image.pullSecret }}
       imagePullSecrets:
         {{- /* The wait-for-sonarqube init container below pulls the SonarQube image, so it needs the
                application nodes' pull secrets too - the orchestrator's own only cover its own image. */}}
@@ -35,14 +35,14 @@ spec:
         {{- with .Values.ApplicationNodes.image.pullSecrets }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- if .Values.agenticHarness.orchestrator.image.pullSecret }}
-        - name: {{ .Values.agenticHarness.orchestrator.image.pullSecret }}
+        {{- if .Values.orchestrator.image.pullSecret }}
+        - name: {{ .Values.orchestrator.image.pullSecret }}
         {{- end }}
-        {{- if .Values.agenticHarness.orchestrator.image.pullSecrets }}
-        {{- toYaml .Values.agenticHarness.orchestrator.image.pullSecrets | nindent 8 }}
+        {{- if .Values.orchestrator.image.pullSecrets }}
+        {{- toYaml .Values.orchestrator.image.pullSecrets | nindent 8 }}
         {{- end }}
       {{- end }}
-      {{- with .Values.agenticHarness.orchestrator.securityContext }}
+      {{- with .Values.orchestrator.securityContext }}
       securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       initContainers:
@@ -61,30 +61,30 @@ spec:
               done
       containers:
         - name: agentic-orchestrator
-          image: "{{ .Values.agenticHarness.orchestrator.image.repository }}:{{ .Values.agenticHarness.orchestrator.image.tag }}"
-          imagePullPolicy: {{ .Values.agenticHarness.orchestrator.image.pullPolicy }}
-          {{- $orchestratorSecurityContext := .Values.agenticHarness.orchestrator.containerSecurityContext | default dict }}
+          image: "{{ .Values.orchestrator.image.repository }}:{{ .Values.orchestrator.image.tag }}"
+          imagePullPolicy: {{ .Values.orchestrator.image.pullPolicy }}
+          {{- $orchestratorSecurityContext := .Values.orchestrator.containerSecurityContext | default dict }}
           {{- with $orchestratorSecurityContext }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
             - name: http
-              containerPort: {{ .Values.agenticHarness.orchestrator.port }}
+              containerPort: {{ .Values.orchestrator.port }}
               protocol: TCP
           env:
             - name: SERVER_PORT
-              value: {{ .Values.agenticHarness.orchestrator.port | quote }}
-            {{- if .Values.agenticHarness.orchestrator.scheduler.enabled }}
+              value: {{ .Values.orchestrator.port | quote }}
+            {{- if .Values.orchestrator.scheduler.enabled }}
             - name: SONAR_AGENTIC_ORCHESTRATOR_SCHEDULER_ENABLED
               value: "true"
             {{- end }}
             {{- /* CORE DB (SonarQube's database) connection for the orchestrator. Each field is
-                   independently configurable via agenticHarness.orchestrator.coreDb, defaulting to
+                   independently configurable via orchestrator.coreDb, defaulting to
                    the shared jdbcOverwrite so it targets the same DB as SonarQube out of the box.
                    Decoupling matters for the password: SonarQube may store an encrypted `{aes-gcm}`
                    value the orchestrator can't decrypt, or a chart-managed secret your GitOps
                    doesn't apply — point coreDb.passwordSecret{Name,Key} at a usable secret. */}}
-            {{- $coreDb := .Values.agenticHarness.orchestrator.coreDb }}
+            {{- $coreDb := .Values.orchestrator.coreDb }}
             - name: CORE_DB_READ_WRITE_ENDPOINT
               value: {{ $coreDb.endpoint | default (include "sonarqube.agentic.jdbc.endpoint" .) | quote }}
             - name: CORE_DB_NAME
@@ -101,52 +101,53 @@ spec:
                   name: {{ $coreDb.passwordSecretName | default (include "jdbc.secret" .) }}
                   key: {{ $coreDb.passwordSecretKey | default (include "jdbc.secretPasswordKey" .) }}
             - name: AGENTIC_STORAGE_ENDPOINT
-              value: {{ .Values.agenticHarness.orchestrator.storage.endpoint | quote }}
+              value: {{ .Values.orchestrator.storage.endpoint | quote }}
             - name: AGENTIC_STORAGE_REGION
-              value: {{ .Values.agenticHarness.orchestrator.storage.region | quote }}
+              value: {{ .Values.orchestrator.storage.region | quote }}
             - name: AGENTIC_STORAGE_BUCKET
-              value: {{ .Values.agenticHarness.orchestrator.storage.bucket | quote }}
+              value: {{ .Values.orchestrator.storage.bucket | quote }}
             - name: AGENTIC_STORAGE_PATH_STYLE
-              value: {{ .Values.agenticHarness.orchestrator.storage.pathStyle | quote }}
+              value: {{ .Values.orchestrator.storage.pathStyle | quote }}
             {{- /* Inject static storage keys only when provided (inline or via existingSecret). When
                    none are set, the env vars are omitted so the orchestrator's AWS SDK falls back to
                    its default credential chain - i.e. the pod's IAM identity (node instance role or
                    IRSA) for credential-less access to a real S3 bucket. */}}
-            {{- if or .Values.agenticHarness.orchestrator.storage.accessKey .Values.agenticHarness.orchestrator.storage.secretKey .Values.agenticHarness.orchestrator.storage.existingSecret }}
+            {{- if or .Values.orchestrator.storage.accessKey .Values.orchestrator.storage.secretKey .Values.orchestrator.storage.existingSecret }}
             - name: AGENTIC_STORAGE_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.agenticHarness.orchestrator.storage.existingSecret }}
+                  name: {{ default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.orchestrator.storage.existingSecret }}
                   key: AGENTIC_STORAGE_ACCESS_KEY
             - name: AGENTIC_STORAGE_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.agenticHarness.orchestrator.storage.existingSecret }}
+                  name: {{ default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.orchestrator.storage.existingSecret }}
                   key: AGENTIC_STORAGE_SECRET_KEY
             {{- end }}
             - name: AGENTIC_SONARQUBE_URL
               value: {{ include "sonarqube.agentic.sonarqube.url" . | quote }}
-            {{- if or .Values.agenticHarness.orchestrator.sonarqubeToken.token .Values.agenticHarness.orchestrator.sonarqubeToken.existingSecret }}
+            {{- if or .Values.orchestrator.sonarqubeToken.token .Values.orchestrator.sonarqubeToken.existingSecret }}
             - name: AGENTIC_SONARQUBE_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.agenticHarness.orchestrator.sonarqubeToken.existingSecret }}
-                  key: {{ .Values.agenticHarness.orchestrator.sonarqubeToken.existingSecretKey | default "AGENTIC_SONARQUBE_TOKEN" }}
+                  name: {{ default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.orchestrator.sonarqubeToken.existingSecret }}
+                  key: {{ .Values.orchestrator.sonarqubeToken.existingSecretKey | default "AGENTIC_SONARQUBE_TOKEN" }}
             {{- end }}
-            {{- range $family, $cfg := .Values.agenticHarness.runtimes }}
+            {{- $runtimes := dict "hunter" .Values.hunterAgent "remediation" .Values.remediationAgent -}}
+            {{- range $family, $cfg := $runtimes }}
             {{- if $cfg.enabled }}
             - name: AGENTIC_{{ $family | upper }}_RUNTIME_PUSH_URL
               value: {{ include "sonarqube.agentic.runtime.pushUrl" (dict "ctx" $ "family" $family) | quote }}
             {{- end }}
             {{- end }}
-            {{- if .Values.agenticHarness.orchestrator.github.apiBaseUrl }}
+            {{- if .Values.orchestrator.github.apiBaseUrl }}
             - name: AGENTIC_GITHUB_API_BASE_URL
-              value: {{ .Values.agenticHarness.orchestrator.github.apiBaseUrl | quote }}
+              value: {{ .Values.orchestrator.github.apiBaseUrl | quote }}
             {{- end }}
             {{- /* No AGENTIC_GITHUB_TOKEN: since SONAR-30903 the orchestrator obtains a short-lived
                    GitHub App installation token from SonarQube on demand (via AGENTIC_SONARQUBE_URL/
                    TOKEN), not from a static env var. */}}
-          {{- with .Values.agenticHarness.orchestrator.resources }}
+          {{- with .Values.orchestrator.resources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
