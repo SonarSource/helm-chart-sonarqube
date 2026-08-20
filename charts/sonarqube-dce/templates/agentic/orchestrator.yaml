@@ -18,6 +18,8 @@ spec:
     matchLabels: {{- include "sonarqube.agentic.orchestrator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/agentic/orchestrator-secret.yaml") . | sha256sum }}
       labels:
         {{- include "sonarqube.agentic.orchestrator.selectorLabels" . | nindent 8 }}
         sonarqube.agentic/component: orchestrator
