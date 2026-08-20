@@ -12,6 +12,7 @@ metadata:
     heritage: {{ $.Release.Service }}
     sonarqube.agentic/component: runtime
     sonarqube.agentic/family: {{ $family }}
+    app.kubernetes.io/component: agentic-runtime-{{ $family }}
 spec:
   # Deliberately a load-balanced ClusterIP, not headless: on an HTTP 429 the runtime drops the
   # socket so a retry's fresh TCP handshake gets re-routed by kube-proxy to another replica.

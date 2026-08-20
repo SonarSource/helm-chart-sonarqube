@@ -12,6 +12,7 @@ metadata:
     heritage: {{ $.Release.Service }}
     sonarqube.agentic/component: runtime
     sonarqube.agentic/family: {{ $family }}
+    app.kubernetes.io/component: agentic-runtime-{{ $family }}
 spec:
   podSelector:
     matchLabels: {{- include "sonarqube.agentic.runtime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 6 }}
