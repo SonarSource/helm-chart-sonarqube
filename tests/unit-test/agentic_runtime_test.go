@@ -21,7 +21,7 @@ func renderAgenticRuntime(t *testing.T, family string, setValues map[string]stri
 		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-runtimes-enabled.yaml"},
 		SetValues:   setValues,
 	}
-	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic-runtime.yaml"})
+	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic/runtime.yaml"})
 	require.NoError(t, err)
 
 	for _, doc := range strings.Split(output, "\n---") {

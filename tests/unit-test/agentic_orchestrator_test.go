@@ -18,12 +18,12 @@ func renderAgenticOrchestrator(t *testing.T, setValues map[string]string) appsv1
 		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-orchestrator-enabled.yaml"},
 		SetValues:   setValues,
 	}
-	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic-orchestrator.yaml"})
+	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic/orchestrator.yaml"})
 	require.NoError(t, err)
 
 	var deployment appsv1.Deployment
 	helm.UnmarshalK8SYaml(t, output, &deployment)
-	require.NotEmpty(t, deployment.Name, "no Deployment rendered by templates/agentic-orchestrator.yaml")
+	require.NotEmpty(t, deployment.Name, "no Deployment rendered by templates/agentic/orchestrator.yaml")
 	return deployment
 }
 
