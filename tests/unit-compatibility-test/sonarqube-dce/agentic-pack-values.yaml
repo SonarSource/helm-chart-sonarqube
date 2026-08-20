@@ -1,7 +1,7 @@
 # Exercises the Agent Orchestrator (Deployment/Service/Secret), the Remediation Agent
-# (Deployment/Service), dedicated ServiceAccounts (IRSA annotations), the orchestrator +
-# remediation NetworkPolicies (incl. egressAllow with ports), credential-less S3 storage (no
-# static keys), and the gVisor RuntimeClass wired onto the runtime.
+# (Deployment/Service), dedicated ServiceAccounts (IRSA annotations), the remediation
+# NetworkPolicy (incl. egressAllow with ports), credential-less S3 storage (no static keys),
+# and the gVisor RuntimeClass wired onto the runtime.
 networkPolicy:
   enabled: true
 
@@ -31,15 +31,6 @@ orchestrator:
     pathStyle: false
   sonarqubeToken:
     token: "squ_example000000000000000000000000000000"
-  egressAllow:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: postgresql
-          app.kubernetes.io/instance: external-postgres
-    - cidr: 10.0.0.0/8
-      ports:
-        - port: 443
-          protocol: TCP
 
 remediationAgent:
   enabled: true

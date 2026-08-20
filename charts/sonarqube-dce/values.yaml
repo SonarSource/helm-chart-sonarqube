@@ -1038,26 +1038,6 @@ orchestrator:
     # Override for GitHub Enterprise Server, or to point at a local mock.
     apiBaseUrl: ""
 
-  # Extra egress destinations for the orchestrator NetworkPolicy (DB / storage / SCM),
-  # in addition to the runtimes and the SonarQube app nodes which are always allowed.
-  # Each entry is either { cidr } or { podSelector [, namespaceSelector] } - use podSelector
-  # for in-cluster dependencies, since a NetworkPolicy ipBlock can never match a Service's
-  # ClusterIP (kube-proxy DNATs before policy enforcement sees the packet).
-  # Optional `ports` ([{ port, protocol }]) scopes the rule; omit to allow all ports to the peer.
-  # Scope broad CIDRs (e.g. 0.0.0.0/0 for S3 over presigned URLs) to `port: 443` so they don't
-  # reopen all egress.
-  egressAllow: []
-  # - cidr: 10.0.0.0/8
-  #   ports:
-  #     - port: 443
-  #       protocol: TCP
-  # - podSelector:
-  #     matchLabels:
-  #       app: my-in-cluster-db
-  #   namespaceSelector:
-  #     matchLabels:
-  #       kubernetes.io/metadata.name: db-namespace
-
 # Agentic Job Runtime that detects issues. Requires orchestrator.enabled - see validation.yaml.
 # Process-count limits aren't set here - use your node's kubelet configuration (podPidsLimit).
 hunterAgent:
