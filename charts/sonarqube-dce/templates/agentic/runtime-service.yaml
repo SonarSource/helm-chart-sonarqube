@@ -21,9 +21,6 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
-  selector:
-    app: {{ template "sonarqube.name" $ }}
-    sonarqube.agentic/component: runtime
-    sonarqube.agentic/family: {{ $family }}
+  selector: {{- include "sonarqube.agentic.runtime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 4 }}
 {{- end }}
 {{- end }}

@@ -42,9 +42,7 @@ spec:
 {{- if .Values.orchestrator.enabled }}
     - from:
         - podSelector:
-            matchLabels:
-              app: {{ template "sonarqube.name" . }}
-              sonarqube.agentic/component: orchestrator
+            matchLabels: {{- include "sonarqube.agentic.orchestrator.selectorLabels" . | nindent 14 }}
       ports:
         - port: {{ .Values.service.internalPort }}
           protocol: TCP
@@ -93,9 +91,7 @@ spec:
     {{- if .Values.orchestrator.enabled }}
     - to:
         - podSelector:
-            matchLabels:
-              app: {{ template "sonarqube.name" . }}
-              sonarqube.agentic/component: orchestrator
+            matchLabels: {{- include "sonarqube.agentic.orchestrator.selectorLabels" . | nindent 14 }}
       ports:
         - port: {{ .Values.orchestrator.port }}
           protocol: TCP

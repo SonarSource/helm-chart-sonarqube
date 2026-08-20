@@ -14,14 +14,11 @@ metadata:
 spec:
   replicas: {{ .Values.orchestrator.replicaCount }}
   selector:
-    matchLabels:
-      app: {{ template "sonarqube.name" . }}
-      sonarqube.agentic/component: orchestrator
+    matchLabels: {{- include "sonarqube.agentic.orchestrator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: {{ template "sonarqube.name" . }}
-        release: {{ .Release.Name }}
+        {{- include "sonarqube.agentic.orchestrator.selectorLabels" . | nindent 8 }}
         sonarqube.agentic/component: orchestrator
     spec:
       automountServiceAccountToken: {{ if .Values.orchestrator.serviceAccount.create }}{{ .Values.orchestrator.serviceAccount.automountToken }}{{ else }}{{ .Values.serviceAccount.automountToken }}{{ end }}

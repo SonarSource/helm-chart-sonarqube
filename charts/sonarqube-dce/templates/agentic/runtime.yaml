@@ -15,15 +15,11 @@ metadata:
 spec:
   replicas: {{ $cfg.replicaCount }}
   selector:
-    matchLabels:
-      app: {{ template "sonarqube.name" $ }}
-      sonarqube.agentic/component: runtime
-      sonarqube.agentic/family: {{ $family }}
+    matchLabels: {{- include "sonarqube.agentic.runtime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 6 }}
   template:
     metadata:
       labels:
-        app: {{ template "sonarqube.name" $ }}
-        release: {{ $.Release.Name }}
+        {{- include "sonarqube.agentic.runtime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 8 }}
         sonarqube.agentic/component: runtime
         sonarqube.agentic/family: {{ $family }}
     spec:

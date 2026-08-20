@@ -14,19 +14,14 @@ metadata:
     sonarqube.agentic/family: {{ $family }}
 spec:
   podSelector:
-    matchLabels:
-      app: {{ template "sonarqube.name" $ }}
-      sonarqube.agentic/component: runtime
-      sonarqube.agentic/family: {{ $family }}
+    matchLabels: {{- include "sonarqube.agentic.runtime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 6 }}
   policyTypes:
     - Ingress
     - Egress
   ingress:
     - from:
         - podSelector:
-            matchLabels:
-              app: {{ template "sonarqube.name" $ }}
-              sonarqube.agentic/component: orchestrator
+            matchLabels: {{- include "sonarqube.agentic.orchestrator.selectorLabels" $ | nindent 14 }}
       ports:
         - port: {{ $cfg.port }}
           protocol: TCP
@@ -43,9 +38,7 @@ spec:
           protocol: TCP
     - to:
         - podSelector:
-            matchLabels:
-              app: {{ template "sonarqube.name" $ }}
-              sonarqube.agentic/component: orchestrator
+            matchLabels: {{- include "sonarqube.agentic.orchestrator.selectorLabels" $ | nindent 14 }}
       ports:
         - port: {{ $.Values.orchestrator.port }}
           protocol: TCP

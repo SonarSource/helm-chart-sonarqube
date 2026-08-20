@@ -16,7 +16,5 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
-  selector:
-    app: {{ template "sonarqube.name" . }}
-    sonarqube.agentic/component: orchestrator
+  selector: {{- include "sonarqube.agentic.orchestrator.selectorLabels" . | nindent 4 }}
 {{- end }}
