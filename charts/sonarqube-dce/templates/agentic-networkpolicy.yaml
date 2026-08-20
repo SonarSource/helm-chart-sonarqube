@@ -1,4 +1,4 @@
-{{- if and .Values.networkPolicy.enabled .Values.agenticHarness.enabled }}
+{{- if and .Values.networkPolicy.enabled .Values.orchestrator.enabled }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -25,7 +25,7 @@ spec:
               app: {{ template "sonarqube.name" . }}
               sonarqube.datacenter/type: app
       ports:
-        - port: {{ .Values.agenticHarness.orchestrator.port }}
+        - port: {{ .Values.orchestrator.port }}
           protocol: TCP
     - from:
         - podSelector:
@@ -33,7 +33,7 @@ spec:
               app: {{ template "sonarqube.name" . }}
               sonarqube.agentic/component: runtime
       ports:
-        - port: {{ .Values.agenticHarness.orchestrator.port }}
+        - port: {{ .Values.orchestrator.port }}
           protocol: TCP
   egress:
     - to:
@@ -46,7 +46,8 @@ spec:
           protocol: UDP
         - port: 53
           protocol: TCP
-    {{- range $family, $cfg := .Values.agenticHarness.runtimes }}
+    {{- $runtimes := dict "hunter" .Values.hunterAgent "remediation" .Values.remediationAgent -}}
+    {{- range $family, $cfg := $runtimes }}
     {{- if $cfg.enabled }}
     - to:
         - podSelector:
@@ -67,7 +68,7 @@ spec:
       ports:
         - port: 9000
           protocol: TCP
-    {{- range .Values.agenticHarness.orchestrator.egressAllow }}
+    {{- range .Values.orchestrator.egressAllow }}
     - to:
 {{ include "sonarqube.agentic.egressAllow.peer" . | indent 8 }}
       {{- with .ports }}
@@ -82,12 +83,12 @@ spec:
     {{- end }}
 {{- end }}
 
-{{- /* Runtime NetworkPolicies render on the global networkPolicy.enabled OR the dedicated
-       runtimeNetworkPolicy.enabled, so the (untrusted) runtimes can be locked down on their own
+{{- /* Runtime NetworkPolicies render on the global networkPolicy.enabled OR each runtime's own
+       dedicated networkPolicy.enabled, so the (untrusted) runtimes can be locked down on their own
        without imposing a NetworkPolicy on the orchestrator or the SonarQube app/search nodes. */}}
-{{- if and (or .Values.networkPolicy.enabled .Values.agenticHarness.runtimeNetworkPolicy.enabled) .Values.agenticHarness.enabled }}
-{{- range $family, $cfg := .Values.agenticHarness.runtimes }}
-{{- if $cfg.enabled }}
+{{- $runtimes := dict "hunter" .Values.hunterAgent "remediation" .Values.remediationAgent -}}
+{{- range $family, $cfg := $runtimes }}
+{{- if and $cfg.enabled (or $.Values.networkPolicy.enabled $cfg.networkPolicy.enabled) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -135,12 +136,12 @@ spec:
               app: {{ template "sonarqube.name" $ }}
               sonarqube.agentic/component: orchestrator
       ports:
-        - port: {{ $.Values.agenticHarness.orchestrator.port }}
+        - port: {{ $.Values.orchestrator.port }}
           protocol: TCP
     {{- /* The runtime reads/writes job artifacts directly against object storage via presigned URLs,
-           bypassing the orchestrator, so it needs its own egress to reach it - the chart has no way to
-           resolve agenticHarness.orchestrator.storage to a NetworkPolicy peer, so egressAllow must
-           cover it (see the comment on runtimes.<family>.egressAllow in values.yaml). */}}
+           bypassing the orchestrator, so it needs its own egress to reach it - the chart has no way
+           to resolve orchestrator.storage to a NetworkPolicy peer, so egressAllow must cover it
+           (see the comment on hunterAgent/remediationAgent.egressAllow in values.yaml). */}}
     {{- range $cfg.egressAllow }}
     - to:
 {{ include "sonarqube.agentic.egressAllow.peer" . | indent 8 }}
@@ -154,6 +155,5 @@ spec:
         {{- end }}
       {{- end }}
     {{- end }}
-{{- end }}
 {{- end }}
 {{- end }}
