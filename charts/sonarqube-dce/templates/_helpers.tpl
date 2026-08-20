@@ -819,3 +819,21 @@ own serviceAccount block)
 {{- .ctx.Values.serviceAccount.automountToken -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+The SonarQube application image config (repository/tag/pullPolicy/pullSecret(s)) - this chart keys
+it as applicationNodes.image; charts/sonarqube keys the equivalent as a single top-level
+.Values.image, so a port there defines this the same way for its own shape.
+*/}}
+{{- define "sonarqube.agentic.sonarqubeImage" -}}
+{{- (fromYaml (include "applicationNodes" .)).image | toYaml -}}
+{{- end -}}
+
+{{/*
+Security context for the wait-for-sonarqube init container - this chart names the underlying
+helper sonarqube.initContainersSecurityContext (plural); charts/sonarqube names its equivalent
+sonarqube.initContainerSecurityContext (singular).
+*/}}
+{{- define "sonarqube.agentic.initContainerSecurityContext" -}}
+{{- include "sonarqube.initContainersSecurityContext" . -}}
+{{- end -}}

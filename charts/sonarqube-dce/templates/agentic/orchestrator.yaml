@@ -39,7 +39,7 @@ spec:
       automountServiceAccountToken: {{ include "sonarqube.agentic.automountServiceAccountToken" (dict "ctx" . "serviceAccount" .Values.orchestrator.serviceAccount) }}
       {{- /* The wait-for-sonarqube init container below pulls the SonarQube image, so it needs the
              application nodes' pull secrets too - the orchestrator's own only cover its own image. */}}
-      {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list .Values.ApplicationNodes.image .Values.orchestrator.image) }}
+      {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list (fromYaml (include "sonarqube.agentic.sonarqubeImage" .)) .Values.orchestrator.image) }}
       {{- if $pullSecrets }}
       imagePullSecrets: {{- $pullSecrets | nindent 8 }}
       {{- end }}
@@ -49,8 +49,8 @@ spec:
       initContainers:
         - name: wait-for-sonarqube
           image: {{ include "sonarqube.image" . }}
-          imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}
-          {{- with (fromYaml (include "sonarqube.initContainersSecurityContext" .)) }}
+          imagePullPolicy: {{ (fromYaml (include "sonarqube.agentic.sonarqubeImage" .)).pullPolicy }}
+          {{- with (fromYaml (include "sonarqube.agentic.initContainerSecurityContext" .)) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           command:
