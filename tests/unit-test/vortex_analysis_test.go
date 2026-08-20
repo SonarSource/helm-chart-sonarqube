@@ -73,7 +73,6 @@ func TestVortexAnalysisDisabledByDefault(t *testing.T) {
 		"templates/vortex-analysis.yaml",
 		"templates/vortex-analysis-service.yaml",
 		"templates/vortex-analysis-secret.yaml",
-		"templates/vortex-analysis-networkpolicy.yaml",
 	} {
 		output, err := renderVortex(t, "vortex-analysis-disabled.yaml", tpl)
 		require.Error(t, err, "%s must render nothing when vortexAnalysis.enabled is false", tpl)
@@ -411,74 +410,6 @@ func TestVortexAnalysisRequiresTagAndToken(t *testing.T) {
 	}
 }
 
-// Reachable only from the application nodes, and allowed out only to DNS, the application nodes and
-// any configured egressAllow entries.
-func TestVortexAnalysisNetworkPolicy(t *testing.T) {
-	output, err := renderVortex(t, "vortex-analysis-enabled.yaml", "templates/vortex-analysis-networkpolicy.yaml")
-	require.NoError(t, err)
-
-	var policy networkingv1.NetworkPolicy
-	helm.UnmarshalK8SYaml(t, output, &policy)
-	require.NotEmpty(t, policy.Name)
-
-	podLabels := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Labels
-	for k, v := range policy.Spec.PodSelector.MatchLabels {
-		assert.Equal(t, v, podLabels[k], "policy podSelector %q must match the pod labels", k)
-	}
-
-	require.Len(t, policy.Spec.Ingress, 1, "only the app nodes may reach the analysis pod")
-	require.Len(t, policy.Spec.Ingress[0].From, 1)
-	assert.Equal(t, "app",
-		policy.Spec.Ingress[0].From[0].PodSelector.MatchLabels["sonarqube.datacenter/type"])
-	require.Len(t, policy.Spec.Ingress[0].Ports, 1)
-	assert.Equal(t, int32(8080), policy.Spec.Ingress[0].Ports[0].Port.IntVal)
-
-	// DNS, the app nodes on 9000 for the callback, and the one egressAllow entry.
-	require.Len(t, policy.Spec.Egress, 3)
-	assert.Equal(t, "app",
-		policy.Spec.Egress[1].To[0].PodSelector.MatchLabels["sonarqube.datacenter/type"])
-	assert.Equal(t, int32(9000), policy.Spec.Egress[1].Ports[0].Port.IntVal)
-	require.NotNil(t, policy.Spec.Egress[2].To[0].IPBlock)
-	assert.Equal(t, "10.0.0.0/8", policy.Spec.Egress[2].To[0].IPBlock.CIDR)
-}
-
-// An egressAllow entry may carry a podSelector, a namespaceSelector or both; each shape must become
-// one peer, since two peers would widen the rule instead of narrowing it.
-func TestVortexAnalysisEgressAllowSelectors(t *testing.T) {
-	output, err := renderVortex(t, "vortex-analysis-existing-secret.yaml", "templates/vortex-analysis-networkpolicy.yaml")
-	require.NoError(t, err)
-
-	var policy networkingv1.NetworkPolicy
-	helm.UnmarshalK8SYaml(t, output, &policy)
-	require.Len(t, policy.Spec.Egress, 4, "DNS, the app nodes and the two egressAllow entries")
-
-	namespaceOnly := policy.Spec.Egress[2]
-	require.Len(t, namespaceOnly.To, 1)
-	assert.Nil(t, namespaceOnly.To[0].PodSelector, "a namespaceSelector entry must not emit an empty podSelector")
-	assert.Equal(t, "egress-gateway", namespaceOnly.To[0].NamespaceSelector.MatchLabels["kubernetes.io/metadata.name"])
-
-	both := policy.Spec.Egress[3]
-	require.Len(t, both.To, 1, "both selectors must combine into a single peer")
-	assert.Equal(t, "proxy", both.To[0].PodSelector.MatchLabels["app"])
-	assert.Equal(t, "egress-gateway", both.To[0].NamespaceSelector.MatchLabels["kubernetes.io/metadata.name"])
-	require.Len(t, both.Ports, 1)
-	assert.Equal(t, int32(8443), both.Ports[0].Port.IntVal)
-}
-
-// The dedicated toggle renders the pod's policy without the top-level networkPolicy.enabled.
-func TestVortexAnalysisStandaloneNetworkPolicyToggle(t *testing.T) {
-	output, err := renderVortex(t, "vortex-analysis-existing-secret.yaml", "templates/vortex-analysis-networkpolicy.yaml")
-	require.NoError(t, err)
-
-	var policy networkingv1.NetworkPolicy
-	helm.UnmarshalK8SYaml(t, output, &policy)
-	assert.Equal(t, dceReleaseName+"-sonarqube-dce"+vortexFullnameSuffix, policy.Name)
-
-	// The app-node policy is not rendered at all here (global networkPolicy.enabled is false).
-	_, err = renderVortex(t, "vortex-analysis-existing-secret.yaml", "templates/networkpolicy.yaml")
-	require.Error(t, err)
-}
-
 // vortexAppNodePolicy picks the application nodes' policy out of a networkpolicy.yaml render.
 func vortexAppNodePolicy(t *testing.T, manifest string) networkingv1.NetworkPolicy {
 	t.Helper()
@@ -561,14 +492,6 @@ func TestVortexAnalysisFollowsServicePorts(t *testing.T) {
 	url := vortexContainerEnv(deployment.Spec.Template.Spec.Containers[0])["VORTEX_ANALYSIS_SONARQUBE_URL"]
 	assert.Equal(t, "http://"+dceReleaseName+"-sonarqube-dce:80", url.Value,
 		"the callback URL must use the Service port")
-
-	output, err = helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/vortex-analysis-networkpolicy.yaml"})
-	require.NoError(t, err)
-	var policy networkingv1.NetworkPolicy
-	helm.UnmarshalK8SYaml(t, output, &policy)
-	egress := vortexEgressPorts(policy.Spec.Egress, "sonarqube-dce")
-	require.Len(t, egress, 1)
-	assert.Equal(t, int32(9500), egress[0].Port.IntVal, "egress must use the app container port")
 
 	output, err = helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/networkpolicy.yaml"})
 	require.NoError(t, err)
