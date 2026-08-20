@@ -805,3 +805,17 @@ Usage: {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list .V
 {{- toYaml . -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Whether to automount the ServiceAccount token: the component's own value when it creates a
+dedicated ServiceAccount, else the top-level serviceAccount.automountToken.
+Parameters (dict): ctx (required, the root context '.'), serviceAccount (required, the component's
+own serviceAccount block)
+*/}}
+{{- define "sonarqube.agentic.automountServiceAccountToken" -}}
+{{- if .serviceAccount.create -}}
+{{- .serviceAccount.automountToken -}}
+{{- else -}}
+{{- .ctx.Values.serviceAccount.automountToken -}}
+{{- end -}}
+{{- end -}}

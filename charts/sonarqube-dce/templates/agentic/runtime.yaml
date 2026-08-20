@@ -29,7 +29,7 @@ spec:
       {{- if eq (include "sonarqube.agentic.gvisor.enabled" $) "true" }}
       runtimeClassName: {{ $.Values.gvisor.runtimeClassName }}
       {{- end }}
-      automountServiceAccountToken: {{ if $cfg.serviceAccount.create }}{{ $cfg.serviceAccount.automountToken }}{{ else }}{{ $.Values.serviceAccount.automountToken }}{{ end }}
+      automountServiceAccountToken: {{ include "sonarqube.agentic.automountServiceAccountToken" (dict "ctx" $ "serviceAccount" $cfg.serviceAccount) }}
       {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list $cfg.image) }}
       {{- if $pullSecrets }}
       imagePullSecrets: {{- $pullSecrets | nindent 8 }}

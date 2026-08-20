@@ -27,7 +27,7 @@ spec:
         release: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ include "sonarqube.vortexAnalysis.serviceAccountName" . }}
-      automountServiceAccountToken: {{ $vortex.serviceAccount.automountToken }}
+      automountServiceAccountToken: {{ include "sonarqube.agentic.automountServiceAccountToken" (dict "ctx" . "serviceAccount" $vortex.serviceAccount) }}
       {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list $vortex.image) }}
       {{- if $pullSecrets }}
       imagePullSecrets: {{- $pullSecrets | nindent 8 }}

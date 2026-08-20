@@ -22,7 +22,7 @@ spec:
         {{- include "sonarqube.agentic.orchestrator.selectorLabels" . | nindent 8 }}
         sonarqube.agentic/component: orchestrator
     spec:
-      automountServiceAccountToken: {{ if .Values.orchestrator.serviceAccount.create }}{{ .Values.orchestrator.serviceAccount.automountToken }}{{ else }}{{ .Values.serviceAccount.automountToken }}{{ end }}
+      automountServiceAccountToken: {{ include "sonarqube.agentic.automountServiceAccountToken" (dict "ctx" . "serviceAccount" .Values.orchestrator.serviceAccount) }}
       {{- /* The wait-for-sonarqube init container below pulls the SonarQube image, so it needs the
              application nodes' pull secrets too - the orchestrator's own only cover its own image. */}}
       {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list .Values.ApplicationNodes.image .Values.orchestrator.image) }}
