@@ -60,7 +60,7 @@ func TestAgenticOrchestratorContainerSecurityContext(t *testing.T) {
 func TestAgenticOrchestratorNoReadOnlyRootFilesystemNoTmpVolume(t *testing.T) {
 	t.Run("readOnlyRootFilesystem: false", func(t *testing.T) {
 		deployment := renderAgenticOrchestrator(t, map[string]string{
-			"agenticHarness.orchestrator.containerSecurityContext.readOnlyRootFilesystem": "false",
+			"orchestrator.containerSecurityContext.readOnlyRootFilesystem": "false",
 		})
 		podSpec := deployment.Spec.Template.Spec
 		require.Len(t, podSpec.Containers, 1)
@@ -69,10 +69,10 @@ func TestAgenticOrchestratorNoReadOnlyRootFilesystemNoTmpVolume(t *testing.T) {
 	})
 
 	// containerSecurityContext: null is the chart's documented convention for disabling a
-	// default map entirely (see agenticHarness.gvisor.nodeSelector) - it must not nil-pointer.
+	// default map entirely (see gvisor.nodeSelector) - it must not nil-pointer.
 	t.Run("containerSecurityContext: null", func(t *testing.T) {
 		deployment := renderAgenticOrchestrator(t, map[string]string{
-			"agenticHarness.orchestrator.containerSecurityContext": "null",
+			"orchestrator.containerSecurityContext": "null",
 		})
 		podSpec := deployment.Spec.Template.Spec
 		require.Len(t, podSpec.Containers, 1)
@@ -118,16 +118,16 @@ func TestAgenticOrchestratorPullSecrets(t *testing.T) {
 
 	t.Run("orchestrator's own pull secret and list still apply", func(t *testing.T) {
 		names := agenticOrchestratorPullSecretNames(renderAgenticOrchestrator(t, map[string]string{
-			"agenticHarness.orchestrator.image.pullSecret":          "orch-secret",
-			"agenticHarness.orchestrator.image.pullSecrets[0].name": "orch-secret-list",
+			"orchestrator.image.pullSecret":          "orch-secret",
+			"orchestrator.image.pullSecrets[0].name": "orch-secret-list",
 		}))
 		assert.Equal(t, []string{"orch-secret", "orch-secret-list"}, names)
 	})
 
 	t.Run("both combine, application nodes first", func(t *testing.T) {
 		names := agenticOrchestratorPullSecretNames(renderAgenticOrchestrator(t, map[string]string{
-			"applicationNodes.image.pullSecret":            "app-secret",
-			"agenticHarness.orchestrator.image.pullSecret": "orch-secret",
+			"applicationNodes.image.pullSecret": "app-secret",
+			"orchestrator.image.pullSecret":     "orch-secret",
 		}))
 		assert.Equal(t, []string{"app-secret", "orch-secret"}, names)
 	})
