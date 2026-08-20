@@ -41,7 +41,25 @@ tests:
       memory: 200M
       ephemeral-storage: 1000M
 
+# gVisor only renders when the harness is enabled. The orchestrator and runtime images are not
+# pullable from CI, so both run with replicaCount 0: the harness is on here purely to exercise the
+# gVisor RuntimeClass and its installer DaemonSet on the kind worker.
 agenticHarness:
+  enabled: true
+  orchestrator:
+    replicaCount: 0
+    image:
+      repository: "example.com/agentorchestrator"
+      tag: "0.0.0"
+    storage:
+      bucket: "ci"
+  runtimes:
+    hunter:
+      enabled: true
+      replicaCount: 0
+      image:
+        repository: "example.com/hunteragent"
+        tag: "0.0.0"
   gvisor:
     enabled: true
     installer:

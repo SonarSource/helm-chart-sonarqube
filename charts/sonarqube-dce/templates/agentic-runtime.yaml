@@ -30,7 +30,7 @@ spec:
     spec:
       {{- /* Run the (untrusted) runtimes under the gVisor RuntimeClass when enabled. The
              RuntimeClass' own scheduling.nodeSelector pins these pods to runsc-ready nodes. */}}
-      {{- if $.Values.agenticHarness.gvisor.enabled }}
+      {{- if eq (include "sonarqube.agentic.gvisor.enabled" $) "true" }}
       runtimeClassName: {{ $.Values.agenticHarness.gvisor.runtimeClassName }}
       {{- end }}
       automountServiceAccountToken: {{ if $.Values.agenticHarness.serviceAccount.create }}{{ $.Values.agenticHarness.serviceAccount.automountToken }}{{ else }}{{ $.Values.serviceAccount.automountToken }}{{ end }}
