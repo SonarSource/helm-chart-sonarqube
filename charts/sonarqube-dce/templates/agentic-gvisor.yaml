@@ -398,8 +398,6 @@ spec:
       # cannot reach the host systemd bus.
       hostPID: true
       serviceAccountName: {{ include "sonarqube.agentic.gvisor.fullname" . }}
-      {{- /* .Values.image is unset in this chart, which keys images per node group; passed anyway
-             so this template stays portable to charts that do define a top-level image. */}}
       {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list .Values.image $installer.image) }}
       {{- if $pullSecrets }}
       imagePullSecrets: {{- $pullSecrets | nindent 8 }}
