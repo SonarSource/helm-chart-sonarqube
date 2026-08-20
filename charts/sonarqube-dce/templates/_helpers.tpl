@@ -757,14 +757,12 @@ Output is unindented; callers should pipe through `indent`/`nindent` to place it
 - ipBlock:
     cidr: {{ .cidr }}
 {{- else -}}
-- podSelector:
-{{ toYaml .podSelector | indent 4 }}
-{{- if .namespaceSelector }}
-  namespaceSelector:
-{{ toYaml .namespaceSelector | indent 4 }}
-{{- end }}
-{{- end }}
-{{- end }}
+{{- $peer := dict -}}
+{{- with .podSelector }}{{ $peer = set $peer "podSelector" . }}{{ end -}}
+{{- with .namespaceSelector }}{{ $peer = set $peer "namespaceSelector" . }}{{ end -}}
+{{- list $peer | toYaml -}}
+{{- end -}}
+{{- end -}}
 
 {{/*
 Render the `imagePullSecrets` list items for one or more image blocks, each optionally providing
