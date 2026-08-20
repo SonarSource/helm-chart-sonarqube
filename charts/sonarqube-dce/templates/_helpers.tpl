@@ -663,6 +663,25 @@ Parameters (dict): ctx (required, the root context '.'), family (required, the r
 {{- end -}}
 
 {{/*
+Selector labels for the Agent Orchestrator: app: <chart>-agentic-orchestrator + release, matching
+the Vortex Analysis convention so the value doesn't collide with the SonarQube app Deployment's own
+selector (app: <chart> + release).
+*/}}
+{{- define "sonarqube.agentic.orchestrator.selectorLabels" -}}
+app: {{ include "sonarqube.name" . }}-agentic-orchestrator
+release: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Selector labels for one Agentic Job Runtime family: app: <chart>-agentic-runtime-<family> + release.
+Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
+*/}}
+{{- define "sonarqube.agentic.runtime.selectorLabels" -}}
+app: {{ include "sonarqube.name" .ctx }}-agentic-runtime-{{ .family }}
+release: {{ .ctx.Release.Name }}
+{{- end -}}
+
+{{/*
 The two Agentic Job Runtime families, keyed by name, for templates that iterate over both.
 Usage: {{- range $family, $cfg := fromYaml (include "sonarqube.agentic.runtimes" .) }}
 */}}
