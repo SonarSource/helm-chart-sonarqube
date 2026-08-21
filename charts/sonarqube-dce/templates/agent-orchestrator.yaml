@@ -25,7 +25,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secret: {{ include (print $.Template.BasePath "/agentic-orchestrator-secret.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/agent-orchestrator-secret.yaml") . | sha256sum }}
         {{- with .Values.agentOrchestrator.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

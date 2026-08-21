@@ -14,7 +14,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-const gvisorInstallerSuffix = "-agentic-gvisor-installer"
+const gvisorInstallerSuffix = "-gvisor-installer"
 
 // renderGvisor renders only the gVisor template. Helm still executes validation.yaml during the
 // render, so a validation `fail` surfaces here even though the gVisor template is the show-only
@@ -22,7 +22,7 @@ const gvisorInstallerSuffix = "-agentic-gvisor-installer"
 func renderGvisor(t *testing.T, fixture string) (string, error) {
 	t.Helper()
 	opts := &helm.Options{Logger: logger.Discard, ValuesFiles: []string{"test-cases-values/sonarqube-dce/" + fixture}}
-	return helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic-gvisor.yaml"})
+	return helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/gvisor.yaml"})
 }
 
 func splitGvisorDocs(manifest string) []string {
@@ -68,7 +68,7 @@ func TestGvisorRuntimeClass(t *testing.T) {
 // neither agent enabled must render nothing.
 func TestGvisorDefaultRequiresAnAgent(t *testing.T) {
 	output, err := renderGvisor(t, "gvisor-default.yaml")
-	require.Error(t, err, "agentic-gvisor.yaml must render nothing without hunterAgent/remediationAgent enabled")
+	require.Error(t, err, "gvisor.yaml must render nothing without hunterAgent/remediationAgent enabled")
 	assert.Empty(t, strings.TrimSpace(output))
 }
 
@@ -131,7 +131,7 @@ func TestGvisorExplicitDisableOverridesAgent(t *testing.T) {
 // installer.
 func TestGvisorDisabledRendersNothing(t *testing.T) {
 	output, err := renderGvisor(t, "gvisor-disabled.yaml")
-	require.Error(t, err, "agentic-gvisor.yaml must render nothing when gvisor.enabled is false")
+	require.Error(t, err, "gvisor.yaml must render nothing when gvisor.enabled is false")
 	assert.Empty(t, strings.TrimSpace(output))
 }
 

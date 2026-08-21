@@ -87,7 +87,7 @@ func TestVortexAnalysisIndependentOfAgenticComponents(t *testing.T) {
 	assert.Equal(t, "vortex-analysis", deployment.Labels["app.kubernetes.io/component"])
 
 	// It uses the release's own ServiceAccount, like the MCP server.
-	_, err := renderVortex(t, "vortex-analysis-enabled.yaml", "templates/agentic-serviceaccount.yaml")
+	_, err := renderVortex(t, "vortex-analysis-enabled.yaml", "templates/agent-serviceaccount.yaml")
 	require.Error(t, err, "the agentic ServiceAccount template must render nothing for a vortex-only install")
 }
 

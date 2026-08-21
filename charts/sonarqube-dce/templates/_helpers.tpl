@@ -75,18 +75,18 @@ fallback logic as sonarqube.serviceAccountName, but independent of it.
 
 {{/*
 Create the fully qualified name for the gVisor installer.
-Usage: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+Usage: {{ include "sonarqube.gvisor.fullname" . }}
 */}}
-{{- define "sonarqube.agentic.gvisor.fullname" -}}
-{{- printf "%s-agentic-gvisor-installer" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- define "sonarqube.gvisor.fullname" -}}
+{{- printf "%s-gvisor-installer" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
 Effective gvisor.enabled: requires at least one of hunterAgent.enabled / remediationAgent.enabled
 too, so gVisor only ever renders when there's a runtime to sandbox.
-Usage: {{ include "sonarqube.agentic.gvisor.enabled" . }}
+Usage: {{ include "sonarqube.gvisor.enabled" . }}
 */}}
-{{- define "sonarqube.agentic.gvisor.enabled" -}}
+{{- define "sonarqube.gvisor.enabled" -}}
 {{- and .Values.gvisor.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
 {{- end -}}
 

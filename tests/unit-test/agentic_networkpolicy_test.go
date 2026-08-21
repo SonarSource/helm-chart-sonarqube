@@ -18,7 +18,7 @@ func renderAgenticRuntimeNetworkPolicy(t *testing.T, setValues map[string]string
 		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-networkpolicy-enabled.yaml"},
 		SetValues:   setValues,
 	}
-	return helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic-networkpolicy.yaml"})
+	return helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agent-networkpolicy.yaml"})
 }
 
 // Both hunter and remediation are enabled in the fixture, so the render emits one NetworkPolicy

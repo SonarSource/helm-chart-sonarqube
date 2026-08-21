@@ -1,5 +1,5 @@
 ---
-# Source: sonarqube-dce/templates/agentic-networkpolicy.yaml
+# Source: sonarqube-dce/templates/agent-networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -239,19 +239,7 @@ spec:
     matchLabels:
       sonarqube.datacenter/type: "app"
 ---
-# Source: sonarqube-dce/templates/agentic-gvisor.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
-    heritage: Helm
-    app.kubernetes.io/component: agentic-gvisor
----
-# Source: sonarqube-dce/templates/agentic-serviceaccount.yaml
+# Source: sonarqube-dce/templates/agent-serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -267,7 +255,7 @@ metadata:
     eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agentic-orchestrator
 automountServiceAccountToken: true
 ---
-# Source: sonarqube-dce/templates/agentic-serviceaccount.yaml
+# Source: sonarqube-dce/templates/agent-serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -284,7 +272,19 @@ metadata:
     eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agentic-orchestrator
 automountServiceAccountToken: true
 ---
-# Source: sonarqube-dce/templates/agentic-orchestrator-secret.yaml
+# Source: sonarqube-dce/templates/gvisor.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: agentic-pack-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: gvisor
+---
+# Source: sonarqube-dce/templates/agent-orchestrator-secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
@@ -377,17 +377,46 @@ type: Opaque
 data:
   VORTEX_ANALYSIS_SONARQUBE_TOKEN: "c3F1X2V4YW1wbGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
 ---
-# Source: sonarqube-dce/templates/agentic-gvisor.yaml
+# Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
+  name: agentic-pack-values.yaml-sonarqube-dce-app-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
     release: agentic-pack-values.yaml
     heritage: Helm
-    app.kubernetes.io/component: agentic-gvisor
+data:
+  sonar.properties: |
+    sonar.hunteragent.orchestrator.url=http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080
+    sonar.remediationagent.orchestrator.url=http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080
+    sonar.vortex.analysis.url=http://agentic-pack-values.yaml-sonarqube-dce-vortex-analysis:8080
+---
+# Source: sonarqube-dce/templates/config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agentic-pack-values.yaml-sonarqube-dce-search-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: agentic-pack-values.yaml
+    heritage: Helm
+data:
+  sonar.properties: |
+---
+# Source: sonarqube-dce/templates/gvisor.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: agentic-pack-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: gvisor
 data:
   # Container entrypoint. Runs in the installer pod, copies the host-facing scripts onto the node,
   # and drives them via `chroot /host` so they use the node's own wget/systemctl/containerd.
@@ -698,35 +727,6 @@ data:
     fi
     echo "[label-node] labeled ${NODE_NAME}"
 ---
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-app-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
-    sonar.hunteragent.orchestrator.url=http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080
-    sonar.remediationagent.orchestrator.url=http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080
-    sonar.vortex.analysis.url=http://agentic-pack-values.yaml-sonarqube-dce-vortex-analysis:8080
----
-# Source: sonarqube-dce/templates/config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-search-config
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
-    heritage: Helm
-data:
-  sonar.properties: |
----
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -817,7 +817,7 @@ data:
   SONAR_JDBC_USERNAME: "user"
   SONAR_JDBC_URL: "jdbc:postgresql://myPostgres/myDatabase?socketTimeout=1500"
 ---
-# Source: sonarqube-dce/templates/agentic-gvisor.yaml
+# Source: sonarqube-dce/templates/gvisor.yaml
 # The installer patches a label onto its own Node so the RuntimeClass scheduler only admits runtime
 # pods once runsc is actually ready there. RBAC has no "own node only" scoping primitive, so this
 # grant is cluster-scoped: any pod using this ServiceAccount can get/patch ANY node, not just the
@@ -825,39 +825,39 @@ data:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
+  name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
     release: agentic-pack-values.yaml
     heritage: Helm
-    app.kubernetes.io/component: agentic-gvisor
+    app.kubernetes.io/component: gvisor
 rules:
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "patch"]
 ---
-# Source: sonarqube-dce/templates/agentic-gvisor.yaml
+# Source: sonarqube-dce/templates/gvisor.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
+  name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
     release: agentic-pack-values.yaml
     heritage: Helm
-    app.kubernetes.io/component: agentic-gvisor
+    app.kubernetes.io/component: gvisor
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
+  name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
 subjects:
   - kind: ServiceAccount
-    name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
+    name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
     namespace: default
 ---
-# Source: sonarqube-dce/templates/agentic-orchestrator-service.yaml
+# Source: sonarqube-dce/templates/agent-orchestrator-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -880,7 +880,7 @@ spec:
     app: sonarqube-dce-agent-orchestrator
     release: agentic-pack-values.yaml
 ---
-# Source: sonarqube-dce/templates/agentic-runtime-service.yaml
+# Source: sonarqube-dce/templates/agent-runtime-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -1030,32 +1030,32 @@ spec:
     app: sonarqube-dce-vortex-analysis
     release: agentic-pack-values.yaml
 ---
-# Source: sonarqube-dce/templates/agentic-gvisor.yaml
+# Source: sonarqube-dce/templates/gvisor.yaml
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
+  name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
     release: agentic-pack-values.yaml
     heritage: Helm
-    app.kubernetes.io/component: agentic-gvisor
+    app.kubernetes.io/component: gvisor
 spec:
   selector:
     matchLabels:
-      app: sonarqube-dce-agentic-gvisor-installer
+      app: sonarqube-dce-gvisor-installer
       release: agentic-pack-values.yaml
   template:
     metadata:
       labels:
-        app: sonarqube-dce-agentic-gvisor-installer
+        app: sonarqube-dce-gvisor-installer
         release: agentic-pack-values.yaml
     spec:
       # Needed so `nsenter -t 1` can reach the host's systemd to restart containerd; chroot alone
       # cannot reach the host systemd bus.
       hostPID: true
-      serviceAccountName: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
+      serviceAccountName: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
       tolerations:
         - operator: Exists
       containers:
@@ -1094,10 +1094,10 @@ spec:
             type: Directory
         - name: scripts
           configMap:
-            name: agentic-pack-values.yaml-sonarqube-dce-agentic-gvisor-installer
+            name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
             defaultMode: 0755
 ---
-# Source: sonarqube-dce/templates/agentic-orchestrator.yaml
+# Source: sonarqube-dce/templates/agent-orchestrator.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1226,7 +1226,7 @@ spec:
         - name: tmp
           emptyDir: {}
 ---
-# Source: sonarqube-dce/templates/agentic-runtime.yaml
+# Source: sonarqube-dce/templates/agent-runtime.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -1867,7 +1867,7 @@ spec:
         emptyDir:
           {}
 ---
-# Source: sonarqube-dce/templates/agentic-gvisor.yaml
+# Source: sonarqube-dce/templates/gvisor.yaml
 # gVisor (runsc) sandboxing for the Agentic Job Runtimes. gvisor.enabled renders the RuntimeClass
 # below, assuming runsc is installed out-of-band. gvisor.installer.enabled additionally renders a
 # privileged, host-mutating DaemonSet that installs it — a deliberately different trust tier from
@@ -1881,7 +1881,7 @@ metadata:
     chart: sonarqube-dce-2026.5.0
     release: agentic-pack-values.yaml
     heritage: Helm
-    app.kubernetes.io/component: agentic-gvisor
+    app.kubernetes.io/component: gvisor
 handler: runsc
 scheduling:
   nodeSelector:

@@ -23,7 +23,7 @@ func TestAgenticValuesSchemaRejectsWrongTypes(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			opts := &helm.Options{Logger: logger.Discard, SetValues: tc.set}
-			_, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic-orchestrator.yaml"})
+			_, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agent-orchestrator.yaml"})
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), "don't meet the specifications")
 		})

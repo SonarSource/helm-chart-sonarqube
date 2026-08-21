@@ -25,7 +25,7 @@ func renderWithValidation(t *testing.T, setValues map[string]string) (string, er
 		base[k] = v
 	}
 	opts := &helm.Options{Logger: logger.Discard, SetValues: base}
-	return helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic-orchestrator.yaml"})
+	return helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agent-orchestrator.yaml"})
 }
 
 // hunterAgent.enabled=true requires agentOrchestrator.enabled=true (SONAR-31689).

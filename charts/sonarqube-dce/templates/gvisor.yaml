@@ -1,4 +1,4 @@
-{{- if eq (include "sonarqube.agentic.gvisor.enabled" .) "true" }}
+{{- if eq (include "sonarqube.gvisor.enabled" .) "true" }}
 {{- $gvisor := .Values.gvisor }}
 {{- $installer := $gvisor.installer }}
 # gVisor (runsc) sandboxing for the Agentic Job Runtimes. gvisor.enabled renders the RuntimeClass
@@ -10,7 +10,7 @@ kind: RuntimeClass
 metadata:
   name: {{ $gvisor.runtimeClassName }}
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
-    app.kubernetes.io/component: agentic-gvisor
+    app.kubernetes.io/component: gvisor
 handler: {{ $gvisor.handler }}
 {{- with $gvisor.nodeSelector }}
 scheduling:
@@ -21,9 +21,9 @@ scheduling:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+  name: {{ include "sonarqube.gvisor.fullname" . }}
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
-    app.kubernetes.io/component: agentic-gvisor
+    app.kubernetes.io/component: gvisor
 ---
 # The installer patches a label onto its own Node so the RuntimeClass scheduler only admits runtime
 # pods once runsc is actually ready there. RBAC has no "own node only" scoping primitive, so this
@@ -32,9 +32,9 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+  name: {{ include "sonarqube.gvisor.fullname" . }}
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
-    app.kubernetes.io/component: agentic-gvisor
+    app.kubernetes.io/component: gvisor
 rules:
   - apiGroups: [""]
     resources: ["nodes"]
@@ -43,24 +43,24 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+  name: {{ include "sonarqube.gvisor.fullname" . }}
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
-    app.kubernetes.io/component: agentic-gvisor
+    app.kubernetes.io/component: gvisor
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+  name: {{ include "sonarqube.gvisor.fullname" . }}
 subjects:
   - kind: ServiceAccount
-    name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+    name: {{ include "sonarqube.gvisor.fullname" . }}
     namespace: {{ .Release.Namespace }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+  name: {{ include "sonarqube.gvisor.fullname" . }}
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
-    app.kubernetes.io/component: agentic-gvisor
+    app.kubernetes.io/component: gvisor
 data:
   # Container entrypoint. Runs in the installer pod, copies the host-facing scripts onto the node,
   # and drives them via `chroot /host` so they use the node's own wget/systemctl/containerd.
@@ -377,13 +377,13 @@ data:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+  name: {{ include "sonarqube.gvisor.fullname" . }}
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
-    app.kubernetes.io/component: agentic-gvisor
+    app.kubernetes.io/component: gvisor
 spec:
   selector:
     matchLabels:
-      app: {{ include "sonarqube.name" . }}-agentic-gvisor-installer
+      app: {{ include "sonarqube.name" . }}-gvisor-installer
       release: {{ .Release.Name }}
   template:
     metadata:
@@ -391,13 +391,13 @@ spec:
       annotations: {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        app: {{ include "sonarqube.name" . }}-agentic-gvisor-installer
+        app: {{ include "sonarqube.name" . }}-gvisor-installer
         release: {{ .Release.Name }}
     spec:
       # Needed so `nsenter -t 1` can reach the host's systemd to restart containerd; chroot alone
       # cannot reach the host systemd bus.
       hostPID: true
-      serviceAccountName: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+      serviceAccountName: {{ include "sonarqube.gvisor.fullname" . }}
       {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list .Values.image $installer.image) }}
       {{- if $pullSecrets }}
       imagePullSecrets: {{- $pullSecrets | nindent 8 }}
@@ -442,7 +442,7 @@ spec:
             type: Directory
         - name: scripts
           configMap:
-            name: {{ include "sonarqube.agentic.gvisor.fullname" . }}
+            name: {{ include "sonarqube.gvisor.fullname" . }}
             defaultMode: 0755
 {{- end }}
 {{- end }}
