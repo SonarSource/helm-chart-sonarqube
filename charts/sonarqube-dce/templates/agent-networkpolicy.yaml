@@ -1,0 +1,64 @@
+{{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" .) }}
+{{- if and $cfg.enabled $cfg.networkPolicy.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "sonarqube.agentRuntime.fullname" (dict "ctx" $ "family" $family) }}
+  labels:
+    app: {{ template "sonarqube.name" $ }}
+    chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    release: {{ $.Release.Name }}
+    heritage: {{ $.Release.Service }}
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: {{ $family }}
+    app.kubernetes.io/component: agent-runtime-{{ $family }}
+spec:
+  podSelector:
+    matchLabels: {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" $ | nindent 14 }}
+      ports:
+        - port: {{ $cfg.port }}
+          protocol: TCP
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" $ | nindent 14 }}
+      ports:
+        - port: {{ $.Values.agentOrchestrator.port }}
+          protocol: TCP
+    {{- /* The runtime reads/writes job artifacts directly against object storage via presigned URLs,
+           bypassing the orchestrator, so it needs its own egress to reach it - the chart has no way
+           to resolve agentOrchestrator.storage to a NetworkPolicy peer, so networkPolicy.egressAllow must
+           cover it (see the comment on it in values.yaml). */}}
+    {{- range $cfg.networkPolicy.egressAllow }}
+    - to:
+{{ include "sonarqube.agent.egressAllow.peer" . | indent 8 }}
+      {{- with .ports }}
+      ports:
+        {{- range . }}
+        - port: {{ .port }}
+          {{- with .protocol }}
+          protocol: {{ . }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}

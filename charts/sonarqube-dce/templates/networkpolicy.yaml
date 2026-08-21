@@ -39,21 +39,19 @@ spec:
         - port: 9000
           protocol: TCP
 {{ end }}
-{{- if .Values.orchestrator.enabled }}
+{{- if .Values.agentOrchestrator.enabled }}
     - from:
         - podSelector:
-            matchLabels:
-              app: {{ template "sonarqube.name" . }}
-              sonarqube.agentic/component: orchestrator
+            matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 14 }}
       ports:
-        - port: 9000
+        - port: {{ .Values.service.internalPort }}
           protocol: TCP
 {{- end }}
-{{- if .Values.vortexAnalysis.enabled }}
+{{- if .Values.vortex.enabled }}
     - from:
         - podSelector:
             matchLabels:
-              app: {{ include "sonarqube.name" . }}-vortex-analysis
+              app: {{ include "sonarqube.name" . }}-vortex
               release: {{ .Release.Name }}
       ports:
         - port: {{ .Values.service.internalPort }}
@@ -90,24 +88,22 @@ spec:
       ports:
         - port: 9000
           protocol: TCP
-    {{- if .Values.orchestrator.enabled }}
+    {{- if .Values.agentOrchestrator.enabled }}
     - to:
         - podSelector:
-            matchLabels:
-              app: {{ template "sonarqube.name" . }}
-              sonarqube.agentic/component: orchestrator
+            matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 14 }}
       ports:
-        - port: {{ .Values.orchestrator.port }}
+        - port: {{ .Values.agentOrchestrator.port }}
           protocol: TCP
     {{- end }}
-    {{- if .Values.vortexAnalysis.enabled }}
+    {{- if .Values.vortex.enabled }}
     - to:
         - podSelector:
             matchLabels:
-              app: {{ include "sonarqube.name" . }}-vortex-analysis
+              app: {{ include "sonarqube.name" . }}-vortex
               release: {{ .Release.Name }}
       ports:
-        - port: {{ .Values.vortexAnalysis.port }}
+        - port: {{ .Values.vortex.port }}
           protocol: TCP
     {{- end }}
 

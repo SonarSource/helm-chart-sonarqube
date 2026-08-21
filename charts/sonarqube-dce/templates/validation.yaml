@@ -30,54 +30,64 @@
   {{- end -}}
 
 {{/* Validation for the Agent Orchestrator, when enabled */}}
-{{- if .Values.orchestrator.enabled -}}
-  {{- if not .Values.orchestrator.image.repository -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n orchestrator.enabled is true but orchestrator.image.repository is not set." -}}
+{{- if .Values.agentOrchestrator.enabled -}}
+  {{- if not .Values.agentOrchestrator.image.repository -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but agentOrchestrator.image.repository is not set." -}}
   {{- end -}}
-  {{- if not .Values.orchestrator.storage.bucket -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n orchestrator.enabled is true but orchestrator.storage.bucket is not set." -}}
+  {{- if not .Values.agentOrchestrator.storage.bucket -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but agentOrchestrator.storage.bucket is not set." -}}
+  {{- end -}}
+  {{- $agentOrchestratorStorage := .Values.agentOrchestrator.storage -}}
+  {{- if and (not $agentOrchestratorStorage.existingSecret) (or $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey) (not (and $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey)) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but only one of agentOrchestrator.storage.accessKey / agentOrchestrator.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
+  {{- end -}}
+  {{- if and (not .Values.agentOrchestrator.coreDb.endpoint) (not (include "sonarqube.agent.jdbc.endpoint" .)) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB endpoint could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.endpoint is not set." -}}
+  {{- end -}}
+  {{- if and (not .Values.agentOrchestrator.coreDb.name) (not (include "sonarqube.agent.jdbc.dbname" .)) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB name could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.name is not set." -}}
   {{- end -}}
 {{- end -}}
 
 {{/* Validation for hunterAgent/remediationAgent dependencies, when enabled */}}
 {{- if .Values.hunterAgent.enabled -}}
-  {{- if not .Values.orchestrator.enabled -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true but orchestrator.enabled is not true." -}}
+  {{- if not .Values.agentOrchestrator.enabled -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true but agentOrchestrator.enabled is not true." -}}
   {{- end -}}
 {{- end -}}
 {{- if .Values.remediationAgent.enabled -}}
-  {{- if not .Values.orchestrator.enabled -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but orchestrator.enabled is not true." -}}
+  {{- if not .Values.agentOrchestrator.enabled -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but agentOrchestrator.enabled is not true." -}}
   {{- end -}}
-  {{- if not .Values.vortexAnalysis.enabled -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but vortexAnalysis.enabled is not true." -}}
+  {{- if not .Values.vortex.enabled -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but vortex.enabled is not true." -}}
   {{- end -}}
 {{- end -}}
 
-{{/* Validation for Vortex analysis, when enabled */}}
-{{- if .Values.vortexAnalysis.enabled -}}
-  {{- if not .Values.vortexAnalysis.image.repository -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.image.repository is not set." -}}
+{{/* Validation for Vortex, when enabled */}}
+{{- if .Values.vortex.enabled -}}
+  {{- if not .Values.vortex.image.repository -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.enabled is true but vortex.image.repository is not set." -}}
   {{- end -}}
-  {{- if not .Values.vortexAnalysis.image.tag -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.image.tag is not set." -}}
+  {{- if not .Values.vortex.image.tag -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.enabled is true but vortex.image.tag is not set." -}}
   {{- end -}}
-  {{- $token := .Values.vortexAnalysis.sonarqubeToken -}}
+  {{- $token := .Values.vortex.sonarqubeToken -}}
   {{- if and (not $token.token) (not $token.existingSecret) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but no token is set. You must provide either vortexAnalysis.sonarqubeToken.token or vortexAnalysis.sonarqubeToken.existingSecret." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.enabled is true but no token is set. You must provide either vortex.sonarqubeToken.token or vortex.sonarqubeToken.existingSecret." -}}
   {{- end -}}
-  {{- $storage := .Values.vortexAnalysis.storage -}}
+  {{- $storage := .Values.vortex.storage -}}
   {{- if not $storage.type -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.storage.type is not set." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.enabled is true but vortex.storage.type is not set." -}}
   {{- end -}}
   {{- if not $storage.bucket -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.storage.bucket is not set." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.enabled is true but vortex.storage.bucket is not set." -}}
   {{- end -}}
   {{- if not $storage.region -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.storage.region is not set." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.enabled is true but vortex.storage.region is not set." -}}
   {{- end -}}
   {{- if and (not $storage.existingSecret) (or $storage.accessKey $storage.secretKey) (not (and $storage.accessKey $storage.secretKey)) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but only one of vortexAnalysis.storage.accessKey / vortexAnalysis.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.enabled is true but only one of vortex.storage.accessKey / vortex.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
   {{- end -}}
 {{- end -}}
 
@@ -86,7 +96,7 @@
      leftover installer.enabled (e.g. a base values file overlaid by one that disables gVisor) is
      inert and must not fail the install. */}}
 {{- $gvisor := .Values.gvisor -}}
-{{- if eq (include "sonarqube.agentic.gvisor.enabled" .) "true" -}}
+{{- if eq (include "sonarqube.gvisor.enabled" .) "true" -}}
   {{- if not $gvisor.runtimeClassName -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.enabled=true requires a non-empty gvisor.runtimeClassName." -}}
   {{- end -}}
@@ -95,6 +105,20 @@
   {{- end -}}
   {{- if and $gvisor.installer.enabled (not $gvisor.installer.image.repository) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.installer.enabled=true requires a non-empty gvisor.installer.image.repository." -}}
+  {{- end -}}
+  {{/* The RuntimeClass merges gvisor.nodeSelector into each runtime pod's own nodeSelector; a
+       shared key with different values makes the pod unschedulable at admission. */}}
+  {{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" $) -}}
+    {{- if $cfg.enabled -}}
+      {{- $effective := default $.Values.nodeSelector $cfg.nodeSelector -}}
+      {{- range $key, $val := $gvisor.nodeSelector -}}
+        {{/* toString both sides: a non-string label value would otherwise make ne fail with a raw
+             Go template type error instead of a readable message. */}}
+        {{- if and (hasKey $effective $key) (ne (toString (index $effective $key)) (toString $val)) -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n %sAgent's effective nodeSelector conflicts with gvisor.nodeSelector on key %q (%q vs %q)." $family $key (toString (index $effective $key)) (toString $val)) -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 

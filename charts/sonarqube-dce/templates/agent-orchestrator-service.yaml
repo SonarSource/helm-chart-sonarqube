@@ -1,0 +1,21 @@
+{{- if .Values.agentOrchestrator.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sonarqube.agentOrchestrator.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agent/component: orchestrator
+    app.kubernetes.io/component: agent-orchestrator
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.agentOrchestrator.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 4 }}
+{{- end }}
