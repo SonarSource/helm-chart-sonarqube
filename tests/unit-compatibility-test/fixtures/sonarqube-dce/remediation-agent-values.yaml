@@ -1,0 +1,1931 @@
+---
+# Source: sonarqube-dce/templates/agent-networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-agent-runtime-remed
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: remediation
+    app.kubernetes.io/component: agent-runtime-remediation
+spec:
+  podSelector:
+    matchLabels:
+      app: sonarqube-dce-agent-runtime-remediation
+      release: remediation-agent-values.yaml
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce-agent-orchestrator
+              release: remediation-agent-values.yaml
+      ports:
+        - port: 8090
+          protocol: TCP
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce-agent-orchestrator
+              release: remediation-agent-values.yaml
+      ports:
+        - port: 8080
+          protocol: TCP
+    - to:
+        - ipBlock:
+            cidr: 160.79.104.0/23
+      ports:
+        - port: 443
+          protocol: TCP
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - port: 443
+          protocol: TCP
+---
+# Source: sonarqube-dce/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-app
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+spec:
+  podSelector:
+    matchLabels:
+      app: sonarqube-dce
+      sonarqube.datacenter/type: app
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce
+              release: remediation-agent-values.yaml
+              sonarqube.datacenter/type: app
+
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce-agent-orchestrator
+              release: remediation-agent-values.yaml
+      ports:
+        - port: 9000
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce-vortex
+              release: remediation-agent-values.yaml
+      ports:
+        - port: 9000
+          protocol: TCP
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              sonarqube.datacenter/type: search
+      ports:
+        - port: 9001
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+        - ipBlock:
+            cidr: "::/0"
+      ports:
+        - port: 9000
+          protocol: TCP
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+        - ipBlock:
+            cidr: "::/0"
+      ports:
+        - port: 9000
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce-agent-orchestrator
+              release: remediation-agent-values.yaml
+      ports:
+        - port: 8080
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce-vortex
+              release: remediation-agent-values.yaml
+      ports:
+        - port: 8080
+          protocol: TCP
+---
+# Source: sonarqube-dce/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-search
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+spec:
+  podSelector:
+    matchLabels:
+      app: sonarqube-dce
+      sonarqube.datacenter/type: search
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              sonarqube.datacenter/type: search
+      ports:
+        - port: 9001
+          protocol: TCP
+        - port: 9002
+          protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              sonarqube.datacenter/type: app
+      ports:
+        - port: 9001
+          protocol: TCP
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+    - to:
+        - podSelector:
+            matchLabels:
+              sonarqube.datacenter/type: search
+      ports:
+        - port: 9001
+          protocol: TCP
+        - port: 9002
+          protocol: TCP
+---
+# Source: sonarqube-dce/templates/pod-disruption-budget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-search
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+spec:
+  minAvailable: 2
+
+  selector:
+    matchLabels:
+      sonarqube.datacenter/type: "search"
+---
+# Source: sonarqube-dce/templates/pod-disruption-budget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-app
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+spec:
+  minAvailable: 1
+
+  selector:
+    matchLabels:
+      sonarqube.datacenter/type: "app"
+---
+# Source: sonarqube-dce/templates/agent-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agent-orchestrator
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: orchestrator
+    app.kubernetes.io/component: agent-orchestrator
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agent-orchestrator
+automountServiceAccountToken: true
+---
+# Source: sonarqube-dce/templates/agent-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: remediation-agent-runtime
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: remediation
+    app.kubernetes.io/component: agent-runtime-remediation
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agent-orchestrator
+automountServiceAccountToken: true
+---
+# Source: sonarqube-dce/templates/gvisor.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: gvisor
+---
+# Source: sonarqube-dce/templates/agent-orchestrator-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: orchestrator
+    app.kubernetes.io/component: agent-orchestrator
+type: Opaque
+data:
+  AGENTIC_SONARQUBE_TOKEN: "c3F1X2V4YW1wbGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+---
+# Source: sonarqube-dce/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-monitoring-passcode
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+type: Opaque
+data:
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+---
+# Source: sonarqube-dce/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+type: Opaque
+data:
+  jdbc-password: "cGFzcw=="
+---
+# Source: sonarqube-dce/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-jwt
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+type: Opaque
+data:
+  SONAR_AUTH_JWTBASE64HS256SECRET: "c29tZS1zZWNyZXQ="
+---
+# Source: sonarqube-dce/templates/secret.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-http-proxies
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+type: Opaque
+stringData:
+  PLUGINS-HTTP-PROXY: ""
+  PLUGINS-HTTPS-PROXY: ""
+  PLUGINS-NO-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
+  PROMETHEUS-EXPORTER-NO-PROXY: ""
+---
+# Source: sonarqube-dce/templates/vortex-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-vortex
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: vortex
+type: Opaque
+data:
+  VORTEX_ANALYSIS_SONARQUBE_TOKEN: "c3F1X2V4YW1wbGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+---
+# Source: sonarqube-dce/templates/config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-app-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+data:
+  sonar.properties: |
+    sonar.hunteragent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator:8080
+    sonar.remediationagent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator:8080
+    sonar.vortex.analysis.url=http://remediation-agent-values.yaml-sonarqube-dce-vortex:8080
+---
+# Source: sonarqube-dce/templates/config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-search-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+data:
+  sonar.properties: |
+---
+# Source: sonarqube-dce/templates/gvisor.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: gvisor
+data:
+  # Container entrypoint. Runs in the installer pod, copies the host-facing scripts onto the node,
+  # and drives them via `chroot /host` so they use the node's own wget/systemctl/containerd.
+  run.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "[gvisor-installer] node=${NODE_NAME}"
+    mkdir -p /host/opt/gvisor
+    cp /scripts/install-gvisor.sh /host/opt/gvisor/install-gvisor.sh
+    cp /scripts/label-node.sh /host/opt/gvisor/label-node.sh
+    chmod +x /host/opt/gvisor/install-gvisor.sh /host/opt/gvisor/label-node.sh
+    echo "[gvisor-installer] running installer in host context"
+    chroot /host /bin/bash /opt/gvisor/install-gvisor.sh
+    echo "[gvisor-installer] labeling node ${NODE_NAME}"
+    SA=/var/run/secrets/kubernetes.io/serviceaccount
+    mkdir -p /host/tmp/gvisor-sa
+    # EXIT trap (not a plain rm after the call) so the token is scrubbed from the host even if
+    # label-node.sh fails under set -e.
+    trap 'rm -rf /host/tmp/gvisor-sa' EXIT
+    cp "${SA}/token" /host/tmp/gvisor-sa/token
+    cp "${SA}/ca.crt" /host/tmp/gvisor-sa/ca.crt
+    chroot /host /bin/bash /opt/gvisor/label-node.sh
+    echo "[gvisor-installer] done; idling to keep the DaemonSet pod Running"
+    exec tail -f /dev/null
+  # Runs on the host (via chroot). Idempotent and version-aware: skips the download when runsc is
+  # already present, and only appends the containerd runtime handler when not already registered.
+  # Validates the config before ever restarting into it, verifies containerd is actually healthy
+  # afterwards, and rolls back on any failure so a broken node is never left worse than it was found.
+  install-gvisor.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    CONTAINERD_CONFIG="/etc/containerd/config.toml"
+    CONTAINERD_BACKUP="${CONTAINERD_CONFIG}.sonarqube-runsc.bak"
+    RUNSC_CONFIG="/etc/containerd/runsc.toml"
+    # Records that containerd was actually restarted for runsc. Presence of the config block on disk
+    # is NOT proof the running daemon loaded it (a restart may have failed on an earlier run), so we
+    # track a confirmed restart separately and retry until it succeeds.
+    RESTART_SENTINEL="/etc/containerd/.sonarqube-runsc-restarted"
+    GVISOR_RELEASE="20260706"
+    RUNSC_HANDLER="runsc"
+    RUNSC_MARKER="ConfigPath = \"${RUNSC_CONFIG}\""
+    RUNSC_CONFIG_HEADER="# Managed by SonarQube Helm chart (gVisor installer)"
+
+    echo "[install-gvisor] starting (release ${GVISOR_RELEASE})"
+
+    # Polls containerd's own state after a restart: is-active alone catches a crash-after-fork that a
+    # 0 exit from `systemctl restart` would mask, and crictl (when present) confirms CRI is actually
+    # serving the given runtime handler. Pass an empty handler to only require CRI to be up (used by
+    # recovery below, where a rollback has just removed the runsc handler). Only ever invoked from an
+    # `if`, so it can loop and test freely without tripping `set -e` in the caller.
+    wait_for_containerd_healthy() {
+      local handler="$1" deadline=$((SECONDS + 30))
+      while [[ "${SECONDS}" -lt "${deadline}" ]]; do
+        if nsenter -t 1 -m -u -i -n -p -- systemctl is-active --quiet containerd; then
+          if ! command -v crictl >/dev/null 2>&1; then
+            [[ -n "${handler}" ]] && echo "[install-gvisor] crictl unavailable; containerd is-active but \"${handler}\" could not be positively confirmed"
+            return 0
+          fi
+          if crictl_info="$(crictl info 2>/dev/null)"; then
+            if [[ -z "${handler}" ]] || grep -q "\"${handler}\"" <<<"${crictl_info}"; then
+              return 0
+            fi
+          fi
+        fi
+        sleep 2
+      done
+      return 1
+    }
+
+    # File-only rollback: restores config.toml to its pre-run state without restarting containerd.
+    # Used before any restart happens (the config-dump preflight below), so the still-running daemon
+    # is never touched. Every risky command here is individually guarded so this function always
+    # returns 0 and is safe to call as a bare statement under `set -e`.
+    rollback_config() {
+      if [[ "${config_preexisted}" == true ]]; then
+        if cp -a "${CONTAINERD_BACKUP}" "${CONTAINERD_CONFIG}"; then
+          echo "[install-gvisor] restored ${CONTAINERD_CONFIG} from backup"
+        else
+          echo "[install-gvisor] WARNING: failed to restore ${CONTAINERD_CONFIG} from ${CONTAINERD_BACKUP}" >&2
+        fi
+      else
+        rm -f "${CONTAINERD_CONFIG}"
+        echo "[install-gvisor] removed ${CONTAINERD_CONFIG} seeded by this run"
+      fi
+    }
+
+    # Full recovery after a restart has already happened: rolls the config back, restarts containerd
+    # once more, and confirms it comes back healthy (handler check intentionally skipped — rollback
+    # removes runsc, so a healthy daemon here means "restored", not "runsc loaded"). Note: when the
+    # runsc block already existed on disk from a prior run (restart_needed set by the crictl-unknown
+    # or handler-absent branches below, not by a fresh append this run), there is no fresh mutation to
+    # revert; this still fails closed (CRITICAL + exit) rather than leaving containerd broken. Always
+    # reaches its final log line and returns 0, so it is safe to call as a bare statement too.
+    rollback_and_recover() {
+      rollback_config
+      echo "[install-gvisor] restarting containerd to recover from a failed runsc install"
+      nsenter -t 1 -m -u -i -n -p -- systemctl restart containerd || true
+      if wait_for_containerd_healthy ""; then
+        echo "[install-gvisor] node restored to its pre-install state; containerd healthy"
+      else
+        echo "[install-gvisor] CRITICAL: containerd did not recover even after rollback; backup at ${CONTAINERD_BACKUP} (or this run seeded ${CONTAINERD_CONFIG} directly — remove it manually); manual intervention required" >&2
+      fi
+    }
+
+    # Install runsc + containerd shim into /usr/local/bin, world-readable/executable (runsc re-execs
+    # itself as an unprivileged user). Skipped if already present.
+    if command -v runsc >/dev/null 2>&1; then
+      echo "[install-gvisor] runsc already present, skipping download"
+    else
+      workdir="$(mktemp -d)"
+      pushd "${workdir}" >/dev/null
+      (
+        set -e
+        ARCH="$(uname -m)"
+        URL="https://storage.googleapis.com/gvisor/releases/release/${GVISOR_RELEASE}/${ARCH}"
+        # Fetch over HTTPS without following redirects — a redirect could serve the download from an
+        # insecure/attacker-controlled location (the sha512 check below is the backstop regardless).
+        # Prefer curl (present on more node images, e.g. kind's); fall back to wget.
+        if command -v curl >/dev/null 2>&1; then
+          fetch() { curl --fail --silent --show-error --proto '=https' -o "$2" "$1"; }
+        elif command -v wget >/dev/null 2>&1; then
+          fetch() { wget --max-redirect=0 --quiet -O "$2" "$1"; }
+        else
+          echo "[install-gvisor] ERROR: need curl or wget on the node to download runsc" >&2
+          exit 1
+        fi
+        for f in runsc runsc.sha512 containerd-shim-runsc-v1 containerd-shim-runsc-v1.sha512; do
+          fetch "${URL}/${f}" "${f}"
+        done
+        sha512sum -c runsc.sha512 -c containerd-shim-runsc-v1.sha512
+        rm -f -- *.sha512
+        chmod a+rx runsc containerd-shim-runsc-v1
+        mv runsc containerd-shim-runsc-v1 /usr/local/bin
+      )
+      popd >/dev/null
+      rm -rf "${workdir}"
+      echo "[install-gvisor] installed runsc to /usr/local/bin"
+    fi
+
+    # Write the runsc runtime config (flags passed to the shim via ConfigPath below). Only touch it
+    # when absent or previously written by us, so a runsc.toml provisioned out-of-band stays intact.
+    if [[ ! -f "${RUNSC_CONFIG}" ]] || head -1 "${RUNSC_CONFIG}" | grep -qF "${RUNSC_CONFIG_HEADER}"; then
+      {
+        echo "${RUNSC_CONFIG_HEADER}"
+        echo "[runsc_config]"
+        echo '  network = "host"'
+        echo '  overlay2 = "root:self,size=50g"'
+      } > "${RUNSC_CONFIG}"
+      echo "[install-gvisor] wrote ${RUNSC_CONFIG}"
+    else
+      echo "[install-gvisor] ${RUNSC_CONFIG} exists and was not created by this installer; leaving it untouched"
+    fi
+
+    # Register the runsc runtime with containerd. Seed from `containerd config default` first if no
+    # config file exists yet — appending to a missing file would drop the default runtime/sandbox
+    # image. Skip if already registered; otherwise back up the file, append only the runsc tables
+    # (never a `version =` line, picking the CRI plugin path for containerd's config v2 vs v3), and
+    # validate the result parses before ever restarting into it — a malformed append is caught here,
+    # while the daemon is still running on its old, unmodified config.
+    restart_needed=false
+    config_preexisted=true
+    if [[ ! -f "${CONTAINERD_CONFIG}" ]]; then
+      echo "[install-gvisor] ${CONTAINERD_CONFIG} not found; seeding from 'containerd config default'"
+      mkdir -p "$(dirname "${CONTAINERD_CONFIG}")"
+      containerd config default > "${CONTAINERD_CONFIG}"
+      config_preexisted=false
+    fi
+    if grep -qF "${RUNSC_MARKER}" "${CONTAINERD_CONFIG}"; then
+      echo "[install-gvisor] runsc block already present in ${CONTAINERD_CONFIG}"
+    else
+      if [[ "${config_preexisted}" == true ]]; then
+        cp -a "${CONTAINERD_CONFIG}" "${CONTAINERD_BACKUP}"
+      fi
+
+      config_version="$(grep -E '^[[:space:]]*version[[:space:]]*=' "${CONTAINERD_CONFIG}" | head -1 | grep -oE '[0-9]+' | head -1 || true)"
+      if [[ -z "${config_version}" ]]; then
+        containerd_major="$(containerd --version 2>/dev/null | grep -oE 'v[0-9]+' | head -1 | tr -d 'v' || true)"
+        if [[ -n "${containerd_major}" ]] && [[ "${containerd_major}" -ge 2 ]] 2>/dev/null; then
+          config_version=3
+        else
+          config_version=2
+        fi
+        echo "[install-gvisor] no version line in ${CONTAINERD_CONFIG}; inferred config version=${config_version} from containerd major ${containerd_major:-unknown}"
+      else
+        echo "[install-gvisor] detected containerd config version=${config_version}"
+      fi
+
+      if [[ "${config_version}" -ge 3 ]] 2>/dev/null; then
+        cri_plugin='io.containerd.cri.v1.runtime'
+      else
+        cri_plugin='io.containerd.grpc.v1.cri'
+      fi
+      echo "[install-gvisor] registering runsc runtime under plugin \"${cri_plugin}\""
+
+      cat >>"${CONTAINERD_CONFIG}" <<EOF
+
+    # gVisor sandbox runtime (managed by SonarQube Helm chart)
+    [plugins."${cri_plugin}".containerd.runtimes.${RUNSC_HANDLER}]
+      runtime_type = "io.containerd.runsc.v1"
+    [plugins."${cri_plugin}".containerd.runtimes.${RUNSC_HANDLER}.options]
+      TypeUrl = "io.containerd.runsc.v1.options"
+      ConfigPath = "${RUNSC_CONFIG}"
+    EOF
+      echo "[install-gvisor] added runsc runtime to ${CONTAINERD_CONFIG}"
+
+      gvisor_dump_err="$(mktemp)"
+      if ! containerd --config "${CONTAINERD_CONFIG}" config dump >/dev/null 2>"${gvisor_dump_err}"; then
+        echo "[install-gvisor] ERROR: ${CONTAINERD_CONFIG} failed to parse after appending the runsc block; aborting before restart" >&2
+        cat "${gvisor_dump_err}" >&2
+        rm -f "${gvisor_dump_err}"
+        rollback_config
+        exit 1
+      fi
+      rm -f "${gvisor_dump_err}"
+
+      restart_needed=true
+    fi
+
+    # Decide whether containerd needs restarting to load the runsc handler. nsenter (needs hostPID)
+    # is used because systemctl can't reach the host's systemd bus from this chroot. Config on disk
+    # doesn't prove containerd loaded it, so prefer crictl's live view of the running daemon, falling
+    # back to a restart sentinel when crictl is unavailable.
+    if [[ "${restart_needed}" != true ]]; then
+      runsc_state=unknown
+      if command -v crictl >/dev/null 2>&1; then
+        # Ask the running containerd directly; a crictl error leaves the state "unknown".
+        if crictl_info="$(crictl info 2>/dev/null)"; then
+          if grep -q "\"${RUNSC_HANDLER}\"" <<<"${crictl_info}"; then
+            runsc_state=loaded
+          else
+            runsc_state=absent
+          fi
+        fi
+      fi
+      case "${runsc_state}" in
+        loaded)
+          echo "[install-gvisor] running containerd already exposes the \"${RUNSC_HANDLER}\" runtime; no restart needed"
+          ;;
+        absent)
+          echo "[install-gvisor] running containerd does not expose \"${RUNSC_HANDLER}\" yet; restart required"
+          restart_needed=true
+          ;;
+        unknown)
+          # Fall back to sentinel + config ownership: only retry on nodes this installer owns, since
+          # out-of-band nodes already have runsc loaded and must not be bounced.
+          owned_by_us=false
+          if [[ -f "${RUNSC_CONFIG}" ]] && head -1 "${RUNSC_CONFIG}" | grep -qF "${RUNSC_CONFIG_HEADER}"; then
+            owned_by_us=true
+          fi
+          if [[ "${owned_by_us}" == true && ! -f "${RESTART_SENTINEL}" ]]; then
+            echo "[install-gvisor] crictl unavailable; installer-owned node without restart sentinel — restarting to be safe"
+            restart_needed=true
+          else
+            echo "[install-gvisor] crictl unavailable; leaving containerd as-is (out-of-band runsc, or restart already recorded)"
+          fi
+          ;;
+      esac
+    fi
+
+    # Restart and verify before ever labeling the node: a restart command exiting 0 is not proof
+    # containerd came back (it can crash-loop immediately after), so gate the sentinel on
+    # wait_for_containerd_healthy actually confirming the runsc handler is live. Any failure here —
+    # the restart command itself, or the post-restart health check — rolls the config back and
+    # retries once more before failing closed; `set -e` then aborts before labeling, so a labeled
+    # node can always actually run runsc.
+    if [[ "${restart_needed}" == true ]]; then
+      echo "[install-gvisor] restarting containerd to load the runsc runtime"
+      if ! nsenter -t 1 -m -u -i -n -p -- systemctl restart containerd; then
+        echo "[install-gvisor] ERROR: systemctl restart containerd failed" >&2
+        rollback_and_recover || true
+        exit 1
+      fi
+      if wait_for_containerd_healthy "${RUNSC_HANDLER}"; then
+        touch "${RESTART_SENTINEL}"
+        echo "[install-gvisor] containerd restarted and healthy; runsc runtime active"
+      else
+        echo "[install-gvisor] ERROR: containerd not healthy after restart (runsc \"${RUNSC_HANDLER}\" not confirmed)" >&2
+        rollback_and_recover || true
+        exit 1
+      fi
+    else
+      echo "[install-gvisor] containerd already serving runsc; nothing to do"
+    fi
+
+    echo "[install-gvisor] done"
+  # Runs on the host after a successful install: labels this Node so the RuntimeClass scheduler
+  # admits runtime pods here, using the mounted ServiceAccount token (curl, or wget as fallback).
+  label-node.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    TOKEN="$(cat /tmp/gvisor-sa/token)"
+    CACERT="/tmp/gvisor-sa/ca.crt"
+    API="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS:-443}"
+    PATCH='{"metadata":{"labels":{"gvisor.enabled":"true"}}}'
+    if command -v curl >/dev/null 2>&1; then
+      curl --fail --silent --show-error --cacert "${CACERT}" \
+        -H "Authorization: Bearer ${TOKEN}" \
+        -H "Content-Type: application/strategic-merge-patch+json" \
+        -X PATCH --data "${PATCH}" \
+        "${API}/api/v1/nodes/${NODE_NAME}" >/dev/null
+    else
+      wget -q --ca-certificate="${CACERT}" \
+        --header="Authorization: Bearer ${TOKEN}" \
+        --header="Content-Type: application/strategic-merge-patch+json" \
+        --method=PATCH --body-data="${PATCH}" \
+        -O- "${API}/api/v1/nodes/${NODE_NAME}" >/dev/null
+    fi
+    echo "[label-node] labeled ${NODE_NAME}"
+---
+# Source: sonarqube-dce/templates/init-fs.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-init-fs
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+data:
+  init_fs.sh: |-
+    chown -R 1000:0 /opt/sonarqube/data
+    chown -R 1000:0 /opt/sonarqube/temp
+    chown -R 1000:0 /opt/sonarqube/logs
+---
+# Source: sonarqube-dce/templates/init-sysctl.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-init-sysctl
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+data:
+  init_sysctl.sh: |-
+    set -o errexit
+    set -o xtrace
+    vmMaxMapCount=524288
+    if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
+      sysctl -w vm.max_map_count=$vmMaxMapCount
+      if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
+        echo "Failed to set initSysctl.vmMaxMapCount"; exit 1
+      fi
+    fi
+    fsFileMax=131072
+    if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
+      sysctl -w fs.file-max=$fsFileMax
+      if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
+        echo "Failed to set initSysctl.fsFileMax"; exit 1
+      fi
+    fi
+    nofile=131072
+    if [[ "$(ulimit -n)" != "unlimited" ]]; then
+      if [[ "$(ulimit -n)" -lt $nofile ]]; then
+        ulimit -n $nofile
+        if [[ "$(ulimit -n)" -lt $nofile ]]; then
+          echo "Failed to set initSysctl.nofile"; exit 1
+        fi
+      fi
+    fi
+    nproc=8192
+    if [[ "$(ulimit -u)" != "unlimited" ]]; then
+      if [[ "$(ulimit -u)" -lt $nproc ]]; then
+        ulimit -u $nproc
+        if [[ "$(ulimit -u)" -lt $nproc ]]; then
+          echo "Failed to set initSysctl.nproc"; exit 1
+        fi
+      fi
+    fi
+---
+# Source: sonarqube-dce/templates/install-plugins.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-install-plugins
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+data:
+  install_plugins.sh: |-
+---
+# Source: sonarqube-dce/templates/jdbc-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-jdbc-config
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+data:
+  SONAR_JDBC_USERNAME: "user"
+  SONAR_JDBC_URL: "jdbc:postgresql://myPostgres/myDatabase?socketTimeout=1500"
+---
+# Source: sonarqube-dce/templates/gvisor.yaml
+# The installer patches a label onto its own Node so the RuntimeClass scheduler only admits runtime
+# pods once runsc is actually ready there. RBAC has no "own node only" scoping primitive, so this
+# grant is cluster-scoped: any pod using this ServiceAccount can get/patch ANY node, not just the
+# one it runs on. Accepted trust surface for this deliberately privileged, host-mutating installer.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: gvisor
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "patch"]
+---
+# Source: sonarqube-dce/templates/gvisor.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: gvisor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
+subjects:
+  - kind: ServiceAccount
+    name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
+    namespace: default
+---
+# Source: sonarqube-dce/templates/agent-orchestrator-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: orchestrator
+    app.kubernetes.io/component: agent-orchestrator
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: sonarqube-dce-agent-orchestrator
+    release: remediation-agent-values.yaml
+---
+# Source: sonarqube-dce/templates/agent-runtime-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-agent-runtime-remed
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: remediation
+    app.kubernetes.io/component: agent-runtime-remediation
+spec:
+  # Deliberately a load-balanced ClusterIP, not headless: on an HTTP 429 the runtime drops the
+  # socket so a retry's fresh TCP handshake gets re-routed by kube-proxy to another replica.
+  type: ClusterIP
+  ports:
+    - port: 8090
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: sonarqube-dce-agent-runtime-remediation
+    release: remediation-agent-values.yaml
+---
+# Source: sonarqube-dce/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: sonarqube-dce
+    release: remediation-agent-values.yaml
+    sonarqube.datacenter/type: "app"
+---
+# Source: sonarqube-dce/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-headless
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: 9003
+      targetPort: hazelcast
+      protocol: TCP
+      appProtocol: tcp
+      name: hazelcast
+  selector:
+    app: sonarqube-dce
+    release: remediation-agent-values.yaml
+    sonarqube.datacenter/type: "app"
+---
+# Source: sonarqube-dce/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-search
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9001
+      targetPort: search-port
+      protocol: TCP
+      name: search
+    - port: 9002
+      targetPort: es-port
+      protocol: TCP
+      name: es
+  selector:
+    app: sonarqube-dce-search
+    release: remediation-agent-values.yaml
+---
+# Source: sonarqube-dce/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-search-headless
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: 9001
+      targetPort: search-port
+      protocol: TCP
+      name: search
+    - port: 9002
+      targetPort: es-port
+      protocol: TCP
+      name: es
+  selector:
+    app: sonarqube-dce-search
+    release: remediation-agent-values.yaml
+---
+# Source: sonarqube-dce/templates/vortex-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-vortex
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: vortex
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: sonarqube-dce-vortex
+    release: remediation-agent-values.yaml
+---
+# Source: sonarqube-dce/templates/gvisor.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: gvisor
+spec:
+  selector:
+    matchLabels:
+      app: sonarqube-dce-gvisor-installer
+      release: remediation-agent-values.yaml
+  template:
+    metadata:
+      labels:
+        app: sonarqube-dce-gvisor-installer
+        release: remediation-agent-values.yaml
+    spec:
+      # Needed so `nsenter -t 1` can reach the host's systemd to restart containerd; chroot alone
+      # cannot reach the host systemd bus.
+      hostPID: true
+      serviceAccountName: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: gvisor-installer
+          image: debian@sha256:1710bde34461551a19a47c787885ec9ad7058d9a5bead2affb8d088fa2f8502b
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "/scripts/run.sh"]
+          # Privileged by design: mounts the host filesystem to install runsc and restart containerd.
+          # The deliberate trust-tier exception called out in values.yaml — not hardened like the runtimes.
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: host-root
+              mountPath: /host
+            - name: scripts
+              mountPath: /scripts
+          resources:
+            limits:
+              cpu: 500m
+              ephemeral-storage: 200Mi
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              ephemeral-storage: 50Mi
+              memory: 128Mi
+      volumes:
+        - name: host-root
+          hostPath:
+            path: /
+            type: Directory
+        - name: scripts
+          configMap:
+            name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
+            defaultMode: 0755
+---
+# Source: sonarqube-dce/templates/agent-orchestrator.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: orchestrator
+    app.kubernetes.io/component: agent-orchestrator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarqube-dce-agent-orchestrator
+      release: remediation-agent-values.yaml
+  template:
+    metadata:
+      annotations:
+        checksum/secret: 26cf79b70f346cd14c142a408593cf69f6997e17fad3e91288418923dfb2998e
+      labels:
+        app: sonarqube-dce-agent-orchestrator
+        release: remediation-agent-values.yaml
+        sonarqube.agent/component: orchestrator
+    spec:
+      automountServiceAccountToken: true
+      initContainers:
+        - name: wait-for-sonarqube
+          image: sonarqube:2026.4.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          command:
+            - sh
+            - -c
+            - |
+              until curl -sf "http://remediation-agent-values.yaml-sonarqube-dce:9000/api/system/status" | grep -q '"status":"UP"'; do
+                echo "Waiting for SonarQube to be UP..."; sleep 10;
+              done
+      containers:
+        - name: agent-orchestrator
+          image: "example.com/agent-orchestrator:1.0.0"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 900
+            runAsNonRoot: true
+            runAsUser: 900
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: SERVER_PORT
+              value: "8080"
+            - name: CORE_DB_READ_WRITE_ENDPOINT
+              value: "myPostgres"
+            - name: CORE_DB_NAME
+              value: "myDatabase"
+            - name: CORE_DB_USERNAME
+              value: "user"
+            - name: CORE_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: core-db
+                  key: password
+            - name: AGENTIC_STORAGE_ENDPOINT
+              value: ""
+            - name: AGENTIC_STORAGE_REGION
+              value: "eu-west-1"
+            - name: AGENTIC_STORAGE_BUCKET
+              value: "agent-artifacts"
+            - name: AGENTIC_STORAGE_PATH_STYLE
+              value: "false"
+            - name: AGENTIC_SONARQUBE_URL
+              value: "http://remediation-agent-values.yaml-sonarqube-dce:9000"
+            - name: AGENTIC_SONARQUBE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator
+                  key: AGENTIC_SONARQUBE_TOKEN
+            - name: AGENTIC_REMEDIATION_RUNTIME_PUSH_URL
+              value: "http://remediation-agent-values.yaml-sonarqube-dce-agent-runtime-remed:8090/jobs"
+          resources:
+            limits:
+              cpu: "1"
+              ephemeral-storage: 2Gi
+              memory: 1Gi
+            requests:
+              cpu: 250m
+              ephemeral-storage: 512Mi
+              memory: 512Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+      serviceAccountName: agent-orchestrator
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+# Source: sonarqube-dce/templates/agent-runtime.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-agent-runtime-remed
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: remediation
+    app.kubernetes.io/component: agent-runtime-remediation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarqube-dce-agent-runtime-remediation
+      release: remediation-agent-values.yaml
+  template:
+    metadata:
+      labels:
+        app: sonarqube-dce-agent-runtime-remediation
+        release: remediation-agent-values.yaml
+        sonarqube.agent/component: runtime
+        sonarqube.agent/family: remediation
+    spec:
+      runtimeClassName: gvisor
+      automountServiceAccountToken: true
+      containers:
+        - name: agent-runtime
+          image: "example.com/remediation-agent:1.0.0"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: http
+              containerPort: 8090
+              protocol: TCP
+          env:
+            - name: REMEDIATION_SCRIPT_PATH
+              value: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
+            - name: REMEDIATION_RULE_INFO_ENDPOINT
+              value: http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator:8080/remediation-agent/rule-info
+          resources:
+            limits:
+              cpu: "4"
+              ephemeral-storage: 50Gi
+              memory: 8Gi
+            requests:
+              cpu: "1"
+              ephemeral-storage: 10Gi
+              memory: 2Gi
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+      serviceAccountName: remediation-agent-runtime
+---
+# Source: sonarqube-dce/templates/sonarqube-application.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-app
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    app.kubernetes.io/name: remediation-agent-values.yaml
+    sonarqube.datacenter/type: "app"
+    app.kubernetes.io/instance: remediation-agent-values.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: remediation-agent-values.yaml-sonarqube-dce
+    app.kubernetes.io/version: "2026.4.0-datacenter-app"
+spec:
+  replicas: 2
+  revisionHistoryLimit: 
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sonarqube-dce
+      release: remediation-agent-values.yaml
+  template:
+    metadata:
+      labels:
+        app: sonarqube-dce
+        release: remediation-agent-values.yaml
+        sonarqube.datacenter/type: "app"
+      annotations:
+        checksum/plugins: be36116904281bf2eba03e93b02de0283317b12c11e5822d2808a26205a52203
+        checksum/config: 20d4d56d5bef5a022b281c51c21e146cb3292d60e1714bcf78b2f5a82fa566f4
+        checksum/secret: a8df0f488260d445c20015ed45cef7287093d404c230085cc7b7e5b5e3162400
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: concat-properties
+          image: sonarqube:2026.4.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          command: 
+          - sh
+          - -c
+          - |
+            #!/bin/sh
+            if [ -f /tmp/props/sonar.properties ]; then
+              cat /tmp/props/sonar.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/secret.properties ]; then
+              cat /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
+              awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+          volumeMounts:
+            - mountPath: /tmp/props/sonar.properties
+              name: config
+              subPath: sonar.properties
+            - mountPath: /tmp/result
+              name: concat-dir
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
+      securityContext:
+        fsGroup: 0
+      containers:
+        - name: sonarqube-dce
+          image: sonarqube:2026.4.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+            - name: hazelcast
+              containerPort: 9003
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              ephemeral-storage: 512000M
+              memory: 4096M
+            requests:
+              cpu: 400m
+              ephemeral-storage: 1536M
+              memory: 4096M
+          env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+            - name: SONAR_LOG_JSONOUTPUT
+              value: "false"
+            - name: SONAR_HELM_CHART_VERSION
+              value: 2026.5.0
+            - name: SONAR_CLUSTER_SEARCH_HOSTS
+              value: "remediation-agent-values.yaml-sonarqube-dce-search"
+            - name: SONAR_CLUSTER_KUBERNETES
+              value: "true"
+            - name: SONAR_CLUSTER_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SONAR_CLUSTER_NODE_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: SONAR_CLUSTER_HOSTS
+              value: "remediation-agent-values.yaml-sonarqube-dce-headless"
+            - name: SONAR_AUTH_JWTBASE64HS256SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "remediation-agent-values.yaml-sonarqube-dce-jwt"
+                  key: SONAR_AUTH_JWTBASE64HS256SECRET
+            - name: SONAR_JDBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: remediation-agent-values.yaml-sonarqube-dce
+                  key: jdbc-password
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: remediation-agent-values.yaml-sonarqube-dce-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
+            - name: SONAR_VORTEX_ANALYSIS_URL
+              value: "http://remediation-agent-values.yaml-sonarqube-dce-vortex:8080"
+            - name: SONAR_HUNTERAGENT_ORCHESTRATOR_URL
+              value: "http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator:8080"
+            - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
+              value: "http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator:8080"
+          envFrom:
+            - configMapRef:
+                name: remediation-agent-values.yaml-sonarqube-dce-jdbc-config
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |-
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
+                curl --noproxy "*" -fsS -o /dev/null --max-time 1 -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
+            failureThreshold: 6
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |-
+                #!/bin/bash
+                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
+                if curl --noproxy "*" -s http://${host}:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                  exit 0
+                fi
+                exit 1
+            failureThreshold: 8
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              scheme: HTTP
+              path: /api/system/status
+              port: http
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            failureThreshold: 32
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/conf/sonar.properties
+              subPath: sonar.properties
+              name: concat-dir
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+      serviceAccountName: default
+      volumes:
+      - name: config
+        configMap:
+          name: remediation-agent-values.yaml-sonarqube-dce-app-config
+          items:
+          - key: sonar.properties
+            path: sonar.properties
+      
+      - name: install-plugins
+        configMap:
+          name: remediation-agent-values.yaml-sonarqube-dce-install-plugins
+          items:
+            - key: install_plugins.sh
+              path: install_plugins.sh
+      - name: sonarqube
+        emptyDir:
+          {}
+      - name : tmp-dir
+        emptyDir:
+          {}
+      - name : concat-dir
+        emptyDir:
+          {}
+---
+# Source: sonarqube-dce/templates/vortex.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-vortex
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: vortex
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sonarqube-dce-vortex
+      release: remediation-agent-values.yaml
+  template:
+    metadata:
+      annotations:
+        checksum/secret: 233dae7e7101bb5a40a21097fd39ba3ff390883efab22fd0d81074f20b0e7cc3
+      labels:
+        app: sonarqube-dce-vortex
+        release: remediation-agent-values.yaml
+    spec:
+      serviceAccountName: default
+      automountServiceAccountToken: false
+      containers:
+        - name: vortex
+          image: "example.com/vortex:1"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: VORTEX_ANALYSIS_SONARQUBE_URL
+              value: "http://remediation-agent-values.yaml-sonarqube-dce:9000"
+            - name: VORTEX_ANALYSIS_SONARQUBE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: remediation-agent-values.yaml-sonarqube-dce-vortex
+                  key: VORTEX_ANALYSIS_SONARQUBE_TOKEN
+            - name: SONAR_AGENTIC_STORAGE_TYPE
+              value: "S3"
+            - name: SONAR_AGENTIC_STORAGE_BUCKET
+              value: "vortex-artifacts"
+            - name: SONAR_AGENTIC_STORAGE_REGION
+              value: "eu-west-1"
+            - name: SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS
+              value: "false"
+            - name: SONAR_AGENTIC_STORAGE_ENDPOINT
+              value: ""
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+---
+# Source: sonarqube-dce/templates/sonarqube-search.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-search
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    app.kubernetes.io/name: "remediation-agent-values.yaml"
+    sonarqube.datacenter/type: "search"
+    app.kubernetes.io/instance: remediation-agent-values.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: remediation-agent-values.yaml-sonarqube-dce
+    app.kubernetes.io/version: "2026.4.0-datacenter-search"
+spec:
+  podManagementPolicy : Parallel
+  replicas: 3
+  serviceName: remediation-agent-values.yaml-sonarqube-dce-search
+  selector:
+    matchLabels:
+      app: sonarqube-dce-search
+      release: remediation-agent-values.yaml
+  volumeClaimTemplates:
+  - metadata:
+      name: remediation-agent-values.yaml-sonarqube-dce
+      labels:
+        release: remediation-agent-values.yaml
+        chart: "sonarqube-dce"
+        app: "remediation-agent-values.yaml-sonarqube-dce"
+    spec:
+      accessModes:
+        - "ReadWriteOnce"
+      resources:
+        requests:
+          storage: "5Gi"
+  template:
+    metadata:
+      labels:
+        app: sonarqube-dce-search
+        release: remediation-agent-values.yaml
+        sonarqube.datacenter/type: "search"
+      annotations:
+        checksum/init-sysctl: 306105394e9e75cfc0fc9038f5650ca2e2a00d0b7cc558dd28844f661c2ac630
+        checksum/init-fs: b620e1fd313bf988bbda99b4b2899948c5835212f6f39a24729f8bd130f81d83
+        checksum/config: 20d4d56d5bef5a022b281c51c21e146cb3292d60e1714bcf78b2f5a82fa566f4
+        checksum/secret: a8df0f488260d445c20015ed45cef7287093d404c230085cc7b7e5b5e3162400
+    spec:
+      automountServiceAccountToken: false
+      initContainers:
+        - name: init-sysctl
+          image: sonarqube:2026.4.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          resources:
+            {}
+          command: ["/bin/bash",
+            "-e",
+            "/tmp/scripts/init_sysctl.sh"]
+          volumeMounts:
+            - name: init-sysctl
+              mountPath: /tmp/scripts/
+        - name: init-fs
+          image: sonarqube:2026.4.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add:
+              - CHOWN
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: false
+            runAsUser: 0
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            {}
+          command: ["sh",
+            "-ex",
+            "/tmp/scripts/init_fs.sh"]
+          volumeMounts:
+            - name: init-fs
+              mountPath: /tmp/scripts/
+            - mountPath: /opt/sonarqube/certs
+              name: "remediation-agent-values.yaml-sonarqube-dce"
+              subPath: certs
+            - mountPath: /opt/sonarqube/data
+              name: "remediation-agent-values.yaml-sonarqube-dce"
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: "remediation-agent-values.yaml-sonarqube-dce"
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: "remediation-agent-values.yaml-sonarqube-dce"
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+      securityContext:
+        fsGroup: 0
+      containers:
+        - name: sonarqube-dce-search
+          image: "sonarqube:2026.4.0-datacenter-search"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: search-port
+              containerPort: 9001
+              protocol: TCP
+            - name: es-port
+              containerPort: 9002
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              ephemeral-storage: 512000M
+              memory: 3072M
+            requests:
+              cpu: 400m
+              ephemeral-storage: 1536M
+              memory: 3072M
+          env:
+            - name: SONAR_LOG_JSONOUTPUT
+              value: "false"
+            - name: SONAR_CLUSTER_ES_HOSTS
+              value: "remediation-agent-values.yaml-sonarqube-dce-search-0,remediation-agent-values.yaml-sonarqube-dce-search-1,remediation-agent-values.yaml-sonarqube-dce-search-2,"
+            - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
+              value: "remediation-agent-values.yaml-sonarqube-dce-search-headless"
+            - name: SONAR_CLUSTER_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SONAR_CLUSTER_NODE_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered live if http call returns 200
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
+                if curl --noproxy "*" -sS "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
+                if curl --noproxy "*" -s "http://${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          startupProbe:
+            exec:
+             command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube search node container is considered started if http call returns 200
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
+                if curl --noproxy "*" -sS "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                  exit 0
+                fi
+                exit 1
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 24
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/certs
+              name: "remediation-agent-values.yaml-sonarqube-dce"
+              subPath: certs
+              readOnly: true
+            - mountPath: /opt/sonarqube/data
+              name: "remediation-agent-values.yaml-sonarqube-dce"
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: "remediation-agent-values.yaml-sonarqube-dce"
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: "remediation-agent-values.yaml-sonarqube-dce"
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+      serviceAccountName: default
+      volumes:
+      
+      - name: init-sysctl
+        configMap:
+          name: remediation-agent-values.yaml-sonarqube-dce-init-sysctl
+          items:
+            - key: init_sysctl.sh
+              path: init_sysctl.sh
+      - name: init-fs
+        configMap:
+          name: remediation-agent-values.yaml-sonarqube-dce-init-fs
+          items:
+            - key: init_fs.sh
+              path: init_fs.sh
+      - name: "remediation-agent-values.yaml-sonarqube-dce"
+      - name : tmp-dir
+        emptyDir:
+          {}
+---
+# Source: sonarqube-dce/templates/gvisor.yaml
+# gVisor (runsc) sandboxing for the agent runtimes. gvisor.enabled renders the RuntimeClass
+# below, assuming runsc is installed out-of-band. gvisor.installer.enabled additionally renders a
+# privileged, host-mutating DaemonSet that installs it — a deliberately different trust tier from
+# the hardened runtimes; self-managed nodes only. See values.yaml for details.
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: gvisor
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: gvisor
+handler: runsc
+scheduling:
+  nodeSelector:
+    gvisor.enabled: "true"
+---
+# Source: sonarqube-dce/templates/tests/sonarqube-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "remediation-agent-values.yaml-ui-test"
+  annotations:
+    "helm.sh/hook": test-success
+    # Disable Istio sidecar injection for this test pod
+    "sidecar.istio.io/inject": "false"
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: remediation-agent-values.yaml-ui-test
+      image: "sonarqube:2026.4.0-datacenter-app"
+      imagePullPolicy: IfNotPresent
+      command: ['curl']
+      args: [
+        '--retry-connrefused',
+        '--retry',
+        '1200',
+        '--retry-delay',
+        '1',
+        '--max-time',
+        '5',
+        '-s',
+        'remediation-agent-values.yaml-sonarqube-dce:9000/api/system/status'
+        ]
+      resources:
+        limits:
+          cpu: 500m
+          ephemeral-storage: 1000M
+          memory: 200M
+        requests:
+          cpu: 500m
+          ephemeral-storage: 100M
+          memory: 200M
+  restartPolicy: Never
