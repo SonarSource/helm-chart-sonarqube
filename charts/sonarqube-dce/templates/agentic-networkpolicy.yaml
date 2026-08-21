@@ -22,7 +22,7 @@ spec:
   ingress:
     - from:
         - podSelector:
-            matchLabels: {{- include "sonarqube.agentic.orchestrator.selectorLabels" $ | nindent 14 }}
+            matchLabels: {{- include "sonarqube.agent.orchestrator.selectorLabels" $ | nindent 14 }}
       ports:
         - port: {{ $cfg.port }}
           protocol: TCP
@@ -39,7 +39,7 @@ spec:
           protocol: TCP
     - to:
         - podSelector:
-            matchLabels: {{- include "sonarqube.agentic.orchestrator.selectorLabels" $ | nindent 14 }}
+            matchLabels: {{- include "sonarqube.agent.orchestrator.selectorLabels" $ | nindent 14 }}
       ports:
         - port: {{ $.Values.orchestrator.port }}
           protocol: TCP

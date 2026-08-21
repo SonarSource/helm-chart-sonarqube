@@ -77,7 +77,7 @@ spec:
           {{- with $cfg.remediationScriptPath }}
           {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_SCRIPT_PATH" "value" .) }}
           {{- end }}
-          {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_RULE_INFO_ENDPOINT" "value" (printf "%s/remediation-agent/rule-info" (include "sonarqube.agentic.orchestrator.url" $))) }}
+          {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_RULE_INFO_ENDPOINT" "value" (printf "%s/remediation-agent/rule-info" (include "sonarqube.agent.orchestrator.url" $))) }}
           {{- end }}
           {{- $mergedEnv := concat $autoEnv ($cfg.env | default list) }}
           {{- with $mergedEnv }}

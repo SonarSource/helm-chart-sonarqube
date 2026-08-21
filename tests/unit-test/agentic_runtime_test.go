@@ -21,7 +21,7 @@ func renderAgenticRuntime(t *testing.T, family string, setValues map[string]stri
 		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-runtimes-enabled.yaml"},
 		SetValues:   setValues,
 	}
-	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic/runtime.yaml"})
+	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic-runtime.yaml"})
 	require.NoError(t, err)
 
 	for _, doc := range strings.Split(output, "\n---") {
@@ -38,7 +38,7 @@ func renderAgenticRuntime(t *testing.T, family string, setValues map[string]stri
 	return appsv1.Deployment{}
 }
 
-// renderAgenticRuntimeService renders templates/agentic/runtime-service.yaml and returns the
+// renderAgenticRuntimeService renders templates/agentic-runtime-service.yaml and returns the
 // Service for family - both hunter and remediation are enabled in the fixture, so it emits one
 // Service document per family.
 func renderAgenticRuntimeService(t *testing.T, family string, setValues map[string]string) corev1.Service {
@@ -48,7 +48,7 @@ func renderAgenticRuntimeService(t *testing.T, family string, setValues map[stri
 		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-runtimes-enabled.yaml"},
 		SetValues:   setValues,
 	}
-	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic/runtime-service.yaml"})
+	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic-runtime-service.yaml"})
 	require.NoError(t, err)
 
 	for _, doc := range strings.Split(output, "\n---") {
@@ -69,8 +69,8 @@ func renderAgenticRuntimeService(t *testing.T, family string, setValues map[stri
 // is enabled.
 func TestAgenticRuntimeDisabledByDefault(t *testing.T) {
 	for _, tpl := range []string{
-		"templates/agentic/runtime.yaml",
-		"templates/agentic/runtime-service.yaml",
+		"templates/agentic-runtime.yaml",
+		"templates/agentic-runtime-service.yaml",
 	} {
 		opts := &helm.Options{
 			Logger:      logger.Discard,
@@ -107,7 +107,7 @@ func TestAgenticRuntimeSchedulingWinsOverGlobal(t *testing.T) {
 				Logger:      logger.Discard,
 				ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-runtimes-global-scheduling.yaml"},
 			}
-			output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic/runtime.yaml"})
+			output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic-runtime.yaml"})
 			require.NoError(t, err)
 
 			var podSpec corev1.PodSpec

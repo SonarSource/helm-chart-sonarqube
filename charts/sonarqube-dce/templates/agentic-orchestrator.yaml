@@ -4,14 +4,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "sonarqube.agentic.orchestrator.fullname" . }}
+  name: {{ include "sonarqube.agent.orchestrator.fullname" . }}
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
     sonarqube.agentic/component: orchestrator
-    app.kubernetes.io/component: agentic-orchestrator
+    app.kubernetes.io/component: agent-orchestrator
 spec:
   replicas: {{ .Values.orchestrator.replicaCount }}
   {{- with .Values.orchestrator.revisionHistoryLimit }}
@@ -21,16 +21,16 @@ spec:
   strategy: {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
-    matchLabels: {{- include "sonarqube.agentic.orchestrator.selectorLabels" . | nindent 6 }}
+    matchLabels: {{- include "sonarqube.agent.orchestrator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
-        checksum/secret: {{ include (print $.Template.BasePath "/agentic/orchestrator-secret.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/agentic-orchestrator-secret.yaml") . | sha256sum }}
         {{- with .Values.orchestrator.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "sonarqube.agentic.orchestrator.selectorLabels" . | nindent 8 }}
+        {{- include "sonarqube.agent.orchestrator.selectorLabels" . | nindent 8 }}
         sonarqube.agentic/component: orchestrator
         {{- with .Values.orchestrator.podLabels }}
         {{- toYaml . | nindent 8 }}
@@ -61,7 +61,7 @@ spec:
                 echo "Waiting for SonarQube to be UP..."; sleep 10;
               done
       containers:
-        - name: agentic-orchestrator
+        - name: agent-orchestrator
           image: "{{ .Values.orchestrator.image.repository }}:{{ .Values.orchestrator.image.tag }}"
           imagePullPolicy: {{ .Values.orchestrator.image.pullPolicy }}
           {{- $orchestratorSecurityContext := .Values.orchestrator.containerSecurityContext | default dict }}
@@ -117,12 +117,12 @@ spec:
             - name: AGENTIC_STORAGE_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.orchestrator.storage.existingSecret }}
+                  name: {{ default (include "sonarqube.agent.orchestrator.fullname" .) .Values.orchestrator.storage.existingSecret }}
                   key: AGENTIC_STORAGE_ACCESS_KEY
             - name: AGENTIC_STORAGE_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.orchestrator.storage.existingSecret }}
+                  name: {{ default (include "sonarqube.agent.orchestrator.fullname" .) .Values.orchestrator.storage.existingSecret }}
                   key: AGENTIC_STORAGE_SECRET_KEY
             {{- end }}
             - name: AGENTIC_SONARQUBE_URL
@@ -131,7 +131,7 @@ spec:
             - name: AGENTIC_SONARQUBE_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.orchestrator.sonarqubeToken.existingSecret }}
+                  name: {{ default (include "sonarqube.agent.orchestrator.fullname" .) .Values.orchestrator.sonarqubeToken.existingSecret }}
                   key: {{ .Values.orchestrator.sonarqubeToken.existingSecretKey | default "AGENTIC_SONARQUBE_TOKEN" }}
             {{- end }}
             {{- range $family, $cfg := fromYaml (include "sonarqube.agentic.runtimes" .) }}
@@ -166,7 +166,7 @@ spec:
       {{- with (include "sonarqube.agentic.scheduling" (dict "ctx" . "component" .Values.orchestrator)) }}
 {{ . | indent 6 }}
       {{- end }}
-      serviceAccountName: {{ include "sonarqube.agentic.orchestrator.serviceAccountName" . }}
+      serviceAccountName: {{ include "sonarqube.agent.orchestrator.serviceAccountName" . }}
       {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
       volumes:
         - name: tmp

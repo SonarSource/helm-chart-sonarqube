@@ -615,8 +615,8 @@ for consumers like hunter-agent-unified-app that read them via Spring instead.
 {{- define "sonarqube.agenticHealthProperties" -}}
 {{- $props := dict -}}
 {{- if .Values.orchestrator.enabled -}}
-{{- $_ := set $props "sonar.hunteragent.orchestrator.url" (include "sonarqube.agentic.orchestrator.url" .) -}}
-{{- $_ := set $props "sonar.remediationagent.orchestrator.url" (include "sonarqube.agentic.orchestrator.url" .) -}}
+{{- $_ := set $props "sonar.hunteragent.orchestrator.url" (include "sonarqube.agent.orchestrator.url" .) -}}
+{{- $_ := set $props "sonar.remediationagent.orchestrator.url" (include "sonarqube.agent.orchestrator.url" .) -}}
 {{- end -}}
 {{- if .Values.vortexAnalysis.enabled -}}
 {{- $_ := set $props "sonar.vortex.analysis.url" (include "sonarqube.vortexAnalysis.url" .) -}}
@@ -650,8 +650,8 @@ User-provided properties take precedence.
 {{/*
 Create the fully qualified name for the Agent Orchestrator.
 */}}
-{{- define "sonarqube.agentic.orchestrator.fullname" -}}
-{{- printf "%s-agentic-orchestrator" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- define "sonarqube.agent.orchestrator.fullname" -}}
+{{- printf "%s-agent-orchestrator" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
@@ -663,12 +663,12 @@ Parameters (dict): ctx (required, the root context '.'), family (required, the r
 {{- end -}}
 
 {{/*
-Selector labels for the Agent Orchestrator: app: <chart>-agentic-orchestrator + release, matching
+Selector labels for the Agent Orchestrator: app: <chart>-agent-orchestrator + release, matching
 the Vortex Analysis convention so the value doesn't collide with the SonarQube app Deployment's own
 selector (app: <chart> + release).
 */}}
-{{- define "sonarqube.agentic.orchestrator.selectorLabels" -}}
-app: {{ include "sonarqube.name" . }}-agentic-orchestrator
+{{- define "sonarqube.agent.orchestrator.selectorLabels" -}}
+app: {{ include "sonarqube.name" . }}-agent-orchestrator
 release: {{ .Release.Name }}
 {{- end -}}
 
@@ -696,9 +696,9 @@ When orchestrator.serviceAccount.create is true, use the pinned orchestrator.ser
 (defaulting to the orchestrator fullname). Otherwise fall back to the main SonarQube ServiceAccount,
 so deployments that don't opt in to dedicated agentic SAs are unaffected.
 */}}
-{{- define "sonarqube.agentic.orchestrator.serviceAccountName" -}}
+{{- define "sonarqube.agent.orchestrator.serviceAccountName" -}}
 {{- if .Values.orchestrator.serviceAccount.create -}}
-{{- default (include "sonarqube.agentic.orchestrator.fullname" .) .Values.orchestrator.serviceAccount.name -}}
+{{- default (include "sonarqube.agent.orchestrator.fullname" .) .Values.orchestrator.serviceAccount.name -}}
 {{- else -}}
 {{- include "sonarqube.serviceAccountName" . -}}
 {{- end -}}
@@ -723,8 +723,8 @@ Same create / pinned-name / fallback logic as the orchestrator helper above.
 {{/*
 URL the app nodes use to reach the shared Agent Orchestrator.
 */}}
-{{- define "sonarqube.agentic.orchestrator.url" -}}
-{{- printf "http://%s:%d" (include "sonarqube.agentic.orchestrator.fullname" .) (int .Values.orchestrator.port) -}}
+{{- define "sonarqube.agent.orchestrator.url" -}}
+{{- printf "http://%s:%d" (include "sonarqube.agent.orchestrator.fullname" .) (int .Values.orchestrator.port) -}}
 {{- end -}}
 
 {{/*

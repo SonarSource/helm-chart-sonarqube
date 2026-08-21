@@ -18,7 +18,7 @@ func renderAgenticRuntimeNetworkPolicy(t *testing.T, setValues map[string]string
 		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-networkpolicy-enabled.yaml"},
 		SetValues:   setValues,
 	}
-	return helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic/networkpolicy.yaml"})
+	return helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic-networkpolicy.yaml"})
 }
 
 // Both hunter and remediation are enabled in the fixture, so the render emits one NetworkPolicy
@@ -75,7 +75,7 @@ func TestCoreNetworkPolicyOrchestratorIngressPort(t *testing.T) {
 	for i := range policy.Spec.Ingress {
 		rule := policy.Spec.Ingress[i]
 		if len(rule.From) == 1 && rule.From[0].PodSelector != nil &&
-			rule.From[0].PodSelector.MatchLabels["app"] == "sonarqube-dce-agentic-orchestrator" {
+			rule.From[0].PodSelector.MatchLabels["app"] == "sonarqube-dce-agent-orchestrator" {
 			fromOrchestrator = &rule
 		}
 	}
