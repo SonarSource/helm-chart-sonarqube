@@ -41,14 +41,14 @@ tests:
       memory: 200M
       ephemeral-storage: 1000M
 
-# gVisor only renders when an agent is enabled. The orchestrator and hunterAgent images are not
-# pullable from CI, so both run with replicaCount 0: they're on here purely to satisfy that
+# gVisor only renders when an agent is enabled. The Agent Orchestrator and Hunter Agent images are
+# not pullable from CI, so both run with replicaCount 0: they're on here purely to satisfy that
 # dependency and exercise the gVisor RuntimeClass and its installer DaemonSet on the kind worker.
-orchestrator:
+agentOrchestrator:
   enabled: true
   replicaCount: 0
   image:
-    repository: "example.com/agentorchestrator"
+    repository: "example.com/agent-orchestrator"
     tag: "0.0.0"
   storage:
     bucket: "ci"
@@ -57,7 +57,7 @@ hunterAgent:
   enabled: true
   replicaCount: 0
   image:
-    repository: "example.com/hunteragent"
+    repository: "example.com/hunter-agent"
     tag: "0.0.0"
 
 gvisor:

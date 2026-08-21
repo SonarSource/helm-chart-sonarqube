@@ -847,10 +847,10 @@ mcp:
   # Set annotations for the MCP pod.
   annotations: {}
 
-# Sonar Vortex analysis: an analysis service that SonarQube calls on demand to analyse individual
+# Vortex analysis: an analysis service that SonarQube calls on demand to analyse individual
 # files. When enabled, the chart points the SonarQube application nodes at it via the
 # sonar.vortex.analysis.url property.
-vortexAnalysis:
+vortex:
   enabled: false
 
   image:
@@ -865,7 +865,7 @@ vortexAnalysis:
 
   replicaCount: 1
 
-  # Update strategy for the Vortex analysis Deployment. Recreate avoids running two pods at once
+  # Update strategy for the Vortex Deployment. Recreate avoids running two pods at once
   # during an upgrade.
   strategy:
     type: Recreate
@@ -879,7 +879,7 @@ vortexAnalysis:
     # Key inside existingSecret. Defaults to VORTEX_ANALYSIS_SONARQUBE_TOKEN.
     existingSecretKey: ""
 
-  # S3-compatible object storage for Agentic Analysis context restoration. Must point at the same
+  # S3-compatible object storage for Vortex analysis context restoration. Must point at the same
   # bucket SonarQube Server writes context to (sonar.agentic.storage.*).
   storage:
     type: S3
@@ -891,32 +891,20 @@ vortexAnalysis:
     endpoint: ""
     # Credentials for that endpoint. Leave accessKey/secretKey/existingSecret all blank for
     # credential-less access: the AWS SDK then falls back to its default credential chain (the
-    # pod's own IAM identity - node instance role, or IRSA via vortexAnalysis.serviceAccount).
+    # pod's own IAM identity - node instance role, or IRSA via vortex.serviceAccount).
     accessKey: ""
     secretKey: ""
     # Existing secret providing SONAR_AGENTIC_STORAGE_ACCESS_KEY / SONAR_AGENTIC_STORAGE_SECRET_KEY
     existingSecret: ""
 
-  # ServiceAccount for the Vortex analysis pod, independent of the top-level serviceAccount.
+  # ServiceAccount for the Vortex pod, independent of the top-level serviceAccount.
   serviceAccount:
     create: false
     name: ""
     automountToken: false
     annotations: {}
 
-  # Restrict traffic to and from the Vortex analysis pod, independently of the top-level
-  # networkPolicy.enabled.
-  networkPolicy:
-    enabled: false
-    # Additional egress destinations, each a cidr, a podSelector, a namespaceSelector or both
-    # selectors, with optional ports. Use the selectors for destinations inside the cluster.
-    egressAllow: []
-    # - cidr: 10.0.0.0/8
-    #   ports:
-    #     - port: 443
-    #       protocol: TCP
-
-  # Set security context for the Vortex analysis container.
+  # Set security context for the Vortex container.
   containerSecurityContext:
     allowPrivilegeEscalation: false
     runAsNonRoot: true
@@ -927,7 +915,7 @@ vortexAnalysis:
     capabilities:
       drop: ["ALL"]
 
-  # Additional environment variables for the Vortex analysis container.
+  # Additional environment variables for the Vortex container.
   env: []
   # - name: MY_VAR
   #   value: my-value
@@ -937,20 +925,20 @@ vortexAnalysis:
   extraVolumes: []
   extraVolumeMounts: []
 
-  # if the global .Values.nodeSelector is set, the following one will be ignored
+  # Wins over the top-level .Values.nodeSelector when set.
   nodeSelector: {}
-  # if the global .Values.affinity is set, the following one will be ignored
+  # Wins over the top-level .Values.affinity when set.
   affinity: {}
-  # if the global .Values.tolerations is set, the following one will be ignored
+  # Wins over the top-level .Values.tolerations when set.
   tolerations: []
 
-  # Set annotations for the Vortex analysis pod.
+  # Set annotations for the Vortex pod.
   annotations: {}
 
 # Shared Agent Orchestrator, dispatching jobs to hunterAgent/remediationAgent. hunterAgent and
 # remediationAgent each require this to be enabled - see validation.yaml. Requires jdbcOverwrite
 # (always true in DCE) to reuse the SonarQube DB, and a real orchestrator image before enabling.
-orchestrator:
+agentOrchestrator:
   enabled: false
 
   image:
@@ -963,6 +951,18 @@ orchestrator:
     #   - name: my-repo-secret
   port: 8080
   replicaCount: 1
+  # Scheduling knobs for the orchestrator pod. Each wins over the chart's global one of the same
+  # name (.Values.nodeSelector/tolerations/affinity) when set.
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
+  revisionHistoryLimit: ""
+  # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
+  strategy: {}
+  # Extra labels/annotations for the orchestrator pod.
+  podLabels: {}
+  annotations: {}
   resources:
     requests:
       cpu: 250m
@@ -973,6 +973,18 @@ orchestrator:
       memory: 1Gi
       ephemeral-storage: 2Gi
   securityContext: {}
+
+  probes:
+    readiness:
+      enabled: true
+      path: /health
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      enabled: true
+      path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 30
 
   containerSecurityContext:
     allowPrivilegeEscalation: false
@@ -992,7 +1004,7 @@ orchestrator:
 
   # ServiceAccount for the orchestrator pod, independent of the top-level serviceAccount. `name`
   # pins the SA name so an external IAM trust policy can reference an exact k8s subject; defaults
-  # to <fullname>-agentic-orchestrator.
+  # to <fullname>-agent-orchestrator.
   serviceAccount:
     create: false
     name: ""
@@ -1018,11 +1030,11 @@ orchestrator:
     # endpoint. pathStyle should be true for MinIO, false for AWS S3 (virtual-hosted style).
     endpoint: ""
     region: us-east-1
-    bucket: agentic-jobs
+    bucket: agent-jobs
     pathStyle: true
     # Credentials. Leave accessKey/secretKey/existingSecret all blank for credential-less access:
     # the orchestrator's AWS SDK then falls back to its default credential chain (the pod's IAM
-    # identity - node instance role, or IRSA via orchestrator.serviceAccount annotations).
+    # identity - node instance role, or IRSA via agentOrchestrator.serviceAccount annotations).
     # Inline access/secret key; ignored when existingSecret is set
     accessKey: ""
     secretKey: ""
@@ -1050,27 +1062,7 @@ orchestrator:
     # Override for GitHub Enterprise Server, or to point at a local mock.
     apiBaseUrl: ""
 
-  # Extra egress destinations for the orchestrator NetworkPolicy (DB / storage / SCM),
-  # in addition to the runtimes and the SonarQube app nodes which are always allowed.
-  # Each entry is either { cidr } or { podSelector [, namespaceSelector] } - use podSelector
-  # for in-cluster dependencies, since a NetworkPolicy ipBlock can never match a Service's
-  # ClusterIP (kube-proxy DNATs before policy enforcement sees the packet).
-  # Optional `ports` ([{ port, protocol }]) scopes the rule; omit to allow all ports to the peer.
-  # Scope broad CIDRs (e.g. 0.0.0.0/0 for S3 over presigned URLs) to `port: 443` so they don't
-  # reopen all egress.
-  egressAllow: []
-  # - cidr: 10.0.0.0/8
-  #   ports:
-  #     - port: 443
-  #       protocol: TCP
-  # - podSelector:
-  #     matchLabels:
-  #       app: my-in-cluster-db
-  #   namespaceSelector:
-  #     matchLabels:
-  #       kubernetes.io/metadata.name: db-namespace
-
-# Agentic Job Runtime that detects issues. Requires orchestrator.enabled - see validation.yaml.
+# Hunter Agent runtime that detects issues. Requires agentOrchestrator.enabled - see validation.yaml.
 # Process-count limits aren't set here - use your node's kubelet configuration (podPidsLimit).
 hunterAgent:
   enabled: false
@@ -1083,8 +1075,32 @@ hunterAgent:
   # headless) so a rejected request's retry gets a fresh TCP handshake routed to another
   # replica by kube-proxy.
   replicaCount: 1
+  # Scheduling knobs for this runtime's pod. Each wins over the chart's global one of the same
+  # name (.Values.nodeSelector/tolerations/affinity) when set. gvisor.nodeSelector is merged in
+  # separately by the RuntimeClass when gVisor is enabled - see gvisor.nodeSelector in values.yaml.
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
+  revisionHistoryLimit: ""
+  # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
+  strategy: {}
+  # Extra labels/annotations for this runtime's pod.
+  podLabels: {}
+  annotations: {}
   resources: {}
   securityContext: {}
+  probes:
+    readiness:
+      enabled: true
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      enabled: true
+      path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 30
   # No readOnlyRootFilesystem: the image needs its home directory writable.
   containerSecurityContext:
     allowPrivilegeEscalation: false
@@ -1096,15 +1112,23 @@ hunterAgent:
     capabilities:
       drop: ["ALL"]
   # ServiceAccount for this runtime, independent of the top-level serviceAccount. `name` pins the
-  # SA name for an external IAM trust policy; defaults to <fullname>-agentic-runtime-hunter.
+  # SA name for an external IAM trust policy; defaults to <fullname>-agent-runtime-hunter.
   serviceAccount:
     create: false
     name: ""
     automountToken: false
     annotations: {}
-  # Restrict traffic to and from this runtime, independently of the top-level networkPolicy.enabled.
+  # Restrict traffic to and from this runtime.
   networkPolicy:
     enabled: false
+    # Additional egress destinations, each a cidr, a podSelector, a namespaceSelector or both
+    # selectors, with optional ports. Use the selectors for destinations inside the cluster.
+    # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
+    # covering agentOrchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
+    # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of
+    # your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
+    egressAllow: []
+    # - cidr: 160.79.104.0/23
   # Path to the detection-agent entrypoint inside the image; the chart exposes it as
   # SCRIPT_PATH, which switches the runtime into hunter/detection mode (symmetric with
   # remediation's remediationScriptPath -> REMEDIATION_SCRIPT_PATH). Override if the image
@@ -1131,15 +1155,9 @@ hunterAgent:
   # - name: custom-ca
   #   mountPath: /custom-ca
   #   readOnly: true
-  # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
-  # covering orchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
-  # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of your
-  # LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
-  egressAllow: []
-  # - cidr: 160.79.104.0/23
 
-# Agentic Job Runtime that remediates issues. Requires orchestrator.enabled AND
-# vortexAnalysis.enabled - see validation.yaml.
+# Remediation Agent runtime that remediates issues. Requires agentOrchestrator.enabled AND
+# vortex.enabled - see validation.yaml.
 remediationAgent:
   enabled: false  # enable once the remediation runtime image is available
   image:
@@ -1148,6 +1166,19 @@ remediationAgent:
     pullPolicy: IfNotPresent
   port: 8090
   replicaCount: 1
+  # Scheduling knobs for this runtime's pod. Each wins over the chart's global one of the same
+  # name (.Values.nodeSelector/tolerations/affinity) when set. gvisor.nodeSelector is merged in
+  # separately by the RuntimeClass when gVisor is enabled - see gvisor.nodeSelector in values.yaml.
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
+  revisionHistoryLimit: ""
+  # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
+  strategy: {}
+  # Extra labels/annotations for this runtime's pod.
+  podLabels: {}
+  annotations: {}
   # Defaults sized for the SonarQube Remediation Agent (SQRA), which clones repos and runs the
   # agent/LLM loop. Override for your workload.
   resources:
@@ -1160,6 +1191,17 @@ remediationAgent:
       memory: 8Gi
       ephemeral-storage: 50Gi
   securityContext: {}
+  probes:
+    readiness:
+      enabled: true
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      enabled: true
+      path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 30
   # No readOnlyRootFilesystem: the image needs its home directory writable.
   containerSecurityContext:
     allowPrivilegeEscalation: false
@@ -1171,15 +1213,23 @@ remediationAgent:
     capabilities:
       drop: ["ALL"]
   # ServiceAccount for this runtime, independent of the top-level serviceAccount. `name` pins the
-  # SA name for an external IAM trust policy; defaults to <fullname>-agentic-runtime-remediation.
+  # SA name for an external IAM trust policy; defaults to <fullname>-agent-runtime-remediation.
   serviceAccount:
     create: false
     name: ""
     automountToken: false
     annotations: {}
-  # Restrict traffic to and from this runtime, independently of the top-level networkPolicy.enabled.
+  # Restrict traffic to and from this runtime.
   networkPolicy:
     enabled: false
+    # Additional egress destinations, each a cidr, a podSelector, a namespaceSelector or both
+    # selectors, with optional ports. Use the selectors for destinations inside the cluster.
+    # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
+    # covering agentOrchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
+    # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of
+    # your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
+    egressAllow: []
+    # - cidr: 160.79.104.0/23
   # Path to the remediation-agent entrypoint inside the image; the chart exposes it as
   # REMEDIATION_SCRIPT_PATH, which switches the runtime into remediation mode. Override if the
   # image relocates it (e.g. a Python version bump); set to "" to omit the env var entirely.
@@ -1188,14 +1238,8 @@ remediationAgent:
   env: []
   extraVolumes: []
   extraVolumeMounts: []
-  # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
-  # covering orchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
-  # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of your
-  # LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
-  egressAllow: []
-  # - cidr: 160.79.104.0/23
 
-# gVisor (runsc) sandboxing for the Agentic Job Runtimes. Renders only when gvisor.enabled is true
+# gVisor (runsc) sandboxing for the agent runtimes. Renders only when gvisor.enabled is true
 # AND at least one of hunterAgent.enabled / remediationAgent.enabled is true. See README ("gVisor
 # sandboxing").
 gvisor:
