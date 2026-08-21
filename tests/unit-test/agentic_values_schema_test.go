@@ -16,7 +16,7 @@ func TestAgenticValuesSchemaRejectsWrongTypes(t *testing.T) {
 		name string
 		set  map[string]string
 	}{
-		{"orchestrator.replicaCount", map[string]string{"orchestrator.replicaCount": "notanumber"}},
+		{"agentOrchestrator.replicaCount", map[string]string{"agentOrchestrator.replicaCount": "notanumber"}},
 		{"hunterAgent.enabled", map[string]string{"hunterAgent.enabled": "notabool"}},
 		{"gvisor.installer.image.digest", map[string]string{"gvisor.installer.image.digest": "true"}},
 	}

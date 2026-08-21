@@ -28,47 +28,47 @@ func renderWithValidation(t *testing.T, setValues map[string]string) (string, er
 	return helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agentic-orchestrator.yaml"})
 }
 
-// hunterAgent.enabled=true requires orchestrator.enabled=true (SONAR-31689).
+// hunterAgent.enabled=true requires agentOrchestrator.enabled=true (SONAR-31689).
 func TestHunterAgentRequiresOrchestrator(t *testing.T) {
 	_, err := renderWithValidation(t, map[string]string{
 		"hunterAgent.enabled": "true",
 	})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "hunterAgent.enabled is true but orchestrator.enabled is not true")
+	assert.Contains(t, err.Error(), "hunterAgent.enabled is true but agentOrchestrator.enabled is not true")
 }
 
-// remediationAgent.enabled=true requires orchestrator.enabled=true (SONAR-31689).
+// remediationAgent.enabled=true requires agentOrchestrator.enabled=true (SONAR-31689).
 func TestRemediationAgentRequiresOrchestrator(t *testing.T) {
 	_, err := renderWithValidation(t, map[string]string{
 		"remediationAgent.enabled": "true",
 	})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "remediationAgent.enabled is true but orchestrator.enabled is not true")
+	assert.Contains(t, err.Error(), "remediationAgent.enabled is true but agentOrchestrator.enabled is not true")
 }
 
 // remediationAgent.enabled=true also requires vortexAnalysis.enabled=true, checked independently of
 // the orchestrator dependency above (SONAR-31689).
 func TestRemediationAgentRequiresVortexAnalysis(t *testing.T) {
 	_, err := renderWithValidation(t, map[string]string{
-		"orchestrator.enabled":          "true",
-		"orchestrator.image.repository": "example.com/agentic/orchestrator",
+		"agentOrchestrator.enabled":          "true",
+		"agentOrchestrator.image.repository": "example.com/agentic/orchestrator",
 		"remediationAgent.enabled":      "true",
 	})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "remediationAgent.enabled is true but vortexAnalysis.enabled is not true")
 }
 
-// orchestratorCoreDbBase covers everything orchestrator.enabled needs besides the CORE DB
+// orchestratorCoreDbBase covers everything agentOrchestrator.enabled needs besides the CORE DB
 // settings under test, so only the derivation logic can fail.
 func orchestratorCoreDbBase() map[string]string {
 	return map[string]string{
-		"orchestrator.enabled":          "true",
-		"orchestrator.image.repository": "example.com/agentic/orchestrator",
-		"orchestrator.storage.bucket":   "agentic-jobs",
+		"agentOrchestrator.enabled":          "true",
+		"agentOrchestrator.image.repository": "example.com/agentic/orchestrator",
+		"agentOrchestrator.storage.bucket":   "agentic-jobs",
 	}
 }
 
-// With no orchestrator.coreDb set at all, the endpoint and name are derived from
+// With no agentOrchestrator.coreDb set at all, the endpoint and name are derived from
 // jdbcOverwrite.jdbcUrl.
 func TestOrchestratorCoreDbDerivedFromJdbcOverwrite(t *testing.T) {
 	output, err := renderWithValidation(t, orchestratorCoreDbBase())
@@ -78,35 +78,35 @@ func TestOrchestratorCoreDbDerivedFromJdbcOverwrite(t *testing.T) {
 }
 
 // jdbcOverwrite.jdbcUrl with no database path segment can't yield a name, and
-// orchestrator.coreDb.name is not set either, so the render must fail rather than deploy with an
+// agentOrchestrator.coreDb.name is not set either, so the render must fail rather than deploy with an
 // empty CORE_DB_NAME.
 func TestOrchestratorRequiresCoreDbNameWhenNotDerivable(t *testing.T) {
 	values := orchestratorCoreDbBase()
 	values["jdbcOverwrite.jdbcUrl"] = "jdbc:postgresql://test-host:5432"
 	_, err := renderWithValidation(t, values)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "the CORE DB name could not be derived from jdbcOverwrite.jdbcUrl and orchestrator.coreDb.name is not set")
+	assert.Contains(t, err.Error(), "the CORE DB name could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.name is not set")
 }
 
-// Explicit orchestrator.coreDb.endpoint/name take precedence and let the render succeed even when
+// Explicit agentOrchestrator.coreDb.endpoint/name take precedence and let the render succeed even when
 // jdbcOverwrite.jdbcUrl alone wouldn't be derivable.
 func TestOrchestratorCoreDbExplicitOverridesTakePrecedence(t *testing.T) {
 	values := orchestratorCoreDbBase()
 	values["jdbcOverwrite.jdbcUrl"] = "jdbc:postgresql://test-host:5432"
-	values["orchestrator.coreDb.endpoint"] = "explicit-host:5432"
-	values["orchestrator.coreDb.name"] = "explicitdb"
+	values["agentOrchestrator.coreDb.endpoint"] = "explicit-host:5432"
+	values["agentOrchestrator.coreDb.name"] = "explicitdb"
 	output, err := renderWithValidation(t, values)
 	require.NoError(t, err)
 	assert.Contains(t, output, `value: "explicit-host:5432"`)
 	assert.Contains(t, output, `value: "explicitdb"`)
 }
 
-// Only one of orchestrator.storage.accessKey / secretKey set must fail rather than deploy with a
+// Only one of agentOrchestrator.storage.accessKey / secretKey set must fail rather than deploy with a
 // silently empty credential.
 func TestOrchestratorRequiresBothStorageCredentialsOrNeither(t *testing.T) {
 	values := orchestratorCoreDbBase()
-	values["orchestrator.storage.accessKey"] = "only-access-key"
+	values["agentOrchestrator.storage.accessKey"] = "only-access-key"
 	_, err := renderWithValidation(t, values)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "only one of orchestrator.storage.accessKey / orchestrator.storage.secretKey is set")
+	assert.Contains(t, err.Error(), "only one of agentOrchestrator.storage.accessKey / agentOrchestrator.storage.secretKey is set")
 }

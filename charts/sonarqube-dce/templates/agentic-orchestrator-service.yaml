@@ -1,8 +1,8 @@
-{{- if .Values.orchestrator.enabled }}
+{{- if .Values.agentOrchestrator.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "sonarqube.agent.orchestrator.fullname" . }}
+  name: {{ include "sonarqube.agentOrchestrator.fullname" . }}
   labels:
     app: {{ template "sonarqube.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -13,9 +13,9 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.orchestrator.port }}
+    - port: {{ .Values.agentOrchestrator.port }}
       targetPort: http
       protocol: TCP
       name: http
-  selector: {{- include "sonarqube.agent.orchestrator.selectorLabels" . | nindent 4 }}
+  selector: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 4 }}
 {{- end }}

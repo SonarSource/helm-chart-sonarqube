@@ -54,9 +54,9 @@ func TestCoreNetworkPolicyOrchestratorIngressPort(t *testing.T) {
 			"jdbcOverwrite.jdbcUsername":    "test-user",
 			"jdbcOverwrite.jdbcPassword":    "test-password",
 			"networkPolicy.enabled":         "true",
-			"orchestrator.enabled":          "true",
-			"orchestrator.image.repository": "example.com/agentic/orchestrator",
-			"orchestrator.storage.bucket":   "agentic-jobs",
+			"agentOrchestrator.enabled":          "true",
+			"agentOrchestrator.image.repository": "example.com/agentic/orchestrator",
+			"agentOrchestrator.storage.bucket":   "agentic-jobs",
 			"service.internalPort":          "9999",
 		},
 	}
@@ -86,7 +86,7 @@ func TestCoreNetworkPolicyOrchestratorIngressPort(t *testing.T) {
 
 // A runtime reads/writes job artifacts directly against object storage via presigned URLs, so its
 // NetworkPolicy needs its own egress to reach it. The chart can't resolve
-// orchestrator.storage to a peer on its own, so networkPolicy.egressAllow must cover it - this is
+// agentOrchestrator.storage to a peer on its own, so networkPolicy.egressAllow must cover it - this is
 // documented on <hunterAgent|remediationAgent>.networkPolicy.egressAllow in values.yaml, not
 // enforced by the render (SONAR-31525).
 func TestAgenticRuntimeNetworkPolicyEgressAllow(t *testing.T) {

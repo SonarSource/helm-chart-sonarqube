@@ -614,9 +614,9 @@ for consumers like hunter-agent-unified-app that read them via Spring instead.
 */}}
 {{- define "sonarqube.agenticHealthProperties" -}}
 {{- $props := dict -}}
-{{- if .Values.orchestrator.enabled -}}
-{{- $_ := set $props "sonar.hunteragent.orchestrator.url" (include "sonarqube.agent.orchestrator.url" .) -}}
-{{- $_ := set $props "sonar.remediationagent.orchestrator.url" (include "sonarqube.agent.orchestrator.url" .) -}}
+{{- if .Values.agentOrchestrator.enabled -}}
+{{- $_ := set $props "sonar.hunteragent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
+{{- $_ := set $props "sonar.remediationagent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
 {{- end -}}
 {{- if .Values.vortexAnalysis.enabled -}}
 {{- $_ := set $props "sonar.vortex.analysis.url" (include "sonarqube.vortexAnalysis.url" .) -}}
@@ -650,7 +650,7 @@ User-provided properties take precedence.
 {{/*
 Create the fully qualified name for the Agent Orchestrator.
 */}}
-{{- define "sonarqube.agent.orchestrator.fullname" -}}
+{{- define "sonarqube.agentOrchestrator.fullname" -}}
 {{- printf "%s-agent-orchestrator" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
@@ -658,8 +658,8 @@ Create the fully qualified name for the Agent Orchestrator.
 Create the fully qualified name for an Agentic Job Runtime family.
 Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
 */}}
-{{- define "sonarqube.agentic.runtime.fullname" -}}
-{{- printf "%s-agentic-runtime-%s" (include "sonarqube.fullname" .ctx) .family | trunc 63 | trimSuffix "-" -}}
+{{- define "sonarqube.agentRuntime.fullname" -}}
+{{- printf "%s-agent-runtime-%s" (include "sonarqube.fullname" .ctx) .family | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
@@ -667,38 +667,38 @@ Selector labels for the Agent Orchestrator: app: <chart>-agent-orchestrator + re
 the Vortex Analysis convention so the value doesn't collide with the SonarQube app Deployment's own
 selector (app: <chart> + release).
 */}}
-{{- define "sonarqube.agent.orchestrator.selectorLabels" -}}
+{{- define "sonarqube.agentOrchestrator.selectorLabels" -}}
 app: {{ include "sonarqube.name" . }}-agent-orchestrator
 release: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
-Selector labels for one Agentic Job Runtime family: app: <chart>-agentic-runtime-<family> + release.
+Selector labels for one Agentic Job Runtime family: app: <chart>-agent-runtime-<family> + release.
 Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
 */}}
-{{- define "sonarqube.agentic.runtime.selectorLabels" -}}
-app: {{ include "sonarqube.name" .ctx }}-agentic-runtime-{{ .family }}
+{{- define "sonarqube.agentRuntime.selectorLabels" -}}
+app: {{ include "sonarqube.name" .ctx }}-agent-runtime-{{ .family }}
 release: {{ .ctx.Release.Name }}
 {{- end -}}
 
 {{/*
 The two Agentic Job Runtime families, keyed by name, for templates that iterate over both.
-Usage: {{- range $family, $cfg := fromYaml (include "sonarqube.agentic.runtimes" .) }}
+Usage: {{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" .) }}
 */}}
-{{- define "sonarqube.agentic.runtimes" -}}
+{{- define "sonarqube.agentRuntimes" -}}
 hunter: {{- .Values.hunterAgent | toYaml | nindent 2 }}
 remediation: {{- .Values.remediationAgent | toYaml | nindent 2 }}
 {{- end -}}
 
 {{/*
 Name of the ServiceAccount for the Agent Orchestrator.
-When orchestrator.serviceAccount.create is true, use the pinned orchestrator.serviceAccount.name
+When agentOrchestrator.serviceAccount.create is true, use the pinned agentOrchestrator.serviceAccount.name
 (defaulting to the orchestrator fullname). Otherwise fall back to the main SonarQube ServiceAccount,
 so deployments that don't opt in to dedicated agentic SAs are unaffected.
 */}}
-{{- define "sonarqube.agent.orchestrator.serviceAccountName" -}}
-{{- if .Values.orchestrator.serviceAccount.create -}}
-{{- default (include "sonarqube.agent.orchestrator.fullname" .) .Values.orchestrator.serviceAccount.name -}}
+{{- define "sonarqube.agentOrchestrator.serviceAccountName" -}}
+{{- if .Values.agentOrchestrator.serviceAccount.create -}}
+{{- default (include "sonarqube.agentOrchestrator.fullname" .) .Values.agentOrchestrator.serviceAccount.name -}}
 {{- else -}}
 {{- include "sonarqube.serviceAccountName" . -}}
 {{- end -}}
@@ -709,12 +709,12 @@ Name of the ServiceAccount for an Agentic Job Runtime family.
 Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
 Same create / pinned-name / fallback logic as the orchestrator helper above.
 */}}
-{{- define "sonarqube.agentic.runtime.serviceAccountName" -}}
+{{- define "sonarqube.agentRuntime.serviceAccountName" -}}
 {{- $ctx := .ctx -}}
 {{- $family := .family -}}
-{{- $cfg := get (fromYaml (include "sonarqube.agentic.runtimes" $ctx)) $family -}}
+{{- $cfg := get (fromYaml (include "sonarqube.agentRuntimes" $ctx)) $family -}}
 {{- if $cfg.serviceAccount.create -}}
-{{- default (include "sonarqube.agentic.runtime.fullname" (dict "ctx" $ctx "family" $family)) $cfg.serviceAccount.name -}}
+{{- default (include "sonarqube.agentRuntime.fullname" (dict "ctx" $ctx "family" $family)) $cfg.serviceAccount.name -}}
 {{- else -}}
 {{- include "sonarqube.serviceAccountName" $ctx -}}
 {{- end -}}
@@ -723,8 +723,8 @@ Same create / pinned-name / fallback logic as the orchestrator helper above.
 {{/*
 URL the app nodes use to reach the shared Agent Orchestrator.
 */}}
-{{- define "sonarqube.agent.orchestrator.url" -}}
-{{- printf "http://%s:%d" (include "sonarqube.agent.orchestrator.fullname" .) (int .Values.orchestrator.port) -}}
+{{- define "sonarqube.agentOrchestrator.url" -}}
+{{- printf "http://%s:%d" (include "sonarqube.agentOrchestrator.fullname" .) (int .Values.agentOrchestrator.port) -}}
 {{- end -}}
 
 {{/*
@@ -740,9 +740,9 @@ web context path.
 Push URL the orchestrator uses to dispatch jobs to one Agentic Job Runtime family.
 Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
 */}}
-{{- define "sonarqube.agentic.runtime.pushUrl" -}}
-{{- $port := (get (fromYaml (include "sonarqube.agentic.runtimes" .ctx)) .family).port -}}
-{{- printf "http://%s:%d/jobs" (include "sonarqube.agentic.runtime.fullname" .) (int $port) -}}
+{{- define "sonarqube.agentRuntime.pushUrl" -}}
+{{- $port := (get (fromYaml (include "sonarqube.agentRuntimes" .ctx)) .family).port -}}
+{{- printf "http://%s:%d/jobs" (include "sonarqube.agentRuntime.fullname" .) (int $port) -}}
 {{- end -}}
 
 {{/*
@@ -839,7 +839,7 @@ Render nodeSelector/tolerations/affinity for an agentic workload: the component'
 when set (whole field, not merged), else the chart's global one.
 Parameters (dict): ctx (required, the root context '.'), component (required, the component's own
 values block, providing nodeSelector/tolerations/affinity)
-Usage: {{- with (include "sonarqube.agentic.scheduling" (dict "ctx" $ "component" .Values.orchestrator)) }}
+Usage: {{- with (include "sonarqube.agentic.scheduling" (dict "ctx" $ "component" .Values.agentOrchestrator)) }}
 {{ . | indent 6 }}
       {{- end }}
 */}}
@@ -867,7 +867,7 @@ affinity:
 {{/*
 Render one HTTP probe (readiness or liveness) from a probes.<kind> block.
 Parameters (dict): probe (required, the probes.<kind> values block)
-Usage: {{- with (include "sonarqube.agentic.probe" (dict "probe" .Values.orchestrator.probes.readiness)) }}
+Usage: {{- with (include "sonarqube.agentic.probe" (dict "probe" .Values.agentOrchestrator.probes.readiness)) }}
           readinessProbe:
 {{ . | indent 12 }}
           {{- end }}

@@ -61,7 +61,7 @@ func TestAgenticOrchestratorContainerSecurityContext(t *testing.T) {
 func TestAgenticOrchestratorNoReadOnlyRootFilesystemNoTmpVolume(t *testing.T) {
 	t.Run("readOnlyRootFilesystem: false", func(t *testing.T) {
 		deployment := renderAgenticOrchestrator(t, map[string]string{
-			"orchestrator.containerSecurityContext.readOnlyRootFilesystem": "false",
+			"agentOrchestrator.containerSecurityContext.readOnlyRootFilesystem": "false",
 		})
 		podSpec := deployment.Spec.Template.Spec
 		require.Len(t, podSpec.Containers, 1)
@@ -73,7 +73,7 @@ func TestAgenticOrchestratorNoReadOnlyRootFilesystemNoTmpVolume(t *testing.T) {
 	// default map entirely (see gvisor.nodeSelector) - it must not nil-pointer.
 	t.Run("containerSecurityContext: null", func(t *testing.T) {
 		deployment := renderAgenticOrchestrator(t, map[string]string{
-			"orchestrator.containerSecurityContext": "null",
+			"agentOrchestrator.containerSecurityContext": "null",
 		})
 		podSpec := deployment.Spec.Template.Spec
 		require.Len(t, podSpec.Containers, 1)
@@ -94,7 +94,7 @@ func TestAgenticOrchestratorResources(t *testing.T) {
 	assert.Equal(t, "2Gi", container.Resources.Limits.StorageEphemeral().String())
 }
 
-// Off by default, so an existing install picks up nothing new until orchestrator.enabled is set.
+// Off by default, so an existing install picks up nothing new until agentOrchestrator.enabled is set.
 func TestAgenticOrchestratorDisabledByDefault(t *testing.T) {
 	for _, tpl := range []string{
 		"templates/agentic-orchestrator.yaml",
@@ -105,7 +105,7 @@ func TestAgenticOrchestratorDisabledByDefault(t *testing.T) {
 			ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-all-disabled.yaml"},
 		}
 		output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{tpl})
-		require.Error(t, err, "%s must render nothing when orchestrator.enabled is false", tpl)
+		require.Error(t, err, "%s must render nothing when agentOrchestrator.enabled is false", tpl)
 		assert.Empty(t, strings.TrimSpace(output))
 	}
 }
@@ -196,8 +196,8 @@ func TestAgenticOrchestratorPullSecrets(t *testing.T) {
 
 	t.Run("orchestrator's own pull secret and list still apply", func(t *testing.T) {
 		names := agenticOrchestratorPullSecretNames(renderAgenticOrchestrator(t, map[string]string{
-			"orchestrator.image.pullSecret":          "orch-secret",
-			"orchestrator.image.pullSecrets[0].name": "orch-secret-list",
+			"agentOrchestrator.image.pullSecret":          "orch-secret",
+			"agentOrchestrator.image.pullSecrets[0].name": "orch-secret-list",
 		}))
 		assert.Equal(t, []string{"orch-secret", "orch-secret-list"}, names)
 	})
@@ -205,7 +205,7 @@ func TestAgenticOrchestratorPullSecrets(t *testing.T) {
 	t.Run("both combine, application nodes first", func(t *testing.T) {
 		names := agenticOrchestratorPullSecretNames(renderAgenticOrchestrator(t, map[string]string{
 			"applicationNodes.image.pullSecret": "app-secret",
-			"orchestrator.image.pullSecret":     "orch-secret",
+			"agentOrchestrator.image.pullSecret":     "orch-secret",
 		}))
 		assert.Equal(t, []string{"app-secret", "orch-secret"}, names)
 	})

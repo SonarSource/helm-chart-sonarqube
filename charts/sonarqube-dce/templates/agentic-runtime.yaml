@@ -1,10 +1,10 @@
-{{- range $family, $cfg := fromYaml (include "sonarqube.agentic.runtimes" .) }}
+{{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" .) }}
 {{- if $cfg.enabled }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "sonarqube.agentic.runtime.fullname" (dict "ctx" $ "family" $family) }}
+  name: {{ include "sonarqube.agentRuntime.fullname" (dict "ctx" $ "family" $family) }}
   labels:
     app: {{ template "sonarqube.name" $ }}
     chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
@@ -12,7 +12,7 @@ metadata:
     heritage: {{ $.Release.Service }}
     sonarqube.agentic/component: runtime
     sonarqube.agentic/family: {{ $family }}
-    app.kubernetes.io/component: agentic-runtime-{{ $family }}
+    app.kubernetes.io/component: agent-runtime-{{ $family }}
 spec:
   replicas: {{ $cfg.replicaCount }}
   {{- with $cfg.revisionHistoryLimit }}
@@ -22,7 +22,7 @@ spec:
   strategy: {{- toYaml . | nindent 4 }}
   {{- end }}
   selector:
-    matchLabels: {{- include "sonarqube.agentic.runtime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 6 }}
+    matchLabels: {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 6 }}
   template:
     metadata:
       {{- with $cfg.annotations }}
@@ -30,7 +30,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "sonarqube.agentic.runtime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 8 }}
+        {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 8 }}
         sonarqube.agentic/component: runtime
         sonarqube.agentic/family: {{ $family }}
         {{- with $cfg.podLabels }}
@@ -77,7 +77,7 @@ spec:
           {{- with $cfg.remediationScriptPath }}
           {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_SCRIPT_PATH" "value" .) }}
           {{- end }}
-          {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_RULE_INFO_ENDPOINT" "value" (printf "%s/remediation-agent/rule-info" (include "sonarqube.agent.orchestrator.url" $))) }}
+          {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_RULE_INFO_ENDPOINT" "value" (printf "%s/remediation-agent/rule-info" (include "sonarqube.agentOrchestrator.url" $))) }}
           {{- end }}
           {{- $mergedEnv := concat $autoEnv ($cfg.env | default list) }}
           {{- with $mergedEnv }}
@@ -102,7 +102,7 @@ spec:
       {{- with (include "sonarqube.agentic.scheduling" (dict "ctx" $ "component" $cfg)) }}
 {{ . | indent 6 }}
       {{- end }}
-      serviceAccountName: {{ include "sonarqube.agentic.runtime.serviceAccountName" (dict "ctx" $ "family" $family) }}
+      serviceAccountName: {{ include "sonarqube.agentRuntime.serviceAccountName" (dict "ctx" $ "family" $family) }}
       {{- with $cfg.extraVolumes }}
       volumes:
         {{- toYaml . | nindent 8 }}

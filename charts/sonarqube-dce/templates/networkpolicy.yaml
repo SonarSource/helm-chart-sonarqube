@@ -39,10 +39,10 @@ spec:
         - port: 9000
           protocol: TCP
 {{ end }}
-{{- if .Values.orchestrator.enabled }}
+{{- if .Values.agentOrchestrator.enabled }}
     - from:
         - podSelector:
-            matchLabels: {{- include "sonarqube.agent.orchestrator.selectorLabels" . | nindent 14 }}
+            matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 14 }}
       ports:
         - port: {{ .Values.service.internalPort }}
           protocol: TCP
@@ -88,12 +88,12 @@ spec:
       ports:
         - port: 9000
           protocol: TCP
-    {{- if .Values.orchestrator.enabled }}
+    {{- if .Values.agentOrchestrator.enabled }}
     - to:
         - podSelector:
-            matchLabels: {{- include "sonarqube.agent.orchestrator.selectorLabels" . | nindent 14 }}
+            matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 14 }}
       ports:
-        - port: {{ .Values.orchestrator.port }}
+        - port: {{ .Values.agentOrchestrator.port }}
           protocol: TCP
     {{- end }}
     {{- if .Values.vortexAnalysis.enabled }}

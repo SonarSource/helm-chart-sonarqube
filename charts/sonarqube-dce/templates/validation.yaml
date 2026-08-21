@@ -30,34 +30,34 @@
   {{- end -}}
 
 {{/* Validation for the Agent Orchestrator, when enabled */}}
-{{- if .Values.orchestrator.enabled -}}
-  {{- if not .Values.orchestrator.image.repository -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n orchestrator.enabled is true but orchestrator.image.repository is not set." -}}
+{{- if .Values.agentOrchestrator.enabled -}}
+  {{- if not .Values.agentOrchestrator.image.repository -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but agentOrchestrator.image.repository is not set." -}}
   {{- end -}}
-  {{- if not .Values.orchestrator.storage.bucket -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n orchestrator.enabled is true but orchestrator.storage.bucket is not set." -}}
+  {{- if not .Values.agentOrchestrator.storage.bucket -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but agentOrchestrator.storage.bucket is not set." -}}
   {{- end -}}
-  {{- $orchestratorStorage := .Values.orchestrator.storage -}}
-  {{- if and (not $orchestratorStorage.existingSecret) (or $orchestratorStorage.accessKey $orchestratorStorage.secretKey) (not (and $orchestratorStorage.accessKey $orchestratorStorage.secretKey)) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n orchestrator.enabled is true but only one of orchestrator.storage.accessKey / orchestrator.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
+  {{- $agentOrchestratorStorage := .Values.agentOrchestrator.storage -}}
+  {{- if and (not $agentOrchestratorStorage.existingSecret) (or $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey) (not (and $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey)) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but only one of agentOrchestrator.storage.accessKey / agentOrchestrator.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
   {{- end -}}
-  {{- if and (not .Values.orchestrator.coreDb.endpoint) (not (include "sonarqube.agentic.jdbc.endpoint" .)) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n orchestrator.enabled is true but the CORE DB endpoint could not be derived from jdbcOverwrite.jdbcUrl and orchestrator.coreDb.endpoint is not set." -}}
+  {{- if and (not .Values.agentOrchestrator.coreDb.endpoint) (not (include "sonarqube.agentic.jdbc.endpoint" .)) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB endpoint could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.endpoint is not set." -}}
   {{- end -}}
-  {{- if and (not .Values.orchestrator.coreDb.name) (not (include "sonarqube.agentic.jdbc.dbname" .)) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n orchestrator.enabled is true but the CORE DB name could not be derived from jdbcOverwrite.jdbcUrl and orchestrator.coreDb.name is not set." -}}
+  {{- if and (not .Values.agentOrchestrator.coreDb.name) (not (include "sonarqube.agentic.jdbc.dbname" .)) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB name could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.name is not set." -}}
   {{- end -}}
 {{- end -}}
 
 {{/* Validation for hunterAgent/remediationAgent dependencies, when enabled */}}
 {{- if .Values.hunterAgent.enabled -}}
-  {{- if not .Values.orchestrator.enabled -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true but orchestrator.enabled is not true." -}}
+  {{- if not .Values.agentOrchestrator.enabled -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true but agentOrchestrator.enabled is not true." -}}
   {{- end -}}
 {{- end -}}
 {{- if .Values.remediationAgent.enabled -}}
-  {{- if not .Values.orchestrator.enabled -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but orchestrator.enabled is not true." -}}
+  {{- if not .Values.agentOrchestrator.enabled -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but agentOrchestrator.enabled is not true." -}}
   {{- end -}}
   {{- if not .Values.vortexAnalysis.enabled -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but vortexAnalysis.enabled is not true." -}}
@@ -108,7 +108,7 @@
   {{- end -}}
   {{/* The RuntimeClass merges gvisor.nodeSelector into each runtime pod's own nodeSelector; a
        shared key with different values makes the pod unschedulable at admission. */}}
-  {{- range $family, $cfg := fromYaml (include "sonarqube.agentic.runtimes" $) -}}
+  {{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" $) -}}
     {{- if $cfg.enabled -}}
       {{- $effective := default $.Values.nodeSelector $cfg.nodeSelector -}}
       {{- range $key, $val := $gvisor.nodeSelector -}}

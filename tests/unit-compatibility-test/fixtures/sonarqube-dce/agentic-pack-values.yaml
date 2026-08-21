@@ -3,83 +3,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
-    heritage: Helm
-    sonarqube.agentic/component: orchestrator
-spec:
-  podSelector:
-    matchLabels:
-      app: sonarqube-dce
-      sonarqube.agentic/component: orchestrator
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: sonarqube-dce
-              sonarqube.datacenter/type: app
-      ports:
-        - port: 8080
-          protocol: TCP
-    - from:
-        - podSelector:
-            matchLabels:
-              app: sonarqube-dce
-              sonarqube.agentic/component: runtime
-      ports:
-        - port: 8080
-          protocol: TCP
-  egress:
-    - to:
-        - namespaceSelector: {}
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
-      ports:
-        - port: 53
-          protocol: UDP
-        - port: 53
-          protocol: TCP
-    - to:
-        - podSelector:
-            matchLabels:
-              app: sonarqube-dce
-              sonarqube.agentic/component: runtime
-              sonarqube.agentic/family: remediation
-      ports:
-        - port: 8090
-          protocol: TCP
-    - to:
-        - podSelector:
-            matchLabels:
-              app: sonarqube-dce
-              sonarqube.datacenter/type: app
-      ports:
-        - port: 9000
-          protocol: TCP
-    - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/instance: external-postgres
-              app.kubernetes.io/name: postgresql
-    - to:
-        - ipBlock:
-            cidr: 10.0.0.0/8
-      ports:
-        - port: 443
-          protocol: TCP
----
-# Source: sonarqube-dce/templates/agentic-networkpolicy.yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agentic-runtime-remediat
+  name: agentic-pack-values.yaml-sonarqube-dce-agent-runtime-remediatio
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
@@ -87,12 +11,12 @@ metadata:
     heritage: Helm
     sonarqube.agentic/component: runtime
     sonarqube.agentic/family: remediation
+    app.kubernetes.io/component: agent-runtime-remediation
 spec:
   podSelector:
     matchLabels:
-      app: sonarqube-dce
-      sonarqube.agentic/component: runtime
-      sonarqube.agentic/family: remediation
+      app: sonarqube-dce-agent-runtime-remediation
+      release: agentic-pack-values.yaml
   policyTypes:
     - Ingress
     - Egress
@@ -100,8 +24,8 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: sonarqube-dce
-              sonarqube.agentic/component: orchestrator
+              app: sonarqube-dce-agent-orchestrator
+              release: agentic-pack-values.yaml
       ports:
         - port: 8090
           protocol: TCP
@@ -119,8 +43,8 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: sonarqube-dce
-              sonarqube.agentic/component: orchestrator
+              app: sonarqube-dce-agent-orchestrator
+              release: agentic-pack-values.yaml
       ports:
         - port: 8080
           protocol: TCP
@@ -166,8 +90,8 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app: sonarqube-dce
-              sonarqube.agentic/component: orchestrator
+              app: sonarqube-dce-agent-orchestrator
+              release: agentic-pack-values.yaml
       ports:
         - port: 9000
           protocol: TCP
@@ -213,8 +137,8 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: sonarqube-dce
-              sonarqube.agentic/component: orchestrator
+              app: sonarqube-dce-agent-orchestrator
+              release: agentic-pack-values.yaml
       ports:
         - port: 8080
           protocol: TCP
@@ -281,54 +205,6 @@ spec:
         - port: 9002
           protocol: TCP
 ---
-# Source: sonarqube-dce/templates/vortex-analysis-networkpolicy.yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-vortex-analysis
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
-    heritage: Helm
-    app.kubernetes.io/component: vortex-analysis
-spec:
-  podSelector:
-    matchLabels:
-      app: sonarqube-dce-vortex-analysis
-      release: agentic-pack-values.yaml
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: sonarqube-dce
-              sonarqube.datacenter/type: app
-      ports:
-        - port: 8080
-          protocol: TCP
-  egress:
-    - to:
-        - namespaceSelector: {}
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
-      ports:
-        - port: 53
-          protocol: UDP
-        - port: 53
-          protocol: TCP
-    - to:
-        - podSelector:
-            matchLabels:
-              app: sonarqube-dce
-              sonarqube.datacenter/type: app
-      ports:
-        - port: 9000
-          protocol: TCP
----
 # Source: sonarqube-dce/templates/pod-disruption-budget.yaml
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -386,6 +262,7 @@ metadata:
     release: agentic-pack-values.yaml
     heritage: Helm
     sonarqube.agentic/component: orchestrator
+    app.kubernetes.io/component: agent-orchestrator
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agentic-orchestrator
 automountServiceAccountToken: true
@@ -402,6 +279,7 @@ metadata:
     heritage: Helm
     sonarqube.agentic/component: runtime
     sonarqube.agentic/family: remediation
+    app.kubernetes.io/component: agent-runtime-remediation
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agentic-orchestrator
 automountServiceAccountToken: true
@@ -410,13 +288,14 @@ automountServiceAccountToken: true
 apiVersion: v1
 kind: Secret
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator
+  name: agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
     release: agentic-pack-values.yaml
     heritage: Helm
     sonarqube.agentic/component: orchestrator
+    app.kubernetes.io/component: agent-orchestrator
 type: Opaque
 data:
   AGENTIC_SONARQUBE_TOKEN: "c3F1X2V4YW1wbGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
@@ -831,8 +710,8 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
-    sonar.hunteragent.orchestrator.url=http://agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator:8080
-    sonar.remediationagent.orchestrator.url=http://agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator:8080
+    sonar.hunteragent.orchestrator.url=http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080
+    sonar.remediationagent.orchestrator.url=http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080
     sonar.vortex.analysis.url=http://agentic-pack-values.yaml-sonarqube-dce-vortex-analysis:8080
 ---
 # Source: sonarqube-dce/templates/config.yaml
@@ -982,13 +861,14 @@ subjects:
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator
+  name: agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
     release: agentic-pack-values.yaml
     heritage: Helm
     sonarqube.agentic/component: orchestrator
+    app.kubernetes.io/component: agent-orchestrator
 spec:
   type: ClusterIP
   ports:
@@ -997,14 +877,14 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: sonarqube-dce
-    sonarqube.agentic/component: orchestrator
+    app: sonarqube-dce-agent-orchestrator
+    release: agentic-pack-values.yaml
 ---
-# Source: sonarqube-dce/templates/agentic-runtime.yaml
+# Source: sonarqube-dce/templates/agentic-runtime-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agentic-runtime-remediat
+  name: agentic-pack-values.yaml-sonarqube-dce-agent-runtime-remediatio
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
@@ -1012,6 +892,7 @@ metadata:
     heritage: Helm
     sonarqube.agentic/component: runtime
     sonarqube.agentic/family: remediation
+    app.kubernetes.io/component: agent-runtime-remediation
 spec:
   # Deliberately a load-balanced ClusterIP, not headless: on an HTTP 429 the runtime drops the
   # socket so a retry's fresh TCP handshake gets re-routed by kube-proxy to another replica.
@@ -1022,9 +903,8 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: sonarqube-dce
-    sonarqube.agentic/component: runtime
-    sonarqube.agentic/family: remediation
+    app: sonarqube-dce-agent-runtime-remediation
+    release: agentic-pack-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -1221,23 +1101,26 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator
+  name: agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
     release: agentic-pack-values.yaml
     heritage: Helm
     sonarqube.agentic/component: orchestrator
+    app.kubernetes.io/component: agent-orchestrator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sonarqube-dce
-      sonarqube.agentic/component: orchestrator
+      app: sonarqube-dce-agent-orchestrator
+      release: agentic-pack-values.yaml
   template:
     metadata:
+      annotations:
+        checksum/secret: 6e2c73b6eaf48e12e04825cbccdda10a6e9f767cee59b12f8fbca056c1402ac5
       labels:
-        app: sonarqube-dce
+        app: sonarqube-dce-agent-orchestrator
         release: agentic-pack-values.yaml
         sonarqube.agentic/component: orchestrator
     spec:
@@ -1265,7 +1148,7 @@ spec:
                 echo "Waiting for SonarQube to be UP..."; sleep 10;
               done
       containers:
-        - name: agentic-orchestrator
+        - name: agent-orchestrator
           image: "example.com/unifiedagenticharness/agentorchestrator:1.0.0"
           imagePullPolicy: IfNotPresent
           securityContext:
@@ -1310,10 +1193,10 @@ spec:
             - name: AGENTIC_SONARQUBE_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator
+                  name: agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator
                   key: AGENTIC_SONARQUBE_TOKEN
             - name: AGENTIC_REMEDIATION_RUNTIME_PUSH_URL
-              value: "http://agentic-pack-values.yaml-sonarqube-dce-agentic-runtime-remediat:8090/jobs"
+              value: "http://agentic-pack-values.yaml-sonarqube-dce-agent-runtime-remediatio:8090/jobs"
           resources:
             limits:
               cpu: "1"
@@ -1347,7 +1230,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agentic-runtime-remediat
+  name: agentic-pack-values.yaml-sonarqube-dce-agent-runtime-remediatio
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
@@ -1355,17 +1238,17 @@ metadata:
     heritage: Helm
     sonarqube.agentic/component: runtime
     sonarqube.agentic/family: remediation
+    app.kubernetes.io/component: agent-runtime-remediation
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sonarqube-dce
-      sonarqube.agentic/component: runtime
-      sonarqube.agentic/family: remediation
+      app: sonarqube-dce-agent-runtime-remediation
+      release: agentic-pack-values.yaml
   template:
     metadata:
       labels:
-        app: sonarqube-dce
+        app: sonarqube-dce-agent-runtime-remediation
         release: agentic-pack-values.yaml
         sonarqube.agentic/component: runtime
         sonarqube.agentic/family: remediation
@@ -1394,7 +1277,7 @@ spec:
             - name: REMEDIATION_SCRIPT_PATH
               value: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
             - name: REMEDIATION_RULE_INFO_ENDPOINT
-              value: http://agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator:8080/remediation-agent/rule-info
+              value: http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080/remediation-agent/rule-info
           resources:
             limits:
               cpu: "4"
@@ -1404,6 +1287,18 @@ spec:
               cpu: "1"
               ephemeral-storage: 10Gi
               memory: 2Gi
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
       serviceAccountName: remediation-agent-runtime
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
@@ -1440,7 +1335,7 @@ spec:
         sonarqube.datacenter/type: "app"
       annotations:
         checksum/plugins: c385a4b4aedaa62ad51bc4dd43343eb8684d1f96a065324bc125c1f48aae2aad
-        checksum/config: 2122632839de2e799c072ca510206fed78932cace75eb98eefce05512c02efe9
+        checksum/config: 7b6c40b1cd54928edf69d6d2c42e76f3fc1c9165461021fc04efdfb3328a9990
         checksum/secret: 704e3b5f601b4acea8b7e253eb3d57b6c8c2bbfc3f1a64c04533fb945bafaa21
     spec:
       automountServiceAccountToken: false
@@ -1546,9 +1441,9 @@ spec:
             - name: SONAR_VORTEX_ANALYSIS_URL
               value: "http://agentic-pack-values.yaml-sonarqube-dce-vortex-analysis:8080"
             - name: SONAR_HUNTERAGENT_ORCHESTRATOR_URL
-              value: "http://agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator:8080"
+              value: "http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080"
             - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
-              value: "http://agentic-pack-values.yaml-sonarqube-dce-agentic-orchestrator:8080"
+              value: "http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080"
           envFrom:
             - configMapRef:
                 name: agentic-pack-values.yaml-sonarqube-dce-jdbc-config
@@ -1774,7 +1669,7 @@ spec:
       annotations:
         checksum/init-sysctl: 48984fefbca804adff3080e6d8de92b55dc4d18e45e68500098515d6f269d103
         checksum/init-fs: b897430b48cc08872fc3b6d6f5aed36612fa12646496d95e7d8d6045ea87dd14
-        checksum/config: 2122632839de2e799c072ca510206fed78932cace75eb98eefce05512c02efe9
+        checksum/config: 7b6c40b1cd54928edf69d6d2c42e76f3fc1c9165461021fc04efdfb3328a9990
         checksum/secret: 704e3b5f601b4acea8b7e253eb3d57b6c8c2bbfc3f1a64c04533fb945bafaa21
     spec:
       automountServiceAccountToken: false

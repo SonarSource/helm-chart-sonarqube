@@ -938,7 +938,7 @@ vortexAnalysis:
 # Shared Agent Orchestrator, dispatching jobs to hunterAgent/remediationAgent. hunterAgent and
 # remediationAgent each require this to be enabled - see validation.yaml. Requires jdbcOverwrite
 # (always true in DCE) to reuse the SonarQube DB, and a real orchestrator image before enabling.
-orchestrator:
+agentOrchestrator:
   enabled: false
 
   image:
@@ -1034,7 +1034,7 @@ orchestrator:
     pathStyle: true
     # Credentials. Leave accessKey/secretKey/existingSecret all blank for credential-less access:
     # the orchestrator's AWS SDK then falls back to its default credential chain (the pod's IAM
-    # identity - node instance role, or IRSA via orchestrator.serviceAccount annotations).
+    # identity - node instance role, or IRSA via agentOrchestrator.serviceAccount annotations).
     # Inline access/secret key; ignored when existingSecret is set
     accessKey: ""
     secretKey: ""
@@ -1062,7 +1062,7 @@ orchestrator:
     # Override for GitHub Enterprise Server, or to point at a local mock.
     apiBaseUrl: ""
 
-# Agentic Job Runtime that detects issues. Requires orchestrator.enabled - see validation.yaml.
+# Agentic Job Runtime that detects issues. Requires agentOrchestrator.enabled - see validation.yaml.
 # Process-count limits aren't set here - use your node's kubelet configuration (podPidsLimit).
 hunterAgent:
   enabled: false
@@ -1112,7 +1112,7 @@ hunterAgent:
     capabilities:
       drop: ["ALL"]
   # ServiceAccount for this runtime, independent of the top-level serviceAccount. `name` pins the
-  # SA name for an external IAM trust policy; defaults to <fullname>-agentic-runtime-hunter.
+  # SA name for an external IAM trust policy; defaults to <fullname>-agent-runtime-hunter.
   serviceAccount:
     create: false
     name: ""
@@ -1124,7 +1124,7 @@ hunterAgent:
     # Additional egress destinations, each a cidr, a podSelector, a namespaceSelector or both
     # selectors, with optional ports. Use the selectors for destinations inside the cluster.
     # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
-    # covering orchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
+    # covering agentOrchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
     # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of
     # your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
     egressAllow: []
@@ -1156,7 +1156,7 @@ hunterAgent:
   #   mountPath: /custom-ca
   #   readOnly: true
 
-# Agentic Job Runtime that remediates issues. Requires orchestrator.enabled AND
+# Agentic Job Runtime that remediates issues. Requires agentOrchestrator.enabled AND
 # vortexAnalysis.enabled - see validation.yaml.
 remediationAgent:
   enabled: false  # enable once the remediation runtime image is available
@@ -1213,7 +1213,7 @@ remediationAgent:
     capabilities:
       drop: ["ALL"]
   # ServiceAccount for this runtime, independent of the top-level serviceAccount. `name` pins the
-  # SA name for an external IAM trust policy; defaults to <fullname>-agentic-runtime-remediation.
+  # SA name for an external IAM trust policy; defaults to <fullname>-agent-runtime-remediation.
   serviceAccount:
     create: false
     name: ""
@@ -1225,7 +1225,7 @@ remediationAgent:
     # Additional egress destinations, each a cidr, a podSelector, a namespaceSelector or both
     # selectors, with optional ports. Use the selectors for destinations inside the cluster.
     # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
-    # covering orchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
+    # covering agentOrchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
     # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of
     # your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
     egressAllow: []
