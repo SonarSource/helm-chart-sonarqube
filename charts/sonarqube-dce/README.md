@@ -304,7 +304,7 @@ Nonetheless, if you intend to run a production-grade SonarQube please follow the
 
 * Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
 * Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
-* Set `gvisor.installer.enabled` to **false**. This parameter deploys a **privileged**, host-mutating DaemonSet that installs `runsc` on every node. In production, provision gVisor yourself instead — either through your own node-provisioning process on self-managed nodes, or through your managed Kubernetes provider's built-in sandbox mechanism where one exists (e.g. GKE Sandbox) — see [Agent Orchestrator, Hunter Agent, Remediation Agent](#agent-orchestrator-hunter-agent-remediation-agent). Leave `gvisor.enabled` at its default (`true`) so the agent runtimes still use the `RuntimeClass` once `runsc` is available.
+* Set `gvisor.installer.enabled` to **false**. This parameter deploys a **privileged**, host-mutating DaemonSet that installs `runsc` on every node. In production, provision gVisor yourself instead — either through your own node-provisioning process on self-managed nodes, or through your managed Kubernetes provider's built-in sandbox mechanism where one exists (e.g. GKE Sandbox) — see [Agentic](#agentic). Leave `gvisor.enabled` at its default (`true`) so the agent runtimes still use the `RuntimeClass` once `runsc` is available.
 * If your cluster spans multiple failure domains, configure `searchNodes.topologySpreadConstraints` to spread search pods across zones and nodes. This is especially important for search pods because they are stateful and depend on persistent volumes.
 
 #### Spreading pods across topology domains
@@ -964,15 +964,25 @@ If the keystore uses a self-signed certificate, SonarQube's JVM will reject the 
      secret: mcp-ca-cert
    ```
 
-### Vortex Analysis
+### Agentic
 
-`sonar.vortex.analysis.url` (like the Agent Orchestrator URLs below) is set both as a pod env var
-and as a real line in the rendered `conf/sonar.properties` — SonarQube's `Configuration` API only
-honours a `SONAR_*` env var override for a property that already has a `conf/sonar.properties`
-line, so the env var alone is silently ignored by anything reading it that way (SONAR-31416).
+Four independently toggled features: Vortex Analysis (`vortexAnalysis.enabled`), the shared Agent Orchestrator (`orchestrator.enabled`), and one Deployment/Service each for the Hunter Agent (`hunterAgent.enabled`) and the Remediation Agent (`remediationAgent.enabled`). Dependencies are enforced at template time (see `templates/validation.yaml`): `hunterAgent.enabled=true` requires `orchestrator.enabled=true`; `remediationAgent.enabled=true` requires both `orchestrator.enabled=true` and `vortexAnalysis.enabled=true`.
+
+`vortexAnalysis.enabled` points the SonarQube app nodes at Vortex via `sonar.vortex.analysis.url`; `orchestrator.enabled` points them at the orchestrator via `sonar.hunteragent.orchestrator.url` and `sonar.remediationagent.orchestrator.url`. Each is set both as a pod env var (`SONAR_VORTEX_ANALYSIS_URL`, `SONAR_HUNTERAGENT_ORCHESTRATOR_URL`, `SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL`) and as a real line in the rendered `conf/sonar.properties` — SonarQube's `Configuration` API only honours a `SONAR_*` env var override for a property that already has a `conf/sonar.properties` line, so the env var alone is silently ignored by anything reading it that way (SONAR-31416).
+
+**gVisor sandboxing.** The (untrusted) agent runtimes run under the [gVisor](https://gvisor.dev/) (`runsc`) sandbox by default, via two toggles under `gvisor` — both only take effect when at least one of `hunterAgent.enabled` / `remediationAgent.enabled` is also `true`:
+
+- **`gvisor.enabled`** (default `true`) creates a cluster-scoped `RuntimeClass` (default name `gvisor`) and runs the agent runtimes under it. Assumes `runsc` is already on your nodes (out-of-band: node bootstrap, custom AMI, GKE Sandbox, Bottlerocket). `RuntimeClass` is cluster-scoped, so give each release a distinct `runtimeClassName` if you install more than one.
+- **`gvisor.installer.enabled`** (default `true`) *additionally* deploys a **privileged** DaemonSet that installs `runsc` and labels each node once ready. **Self-managed nodes only**. **On fully-managed, no-node-access compute** (GKE Autopilot, Fargate-style EKS/AKS profiles) this can't run at all — use the provider's own sandbox where one exists (GKE Sandbox on GKE; AWS and Azure have no equivalent) or provision `runsc` via a custom node image. Standard EKS/AKS managed node groups aren't restricted this way. Pods requesting the RuntimeClass stay `Pending` until a node is labeled — expected, not a failure. Idempotent. Recommended **off** in production — see [Production use case](#production-use-case).
+
+**Node pinning.** The `RuntimeClass` merges `gvisor.nodeSelector` into each runtime pod's own `nodeSelector`, so a runtime's effective `nodeSelector` (its own, else the top-level one) must not set any of those keys to a different value — the chart fails the install rather than let Kubernetes reject the pod.
+
+**Opting out.** Set `gvisor.enabled=false` to run the agent runtimes under your cluster's standard container runtime instead. Trade-off: without gVisor, isolation between an LLM-influenced job and the host relies on standard container isolation (namespaces/cgroups/seccomp) only — no syscall-interception sandbox layer underneath it.
+
+**Version pin.** The `runsc` release the installer downloads (`gvisor.installer.runscVersion`) is pinned and must be bumped deliberately, in the same change as any other gVisor-related update to this chart — never left to float to "latest".
 
 | Parameter                                       | Description                                                                                                     | Default                                                                |
-| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | `vortexAnalysis.enabled`                        | Deploy the Vortex analysis service and set `sonar.vortex.analysis.url` on the app nodes                          | `false`                                                                |
 | `vortexAnalysis.image.repository`               | Vortex analysis image repository (required when enabled)                                                         | `""`                                                                   |
 | `vortexAnalysis.image.tag`                      | Vortex analysis image tag (required when enabled)                                                                | `""`                                                                   |
@@ -1006,32 +1016,6 @@ line, so the env var alone is silently ignored by anything reading it that way (
 | `vortexAnalysis.affinity`                       | Affinity for the Vortex analysis pod                                                                              | `{}`                                                                   |
 | `vortexAnalysis.tolerations`                    | Tolerations for the Vortex analysis pod                                                                           | `[]`                                                                   |
 | `vortexAnalysis.annotations`                    | Annotations for the Vortex analysis pod                                                                          | `{}`                                                                   |
-
-When `vortexAnalysis.enabled` is set to `true`, the chart deploys a separate Vortex analysis pod alongside the SonarQube application nodes and automatically wires the two together via the `SONAR_VORTEX_ANALYSIS_URL` environment variable, which sets the `sonar.vortex.analysis.url` property. SonarQube then sends analysis requests to it. While it is disabled, SonarQube sends none.
-
-Vortex analysis calls the SonarQube Web API, so a token is required: set either `vortexAnalysis.sonarqubeToken.token` or `vortexAnalysis.sonarqubeToken.existingSecret`.
-
-Context restoration also requires an S3-compatible object store matching `sonar.agentic.storage.*`: set `vortexAnalysis.storage.bucket` and `vortexAnalysis.storage.region`, and, if needed, `vortexAnalysis.serviceAccount` for IRSA access to it.
-
-The pod can take several minutes to become ready on a first start, while it loads its analyzers.
-
-### Agent Orchestrator, Hunter Agent, Remediation Agent
-
-Three independent features: the shared Agent Orchestrator (`orchestrator.enabled`), and one Deployment/Service each for the Hunter Agent (`hunterAgent.enabled`) and the Remediation Agent (`remediationAgent.enabled`). Dependencies are enforced at template time (see `templates/validation.yaml`): `hunterAgent.enabled=true` requires `orchestrator.enabled=true`; `remediationAgent.enabled=true` requires both `orchestrator.enabled=true` and `vortexAnalysis.enabled=true`. When the orchestrator is enabled, the chart also points the SonarQube app nodes at it, both via the `SONAR_HUNTERAGENT_ORCHESTRATOR_URL` / `SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL` env vars and as real `sonar.hunteragent.orchestrator.url` / `sonar.remediationagent.orchestrator.url` lines in the rendered `conf/sonar.properties` — see the note under [Vortex Analysis](#vortex-analysis) for why both are needed (SONAR-31416).
-
-**gVisor sandboxing.** The (untrusted) agent runtimes run under the [gVisor](https://gvisor.dev/) (`runsc`) sandbox by default, via two toggles under `gvisor` — both only take effect when at least one of `hunterAgent.enabled` / `remediationAgent.enabled` is also `true`:
-
-- **`gvisor.enabled`** (default `true`) creates a cluster-scoped `RuntimeClass` (default name `gvisor`) and runs the agent runtimes under it. Assumes `runsc` is already on your nodes (out-of-band: node bootstrap, custom AMI, GKE Sandbox, Bottlerocket). `RuntimeClass` is cluster-scoped, so give each release a distinct `runtimeClassName` if you install more than one.
-- **`gvisor.installer.enabled`** (default `true`) *additionally* deploys a **privileged** DaemonSet that installs `runsc` and labels each node once ready. **Self-managed nodes only**. **On fully-managed, no-node-access compute** (GKE Autopilot, Fargate-style EKS/AKS profiles) this can't run at all — use the provider's own sandbox where one exists (GKE Sandbox on GKE; AWS and Azure have no equivalent) or provision `runsc` via a custom node image. Standard EKS/AKS managed node groups aren't restricted this way. Pods requesting the RuntimeClass stay `Pending` until a node is labeled — expected, not a failure. Idempotent. Recommended **off** in production — see [Production use case](#production-use-case).
-
-**Node pinning.** The `RuntimeClass` merges `gvisor.nodeSelector` into each runtime pod's own `nodeSelector`, so a runtime's effective `nodeSelector` (its own, else the top-level one) must not set any of those keys to a different value — the chart fails the install rather than let Kubernetes reject the pod.
-
-**Opting out.** Set `gvisor.enabled=false` to run the agent runtimes under your cluster's standard container runtime instead. Trade-off: without gVisor, isolation between an LLM-influenced job and the host relies on standard container isolation (namespaces/cgroups/seccomp) only — no syscall-interception sandbox layer underneath it.
-
-**Version pin.** The `runsc` release the installer downloads (`gvisor.installer.runscVersion`) is pinned and must be bumped deliberately, in the same change as any other gVisor-related update to this chart — never left to float to "latest".
-
-| Parameter                                                        | Description                                                                                                                              | Default                                                                        |
-| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | `orchestrator.enabled`                                           | Deploy the Agent Orchestrator                                                                                                            | `false`                                                                        |
 | `hunterAgent.enabled`                                            | Deploy the Hunter Agent (requires `orchestrator.enabled=true`)                                                                           | `false`                                                                        |
 | `remediationAgent.enabled`                                       | Deploy the Remediation Agent (requires `orchestrator.enabled=true` and `vortexAnalysis.enabled=true`)                                    | `false`                                                                        |
@@ -1118,6 +1102,14 @@ Three independent features: the shared Agent Orchestrator (`orchestrator.enabled
 | `hunterAgent.scriptPath`                                         | Detection-agent entrypoint exposed as `SCRIPT_PATH`, which switches the runtime into hunter/detection mode; `""` omits the env var                        | `/home/agent/app/.venv/bin/detection-agent`                                    |
 | `remediationAgent.remediationScriptPath`                         | Remediation-agent entrypoint exposed as `REMEDIATION_SCRIPT_PATH` (`REMEDIATION_RULE_INFO_ENDPOINT` is derived from the orchestrator URL); `""` omits the env var | `/home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py` |
 | `remediationAgent.resources`                                     | Resources for the SonarQube Remediation Agent (SQRA) runtime, sized for repo clone + agent/LLM loop                                      | requests `1` CPU / `2Gi` / `10Gi`, limits `4` CPU / `8Gi` / `50Gi`             |
+
+When `vortexAnalysis.enabled` is set to `true`, the chart deploys a separate Vortex analysis pod alongside the SonarQube application nodes, and SonarQube starts sending analysis requests to it. While it is disabled, SonarQube sends none.
+
+Vortex analysis calls the SonarQube Web API, so a token is required: set either `vortexAnalysis.sonarqubeToken.token` or `vortexAnalysis.sonarqubeToken.existingSecret`.
+
+Context restoration also requires an S3-compatible object store matching `sonar.agentic.storage.*`: set `vortexAnalysis.storage.bucket` and `vortexAnalysis.storage.region`, and, if needed, `vortexAnalysis.serviceAccount` for IRSA access to it.
+
+The Vortex analysis pod can take several minutes to become ready on a first start, while it loads its analyzers.
 
 Each agent also reads/writes job artifacts directly against `orchestrator.storage` via presigned URLs, bypassing the orchestrator. With that agent's `networkPolicy.enabled`, add a peer covering it to its `networkPolicy.egressAllow`, or jobs fail at the first artifact download.
 
