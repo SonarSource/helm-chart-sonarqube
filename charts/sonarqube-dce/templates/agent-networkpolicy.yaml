@@ -10,8 +10,8 @@ metadata:
     chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
     release: {{ $.Release.Name }}
     heritage: {{ $.Release.Service }}
-    sonarqube.agentic/component: runtime
-    sonarqube.agentic/family: {{ $family }}
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: {{ $family }}
     app.kubernetes.io/component: agent-runtime-{{ $family }}
 spec:
   podSelector:
@@ -49,7 +49,7 @@ spec:
            cover it (see the comment on it in values.yaml). */}}
     {{- range $cfg.networkPolicy.egressAllow }}
     - to:
-{{ include "sonarqube.agentic.egressAllow.peer" . | indent 8 }}
+{{ include "sonarqube.agent.egressAllow.peer" . | indent 8 }}
       {{- with .ports }}
       ports:
         {{- range . }}

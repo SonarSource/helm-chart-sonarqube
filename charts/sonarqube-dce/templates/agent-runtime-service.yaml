@@ -10,8 +10,8 @@ metadata:
     chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
     release: {{ $.Release.Name }}
     heritage: {{ $.Release.Service }}
-    sonarqube.agentic/component: runtime
-    sonarqube.agentic/family: {{ $family }}
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: {{ $family }}
     app.kubernetes.io/component: agent-runtime-{{ $family }}
 spec:
   # Deliberately a load-balanced ClusterIP, not headless: on an HTTP 429 the runtime drops the

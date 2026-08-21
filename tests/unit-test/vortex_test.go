@@ -13,11 +13,11 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 )
 
-// Vortex analysis is a standalone service deployed alongside SonarQube, like the MCP server, and is
+// Vortex is a standalone service deployed alongside SonarQube, like the MCP server, and is
 // independent of the orchestrator/hunterAgent/remediationAgent. It exists only on the Data Center
 // chart for now.
 
-const vortexFullnameSuffix = "-vortex-analysis"
+const vortexFullnameSuffix = "-vortex"
 
 func renderVortex(t *testing.T, fixture string, templates ...string) (string, error) {
 	t.Helper()
@@ -50,12 +50,12 @@ func vortexDocKind(doc string) string {
 
 func vortexDeployment(t *testing.T, fixture string) appsv1.Deployment {
 	t.Helper()
-	output, err := renderVortex(t, fixture, "templates/vortex-analysis.yaml")
+	output, err := renderVortex(t, fixture, "templates/vortex.yaml")
 	require.NoError(t, err)
 
 	var deployment appsv1.Deployment
 	helm.UnmarshalK8SYaml(t, output, &deployment)
-	require.NotEmpty(t, deployment.Name, "no Deployment rendered by templates/vortex-analysis.yaml")
+	require.NotEmpty(t, deployment.Name, "no Deployment rendered by templates/vortex.yaml")
 	return deployment
 }
 
@@ -67,36 +67,36 @@ func vortexContainerEnv(container corev1.Container) map[string]corev1.EnvVar {
 	return env
 }
 
-// Off by default, so an existing install picks up nothing new until vortexAnalysis.enabled is set.
-func TestVortexAnalysisDisabledByDefault(t *testing.T) {
+// Off by default, so an existing install picks up nothing new until vortex.enabled is set.
+func TestVortexDisabledByDefault(t *testing.T) {
 	for _, tpl := range []string{
-		"templates/vortex-analysis.yaml",
-		"templates/vortex-analysis-service.yaml",
-		"templates/vortex-analysis-secret.yaml",
+		"templates/vortex.yaml",
+		"templates/vortex-service.yaml",
+		"templates/vortex-secret.yaml",
 	} {
-		output, err := renderVortex(t, "vortex-analysis-disabled.yaml", tpl)
-		require.Error(t, err, "%s must render nothing when vortexAnalysis.enabled is false", tpl)
+		output, err := renderVortex(t, "vortex-disabled.yaml", tpl)
+		require.Error(t, err, "%s must render nothing when vortex.enabled is false", tpl)
 		assert.Empty(t, strings.TrimSpace(output))
 	}
 }
 
 // It must render with no orchestrator/hunterAgent/remediationAgent configured at all.
-func TestVortexAnalysisIndependentOfAgenticComponents(t *testing.T) {
-	deployment := vortexDeployment(t, "vortex-analysis-enabled.yaml")
+func TestVortexIndependentOfAgentComponents(t *testing.T) {
+	deployment := vortexDeployment(t, "vortex-enabled.yaml")
 	assert.Equal(t, dceReleaseName+"-sonarqube-dce"+vortexFullnameSuffix, deployment.Name)
-	assert.Equal(t, "vortex-analysis", deployment.Labels["app.kubernetes.io/component"])
+	assert.Equal(t, "vortex", deployment.Labels["app.kubernetes.io/component"])
 
 	// It uses the release's own ServiceAccount, like the MCP server.
-	_, err := renderVortex(t, "vortex-analysis-enabled.yaml", "templates/agent-serviceaccount.yaml")
-	require.Error(t, err, "the agentic ServiceAccount template must render nothing for a vortex-only install")
+	_, err := renderVortex(t, "vortex-enabled.yaml", "templates/agent-serviceaccount.yaml")
+	require.Error(t, err, "the agent ServiceAccount template must render nothing for a vortex-only install")
 }
 
 // The property that activates analysis on the SonarQube side is sonar.vortex.analysis.url, injected
 // as SONAR_VORTEX_ANALYSIS_URL. Absent when the service isn't deployed — unset means SonarQube routes
 // no analysis requests, rather than failing to boot.
-func TestVortexAnalysisAppNodeWiring(t *testing.T) {
+func TestVortexAppNodeWiring(t *testing.T) {
 	t.Run("set when enabled", func(t *testing.T) {
-		output, err := renderVortex(t, "vortex-analysis-enabled.yaml", "templates/sonarqube-application.yaml")
+		output, err := renderVortex(t, "vortex-enabled.yaml", "templates/sonarqube-application.yaml")
 		require.NoError(t, err)
 
 		var app appsv1.Deployment
@@ -109,7 +109,7 @@ func TestVortexAnalysisAppNodeWiring(t *testing.T) {
 	})
 
 	t.Run("absent when disabled", func(t *testing.T) {
-		output, err := renderVortex(t, "vortex-analysis-disabled.yaml", "templates/sonarqube-application.yaml")
+		output, err := renderVortex(t, "vortex-disabled.yaml", "templates/sonarqube-application.yaml")
 		require.NoError(t, err)
 
 		var app appsv1.Deployment
@@ -121,8 +121,8 @@ func TestVortexAnalysisAppNodeWiring(t *testing.T) {
 
 // Vortex analysis calls the SonarQube Web API, so it needs the SonarQube URL and a token. User
 // supplied env comes last, so it can override the values the chart wires automatically.
-func TestVortexAnalysisContainerEnv(t *testing.T) {
-	container := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Spec.Containers[0]
+func TestVortexContainerEnv(t *testing.T) {
+	container := vortexDeployment(t, "vortex-enabled.yaml").Spec.Template.Spec.Containers[0]
 	env := vortexContainerEnv(container)
 
 	url, ok := env["VORTEX_ANALYSIS_SONARQUBE_URL"]
@@ -146,12 +146,12 @@ func TestVortexAnalysisContainerEnv(t *testing.T) {
 // Context restoration reads from an S3-compatible object store, wired via the SONAR_AGENTIC_STORAGE_*
 // env vars (SONAR-31587). They must resolve to the same bucket SonarQube Server writes the context
 // items to, or restoration silently finds nothing.
-func TestVortexAnalysisStorageEnv(t *testing.T) {
-	container := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Spec.Containers[0]
+func TestVortexStorageEnv(t *testing.T) {
+	container := vortexDeployment(t, "vortex-enabled.yaml").Spec.Template.Spec.Containers[0]
 	env := vortexContainerEnv(container)
 
 	assert.Equal(t, "S3", env["SONAR_AGENTIC_STORAGE_TYPE"].Value)
-	assert.Equal(t, "agentic-artifacts", env["SONAR_AGENTIC_STORAGE_BUCKET"].Value)
+	assert.Equal(t, "agent-artifacts", env["SONAR_AGENTIC_STORAGE_BUCKET"].Value)
 	assert.Equal(t, "eu-west-1", env["SONAR_AGENTIC_STORAGE_REGION"].Value)
 	assert.Equal(t, "false", env["SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS"].Value)
 	assert.Equal(t, "", env["SONAR_AGENTIC_STORAGE_ENDPOINT"].Value)
@@ -163,8 +163,8 @@ func TestVortexAnalysisStorageEnv(t *testing.T) {
 }
 
 // A custom endpoint (e.g. MinIO) with inline static credentials becomes a chart-managed Secret.
-func TestVortexAnalysisStorageCredentials(t *testing.T) {
-	container := vortexDeployment(t, "vortex-analysis-storage-credentials.yaml").Spec.Template.Spec.Containers[0]
+func TestVortexStorageCredentials(t *testing.T) {
+	container := vortexDeployment(t, "vortex-storage-credentials.yaml").Spec.Template.Spec.Containers[0]
 	env := vortexContainerEnv(container)
 
 	assert.Equal(t, "http://minio.speedboat-test-xx.svc:9000", env["SONAR_AGENTIC_STORAGE_ENDPOINT"].Value)
@@ -179,7 +179,7 @@ func TestVortexAnalysisStorageCredentials(t *testing.T) {
 	require.NotNil(t, secretKey.ValueFrom)
 	assert.Equal(t, "SONAR_AGENTIC_STORAGE_SECRET_KEY", secretKey.ValueFrom.SecretKeyRef.Key)
 
-	output, err := renderVortex(t, "vortex-analysis-storage-credentials.yaml", "templates/vortex-analysis-secret.yaml")
+	output, err := renderVortex(t, "vortex-storage-credentials.yaml", "templates/vortex-secret.yaml")
 	require.NoError(t, err)
 	var secret corev1.Secret
 	helm.UnmarshalK8SYaml(t, output, &secret)
@@ -188,8 +188,8 @@ func TestVortexAnalysisStorageCredentials(t *testing.T) {
 }
 
 // An existingSecret for the storage credentials is referenced directly, with no chart-managed Secret.
-func TestVortexAnalysisStorageExistingSecret(t *testing.T) {
-	deployment := vortexDeployment(t, "vortex-analysis-storage-existing-secret.yaml")
+func TestVortexStorageExistingSecret(t *testing.T) {
+	deployment := vortexDeployment(t, "vortex-storage-existing-secret.yaml")
 	env := vortexContainerEnv(deployment.Spec.Template.Spec.Containers[0])
 
 	accessKey := env["SONAR_AGENTIC_STORAGE_ACCESS_KEY"]
@@ -197,15 +197,15 @@ func TestVortexAnalysisStorageExistingSecret(t *testing.T) {
 	assert.Equal(t, "my-minio-credentials", accessKey.ValueFrom.SecretKeyRef.Name)
 	assert.Equal(t, "SONAR_AGENTIC_STORAGE_ACCESS_KEY", accessKey.ValueFrom.SecretKeyRef.Key)
 
-	output, err := renderVortex(t, "vortex-analysis-storage-existing-secret.yaml", "templates/vortex-analysis-secret.yaml")
+	output, err := renderVortex(t, "vortex-storage-existing-secret.yaml", "templates/vortex-secret.yaml")
 	require.Error(t, err, "no Secret may be rendered when both the token and the storage credentials come from an existingSecret")
 	assert.Empty(t, strings.TrimSpace(output))
 }
 
 // By default the pod talks to the Web API with its own token and never to the Kubernetes API, so
 // it must not get a ServiceAccount token mounted, and it uses "default" rather than a pinned name.
-func TestVortexAnalysisDoesNotAutomountServiceAccountToken(t *testing.T) {
-	podSpec := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Spec
+func TestVortexDoesNotAutomountServiceAccountToken(t *testing.T) {
+	podSpec := vortexDeployment(t, "vortex-enabled.yaml").Spec.Template.Spec
 	require.NotNil(t, podSpec.AutomountServiceAccountToken)
 	assert.False(t, *podSpec.AutomountServiceAccountToken)
 	assert.Equal(t, "default", podSpec.ServiceAccountName)
@@ -213,38 +213,38 @@ func TestVortexAnalysisDoesNotAutomountServiceAccountToken(t *testing.T) {
 
 // A dedicated, IRSA-annotated ServiceAccount (SONAR-31587) lets the pod reach real S3 for context
 // restoration instead of falling back to the node's own AWS identity.
-func TestVortexAnalysisServiceAccount(t *testing.T) {
-	podSpec := vortexDeployment(t, "vortex-analysis-serviceaccount.yaml").Spec.Template.Spec
+func TestVortexServiceAccount(t *testing.T) {
+	podSpec := vortexDeployment(t, "vortex-serviceaccount.yaml").Spec.Template.Spec
 	assert.Equal(t, dceReleaseName+"-sonarqube-dce"+vortexFullnameSuffix, podSpec.ServiceAccountName)
 	require.NotNil(t, podSpec.AutomountServiceAccountToken)
 	assert.True(t, *podSpec.AutomountServiceAccountToken)
 
-	output, err := renderVortex(t, "vortex-analysis-serviceaccount.yaml", "templates/vortex-analysis-serviceaccount.yaml")
+	output, err := renderVortex(t, "vortex-serviceaccount.yaml", "templates/vortex-serviceaccount.yaml")
 	require.NoError(t, err)
 
 	var sa corev1.ServiceAccount
 	helm.UnmarshalK8SYaml(t, output, &sa)
 	assert.Equal(t, podSpec.ServiceAccountName, sa.Name)
-	assert.Equal(t, "arn:aws:iam::123456789012:role/vortex-analysis", sa.Annotations["eks.amazonaws.com/role-arn"])
+	assert.Equal(t, "arn:aws:iam::123456789012:role/vortex", sa.Annotations["eks.amazonaws.com/role-arn"])
 
-	_, err = renderVortex(t, "vortex-analysis-enabled.yaml", "templates/vortex-analysis-serviceaccount.yaml")
-	require.Error(t, err, "no ServiceAccount may render when vortexAnalysis.serviceAccount.create is false")
+	_, err = renderVortex(t, "vortex-enabled.yaml", "templates/vortex-serviceaccount.yaml")
+	require.Error(t, err, "no ServiceAccount may render when vortex.serviceAccount.create is false")
 }
 
 // The token reaches the container through secretKeyRef, which is only read at startup. Without a
 // checksum annotation, rotating it would leave the running pod on the old token.
-func TestVortexAnalysisRollsOnTokenChange(t *testing.T) {
-	annotations := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Annotations
+func TestVortexRollsOnTokenChange(t *testing.T) {
+	annotations := vortexDeployment(t, "vortex-enabled.yaml").Spec.Template.Annotations
 	checksum, ok := annotations["checksum/secret"]
 	require.True(t, ok, "the pod template must carry a checksum of the token Secret")
 
 	// A different token must produce a different pod template, so the upgrade rolls the pod.
 	opts := &helm.Options{
 		Logger:      logger.Discard,
-		ValuesFiles: []string{"test-cases-values/sonarqube-dce/vortex-analysis-enabled.yaml"},
-		SetValues:   map[string]string{"vortexAnalysis.sonarqubeToken.token": "squ_rotated0000000000000000000000000000000"},
+		ValuesFiles: []string{"test-cases-values/sonarqube-dce/vortex-enabled.yaml"},
+		SetValues:   map[string]string{"vortex.sonarqubeToken.token": "squ_rotated0000000000000000000000000000000"},
 	}
-	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/vortex-analysis.yaml"})
+	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/vortex.yaml"})
 	require.NoError(t, err)
 
 	var rotated appsv1.Deployment
@@ -253,28 +253,28 @@ func TestVortexAnalysisRollsOnTokenChange(t *testing.T) {
 }
 
 // Recreate rather than the default RollingUpdate, so an upgrade never runs two pods at once.
-func TestVortexAnalysisUsesRecreateStrategy(t *testing.T) {
-	deployment := vortexDeployment(t, "vortex-analysis-enabled.yaml")
+func TestVortexUsesRecreateStrategy(t *testing.T) {
+	deployment := vortexDeployment(t, "vortex-enabled.yaml")
 	assert.Equal(t, appsv1.RecreateDeploymentStrategyType, deployment.Spec.Strategy.Type)
 }
 
-// Only the Vortex analysis image pull secrets are applied. The application nodes' ones are not
+// Only the Vortex image pull secrets are applied. The application nodes' ones are not
 // reused, so the pod never references registry credentials that were not configured for it.
-func TestVortexAnalysisPullSecrets(t *testing.T) {
-	podSpec := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Spec
+func TestVortexPullSecrets(t *testing.T) {
+	podSpec := vortexDeployment(t, "vortex-enabled.yaml").Spec.Template.Spec
 
 	var names []string
 	for _, s := range podSpec.ImagePullSecrets {
 		names = append(names, s.Name)
 	}
 	assert.Equal(t, []string{"vortex-secret", "vortex-secret-list"}, names,
-		"only the Vortex analysis pull secrets may be applied")
+		"only the Vortex pull secrets may be applied")
 }
 
-// Vortex analysis can be scheduled apart from the SonarQube pods through its own nodeSelector,
+// Vortex can be scheduled apart from the SonarQube pods through its own nodeSelector,
 // affinity and tolerations.
-func TestVortexAnalysisScheduling(t *testing.T) {
-	podSpec := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Spec
+func TestVortexScheduling(t *testing.T) {
+	podSpec := vortexDeployment(t, "vortex-enabled.yaml").Spec.Template.Spec
 
 	assert.Equal(t, map[string]string{"vortex": "true"}, podSpec.NodeSelector)
 
@@ -289,9 +289,9 @@ func TestVortexAnalysisScheduling(t *testing.T) {
 	assert.Equal(t, "vortex", terms[0].MatchExpressions[0].Key)
 }
 
-// Vortex analysis's own scheduling settings take precedence over the chart's global ones.
-func TestVortexAnalysisSchedulingWinsOverGlobal(t *testing.T) {
-	podSpec := vortexDeployment(t, "vortex-analysis-global-scheduling.yaml").Spec.Template.Spec
+// Vortex's own scheduling settings take precedence over the chart's global ones.
+func TestVortexSchedulingWinsOverGlobal(t *testing.T) {
+	podSpec := vortexDeployment(t, "vortex-global-scheduling.yaml").Spec.Template.Spec
 
 	assert.Equal(t, map[string]string{"vortex": "true"}, podSpec.NodeSelector)
 
@@ -307,8 +307,8 @@ func TestVortexAnalysisSchedulingWinsOverGlobal(t *testing.T) {
 
 // The pod can take several minutes to become ready on a first start, so the startup probe must allow
 // for that before the liveness probe begins.
-func TestVortexAnalysisProbes(t *testing.T) {
-	container := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Spec.Containers[0]
+func TestVortexProbes(t *testing.T) {
+	container := vortexDeployment(t, "vortex-enabled.yaml").Spec.Template.Spec.Containers[0]
 
 	for name, probe := range map[string]*corev1.Probe{
 		"startup":   container.StartupProbe,
@@ -327,8 +327,8 @@ func TestVortexAnalysisProbes(t *testing.T) {
 }
 
 // The Service must select the Deployment's pods — a label typo here silently yields no endpoints.
-func TestVortexAnalysisService(t *testing.T) {
-	output, err := renderVortex(t, "vortex-analysis-enabled.yaml", "templates/vortex-analysis-service.yaml")
+func TestVortexService(t *testing.T) {
+	output, err := renderVortex(t, "vortex-enabled.yaml", "templates/vortex-service.yaml")
 	require.NoError(t, err)
 
 	var service corev1.Service
@@ -337,16 +337,16 @@ func TestVortexAnalysisService(t *testing.T) {
 	require.Len(t, service.Spec.Ports, 1)
 	assert.Equal(t, int32(8080), service.Spec.Ports[0].Port)
 
-	podLabels := vortexDeployment(t, "vortex-analysis-enabled.yaml").Spec.Template.Labels
+	podLabels := vortexDeployment(t, "vortex-enabled.yaml").Spec.Template.Labels
 	for k, v := range service.Spec.Selector {
 		assert.Equal(t, v, podLabels[k], "Service selector %q must match the pod labels", k)
 	}
 }
 
 // An inline token becomes a chart-managed Secret; an existingSecret must not produce one.
-func TestVortexAnalysisSecret(t *testing.T) {
+func TestVortexSecret(t *testing.T) {
 	t.Run("inline token renders a Secret", func(t *testing.T) {
-		output, err := renderVortex(t, "vortex-analysis-enabled.yaml", "templates/vortex-analysis-secret.yaml")
+		output, err := renderVortex(t, "vortex-enabled.yaml", "templates/vortex-secret.yaml")
 		require.NoError(t, err)
 
 		var secret corev1.Secret
@@ -358,11 +358,11 @@ func TestVortexAnalysisSecret(t *testing.T) {
 	})
 
 	t.Run("existingSecret renders none and is referenced directly", func(t *testing.T) {
-		output, err := renderVortex(t, "vortex-analysis-existing-secret.yaml", "templates/vortex-analysis-secret.yaml")
+		output, err := renderVortex(t, "vortex-existing-secret.yaml", "templates/vortex-secret.yaml")
 		require.Error(t, err, "no Secret may be rendered when the token comes from an existingSecret")
 		assert.Empty(t, strings.TrimSpace(output))
 
-		token := vortexContainerEnv(vortexDeployment(t, "vortex-analysis-existing-secret.yaml").
+		token := vortexContainerEnv(vortexDeployment(t, "vortex-existing-secret.yaml").
 			Spec.Template.Spec.Containers[0])["VORTEX_ANALYSIS_SONARQUBE_TOKEN"]
 		require.NotNil(t, token.ValueFrom)
 		assert.Equal(t, "my-vortex-token", token.ValueFrom.SecretKeyRef.Name)
@@ -372,37 +372,37 @@ func TestVortexAnalysisSecret(t *testing.T) {
 
 // Enabling the service without an image must fail validation rather than deploy an invalid image
 // reference.
-func TestVortexAnalysisRequiresImageRepository(t *testing.T) {
-	_, err := renderVortex(t, "vortex-analysis-no-image.yaml", "templates/vortex-analysis.yaml")
+func TestVortexRequiresImageRepository(t *testing.T) {
+	_, err := renderVortex(t, "vortex-no-image.yaml", "templates/vortex.yaml")
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "vortexAnalysis.image.repository is not set")
+	assert.Contains(t, err.Error(), "vortex.image.repository is not set")
 }
 
 // The remaining settings the service cannot start without: an image tag, since the reference is
 // built verbatim, a token, since every Web API call needs one, and the storage settings backing
 // context restoration, which have to resolve to the store SonarQube Server writes the items to.
-func TestVortexAnalysisRequiresTagAndToken(t *testing.T) {
+func TestVortexRequiresTagAndToken(t *testing.T) {
 	for name, tc := range map[string]struct {
 		unset    map[string]string
 		expected string
 	}{
-		"image tag":      {map[string]string{"vortexAnalysis.image.tag": ""}, "vortexAnalysis.image.tag is not set"},
-		"token":          {map[string]string{"vortexAnalysis.sonarqubeToken.token": ""}, "no token is set"},
-		"storage type":   {map[string]string{"vortexAnalysis.storage.type": ""}, "vortexAnalysis.storage.type is not set"},
-		"storage bucket": {map[string]string{"vortexAnalysis.storage.bucket": ""}, "vortexAnalysis.storage.bucket is not set"},
-		"storage region": {map[string]string{"vortexAnalysis.storage.region": ""}, "vortexAnalysis.storage.region is not set"},
+		"image tag":      {map[string]string{"vortex.image.tag": ""}, "vortex.image.tag is not set"},
+		"token":          {map[string]string{"vortex.sonarqubeToken.token": ""}, "no token is set"},
+		"storage type":   {map[string]string{"vortex.storage.type": ""}, "vortex.storage.type is not set"},
+		"storage bucket": {map[string]string{"vortex.storage.bucket": ""}, "vortex.storage.bucket is not set"},
+		"storage region": {map[string]string{"vortex.storage.region": ""}, "vortex.storage.region is not set"},
 		"storage partial credentials": {
-			map[string]string{"vortexAnalysis.storage.accessKey": "only-access-key"},
-			"only one of vortexAnalysis.storage.accessKey / vortexAnalysis.storage.secretKey is set",
+			map[string]string{"vortex.storage.accessKey": "only-access-key"},
+			"only one of vortex.storage.accessKey / vortex.storage.secretKey is set",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			opts := &helm.Options{
 				Logger:      logger.Discard,
-				ValuesFiles: []string{"test-cases-values/sonarqube-dce/vortex-analysis-enabled.yaml"},
+				ValuesFiles: []string{"test-cases-values/sonarqube-dce/vortex-enabled.yaml"},
 				SetValues:   tc.unset,
 			}
-			_, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/vortex-analysis.yaml"})
+			_, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/vortex.yaml"})
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tc.expected)
 		})
@@ -457,8 +457,8 @@ func vortexEgressPorts(rules []networkingv1.NetworkPolicyEgressRule, appLabel st
 
 // The application nodes' own policy needs matching rules, otherwise they could neither reach Vortex
 // analysis nor accept its calls back to the Web API.
-func TestVortexAnalysisAppNodeNetworkPolicy(t *testing.T) {
-	output, err := renderVortex(t, "vortex-analysis-enabled.yaml", "templates/networkpolicy.yaml")
+func TestVortexAppNodeNetworkPolicy(t *testing.T) {
+	output, err := renderVortex(t, "vortex-enabled.yaml", "templates/networkpolicy.yaml")
 	require.NoError(t, err)
 
 	policy := vortexAppNodePolicy(t, output)
@@ -476,15 +476,15 @@ func TestVortexAnalysisAppNodeNetworkPolicy(t *testing.T) {
 // Two different ports are in play and mixing them up silently breaks the callback: the URL goes
 // through the SonarQube Service, which listens on service.externalPort, while the NetworkPolicy
 // rules are evaluated after the Service DNAT and so must use the container's service.internalPort.
-func TestVortexAnalysisFollowsServicePorts(t *testing.T) {
+func TestVortexFollowsServicePorts(t *testing.T) {
 	ports := map[string]string{"service.externalPort": "80", "service.internalPort": "9500"}
 	opts := &helm.Options{
 		Logger:      logger.Discard,
-		ValuesFiles: []string{"test-cases-values/sonarqube-dce/vortex-analysis-enabled.yaml"},
+		ValuesFiles: []string{"test-cases-values/sonarqube-dce/vortex-enabled.yaml"},
 		SetValues:   ports,
 	}
 
-	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/vortex-analysis.yaml"})
+	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/vortex.yaml"})
 	require.NoError(t, err)
 	var deployment appsv1.Deployment
 	helm.UnmarshalK8SYaml(t, output, &deployment)

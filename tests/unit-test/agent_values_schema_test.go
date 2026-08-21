@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// values.schema.json type-checks the agentic pack's values at render time, catching e.g. a
+// values.schema.json type-checks the agent pack's values at render time, catching e.g. a
 // replicaCount typed as a string before it ever reaches a Deployment spec.
-func TestAgenticValuesSchemaRejectsWrongTypes(t *testing.T) {
+func TestAgentValuesSchemaRejectsWrongTypes(t *testing.T) {
 	cases := []struct {
 		name string
 		set  map[string]string

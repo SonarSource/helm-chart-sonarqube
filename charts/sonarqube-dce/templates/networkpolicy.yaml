@@ -47,11 +47,11 @@ spec:
         - port: {{ .Values.service.internalPort }}
           protocol: TCP
 {{- end }}
-{{- if .Values.vortexAnalysis.enabled }}
+{{- if .Values.vortex.enabled }}
     - from:
         - podSelector:
             matchLabels:
-              app: {{ include "sonarqube.name" . }}-vortex-analysis
+              app: {{ include "sonarqube.name" . }}-vortex
               release: {{ .Release.Name }}
       ports:
         - port: {{ .Values.service.internalPort }}
@@ -96,14 +96,14 @@ spec:
         - port: {{ .Values.agentOrchestrator.port }}
           protocol: TCP
     {{- end }}
-    {{- if .Values.vortexAnalysis.enabled }}
+    {{- if .Values.vortex.enabled }}
     - to:
         - podSelector:
             matchLabels:
-              app: {{ include "sonarqube.name" . }}-vortex-analysis
+              app: {{ include "sonarqube.name" . }}-vortex
               release: {{ .Release.Name }}
       ports:
-        - port: {{ .Values.vortexAnalysis.port }}
+        - port: {{ .Values.vortex.port }}
           protocol: TCP
     {{- end }}
 

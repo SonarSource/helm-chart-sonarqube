@@ -47,29 +47,29 @@ Create the fully qualified name for the MCP service.
 {{- end -}}
 
 {{/*
-Create the fully qualified name for the Vortex analysis service.
-Usage: {{ include "sonarqube.vortexAnalysis.fullname" . }}
+Create the fully qualified name for Vortex.
+Usage: {{ include "sonarqube.vortex.fullname" . }}
 */}}
-{{- define "sonarqube.vortexAnalysis.fullname" -}}
-{{- printf "%s-vortex-analysis" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- define "sonarqube.vortex.fullname" -}}
+{{- printf "%s-vortex" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
-URL the application nodes use to reach Vortex analysis (the sonar.vortex.analysis.url property).
+URL the application nodes use to reach Vortex (the sonar.vortex.analysis.url property).
 */}}
-{{- define "sonarqube.vortexAnalysis.url" -}}
-{{- printf "http://%s:%d" (include "sonarqube.vortexAnalysis.fullname" .) (int .Values.vortexAnalysis.port) -}}
+{{- define "sonarqube.vortex.url" -}}
+{{- printf "http://%s:%d" (include "sonarqube.vortex.fullname" .) (int .Values.vortex.port) -}}
 {{- end -}}
 
 {{/*
-Name of the ServiceAccount for the Vortex analysis pod. Same create / pinned-name / "default"
+Name of the ServiceAccount for the Vortex pod. Same create / pinned-name / "default"
 fallback logic as sonarqube.serviceAccountName, but independent of it.
 */}}
-{{- define "sonarqube.vortexAnalysis.serviceAccountName" -}}
-{{- if .Values.vortexAnalysis.serviceAccount.create -}}
-    {{ default (include "sonarqube.vortexAnalysis.fullname" .) .Values.vortexAnalysis.serviceAccount.name }}
+{{- define "sonarqube.vortex.serviceAccountName" -}}
+{{- if .Values.vortex.serviceAccount.create -}}
+    {{ default (include "sonarqube.vortex.fullname" .) .Values.vortex.serviceAccount.name }}
 {{- else -}}
-    {{ default "default" .Values.vortexAnalysis.serviceAccount.name }}
+    {{ default "default" .Values.vortex.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
 
@@ -612,32 +612,32 @@ Also give these properties a real conf/sonar.properties line — the pod env var
 aren't picked up by plain Configuration.get() consumers (SONAR-31416). Additive: env vars stay too,
 for consumers like hunter-agent-unified-app that read them via Spring instead.
 */}}
-{{- define "sonarqube.agenticHealthProperties" -}}
+{{- define "sonarqube.agentHealthProperties" -}}
 {{- $props := dict -}}
 {{- if .Values.agentOrchestrator.enabled -}}
 {{- $_ := set $props "sonar.hunteragent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
 {{- $_ := set $props "sonar.remediationagent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
 {{- end -}}
-{{- if .Values.vortexAnalysis.enabled -}}
-{{- $_ := set $props "sonar.vortex.analysis.url" (include "sonarqube.vortexAnalysis.url" .) -}}
+{{- if .Values.vortex.enabled -}}
+{{- $_ := set $props "sonar.vortex.analysis.url" (include "sonarqube.vortex.url" .) -}}
 {{- end -}}
 {{- toYaml $props -}}
 {{- end -}}
 
 {{/*
-Merge user-provided sonarProperties with automatically generated properties (Hazelcast, agentic).
+Merge user-provided sonarProperties with automatically generated properties (Hazelcast, agent health).
 User-provided properties take precedence.
 */}}
 {{- define "sonarqube.mergedSonarProperties" -}}
 {{- $hazelcastProps := fromYaml (include "sonarqube.hazelcastProperties" .) | default dict -}}
-{{- $agenticHealthProps := fromYaml (include "sonarqube.agenticHealthProperties" .) | default dict -}}
+{{- $agentHealthProps := fromYaml (include "sonarqube.agentHealthProperties" .) | default dict -}}
 {{- $userProps := .Values.ApplicationNodes.sonarProperties | default dict -}}
 {{- $merged := dict -}}
 {{- /* Start with automatically generated properties */}}
 {{- range $key, $val := $hazelcastProps -}}
   {{- $_ := set $merged $key $val -}}
 {{- end -}}
-{{- range $key, $val := $agenticHealthProps -}}
+{{- range $key, $val := $agentHealthProps -}}
   {{- $_ := set $merged $key $val -}}
 {{- end -}}
 {{- /* User properties override automatic ones */}}
@@ -655,7 +655,7 @@ Create the fully qualified name for the Agent Orchestrator.
 {{- end -}}
 
 {{/*
-Create the fully qualified name for an Agentic Job Runtime family.
+Create the fully qualified name for an agent runtime family.
 Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
 */}}
 {{- define "sonarqube.agentRuntime.fullname" -}}
@@ -664,7 +664,7 @@ Parameters (dict): ctx (required, the root context '.'), family (required, the r
 
 {{/*
 Selector labels for the Agent Orchestrator: app: <chart>-agent-orchestrator + release, matching
-the Vortex Analysis convention so the value doesn't collide with the SonarQube app Deployment's own
+the Vortex convention so the value doesn't collide with the SonarQube app Deployment's own
 selector (app: <chart> + release).
 */}}
 {{- define "sonarqube.agentOrchestrator.selectorLabels" -}}
@@ -673,7 +673,7 @@ release: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
-Selector labels for one Agentic Job Runtime family: app: <chart>-agent-runtime-<family> + release.
+Selector labels for one agent runtime family: app: <chart>-agent-runtime-<family> + release.
 Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
 */}}
 {{- define "sonarqube.agentRuntime.selectorLabels" -}}
@@ -682,7 +682,7 @@ release: {{ .ctx.Release.Name }}
 {{- end -}}
 
 {{/*
-The two Agentic Job Runtime families, keyed by name, for templates that iterate over both.
+The two agent runtime families, keyed by name, for templates that iterate over both.
 Usage: {{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" .) }}
 */}}
 {{- define "sonarqube.agentRuntimes" -}}
@@ -694,7 +694,7 @@ remediation: {{- .Values.remediationAgent | toYaml | nindent 2 }}
 Name of the ServiceAccount for the Agent Orchestrator.
 When agentOrchestrator.serviceAccount.create is true, use the pinned agentOrchestrator.serviceAccount.name
 (defaulting to the orchestrator fullname). Otherwise fall back to the main SonarQube ServiceAccount,
-so deployments that don't opt in to dedicated agentic SAs are unaffected.
+so deployments that don't opt in to dedicated agent SAs are unaffected.
 */}}
 {{- define "sonarqube.agentOrchestrator.serviceAccountName" -}}
 {{- if .Values.agentOrchestrator.serviceAccount.create -}}
@@ -705,7 +705,7 @@ so deployments that don't opt in to dedicated agentic SAs are unaffected.
 {{- end -}}
 
 {{/*
-Name of the ServiceAccount for an Agentic Job Runtime family.
+Name of the ServiceAccount for an agent runtime family.
 Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
 Same create / pinned-name / fallback logic as the orchestrator helper above.
 */}}
@@ -732,12 +732,12 @@ In-cluster URL of the SonarQube service the Agent Orchestrator talks to (AGENTIC
 and the wait-for-sonarqube init container). Always the co-deployed SonarQube service; honours the
 web context path.
 */}}
-{{- define "sonarqube.agentic.sonarqube.url" -}}
+{{- define "sonarqube.agent.sonarqube.url" -}}
 {{- printf "http://%s:%d%s" (include "sonarqube.fullname" .) (int .Values.service.externalPort) (trimSuffix "/" (include "sonarqube.webcontext" .)) -}}
 {{- end -}}
 
 {{/*
-Push URL the orchestrator uses to dispatch jobs to one Agentic Job Runtime family.
+Push URL the orchestrator uses to dispatch jobs to one agent runtime family.
 Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
 */}}
 {{- define "sonarqube.agentRuntime.pushUrl" -}}
@@ -749,7 +749,7 @@ Parameters (dict): ctx (required, the root context '.'), family (required, the r
 Parse the host:port endpoint out of jdbcOverwrite.jdbcUrl (jdbc:postgresql://host:port/db[?params]),
 for the Agent Orchestrator's CORE_DB_READ_WRITE_ENDPOINT env, since it reuses SonarQube's own DB.
 */}}
-{{- define "sonarqube.agentic.jdbc.endpoint" -}}
+{{- define "sonarqube.agent.jdbc.endpoint" -}}
 {{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" .Values.jdbcOverwrite.jdbcUrl "" -}}
 {{- (splitn "/" 2 $stripped)._0 -}}
 {{- end -}}
@@ -758,7 +758,7 @@ for the Agent Orchestrator's CORE_DB_READ_WRITE_ENDPOINT env, since it reuses So
 Parse the database name out of jdbcOverwrite.jdbcUrl (jdbc:postgresql://host:port/db[?params]),
 for the Agent Orchestrator's CORE_DB_NAME env.
 */}}
-{{- define "sonarqube.agentic.jdbc.dbname" -}}
+{{- define "sonarqube.agent.jdbc.dbname" -}}
 {{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" .Values.jdbcOverwrite.jdbcUrl "" -}}
 {{- $rest := (splitn "/" 2 $stripped)._1 | default "" -}}
 {{- regexReplaceAll "\\?.*$" $rest "" -}}
@@ -771,7 +771,7 @@ can never target a Service's ClusterIP - kube-proxy DNATs to the backing pod IP 
 enforcement sees the packet - so in-cluster dependencies must use podSelector, not cidr.
 Output is unindented; callers should pipe through `indent`/`nindent` to place it under a `to:` list.
 */}}
-{{- define "sonarqube.agentic.egressAllow.peer" -}}
+{{- define "sonarqube.agent.egressAllow.peer" -}}
 {{- if .cidr -}}
 - ipBlock:
     cidr: {{ .cidr }}
@@ -788,9 +788,9 @@ Render the `imagePullSecrets` list items for one or more image blocks, each opti
 `pullSecret` (string) and/or `pullSecrets` (list), in the order given - callers combine e.g. the
 application nodes' image with their own. Nil-safe against an image block the chart doesn't define
 (e.g. a top-level .Values.image). Output is unindented and empty when no source has anything.
-Usage: {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list .Values.a.image .Values.b.image) }}
+Usage: {{- $pullSecrets := include "sonarqube.agent.imagePullSecrets" (list .Values.a.image .Values.b.image) }}
 */}}
-{{- define "sonarqube.agentic.imagePullSecrets" -}}
+{{- define "sonarqube.agent.imagePullSecrets" -}}
 {{- $refs := list -}}
 {{- range . -}}
 {{- $img := . | default dict -}}
@@ -812,7 +812,7 @@ dedicated ServiceAccount, else the top-level serviceAccount.automountToken.
 Parameters (dict): ctx (required, the root context '.'), serviceAccount (required, the component's
 own serviceAccount block)
 */}}
-{{- define "sonarqube.agentic.automountServiceAccountToken" -}}
+{{- define "sonarqube.agent.automountServiceAccountToken" -}}
 {{- if .serviceAccount.create -}}
 {{- .serviceAccount.automountToken -}}
 {{- else -}}
@@ -823,31 +823,31 @@ own serviceAccount block)
 {{/*
 The SonarQube application image config: repository/tag/pullPolicy/pullSecret(s).
 */}}
-{{- define "sonarqube.agentic.sonarqubeImage" -}}
+{{- define "sonarqube.agent.sonarqubeImage" -}}
 {{- (fromYaml (include "applicationNodes" .)).image | toYaml -}}
 {{- end -}}
 
 {{/*
 Security context for the wait-for-sonarqube init container.
 */}}
-{{- define "sonarqube.agentic.initContainerSecurityContext" -}}
+{{- define "sonarqube.agent.initContainerSecurityContext" -}}
 {{- include "sonarqube.initContainersSecurityContext" . -}}
 {{- end -}}
 
 {{/*
-Render nodeSelector/tolerations/affinity for an agentic workload: the component's own value wins
+Render nodeSelector/tolerations/affinity for an agent workload: the component's own value wins
 when set (whole field, not merged), else the chart's global one.
 Parameters (dict): ctx (required, the root context '.'), component (required, the component's own
 values block, providing nodeSelector/tolerations/affinity)
-Usage: {{- with (include "sonarqube.agentic.scheduling" (dict "ctx" $ "component" .Values.agentOrchestrator)) }}
+Usage: {{- with (include "sonarqube.agent.scheduling" (dict "ctx" $ "component" .Values.agentOrchestrator)) }}
 {{ . | indent 6 }}
       {{- end }}
 */}}
-{{- define "sonarqube.agentic.scheduling" -}}
-{{- trimPrefix "\n" (include "sonarqube.agentic.scheduling.render" .) -}}
+{{- define "sonarqube.agent.scheduling" -}}
+{{- trimPrefix "\n" (include "sonarqube.agent.scheduling.render" .) -}}
 {{- end -}}
 
-{{- define "sonarqube.agentic.scheduling.render" -}}
+{{- define "sonarqube.agent.scheduling.render" -}}
 {{- $ctx := .ctx -}}
 {{- $component := .component -}}
 {{- with default $ctx.Values.nodeSelector $component.nodeSelector }}
@@ -867,12 +867,12 @@ affinity:
 {{/*
 Render one HTTP probe (readiness or liveness) from a probes.<kind> block.
 Parameters (dict): probe (required, the probes.<kind> values block)
-Usage: {{- with (include "sonarqube.agentic.probe" (dict "probe" .Values.agentOrchestrator.probes.readiness)) }}
+Usage: {{- with (include "sonarqube.agent.probe" (dict "probe" .Values.agentOrchestrator.probes.readiness)) }}
           readinessProbe:
 {{ . | indent 12 }}
           {{- end }}
 */}}
-{{- define "sonarqube.agentic.probe" -}}
+{{- define "sonarqube.agent.probe" -}}
 {{- if .probe.enabled -}}
 httpGet:
   path: {{ .probe.path }}

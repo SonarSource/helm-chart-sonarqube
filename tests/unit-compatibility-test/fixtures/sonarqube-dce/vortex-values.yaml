@@ -3,11 +3,11 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-app
+  name: vortex-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 spec:
   podSelector:
@@ -22,14 +22,14 @@ spec:
         - podSelector:
             matchLabels:
               app: sonarqube-dce
-              release: vortex-analysis-values.yaml
+              release: vortex-values.yaml
               sonarqube.datacenter/type: app
 
     - from:
         - podSelector:
             matchLabels:
-              app: sonarqube-dce-vortex-analysis
-              release: vortex-analysis-values.yaml
+              app: sonarqube-dce-vortex
+              release: vortex-values.yaml
       ports:
         - port: 9000
           protocol: TCP
@@ -67,8 +67,8 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: sonarqube-dce-vortex-analysis
-              release: vortex-analysis-values.yaml
+              app: sonarqube-dce-vortex
+              release: vortex-values.yaml
       ports:
         - port: 8080
           protocol: TCP
@@ -77,11 +77,11 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-search
+  name: vortex-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 spec:
   podSelector:
@@ -131,11 +131,11 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-search
+  name: vortex-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 spec:
   minAvailable: 2
@@ -148,11 +148,11 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-app
+  name: vortex-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 spec:
   minAvailable: 1
@@ -165,11 +165,11 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-monitoring-passcode
+  name: vortex-values.yaml-sonarqube-dce-monitoring-passcode
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -179,11 +179,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce
+  name: vortex-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -193,11 +193,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-jwt
+  name: vortex-values.yaml-sonarqube-dce-jwt
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -208,11 +208,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-http-proxies
+  name: vortex-values.yaml-sonarqube-dce-http-proxies
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 type: Opaque
 stringData:
@@ -223,17 +223,17 @@ stringData:
   PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
   PROMETHEUS-EXPORTER-NO-PROXY: ""
 ---
-# Source: sonarqube-dce/templates/vortex-analysis-secret.yaml
+# Source: sonarqube-dce/templates/vortex-secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-vortex-analysis
+  name: vortex-values.yaml-sonarqube-dce-vortex
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
-    app.kubernetes.io/component: vortex-analysis
+    app.kubernetes.io/component: vortex
 type: Opaque
 data:
   VORTEX_ANALYSIS_SONARQUBE_TOKEN: "c3F1X2V4YW1wbGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
@@ -242,25 +242,25 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-app-config
+  name: vortex-values.yaml-sonarqube-dce-app-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
-    sonar.vortex.analysis.url=http://vortex-analysis-values.yaml-sonarqube-dce-vortex-analysis:8080
+    sonar.vortex.analysis.url=http://vortex-values.yaml-sonarqube-dce-vortex:8080
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-search-config
+  name: vortex-values.yaml-sonarqube-dce-search-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -269,11 +269,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-init-fs
+  name: vortex-values.yaml-sonarqube-dce-init-fs
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 data:
   init_fs.sh: |-
@@ -285,11 +285,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-init-sysctl
+  name: vortex-values.yaml-sonarqube-dce-init-sysctl
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -332,11 +332,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-install-plugins
+  name: vortex-values.yaml-sonarqube-dce-install-plugins
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
@@ -345,11 +345,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-jdbc-config
+  name: vortex-values.yaml-sonarqube-dce-jdbc-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "user"
@@ -359,11 +359,11 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce
+  name: vortex-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 
 spec:
@@ -375,18 +375,18 @@ spec:
       name: http
   selector:
     app: sonarqube-dce
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     sonarqube.datacenter/type: "app"
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-headless
+  name: vortex-values.yaml-sonarqube-dce-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 
 spec:
@@ -401,18 +401,18 @@ spec:
       name: hazelcast
   selector:
     app: sonarqube-dce
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     sonarqube.datacenter/type: "app"
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-search
+  name: vortex-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 
 spec:
@@ -428,17 +428,17 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-search-headless
+  name: vortex-values.yaml-sonarqube-dce-search-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 
 spec:
@@ -455,19 +455,19 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
 ---
-# Source: sonarqube-dce/templates/vortex-analysis-service.yaml
+# Source: sonarqube-dce/templates/vortex-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-vortex-analysis
+  name: vortex-values.yaml-sonarqube-dce-vortex
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
-    app.kubernetes.io/component: vortex-analysis
+    app.kubernetes.io/component: vortex
 spec:
   type: ClusterIP
   ports:
@@ -476,25 +476,25 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: sonarqube-dce-vortex-analysis
-    release: vortex-analysis-values.yaml
+    app: sonarqube-dce-vortex
+    release: vortex-values.yaml
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-app
+  name: vortex-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: vortex-analysis-values.yaml
+    app.kubernetes.io/name: vortex-values.yaml
     sonarqube.datacenter/type: "app"
-    app.kubernetes.io/instance: vortex-analysis-values.yaml
+    app.kubernetes.io/instance: vortex-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: vortex-analysis-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: vortex-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "2026.4.0-datacenter-app"
 spec:
   replicas: 2
@@ -504,17 +504,17 @@ spec:
   selector:
     matchLabels:
       app: sonarqube-dce
-      release: vortex-analysis-values.yaml
+      release: vortex-values.yaml
   template:
     metadata:
       labels:
         app: sonarqube-dce
-        release: vortex-analysis-values.yaml
+        release: vortex-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 596e48ecd041ecc6eb4dbbd6293b6ef67a07ead44f365d133a2919bc5838e8ab
-        checksum/config: 1a086dd53db67c85b0e2d544885bb083b994aec56568f8a8411c324bc6053fc9
-        checksum/secret: 2592e9f1ca6d4b9e0e54df80f95e2bf61bfa6910b9d61709bed080233891c2b6
+        checksum/plugins: 7b6c1707a57a2164b96c7055fd281684cad31ea41094df4ceffb358b299428ea
+        checksum/config: 07f0d4057cab62e97acc3fc3e04ff4bde2f5e35fc355c32276f0297449f1f976
+        checksum/secret: ee34b538cb7044d2743f408d8c33832b99f8515c7869b31cbf26e2d3f6cf83eb
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -588,7 +588,7 @@ spec:
             - name: SONAR_HELM_CHART_VERSION
               value: 2026.5.0
             - name: SONAR_CLUSTER_SEARCH_HOSTS
-              value: "vortex-analysis-values.yaml-sonarqube-dce-search"
+              value: "vortex-values.yaml-sonarqube-dce-search"
             - name: SONAR_CLUSTER_KUBERNETES
               value: "true"
             - name: SONAR_CLUSTER_NODE_NAME
@@ -600,27 +600,27 @@ spec:
                 fieldRef:
                   fieldPath: status.podIP
             - name: SONAR_CLUSTER_HOSTS
-              value: "vortex-analysis-values.yaml-sonarqube-dce-headless"
+              value: "vortex-values.yaml-sonarqube-dce-headless"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
               valueFrom:
                 secretKeyRef:
-                  name: "vortex-analysis-values.yaml-sonarqube-dce-jwt"
+                  name: "vortex-values.yaml-sonarqube-dce-jwt"
                   key: SONAR_AUTH_JWTBASE64HS256SECRET
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: vortex-analysis-values.yaml-sonarqube-dce
+                  name: vortex-values.yaml-sonarqube-dce
                   key: jdbc-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: vortex-analysis-values.yaml-sonarqube-dce-monitoring-passcode
+                  name: vortex-values.yaml-sonarqube-dce-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
             - name: SONAR_VORTEX_ANALYSIS_URL
-              value: "http://vortex-analysis-values.yaml-sonarqube-dce-vortex-analysis:8080"
+              value: "http://vortex-values.yaml-sonarqube-dce-vortex:8080"
           envFrom:
             - configMapRef:
-                name: vortex-analysis-values.yaml-sonarqube-dce-jdbc-config
+                name: vortex-values.yaml-sonarqube-dce-jdbc-config
           livenessProbe:
             exec:
               command:
@@ -693,14 +693,14 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: vortex-analysis-values.yaml-sonarqube-dce-app-config
+          name: vortex-values.yaml-sonarqube-dce-app-config
           items:
           - key: sonar.properties
             path: sonar.properties
       
       - name: install-plugins
         configMap:
-          name: vortex-analysis-values.yaml-sonarqube-dce-install-plugins
+          name: vortex-values.yaml-sonarqube-dce-install-plugins
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
@@ -714,37 +714,37 @@ spec:
         emptyDir:
           {}
 ---
-# Source: sonarqube-dce/templates/vortex-analysis.yaml
+# Source: sonarqube-dce/templates/vortex.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-vortex-analysis
+  name: vortex-values.yaml-sonarqube-dce-vortex
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
-    app.kubernetes.io/component: vortex-analysis
+    app.kubernetes.io/component: vortex
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: sonarqube-dce-vortex-analysis
-      release: vortex-analysis-values.yaml
+      app: sonarqube-dce-vortex
+      release: vortex-values.yaml
   template:
     metadata:
       annotations:
-        checksum/secret: e9ce314f74664ae45316a0b0f5f8a84e0df098b9440817d2b29281afe6ab02f5
+        checksum/secret: 8a67e873e447f277707e957c77d23201a7dd2f819ffab5c4e0747e8c8dba1ee6
       labels:
-        app: sonarqube-dce-vortex-analysis
-        release: vortex-analysis-values.yaml
+        app: sonarqube-dce-vortex
+        release: vortex-values.yaml
     spec:
       serviceAccountName: default
       automountServiceAccountToken: false
       containers:
-        - name: vortex-analysis
+        - name: vortex
           image: "example.com/a3s/analysis/proxysqs:7593"
           imagePullPolicy: IfNotPresent
           securityContext:
@@ -763,16 +763,16 @@ spec:
               protocol: TCP
           env:
             - name: VORTEX_ANALYSIS_SONARQUBE_URL
-              value: "http://vortex-analysis-values.yaml-sonarqube-dce:9000"
+              value: "http://vortex-values.yaml-sonarqube-dce:9000"
             - name: VORTEX_ANALYSIS_SONARQUBE_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: vortex-analysis-values.yaml-sonarqube-dce-vortex-analysis
+                  name: vortex-values.yaml-sonarqube-dce-vortex
                   key: VORTEX_ANALYSIS_SONARQUBE_TOKEN
             - name: SONAR_AGENTIC_STORAGE_TYPE
               value: "S3"
             - name: SONAR_AGENTIC_STORAGE_BUCKET
-              value: "agentic-artifacts"
+              value: "agent-artifacts"
             - name: SONAR_AGENTIC_STORAGE_REGION
               value: "eu-west-1"
             - name: SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS
@@ -802,34 +802,34 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: vortex-analysis-values.yaml-sonarqube-dce-search
+  name: vortex-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: "vortex-analysis-values.yaml"
+    app.kubernetes.io/name: "vortex-values.yaml"
     sonarqube.datacenter/type: "search"
-    app.kubernetes.io/instance: vortex-analysis-values.yaml
+    app.kubernetes.io/instance: vortex-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: vortex-analysis-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: vortex-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "2026.4.0-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
-  serviceName: vortex-analysis-values.yaml-sonarqube-dce-search
+  serviceName: vortex-values.yaml-sonarqube-dce-search
   selector:
     matchLabels:
       app: sonarqube-dce-search
-      release: vortex-analysis-values.yaml
+      release: vortex-values.yaml
   volumeClaimTemplates:
   - metadata:
-      name: vortex-analysis-values.yaml-sonarqube-dce
+      name: vortex-values.yaml-sonarqube-dce
       labels:
-        release: vortex-analysis-values.yaml
+        release: vortex-values.yaml
         chart: "sonarqube-dce"
-        app: "vortex-analysis-values.yaml-sonarqube-dce"
+        app: "vortex-values.yaml-sonarqube-dce"
     spec:
       accessModes:
         - "ReadWriteOnce"
@@ -840,13 +840,13 @@ spec:
     metadata:
       labels:
         app: sonarqube-dce-search
-        release: vortex-analysis-values.yaml
+        release: vortex-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: 3116085162a6a884158da280c3a8a49a9843a3e13bd752e92c2912d3882f9587
-        checksum/init-fs: ea76c3593a1c40f72946ae87e60080fc012232ecae1d4f4a3ddf5232bf9f2535
-        checksum/config: 1a086dd53db67c85b0e2d544885bb083b994aec56568f8a8411c324bc6053fc9
-        checksum/secret: 2592e9f1ca6d4b9e0e54df80f95e2bf61bfa6910b9d61709bed080233891c2b6
+        checksum/init-sysctl: 78765817f42252d0bd2c6d75a4c09519ebdfbc2e34ebcda0f15123b168cd28ba
+        checksum/init-fs: 403f3deed296e86cd6673fb822cbf4750c63dfeff28385e9576f61556a0fd1db
+        checksum/config: 07f0d4057cab62e97acc3fc3e04ff4bde2f5e35fc355c32276f0297449f1f976
+        checksum/secret: ee34b538cb7044d2743f408d8c33832b99f8515c7869b31cbf26e2d3f6cf83eb
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -890,16 +890,16 @@ spec:
             - name: init-fs
               mountPath: /tmp/scripts/
             - mountPath: /opt/sonarqube/certs
-              name: "vortex-analysis-values.yaml-sonarqube-dce"
+              name: "vortex-values.yaml-sonarqube-dce"
               subPath: certs
             - mountPath: /opt/sonarqube/data
-              name: "vortex-analysis-values.yaml-sonarqube-dce"
+              name: "vortex-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "vortex-analysis-values.yaml-sonarqube-dce"
+              name: "vortex-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "vortex-analysis-values.yaml-sonarqube-dce"
+              name: "vortex-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -929,9 +929,9 @@ spec:
             - name: SONAR_LOG_JSONOUTPUT
               value: "false"
             - name: SONAR_CLUSTER_ES_HOSTS
-              value: "vortex-analysis-values.yaml-sonarqube-dce-search-0,vortex-analysis-values.yaml-sonarqube-dce-search-1,vortex-analysis-values.yaml-sonarqube-dce-search-2,"
+              value: "vortex-values.yaml-sonarqube-dce-search-0,vortex-values.yaml-sonarqube-dce-search-1,vortex-values.yaml-sonarqube-dce-search-2,"
             - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
-              value: "vortex-analysis-values.yaml-sonarqube-dce-search-headless"
+              value: "vortex-values.yaml-sonarqube-dce-search-headless"
             - name: SONAR_CLUSTER_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -1009,17 +1009,17 @@ spec:
               type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/certs
-              name: "vortex-analysis-values.yaml-sonarqube-dce"
+              name: "vortex-values.yaml-sonarqube-dce"
               subPath: certs
               readOnly: true
             - mountPath: /opt/sonarqube/data
-              name: "vortex-analysis-values.yaml-sonarqube-dce"
+              name: "vortex-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "vortex-analysis-values.yaml-sonarqube-dce"
+              name: "vortex-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "vortex-analysis-values.yaml-sonarqube-dce"
+              name: "vortex-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -1028,17 +1028,17 @@ spec:
       
       - name: init-sysctl
         configMap:
-          name: vortex-analysis-values.yaml-sonarqube-dce-init-sysctl
+          name: vortex-values.yaml-sonarqube-dce-init-sysctl
           items:
             - key: init_sysctl.sh
               path: init_sysctl.sh
       - name: init-fs
         configMap:
-          name: vortex-analysis-values.yaml-sonarqube-dce-init-fs
+          name: vortex-values.yaml-sonarqube-dce-init-fs
           items:
             - key: init_fs.sh
               path: init_fs.sh
-      - name: "vortex-analysis-values.yaml-sonarqube-dce"
+      - name: "vortex-values.yaml-sonarqube-dce"
       - name : tmp-dir
         emptyDir:
           {}
@@ -1047,7 +1047,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "vortex-analysis-values.yaml-ui-test"
+  name: "vortex-values.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
     # Disable Istio sidecar injection for this test pod
@@ -1055,12 +1055,12 @@ metadata:
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: vortex-analysis-values.yaml
+    release: vortex-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: vortex-analysis-values.yaml-ui-test
+    - name: vortex-values.yaml-ui-test
       image: "sonarqube:2026.4.0-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['curl']
@@ -1073,7 +1073,7 @@ spec:
         '--max-time',
         '5',
         '-s',
-        'vortex-analysis-values.yaml-sonarqube-dce:9000/api/system/status'
+        'vortex-values.yaml-sonarqube-dce:9000/api/system/status'
         ]
       resources:
         limits:

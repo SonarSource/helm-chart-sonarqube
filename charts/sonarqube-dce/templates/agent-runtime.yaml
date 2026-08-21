@@ -10,8 +10,8 @@ metadata:
     chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
     release: {{ $.Release.Name }}
     heritage: {{ $.Release.Service }}
-    sonarqube.agentic/component: runtime
-    sonarqube.agentic/family: {{ $family }}
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: {{ $family }}
     app.kubernetes.io/component: agent-runtime-{{ $family }}
 spec:
   replicas: {{ $cfg.replicaCount }}
@@ -31,8 +31,8 @@ spec:
       {{- end }}
       labels:
         {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 8 }}
-        sonarqube.agentic/component: runtime
-        sonarqube.agentic/family: {{ $family }}
+        sonarqube.agent/component: runtime
+        sonarqube.agent/family: {{ $family }}
         {{- with $cfg.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -42,8 +42,8 @@ spec:
       {{- if eq (include "sonarqube.gvisor.enabled" $) "true" }}
       runtimeClassName: {{ $.Values.gvisor.runtimeClassName }}
       {{- end }}
-      automountServiceAccountToken: {{ include "sonarqube.agentic.automountServiceAccountToken" (dict "ctx" $ "serviceAccount" $cfg.serviceAccount) }}
-      {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list $cfg.image) }}
+      automountServiceAccountToken: {{ include "sonarqube.agent.automountServiceAccountToken" (dict "ctx" $ "serviceAccount" $cfg.serviceAccount) }}
+      {{- $pullSecrets := include "sonarqube.agent.imagePullSecrets" (list $cfg.image) }}
       {{- if $pullSecrets }}
       imagePullSecrets: {{- $pullSecrets | nindent 8 }}
       {{- end }}
@@ -51,7 +51,7 @@ spec:
       securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-        - name: agentic-runtime
+        - name: agent-runtime
           image: "{{ $cfg.image.repository }}:{{ $cfg.image.tag }}"
           imagePullPolicy: {{ $cfg.image.pullPolicy }}
           {{- with $cfg.containerSecurityContext }}
@@ -87,11 +87,11 @@ spec:
           {{- with $cfg.resources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with (include "sonarqube.agentic.probe" (dict "probe" $cfg.probes.readiness)) }}
+          {{- with (include "sonarqube.agent.probe" (dict "probe" $cfg.probes.readiness)) }}
           readinessProbe:
 {{ . | indent 12 }}
           {{- end }}
-          {{- with (include "sonarqube.agentic.probe" (dict "probe" $cfg.probes.liveness)) }}
+          {{- with (include "sonarqube.agent.probe" (dict "probe" $cfg.probes.liveness)) }}
           livenessProbe:
 {{ . | indent 12 }}
           {{- end }}
@@ -99,7 +99,7 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-      {{- with (include "sonarqube.agentic.scheduling" (dict "ctx" $ "component" $cfg)) }}
+      {{- with (include "sonarqube.agent.scheduling" (dict "ctx" $ "component" $cfg)) }}
 {{ . | indent 6 }}
       {{- end }}
       serviceAccountName: {{ include "sonarqube.agentRuntime.serviceAccountName" (dict "ctx" $ "family" $family) }}

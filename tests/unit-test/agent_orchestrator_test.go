@@ -12,11 +12,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func renderAgenticOrchestrator(t *testing.T, setValues map[string]string) appsv1.Deployment {
+func renderAgentOrchestrator(t *testing.T, setValues map[string]string) appsv1.Deployment {
 	t.Helper()
 	opts := &helm.Options{
 		Logger:      logger.Discard,
-		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-orchestrator-enabled.yaml"},
+		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agent-orchestrator-enabled.yaml"},
 		SetValues:   setValues,
 	}
 	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agent-orchestrator.yaml"})
@@ -28,8 +28,8 @@ func renderAgenticOrchestrator(t *testing.T, setValues map[string]string) appsv1
 	return deployment
 }
 
-func TestAgenticOrchestratorContainerSecurityContext(t *testing.T) {
-	deployment := renderAgenticOrchestrator(t, nil)
+func TestAgentOrchestratorContainerSecurityContext(t *testing.T) {
+	deployment := renderAgentOrchestrator(t, nil)
 	podSpec := deployment.Spec.Template.Spec
 	require.Len(t, podSpec.Containers, 1)
 	container := podSpec.Containers[0]
@@ -58,9 +58,9 @@ func TestAgenticOrchestratorContainerSecurityContext(t *testing.T) {
 
 // Clearing readOnlyRootFilesystem drops the securityContext key and the chart-managed /tmp
 // emptyDir, since neither is needed without it.
-func TestAgenticOrchestratorNoReadOnlyRootFilesystemNoTmpVolume(t *testing.T) {
+func TestAgentOrchestratorNoReadOnlyRootFilesystemNoTmpVolume(t *testing.T) {
 	t.Run("readOnlyRootFilesystem: false", func(t *testing.T) {
-		deployment := renderAgenticOrchestrator(t, map[string]string{
+		deployment := renderAgentOrchestrator(t, map[string]string{
 			"agentOrchestrator.containerSecurityContext.readOnlyRootFilesystem": "false",
 		})
 		podSpec := deployment.Spec.Template.Spec
@@ -72,7 +72,7 @@ func TestAgenticOrchestratorNoReadOnlyRootFilesystemNoTmpVolume(t *testing.T) {
 	// containerSecurityContext: null is the chart's documented convention for disabling a
 	// default map entirely (see gvisor.nodeSelector) - it must not nil-pointer.
 	t.Run("containerSecurityContext: null", func(t *testing.T) {
-		deployment := renderAgenticOrchestrator(t, map[string]string{
+		deployment := renderAgentOrchestrator(t, map[string]string{
 			"agentOrchestrator.containerSecurityContext": "null",
 		})
 		podSpec := deployment.Spec.Template.Spec
@@ -83,8 +83,8 @@ func TestAgenticOrchestratorNoReadOnlyRootFilesystemNoTmpVolume(t *testing.T) {
 	})
 }
 
-func TestAgenticOrchestratorResources(t *testing.T) {
-	deployment := renderAgenticOrchestrator(t, nil)
+func TestAgentOrchestratorResources(t *testing.T) {
+	deployment := renderAgentOrchestrator(t, nil)
 	container := deployment.Spec.Template.Spec.Containers[0]
 	assert.Equal(t, "250m", container.Resources.Requests.Cpu().String())
 	assert.Equal(t, "512Mi", container.Resources.Requests.Memory().String())
@@ -95,14 +95,14 @@ func TestAgenticOrchestratorResources(t *testing.T) {
 }
 
 // Off by default, so an existing install picks up nothing new until agentOrchestrator.enabled is set.
-func TestAgenticOrchestratorDisabledByDefault(t *testing.T) {
+func TestAgentOrchestratorDisabledByDefault(t *testing.T) {
 	for _, tpl := range []string{
 		"templates/agent-orchestrator.yaml",
 		"templates/agent-orchestrator-service.yaml",
 	} {
 		opts := &helm.Options{
 			Logger:      logger.Discard,
-			ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-all-disabled.yaml"},
+			ValuesFiles: []string{"test-cases-values/sonarqube-dce/agent-all-disabled.yaml"},
 		}
 		output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{tpl})
 		require.Error(t, err, "%s must render nothing when agentOrchestrator.enabled is false", tpl)
@@ -111,10 +111,10 @@ func TestAgenticOrchestratorDisabledByDefault(t *testing.T) {
 }
 
 // The Service must select the Deployment's pods — a label typo here silently yields no endpoints.
-func TestAgenticOrchestratorService(t *testing.T) {
+func TestAgentOrchestratorService(t *testing.T) {
 	opts := &helm.Options{
 		Logger:      logger.Discard,
-		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-orchestrator-enabled.yaml"},
+		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agent-orchestrator-enabled.yaml"},
 	}
 	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agent-orchestrator-service.yaml"})
 	require.NoError(t, err)
@@ -123,7 +123,7 @@ func TestAgenticOrchestratorService(t *testing.T) {
 	helm.UnmarshalK8SYaml(t, output, &service)
 	require.NotEmpty(t, service.Name)
 
-	podLabels := renderAgenticOrchestrator(t, nil).Spec.Template.Labels
+	podLabels := renderAgentOrchestrator(t, nil).Spec.Template.Labels
 	require.NotEmpty(t, service.Spec.Selector)
 	for k, v := range service.Spec.Selector {
 		assert.Equal(t, v, podLabels[k], "Service selector %q must match the pod labels", k)
@@ -132,10 +132,10 @@ func TestAgenticOrchestratorService(t *testing.T) {
 
 // The Agent Orchestrator can be scheduled apart from the SonarQube pods, and its own scheduling
 // settings take precedence over the chart's global ones.
-func TestAgenticOrchestratorSchedulingWinsOverGlobal(t *testing.T) {
+func TestAgentOrchestratorSchedulingWinsOverGlobal(t *testing.T) {
 	opts := &helm.Options{
 		Logger:      logger.Discard,
-		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-orchestrator-global-scheduling.yaml"},
+		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agent-orchestrator-global-scheduling.yaml"},
 	}
 	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agent-orchestrator.yaml"})
 	require.NoError(t, err)
@@ -157,8 +157,8 @@ func TestAgenticOrchestratorSchedulingWinsOverGlobal(t *testing.T) {
 }
 
 // Both probes default on, against the health endpoint the orchestrator's own source exposes.
-func TestAgenticOrchestratorProbes(t *testing.T) {
-	container := renderAgenticOrchestrator(t, nil).Spec.Template.Spec.Containers[0]
+func TestAgentOrchestratorProbes(t *testing.T) {
+	container := renderAgentOrchestrator(t, nil).Spec.Template.Spec.Containers[0]
 
 	for name, probe := range map[string]*corev1.Probe{
 		"readiness": container.ReadinessProbe,
@@ -171,7 +171,7 @@ func TestAgenticOrchestratorProbes(t *testing.T) {
 	}
 }
 
-func agenticOrchestratorPullSecretNames(deployment appsv1.Deployment) []string {
+func agentOrchestratorPullSecretNames(deployment appsv1.Deployment) []string {
 	var names []string
 	for _, s := range deployment.Spec.Template.Spec.ImagePullSecrets {
 		names = append(names, s.Name)
@@ -181,13 +181,13 @@ func agenticOrchestratorPullSecretNames(deployment appsv1.Deployment) []string {
 
 // The wait-for-sonarqube init container pulls the SonarQube image, so it needs the application
 // nodes' pull secrets, not just the orchestrator's own (SONAR-31523).
-func TestAgenticOrchestratorPullSecrets(t *testing.T) {
+func TestAgentOrchestratorPullSecrets(t *testing.T) {
 	t.Run("none configured renders no imagePullSecrets", func(t *testing.T) {
-		assert.Empty(t, agenticOrchestratorPullSecretNames(renderAgenticOrchestrator(t, nil)))
+		assert.Empty(t, agentOrchestratorPullSecretNames(renderAgentOrchestrator(t, nil)))
 	})
 
 	t.Run("application nodes' pull secret and list reach the pod", func(t *testing.T) {
-		names := agenticOrchestratorPullSecretNames(renderAgenticOrchestrator(t, map[string]string{
+		names := agentOrchestratorPullSecretNames(renderAgentOrchestrator(t, map[string]string{
 			"applicationNodes.image.pullSecret":          "app-secret",
 			"applicationNodes.image.pullSecrets[0].name": "app-secret-list",
 		}))
@@ -195,7 +195,7 @@ func TestAgenticOrchestratorPullSecrets(t *testing.T) {
 	})
 
 	t.Run("orchestrator's own pull secret and list still apply", func(t *testing.T) {
-		names := agenticOrchestratorPullSecretNames(renderAgenticOrchestrator(t, map[string]string{
+		names := agentOrchestratorPullSecretNames(renderAgentOrchestrator(t, map[string]string{
 			"agentOrchestrator.image.pullSecret":          "orch-secret",
 			"agentOrchestrator.image.pullSecrets[0].name": "orch-secret-list",
 		}))
@@ -203,7 +203,7 @@ func TestAgenticOrchestratorPullSecrets(t *testing.T) {
 	})
 
 	t.Run("both combine, application nodes first", func(t *testing.T) {
-		names := agenticOrchestratorPullSecretNames(renderAgenticOrchestrator(t, map[string]string{
+		names := agentOrchestratorPullSecretNames(renderAgentOrchestrator(t, map[string]string{
 			"applicationNodes.image.pullSecret": "app-secret",
 			"agentOrchestrator.image.pullSecret":     "orch-secret",
 		}))

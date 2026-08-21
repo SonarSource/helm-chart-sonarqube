@@ -10,7 +10,7 @@ import (
 )
 
 // renderWithValidation renders a lightweight template with the given SetValues, layered on top of
-// the base fields validation.yaml requires regardless of the agentic toggles (monitoringPasscode,
+// the base fields validation.yaml requires regardless of the agent toggles (monitoringPasscode,
 // jwtSecret, jdbcOverwrite), so only the dependency check under test can fail.
 func renderWithValidation(t *testing.T, setValues map[string]string) (string, error) {
 	t.Helper()
@@ -46,16 +46,16 @@ func TestRemediationAgentRequiresOrchestrator(t *testing.T) {
 	assert.Contains(t, err.Error(), "remediationAgent.enabled is true but agentOrchestrator.enabled is not true")
 }
 
-// remediationAgent.enabled=true also requires vortexAnalysis.enabled=true, checked independently of
+// remediationAgent.enabled=true also requires vortex.enabled=true, checked independently of
 // the orchestrator dependency above (SONAR-31689).
-func TestRemediationAgentRequiresVortexAnalysis(t *testing.T) {
+func TestRemediationAgentRequiresVortex(t *testing.T) {
 	_, err := renderWithValidation(t, map[string]string{
 		"agentOrchestrator.enabled":          "true",
-		"agentOrchestrator.image.repository": "example.com/agentic/orchestrator",
+		"agentOrchestrator.image.repository": "example.com/agent-orchestrator",
 		"remediationAgent.enabled":      "true",
 	})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "remediationAgent.enabled is true but vortexAnalysis.enabled is not true")
+	assert.Contains(t, err.Error(), "remediationAgent.enabled is true but vortex.enabled is not true")
 }
 
 // orchestratorCoreDbBase covers everything agentOrchestrator.enabled needs besides the CORE DB
@@ -63,8 +63,8 @@ func TestRemediationAgentRequiresVortexAnalysis(t *testing.T) {
 func orchestratorCoreDbBase() map[string]string {
 	return map[string]string{
 		"agentOrchestrator.enabled":          "true",
-		"agentOrchestrator.image.repository": "example.com/agentic/orchestrator",
-		"agentOrchestrator.storage.bucket":   "agentic-jobs",
+		"agentOrchestrator.image.repository": "example.com/agent-orchestrator",
+		"agentOrchestrator.storage.bucket":   "agent-jobs",
 	}
 }
 

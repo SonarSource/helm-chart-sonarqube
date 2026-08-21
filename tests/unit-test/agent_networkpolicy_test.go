@@ -11,11 +11,11 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 )
 
-func renderAgenticRuntimeNetworkPolicy(t *testing.T, setValues map[string]string) (string, error) {
+func renderAgentRuntimeNetworkPolicy(t *testing.T, setValues map[string]string) (string, error) {
 	t.Helper()
 	opts := &helm.Options{
 		Logger:      logger.Discard,
-		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agentic-networkpolicy-enabled.yaml"},
+		ValuesFiles: []string{"test-cases-values/sonarqube-dce/agent-networkpolicy-enabled.yaml"},
 		SetValues:   setValues,
 	}
 	return helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agent-networkpolicy.yaml"})
@@ -25,7 +25,7 @@ func renderAgenticRuntimeNetworkPolicy(t *testing.T, setValues map[string]string
 // document per family; pick out the one for family.
 func runtimeNetworkPolicy(t *testing.T, family string, setValues map[string]string) networkingv1.NetworkPolicy {
 	t.Helper()
-	output, err := renderAgenticRuntimeNetworkPolicy(t, setValues)
+	output, err := renderAgentRuntimeNetworkPolicy(t, setValues)
 	require.NoError(t, err)
 
 	for _, doc := range strings.Split(output, "\n---") {
@@ -34,7 +34,7 @@ func runtimeNetworkPolicy(t *testing.T, family string, setValues map[string]stri
 		}
 		var policy networkingv1.NetworkPolicy
 		helm.UnmarshalK8SYaml(t, doc, &policy)
-		if policy.Labels["sonarqube.agentic/family"] == family {
+		if policy.Labels["sonarqube.agent/family"] == family {
 			return policy
 		}
 	}
@@ -55,8 +55,8 @@ func TestCoreNetworkPolicyOrchestratorIngressPort(t *testing.T) {
 			"jdbcOverwrite.jdbcPassword":    "test-password",
 			"networkPolicy.enabled":         "true",
 			"agentOrchestrator.enabled":          "true",
-			"agentOrchestrator.image.repository": "example.com/agentic/orchestrator",
-			"agentOrchestrator.storage.bucket":   "agentic-jobs",
+			"agentOrchestrator.image.repository": "example.com/agent-orchestrator",
+			"agentOrchestrator.storage.bucket":   "agent-jobs",
 			"service.internalPort":          "9999",
 		},
 	}
@@ -89,7 +89,7 @@ func TestCoreNetworkPolicyOrchestratorIngressPort(t *testing.T) {
 // agentOrchestrator.storage to a peer on its own, so networkPolicy.egressAllow must cover it - this is
 // documented on <hunterAgent|remediationAgent>.networkPolicy.egressAllow in values.yaml, not
 // enforced by the render (SONAR-31525).
-func TestAgenticRuntimeNetworkPolicyEgressAllow(t *testing.T) {
+func TestAgentRuntimeNetworkPolicyEgressAllow(t *testing.T) {
 	valuesKey := map[string]string{"hunter": "hunterAgent", "remediation": "remediationAgent"}
 	for _, family := range []string{"hunter", "remediation"} {
 		t.Run(family+": empty egressAllow renders no extra egress rule", func(t *testing.T) {
@@ -117,14 +117,14 @@ func TestAgenticRuntimeNetworkPolicyEgressAllow(t *testing.T) {
 
 // A podSelector-only egressAllow entry (no namespaceSelector) must not render a stray
 // `namespaceSelector: null` peer alongside it - only the keys actually given.
-func TestAgenticRuntimeNetworkPolicyEgressAllowPodSelectorNoNullKeys(t *testing.T) {
+func TestAgentRuntimeNetworkPolicyEgressAllowPodSelectorNoNullKeys(t *testing.T) {
 	setValues := map[string]string{
 		"hunterAgent.networkPolicy.egressAllow[0].podSelector.matchLabels.app": "some-dependency",
 	}
 
 	// Asserted on the rendered YAML, not the parsed peer: `namespaceSelector: null` unmarshals to
 	// the same nil pointer as an absent key, so a typed check can't tell the two apart.
-	output, err := renderAgenticRuntimeNetworkPolicy(t, setValues)
+	output, err := renderAgentRuntimeNetworkPolicy(t, setValues)
 	require.NoError(t, err)
 	assert.NotContains(t, output, "namespaceSelector: null")
 

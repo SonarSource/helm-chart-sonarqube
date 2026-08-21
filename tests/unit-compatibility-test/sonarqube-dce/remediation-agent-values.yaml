@@ -16,7 +16,7 @@ agentOrchestrator:
     automountToken: true
     name: agent-orchestrator
     annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agentic-orchestrator
+      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agent-orchestrator
   # CORE DB password decoupled from SonarQube's jdbc secret (e.g. an encrypted value the
   # orchestrator can't use); endpoint/name/username fall back to jdbcOverwrite.
   coreDb:
@@ -27,7 +27,7 @@ agentOrchestrator:
   storage:
     endpoint: ""
     region: eu-west-1
-    bucket: agentic-artifacts
+    bucket: agent-artifacts
     pathStyle: false
   sonarqubeToken:
     token: "squ_example000000000000000000000000000000"
@@ -50,15 +50,15 @@ remediationAgent:
     automountToken: true
     name: remediation-agent-runtime
     annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agentic-orchestrator
+      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agent-orchestrator
   image:
     repository: example.com/unifiedagenticharness/remediationagent
     tag: "1.0.0"
 
-vortexAnalysis:
+vortex:
   enabled: true
   image:
-    repository: example.com/vortex/analysis
+    repository: example.com/vortex
     tag: "1"
   sonarqubeToken:
     token: "squ_example000000000000000000000000000000"

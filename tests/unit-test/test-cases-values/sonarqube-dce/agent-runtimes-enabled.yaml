@@ -8,22 +8,24 @@ jdbcOverwrite:
 agentOrchestrator:
   enabled: true
   image:
-    repository: example.com/agentic/orchestrator
+    repository: example.com/agent-orchestrator
     tag: "42"
   storage:
-    bucket: agentic-jobs
+    bucket: agent-jobs
 hunterAgent:
   enabled: true
-  networkPolicy:
-    enabled: true
+  image:
+    repository: example.com/hunter-agent
+    tag: "1"
 remediationAgent:
   enabled: true
-  networkPolicy:
-    enabled: true
-vortexAnalysis:
+  image:
+    repository: example.com/remediation-agent
+    tag: "1"
+vortex:
   enabled: true
   image:
-    repository: example.com/vortex/analysis
+    repository: example.com/vortex
     tag: "1"
   sonarqubeToken:
     token: "squ_example000000000000000000000000000000"

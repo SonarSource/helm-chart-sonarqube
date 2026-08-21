@@ -5,7 +5,7 @@ jdbcOverwrite:
   jdbcUrl: jdbc:postgresql://test-host:5432/testdb
   jdbcUsername: test-user
   jdbcPassword: test-password
-# Global scheduling settings alongside the Vortex analysis ones, which take precedence over them.
+# Global scheduling settings alongside Vortex's own, which take precedence over them.
 nodeSelector:
   global: "true"
 tolerations:
@@ -20,7 +20,7 @@ affinity:
             - key: global
               operator: In
               values: ["true"]
-vortexAnalysis:
+vortex:
   enabled: true
   image:
     repository: example.com/a3s/analysis/proxysqs
@@ -28,7 +28,7 @@ vortexAnalysis:
   sonarqubeToken:
     existingSecret: my-vortex-token
   storage:
-    bucket: agentic-artifacts
+    bucket: agent-artifacts
     region: eu-west-1
   nodeSelector:
     vortex: "true"

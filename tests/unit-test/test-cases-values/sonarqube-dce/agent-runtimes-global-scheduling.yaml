@@ -23,14 +23,14 @@ affinity:
 agentOrchestrator:
   enabled: true
   image:
-    repository: example.com/agentic/orchestrator
+    repository: example.com/agent-orchestrator
     tag: "42"
   storage:
-    bucket: agentic-jobs
+    bucket: agent-jobs
 hunterAgent:
   enabled: true
   image:
-    repository: example.com/agentic/hunter
+    repository: example.com/hunter-agent
     tag: "1"
   nodeSelector:
     hunter: "true"
@@ -49,7 +49,7 @@ hunterAgent:
 remediationAgent:
   enabled: true
   image:
-    repository: example.com/agentic/remediation
+    repository: example.com/remediation-agent
     tag: "1"
   nodeSelector:
     remediation: "true"
@@ -65,10 +65,10 @@ remediationAgent:
               - key: remediation
                 operator: In
                 values: ["true"]
-vortexAnalysis:
+vortex:
   enabled: true
   image:
-    repository: example.com/vortex/analysis
+    repository: example.com/vortex
     tag: "1"
   sonarqubeToken:
     token: "squ_example000000000000000000000000000000"

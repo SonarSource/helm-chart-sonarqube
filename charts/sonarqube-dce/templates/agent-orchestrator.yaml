@@ -10,7 +10,7 @@ metadata:
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-    sonarqube.agentic/component: orchestrator
+    sonarqube.agent/component: orchestrator
     app.kubernetes.io/component: agent-orchestrator
 spec:
   replicas: {{ .Values.agentOrchestrator.replicaCount }}
@@ -31,15 +31,15 @@ spec:
         {{- end }}
       labels:
         {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 8 }}
-        sonarqube.agentic/component: orchestrator
+        sonarqube.agent/component: orchestrator
         {{- with .Values.agentOrchestrator.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      automountServiceAccountToken: {{ include "sonarqube.agentic.automountServiceAccountToken" (dict "ctx" . "serviceAccount" .Values.agentOrchestrator.serviceAccount) }}
+      automountServiceAccountToken: {{ include "sonarqube.agent.automountServiceAccountToken" (dict "ctx" . "serviceAccount" .Values.agentOrchestrator.serviceAccount) }}
       {{- /* The wait-for-sonarqube init container below pulls the SonarQube image, so it needs the
              application nodes' pull secrets too - the orchestrator's own only cover its own image. */}}
-      {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list (fromYaml (include "sonarqube.agentic.sonarqubeImage" .)) .Values.agentOrchestrator.image) }}
+      {{- $pullSecrets := include "sonarqube.agent.imagePullSecrets" (list (fromYaml (include "sonarqube.agent.sonarqubeImage" .)) .Values.agentOrchestrator.image) }}
       {{- if $pullSecrets }}
       imagePullSecrets: {{- $pullSecrets | nindent 8 }}
       {{- end }}
@@ -49,15 +49,15 @@ spec:
       initContainers:
         - name: wait-for-sonarqube
           image: {{ include "sonarqube.image" . }}
-          imagePullPolicy: {{ (fromYaml (include "sonarqube.agentic.sonarqubeImage" .)).pullPolicy }}
-          {{- with (fromYaml (include "sonarqube.agentic.initContainerSecurityContext" .)) }}
+          imagePullPolicy: {{ (fromYaml (include "sonarqube.agent.sonarqubeImage" .)).pullPolicy }}
+          {{- with (fromYaml (include "sonarqube.agent.initContainerSecurityContext" .)) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           command:
             - sh
             - -c
             - |
-              until curl -sf "{{ include "sonarqube.agentic.sonarqube.url" . }}/api/system/status" | grep -q '"status":"UP"'; do
+              until curl -sf "{{ include "sonarqube.agent.sonarqube.url" . }}/api/system/status" | grep -q '"status":"UP"'; do
                 echo "Waiting for SonarQube to be UP..."; sleep 10;
               done
       containers:
@@ -87,9 +87,9 @@ spec:
                    doesn't apply — point coreDb.passwordSecret{Name,Key} at a usable secret. */}}
             {{- $coreDb := .Values.agentOrchestrator.coreDb }}
             - name: CORE_DB_READ_WRITE_ENDPOINT
-              value: {{ $coreDb.endpoint | default (include "sonarqube.agentic.jdbc.endpoint" .) | quote }}
+              value: {{ $coreDb.endpoint | default (include "sonarqube.agent.jdbc.endpoint" .) | quote }}
             - name: CORE_DB_NAME
-              value: {{ $coreDb.name | default (include "sonarqube.agentic.jdbc.dbname" .) | quote }}
+              value: {{ $coreDb.name | default (include "sonarqube.agent.jdbc.dbname" .) | quote }}
             - name: CORE_DB_USERNAME
               {{- if $coreDb.username }}
               value: {{ $coreDb.username | quote }}
@@ -126,7 +126,7 @@ spec:
                   key: AGENTIC_STORAGE_SECRET_KEY
             {{- end }}
             - name: AGENTIC_SONARQUBE_URL
-              value: {{ include "sonarqube.agentic.sonarqube.url" . | quote }}
+              value: {{ include "sonarqube.agent.sonarqube.url" . | quote }}
             {{- if or .Values.agentOrchestrator.sonarqubeToken.token .Values.agentOrchestrator.sonarqubeToken.existingSecret }}
             - name: AGENTIC_SONARQUBE_TOKEN
               valueFrom:
@@ -155,15 +155,15 @@ spec:
             - name: tmp
               mountPath: /tmp
           {{- end }}
-          {{- with (include "sonarqube.agentic.probe" (dict "probe" .Values.agentOrchestrator.probes.readiness)) }}
+          {{- with (include "sonarqube.agent.probe" (dict "probe" .Values.agentOrchestrator.probes.readiness)) }}
           readinessProbe:
 {{ . | indent 12 }}
           {{- end }}
-          {{- with (include "sonarqube.agentic.probe" (dict "probe" .Values.agentOrchestrator.probes.liveness)) }}
+          {{- with (include "sonarqube.agent.probe" (dict "probe" .Values.agentOrchestrator.probes.liveness)) }}
           livenessProbe:
 {{ . | indent 12 }}
           {{- end }}
-      {{- with (include "sonarqube.agentic.scheduling" (dict "ctx" . "component" .Values.agentOrchestrator)) }}
+      {{- with (include "sonarqube.agent.scheduling" (dict "ctx" . "component" .Values.agentOrchestrator)) }}
 {{ . | indent 6 }}
       {{- end }}
       serviceAccountName: {{ include "sonarqube.agentOrchestrator.serviceAccountName" . }}

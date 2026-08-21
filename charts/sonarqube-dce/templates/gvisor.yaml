@@ -1,7 +1,7 @@
 {{- if eq (include "sonarqube.gvisor.enabled" .) "true" }}
 {{- $gvisor := .Values.gvisor }}
 {{- $installer := $gvisor.installer }}
-# gVisor (runsc) sandboxing for the Agentic Job Runtimes. gvisor.enabled renders the RuntimeClass
+# gVisor (runsc) sandboxing for the agent runtimes. gvisor.enabled renders the RuntimeClass
 # below, assuming runsc is installed out-of-band. gvisor.installer.enabled additionally renders a
 # privileged, host-mutating DaemonSet that installs it — a deliberately different trust tier from
 # the hardened runtimes; self-managed nodes only. See values.yaml for details.
@@ -105,7 +105,7 @@ data:
     GVISOR_RELEASE="{{ $installer.runscVersion }}"
     RUNSC_HANDLER="{{ $gvisor.handler }}"
     RUNSC_MARKER="ConfigPath = \"${RUNSC_CONFIG}\""
-    RUNSC_CONFIG_HEADER="# Managed by SonarQube Helm chart (agentic gVisor installer)"
+    RUNSC_CONFIG_HEADER="# Managed by SonarQube Helm chart (gVisor installer)"
 
     echo "[install-gvisor] starting (release ${GVISOR_RELEASE})"
 
@@ -398,7 +398,7 @@ spec:
       # cannot reach the host systemd bus.
       hostPID: true
       serviceAccountName: {{ include "sonarqube.gvisor.fullname" . }}
-      {{- $pullSecrets := include "sonarqube.agentic.imagePullSecrets" (list .Values.image $installer.image) }}
+      {{- $pullSecrets := include "sonarqube.agent.imagePullSecrets" (list .Values.image $installer.image) }}
       {{- if $pullSecrets }}
       imagePullSecrets: {{- $pullSecrets | nindent 8 }}
       {{- end }}

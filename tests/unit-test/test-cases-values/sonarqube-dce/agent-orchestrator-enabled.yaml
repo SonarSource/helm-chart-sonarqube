@@ -5,9 +5,12 @@ jdbcOverwrite:
   jdbcUrl: jdbc:postgresql://test-host:5432/testdb
   jdbcUsername: test-user
   jdbcPassword: test-password
-# Vortex analysis enabled without an image repository, which must fail validation.
-vortexAnalysis:
+agentOrchestrator:
   enabled: true
   image:
-    repository: ""
-    tag: "7593"
+    repository: example.com/agent-orchestrator
+    tag: "42"
+  storage:
+    bucket: agent-jobs
+hunterAgent:
+  enabled: true

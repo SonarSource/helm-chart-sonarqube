@@ -3,20 +3,20 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agent-runtime-remediatio
+  name: remediation-agent-values.yaml-sonarqube-dce-agent-runtime-remed
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
-    sonarqube.agentic/component: runtime
-    sonarqube.agentic/family: remediation
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: remediation
     app.kubernetes.io/component: agent-runtime-remediation
 spec:
   podSelector:
     matchLabels:
       app: sonarqube-dce-agent-runtime-remediation
-      release: agentic-pack-values.yaml
+      release: remediation-agent-values.yaml
   policyTypes:
     - Ingress
     - Egress
@@ -25,7 +25,7 @@ spec:
         - podSelector:
             matchLabels:
               app: sonarqube-dce-agent-orchestrator
-              release: agentic-pack-values.yaml
+              release: remediation-agent-values.yaml
       ports:
         - port: 8090
           protocol: TCP
@@ -44,7 +44,7 @@ spec:
         - podSelector:
             matchLabels:
               app: sonarqube-dce-agent-orchestrator
-              release: agentic-pack-values.yaml
+              release: remediation-agent-values.yaml
       ports:
         - port: 8080
           protocol: TCP
@@ -65,11 +65,11 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-app
+  name: remediation-agent-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 spec:
   podSelector:
@@ -84,22 +84,22 @@ spec:
         - podSelector:
             matchLabels:
               app: sonarqube-dce
-              release: agentic-pack-values.yaml
+              release: remediation-agent-values.yaml
               sonarqube.datacenter/type: app
 
     - from:
         - podSelector:
             matchLabels:
               app: sonarqube-dce-agent-orchestrator
-              release: agentic-pack-values.yaml
+              release: remediation-agent-values.yaml
       ports:
         - port: 9000
           protocol: TCP
     - from:
         - podSelector:
             matchLabels:
-              app: sonarqube-dce-vortex-analysis
-              release: agentic-pack-values.yaml
+              app: sonarqube-dce-vortex
+              release: remediation-agent-values.yaml
       ports:
         - port: 9000
           protocol: TCP
@@ -138,15 +138,15 @@ spec:
         - podSelector:
             matchLabels:
               app: sonarqube-dce-agent-orchestrator
-              release: agentic-pack-values.yaml
+              release: remediation-agent-values.yaml
       ports:
         - port: 8080
           protocol: TCP
     - to:
         - podSelector:
             matchLabels:
-              app: sonarqube-dce-vortex-analysis
-              release: agentic-pack-values.yaml
+              app: sonarqube-dce-vortex
+              release: remediation-agent-values.yaml
       ports:
         - port: 8080
           protocol: TCP
@@ -155,11 +155,11 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-search
+  name: remediation-agent-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 spec:
   podSelector:
@@ -209,11 +209,11 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-search
+  name: remediation-agent-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 spec:
   minAvailable: 2
@@ -226,11 +226,11 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-app
+  name: remediation-agent-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 spec:
   minAvailable: 1
@@ -247,12 +247,12 @@ metadata:
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
-    sonarqube.agentic/component: orchestrator
+    sonarqube.agent/component: orchestrator
     app.kubernetes.io/component: agent-orchestrator
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agentic-orchestrator
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agent-orchestrator
 automountServiceAccountToken: true
 ---
 # Source: sonarqube-dce/templates/agent-serviceaccount.yaml
@@ -263,24 +263,24 @@ metadata:
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
-    sonarqube.agentic/component: runtime
-    sonarqube.agentic/family: remediation
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: remediation
     app.kubernetes.io/component: agent-runtime-remediation
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agentic-orchestrator
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agent-orchestrator
 automountServiceAccountToken: true
 ---
 # Source: sonarqube-dce/templates/gvisor.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
+  name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
     app.kubernetes.io/component: gvisor
 ---
@@ -288,13 +288,13 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator
+  name: remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
-    sonarqube.agentic/component: orchestrator
+    sonarqube.agent/component: orchestrator
     app.kubernetes.io/component: agent-orchestrator
 type: Opaque
 data:
@@ -304,11 +304,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-monitoring-passcode
+  name: remediation-agent-values.yaml-sonarqube-dce-monitoring-passcode
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -318,11 +318,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce
+  name: remediation-agent-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -332,11 +332,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-jwt
+  name: remediation-agent-values.yaml-sonarqube-dce-jwt
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 type: Opaque
 data:
@@ -347,11 +347,11 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-http-proxies
+  name: remediation-agent-values.yaml-sonarqube-dce-http-proxies
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 type: Opaque
 stringData:
@@ -362,17 +362,17 @@ stringData:
   PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
   PROMETHEUS-EXPORTER-NO-PROXY: ""
 ---
-# Source: sonarqube-dce/templates/vortex-analysis-secret.yaml
+# Source: sonarqube-dce/templates/vortex-secret.yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-vortex-analysis
+  name: remediation-agent-values.yaml-sonarqube-dce-vortex
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
-    app.kubernetes.io/component: vortex-analysis
+    app.kubernetes.io/component: vortex
 type: Opaque
 data:
   VORTEX_ANALYSIS_SONARQUBE_TOKEN: "c3F1X2V4YW1wbGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
@@ -381,27 +381,27 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-app-config
+  name: remediation-agent-values.yaml-sonarqube-dce-app-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
-    sonar.hunteragent.orchestrator.url=http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080
-    sonar.remediationagent.orchestrator.url=http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080
-    sonar.vortex.analysis.url=http://agentic-pack-values.yaml-sonarqube-dce-vortex-analysis:8080
+    sonar.hunteragent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator:8080
+    sonar.remediationagent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator:8080
+    sonar.vortex.analysis.url=http://remediation-agent-values.yaml-sonarqube-dce-vortex:8080
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-search-config
+  name: remediation-agent-values.yaml-sonarqube-dce-search-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 data:
   sonar.properties: |
@@ -410,11 +410,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
+  name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
     app.kubernetes.io/component: gvisor
 data:
@@ -459,7 +459,7 @@ data:
     GVISOR_RELEASE="20260706"
     RUNSC_HANDLER="runsc"
     RUNSC_MARKER="ConfigPath = \"${RUNSC_CONFIG}\""
-    RUNSC_CONFIG_HEADER="# Managed by SonarQube Helm chart (agentic gVisor installer)"
+    RUNSC_CONFIG_HEADER="# Managed by SonarQube Helm chart (gVisor installer)"
 
     echo "[install-gvisor] starting (release ${GVISOR_RELEASE})"
 
@@ -731,11 +731,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-init-fs
+  name: remediation-agent-values.yaml-sonarqube-dce-init-fs
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 data:
   init_fs.sh: |-
@@ -747,11 +747,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-init-sysctl
+  name: remediation-agent-values.yaml-sonarqube-dce-init-sysctl
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 data:
   init_sysctl.sh: |-
@@ -794,11 +794,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-install-plugins
+  name: remediation-agent-values.yaml-sonarqube-dce-install-plugins
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 data:
   install_plugins.sh: |-
@@ -807,11 +807,11 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-jdbc-config
+  name: remediation-agent-values.yaml-sonarqube-dce-jdbc-config
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 data:
   SONAR_JDBC_USERNAME: "user"
@@ -825,11 +825,11 @@ data:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
+  name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
     app.kubernetes.io/component: gvisor
 rules:
@@ -841,33 +841,33 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
+  name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
     app.kubernetes.io/component: gvisor
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
+  name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
 subjects:
   - kind: ServiceAccount
-    name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
+    name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
     namespace: default
 ---
 # Source: sonarqube-dce/templates/agent-orchestrator-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator
+  name: remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
-    sonarqube.agentic/component: orchestrator
+    sonarqube.agent/component: orchestrator
     app.kubernetes.io/component: agent-orchestrator
 spec:
   type: ClusterIP
@@ -878,20 +878,20 @@ spec:
       name: http
   selector:
     app: sonarqube-dce-agent-orchestrator
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
 ---
 # Source: sonarqube-dce/templates/agent-runtime-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agent-runtime-remediatio
+  name: remediation-agent-values.yaml-sonarqube-dce-agent-runtime-remed
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
-    sonarqube.agentic/component: runtime
-    sonarqube.agentic/family: remediation
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: remediation
     app.kubernetes.io/component: agent-runtime-remediation
 spec:
   # Deliberately a load-balanced ClusterIP, not headless: on an HTTP 429 the runtime drops the
@@ -904,17 +904,17 @@ spec:
       name: http
   selector:
     app: sonarqube-dce-agent-runtime-remediation
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce
+  name: remediation-agent-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 
 spec:
@@ -926,18 +926,18 @@ spec:
       name: http
   selector:
     app: sonarqube-dce
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     sonarqube.datacenter/type: "app"
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-headless
+  name: remediation-agent-values.yaml-sonarqube-dce-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 
 spec:
@@ -952,18 +952,18 @@ spec:
       name: hazelcast
   selector:
     app: sonarqube-dce
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     sonarqube.datacenter/type: "app"
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-search
+  name: remediation-agent-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 
 spec:
@@ -979,17 +979,17 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-search-headless
+  name: remediation-agent-values.yaml-sonarqube-dce-search-headless
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 
 spec:
@@ -1006,19 +1006,19 @@ spec:
       name: es
   selector:
     app: sonarqube-dce-search
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
 ---
-# Source: sonarqube-dce/templates/vortex-analysis-service.yaml
+# Source: sonarqube-dce/templates/vortex-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-vortex-analysis
+  name: remediation-agent-values.yaml-sonarqube-dce-vortex
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
-    app.kubernetes.io/component: vortex-analysis
+    app.kubernetes.io/component: vortex
 spec:
   type: ClusterIP
   ports:
@@ -1027,35 +1027,35 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: sonarqube-dce-vortex-analysis
-    release: agentic-pack-values.yaml
+    app: sonarqube-dce-vortex
+    release: remediation-agent-values.yaml
 ---
 # Source: sonarqube-dce/templates/gvisor.yaml
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
+  name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
     app.kubernetes.io/component: gvisor
 spec:
   selector:
     matchLabels:
       app: sonarqube-dce-gvisor-installer
-      release: agentic-pack-values.yaml
+      release: remediation-agent-values.yaml
   template:
     metadata:
       labels:
         app: sonarqube-dce-gvisor-installer
-        release: agentic-pack-values.yaml
+        release: remediation-agent-values.yaml
     spec:
       # Needed so `nsenter -t 1` can reach the host's systemd to restart containerd; chroot alone
       # cannot reach the host systemd bus.
       hostPID: true
-      serviceAccountName: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
+      serviceAccountName: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
       tolerations:
         - operator: Exists
       containers:
@@ -1094,35 +1094,35 @@ spec:
             type: Directory
         - name: scripts
           configMap:
-            name: agentic-pack-values.yaml-sonarqube-dce-gvisor-installer
+            name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
             defaultMode: 0755
 ---
 # Source: sonarqube-dce/templates/agent-orchestrator.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator
+  name: remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
-    sonarqube.agentic/component: orchestrator
+    sonarqube.agent/component: orchestrator
     app.kubernetes.io/component: agent-orchestrator
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: sonarqube-dce-agent-orchestrator
-      release: agentic-pack-values.yaml
+      release: remediation-agent-values.yaml
   template:
     metadata:
       annotations:
-        checksum/secret: 6e2c73b6eaf48e12e04825cbccdda10a6e9f767cee59b12f8fbca056c1402ac5
+        checksum/secret: 26cf79b70f346cd14c142a408593cf69f6997e17fad3e91288418923dfb2998e
       labels:
         app: sonarqube-dce-agent-orchestrator
-        release: agentic-pack-values.yaml
-        sonarqube.agentic/component: orchestrator
+        release: remediation-agent-values.yaml
+        sonarqube.agent/component: orchestrator
     spec:
       automountServiceAccountToken: true
       initContainers:
@@ -1144,7 +1144,7 @@ spec:
             - sh
             - -c
             - |
-              until curl -sf "http://agentic-pack-values.yaml-sonarqube-dce:9000/api/system/status" | grep -q '"status":"UP"'; do
+              until curl -sf "http://remediation-agent-values.yaml-sonarqube-dce:9000/api/system/status" | grep -q '"status":"UP"'; do
                 echo "Waiting for SonarQube to be UP..."; sleep 10;
               done
       containers:
@@ -1185,18 +1185,18 @@ spec:
             - name: AGENTIC_STORAGE_REGION
               value: "eu-west-1"
             - name: AGENTIC_STORAGE_BUCKET
-              value: "agentic-artifacts"
+              value: "agent-artifacts"
             - name: AGENTIC_STORAGE_PATH_STYLE
               value: "false"
             - name: AGENTIC_SONARQUBE_URL
-              value: "http://agentic-pack-values.yaml-sonarqube-dce:9000"
+              value: "http://remediation-agent-values.yaml-sonarqube-dce:9000"
             - name: AGENTIC_SONARQUBE_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator
+                  name: remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator
                   key: AGENTIC_SONARQUBE_TOKEN
             - name: AGENTIC_REMEDIATION_RUNTIME_PUSH_URL
-              value: "http://agentic-pack-values.yaml-sonarqube-dce-agent-runtime-remediatio:8090/jobs"
+              value: "http://remediation-agent-values.yaml-sonarqube-dce-agent-runtime-remed:8090/jobs"
           resources:
             limits:
               cpu: "1"
@@ -1230,33 +1230,33 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-agent-runtime-remediatio
+  name: remediation-agent-values.yaml-sonarqube-dce-agent-runtime-remed
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
-    sonarqube.agentic/component: runtime
-    sonarqube.agentic/family: remediation
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: remediation
     app.kubernetes.io/component: agent-runtime-remediation
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: sonarqube-dce-agent-runtime-remediation
-      release: agentic-pack-values.yaml
+      release: remediation-agent-values.yaml
   template:
     metadata:
       labels:
         app: sonarqube-dce-agent-runtime-remediation
-        release: agentic-pack-values.yaml
-        sonarqube.agentic/component: runtime
-        sonarqube.agentic/family: remediation
+        release: remediation-agent-values.yaml
+        sonarqube.agent/component: runtime
+        sonarqube.agent/family: remediation
     spec:
       runtimeClassName: gvisor
       automountServiceAccountToken: true
       containers:
-        - name: agentic-runtime
+        - name: agent-runtime
           image: "example.com/unifiedagenticharness/remediationagent:1.0.0"
           imagePullPolicy: IfNotPresent
           securityContext:
@@ -1277,7 +1277,7 @@ spec:
             - name: REMEDIATION_SCRIPT_PATH
               value: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
             - name: REMEDIATION_RULE_INFO_ENDPOINT
-              value: http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080/remediation-agent/rule-info
+              value: http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator:8080/remediation-agent/rule-info
           resources:
             limits:
               cpu: "4"
@@ -1305,18 +1305,18 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-app
+  name: remediation-agent-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: agentic-pack-values.yaml
+    app.kubernetes.io/name: remediation-agent-values.yaml
     sonarqube.datacenter/type: "app"
-    app.kubernetes.io/instance: agentic-pack-values.yaml
+    app.kubernetes.io/instance: remediation-agent-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: agentic-pack-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: remediation-agent-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "2026.4.0-datacenter-app"
 spec:
   replicas: 2
@@ -1326,17 +1326,17 @@ spec:
   selector:
     matchLabels:
       app: sonarqube-dce
-      release: agentic-pack-values.yaml
+      release: remediation-agent-values.yaml
   template:
     metadata:
       labels:
         app: sonarqube-dce
-        release: agentic-pack-values.yaml
+        release: remediation-agent-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: c385a4b4aedaa62ad51bc4dd43343eb8684d1f96a065324bc125c1f48aae2aad
-        checksum/config: 7b6c40b1cd54928edf69d6d2c42e76f3fc1c9165461021fc04efdfb3328a9990
-        checksum/secret: 704e3b5f601b4acea8b7e253eb3d57b6c8c2bbfc3f1a64c04533fb945bafaa21
+        checksum/plugins: be36116904281bf2eba03e93b02de0283317b12c11e5822d2808a26205a52203
+        checksum/config: 20d4d56d5bef5a022b281c51c21e146cb3292d60e1714bcf78b2f5a82fa566f4
+        checksum/secret: a8df0f488260d445c20015ed45cef7287093d404c230085cc7b7e5b5e3162400
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -1410,7 +1410,7 @@ spec:
             - name: SONAR_HELM_CHART_VERSION
               value: 2026.5.0
             - name: SONAR_CLUSTER_SEARCH_HOSTS
-              value: "agentic-pack-values.yaml-sonarqube-dce-search"
+              value: "remediation-agent-values.yaml-sonarqube-dce-search"
             - name: SONAR_CLUSTER_KUBERNETES
               value: "true"
             - name: SONAR_CLUSTER_NODE_NAME
@@ -1422,31 +1422,31 @@ spec:
                 fieldRef:
                   fieldPath: status.podIP
             - name: SONAR_CLUSTER_HOSTS
-              value: "agentic-pack-values.yaml-sonarqube-dce-headless"
+              value: "remediation-agent-values.yaml-sonarqube-dce-headless"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
               valueFrom:
                 secretKeyRef:
-                  name: "agentic-pack-values.yaml-sonarqube-dce-jwt"
+                  name: "remediation-agent-values.yaml-sonarqube-dce-jwt"
                   key: SONAR_AUTH_JWTBASE64HS256SECRET
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: agentic-pack-values.yaml-sonarqube-dce
+                  name: remediation-agent-values.yaml-sonarqube-dce
                   key: jdbc-password
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
-                  name: agentic-pack-values.yaml-sonarqube-dce-monitoring-passcode
+                  name: remediation-agent-values.yaml-sonarqube-dce-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
             - name: SONAR_VORTEX_ANALYSIS_URL
-              value: "http://agentic-pack-values.yaml-sonarqube-dce-vortex-analysis:8080"
+              value: "http://remediation-agent-values.yaml-sonarqube-dce-vortex:8080"
             - name: SONAR_HUNTERAGENT_ORCHESTRATOR_URL
-              value: "http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080"
+              value: "http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator:8080"
             - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
-              value: "http://agentic-pack-values.yaml-sonarqube-dce-agent-orchestrator:8080"
+              value: "http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator:8080"
           envFrom:
             - configMapRef:
-                name: agentic-pack-values.yaml-sonarqube-dce-jdbc-config
+                name: remediation-agent-values.yaml-sonarqube-dce-jdbc-config
           livenessProbe:
             exec:
               command:
@@ -1519,14 +1519,14 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: agentic-pack-values.yaml-sonarqube-dce-app-config
+          name: remediation-agent-values.yaml-sonarqube-dce-app-config
           items:
           - key: sonar.properties
             path: sonar.properties
       
       - name: install-plugins
         configMap:
-          name: agentic-pack-values.yaml-sonarqube-dce-install-plugins
+          name: remediation-agent-values.yaml-sonarqube-dce-install-plugins
           items:
             - key: install_plugins.sh
               path: install_plugins.sh
@@ -1540,38 +1540,38 @@ spec:
         emptyDir:
           {}
 ---
-# Source: sonarqube-dce/templates/vortex-analysis.yaml
+# Source: sonarqube-dce/templates/vortex.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-vortex-analysis
+  name: remediation-agent-values.yaml-sonarqube-dce-vortex
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
-    app.kubernetes.io/component: vortex-analysis
+    app.kubernetes.io/component: vortex
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: sonarqube-dce-vortex-analysis
-      release: agentic-pack-values.yaml
+      app: sonarqube-dce-vortex
+      release: remediation-agent-values.yaml
   template:
     metadata:
       annotations:
-        checksum/secret: 6f90f8cc5df0d3ed7c876fb3c7d26343fe15b8d1b8e4177ba971a8ed1a122a0f
+        checksum/secret: 233dae7e7101bb5a40a21097fd39ba3ff390883efab22fd0d81074f20b0e7cc3
       labels:
-        app: sonarqube-dce-vortex-analysis
-        release: agentic-pack-values.yaml
+        app: sonarqube-dce-vortex
+        release: remediation-agent-values.yaml
     spec:
       serviceAccountName: default
       automountServiceAccountToken: false
       containers:
-        - name: vortex-analysis
-          image: "example.com/vortex/analysis:1"
+        - name: vortex
+          image: "example.com/vortex:1"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -1589,11 +1589,11 @@ spec:
               protocol: TCP
           env:
             - name: VORTEX_ANALYSIS_SONARQUBE_URL
-              value: "http://agentic-pack-values.yaml-sonarqube-dce:9000"
+              value: "http://remediation-agent-values.yaml-sonarqube-dce:9000"
             - name: VORTEX_ANALYSIS_SONARQUBE_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: agentic-pack-values.yaml-sonarqube-dce-vortex-analysis
+                  name: remediation-agent-values.yaml-sonarqube-dce-vortex
                   key: VORTEX_ANALYSIS_SONARQUBE_TOKEN
             - name: SONAR_AGENTIC_STORAGE_TYPE
               value: "S3"
@@ -1626,34 +1626,34 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: agentic-pack-values.yaml-sonarqube-dce-search
+  name: remediation-agent-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
-    app.kubernetes.io/name: "agentic-pack-values.yaml"
+    app.kubernetes.io/name: "remediation-agent-values.yaml"
     sonarqube.datacenter/type: "search"
-    app.kubernetes.io/instance: agentic-pack-values.yaml
+    app.kubernetes.io/instance: remediation-agent-values.yaml
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
-    app.kubernetes.io/component: agentic-pack-values.yaml-sonarqube-dce
+    app.kubernetes.io/component: remediation-agent-values.yaml-sonarqube-dce
     app.kubernetes.io/version: "2026.4.0-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
-  serviceName: agentic-pack-values.yaml-sonarqube-dce-search
+  serviceName: remediation-agent-values.yaml-sonarqube-dce-search
   selector:
     matchLabels:
       app: sonarqube-dce-search
-      release: agentic-pack-values.yaml
+      release: remediation-agent-values.yaml
   volumeClaimTemplates:
   - metadata:
-      name: agentic-pack-values.yaml-sonarqube-dce
+      name: remediation-agent-values.yaml-sonarqube-dce
       labels:
-        release: agentic-pack-values.yaml
+        release: remediation-agent-values.yaml
         chart: "sonarqube-dce"
-        app: "agentic-pack-values.yaml-sonarqube-dce"
+        app: "remediation-agent-values.yaml-sonarqube-dce"
     spec:
       accessModes:
         - "ReadWriteOnce"
@@ -1664,13 +1664,13 @@ spec:
     metadata:
       labels:
         app: sonarqube-dce-search
-        release: agentic-pack-values.yaml
+        release: remediation-agent-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: 48984fefbca804adff3080e6d8de92b55dc4d18e45e68500098515d6f269d103
-        checksum/init-fs: b897430b48cc08872fc3b6d6f5aed36612fa12646496d95e7d8d6045ea87dd14
-        checksum/config: 7b6c40b1cd54928edf69d6d2c42e76f3fc1c9165461021fc04efdfb3328a9990
-        checksum/secret: 704e3b5f601b4acea8b7e253eb3d57b6c8c2bbfc3f1a64c04533fb945bafaa21
+        checksum/init-sysctl: 306105394e9e75cfc0fc9038f5650ca2e2a00d0b7cc558dd28844f661c2ac630
+        checksum/init-fs: b620e1fd313bf988bbda99b4b2899948c5835212f6f39a24729f8bd130f81d83
+        checksum/config: 20d4d56d5bef5a022b281c51c21e146cb3292d60e1714bcf78b2f5a82fa566f4
+        checksum/secret: a8df0f488260d445c20015ed45cef7287093d404c230085cc7b7e5b5e3162400
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -1714,16 +1714,16 @@ spec:
             - name: init-fs
               mountPath: /tmp/scripts/
             - mountPath: /opt/sonarqube/certs
-              name: "agentic-pack-values.yaml-sonarqube-dce"
+              name: "remediation-agent-values.yaml-sonarqube-dce"
               subPath: certs
             - mountPath: /opt/sonarqube/data
-              name: "agentic-pack-values.yaml-sonarqube-dce"
+              name: "remediation-agent-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "agentic-pack-values.yaml-sonarqube-dce"
+              name: "remediation-agent-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "agentic-pack-values.yaml-sonarqube-dce"
+              name: "remediation-agent-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -1753,9 +1753,9 @@ spec:
             - name: SONAR_LOG_JSONOUTPUT
               value: "false"
             - name: SONAR_CLUSTER_ES_HOSTS
-              value: "agentic-pack-values.yaml-sonarqube-dce-search-0,agentic-pack-values.yaml-sonarqube-dce-search-1,agentic-pack-values.yaml-sonarqube-dce-search-2,"
+              value: "remediation-agent-values.yaml-sonarqube-dce-search-0,remediation-agent-values.yaml-sonarqube-dce-search-1,remediation-agent-values.yaml-sonarqube-dce-search-2,"
             - name: SONAR_CLUSTER_ES_DISCOVERY_SEED_HOSTS
-              value: "agentic-pack-values.yaml-sonarqube-dce-search-headless"
+              value: "remediation-agent-values.yaml-sonarqube-dce-search-headless"
             - name: SONAR_CLUSTER_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -1833,17 +1833,17 @@ spec:
               type: RuntimeDefault
           volumeMounts:
             - mountPath: /opt/sonarqube/certs
-              name: "agentic-pack-values.yaml-sonarqube-dce"
+              name: "remediation-agent-values.yaml-sonarqube-dce"
               subPath: certs
               readOnly: true
             - mountPath: /opt/sonarqube/data
-              name: "agentic-pack-values.yaml-sonarqube-dce"
+              name: "remediation-agent-values.yaml-sonarqube-dce"
               subPath: data
             - mountPath: /opt/sonarqube/temp
-              name: "agentic-pack-values.yaml-sonarqube-dce"
+              name: "remediation-agent-values.yaml-sonarqube-dce"
               subPath: temp
             - mountPath: /opt/sonarqube/logs
-              name: "agentic-pack-values.yaml-sonarqube-dce"
+              name: "remediation-agent-values.yaml-sonarqube-dce"
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
@@ -1852,23 +1852,23 @@ spec:
       
       - name: init-sysctl
         configMap:
-          name: agentic-pack-values.yaml-sonarqube-dce-init-sysctl
+          name: remediation-agent-values.yaml-sonarqube-dce-init-sysctl
           items:
             - key: init_sysctl.sh
               path: init_sysctl.sh
       - name: init-fs
         configMap:
-          name: agentic-pack-values.yaml-sonarqube-dce-init-fs
+          name: remediation-agent-values.yaml-sonarqube-dce-init-fs
           items:
             - key: init_fs.sh
               path: init_fs.sh
-      - name: "agentic-pack-values.yaml-sonarqube-dce"
+      - name: "remediation-agent-values.yaml-sonarqube-dce"
       - name : tmp-dir
         emptyDir:
           {}
 ---
 # Source: sonarqube-dce/templates/gvisor.yaml
-# gVisor (runsc) sandboxing for the Agentic Job Runtimes. gvisor.enabled renders the RuntimeClass
+# gVisor (runsc) sandboxing for the agent runtimes. gvisor.enabled renders the RuntimeClass
 # below, assuming runsc is installed out-of-band. gvisor.installer.enabled additionally renders a
 # privileged, host-mutating DaemonSet that installs it — a deliberately different trust tier from
 # the hardened runtimes; self-managed nodes only. See values.yaml for details.
@@ -1879,7 +1879,7 @@ metadata:
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
     app.kubernetes.io/component: gvisor
 handler: runsc
@@ -1891,7 +1891,7 @@ scheduling:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "agentic-pack-values.yaml-ui-test"
+  name: "remediation-agent-values.yaml-ui-test"
   annotations:
     "helm.sh/hook": test-success
     # Disable Istio sidecar injection for this test pod
@@ -1899,12 +1899,12 @@ metadata:
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
-    release: agentic-pack-values.yaml
+    release: remediation-agent-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
-    - name: agentic-pack-values.yaml-ui-test
+    - name: remediation-agent-values.yaml-ui-test
       image: "sonarqube:2026.4.0-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['curl']
@@ -1917,7 +1917,7 @@ spec:
         '--max-time',
         '5',
         '-s',
-        'agentic-pack-values.yaml-sonarqube-dce:9000/api/system/status'
+        'remediation-agent-values.yaml-sonarqube-dce:9000/api/system/status'
         ]
       resources:
         limits:
