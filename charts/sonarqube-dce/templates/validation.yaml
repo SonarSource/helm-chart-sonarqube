@@ -37,6 +37,10 @@
   {{- if not .Values.orchestrator.storage.bucket -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n orchestrator.enabled is true but orchestrator.storage.bucket is not set." -}}
   {{- end -}}
+  {{- $orchestratorStorage := .Values.orchestrator.storage -}}
+  {{- if and (not $orchestratorStorage.existingSecret) (or $orchestratorStorage.accessKey $orchestratorStorage.secretKey) (not (and $orchestratorStorage.accessKey $orchestratorStorage.secretKey)) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n orchestrator.enabled is true but only one of orchestrator.storage.accessKey / orchestrator.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
+  {{- end -}}
   {{- if and (not .Values.orchestrator.coreDb.endpoint) (not (include "sonarqube.agentic.jdbc.endpoint" .)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n orchestrator.enabled is true but the CORE DB endpoint could not be derived from jdbcOverwrite.jdbcUrl and orchestrator.coreDb.endpoint is not set." -}}
   {{- end -}}

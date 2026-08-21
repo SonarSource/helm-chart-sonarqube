@@ -100,3 +100,13 @@ func TestOrchestratorCoreDbExplicitOverridesTakePrecedence(t *testing.T) {
 	assert.Contains(t, output, `value: "explicit-host:5432"`)
 	assert.Contains(t, output, `value: "explicitdb"`)
 }
+
+// Only one of orchestrator.storage.accessKey / secretKey set must fail rather than deploy with a
+// silently empty credential.
+func TestOrchestratorRequiresBothStorageCredentialsOrNeither(t *testing.T) {
+	values := orchestratorCoreDbBase()
+	values["orchestrator.storage.accessKey"] = "only-access-key"
+	_, err := renderWithValidation(t, values)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "only one of orchestrator.storage.accessKey / orchestrator.storage.secretKey is set")
+}
