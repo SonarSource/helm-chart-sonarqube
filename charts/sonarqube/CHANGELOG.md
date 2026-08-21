@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [2026.5.0]
 * Upgrade Chart's version to 2026.5.0
 * Upgrade SonarQube Community build to 26.8.0.126808
+* Deprecate the Prometheus JMX exporter (`prometheusExporter`). The exporter remains available in this release and will be removed in a future release
 * **Breaking**: Remove the deprecated `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart dependency. `ingress.enabled` remains supported for use with a self-managed ingress controller; `httproute.enabled` (Gateway API) is also available
 * Add `gateway-api-migration-scripts/nginx-to-istio-migration.sh` to help migrate from the bundled ingress-nginx controller to Gateway API
 

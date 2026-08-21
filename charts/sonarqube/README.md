@@ -369,6 +369,8 @@ This Helm chart offers the possibility to monitor SonarQube with Prometheus. You
 
 ### Export JMX metrics
 
+**(DEPRECATED)** The Prometheus JMX exporter is deprecated and will be removed in a future release.
+
 The prometheus exporter (`prometheusExporter.enabled=true`) converts the JMX metrics into a format that Prometheus can understand. After the metrics are exported, you can connect your Prometheus instance and scrape them.
 
 Per default the JMX metrics for the Web Bean and the CE Bean are exposed on port 8000 and 8001. These values can be configured with `prometheusExporter.webBeanPort` and `prometheusExporter.ceBeanPort`.
