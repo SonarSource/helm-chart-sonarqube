@@ -1,0 +1,115 @@
+{{- if .Values.vortex.enabled }}
+{{- $vortex := .Values.vortex }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sonarqube.vortex.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vortex
+spec:
+  replicas: {{ $vortex.replicaCount }}
+  {{- with $vortex.strategy }}
+  strategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-vortex
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/vortex-secret.yaml") . | sha256sum }}
+        {{- with $vortex.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        app: {{ include "sonarqube.name" . }}-vortex
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ include "sonarqube.vortex.serviceAccountName" . }}
+      automountServiceAccountToken: {{ include "sonarqube.agent.automountServiceAccountToken" (dict "ctx" . "serviceAccount" $vortex.serviceAccount) }}
+      {{- $pullSecrets := include "sonarqube.agent.imagePullSecrets" (list $vortex.image) }}
+      {{- if $pullSecrets }}
+      imagePullSecrets: {{- $pullSecrets | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: vortex
+          image: "{{ $vortex.image.repository }}:{{ $vortex.image.tag }}"
+          imagePullPolicy: {{ $vortex.image.pullPolicy }}
+          {{- with $vortex.containerSecurityContext }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ $vortex.port }}
+              protocol: TCP
+          env:
+            - name: VORTEX_ANALYSIS_SONARQUBE_URL
+              value: {{ printf "http://%s:%d%s" (include "sonarqube.fullname" .) (int .Values.service.externalPort) (trimSuffix "/" (include "sonarqube.webcontext" .)) | quote }}
+            {{- if or $vortex.sonarqubeToken.token $vortex.sonarqubeToken.existingSecret }}
+            - name: VORTEX_ANALYSIS_SONARQUBE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.vortex.fullname" .) $vortex.sonarqubeToken.existingSecret }}
+                  key: {{ $vortex.sonarqubeToken.existingSecretKey | default "VORTEX_ANALYSIS_SONARQUBE_TOKEN" }}
+            {{- end }}
+            - name: SONAR_AGENTIC_STORAGE_TYPE
+              value: {{ $vortex.storage.type | quote }}
+            - name: SONAR_AGENTIC_STORAGE_BUCKET
+              value: {{ $vortex.storage.bucket | quote }}
+            - name: SONAR_AGENTIC_STORAGE_REGION
+              value: {{ $vortex.storage.region | quote }}
+            - name: SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS
+              value: {{ $vortex.storage.pathStyleAccess | quote }}
+            - name: SONAR_AGENTIC_STORAGE_ENDPOINT
+              value: {{ $vortex.storage.endpoint | quote }}
+            {{- /* Inject static storage keys only when provided (inline or via existingSecret). When
+                   none are set, the env vars are omitted so the AWS SDK falls back to its default
+                   credential chain - i.e. the pod's IAM identity (node instance role or IRSA) for
+                   credential-less access to a real S3 bucket. */}}
+            {{- if or $vortex.storage.accessKey $vortex.storage.secretKey $vortex.storage.existingSecret }}
+            - name: SONAR_AGENTIC_STORAGE_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.vortex.fullname" .) $vortex.storage.existingSecret }}
+                  key: SONAR_AGENTIC_STORAGE_ACCESS_KEY
+            - name: SONAR_AGENTIC_STORAGE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.vortex.fullname" .) $vortex.storage.existingSecret }}
+                  key: SONAR_AGENTIC_STORAGE_SECRET_KEY
+            {{- end }}
+            {{- with $vortex.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with $vortex.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+          {{- with $vortex.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with (include "sonarqube.agent.scheduling" (dict "ctx" . "component" $vortex)) }}
+{{ . | indent 6 }}
+      {{- end }}
+      {{- with $vortex.extraVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
