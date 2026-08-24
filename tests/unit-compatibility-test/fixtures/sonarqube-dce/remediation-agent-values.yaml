@@ -463,6 +463,19 @@ data:
 
     echo "[install-gvisor] starting (release ${GVISOR_RELEASE})"
 
+    # Pre-flight: if containerd already exposes the target handler (e.g. GKE Sandbox or another
+    # provider's own sandbox runtime), the node is already sandboxed and this installer has nothing
+    # to do. Skip before touching anything on disk — mutating a config this installer doesn't own
+    # risks clobbering it. The RuntimeClass itself isn't gated by this: it's rendered independently
+    # of the installer, so scheduling is unaffected. label-node.sh still runs afterwards so the
+    # scheduler admits pods here.
+    if command -v crictl >/dev/null 2>&1; then
+      if crictl_info="$(crictl info 2>/dev/null)" && grep -q "\"${RUNSC_HANDLER}\"" <<<"${crictl_info}"; then
+        echo "[install-gvisor] containerd already exposes the \"${RUNSC_HANDLER}\" runtime; skipping installation"
+        exit 0
+      fi
+    fi
+
     # Polls containerd's own state after a restart: is-active alone catches a crash-after-fork that a
     # 0 exit from `systemctl restart` would mask, and crictl (when present) confirms CRI is actually
     # serving the given runtime handler. Pass an empty handler to only require CRI to be up (used by

@@ -273,6 +273,32 @@ func TestGvisorInstallerSafetyNets(t *testing.T) {
 	assert.Contains(t, script, "CRITICAL")
 }
 
+// A pre-flight check must skip the whole install, before touching anything on disk, when containerd
+// already exposes the target handler (e.g. GKE Sandbox's own runsc) (SONAR-31721).
+func TestGvisorInstallerPreflightSkipsExistingRuntime(t *testing.T) {
+	output, err := renderGvisor(t, "gvisor-installer.yaml")
+	require.NoError(t, err)
+
+	var configMap corev1.ConfigMap
+	for _, doc := range splitGvisorDocs(output) {
+		if strings.Contains(doc, "kind: ConfigMap") {
+			helm.UnmarshalK8SYaml(t, doc, &configMap)
+		}
+	}
+	require.NotEmpty(t, configMap.Name)
+
+	script, ok := configMap.Data["install-gvisor.sh"]
+	require.True(t, ok, "expected an install-gvisor.sh key in the installer ConfigMap")
+
+	preflightIdx := strings.Index(script, "skipping installation")
+	downloadIdx := strings.Index(script, "already present, skipping download")
+	require.NotEqual(t, -1, preflightIdx, "expected a pre-flight skip check in install-gvisor.sh")
+	require.NotEqual(t, -1, downloadIdx)
+	assert.Less(t, preflightIdx, downloadIdx, "pre-flight check must run before the download step")
+	assert.Contains(t, script, "crictl info")
+	assert.Contains(t, script, `"${RUNSC_HANDLER}"`)
+}
+
 // The three invalid toggle combinations must each fail closed at template time with a specific
 // message. (installer.enabled without gvisor.enabled is intentionally NOT here: gvisor.enabled=false
 // renders nothing, so the leftover installer flag is inert and must not fail — see validation.yaml.)
