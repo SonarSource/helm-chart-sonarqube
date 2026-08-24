@@ -1,0 +1,76 @@
+# Exercises the Agent Orchestrator (Deployment/Service/Secret), the Remediation Agent
+# (Deployment/Service), dedicated ServiceAccounts (IRSA annotations), the remediation
+# NetworkPolicy (incl. egressAllow with ports), credential-less S3 storage (no static keys),
+# and the gVisor RuntimeClass wired onto the runtime.
+community:
+  enabled: true
+
+networkPolicy:
+  enabled: true
+
+jdbcOverwrite:
+  enabled: true
+
+agentOrchestrator:
+  enabled: true
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "1.0.0"
+  port: 8080
+  serviceAccount:
+    create: true
+    automountToken: true
+    name: agent-orchestrator
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agent-orchestrator
+  # CORE DB password decoupled from SonarQube's jdbc secret (e.g. an encrypted value the
+  # orchestrator can't use); endpoint/name/username fall back to jdbcOverwrite.
+  coreDb:
+    passwordSecretName: core-db
+    passwordSecretKey: password
+  # Credential-less storage: no accessKey/secretKey -> the orchestrator omits the static-key env
+  # and relies on the pod IAM identity (IRSA).
+  storage:
+    endpoint: ""
+    region: eu-west-1
+    bucket: agent-artifacts
+    pathStyle: false
+  sonarqubeToken:
+    token: "squ_example000000000000000000000000000000"
+
+remediationAgent:
+  enabled: true
+  networkPolicy:
+    enabled: true
+    egressAllow:
+      - cidr: 160.79.104.0/23
+        ports:
+          - port: 443
+            protocol: TCP
+      - cidr: 0.0.0.0/0
+        ports:
+          - port: 443
+            protocol: TCP
+  serviceAccount:
+    create: true
+    automountToken: true
+    name: remediation-agent-runtime
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agent-orchestrator
+  image:
+    repository: example.com/remediation-agent
+    tag: "1.0.0"
+
+vortex:
+  enabled: true
+  image:
+    repository: example.com/vortex
+    tag: "1"
+  sonarqubeToken:
+    token: "squ_example000000000000000000000000000000"
+  storage:
+    bucket: vortex-artifacts
+    region: eu-west-1
+
+gvisor:
+  enabled: true
