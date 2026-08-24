@@ -28,3 +28,35 @@ tests:
       cpu: 50m
       memory: 200M
       ephemeral-storage: 1000M
+
+# gVisor only renders when an agent is enabled. The Agent Orchestrator and Hunter Agent images are
+# not pullable from CI, so both run with replicaCount 0: they're on here purely to satisfy that
+# dependency and exercise the gVisor RuntimeClass and its installer DaemonSet on the kind worker.
+agentOrchestrator:
+  enabled: true
+  replicaCount: 0
+  image:
+    repository: "example.com/agent-orchestrator"
+    tag: "0.0.0"
+  storage:
+    bucket: "ci"
+  # This chart's CI install uses the embedded database (community.enabled), so there is no
+  # jdbcOverwrite.jdbcUrl to derive CORE DB settings from - set both explicitly instead.
+  coreDb:
+    endpoint: "ci-db:5432"
+    name: "ci"
+
+hunterAgent:
+  enabled: true
+  replicaCount: 0
+  image:
+    repository: "example.com/hunter-agent"
+    tag: "0.0.0"
+
+gvisor:
+  enabled: true
+  installer:
+    enabled: true
+    tolerations: []
+    annotations:
+      sidecar.istio.io/inject: "false"

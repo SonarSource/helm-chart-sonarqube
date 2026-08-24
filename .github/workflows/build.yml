@@ -247,7 +247,7 @@ jobs:
           ct lint --config ${{ matrix.config }}
           ct install --namespace test --config ${{ matrix.config }} --debug
       - name: Verify gVisor installed on the cluster
-        if: matrix.chart == 'sonarqube-dce'
+        if: matrix.chart == 'sonarqube-dce' || matrix.chart == 'sonarqube'
         run: |
           # Wait until the installer has labeled at least one node with gvisor.enabled=true, or fail after 2 minutes. 
           # The installer DaemonSet runs on all worker nodes (empty tolerations = it does not tolerate the control-plane taint), 

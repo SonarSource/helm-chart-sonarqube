@@ -1,7 +1,7 @@
 # Kind cluster used by the "Kind Test" CI job (helm/kind-action).
 #
 # A worker node is added on top of the control-plane specifically so the privileged gVisor
-# installer DaemonSet can run on the worker only (via empty tolerations in the DCE chart's
+# installer DaemonSet can run on the worker only (via empty tolerations in each chart's
 # ci/ci-values.yaml) and mutate/restart *that* node's containerd — never the control-plane node that
 # hosts the API server and etcd. Keep this multi-node as long as ci-values enables
 # gvisor.installer.
