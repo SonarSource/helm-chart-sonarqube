@@ -1,0 +1,78 @@
+community:
+  enabled: true
+monitoringPasscode: test-passcode
+jdbcOverwrite:
+  enabled: true
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+# Global scheduling settings alongside each runtime's own, which take precedence over them.
+nodeSelector:
+  global: "true"
+tolerations:
+  - key: global
+    operator: Exists
+    effect: NoSchedule
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: global
+              operator: In
+              values: ["true"]
+agentOrchestrator:
+  enabled: true
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "42"
+  storage:
+    bucket: agent-jobs
+hunterAgent:
+  enabled: true
+  image:
+    repository: example.com/hunter-agent
+    tag: "1"
+  nodeSelector:
+    hunter: "true"
+  tolerations:
+    - key: hunter
+      operator: Exists
+      effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: hunter
+                operator: In
+                values: ["true"]
+remediationAgent:
+  enabled: true
+  image:
+    repository: example.com/remediation-agent
+    tag: "1"
+  nodeSelector:
+    remediation: "true"
+  tolerations:
+    - key: remediation
+      operator: Exists
+      effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: remediation
+                operator: In
+                values: ["true"]
+vortex:
+  enabled: true
+  image:
+    repository: example.com/vortex
+    tag: "1"
+  sonarqubeToken:
+    token: "squ_example000000000000000000000000000000"
+  storage:
+    bucket: vortex-artifacts
+    region: eu-west-1

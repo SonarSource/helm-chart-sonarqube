@@ -20,12 +20,16 @@ func TestAgentValuesSchemaRejectsWrongTypes(t *testing.T) {
 		{"hunterAgent.enabled", map[string]string{"hunterAgent.enabled": "notabool"}},
 		{"gvisor.installer.image.digest", map[string]string{"gvisor.installer.image.digest": "true"}},
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			opts := &helm.Options{Logger: logger.Discard, SetValues: tc.set}
-			_, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agent-orchestrator.yaml"})
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), "don't meet the specifications")
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *testing.T) {
+					opts := &helm.Options{Logger: logger.Discard, SetValues: tc.set}
+					_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-orchestrator.yaml"})
+					require.Error(t, err)
+					assert.Contains(t, err.Error(), "don't meet the specifications")
+				})
+			}
 		})
 	}
 }

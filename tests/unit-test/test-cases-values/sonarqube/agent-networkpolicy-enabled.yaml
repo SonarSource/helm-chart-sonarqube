@@ -1,0 +1,33 @@
+community:
+  enabled: true
+monitoringPasscode: test-passcode
+jdbcOverwrite:
+  enabled: true
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+agentOrchestrator:
+  enabled: true
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "42"
+  storage:
+    bucket: agent-jobs
+hunterAgent:
+  enabled: true
+  networkPolicy:
+    enabled: true
+remediationAgent:
+  enabled: true
+  networkPolicy:
+    enabled: true
+vortex:
+  enabled: true
+  image:
+    repository: example.com/vortex
+    tag: "1"
+  sonarqubeToken:
+    token: "squ_example000000000000000000000000000000"
+  storage:
+    bucket: vortex-artifacts
+    region: eu-west-1

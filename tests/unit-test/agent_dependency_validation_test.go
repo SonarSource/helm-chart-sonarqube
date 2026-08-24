@@ -9,53 +9,79 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// renderWithValidation renders a lightweight template with the given SetValues, layered on top of
-// the base fields validation.yaml requires regardless of the agent toggles (monitoringPasscode,
-// jwtSecret, jdbcOverwrite), so only the dependency check under test can fail.
-func renderWithValidation(t *testing.T, setValues map[string]string) (string, error) {
-	t.Helper()
+// agentValidationBase returns everything validation.yaml requires regardless of the agent
+// toggles (monitoringPasscode, edition/community, jdbcOverwrite), so only the dependency check
+// under test can fail. It differs per chart: sonarqube-dce has no edition gate and an
+// unconditional jdbcOverwrite, while sonarqube requires community.enabled (or edition) and
+// jdbcOverwrite.enabled.
+func agentValidationBase(chart agentChart) map[string]string {
 	base := map[string]string{
 		"monitoringPasscode":         "test-passcode",
-		"applicationNodes.jwtSecret": "test-jwt-secret",
 		"jdbcOverwrite.jdbcUrl":      "jdbc:postgresql://test-host:5432/testdb",
 		"jdbcOverwrite.jdbcUsername": "test-user",
 		"jdbcOverwrite.jdbcPassword": "test-password",
 	}
+	if chart.name == "sonarqube-dce" {
+		base["applicationNodes.jwtSecret"] = "test-jwt-secret"
+	} else {
+		base["community.enabled"] = "true"
+		base["jdbcOverwrite.enabled"] = "true"
+	}
+	return base
+}
+
+// renderWithValidation renders a lightweight template with the given SetValues, layered on top of
+// the chart's validation base, so only the dependency check under test can fail.
+func renderWithValidation(t *testing.T, chart agentChart, setValues map[string]string) (string, error) {
+	t.Helper()
+	base := agentValidationBase(chart)
 	for k, v := range setValues {
 		base[k] = v
 	}
 	opts := &helm.Options{Logger: logger.Discard, SetValues: base}
-	return helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/agent-orchestrator.yaml"})
+	return helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-orchestrator.yaml"})
 }
 
 // hunterAgent.enabled=true requires agentOrchestrator.enabled=true (SONAR-31689).
 func TestHunterAgentRequiresOrchestrator(t *testing.T) {
-	_, err := renderWithValidation(t, map[string]string{
-		"hunterAgent.enabled": "true",
-	})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "hunterAgent.enabled is true but agentOrchestrator.enabled is not true")
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			_, err := renderWithValidation(t, chart, map[string]string{
+				"hunterAgent.enabled": "true",
+			})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "hunterAgent.enabled is true but agentOrchestrator.enabled is not true")
+		})
+	}
 }
 
 // remediationAgent.enabled=true requires agentOrchestrator.enabled=true (SONAR-31689).
 func TestRemediationAgentRequiresOrchestrator(t *testing.T) {
-	_, err := renderWithValidation(t, map[string]string{
-		"remediationAgent.enabled": "true",
-	})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "remediationAgent.enabled is true but agentOrchestrator.enabled is not true")
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			_, err := renderWithValidation(t, chart, map[string]string{
+				"remediationAgent.enabled": "true",
+			})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "remediationAgent.enabled is true but agentOrchestrator.enabled is not true")
+		})
+	}
 }
 
 // remediationAgent.enabled=true also requires vortex.enabled=true, checked independently of
 // the orchestrator dependency above (SONAR-31689).
 func TestRemediationAgentRequiresVortex(t *testing.T) {
-	_, err := renderWithValidation(t, map[string]string{
-		"agentOrchestrator.enabled":          "true",
-		"agentOrchestrator.image.repository": "example.com/agent-orchestrator",
-		"remediationAgent.enabled":      "true",
-	})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "remediationAgent.enabled is true but vortex.enabled is not true")
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			_, err := renderWithValidation(t, chart, map[string]string{
+				"agentOrchestrator.enabled":          "true",
+				"agentOrchestrator.image.repository": "example.com/agent-orchestrator",
+				"remediationAgent.enabled":           "true",
+			})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "remediationAgent.enabled is true but vortex.enabled is not true")
+		})
+	}
 }
 
 // orchestratorCoreDbBase covers everything agentOrchestrator.enabled needs besides the CORE DB
@@ -71,42 +97,99 @@ func orchestratorCoreDbBase() map[string]string {
 // With no agentOrchestrator.coreDb set at all, the endpoint and name are derived from
 // jdbcOverwrite.jdbcUrl.
 func TestOrchestratorCoreDbDerivedFromJdbcOverwrite(t *testing.T) {
-	output, err := renderWithValidation(t, orchestratorCoreDbBase())
-	require.NoError(t, err)
-	assert.Contains(t, output, `value: "test-host:5432"`)
-	assert.Contains(t, output, `value: "testdb"`)
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			output, err := renderWithValidation(t, chart, orchestratorCoreDbBase())
+			require.NoError(t, err)
+			assert.Contains(t, output, `value: "test-host:5432"`)
+			assert.Contains(t, output, `value: "testdb"`)
+		})
+	}
 }
 
 // jdbcOverwrite.jdbcUrl with no database path segment can't yield a name, and
 // agentOrchestrator.coreDb.name is not set either, so the render must fail rather than deploy with an
 // empty CORE_DB_NAME.
 func TestOrchestratorRequiresCoreDbNameWhenNotDerivable(t *testing.T) {
-	values := orchestratorCoreDbBase()
-	values["jdbcOverwrite.jdbcUrl"] = "jdbc:postgresql://test-host:5432"
-	_, err := renderWithValidation(t, values)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "the CORE DB name could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.name is not set")
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			values := orchestratorCoreDbBase()
+			values["jdbcOverwrite.jdbcUrl"] = "jdbc:postgresql://test-host:5432"
+			_, err := renderWithValidation(t, chart, values)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "the CORE DB name could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.name is not set")
+		})
+	}
 }
 
 // Explicit agentOrchestrator.coreDb.endpoint/name take precedence and let the render succeed even when
 // jdbcOverwrite.jdbcUrl alone wouldn't be derivable.
 func TestOrchestratorCoreDbExplicitOverridesTakePrecedence(t *testing.T) {
-	values := orchestratorCoreDbBase()
-	values["jdbcOverwrite.jdbcUrl"] = "jdbc:postgresql://test-host:5432"
-	values["agentOrchestrator.coreDb.endpoint"] = "explicit-host:5432"
-	values["agentOrchestrator.coreDb.name"] = "explicitdb"
-	output, err := renderWithValidation(t, values)
-	require.NoError(t, err)
-	assert.Contains(t, output, `value: "explicit-host:5432"`)
-	assert.Contains(t, output, `value: "explicitdb"`)
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			values := orchestratorCoreDbBase()
+			values["jdbcOverwrite.jdbcUrl"] = "jdbc:postgresql://test-host:5432"
+			values["agentOrchestrator.coreDb.endpoint"] = "explicit-host:5432"
+			values["agentOrchestrator.coreDb.name"] = "explicitdb"
+			output, err := renderWithValidation(t, chart, values)
+			require.NoError(t, err)
+			assert.Contains(t, output, `value: "explicit-host:5432"`)
+			assert.Contains(t, output, `value: "explicitdb"`)
+		})
+	}
 }
 
 // Only one of agentOrchestrator.storage.accessKey / secretKey set must fail rather than deploy with a
 // silently empty credential.
 func TestOrchestratorRequiresBothStorageCredentialsOrNeither(t *testing.T) {
-	values := orchestratorCoreDbBase()
-	values["agentOrchestrator.storage.accessKey"] = "only-access-key"
-	_, err := renderWithValidation(t, values)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "only one of agentOrchestrator.storage.accessKey / agentOrchestrator.storage.secretKey is set")
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			values := orchestratorCoreDbBase()
+			values["agentOrchestrator.storage.accessKey"] = "only-access-key"
+			_, err := renderWithValidation(t, chart, values)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "only one of agentOrchestrator.storage.accessKey / agentOrchestrator.storage.secretKey is set")
+		})
+	}
+}
+
+// agentOrchestrator.enabled=true with jdbcOverwrite.enabled=false and no explicit CORE DB
+// endpoint/name must fail rather than silently inherit the jdbcOverwrite.jdbcUrl placeholder.
+// Specific to this chart: sonarqube-dce has no jdbcOverwrite.enabled gate - jdbcOverwrite is
+// always active there.
+func TestAgentOrchestratorRequiresExplicitCoreDbWithoutJdbcOverwrite(t *testing.T) {
+	sonarqube := agentCharts[1]
+
+	baseValues := func() map[string]string {
+		values := agentValidationBase(sonarqube)
+		values["jdbcOverwrite.enabled"] = "false"
+		values["agentOrchestrator.enabled"] = "true"
+		values["agentOrchestrator.image.repository"] = "example.com/agent-orchestrator"
+		values["agentOrchestrator.storage.bucket"] = "agent-jobs"
+		return values
+	}
+
+	t.Run("fails without jdbcOverwrite and without explicit coreDb", func(t *testing.T) {
+		opts := &helm.Options{Logger: logger.Discard, SetValues: baseValues()}
+		_, err := helm.RenderTemplateE(t, opts, sonarqube.path, sonarqube.release, []string{"templates/agent-orchestrator.yaml"})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "agentOrchestrator.enabled is true but jdbcOverwrite is not enabled")
+	})
+
+	t.Run("succeeds with jdbcOverwrite.enabled=true", func(t *testing.T) {
+		values := baseValues()
+		values["jdbcOverwrite.enabled"] = "true"
+		opts := &helm.Options{Logger: logger.Discard, SetValues: values}
+		_, err := helm.RenderTemplateE(t, opts, sonarqube.path, sonarqube.release, []string{"templates/agent-orchestrator.yaml"})
+		require.NoError(t, err)
+	})
+
+	t.Run("succeeds with explicit coreDb endpoint and name", func(t *testing.T) {
+		values := baseValues()
+		values["agentOrchestrator.coreDb.endpoint"] = "explicit-host:5432"
+		values["agentOrchestrator.coreDb.name"] = "explicitdb"
+		opts := &helm.Options{Logger: logger.Discard, SetValues: values}
+		_, err := helm.RenderTemplateE(t, opts, sonarqube.path, sonarqube.release, []string{"templates/agent-orchestrator.yaml"})
+		require.NoError(t, err)
+	})
 }
