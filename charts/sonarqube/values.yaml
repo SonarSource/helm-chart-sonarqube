@@ -714,3 +714,444 @@ mcp:
 
   # Set annotations for the MCP pod.
   annotations: {}
+
+# Vortex analysis: an analysis service that SonarQube calls on demand to analyse individual
+# files. When enabled, the chart points the SonarQube application nodes at it via the
+# sonar.vortex.analysis.url property.
+vortex:
+  enabled: false
+
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: IfNotPresent
+    # pullSecret: my-repo-secret
+    # pullSecrets:
+    #   - name: my-repo-secret
+
+  port: 8080
+
+  replicaCount: 1
+
+  # Update strategy for the Vortex Deployment. Recreate avoids running two pods at once
+  # during an upgrade.
+  strategy:
+    type: Recreate
+
+  # Token Vortex analysis uses to call the SonarQube Web API. Required for analysis to succeed.
+  sonarqubeToken:
+    # The token itself. Ignored when existingSecret is set.
+    token: ""
+    # Name of an existing Secret containing the token.
+    existingSecret: ""
+    # Key inside existingSecret. Defaults to VORTEX_ANALYSIS_SONARQUBE_TOKEN.
+    existingSecretKey: ""
+
+  # S3-compatible object storage for Vortex analysis context restoration. Must point at the same
+  # bucket SonarQube Server writes context to (sonar.agentic.storage.*).
+  storage:
+    type: S3
+    bucket: ""
+    region: ""
+    # false for AWS S3, true for most S3-compatible endpoints (e.g. MinIO).
+    pathStyleAccess: false
+    # Custom S3-compatible endpoint (e.g. MinIO). Leave blank for real AWS S3.
+    endpoint: ""
+    # Credentials for that endpoint. Leave accessKey/secretKey/existingSecret all blank for
+    # credential-less access: the AWS SDK then falls back to its default credential chain (the
+    # pod's own IAM identity - node instance role, or IRSA via vortex.serviceAccount).
+    accessKey: ""
+    secretKey: ""
+    # Existing secret providing SONAR_AGENTIC_STORAGE_ACCESS_KEY / SONAR_AGENTIC_STORAGE_SECRET_KEY
+    existingSecret: ""
+
+  # ServiceAccount for the Vortex pod, independent of the top-level serviceAccount.
+  serviceAccount:
+    create: false
+    name: ""
+    automountToken: false
+    annotations: {}
+
+  # Set security context for the Vortex container.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 0
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
+
+  # Additional environment variables for the Vortex container.
+  env: []
+  # - name: MY_VAR
+  #   value: my-value
+
+  resources: {}
+
+  extraVolumes: []
+  extraVolumeMounts: []
+
+  # Wins over the top-level .Values.nodeSelector when set.
+  nodeSelector: {}
+  # Wins over the top-level .Values.affinity when set.
+  affinity: {}
+  # Wins over the top-level .Values.tolerations when set.
+  tolerations: []
+
+  # Set annotations for the Vortex pod.
+  annotations: {}
+
+# Shared Agent Orchestrator, dispatching jobs to hunterAgent/remediationAgent. hunterAgent and
+# remediationAgent each require this to be enabled - see validation.yaml. In this chart
+# jdbcOverwrite.enabled defaults to false, so enabling this requires either
+# jdbcOverwrite.enabled=true or explicit agentOrchestrator.coreDb.endpoint/.name - see validation.yaml.
+agentOrchestrator:
+  enabled: false
+
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: IfNotPresent
+    # For the orchestrator's own image only; its wait-for-sonarqube init container pulls the
+    # SonarQube image instead, and always gets ApplicationNodes.image.pullSecret(s) for that.
+    # pullSecrets:
+    #   - name: my-repo-secret
+  port: 8080
+  replicaCount: 1
+  # Scheduling knobs for the orchestrator pod. Each wins over the chart's global one of the same
+  # name (.Values.nodeSelector/tolerations/affinity) when set.
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
+  revisionHistoryLimit: ""
+  # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
+  strategy: {}
+  # Extra labels/annotations for the orchestrator pod.
+  podLabels: {}
+  annotations: {}
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+      ephemeral-storage: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+      ephemeral-storage: 2Gi
+  securityContext: {}
+
+  probes:
+    readiness:
+      enabled: true
+      path: /health
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      enabled: true
+      path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 30
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 900
+    runAsGroup: 900
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
+    readOnlyRootFilesystem: true
+
+  # Enable the orchestrator's internal scheduler. When true, injects
+  # SONAR_AGENTIC_ORCHESTRATOR_SCHEDULER_ENABLED=true on the orchestrator container.
+  scheduler:
+    enabled: false
+
+  # ServiceAccount for the orchestrator pod, independent of the top-level serviceAccount. `name`
+  # pins the SA name so an external IAM trust policy can reference an exact k8s subject; defaults
+  # to <fullname>-agent-orchestrator.
+  serviceAccount:
+    create: false
+    name: ""
+    automountToken: false
+    annotations: {}
+
+  # CORE DB (SonarQube's database) connection for the orchestrator (CORE_DB_* env). Fully decoupled
+  # from SonarQube's own jdbcOverwrite: each field below defaults to the jdbcOverwrite-derived value
+  # (so out of the box the orchestrator targets the same DB as SonarQube), but can be set explicitly.
+  # In particular the password must be a value the orchestrator can use directly - SonarQube may
+  # store an encrypted `{aes-gcm}` password it can't decrypt, or a chart-managed secret your GitOps
+  # doesn't apply - so point passwordSecretName/passwordSecretKey at a usable secret.
+  coreDb:
+    endpoint: ""            # host:port; default parsed from jdbcOverwrite.jdbcUrl
+    name: ""                # database name; default parsed from jdbcOverwrite.jdbcUrl
+    username: ""            # default jdbcOverwrite.jdbcUsername
+    passwordSecretName: ""  # default: the jdbcOverwrite-derived secret name
+    passwordSecretKey: ""   # default: the jdbcOverwrite-derived password key
+
+  # Object storage (S3/MinIO) for the shared job folder -> AGENTIC_STORAGE_* env
+  storage:
+    # Custom S3 endpoint (e.g. MinIO). Leave blank for real AWS S3 so the SDK uses its regional
+    # endpoint. pathStyle should be true for MinIO, false for AWS S3 (virtual-hosted style).
+    endpoint: ""
+    region: us-east-1
+    bucket: agent-jobs
+    pathStyle: true
+    # Credentials. Leave accessKey/secretKey/existingSecret all blank for credential-less access:
+    # the orchestrator's AWS SDK then falls back to its default credential chain (the pod's IAM
+    # identity - node instance role, or IRSA via agentOrchestrator.serviceAccount annotations).
+    # Inline access/secret key; ignored when existingSecret is set
+    accessKey: ""
+    secretKey: ""
+    # Existing secret providing AGENTIC_STORAGE_ACCESS_KEY / AGENTIC_STORAGE_SECRET_KEY
+    existingSecret: ""
+
+  # Bearer token for AGENTIC_SONARQUBE_URL's /api/issues/search, used by the remediation
+  # dispatcher to enrich issues before pushing a job. Blank -> anonymous access (fails against a
+  # SonarQube instance that requires auth; the remediation job then fails at dispatch).
+  sonarqubeToken:
+    # Inline token; ignored when existingSecret is set -> AGENTIC_SONARQUBE_TOKEN
+    token: ""
+    # Existing secret providing the token
+    existingSecret: ""
+    # Key within existingSecret; defaults to AGENTIC_SONARQUBE_TOKEN
+    existingSecretKey: ""
+
+  # Remediation flow: push a fix branch and open a PR via the GitHub REST API. No token is
+  # configured here: since SONAR-30903 the orchestrator obtains a short-lived GitHub App
+  # installation token from SonarQube on demand (via sonarqubeToken above), right
+  # before each git operation. Configure a GitHub App DevOps integration on SonarQube and bind
+  # the project for the PR flow to succeed.
+  github:
+    # AGENTIC_GITHUB_API_BASE_URL; blank -> orchestrator's own default (real api.github.com).
+    # Override for GitHub Enterprise Server, or to point at a local mock.
+    apiBaseUrl: ""
+
+# Hunter Agent runtime that detects issues. Requires agentOrchestrator.enabled - see validation.yaml.
+# Process-count limits aren't set here - use your node's kubelet configuration (podPidsLimit).
+hunterAgent:
+  enabled: false
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: IfNotPresent
+  port: 8090
+  # >1 enables the L4 429 re-routing: the Service is a load-balanced ClusterIP (not
+  # headless) so a rejected request's retry gets a fresh TCP handshake routed to another
+  # replica by kube-proxy.
+  replicaCount: 1
+  # Scheduling knobs for this runtime's pod. Each wins over the chart's global one of the same
+  # name (.Values.nodeSelector/tolerations/affinity) when set. gvisor.nodeSelector is merged in
+  # separately by the RuntimeClass when gVisor is enabled - see gvisor.nodeSelector in values.yaml.
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
+  revisionHistoryLimit: ""
+  # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
+  strategy: {}
+  # Extra labels/annotations for this runtime's pod.
+  podLabels: {}
+  annotations: {}
+  resources: {}
+  securityContext: {}
+  probes:
+    readiness:
+      enabled: true
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      enabled: true
+      path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 30
+  # No readOnlyRootFilesystem: the image needs its home directory writable.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
+  # ServiceAccount for this runtime, independent of the top-level serviceAccount. `name` pins the
+  # SA name for an external IAM trust policy; defaults to <fullname>-agent-runtime-hunter.
+  serviceAccount:
+    create: false
+    name: ""
+    automountToken: false
+    annotations: {}
+  # Restrict traffic to and from this runtime.
+  networkPolicy:
+    enabled: false
+    # Additional egress destinations, each a cidr, a podSelector, a namespaceSelector or both
+    # selectors, with optional ports. Use the selectors for destinations inside the cluster.
+    # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
+    # covering agentOrchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
+    # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of
+    # your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
+    egressAllow: []
+    # - cidr: 160.79.104.0/23
+  # Path to the detection-agent entrypoint inside the image; the chart exposes it as
+  # SCRIPT_PATH, which switches the runtime into hunter/detection mode (symmetric with
+  # remediation's remediationScriptPath -> REMEDIATION_SCRIPT_PATH). Override if the image
+  # relocates it; set to "" to omit the env var entirely. Unlike remediation, the hunter
+  # runtime never calls the orchestrator for rule-info, so no rule-info endpoint is wired.
+  scriptPath: /home/agent/app/.venv/bin/detection-agent
+  # Extra env vars for the runtime container. The chart only sets `port` on the Service /
+  # containerPort - it does not assume a listen-port convention for arbitrary runtime images
+  # (Spring Boot images read SERVER_PORT; others may hardcode their port or use something
+  # else), so set whatever env var your image needs here to make it actually listen on
+  # `port`. Also where you'd set an image-specific LLM endpoint override, etc.
+  env: []
+  # - name: SERVER_PORT
+  #   value: "8090"
+  # Extra volumes/mounts for the runtime container/pod - e.g. a custom CA cert for a network
+  # that TLS-inspects egress to the LLM endpoint (the JVM/language runtime's own trust store is
+  # separate from the OS's, so a system-level fix alone isn't enough; mount the cert here and
+  # have the image import it at startup, same idea as charts/sonarqube's caCerts feature).
+  extraVolumes: []
+  # - name: custom-ca
+  #   secret:
+  #     secretName: my-runtime-custom-ca
+  extraVolumeMounts: []
+  # - name: custom-ca
+  #   mountPath: /custom-ca
+  #   readOnly: true
+
+# Remediation Agent runtime that remediates issues. Requires agentOrchestrator.enabled AND
+# vortex.enabled - see validation.yaml.
+remediationAgent:
+  enabled: false  # enable once the remediation runtime image is available
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: IfNotPresent
+  port: 8090
+  replicaCount: 1
+  # Scheduling knobs for this runtime's pod. Each wins over the chart's global one of the same
+  # name (.Values.nodeSelector/tolerations/affinity) when set. gvisor.nodeSelector is merged in
+  # separately by the RuntimeClass when gVisor is enabled - see gvisor.nodeSelector in values.yaml.
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
+  revisionHistoryLimit: ""
+  # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
+  strategy: {}
+  # Extra labels/annotations for this runtime's pod.
+  podLabels: {}
+  annotations: {}
+  # Defaults sized for the SonarQube Remediation Agent (SQRA), which clones repos and runs the
+  # agent/LLM loop. Override for your workload.
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+      ephemeral-storage: 10Gi
+    limits:
+      cpu: "4"
+      memory: 8Gi
+      ephemeral-storage: 50Gi
+  securityContext: {}
+  probes:
+    readiness:
+      enabled: true
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      enabled: true
+      path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 30
+  # No readOnlyRootFilesystem: the image needs its home directory writable.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
+  # ServiceAccount for this runtime, independent of the top-level serviceAccount. `name` pins the
+  # SA name for an external IAM trust policy; defaults to <fullname>-agent-runtime-remediation.
+  serviceAccount:
+    create: false
+    name: ""
+    automountToken: false
+    annotations: {}
+  # Restrict traffic to and from this runtime.
+  networkPolicy:
+    enabled: false
+    # Additional egress destinations, each a cidr, a podSelector, a namespaceSelector or both
+    # selectors, with optional ports. Use the selectors for destinations inside the cluster.
+    # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
+    # covering agentOrchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
+    # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of
+    # your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
+    egressAllow: []
+    # - cidr: 160.79.104.0/23
+  # Path to the remediation-agent entrypoint inside the image; the chart exposes it as
+  # REMEDIATION_SCRIPT_PATH, which switches the runtime into remediation mode. Override if the
+  # image relocates it (e.g. a Python version bump); set to "" to omit the env var entirely.
+  # (REMEDIATION_RULE_INFO_ENDPOINT is also auto-wired, derived from the Agent Orchestrator URL.)
+  remediationScriptPath: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
+  env: []
+  extraVolumes: []
+  extraVolumeMounts: []
+
+# gVisor (runsc) sandboxing for the agent runtimes. Renders only when gvisor.enabled is true
+# AND at least one of hunterAgent.enabled / remediationAgent.enabled is true. See README ("gVisor
+# sandboxing").
+gvisor:
+  enabled: true
+  # Name of the RuntimeClass created + referenced by runtimes. RuntimeClass is cluster-scoped:
+  # installing this chart as multiple releases/namespaces with the same value will collide
+  # (the second install fails, RuntimeClass owned by the first release) — give each release a
+  # distinct runtimeClassName if you do that.
+  runtimeClassName: gvisor
+  handler: runsc                    # containerd runtime handler
+  # RuntimeClass.scheduling.nodeSelector, and (when installer.enabled) the label the installer
+  # applies once runsc is ready. Use `null`, not `{}`, to disable node pinning — Helm merges maps.
+  nodeSelector:
+    gvisor.enabled: "true"
+  installer:
+    enabled: true                   # deploy the privileged installer DaemonSet (needs gvisor.enabled)
+    image:
+      repository: debian
+      tag: stable-slim
+      # Pinned for a reproducible pull; bump deliberately. Set to "" to use repository:tag.
+      digest: sha256:1710bde34461551a19a47c787885ec9ad7058d9a5bead2affb8d088fa2f8502b
+      pullPolicy: IfNotPresent
+      # pullSecrets:
+      #   - name: my-repo-secret
+    # Pinned gVisor release for reproducible installs (not "latest"); bump deliberately.
+    # See https://github.com/google/gvisor/tags for the release list.
+    runscVersion: "20260706"
+    containerdConfigPath: /etc/containerd/config.toml
+    # Rendered to /etc/containerd/runsc.toml. network=host avoids gVisor's netstack breaking
+    # cluster DNS/kube-proxy — unrelated to Kubernetes hostNetwork; pod isolation is unaffected.
+    runscConfig:
+      network: host
+      overlay2: "root:self,size=50g"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+        ephemeral-storage: 50Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+        ephemeral-storage: 200Mi
+    nodeSelector: {}                # which nodes to install on (empty = all)
+    tolerations:                    # run everywhere incl. tainted/control-plane nodes
+      - operator: Exists
+    annotations: {}
