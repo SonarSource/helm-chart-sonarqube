@@ -41,10 +41,14 @@ agentOrchestrator:
   storage:
     bucket: "ci"
   # This chart's CI install uses the embedded database (community.enabled), so there is no
-  # jdbcOverwrite.jdbcUrl to derive CORE DB settings from - set both explicitly instead.
+  # jdbcOverwrite.jdbcUrl to derive CORE DB settings from - set every field explicitly instead.
+  # replicaCount 0 means the pod is never scheduled, so passwordSecretName doesn't need to exist.
   coreDb:
     endpoint: "ci-db:5432"
     name: "ci"
+    username: "ci"
+    passwordSecretName: "ci-db-credentials"
+    passwordSecretKey: "password"
 
 hunterAgent:
   enabled: true

@@ -94,11 +94,18 @@ spec:
               {{- else }}
               value: {{ template "jdbc.username" . }}
               {{- end }}
+            {{- /* jdbc.secret only resolves to a usable name when jdbcOverwrite is enabled (or an
+                   explicit coreDb.passwordSecretName is given) - the plain chart, unlike DCE, has
+                   no fallback secret when the embedded/community DB is used, so the env var is
+                   omitted rather than rendering an invalid empty secretKeyRef. */}}
+            {{- $coreDbSecretName := $coreDb.passwordSecretName | default (include "jdbc.secret" .) }}
+            {{- if $coreDbSecretName }}
             - name: CORE_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ $coreDb.passwordSecretName | default (include "jdbc.secret" .) }}
+                  name: {{ $coreDbSecretName }}
                   key: {{ $coreDb.passwordSecretKey | default (include "jdbc.secretPasswordKey" .) }}
+            {{- end }}
             - name: AGENTIC_STORAGE_ENDPOINT
               value: {{ .Values.agentOrchestrator.storage.endpoint | quote }}
             - name: AGENTIC_STORAGE_REGION
