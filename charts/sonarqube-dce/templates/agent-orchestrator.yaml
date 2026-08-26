@@ -81,10 +81,12 @@ spec:
             {{- end }}
             {{- /* When the chart-wide encryption key secret (.Values.sonarSecretKey) is set, mount
                    it into the orchestrator too, mirroring how it's mounted into the SonarQube
-                   application/search pods and exposed there via the sonar.secretKeyPath property. */}}
+                   application/search pods and exposed there via the sonar.secretKeyPath property.
+                   /sonarcloud is the orchestrator's own image path convention, independent of
+                   .Values.sonarqubeFolder (which only applies to the SonarQube app/search image). */}}
             {{- if .Values.sonarSecretKey }}
-            - name: SONAR_SECRET_KEY_PATH
-              value: {{ printf "%s/secret/sonar-secret.txt" .Values.sonarqubeFolder | quote }}
+            - name: AGENTIC_SECRET_KEY_PATH
+              value: "/sonarcloud/secret/sonar-secret.txt"
             {{- end }}
             {{- /* CORE DB (SonarQube's database) connection for the orchestrator. Each field is
                    independently configurable via agentOrchestrator.coreDb, defaulting to
@@ -165,7 +167,7 @@ spec:
             {{- end }}
             {{- if .Values.sonarSecretKey }}
             - name: secret
-              mountPath: {{ .Values.sonarqubeFolder }}/secret/
+              mountPath: /sonarcloud/secret/
             {{- end }}
           {{- end }}
           {{- with (include "sonarqube.agent.probe" (dict "probe" .Values.agentOrchestrator.probes.readiness)) }}
