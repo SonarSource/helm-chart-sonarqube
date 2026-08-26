@@ -93,7 +93,9 @@ spec:
                    the shared jdbcOverwrite so it targets the same DB as SonarQube out of the box.
                    Decoupling matters for the password: SonarQube may store an encrypted `{aes-gcm}`
                    value the orchestrator can't decrypt, or a chart-managed secret your GitOps
-                   doesn't apply — point coreDb.passwordSecret{Name,Key} at a usable secret. */}}
+                   doesn't apply — point coreDb.passwordSecret{Name,Key} at a usable secret. The
+                   sonarSecretKey mounted above (AGENTIC_SECRET_KEY_PATH) is unrelated to this: it
+                   does not let the orchestrator decrypt an `{aes-gcm}` CORE_DB_PASSWORD. */}}
             {{- $coreDb := .Values.agentOrchestrator.coreDb }}
             - name: CORE_DB_READ_WRITE_ENDPOINT
               value: {{ $coreDb.endpoint | default (include "sonarqube.agent.jdbc.endpoint" .) | quote }}
