@@ -171,6 +171,84 @@ func TestAgentOrchestratorProbes(t *testing.T) {
 	}
 }
 
+// When the chart-wide encryption key secret (.Values.sonarSecretKey) is set, it must be mounted
+// into the orchestrator too, mirroring how it's mounted into the SonarQube application/search
+// pods, with its path exposed via AGENTIC_SECRET_KEY_PATH (SONAR-31746).
+func TestAgentOrchestratorEncryptionKeyMount(t *testing.T) {
+	findEnv := func(container corev1.Container, name string) *corev1.EnvVar {
+		for i := range container.Env {
+			if container.Env[i].Name == name {
+				return &container.Env[i]
+			}
+		}
+		return nil
+	}
+	findVolume := func(podSpec corev1.PodSpec, name string) *corev1.Volume {
+		for i := range podSpec.Volumes {
+			if podSpec.Volumes[i].Name == name {
+				return &podSpec.Volumes[i]
+			}
+		}
+		return nil
+	}
+	findVolumeMount := func(container corev1.Container, name string) *corev1.VolumeMount {
+		for i := range container.VolumeMounts {
+			if container.VolumeMounts[i].Name == name {
+				return &container.VolumeMounts[i]
+			}
+		}
+		return nil
+	}
+
+	t.Run("unset renders no encryption key env var, volume, or volumeMount", func(t *testing.T) {
+		deployment := renderAgentOrchestrator(t, nil)
+		container := deployment.Spec.Template.Spec.Containers[0]
+		assert.Nil(t, findEnv(container, "AGENTIC_SECRET_KEY_PATH"))
+		assert.Nil(t, findVolumeMount(container, "secret"))
+		assert.Nil(t, findVolume(deployment.Spec.Template.Spec, "secret"))
+	})
+
+	t.Run("set mounts the secret and exposes its path", func(t *testing.T) {
+		deployment := renderAgentOrchestrator(t, map[string]string{
+			"sonarSecretKey": "settings-encryption-secret",
+		})
+		podSpec := deployment.Spec.Template.Spec
+		container := podSpec.Containers[0]
+
+		env := findEnv(container, "AGENTIC_SECRET_KEY_PATH")
+		require.NotNil(t, env)
+		assert.Equal(t, "/sonarcloud/secret/sonar-secret.txt", env.Value)
+
+		volumeMount := findVolumeMount(container, "secret")
+		require.NotNil(t, volumeMount)
+		assert.Equal(t, "/sonarcloud/secret/", volumeMount.MountPath)
+
+		volume := findVolume(podSpec, "secret")
+		require.NotNil(t, volume)
+		require.NotNil(t, volume.Secret)
+		assert.Equal(t, "settings-encryption-secret", volume.Secret.SecretName)
+		require.Len(t, volume.Secret.Items, 1)
+		assert.Equal(t, "sonar-secret.txt", volume.Secret.Items[0].Key)
+		assert.Equal(t, "sonar-secret.txt", volume.Secret.Items[0].Path)
+	})
+
+	// The secret volume/volumeMount must still render even without readOnlyRootFilesystem, since
+	// the two are independently gated (SONAR-31746 must not regress SONAR-31523's tmp-volume fix).
+	t.Run("set still mounts the secret without readOnlyRootFilesystem", func(t *testing.T) {
+		deployment := renderAgentOrchestrator(t, map[string]string{
+			"sonarSecretKey": "settings-encryption-secret",
+			"agentOrchestrator.containerSecurityContext.readOnlyRootFilesystem": "false",
+		})
+		podSpec := deployment.Spec.Template.Spec
+		container := podSpec.Containers[0]
+
+		assert.NotNil(t, findVolumeMount(container, "secret"))
+		assert.NotNil(t, findVolume(podSpec, "secret"))
+		assert.Nil(t, findVolumeMount(container, "tmp"))
+		assert.Nil(t, findVolume(podSpec, "tmp"))
+	})
+}
+
 func agentOrchestratorPullSecretNames(deployment appsv1.Deployment) []string {
 	var names []string
 	for _, s := range deployment.Spec.Template.Spec.ImagePullSecrets {
