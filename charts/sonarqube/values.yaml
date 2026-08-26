@@ -804,9 +804,9 @@ vortex:
   annotations: {}
 
 # Shared Agent Orchestrator, dispatching jobs to hunterAgent/remediationAgent. hunterAgent and
-# remediationAgent each require this to be enabled - see validation.yaml. In this chart
-# jdbcOverwrite.enabled defaults to false, so enabling this requires either
-# jdbcOverwrite.enabled=true or explicit agentOrchestrator.coreDb.endpoint/.name - see validation.yaml.
+# remediationAgent each require this to be enabled - see validation.yaml. The orchestrator shares
+# SonarQube's database, so it also requires jdbcOverwrite.enabled=true: the embedded database that
+# jdbcOverwrite.enabled=false (the default here) selects is not reachable from another pod.
 agentOrchestrator:
   enabled: false
 
@@ -815,7 +815,7 @@ agentOrchestrator:
     tag: ""
     pullPolicy: IfNotPresent
     # For the orchestrator's own image only; its wait-for-sonarqube init container pulls the
-    # SonarQube image instead, and always gets ApplicationNodes.image.pullSecret(s) for that.
+    # SonarQube image instead, and always gets image.pullSecret(s) for that.
     # pullSecrets:
     #   - name: my-repo-secret
   port: 8080
@@ -1015,7 +1015,7 @@ hunterAgent:
   # Extra volumes/mounts for the runtime container/pod - e.g. a custom CA cert for a network
   # that TLS-inspects egress to the LLM endpoint (the JVM/language runtime's own trust store is
   # separate from the OS's, so a system-level fix alone isn't enough; mount the cert here and
-  # have the image import it at startup, same idea as charts/sonarqube's caCerts feature).
+  # have the image import it at startup, same idea as this chart's own caCerts feature).
   extraVolumes: []
   # - name: custom-ca
   #   secret:

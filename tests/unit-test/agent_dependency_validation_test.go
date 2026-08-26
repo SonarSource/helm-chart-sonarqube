@@ -153,11 +153,12 @@ func TestOrchestratorRequiresBothStorageCredentialsOrNeither(t *testing.T) {
 	}
 }
 
-// agentOrchestrator.enabled=true with jdbcOverwrite.enabled=false and no explicit CORE DB
-// endpoint/name must fail rather than silently inherit the jdbcOverwrite.jdbcUrl placeholder.
+// The orchestrator shares SonarQube's database, so it cannot run against the embedded one that
+// jdbcOverwrite.enabled=false selects - not even with an explicit agentOrchestrator.coreDb, since
+// the CORE_DB_USERNAME/PASSWORD defaults still come from the (then empty) jdbcOverwrite helpers.
 // Specific to this chart: sonarqube-dce has no jdbcOverwrite.enabled gate - jdbcOverwrite is
 // always active there.
-func TestAgentOrchestratorRequiresExplicitCoreDbWithoutJdbcOverwrite(t *testing.T) {
+func TestAgentOrchestratorRequiresJdbcOverwrite(t *testing.T) {
 	sonarqube := agentCharts[1]
 
 	baseValues := func() map[string]string {
@@ -169,8 +170,18 @@ func TestAgentOrchestratorRequiresExplicitCoreDbWithoutJdbcOverwrite(t *testing.
 		return values
 	}
 
-	t.Run("fails without jdbcOverwrite and without explicit coreDb", func(t *testing.T) {
+	t.Run("fails without jdbcOverwrite", func(t *testing.T) {
 		opts := &helm.Options{Logger: logger.Discard, SetValues: baseValues()}
+		_, err := helm.RenderTemplateE(t, opts, sonarqube.path, sonarqube.release, []string{"templates/agent-orchestrator.yaml"})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "agentOrchestrator.enabled is true but jdbcOverwrite is not enabled")
+	})
+
+	t.Run("fails without jdbcOverwrite even with explicit coreDb", func(t *testing.T) {
+		values := baseValues()
+		values["agentOrchestrator.coreDb.endpoint"] = "explicit-host:5432"
+		values["agentOrchestrator.coreDb.name"] = "explicitdb"
+		opts := &helm.Options{Logger: logger.Discard, SetValues: values}
 		_, err := helm.RenderTemplateE(t, opts, sonarqube.path, sonarqube.release, []string{"templates/agent-orchestrator.yaml"})
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "agentOrchestrator.enabled is true but jdbcOverwrite is not enabled")
@@ -179,15 +190,6 @@ func TestAgentOrchestratorRequiresExplicitCoreDbWithoutJdbcOverwrite(t *testing.
 	t.Run("succeeds with jdbcOverwrite.enabled=true", func(t *testing.T) {
 		values := baseValues()
 		values["jdbcOverwrite.enabled"] = "true"
-		opts := &helm.Options{Logger: logger.Discard, SetValues: values}
-		_, err := helm.RenderTemplateE(t, opts, sonarqube.path, sonarqube.release, []string{"templates/agent-orchestrator.yaml"})
-		require.NoError(t, err)
-	})
-
-	t.Run("succeeds with explicit coreDb endpoint and name", func(t *testing.T) {
-		values := baseValues()
-		values["agentOrchestrator.coreDb.endpoint"] = "explicit-host:5432"
-		values["agentOrchestrator.coreDb.name"] = "explicitdb"
 		opts := &helm.Options{Logger: logger.Discard, SetValues: values}
 		_, err := helm.RenderTemplateE(t, opts, sonarqube.path, sonarqube.release, []string{"templates/agent-orchestrator.yaml"})
 		require.NoError(t, err)

@@ -40,10 +40,13 @@ It is used to validate the values.yaml file before the installation starts.
   {{- if and (not $agentOrchestratorStorage.existingSecret) (or $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey) (not (and $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but only one of agentOrchestrator.storage.accessKey / agentOrchestrator.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
   {{- end -}}
+  {{/* The orchestrator reads and writes SonarQube's own database, so it needs a real external
+       one. The embedded database that jdbcOverwrite.enabled=false selects is not reachable from
+       another pod, and every CORE_DB_* default below derives from jdbcOverwrite - so require it
+       outright rather than letting agentOrchestrator.coreDb stand in for it. This gate does not
+       exist in sonarqube-dce, which is always on an external database. */}}
   {{- if and (not .Values.jdbcOverwrite.enabled) (not .Values.jdbcOverwrite.enable) -}}
-    {{- if or (not .Values.agentOrchestrator.coreDb.endpoint) (not .Values.agentOrchestrator.coreDb.name) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but jdbcOverwrite is not enabled. Set jdbcOverwrite.enabled=true, or set both agentOrchestrator.coreDb.endpoint and agentOrchestrator.coreDb.name explicitly — the orchestrator needs a real database and would otherwise inherit the jdbcOverwrite.jdbcUrl placeholder." -}}
-    {{- end -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but jdbcOverwrite is not enabled. The orchestrator shares SonarQube's database and cannot use the embedded one - set jdbcOverwrite.enabled=true and point it at an external PostgreSQL." -}}
   {{- end -}}
   {{- if and (not .Values.agentOrchestrator.coreDb.endpoint) (not (include "sonarqube.agent.jdbc.endpoint" .)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB endpoint could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.endpoint is not set." -}}
