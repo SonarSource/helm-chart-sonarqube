@@ -9,6 +9,13 @@ type agentChart struct {
 	// appTemplate is the path of the template rendering the SonarQube application pod - the
 	// two charts name it differently.
 	appTemplate string
+	// appConfigMapSuffix is appended to fullnamePrefix() to get the name of the ConfigMap holding
+	// the application nodes' conf/sonar.properties. templates/config.yaml renders a single
+	// ConfigMap in sonarqube, but an app one plus a search one in sonarqube-dce.
+	appConfigMapSuffix string
+	// sonarPropertiesPath is the values path holding the user's own conf/sonar.properties entries -
+	// top-level in sonarqube, under the application nodes in sonarqube-dce.
+	sonarPropertiesPath string
 }
 
 // fullnamePrefix is "<release>-<chart>", e.g. "sonarqube-dce-sonarqube-dce" or
@@ -18,6 +25,6 @@ func (c agentChart) fullnamePrefix() string {
 }
 
 var agentCharts = []agentChart{
-	{"sonarqube-dce", dceChartPath, dceReleaseName, "test-cases-values/sonarqube-dce", "templates/sonarqube-application.yaml"},
-	{"sonarqube", chartPath, releaseName, "test-cases-values/sonarqube", "templates/sonarqube-sts.yaml"},
+	{"sonarqube-dce", dceChartPath, dceReleaseName, "test-cases-values/sonarqube-dce", "templates/sonarqube-application.yaml", "-app-config", "applicationNodes.sonarProperties"},
+	{"sonarqube", chartPath, releaseName, "test-cases-values/sonarqube", "templates/sonarqube-sts.yaml", "-config", "sonarProperties"},
 }
