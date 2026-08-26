@@ -1114,9 +1114,10 @@ remediationAgent:
 gvisor:
   enabled: true
   # Name of the RuntimeClass created + referenced by runtimes. RuntimeClass is cluster-scoped:
-  # installing this chart as multiple releases/namespaces with the same value will collide
-  # (the second install fails, RuntimeClass owned by the first release) — give each release a
-  # distinct runtimeClassName if you do that.
+  # any two installs sharing this value will collide (the second install fails, RuntimeClass owned
+  # by the first release) — give each a distinct runtimeClassName. That covers multiple
+  # releases/namespaces of this chart, and this chart installed alongside sonarqube-dce, which
+  # ships the same feature.
   runtimeClassName: gvisor
   handler: runsc                    # containerd runtime handler
   # RuntimeClass.scheduling.nodeSelector, and (when installer.enabled) the label the installer
