@@ -1,0 +1,44 @@
+community:
+  enabled: true
+monitoringPasscode: test-passcode
+jdbcOverwrite:
+  enabled: true
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+# Global scheduling settings alongside the orchestrator's own, which take precedence over them.
+nodeSelector:
+  global: "true"
+tolerations:
+  - key: global
+    operator: Exists
+    effect: NoSchedule
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: global
+              operator: In
+              values: ["true"]
+agentOrchestrator:
+  enabled: true
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "42"
+  storage:
+    bucket: agent-jobs
+  nodeSelector:
+    orchestrator: "true"
+  tolerations:
+    - key: orchestrator
+      operator: Exists
+      effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: orchestrator
+                operator: In
+                values: ["true"]

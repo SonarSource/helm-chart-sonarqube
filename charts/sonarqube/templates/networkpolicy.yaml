@@ -31,6 +31,24 @@ spec:
         - port: {{ .Values.prometheusExporter.webBeanPort }}
           protocol: TCP
     {{ end }}
+    {{- if .Values.agentOrchestrator.enabled }}
+    - from:
+        - podSelector:
+            matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 14 }}
+      ports:
+        - port: {{ .Values.service.internalPort }}
+          protocol: TCP
+    {{- end }}
+    {{- if .Values.vortex.enabled }}
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ include "sonarqube.name" . }}-vortex
+              release: {{ .Release.Name }}
+      ports:
+        - port: {{ .Values.service.internalPort }}
+          protocol: TCP
+    {{- end }}
   egress:
     - to:
         - namespaceSelector:

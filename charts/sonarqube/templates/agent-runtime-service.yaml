@@ -1,0 +1,27 @@
+{{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" .) }}
+{{- if $cfg.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sonarqube.agentRuntime.fullname" (dict "ctx" $ "family" $family) }}
+  labels:
+    app: {{ template "sonarqube.name" $ }}
+    chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    release: {{ $.Release.Name }}
+    heritage: {{ $.Release.Service }}
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: {{ $family }}
+    app.kubernetes.io/component: agent-runtime-{{ $family }}
+spec:
+  # Deliberately a load-balanced ClusterIP, not headless: on an HTTP 429 the runtime drops the
+  # socket so a retry's fresh TCP handshake gets re-routed by kube-proxy to another replica.
+  type: ClusterIP
+  ports:
+    - port: {{ $cfg.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector: {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 4 }}
+{{- end }}
+{{- end }}
