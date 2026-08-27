@@ -1130,6 +1130,13 @@ agentEgressProxy:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
     runAsNonRoot: true
+    # The pinned ubuntu/squid image declares no non-root USER (it starts as root by convention,
+    # matching its own cache_effective_user startup-then-drop-privileges model), so runAsNonRoot
+    # requires an explicit runAsUser or the container fails to start (CreateContainerConfigError).
+    # 13 is the image's built-in "proxy" uid/gid — verified to start squid cleanly with no cache_dir
+    # and no TLS interception (D6), matching the cache_effective_user directive in squid.conf below.
+    runAsUser: 13
+    runAsGroup: 13
     seccompProfile:
       type: RuntimeDefault
     capabilities:
