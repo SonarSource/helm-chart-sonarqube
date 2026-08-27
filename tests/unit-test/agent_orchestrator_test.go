@@ -199,43 +199,36 @@ func TestAgentOrchestratorProbes(t *testing.T) {
 	}
 }
 
+func findEnvByName(container corev1.Container, name string) *corev1.EnvVar {
+	for i := range container.Env {
+		if container.Env[i].Name == name {
+			return &container.Env[i]
+		}
+	}
+	return nil
+}
+
+func findVolumeMountByName(container corev1.Container, name string) *corev1.VolumeMount {
+	for i := range container.VolumeMounts {
+		if container.VolumeMounts[i].Name == name {
+			return &container.VolumeMounts[i]
+		}
+	}
+	return nil
+}
+
 // When the chart-wide encryption key secret (.Values.sonarSecretKey) is set, it must be mounted
 // into the orchestrator too, mirroring how it's mounted into the SonarQube application/search
 // pods, with its path exposed via AGENTIC_SECRET_KEY_PATH (SONAR-31746).
 func TestAgentOrchestratorEncryptionKeyMount(t *testing.T) {
-	findEnv := func(container corev1.Container, name string) *corev1.EnvVar {
-		for i := range container.Env {
-			if container.Env[i].Name == name {
-				return &container.Env[i]
-			}
-		}
-		return nil
-	}
-	findVolume := func(podSpec corev1.PodSpec, name string) *corev1.Volume {
-		for i := range podSpec.Volumes {
-			if podSpec.Volumes[i].Name == name {
-				return &podSpec.Volumes[i]
-			}
-		}
-		return nil
-	}
-	findVolumeMount := func(container corev1.Container, name string) *corev1.VolumeMount {
-		for i := range container.VolumeMounts {
-			if container.VolumeMounts[i].Name == name {
-				return &container.VolumeMounts[i]
-			}
-		}
-		return nil
-	}
-
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			t.Run("unset renders no encryption key env var, volume, or volumeMount", func(t *testing.T) {
 				deployment := renderAgentOrchestrator(t, chart, nil)
 				container := deployment.Spec.Template.Spec.Containers[0]
-				assert.Nil(t, findEnv(container, "AGENTIC_SECRET_KEY_PATH"))
-				assert.Nil(t, findVolumeMount(container, "secret"))
-				assert.Nil(t, findVolume(deployment.Spec.Template.Spec, "secret"))
+				assert.Nil(t, findEnvByName(container, "AGENTIC_SECRET_KEY_PATH"))
+				assert.Nil(t, findVolumeMountByName(container, "secret"))
+				assert.Nil(t, findVolumeByName(deployment.Spec.Template.Spec.Volumes, "secret"))
 			})
 
 			t.Run("set mounts the secret and exposes its path", func(t *testing.T) {
@@ -245,15 +238,15 @@ func TestAgentOrchestratorEncryptionKeyMount(t *testing.T) {
 				podSpec := deployment.Spec.Template.Spec
 				container := podSpec.Containers[0]
 
-				env := findEnv(container, "AGENTIC_SECRET_KEY_PATH")
+				env := findEnvByName(container, "AGENTIC_SECRET_KEY_PATH")
 				require.NotNil(t, env)
 				assert.Equal(t, "/sonarcloud/secret/sonar-secret.txt", env.Value)
 
-				volumeMount := findVolumeMount(container, "secret")
+				volumeMount := findVolumeMountByName(container, "secret")
 				require.NotNil(t, volumeMount)
 				assert.Equal(t, "/sonarcloud/secret/", volumeMount.MountPath)
 
-				volume := findVolume(podSpec, "secret")
+				volume := findVolumeByName(podSpec.Volumes, "secret")
 				require.NotNil(t, volume)
 				require.NotNil(t, volume.Secret)
 				assert.Equal(t, "settings-encryption-secret", volume.Secret.SecretName)
@@ -273,10 +266,10 @@ func TestAgentOrchestratorEncryptionKeyMount(t *testing.T) {
 				podSpec := deployment.Spec.Template.Spec
 				container := podSpec.Containers[0]
 
-				assert.NotNil(t, findVolumeMount(container, "secret"))
-				assert.NotNil(t, findVolume(podSpec, "secret"))
-				assert.Nil(t, findVolumeMount(container, "tmp"))
-				assert.Nil(t, findVolume(podSpec, "tmp"))
+				assert.NotNil(t, findVolumeMountByName(container, "secret"))
+				assert.NotNil(t, findVolumeByName(podSpec.Volumes, "secret"))
+				assert.Nil(t, findVolumeMountByName(container, "tmp"))
+				assert.Nil(t, findVolumeByName(podSpec.Volumes, "tmp"))
 			})
 		})
 	}
