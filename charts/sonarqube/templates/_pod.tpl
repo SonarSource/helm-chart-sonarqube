@@ -1,4 +1,5 @@
 {{- define "sonarqube.pod" -}}
+{{- $hasMergedProps := or .Values.sonarProperties .Values.agentOrchestrator.enabled .Values.vortex.enabled -}}
 metadata:
   annotations:
     checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
@@ -91,7 +92,7 @@ spec:
       env:
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
-    {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
+    {{- if or $hasMergedProps .Values.sonarSecretProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
     - name: concat-properties
       image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -112,7 +113,7 @@ spec:
       volumeMounts:
         - mountPath: /tmp/result
           name: concat-dir
-        {{- if or .Values.sonarProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
+        {{- if or $hasMergedProps .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
         - mountPath: /tmp/props/sonar.properties
           name: config
           subPath: sonar.properties
@@ -307,6 +308,16 @@ spec:
           value: {{ .Values.mcp.healthCheckInterval | quote }}
         {{- end }}
         {{- end }}
+        {{- if .Values.vortex.enabled }}
+        - name: SONAR_VORTEX_ANALYSIS_URL
+          value: {{ include "sonarqube.vortex.url" . | quote }}
+        {{- end }}
+        {{- if .Values.agentOrchestrator.enabled }}
+        - name: SONAR_HUNTERAGENT_ORCHESTRATOR_URL
+          value: {{ include "sonarqube.agentOrchestrator.url" . | quote }}
+        - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
+          value: {{ include "sonarqube.agentOrchestrator.url" . | quote }}
+        {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
       envFrom:
         {{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable }}
@@ -353,7 +364,7 @@ spec:
           subPath: logs
         - mountPath: /tmp
           name: tmp-dir
-        {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
+        {{- if or $hasMergedProps .Values.sonarSecretProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
         - mountPath: {{ .Values.sonarqubeFolder }}/conf/
           name: concat-dir
         {{- end }}
@@ -406,7 +417,7 @@ spec:
     {{- with .Values.extraVolumes }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-    {{- if or .Values.sonarProperties .Values.sonarSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
+    {{- if or $hasMergedProps .Values.sonarSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
     - name: config
       configMap:
         name: {{ include "sonarqube.fullname" . }}-config
@@ -506,7 +517,7 @@ spec:
       {{- end }}
     - name : tmp-dir
       emptyDir: {{- toYaml .Values.emptyDir | nindent 8 }}
-      {{- if or .Values.sonarProperties .Values.sonarSecretProperties .Values.sonarSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
+      {{- if or $hasMergedProps .Values.sonarSecretProperties .Values.sonarSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
     - name : concat-dir
       emptyDir: {{- toYaml .Values.emptyDir | nindent 8 }}
       {{- end }}
