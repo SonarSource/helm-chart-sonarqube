@@ -203,8 +203,10 @@ func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 		helm.UnmarshalK8SYaml(t, output, &cm)
 		conf := cm.Data["squid.conf"]
 
-		assert.Contains(t, conf, "acl sonarqube_host dstdomain "+egressProxyChart.fullnamePrefix())
-		assert.Contains(t, conf, "acl sonarqube_agentic_endpoints urlpath_regex /rules/show$ /agentic-analysis(/|$)")
+		// Fully qualified, not the bare short name - Squid's own DNS resolver doesn't honour
+		// /etc/resolv.conf's search list, so a bare Service name can never resolve for it.
+		assert.Contains(t, conf, "acl sonarqube_host dstdomain "+egressProxyChart.fullnamePrefix()+".default.svc.cluster.local")
+		assert.Contains(t, conf, "acl sonarqube_agentic_endpoints urlpath_regex /rules/show(\\?|$) /agentic-analysis(/|\\?|$)")
 		assert.Contains(t, conf, "http_access allow sonarqube_host sonarqube_agentic_endpoints")
 		assert.Contains(t, conf, "acl Safe_ports port 9000", "SonarQube's default externalPort must be reachable too")
 	})
@@ -223,7 +225,7 @@ func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 		helm.UnmarshalK8SYaml(t, output, &cm)
 		conf := cm.Data["squid.conf"]
 
-		assert.Contains(t, conf, "acl sonarqube_host dstdomain "+egressProxyChart.fullnamePrefix())
+		assert.Contains(t, conf, "acl sonarqube_host dstdomain "+egressProxyChart.fullnamePrefix()+".default.svc.cluster.local")
 		assert.Contains(t, conf, "acl Safe_ports port 9001")
 	})
 }
@@ -282,12 +284,15 @@ func TestAgentEgressProxyNetworkPolicy(t *testing.T) {
 		assert.NotContains(t, ingress.From[0].PodSelector.MatchLabels, "sonarqube.agent/family",
 			"must select both families, not just one")
 
-		require.Len(t, policy.Spec.Egress, 2, "DNS plus the broad 0.0.0.0/0 rule")
-		var broad *networkingv1.NetworkPolicyEgressRule
+		require.Len(t, policy.Spec.Egress, 3, "DNS, the SonarQube pod rule, plus the broad 0.0.0.0/0 rule")
+		var broad, sonarqube *networkingv1.NetworkPolicyEgressRule
 		for i := range policy.Spec.Egress {
 			rule := policy.Spec.Egress[i]
 			if len(rule.To) == 1 && rule.To[0].IPBlock != nil {
 				broad = &rule
+			}
+			if len(rule.To) == 1 && rule.To[0].PodSelector != nil && rule.To[0].PodSelector.MatchLabels["app"] == "sonarqube" {
+				sonarqube = &rule
 			}
 		}
 		require.NotNil(t, broad, "expected a broad ipBlock egress rule")
@@ -295,6 +300,41 @@ func TestAgentEgressProxyNetworkPolicy(t *testing.T) {
 		require.Len(t, broad.Ports, 2)
 		ports := []int32{broad.Ports[0].Port.IntVal, broad.Ports[1].Port.IntVal}
 		assert.ElementsMatch(t, []int32{80, 443}, ports)
+
+		require.NotNil(t, sonarqube, "expected a rule allowing egress to the SonarQube pod - "+
+			"this backs the hardcoded sonarqube_host allow rule in agent-egress-proxy-configmap.yaml")
+		require.Len(t, sonarqube.Ports, 1)
+		assert.EqualValues(t, 9000, sonarqube.Ports[0].Port.IntVal)
+	})
+
+	t.Run("SonarQube pod egress rule is unconditional, not gated behind networkPolicy.egressPorts", func(t *testing.T) {
+		setValues := map[string]string{
+			"hunterAgent.enabled":          "true",
+			"hunterAgent.image.repository": "example.com/hunter-agent",
+			"hunterAgent.image.tag":        "1",
+			// networkPolicy left disabled - the whole NetworkPolicy resource doesn't render then,
+			// so this instead pins the port to a non-default value to prove it isn't read from
+			// networkPolicy.egressPorts.
+			"agentEgressProxy.networkPolicy.enabled":        "true",
+			"agentEgressProxy.networkPolicy.egressPorts[0]": "8080",
+			"service.externalPort":                          "9001",
+		}
+		output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
+		require.NoError(t, err)
+
+		var policy networkingv1.NetworkPolicy
+		helm.UnmarshalK8SYaml(t, output, &policy)
+
+		var sonarqube *networkingv1.NetworkPolicyEgressRule
+		for i := range policy.Spec.Egress {
+			rule := policy.Spec.Egress[i]
+			if len(rule.To) == 1 && rule.To[0].PodSelector != nil && rule.To[0].PodSelector.MatchLabels["app"] == "sonarqube" {
+				sonarqube = &rule
+			}
+		}
+		require.NotNil(t, sonarqube)
+		require.Len(t, sonarqube.Ports, 1)
+		assert.EqualValues(t, 9001, sonarqube.Ports[0].Port.IntVal, "tracks service.externalPort, not networkPolicy.egressPorts")
 	})
 }
 

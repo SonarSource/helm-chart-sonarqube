@@ -49,9 +49,12 @@ data:
     # matter what allowedDomains contains - hardcoded here (not sourced from Values) so it can't
     # be edited away. The path match is anchored to the SonarQube service itself via
     # sonarqube_host; the regexes are suffix-based (not tied to webcontext/API-version prefixes)
-    # so they keep matching regardless of how those are configured.
-    acl sonarqube_host dstdomain {{ include "sonarqube.fullname" . }}
-    acl sonarqube_agentic_endpoints urlpath_regex /rules/show$ /agentic-analysis(/|$)
+    # so they keep matching regardless of how those are configured. Fully qualified (not the bare
+    # short name) since Squid's DNS resolver doesn't honour /etc/resolv.conf's search list.
+    # urlpath_regex matches the path *and* query string, so both endpoints must tolerate a
+    # trailing "?..." - real calls to rules/show carry a "?key=..." query parameter.
+    acl sonarqube_host dstdomain {{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.fullname" .) "ctx" .) }}
+    acl sonarqube_agentic_endpoints urlpath_regex /rules/show(\?|$) /agentic-analysis(/|\?|$)
 
     http_access deny !Safe_ports
     http_access deny CONNECT !SSL_ports

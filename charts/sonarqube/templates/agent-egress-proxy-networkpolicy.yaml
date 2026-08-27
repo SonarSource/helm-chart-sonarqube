@@ -25,6 +25,15 @@ spec:
           protocol: TCP
   egress:
 {{ include "sonarqube.agent.dnsEgressRule" . | indent 4 }}
+    {{- /* Backs the hardcoded sonarqube_host allow rule in agent-egress-proxy-configmap.yaml,
+           which must stay reachable unconditionally - so this rule is not gated behind
+           networkPolicy.egressPorts, unlike the allowedDomains rule below. */}}
+    - to:
+        - podSelector:
+            matchLabels: {{- include "sonarqube.selectorLabels" . | nindent 14 }}
+      ports:
+        - port: {{ .Values.service.externalPort }}
+          protocol: TCP
     {{- /* NetworkPolicy is L3/L4-only and cannot match a destination FQDN, so this rule stays
            broad by necessity - the actual per-domain restriction is enforced entirely inside
            Squid via allowedDomains (dstdomain ACL), not here. */}}

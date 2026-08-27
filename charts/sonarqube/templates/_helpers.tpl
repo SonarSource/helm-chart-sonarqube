@@ -576,10 +576,22 @@ Same create / pinned-name / fallback logic as the orchestrator helper above.
 {{- end -}}
 
 {{/*
+Fully qualified in-cluster DNS name for a Service, given its short name. Used for every in-cluster
+URL this chart builds (not just proxied ones, for consistency): Squid's own DNS resolver only
+reads `nameserver`/`ndots` from /etc/resolv.conf, not the `search` list, so it can never resolve a
+bare short Service name the way normal container DNS resolution does - any address a runtime
+reaches through the Agent Egress Proxy must be fully qualified or Squid fails with ERR_DNS_FAIL.
+Parameters (dict): name (required, the Service's short name), ctx (required, the root context '.')
+*/}}
+{{- define "sonarqube.svcFQDN" -}}
+{{- printf "%s.%s.svc.cluster.local" .name .ctx.Release.Namespace -}}
+{{- end -}}
+
+{{/*
 URL the app nodes use to reach the shared Agent Orchestrator.
 */}}
 {{- define "sonarqube.agentOrchestrator.url" -}}
-{{- printf "http://%s:%d" (include "sonarqube.agentOrchestrator.fullname" .) (int .Values.agentOrchestrator.port) -}}
+{{- printf "http://%s:%d" (include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.agentOrchestrator.fullname" .) "ctx" .)) (int .Values.agentOrchestrator.port) -}}
 {{- end -}}
 
 {{/*
@@ -588,7 +600,7 @@ and the wait-for-sonarqube init container). Always the co-deployed SonarQube ser
 web context path.
 */}}
 {{- define "sonarqube.agent.sonarqube.url" -}}
-{{- printf "http://%s:%d%s" (include "sonarqube.fullname" .) (int .Values.service.externalPort) (trimSuffix "/" (include "sonarqube.webcontext" .)) -}}
+{{- printf "http://%s:%d%s" (include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.fullname" .) "ctx" .)) (int .Values.service.externalPort) (trimSuffix "/" (include "sonarqube.webcontext" .)) -}}
 {{- end -}}
 
 {{/*
@@ -597,7 +609,7 @@ Parameters (dict): ctx (required, the root context '.'), family (required, the r
 */}}
 {{- define "sonarqube.agentRuntime.pushUrl" -}}
 {{- $port := (get (fromYaml (include "sonarqube.agentRuntimes" .ctx)) .family).port -}}
-{{- printf "http://%s:%d/jobs" (include "sonarqube.agentRuntime.fullname" .) (int $port) -}}
+{{- printf "http://%s:%d/jobs" (include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.agentRuntime.fullname" .) "ctx" .ctx)) (int $port) -}}
 {{- end -}}
 
 {{/*
