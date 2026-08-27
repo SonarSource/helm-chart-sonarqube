@@ -476,6 +476,24 @@ Usage: {{ include "sonarqube.gvisor.enabled" . }}
 {{- and .Values.gvisor.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
 {{- end -}}
 
+{{/*
+Return the target Kubernetes version
+*/}}
+{{- define "common.capabilities.kubeVersion" -}}
+{{- print .Capabilities.KubeVersion.Version -}}
+{{- end -}}
+
+{{/*
+Return the appropriate apiVersion for poddisruptionbudget.
+*/}}
+{{- define "common.capabilities.policy.apiVersion" -}}
+{{- if semverCompare "<1.21-0" (include "common.capabilities.kubeVersion" .) -}}
+{{- print "policy/v1beta1" -}}
+{{- else -}}
+{{- print "policy/v1" -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "accountDeprecation" -}}
 {{- $map1 := .Values.setAdminPassword -}}
 {{- $map2 := .Values.account -}}
@@ -583,6 +601,83 @@ Parameters (dict): ctx (required, the root context '.'), family (required, the r
 {{- end -}}
 
 {{/*
+Create the fully qualified name for the Agent Egress Proxy.
+*/}}
+{{- define "sonarqube.agentEgressProxy.fullname" -}}
+{{- printf "%s-agent-egress-proxy" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Selector labels for the Agent Egress Proxy: app: <chart>-agent-egress-proxy + release.
+*/}}
+{{- define "sonarqube.agentEgressProxy.selectorLabels" -}}
+app: {{ include "sonarqube.name" . }}-agent-egress-proxy
+release: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Name of the ServiceAccount for the Agent Egress Proxy.
+Same create / pinned-name / fallback logic as the orchestrator helper above.
+*/}}
+{{- define "sonarqube.agentEgressProxy.serviceAccountName" -}}
+{{- if .Values.agentEgressProxy.serviceAccount.create -}}
+{{- default (include "sonarqube.agentEgressProxy.fullname" .) .Values.agentEgressProxy.serviceAccount.name -}}
+{{- else -}}
+{{- include "sonarqube.serviceAccountName" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+In-cluster URL the agent runtimes reach the Agent Egress Proxy through. Plain http:// even for
+HTTPS_PROXY - the runtime talks plain HTTP to Squid itself, which then CONNECT-tunnels the actual
+HTTPS session (no TLS interception between the runtime and the proxy).
+*/}}
+{{- define "sonarqube.agentEgressProxy.url" -}}
+{{- printf "http://%s:%d" (include "sonarqube.agentEgressProxy.fullname" .) (int .Values.agentEgressProxy.port) -}}
+{{- end -}}
+
+{{/*
+Whether the Agent Egress Proxy must be rendered: it has no independent enable/disable switch of
+its own (unlike every other agentic component) - it auto-activates whenever hunterAgent.enabled
+or remediationAgent.enabled is true, and renders nothing when both are false. Every Agent Egress
+Proxy template gates on this helper instead of a values flag.
+Usage: {{- if include "sonarqube.agentEgressProxy.required" . }}
+*/}}
+{{- define "sonarqube.agentEgressProxy.required" -}}
+{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Selector labels common to both agent runtime families (family-agnostic), so a single selector can
+match every runtime pod regardless of family - used by the Agent Egress Proxy's own NetworkPolicy
+ingress rule.
+*/}}
+{{- define "sonarqube.agentRuntime.commonSelectorLabels" -}}
+sonarqube.agent/component: runtime
+release: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+The DNS-to-kube-dns egress rule shared by every agent NetworkPolicy (runtime and proxy alike).
+Output is unindented; callers should pipe through `indent`/`nindent` to place it under `egress:`.
+Usage: {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
+*/}}
+{{- define "sonarqube.agent.dnsEgressRule" -}}
+- to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+  ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+{{- end -}}
+
+{{/*
 Parse the host:port endpoint out of jdbcOverwrite.jdbcUrl (jdbc:postgresql://host:port/db[?params]),
 for the Agent Orchestrator's CORE_DB_READ_WRITE_ENDPOINT env, since it reuses SonarQube's own DB.
 */}}
@@ -599,25 +694,6 @@ for the Agent Orchestrator's CORE_DB_NAME env.
 {{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" .Values.jdbcOverwrite.jdbcUrl "" -}}
 {{- $rest := (splitn "/" 2 $stripped)._1 | default "" -}}
 {{- regexReplaceAll "\\?.*$" $rest "" -}}
-{{- end -}}
-
-{{/*
-Render a single NetworkPolicy egress peer for one `egressAllow` entry
-(either `{ cidr }` or `{ podSelector [, namespaceSelector] }`). A NetworkPolicy ipBlock rule
-can never target a Service's ClusterIP - kube-proxy DNATs to the backing pod IP before policy
-enforcement sees the packet - so in-cluster dependencies must use podSelector, not cidr.
-Output is unindented; callers should pipe through `indent`/`nindent` to place it under a `to:` list.
-*/}}
-{{- define "sonarqube.agent.egressAllow.peer" -}}
-{{- if .cidr -}}
-- ipBlock:
-    cidr: {{ .cidr }}
-{{- else -}}
-{{- $peer := dict -}}
-{{- with .podSelector }}{{ $peer = set $peer "podSelector" . }}{{ end -}}
-{{- with .namespaceSelector }}{{ $peer = set $peer "namespaceSelector" . }}{{ end -}}
-{{- list $peer | toYaml -}}
-{{- end -}}
 {{- end -}}
 
 {{/*
@@ -730,6 +806,27 @@ successThreshold: {{ . }}
 failureThreshold: {{ . }}
 {{- end }}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Render one tcpSocket probe (readiness or liveness) for the Agent Egress Proxy - Squid has no HTTP
+health endpoint worth curling, so unlike sonarqube.agent.probe above this checks the proxy port is
+accepting TCP connections.
+Parameters: the agentEgressProxy.probes.<kind> values block.
+Usage: {{- with (include "sonarqube.agent.egressProxy.probe" .Values.agentEgressProxy.probes.readiness) }}
+          readinessProbe:
+{{ . | indent 12 }}
+          {{- end }}
+*/}}
+{{- define "sonarqube.agent.egressProxy.probe" -}}
+tcpSocket:
+  port: http-proxy
+{{- with .periodSeconds }}
+periodSeconds: {{ . }}
+{{- end }}
+{{- with .timeoutSeconds }}
+timeoutSeconds: {{ . }}
+{{- end }}
 {{- end -}}
 
 {{/*

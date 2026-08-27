@@ -115,13 +115,19 @@ func TestCoreNetworkPolicyOrchestratorIngressPort(t *testing.T) {
 }
 
 // A runtime reads/writes job artifacts directly against object storage via presigned URLs, so its
-// NetworkPolicy needs its own egress to reach it. The chart can't resolve
-// agentOrchestrator.storage to a peer on its own, so networkPolicy.egressAllow must cover it - this is
-// documented on <hunterAgent|remediationAgent>.networkPolicy.egressAllow in values.yaml, not
-// enforced by the render (SONAR-31525).
+// NetworkPolicy needs its own egress to reach it. On charts without an Agent Egress Proxy, the
+// chart can't resolve agentOrchestrator.storage to a peer on its own, so
+// networkPolicy.egressAllow must cover it - this is documented on
+// <hunterAgent|remediationAgent>.networkPolicy.egressAllow in values.yaml, not enforced by the
+// render (SONAR-31525). On charts with a proxy, that egress (and everything else) transits it
+// instead, and egressAllow no longer exists at all - see TestAgentEgressProxyRequired in
+// agent_egress_proxy_test.go for the D8 auto-activation behavior this replaces it with.
 func TestAgentRuntimeNetworkPolicyEgressAllow(t *testing.T) {
 	valuesKey := map[string]string{"hunter": "hunterAgent", "remediation": "remediationAgent"}
 	for _, chart := range agentCharts {
+		if chart.hasEgressProxy {
+			continue
+		}
 		t.Run(chart.name, func(t *testing.T) {
 			for _, family := range []string{"hunter", "remediation"} {
 				t.Run(family+": empty egressAllow renders no extra egress rule", func(t *testing.T) {
@@ -149,10 +155,37 @@ func TestAgentRuntimeNetworkPolicyEgressAllow(t *testing.T) {
 	}
 }
 
+// On a chart with an Agent Egress Proxy, egressAllow no longer exists: the runtime's egress list
+// is always exactly DNS + the proxy, and setting the old key has no effect at all.
+func TestAgentRuntimeNetworkPolicyEgressProxyMakesEgressAllowInert(t *testing.T) {
+	for _, chart := range agentCharts {
+		if !chart.hasEgressProxy {
+			continue
+		}
+		t.Run(chart.name, func(t *testing.T) {
+			for _, family := range []string{"hunter", "remediation"} {
+				t.Run(family, func(t *testing.T) {
+					base := runtimeNetworkPolicy(t, chart, family, nil)
+					require.Len(t, base.Spec.Egress, 2, "DNS and the proxy only")
+
+					withEgressAllow := runtimeNetworkPolicy(t, chart, family, map[string]string{
+						"hunterAgent.networkPolicy.egressAllow[0].cidr": "0.0.0.0/0",
+					})
+					assert.Equal(t, base.Spec.Egress, withEgressAllow.Spec.Egress, "egressAllow must be fully inert")
+				})
+			}
+		})
+	}
+}
+
 // A podSelector-only egressAllow entry (no namespaceSelector) must not render a stray
-// `namespaceSelector: null` peer alongside it - only the keys actually given.
+// `namespaceSelector: null` peer alongside it - only the keys actually given. Only applies to
+// charts still supporting egressAllow.
 func TestAgentRuntimeNetworkPolicyEgressAllowPodSelectorNoNullKeys(t *testing.T) {
 	for _, chart := range agentCharts {
+		if chart.hasEgressProxy {
+			continue
+		}
 		t.Run(chart.name, func(t *testing.T) {
 			setValues := map[string]string{
 				"hunterAgent.networkPolicy.egressAllow[0].podSelector.matchLabels.app": "some-dependency",

@@ -16,6 +16,9 @@ type agentChart struct {
 	// sonarPropertiesPath is the values path holding the user's own conf/sonar.properties entries -
 	// top-level in sonarqube, under the application nodes in sonarqube-dce.
 	sonarPropertiesPath string
+	// hasEgressProxy is true for charts that route agent runtime egress through a dedicated Agent
+	// Egress Proxy component instead of the legacy networkPolicy.egressAllow escape hatch.
+	hasEgressProxy bool
 }
 
 // fullnamePrefix is "<release>-<chart>", e.g. "sonarqube-dce-sonarqube-dce" or
@@ -25,6 +28,6 @@ func (c agentChart) fullnamePrefix() string {
 }
 
 var agentCharts = []agentChart{
-	{"sonarqube-dce", dceChartPath, dceReleaseName, "test-cases-values/sonarqube-dce", "templates/sonarqube-application.yaml", "-app-config", "applicationNodes.sonarProperties"},
-	{"sonarqube", chartPath, releaseName, "test-cases-values/sonarqube", "templates/sonarqube-sts.yaml", "-config", "sonarProperties"},
+	{"sonarqube-dce", dceChartPath, dceReleaseName, "test-cases-values/sonarqube-dce", "templates/sonarqube-application.yaml", "-app-config", "applicationNodes.sonarProperties", false},
+	{"sonarqube", chartPath, releaseName, "test-cases-values/sonarqube", "templates/sonarqube-sts.yaml", "-config", "sonarProperties", true},
 }

@@ -992,14 +992,6 @@ hunterAgent:
   # Restrict traffic to and from this runtime.
   networkPolicy:
     enabled: false
-    # Additional egress destinations, each a cidr, a podSelector, a namespaceSelector or both
-    # selectors, with optional ports. Use the selectors for destinations inside the cluster.
-    # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
-    # covering agentOrchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
-    # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of
-    # your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
-    egressAllow: []
-    # - cidr: 160.79.104.0/23
   # Path to the detection-agent entrypoint inside the image; the chart exposes it as
   # SCRIPT_PATH, which switches the runtime into hunter/detection mode (symmetric with
   # remediation's remediationScriptPath -> REMEDIATION_SCRIPT_PATH). Override if the image
@@ -1093,19 +1085,85 @@ remediationAgent:
   # Restrict traffic to and from this runtime.
   networkPolicy:
     enabled: false
-    # Additional egress destinations, each a cidr, a podSelector, a namespaceSelector or both
-    # selectors, with optional ports. Use the selectors for destinations inside the cluster.
-    # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
-    # covering agentOrchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
-    # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of
-    # your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
-    egressAllow: []
-    # - cidr: 160.79.104.0/23
   # Path to the remediation-agent entrypoint inside the image; the chart exposes it as
   # REMEDIATION_SCRIPT_PATH, which switches the runtime into remediation mode. Override if the
   # image relocates it (e.g. a Python version bump); set to "" to omit the env var entirely.
   # (REMEDIATION_RULE_INFO_ENDPOINT is also auto-wired, derived from the Agent Orchestrator URL.)
   remediationScriptPath: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
+  env: []
+  extraVolumes: []
+  extraVolumeMounts: []
+
+# Squid forward-proxy that all agent runtime (hunterAgent/remediationAgent) egress is routed
+# through, so FQDN allow-listing (Squid dstdomain ACLs) becomes possible where NetworkPolicy alone
+# cannot express it (L3/L4 only, no hostname matching). Always a standalone Deployment, never a
+# sidecar (NetworkPolicy is enforced per pod - see templates/agent-egress-proxy.yaml).
+#
+# This component has no independent enable/disable switch: it is automatically deployed whenever
+# hunterAgent.enabled or remediationAgent.enabled is true, and renders nothing when both are
+# false. There is no way to enable a runtime without the proxy, or vice versa.
+agentEgressProxy:
+  image:
+    repository: ubuntu/squid
+    # Canonical's Ubuntu LTS Squid rock. Re-verify this tag/digest at implementation time
+    # (`docker buildx imagetools inspect ubuntu/squid:<tag>`) - Canonical's channel naming
+    # (<squidVersion>-<ubuntuRelease>_<risk>) shifts over time. Prefer pinning `digest` below.
+    tag: "6.6-24.04_edge"
+    digest: ""
+    pullPolicy: IfNotPresent
+    pullSecret: ""
+    pullSecrets: []
+  port: 3128
+  # D7: default 2 so a single pod eviction/restart/drain doesn't cut off every runtime's egress.
+  # Override to 1 for local/dev/kind if the single point of failure is acceptable there.
+  replicaCount: 2
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  revisionHistoryLimit: ""
+  strategy: {}
+  podLabels: {}
+  annotations: {}
+  resources: {}
+  securityContext: {}
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
+  probes:
+    readiness:
+      periodSeconds: 10
+      timeoutSeconds: 5
+    liveness:
+      periodSeconds: 10
+      timeoutSeconds: 5
+  serviceAccount:
+    create: false
+    name: ""
+    automountToken: false
+    annotations: {}
+  # Domains runtimes may reach through the proxy (Squid `dstdomain` ACL). A leading dot means
+  # "this domain and all subdomains". HTTPS is CONNECT-tunneled (no TLS interception in v1) -
+  # matched against the CONNECT target hostname, not decrypted SNI.
+  allowedDomains: []
+  # - .anthropic.com
+  # Extra ports beyond Squid's defaults (80 plain HTTP, 443 CONNECT/HTTPS). Anything added here
+  # must ALSO be added to agentEgressProxy.networkPolicy.egressPorts, or NetworkPolicy blocks it
+  # before Squid's ACLs ever see the request.
+  extraSafePorts: []
+  extraSslPorts: []
+  requestBodyMaxSizeMb: 10
+  # Raw squid.conf lines appended after the generated ACLs, for anything not covered above.
+  extraSquidConf: ""
+  networkPolicy:
+    enabled: false
+    egressPorts: [80, 443]
+  podDisruptionBudget:
+    minAvailable: 1
   env: []
   extraVolumes: []
   extraVolumeMounts: []

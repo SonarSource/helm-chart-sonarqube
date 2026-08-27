@@ -27,38 +27,16 @@ spec:
         - port: {{ $cfg.port }}
           protocol: TCP
   egress:
-    - to:
-        - namespaceSelector: {}
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
-      ports:
-        - port: 53
-          protocol: UDP
-        - port: 53
-          protocol: TCP
+{{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
+    {{- /* All other runtime egress - including reaching the orchestrator and reading/writing job
+           artifacts against object storage via presigned URLs - transits the Agent Egress Proxy.
+           There is no direct-to-orchestrator or direct-to-storage rule here: the proxy's own
+           allowedDomains ACL is what decides which destinations a runtime may actually reach. */}}
     - to:
         - podSelector:
-            matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" $ | nindent 14 }}
+            matchLabels: {{- include "sonarqube.agentEgressProxy.selectorLabels" $ | nindent 14 }}
       ports:
-        - port: {{ $.Values.agentOrchestrator.port }}
+        - port: {{ $.Values.agentEgressProxy.port }}
           protocol: TCP
-    {{- /* The runtime reads/writes job artifacts directly against object storage via presigned URLs,
-           bypassing the orchestrator, so it needs its own egress to reach it - the chart has no way
-           to resolve agentOrchestrator.storage to a NetworkPolicy peer, so networkPolicy.egressAllow must
-           cover it (see the comment on it in values.yaml). */}}
-    {{- range $cfg.networkPolicy.egressAllow }}
-    - to:
-{{ include "sonarqube.agent.egressAllow.peer" . | indent 8 }}
-      {{- with .ports }}
-      ports:
-        {{- range . }}
-        - port: {{ .port }}
-          {{- with .protocol }}
-          protocol: {{ . }}
-          {{- end }}
-        {{- end }}
-      {{- end }}
-    {{- end }}
 {{- end }}
 {{- end }}

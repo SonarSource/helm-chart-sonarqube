@@ -1,0 +1,53 @@
+{{- if include "sonarqube.agentEgressProxy.required" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sonarqube.agentEgressProxy.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agent/component: egress-proxy
+    app.kubernetes.io/component: agent-egress-proxy
+data:
+  squid.conf: |-
+    http_port {{ .Values.agentEgressProxy.port }}
+
+    # Pass-through forward proxy, not a cache - nothing is stored or re-served.
+    cache deny all
+    via off
+    forwarded_for delete
+
+    access_log stdio:/dev/stdout squid
+    cache_log stdio:/dev/stderr
+
+    # Must be set explicitly, or Squid FATALs on startup instead of falling back to a default.
+    cache_effective_user proxy proxy
+
+    request_body_max_size {{ .Values.agentEgressProxy.requestBodyMaxSizeMb }} MB
+
+    acl SSL_ports port 443
+    {{- range .Values.agentEgressProxy.extraSslPorts }}
+    acl SSL_ports port {{ . }}
+    {{- end }}
+    acl Safe_ports port 80
+    acl Safe_ports port 443
+    {{- range .Values.agentEgressProxy.extraSafePorts }}
+    acl Safe_ports port {{ . }}
+    {{- end }}
+    acl CONNECT method CONNECT
+
+    # No TLS interception (SSL-bump): CONNECT tunnels are passed through as-is, so dstdomain below
+    # matches the CONNECT request's target hostname, not a decrypted SNI/certificate.
+    acl allowed_domains dstdomain {{ range .Values.agentEgressProxy.allowedDomains }}{{ . }} {{ end }}
+
+    http_access deny !Safe_ports
+    http_access deny CONNECT !SSL_ports
+    http_access allow allowed_domains
+    http_access deny all
+    {{- with .Values.agentEgressProxy.extraSquidConf }}
+
+    {{ . }}
+    {{- end }}
+{{- end }}
