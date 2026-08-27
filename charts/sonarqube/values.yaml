@@ -1125,7 +1125,18 @@ agentEgressProxy:
   strategy: {}
   podLabels: {}
   annotations: {}
-  resources: {}
+  # D7 makes this a hard dependency of every runtime's data path (unlike hunterAgent's own
+  # `resources: {}` default) - Squid caching is disabled (no cache_dir), so memory/storage
+  # needs stay small regardless of traffic volume.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+      ephemeral-storage: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+      ephemeral-storage: 128Mi
   securityContext: {}
   containerSecurityContext:
     allowPrivilegeEscalation: false

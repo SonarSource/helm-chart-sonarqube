@@ -246,97 +246,106 @@ func TestAgentEgressProxyPodDisruptionBudget(t *testing.T) {
 	assert.Equal(t, "3", pdb.Spec.MinAvailable.String())
 }
 
+// findEgressRuleTo returns the first egress rule matching predicate, or nil if none match.
+func findEgressRuleTo(rules []networkingv1.NetworkPolicyEgressRule, predicate func(networkingv1.NetworkPolicyEgressRule) bool) *networkingv1.NetworkPolicyEgressRule {
+	for i := range rules {
+		if predicate(rules[i]) {
+			return &rules[i]
+		}
+	}
+	return nil
+}
+
+func isBroadIPBlockRule(rule networkingv1.NetworkPolicyEgressRule) bool {
+	return len(rule.To) == 1 && rule.To[0].IPBlock != nil
+}
+
+func isSonarQubePodRule(rule networkingv1.NetworkPolicyEgressRule) bool {
+	return len(rule.To) == 1 && rule.To[0].PodSelector != nil && rule.To[0].PodSelector.MatchLabels["app"] == "sonarqube"
+}
+
 // The proxy's own NetworkPolicy is opt-in (agentEgressProxy.networkPolicy.enabled), independent
 // of D8's auto-activation of the Deployment/Service/ConfigMap.
 func TestAgentEgressProxyNetworkPolicy(t *testing.T) {
-	t.Run("disabled by default even when the proxy is active", func(t *testing.T) {
-		setValues := map[string]string{
-			"hunterAgent.enabled":          "true",
-			"hunterAgent.image.repository": "example.com/hunter-agent",
-			"hunterAgent.image.tag":        "1",
-		}
-		output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
-		require.Error(t, err)
-		assert.Empty(t, strings.TrimSpace(output))
-	})
+	t.Run("disabled by default even when the proxy is active", testAgentEgressProxyNetworkPolicyDisabledByDefault)
+	t.Run("enabled selects both runtime families on ingress and 0.0.0.0/0 on egress", testAgentEgressProxyNetworkPolicyEnabled)
+	t.Run("SonarQube pod egress rule is unconditional, not gated behind networkPolicy.egressPorts", testAgentEgressProxyNetworkPolicySonarQubePortUnconditional)
+}
 
-	t.Run("enabled selects both runtime families on ingress and 0.0.0.0/0 on egress", func(t *testing.T) {
-		setValues := map[string]string{
-			"hunterAgent.enabled":                    "true",
-			"hunterAgent.image.repository":           "example.com/hunter-agent",
-			"hunterAgent.image.tag":                  "1",
-			"remediationAgent.enabled":               "true",
-			"remediationAgent.image.repository":      "example.com/remediation-agent",
-			"remediationAgent.image.tag":             "1",
-			"agentEgressProxy.networkPolicy.enabled": "true",
-		}
-		output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
-		require.NoError(t, err)
+func testAgentEgressProxyNetworkPolicyDisabledByDefault(t *testing.T) {
+	setValues := map[string]string{
+		"hunterAgent.enabled":          "true",
+		"hunterAgent.image.repository": "example.com/hunter-agent",
+		"hunterAgent.image.tag":        "1",
+	}
+	output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
+	require.Error(t, err)
+	assert.Empty(t, strings.TrimSpace(output))
+}
 
-		var policy networkingv1.NetworkPolicy
-		helm.UnmarshalK8SYaml(t, output, &policy)
+func testAgentEgressProxyNetworkPolicyEnabled(t *testing.T) {
+	setValues := map[string]string{
+		"hunterAgent.enabled":                    "true",
+		"hunterAgent.image.repository":           "example.com/hunter-agent",
+		"hunterAgent.image.tag":                  "1",
+		"remediationAgent.enabled":               "true",
+		"remediationAgent.image.repository":      "example.com/remediation-agent",
+		"remediationAgent.image.tag":             "1",
+		"agentEgressProxy.networkPolicy.enabled": "true",
+	}
+	output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
+	require.NoError(t, err)
 
-		require.Len(t, policy.Spec.Ingress, 1)
-		ingress := policy.Spec.Ingress[0]
-		require.Len(t, ingress.From, 1)
-		require.NotNil(t, ingress.From[0].PodSelector)
-		assert.Equal(t, "runtime", ingress.From[0].PodSelector.MatchLabels["sonarqube.agent/component"])
-		assert.NotContains(t, ingress.From[0].PodSelector.MatchLabels, "sonarqube.agent/family",
-			"must select both families, not just one")
+	var policy networkingv1.NetworkPolicy
+	helm.UnmarshalK8SYaml(t, output, &policy)
 
-		require.Len(t, policy.Spec.Egress, 3, "DNS, the SonarQube pod rule, plus the broad 0.0.0.0/0 rule")
-		var broad, sonarqube *networkingv1.NetworkPolicyEgressRule
-		for i := range policy.Spec.Egress {
-			rule := policy.Spec.Egress[i]
-			if len(rule.To) == 1 && rule.To[0].IPBlock != nil {
-				broad = &rule
-			}
-			if len(rule.To) == 1 && rule.To[0].PodSelector != nil && rule.To[0].PodSelector.MatchLabels["app"] == "sonarqube" {
-				sonarqube = &rule
-			}
-		}
-		require.NotNil(t, broad, "expected a broad ipBlock egress rule")
-		assert.Equal(t, "0.0.0.0/0", broad.To[0].IPBlock.CIDR)
-		require.Len(t, broad.Ports, 2)
-		ports := []int32{broad.Ports[0].Port.IntVal, broad.Ports[1].Port.IntVal}
-		assert.ElementsMatch(t, []int32{80, 443}, ports)
+	require.Len(t, policy.Spec.Ingress, 1)
+	ingress := policy.Spec.Ingress[0]
+	require.Len(t, ingress.From, 1)
+	require.NotNil(t, ingress.From[0].PodSelector)
+	assert.Equal(t, "runtime", ingress.From[0].PodSelector.MatchLabels["sonarqube.agent/component"])
+	assert.NotContains(t, ingress.From[0].PodSelector.MatchLabels, "sonarqube.agent/family",
+		"must select both families, not just one")
 
-		require.NotNil(t, sonarqube, "expected a rule allowing egress to the SonarQube pod - "+
-			"this backs the hardcoded sonarqube_host allow rule in agent-egress-proxy-configmap.yaml")
-		require.Len(t, sonarqube.Ports, 1)
-		assert.EqualValues(t, 9000, sonarqube.Ports[0].Port.IntVal)
-	})
+	require.Len(t, policy.Spec.Egress, 3, "DNS, the SonarQube pod rule, plus the broad 0.0.0.0/0 rule")
+	broad := findEgressRuleTo(policy.Spec.Egress, isBroadIPBlockRule)
+	sonarqube := findEgressRuleTo(policy.Spec.Egress, isSonarQubePodRule)
 
-	t.Run("SonarQube pod egress rule is unconditional, not gated behind networkPolicy.egressPorts", func(t *testing.T) {
-		setValues := map[string]string{
-			"hunterAgent.enabled":          "true",
-			"hunterAgent.image.repository": "example.com/hunter-agent",
-			"hunterAgent.image.tag":        "1",
-			// networkPolicy left disabled - the whole NetworkPolicy resource doesn't render then,
-			// so this instead pins the port to a non-default value to prove it isn't read from
-			// networkPolicy.egressPorts.
-			"agentEgressProxy.networkPolicy.enabled":        "true",
-			"agentEgressProxy.networkPolicy.egressPorts[0]": "8080",
-			"service.internalPort":                          "9001",
-			"service.externalPort":                          "9002",
-		}
-		output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
-		require.NoError(t, err)
+	require.NotNil(t, broad, "expected a broad ipBlock egress rule")
+	assert.Equal(t, "0.0.0.0/0", broad.To[0].IPBlock.CIDR)
+	require.Len(t, broad.Ports, 2)
+	ports := []int32{broad.Ports[0].Port.IntVal, broad.Ports[1].Port.IntVal}
+	assert.ElementsMatch(t, []int32{80, 443}, ports)
 
-		var policy networkingv1.NetworkPolicy
-		helm.UnmarshalK8SYaml(t, output, &policy)
+	require.NotNil(t, sonarqube, "expected a rule allowing egress to the SonarQube pod - "+
+		"this backs the hardcoded sonarqube_host allow rule in agent-egress-proxy-configmap.yaml")
+	require.Len(t, sonarqube.Ports, 1)
+	assert.EqualValues(t, 9000, sonarqube.Ports[0].Port.IntVal)
+}
 
-		var sonarqube *networkingv1.NetworkPolicyEgressRule
-		for i := range policy.Spec.Egress {
-			rule := policy.Spec.Egress[i]
-			if len(rule.To) == 1 && rule.To[0].PodSelector != nil && rule.To[0].PodSelector.MatchLabels["app"] == "sonarqube" {
-				sonarqube = &rule
-			}
-		}
-		require.NotNil(t, sonarqube)
-		require.Len(t, sonarqube.Ports, 1)
-		assert.EqualValues(t, 9001, sonarqube.Ports[0].Port.IntVal, "tracks service.internalPort, not networkPolicy.egressPorts or service.externalPort")
-	})
+func testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t *testing.T) {
+	setValues := map[string]string{
+		"hunterAgent.enabled":          "true",
+		"hunterAgent.image.repository": "example.com/hunter-agent",
+		"hunterAgent.image.tag":        "1",
+		// networkPolicy left disabled - the whole NetworkPolicy resource doesn't render then,
+		// so this instead pins the port to a non-default value to prove it isn't read from
+		// networkPolicy.egressPorts.
+		"agentEgressProxy.networkPolicy.enabled":        "true",
+		"agentEgressProxy.networkPolicy.egressPorts[0]": "8080",
+		"service.internalPort":                          "9001",
+		"service.externalPort":                          "9002",
+	}
+	output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
+	require.NoError(t, err)
+
+	var policy networkingv1.NetworkPolicy
+	helm.UnmarshalK8SYaml(t, output, &policy)
+
+	sonarqube := findEgressRuleTo(policy.Spec.Egress, isSonarQubePodRule)
+	require.NotNil(t, sonarqube)
+	require.Len(t, sonarqube.Ports, 1)
+	assert.EqualValues(t, 9001, sonarqube.Ports[0].Port.IntVal, "tracks service.internalPort, not networkPolicy.egressPorts or service.externalPort")
 }
 
 // Regression test: HTTP_PROXY/HTTPS_PROXY/NO_PROXY (and lowercase variants) must not be

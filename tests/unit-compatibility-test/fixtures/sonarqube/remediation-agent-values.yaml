@@ -1060,6 +1060,15 @@ spec:
             - name: http-proxy
               containerPort: 3128
               protocol: TCP
+          resources:
+            limits:
+              cpu: 250m
+              ephemeral-storage: 128Mi
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              ephemeral-storage: 64Mi
+              memory: 64Mi
           readinessProbe:
             tcpSocket:
               port: http-proxy
