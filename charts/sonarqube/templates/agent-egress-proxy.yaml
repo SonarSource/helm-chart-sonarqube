@@ -92,7 +92,7 @@ spec:
             {{- with .Values.agentEgressProxy.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-      {{- with (include "sonarqube.agent.scheduling" (dict "ctx" . "component" .Values.agentEgressProxy)) }}
+      {{- with (include "sonarqube.agentEgressProxy.scheduling" .) }}
 {{ . | indent 6 }}
       {{- end }}
       serviceAccountName: {{ include "sonarqube.agentEgressProxy.serviceAccountName" . }}

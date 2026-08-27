@@ -162,27 +162,78 @@ func TestAgentEgressProxyDeploymentDefaults(t *testing.T) {
 	}
 }
 
-// squid.conf must reflect allowedDomains, extraSafePorts, and requestBodyMaxSizeMb.
+// squid.conf must reflect allowedDomains, and must not carry a request body cap: HTTPS is
+// CONNECT-tunnelled and opaque to Squid, so any such cap would apply only to the cleartext calls
+// to SonarQube's always-reachable endpoints - a silent ceiling on a path the chart guarantees.
 func TestAgentEgressProxyConfigMapContent(t *testing.T) {
 	setValues := map[string]string{
-		"hunterAgent.enabled":                   "true",
-		"hunterAgent.image.repository":          "example.com/hunter-agent",
-		"hunterAgent.image.tag":                 "1",
-		"agentEgressProxy.allowedDomains[0]":    ".anthropic.com",
-		"agentEgressProxy.allowedDomains[1]":    "example.org",
-		"agentEgressProxy.extraSafePorts[0]":    "8443",
-		"agentEgressProxy.requestBodyMaxSizeMb": "42",
+		"hunterAgent.enabled":                "true",
+		"hunterAgent.image.repository":       "example.com/hunter-agent",
+		"hunterAgent.image.tag":              "1",
+		"agentEgressProxy.allowedDomains[0]": ".anthropic.com",
+		"agentEgressProxy.allowedDomains[1]": "example.org",
 	}
+	conf := renderAgentEgressProxySquidConf(t, setValues)
+
+	assert.Contains(t, conf, "acl allowed_domains dstdomain .anthropic.com example.org")
+	assert.Contains(t, conf, "http_access allow allowed_domains")
+	// Matched per-directive rather than with NotContains: a comment in squid.conf explains why
+	// the cap is absent, and naming the directive there keeps it greppable.
+	assert.False(t, squidConfHasDirective(conf, "request_body_max_size"),
+		"squid.conf must not cap request bodies")
+}
+
+// squidConfHasDirective reports whether squid.conf actually sets a directive, ignoring comments.
+func squidConfHasDirective(conf, directive string) bool {
+	for _, line := range strings.Split(conf, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), directive+" ") {
+			return true
+		}
+	}
+	return false
+}
+
+// An empty allowedDomains must omit the ACL entirely rather than render a valueless
+// `acl ... dstdomain`, which makes Squid log "WARNING: empty ACL" on every start and leaves an
+// allow rule that can never match.
+func TestAgentEgressProxyOmitsAllowedDomainsAclWhenEmpty(t *testing.T) {
+	setValues := map[string]string{
+		"hunterAgent.enabled":          "true",
+		"hunterAgent.image.repository": "example.com/hunter-agent",
+		"hunterAgent.image.tag":        "1",
+	}
+	conf := renderAgentEgressProxySquidConf(t, setValues)
+
+	assert.NotContains(t, conf, "allowed_domains")
+}
+
+// extraSquidConf must land *before* the final `http_access deny all`: Squid evaluates http_access
+// top-down and stops at the first match, so anything after that deny is unreachable and a user's
+// allow rule would silently do nothing.
+func TestAgentEgressProxyExtraSquidConfPrecedesDenyAll(t *testing.T) {
+	setValues := map[string]string{
+		"hunterAgent.enabled":             "true",
+		"hunterAgent.image.repository":    "example.com/hunter-agent",
+		"hunterAgent.image.tag":           "1",
+		"agentEgressProxy.extraSquidConf": "http_access allow example_marker",
+	}
+	conf := renderAgentEgressProxySquidConf(t, setValues)
+
+	marker := strings.Index(conf, "http_access allow example_marker")
+	denyAll := strings.Index(conf, "http_access deny all")
+	require.NotEqual(t, -1, marker, "extraSquidConf was not spliced into squid.conf")
+	require.NotEqual(t, -1, denyAll, "squid.conf is missing its final deny")
+	assert.Less(t, marker, denyAll, "extraSquidConf must precede `http_access deny all` to have any effect")
+}
+
+func renderAgentEgressProxySquidConf(t *testing.T, setValues map[string]string) string {
+	t.Helper()
 	output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
 	require.NoError(t, err)
 
 	var cm corev1.ConfigMap
 	helm.UnmarshalK8SYaml(t, output, &cm)
-	conf := cm.Data["squid.conf"]
-
-	assert.Contains(t, conf, "acl allowed_domains dstdomain .anthropic.com example.org")
-	assert.Contains(t, conf, "acl Safe_ports port 8443")
-	assert.Contains(t, conf, "request_body_max_size 42 MB")
+	return cm.Data["squid.conf"]
 }
 
 // SonarQube's /rules/show and /agentic-analysis endpoints must always be reachable through the

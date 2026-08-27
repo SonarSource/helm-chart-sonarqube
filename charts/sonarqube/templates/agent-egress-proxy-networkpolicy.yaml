@@ -36,10 +36,17 @@ spec:
           protocol: TCP
     {{- /* NetworkPolicy is L3/L4-only and cannot match a destination FQDN, so this rule stays
            broad by necessity - the actual per-domain restriction is enforced entirely inside
-           Squid via allowedDomains (dstdomain ACL), not here. */}}
+           Squid via allowedDomains (dstdomain ACL), not here. `except` carves back out the
+           destinations that should never be proxy-reachable no matter what Squid is configured to
+           allow (by default the link-local range carrying the cloud metadata service), so a
+           mistaken allowedDomains entry or extraSquidConf rule can't turn the proxy into an SSRF
+           pivot on its own. */}}
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
+            {{- with .Values.agentEgressProxy.networkPolicy.egressExcludeCidrs }}
+            except: {{- toYaml . | nindent 14 }}
+            {{- end }}
       ports:
         {{- range .Values.agentEgressProxy.networkPolicy.egressPorts }}
         - port: {{ . }}

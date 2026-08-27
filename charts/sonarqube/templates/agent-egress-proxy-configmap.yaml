@@ -25,25 +25,30 @@ data:
     # Must be set explicitly, or Squid FATALs on startup instead of falling back to a default.
     cache_effective_user proxy proxy
 
-    request_body_max_size {{ .Values.agentEgressProxy.requestBodyMaxSizeMb }} MB
+    # No request_body_max_size: without TLS interception a CONNECT tunnel is opaque to Squid, so
+    # any such cap would miss every HTTPS body (all LLM prompts and uploads) and apply only to
+    # cleartext - which here means SonarQube's own always-reachable endpoints. A limit there would
+    # be a silent ceiling on a path the chart guarantees, so body size is left to SonarQube.
 
     acl SSL_ports port 443
-    {{- range .Values.agentEgressProxy.extraSslPorts }}
-    acl SSL_ports port {{ . }}
-    {{- end }}
     acl Safe_ports port 80
     acl Safe_ports port 443
-    {{- range .Values.agentEgressProxy.extraSafePorts }}
-    acl Safe_ports port {{ . }}
-    {{- end }}
-    # SonarQube's own port, so the hardcoded allow rule below can ever match - not user-editable,
-    # unlike extraSafePorts above.
+    # SonarQube's own port, so the hardcoded allow rule below can ever match.
     acl Safe_ports port {{ .Values.service.externalPort }}
+    # To reach an endpoint on another port, append to these ACLs from extraSquidConf - Squid
+    # resolves http_access rules to the named ACL object, so entries added there still apply to
+    # the `deny !Safe_ports` rule below despite being spliced in after it. Whatever port you add
+    # must ALSO be in agentEgressProxy.networkPolicy.egressPorts, or NetworkPolicy drops the
+    # request before Squid ever sees it.
     acl CONNECT method CONNECT
 
     # No TLS interception (SSL-bump): CONNECT tunnels are passed through as-is, so dstdomain below
     # matches the CONNECT request's target hostname, not a decrypted SNI/certificate.
-    acl allowed_domains dstdomain {{ range .Values.agentEgressProxy.allowedDomains }}{{ . }} {{ end }}
+    # Rendered only when non-empty: a valueless `acl ... dstdomain` makes Squid log
+    # "WARNING: empty ACL" on every start, and the allow rule referencing it can never match.
+    {{- with .Values.agentEgressProxy.allowedDomains }}
+    acl allowed_domains dstdomain {{ join " " . }}
+    {{- end }}
 
     # SonarQube's own rule-lookup and agentic-analysis endpoints must always be reachable, no
     # matter what allowedDomains contains - hardcoded here (not sourced from Values) so it can't
@@ -59,9 +64,14 @@ data:
     http_access deny !Safe_ports
     http_access deny CONNECT !SSL_ports
     http_access allow sonarqube_host sonarqube_agentic_endpoints
+    {{- if .Values.agentEgressProxy.allowedDomains }}
     http_access allow allowed_domains
-    http_access deny all
+    {{- end }}
+    {{- /* Spliced in *before* the final deny: Squid evaluates http_access top-down and stops at the
+           first match, so anything after `deny all` is unreachable. Placing the user's rules here
+           is what makes an `http_access allow ...` in extraSquidConf actually take effect. */}}
     {{- with .Values.agentEgressProxy.extraSquidConf }}
 {{ . | indent 4 }}
     {{- end }}
+    http_access deny all
 {{- end }}

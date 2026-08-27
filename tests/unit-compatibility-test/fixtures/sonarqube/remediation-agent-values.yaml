@@ -50,6 +50,8 @@ spec:
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
+            except:
+              - 169.254.0.0/16
       ports:
         - port: 80
           protocol: TCP
@@ -335,19 +337,28 @@ data:
     # Must be set explicitly, or Squid FATALs on startup instead of falling back to a default.
     cache_effective_user proxy proxy
 
-    request_body_max_size 10 MB
+    # No request_body_max_size: without TLS interception a CONNECT tunnel is opaque to Squid, so
+    # any such cap would miss every HTTPS body (all LLM prompts and uploads) and apply only to
+    # cleartext - which here means SonarQube's own always-reachable endpoints. A limit there would
+    # be a silent ceiling on a path the chart guarantees, so body size is left to SonarQube.
 
     acl SSL_ports port 443
     acl Safe_ports port 80
     acl Safe_ports port 443
-    # SonarQube's own port, so the hardcoded allow rule below can ever match - not user-editable,
-    # unlike extraSafePorts above.
+    # SonarQube's own port, so the hardcoded allow rule below can ever match.
     acl Safe_ports port 9000
+    # To reach an endpoint on another port, append to these ACLs from extraSquidConf - Squid
+    # resolves http_access rules to the named ACL object, so entries added there still apply to
+    # the `deny !Safe_ports` rule below despite being spliced in after it. Whatever port you add
+    # must ALSO be in agentEgressProxy.networkPolicy.egressPorts, or NetworkPolicy drops the
+    # request before Squid ever sees it.
     acl CONNECT method CONNECT
 
     # No TLS interception (SSL-bump): CONNECT tunnels are passed through as-is, so dstdomain below
     # matches the CONNECT request's target hostname, not a decrypted SNI/certificate.
-    acl allowed_domains dstdomain .anthropic.com 
+    # Rendered only when non-empty: a valueless `acl ... dstdomain` makes Squid log
+    # "WARNING: empty ACL" on every start, and the allow rule referencing it can never match.
+    acl allowed_domains dstdomain .anthropic.com
 
     # SonarQube's own rule-lookup and agentic-analysis endpoints must always be reachable, no
     # matter what allowedDomains contains - hardcoded here (not sourced from Values) so it can't
@@ -1033,7 +1044,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 920fc335f1b4e402f9f3efbc975ec45dc5725a3f8557ef24bce83b5c1236fda3
+        checksum/config: 01ce6848513cff990d472fd52328fe7fde144422e07a2f3391dcb837e2ba2c06
       labels:
         app: sonarqube-agent-egress-proxy
         release: remediation-agent-values.yaml
@@ -1042,7 +1053,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: agent-egress-proxy
-          image: ubuntu/squid:6.6-24.04_edge
+          image: ubuntu/squid@sha256:8a3baed477e2c282ab8aa5edad442f69873246964f225c5c2ae8364b6610963c
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -1090,6 +1101,16 @@ spec:
               mountPath: /var/run
             - name: tmp
               mountPath: /tmp
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: sonarqube-agent-egress-proxy
+                  release: remediation-agent-values.yaml
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       serviceAccountName: default
       volumes:
         - name: squid-conf

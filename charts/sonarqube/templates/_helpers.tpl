@@ -662,6 +662,38 @@ true
 {{- end -}}
 
 {{/*
+Scheduling block (nodeSelector/tolerations/affinity) for the Agent Egress Proxy.
+
+Identical to sonarqube.agent.scheduling except for the affinity default: with replicaCount 2 and a
+podDisruptionBudget of minAvailable 1, nothing otherwise stops both replicas landing on the same
+node - which would make a single node drain sever every runtime's only egress path *and* be
+blocked by the PDB. So when neither agentEgressProxy.affinity nor the global affinity is set, fall
+back to a soft (preferred, not required) anti-affinity on hostname: spreads across nodes when the
+cluster has them, still schedulable on a single-node cluster such as kind.
+
+Setting agentEgressProxy.affinity replaces this default wholesale - it is not merged.
+*/}}
+{{- define "sonarqube.agentEgressProxy.scheduling" -}}
+{{- $proxy := .Values.agentEgressProxy -}}
+{{- $affinity := default .Values.affinity $proxy.affinity -}}
+{{- if not $affinity -}}
+{{- $affinity = fromYaml (include "sonarqube.agentEgressProxy.defaultAntiAffinity" .) -}}
+{{- end -}}
+{{- include "sonarqube.agent.scheduling" (dict "ctx" . "component" (dict "nodeSelector" $proxy.nodeSelector "tolerations" $proxy.tolerations "affinity" $affinity)) -}}
+{{- end -}}
+
+{{- define "sonarqube.agentEgressProxy.defaultAntiAffinity" -}}
+podAntiAffinity:
+  preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchLabels:
+{{ include "sonarqube.agentEgressProxy.selectorLabels" . | indent 12 }}
+{{- end -}}
+
+{{/*
 Selector labels common to both agent runtime families (family-agnostic), so a single selector can
 match every runtime pod regardless of family - used by the Agent Egress Proxy's own NetworkPolicy
 ingress rule.
