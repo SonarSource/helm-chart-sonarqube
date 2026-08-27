@@ -14,15 +14,17 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 )
 
-// The Agent Egress Proxy only exists on charts/sonarqube - charts/sonarqube-dce has no
-// equivalent component, so these tests are not table-driven over agentCharts.
-var egressProxyChart = agentCharts[1]
-
-func init() {
-	if egressProxyChart.name != "sonarqube" || !egressProxyChart.hasEgressProxy {
-		panic("agentCharts[1] is expected to be the sonarqube chart with hasEgressProxy set")
+// egressProxyCharts is the subset of agentCharts with an Agent Egress Proxy component. Every test
+// in this file loops over it instead of pinning to one chart, since the proxy now exists on both.
+var egressProxyCharts = func() []agentChart {
+	var charts []agentChart
+	for _, c := range agentCharts {
+		if c.hasEgressProxy {
+			charts = append(charts, c)
+		}
 	}
-}
+	return charts
+}()
 
 // renderAgentEgressProxyTemplates always merges in the minimum values validation.yaml requires to
 // enable a runtime family - community/monitoringPasscode, jdbcOverwrite, a valid
@@ -30,11 +32,12 @@ func init() {
 // hunterAgent/remediationAgent both require agentOrchestrator.enabled, and remediationAgent
 // additionally requires vortex.enabled) - so callers only need to set what's relevant to what
 // they're testing, typically just which runtime family(ies) to enable.
-func renderAgentEgressProxyTemplates(t *testing.T, setValues map[string]string, templates []string) (string, error) {
+func renderAgentEgressProxyTemplates(t *testing.T, chart agentChart, setValues map[string]string, templates []string) (string, error) {
 	t.Helper()
 	merged := map[string]string{
 		"community.enabled":                  "true",
 		"monitoringPasscode":                 "test-passcode",
+		"applicationNodes.jwtSecret":         "test-jwt-secret",
 		"jdbcOverwrite.enabled":              "true",
 		"jdbcOverwrite.jdbcUrl":              "jdbc:postgresql://test-host:5432/testdb",
 		"jdbcOverwrite.jdbcUsername":         "test-user",
@@ -58,7 +61,7 @@ func renderAgentEgressProxyTemplates(t *testing.T, setValues map[string]string, 
 		Logger:    logger.Discard,
 		SetValues: merged,
 	}
-	return helm.RenderTemplateE(t, opts, egressProxyChart.path, egressProxyChart.release, templates)
+	return helm.RenderTemplateE(t, opts, chart.path, chart.release, templates)
 }
 
 var egressProxyTemplates = []string{
@@ -71,56 +74,63 @@ var egressProxyTemplates = []string{
 // D8: the proxy has no enabled toggle of its own - it must render nothing when both runtime
 // families are disabled, and render fully when either one is enabled, regardless of the other.
 func TestAgentEgressProxyRequired(t *testing.T) {
-	t.Run("both disabled renders nothing", func(t *testing.T) {
-		for _, tpl := range append(egressProxyTemplates, "templates/agent-egress-proxy-networkpolicy.yaml") {
-			opts := &helm.Options{
-				Logger:      logger.Discard,
-				ValuesFiles: []string{egressProxyChart.valuesDir + "/agent-all-disabled.yaml"},
+	for _, chart := range egressProxyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			chart := chart
+
+			t.Run("both disabled renders nothing", func(t *testing.T) {
+				for _, tpl := range append(egressProxyTemplates, "templates/agent-egress-proxy-networkpolicy.yaml") {
+					opts := &helm.Options{
+						Logger:      logger.Discard,
+						ValuesFiles: []string{chart.valuesDir + "/agent-all-disabled.yaml"},
+					}
+					output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{tpl})
+					require.Error(t, err, "%s must render nothing when hunterAgent/remediationAgent are both disabled", tpl)
+					assert.Empty(t, strings.TrimSpace(output))
+				}
+			})
+
+			t.Run("serviceaccount renders nothing when both disabled even with create: true", func(t *testing.T) {
+				// With agentOrchestrator/hunterAgent/remediationAgent all disabled, every if-block in
+				// agent-serviceaccount.yaml is false, so the whole file renders empty - which Helm
+				// reports as an error, not an empty success (see the "both disabled renders nothing"
+				// subtest above for the same convention).
+				opts := &helm.Options{
+					Logger:      logger.Discard,
+					ValuesFiles: []string{chart.valuesDir + "/agent-all-disabled.yaml"},
+					SetValues:   map[string]string{"agentEgressProxy.serviceAccount.create": "true"},
+				}
+				output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-serviceaccount.yaml"})
+				require.Error(t, err)
+				assert.Empty(t, strings.TrimSpace(output))
+			})
+
+			for _, family := range []string{"hunterAgent", "remediationAgent"} {
+				family := family
+				t.Run(family+" alone activates the proxy", func(t *testing.T) {
+					setValues := map[string]string{
+						family + ".enabled":                      "true",
+						family + ".image.repository":             "example.com/" + family,
+						family + ".image.tag":                    "1",
+						"agentEgressProxy.serviceAccount.create": "true",
+					}
+					output, err := renderAgentEgressProxyTemplates(t, chart, setValues, egressProxyTemplates)
+					require.NoError(t, err)
+					assert.Contains(t, output, "kind: Deployment")
+					assert.Contains(t, output, "kind: Service")
+					assert.Contains(t, output, "kind: ConfigMap")
+					assert.Contains(t, output, "kind: PodDisruptionBudget")
+
+					saOutput, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-serviceaccount.yaml"})
+					require.NoError(t, err)
+					assert.Contains(t, saOutput, "agent-egress-proxy")
+				})
 			}
-			output, err := helm.RenderTemplateE(t, opts, egressProxyChart.path, egressProxyChart.release, []string{tpl})
-			require.Error(t, err, "%s must render nothing when hunterAgent/remediationAgent are both disabled", tpl)
-			assert.Empty(t, strings.TrimSpace(output))
-		}
-	})
-
-	t.Run("serviceaccount renders nothing when both disabled even with create: true", func(t *testing.T) {
-		// With agentOrchestrator/hunterAgent/remediationAgent all disabled, every if-block in
-		// agent-serviceaccount.yaml is false, so the whole file renders empty - which Helm
-		// reports as an error, not an empty success (see the "both disabled renders nothing"
-		// subtest above for the same convention).
-		opts := &helm.Options{
-			Logger:      logger.Discard,
-			ValuesFiles: []string{egressProxyChart.valuesDir + "/agent-all-disabled.yaml"},
-			SetValues:   map[string]string{"agentEgressProxy.serviceAccount.create": "true"},
-		}
-		output, err := helm.RenderTemplateE(t, opts, egressProxyChart.path, egressProxyChart.release, []string{"templates/agent-serviceaccount.yaml"})
-		require.Error(t, err)
-		assert.Empty(t, strings.TrimSpace(output))
-	})
-
-	for _, family := range []string{"hunterAgent", "remediationAgent"} {
-		t.Run(family+" alone activates the proxy", func(t *testing.T) {
-			setValues := map[string]string{
-				family + ".enabled":                      "true",
-				family + ".image.repository":             "example.com/" + family,
-				family + ".image.tag":                    "1",
-				"agentEgressProxy.serviceAccount.create": "true",
-			}
-			output, err := renderAgentEgressProxyTemplates(t, setValues, egressProxyTemplates)
-			require.NoError(t, err)
-			assert.Contains(t, output, "kind: Deployment")
-			assert.Contains(t, output, "kind: Service")
-			assert.Contains(t, output, "kind: ConfigMap")
-			assert.Contains(t, output, "kind: PodDisruptionBudget")
-
-			saOutput, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-serviceaccount.yaml"})
-			require.NoError(t, err)
-			assert.Contains(t, saOutput, "agent-egress-proxy")
 		})
 	}
 }
 
-func renderAgentEgressProxyDeployment(t *testing.T, setValues map[string]string) appsv1.Deployment {
+func renderAgentEgressProxyDeployment(t *testing.T, chart agentChart, setValues map[string]string) appsv1.Deployment {
 	t.Helper()
 	merged := map[string]string{
 		"hunterAgent.enabled":          "true",
@@ -130,7 +140,7 @@ func renderAgentEgressProxyDeployment(t *testing.T, setValues map[string]string)
 	for k, v := range setValues {
 		merged[k] = v
 	}
-	output, err := renderAgentEgressProxyTemplates(t, merged, []string{"templates/agent-egress-proxy.yaml"})
+	output, err := renderAgentEgressProxyTemplates(t, chart, merged, []string{"templates/agent-egress-proxy.yaml"})
 	require.NoError(t, err)
 
 	var deployment appsv1.Deployment
@@ -140,25 +150,29 @@ func renderAgentEgressProxyDeployment(t *testing.T, setValues map[string]string)
 }
 
 func TestAgentEgressProxyDeploymentDefaults(t *testing.T) {
-	deployment := renderAgentEgressProxyDeployment(t, nil)
+	for _, chart := range egressProxyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			deployment := renderAgentEgressProxyDeployment(t, chart, nil)
 
-	assert.Equal(t, int32(2), *deployment.Spec.Replicas, "D7: two replicas by default")
+			assert.Equal(t, int32(2), *deployment.Spec.Replicas, "D7: two replicas by default")
 
-	podSpec := deployment.Spec.Template.Spec
-	require.Len(t, podSpec.Containers, 1)
-	container := podSpec.Containers[0]
+			podSpec := deployment.Spec.Template.Spec
+			require.Len(t, podSpec.Containers, 1)
+			container := podSpec.Containers[0]
 
-	require.NotNil(t, container.ReadinessProbe)
-	require.NotNil(t, container.ReadinessProbe.TCPSocket, "Squid has no HTTP health endpoint")
-	require.NotNil(t, container.LivenessProbe)
-	require.NotNil(t, container.LivenessProbe.TCPSocket)
+			require.NotNil(t, container.ReadinessProbe)
+			require.NotNil(t, container.ReadinessProbe.TCPSocket, "Squid has no HTTP health endpoint")
+			require.NotNil(t, container.LivenessProbe)
+			require.NotNil(t, container.LivenessProbe.TCPSocket)
 
-	volumeNames := map[string]bool{}
-	for _, v := range podSpec.Volumes {
-		volumeNames[v.Name] = true
-	}
-	for _, want := range []string{"squid-conf", "squid-spool", "squid-run", "tmp"} {
-		assert.True(t, volumeNames[want], "expected volume %q", want)
+			volumeNames := map[string]bool{}
+			for _, v := range podSpec.Volumes {
+				volumeNames[v.Name] = true
+			}
+			for _, want := range []string{"squid-conf", "squid-spool", "squid-run", "tmp"} {
+				assert.True(t, volumeNames[want], "expected volume %q", want)
+			}
+		})
 	}
 }
 
@@ -166,21 +180,25 @@ func TestAgentEgressProxyDeploymentDefaults(t *testing.T) {
 // CONNECT-tunnelled and opaque to Squid, so any such cap would apply only to the cleartext calls
 // to SonarQube's always-reachable endpoints - a silent ceiling on a path the chart guarantees.
 func TestAgentEgressProxyConfigMapContent(t *testing.T) {
-	setValues := map[string]string{
-		"hunterAgent.enabled":                "true",
-		"hunterAgent.image.repository":       "example.com/hunter-agent",
-		"hunterAgent.image.tag":              "1",
-		"agentEgressProxy.allowedDomains[0]": ".anthropic.com",
-		"agentEgressProxy.allowedDomains[1]": "example.org",
-	}
-	conf := renderAgentEgressProxySquidConf(t, setValues)
+	for _, chart := range egressProxyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			setValues := map[string]string{
+				"hunterAgent.enabled":                "true",
+				"hunterAgent.image.repository":       "example.com/hunter-agent",
+				"hunterAgent.image.tag":              "1",
+				"agentEgressProxy.allowedDomains[0]": ".anthropic.com",
+				"agentEgressProxy.allowedDomains[1]": "example.org",
+			}
+			conf := renderAgentEgressProxySquidConf(t, chart, setValues)
 
-	assert.Contains(t, conf, "acl allowed_domains dstdomain .anthropic.com example.org")
-	assert.Contains(t, conf, "http_access allow allowed_domains")
-	// Matched per-directive rather than with NotContains: a comment in squid.conf explains why
-	// the cap is absent, and naming the directive there keeps it greppable.
-	assert.False(t, squidConfHasDirective(conf, "request_body_max_size"),
-		"squid.conf must not cap request bodies")
+			assert.Contains(t, conf, "acl allowed_domains dstdomain .anthropic.com example.org")
+			assert.Contains(t, conf, "http_access allow allowed_domains")
+			// Matched per-directive rather than with NotContains: a comment in squid.conf explains why
+			// the cap is absent, and naming the directive there keeps it greppable.
+			assert.False(t, squidConfHasDirective(conf, "request_body_max_size"),
+				"squid.conf must not cap request bodies")
+		})
+	}
 }
 
 // squidConfHasDirective reports whether squid.conf actually sets a directive, ignoring comments.
@@ -197,38 +215,46 @@ func squidConfHasDirective(conf, directive string) bool {
 // `acl ... dstdomain`, which makes Squid log "WARNING: empty ACL" on every start and leaves an
 // allow rule that can never match.
 func TestAgentEgressProxyOmitsAllowedDomainsAclWhenEmpty(t *testing.T) {
-	setValues := map[string]string{
-		"hunterAgent.enabled":          "true",
-		"hunterAgent.image.repository": "example.com/hunter-agent",
-		"hunterAgent.image.tag":        "1",
-	}
-	conf := renderAgentEgressProxySquidConf(t, setValues)
+	for _, chart := range egressProxyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			setValues := map[string]string{
+				"hunterAgent.enabled":          "true",
+				"hunterAgent.image.repository": "example.com/hunter-agent",
+				"hunterAgent.image.tag":        "1",
+			}
+			conf := renderAgentEgressProxySquidConf(t, chart, setValues)
 
-	assert.NotContains(t, conf, "allowed_domains")
+			assert.NotContains(t, conf, "allowed_domains")
+		})
+	}
 }
 
 // extraSquidConf must land *before* the final `http_access deny all`: Squid evaluates http_access
 // top-down and stops at the first match, so anything after that deny is unreachable and a user's
 // allow rule would silently do nothing.
 func TestAgentEgressProxyExtraSquidConfPrecedesDenyAll(t *testing.T) {
-	setValues := map[string]string{
-		"hunterAgent.enabled":             "true",
-		"hunterAgent.image.repository":    "example.com/hunter-agent",
-		"hunterAgent.image.tag":           "1",
-		"agentEgressProxy.extraSquidConf": "http_access allow example_marker",
-	}
-	conf := renderAgentEgressProxySquidConf(t, setValues)
+	for _, chart := range egressProxyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			setValues := map[string]string{
+				"hunterAgent.enabled":             "true",
+				"hunterAgent.image.repository":    "example.com/hunter-agent",
+				"hunterAgent.image.tag":           "1",
+				"agentEgressProxy.extraSquidConf": "http_access allow example_marker",
+			}
+			conf := renderAgentEgressProxySquidConf(t, chart, setValues)
 
-	marker := strings.Index(conf, "http_access allow example_marker")
-	denyAll := strings.Index(conf, "http_access deny all")
-	require.NotEqual(t, -1, marker, "extraSquidConf was not spliced into squid.conf")
-	require.NotEqual(t, -1, denyAll, "squid.conf is missing its final deny")
-	assert.Less(t, marker, denyAll, "extraSquidConf must precede `http_access deny all` to have any effect")
+			marker := strings.Index(conf, "http_access allow example_marker")
+			denyAll := strings.Index(conf, "http_access deny all")
+			require.NotEqual(t, -1, marker, "extraSquidConf was not spliced into squid.conf")
+			require.NotEqual(t, -1, denyAll, "squid.conf is missing its final deny")
+			assert.Less(t, marker, denyAll, "extraSquidConf must precede `http_access deny all` to have any effect")
+		})
+	}
 }
 
-func renderAgentEgressProxySquidConf(t *testing.T, setValues map[string]string) string {
+func renderAgentEgressProxySquidConf(t *testing.T, chart agentChart, setValues map[string]string) string {
 	t.Helper()
-	output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
+	output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
 	require.NoError(t, err)
 
 	var cm corev1.ConfigMap
@@ -240,61 +266,71 @@ func renderAgentEgressProxySquidConf(t *testing.T, setValues map[string]string) 
 // proxy, hardcoded independently of allowedDomains - there is no values key that can remove this
 // allow rule, unlike everything in allowedDomains.
 func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
-	t.Run("present regardless of allowedDomains", func(t *testing.T) {
-		setValues := map[string]string{
-			"hunterAgent.enabled":          "true",
-			"hunterAgent.image.repository": "example.com/hunter-agent",
-			"hunterAgent.image.tag":        "1",
-			// allowedDomains left empty on purpose: the SonarQube allow rule must not depend on it.
-		}
-		output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
-		require.NoError(t, err)
+	for _, chart := range egressProxyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			chart := chart
 
-		var cm corev1.ConfigMap
-		helm.UnmarshalK8SYaml(t, output, &cm)
-		conf := cm.Data["squid.conf"]
+			t.Run("present regardless of allowedDomains", func(t *testing.T) {
+				setValues := map[string]string{
+					"hunterAgent.enabled":          "true",
+					"hunterAgent.image.repository": "example.com/hunter-agent",
+					"hunterAgent.image.tag":        "1",
+					// allowedDomains left empty on purpose: the SonarQube allow rule must not depend on it.
+				}
+				output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
+				require.NoError(t, err)
 
-		// Fully qualified, not the bare short name - Squid's own DNS resolver doesn't honour
-		// /etc/resolv.conf's search list, so a bare Service name can never resolve for it.
-		assert.Contains(t, conf, "acl sonarqube_host dstdomain "+egressProxyChart.fullnamePrefix()+".default.svc.cluster.local")
-		assert.Contains(t, conf, "acl sonarqube_agentic_endpoints urlpath_regex /rules/show(\\?|$) /agentic-analysis(/|\\?|$)")
-		assert.Contains(t, conf, "http_access allow sonarqube_host sonarqube_agentic_endpoints")
-		assert.Contains(t, conf, "acl Safe_ports port 9000", "SonarQube's default externalPort must be reachable too")
-	})
+				var cm corev1.ConfigMap
+				helm.UnmarshalK8SYaml(t, output, &cm)
+				conf := cm.Data["squid.conf"]
 
-	t.Run("dstdomain tracks the fullname prefix and service.externalPort overrides", func(t *testing.T) {
-		setValues := map[string]string{
-			"hunterAgent.enabled":          "true",
-			"hunterAgent.image.repository": "example.com/hunter-agent",
-			"hunterAgent.image.tag":        "1",
-			"service.externalPort":         "9001",
-		}
-		output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
-		require.NoError(t, err)
+				// Fully qualified, not the bare short name - Squid's own DNS resolver doesn't honour
+				// /etc/resolv.conf's search list, so a bare Service name can never resolve for it.
+				assert.Contains(t, conf, "acl sonarqube_host dstdomain "+chart.fullnamePrefix()+".default.svc.cluster.local")
+				assert.Contains(t, conf, "acl sonarqube_agentic_endpoints urlpath_regex /rules/show(\\?|$) /agentic-analysis(/|\\?|$)")
+				assert.Contains(t, conf, "http_access allow sonarqube_host sonarqube_agentic_endpoints")
+				assert.Contains(t, conf, "acl Safe_ports port 9000", "SonarQube's default externalPort must be reachable too")
+			})
 
-		var cm corev1.ConfigMap
-		helm.UnmarshalK8SYaml(t, output, &cm)
-		conf := cm.Data["squid.conf"]
+			t.Run("dstdomain tracks the fullname prefix and service.externalPort overrides", func(t *testing.T) {
+				setValues := map[string]string{
+					"hunterAgent.enabled":          "true",
+					"hunterAgent.image.repository": "example.com/hunter-agent",
+					"hunterAgent.image.tag":        "1",
+					"service.externalPort":         "9001",
+				}
+				output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
+				require.NoError(t, err)
 
-		assert.Contains(t, conf, "acl sonarqube_host dstdomain "+egressProxyChart.fullnamePrefix()+".default.svc.cluster.local")
-		assert.Contains(t, conf, "acl Safe_ports port 9001")
-	})
+				var cm corev1.ConfigMap
+				helm.UnmarshalK8SYaml(t, output, &cm)
+				conf := cm.Data["squid.conf"]
+
+				assert.Contains(t, conf, "acl sonarqube_host dstdomain "+chart.fullnamePrefix()+".default.svc.cluster.local")
+				assert.Contains(t, conf, "acl Safe_ports port 9001")
+			})
+		})
+	}
 }
 
 func TestAgentEgressProxyPodDisruptionBudget(t *testing.T) {
-	setValues := map[string]string{
-		"hunterAgent.enabled":                               "true",
-		"hunterAgent.image.repository":                      "example.com/hunter-agent",
-		"hunterAgent.image.tag":                             "1",
-		"agentEgressProxy.podDisruptionBudget.minAvailable": "3",
-	}
-	output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-poddisruptionbudget.yaml"})
-	require.NoError(t, err)
+	for _, chart := range egressProxyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			setValues := map[string]string{
+				"hunterAgent.enabled":                               "true",
+				"hunterAgent.image.repository":                      "example.com/hunter-agent",
+				"hunterAgent.image.tag":                             "1",
+				"agentEgressProxy.podDisruptionBudget.minAvailable": "3",
+			}
+			output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-poddisruptionbudget.yaml"})
+			require.NoError(t, err)
 
-	var pdb policyv1.PodDisruptionBudget
-	helm.UnmarshalK8SYaml(t, output, &pdb)
-	require.NotNil(t, pdb.Spec.MinAvailable)
-	assert.Equal(t, "3", pdb.Spec.MinAvailable.String())
+			var pdb policyv1.PodDisruptionBudget
+			helm.UnmarshalK8SYaml(t, output, &pdb)
+			require.NotNil(t, pdb.Spec.MinAvailable)
+			assert.Equal(t, "3", pdb.Spec.MinAvailable.String())
+		})
+	}
 }
 
 // findEgressRuleTo returns the first egress rule matching predicate, or nil if none match.
@@ -311,30 +347,43 @@ func isBroadIPBlockRule(rule networkingv1.NetworkPolicyEgressRule) bool {
 	return len(rule.To) == 1 && rule.To[0].IPBlock != nil
 }
 
-func isSonarQubePodRule(rule networkingv1.NetworkPolicyEgressRule) bool {
-	return len(rule.To) == 1 && rule.To[0].PodSelector != nil && rule.To[0].PodSelector.MatchLabels["app"] == "sonarqube"
+func isSonarQubePodRule(chart agentChart) func(networkingv1.NetworkPolicyEgressRule) bool {
+	return func(rule networkingv1.NetworkPolicyEgressRule) bool {
+		return len(rule.To) == 1 && rule.To[0].PodSelector != nil && rule.To[0].PodSelector.MatchLabels["app"] == chart.name
+	}
 }
 
 // The proxy's own NetworkPolicy is opt-in (agentEgressProxy.networkPolicy.enabled), independent
 // of D8's auto-activation of the Deployment/Service/ConfigMap.
 func TestAgentEgressProxyNetworkPolicy(t *testing.T) {
-	t.Run("disabled by default even when the proxy is active", testAgentEgressProxyNetworkPolicyDisabledByDefault)
-	t.Run("enabled selects both runtime families on ingress and 0.0.0.0/0 on egress", testAgentEgressProxyNetworkPolicyEnabled)
-	t.Run("SonarQube pod egress rule is unconditional, not gated behind networkPolicy.egressPorts", testAgentEgressProxyNetworkPolicySonarQubePortUnconditional)
+	for _, chart := range egressProxyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			chart := chart
+			t.Run("disabled by default even when the proxy is active", func(t *testing.T) {
+				testAgentEgressProxyNetworkPolicyDisabledByDefault(t, chart)
+			})
+			t.Run("enabled selects both runtime families on ingress and 0.0.0.0/0 on egress", func(t *testing.T) {
+				testAgentEgressProxyNetworkPolicyEnabled(t, chart)
+			})
+			t.Run("SonarQube pod egress rule is unconditional, not gated behind networkPolicy.egressPorts", func(t *testing.T) {
+				testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t, chart)
+			})
+		})
+	}
 }
 
-func testAgentEgressProxyNetworkPolicyDisabledByDefault(t *testing.T) {
+func testAgentEgressProxyNetworkPolicyDisabledByDefault(t *testing.T, chart agentChart) {
 	setValues := map[string]string{
 		"hunterAgent.enabled":          "true",
 		"hunterAgent.image.repository": "example.com/hunter-agent",
 		"hunterAgent.image.tag":        "1",
 	}
-	output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
+	output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
 	require.Error(t, err)
 	assert.Empty(t, strings.TrimSpace(output))
 }
 
-func testAgentEgressProxyNetworkPolicyEnabled(t *testing.T) {
+func testAgentEgressProxyNetworkPolicyEnabled(t *testing.T, chart agentChart) {
 	setValues := map[string]string{
 		"hunterAgent.enabled":                    "true",
 		"hunterAgent.image.repository":           "example.com/hunter-agent",
@@ -344,7 +393,7 @@ func testAgentEgressProxyNetworkPolicyEnabled(t *testing.T) {
 		"remediationAgent.image.tag":             "1",
 		"agentEgressProxy.networkPolicy.enabled": "true",
 	}
-	output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
+	output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
 	require.NoError(t, err)
 
 	var policy networkingv1.NetworkPolicy
@@ -360,7 +409,7 @@ func testAgentEgressProxyNetworkPolicyEnabled(t *testing.T) {
 
 	require.Len(t, policy.Spec.Egress, 3, "DNS, the SonarQube pod rule, plus the broad 0.0.0.0/0 rule")
 	broad := findEgressRuleTo(policy.Spec.Egress, isBroadIPBlockRule)
-	sonarqube := findEgressRuleTo(policy.Spec.Egress, isSonarQubePodRule)
+	sonarqube := findEgressRuleTo(policy.Spec.Egress, isSonarQubePodRule(chart))
 
 	require.NotNil(t, broad, "expected a broad ipBlock egress rule")
 	assert.Equal(t, "0.0.0.0/0", broad.To[0].IPBlock.CIDR)
@@ -374,7 +423,7 @@ func testAgentEgressProxyNetworkPolicyEnabled(t *testing.T) {
 	assert.EqualValues(t, 9000, sonarqube.Ports[0].Port.IntVal)
 }
 
-func testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t *testing.T) {
+func testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t *testing.T, chart agentChart) {
 	setValues := map[string]string{
 		"hunterAgent.enabled":          "true",
 		"hunterAgent.image.repository": "example.com/hunter-agent",
@@ -387,13 +436,13 @@ func testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t *testing.T) {
 		"service.internalPort":                          "9001",
 		"service.externalPort":                          "9002",
 	}
-	output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
+	output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
 	require.NoError(t, err)
 
 	var policy networkingv1.NetworkPolicy
 	helm.UnmarshalK8SYaml(t, output, &policy)
 
-	sonarqube := findEgressRuleTo(policy.Spec.Egress, isSonarQubePodRule)
+	sonarqube := findEgressRuleTo(policy.Spec.Egress, isSonarQubePodRule(chart))
 	require.NotNil(t, sonarqube)
 	require.Len(t, sonarqube.Ports, 1)
 	assert.EqualValues(t, 9001, sonarqube.Ports[0].Port.IntVal, "tracks service.internalPort, not networkPolicy.egressPorts or service.externalPort")
@@ -403,39 +452,43 @@ func testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t *testing.T) {
 // overridable via hunterAgent.env/remediationAgent.env - D1/D2 require the runtime to have no
 // way to bypass the proxy or carve out a NO_PROXY exception.
 func TestAgentEgressProxyEnvVarsNotOverridable(t *testing.T) {
-	opts := &helm.Options{
-		Logger:      logger.Discard,
-		ValuesFiles: []string{egressProxyChart.valuesDir + "/agent-runtimes-enabled.yaml"},
-		SetValues: map[string]string{
-			"hunterAgent.env[0].name":  "NO_PROXY",
-			"hunterAgent.env[0].value": "attacker.example.com",
-			"hunterAgent.env[1].name":  "HTTP_PROXY",
-			"hunterAgent.env[1].value": "http://bypass.example.com:8080",
-		},
-	}
-	output, err := helm.RenderTemplateE(t, opts, egressProxyChart.path, egressProxyChart.release, []string{"templates/agent-runtime.yaml"})
-	require.NoError(t, err)
+	for _, chart := range egressProxyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			opts := &helm.Options{
+				Logger:      logger.Discard,
+				ValuesFiles: []string{chart.valuesDir + "/agent-runtimes-enabled.yaml"},
+				SetValues: map[string]string{
+					"hunterAgent.env[0].name":  "NO_PROXY",
+					"hunterAgent.env[0].value": "attacker.example.com",
+					"hunterAgent.env[1].name":  "HTTP_PROXY",
+					"hunterAgent.env[1].value": "http://bypass.example.com:8080",
+				},
+			}
+			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-runtime.yaml"})
+			require.NoError(t, err)
 
-	var deployments []appsv1.Deployment
-	for _, doc := range strings.Split(output, "\n---") {
-		if strings.TrimSpace(doc) == "" {
-			continue
-		}
-		var d appsv1.Deployment
-		helm.UnmarshalK8SYaml(t, doc, &d)
-		if strings.Contains(d.Labels["sonarqube.agent/family"], "hunter") {
-			deployments = append(deployments, d)
-		}
-	}
-	require.Len(t, deployments, 1)
-	env := deployments[0].Spec.Template.Spec.Containers[0].Env
+			var deployments []appsv1.Deployment
+			for _, doc := range strings.Split(output, "\n---") {
+				if strings.TrimSpace(doc) == "" {
+					continue
+				}
+				var d appsv1.Deployment
+				helm.UnmarshalK8SYaml(t, doc, &d)
+				if strings.Contains(d.Labels["sonarqube.agent/family"], "hunter") {
+					deployments = append(deployments, d)
+				}
+			}
+			require.Len(t, deployments, 1)
+			env := deployments[0].Spec.Template.Spec.Containers[0].Env
 
-	lastValueByName := map[string]string{}
-	for _, e := range env {
-		lastValueByName[e.Name] = e.Value
-	}
+			lastValueByName := map[string]string{}
+			for _, e := range env {
+				lastValueByName[e.Name] = e.Value
+			}
 
-	expectedProxyURL := "http://" + egressProxyChart.fullnamePrefix() + "-agent-egress-proxy:3128"
-	assert.Equal(t, expectedProxyURL, lastValueByName["HTTP_PROXY"], "attacker-supplied env must not win")
-	assert.Equal(t, "", lastValueByName["NO_PROXY"], "NO_PROXY must stay forced empty")
+			expectedProxyURL := "http://" + chart.fullnamePrefix() + "-agent-egress-proxy:3128"
+			assert.Equal(t, expectedProxyURL, lastValueByName["HTTP_PROXY"], "attacker-supplied env must not win")
+			assert.Equal(t, "", lastValueByName["NO_PROXY"], "NO_PROXY must stay forced empty")
+		})
+	}
 }

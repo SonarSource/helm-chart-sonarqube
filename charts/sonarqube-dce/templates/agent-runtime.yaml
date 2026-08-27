@@ -65,8 +65,9 @@ spec:
                  runtime reads SCRIPT_PATH (detection mode); the remediation runtime reads
                  REMEDIATION_SCRIPT_PATH plus REMEDIATION_RULE_INFO_ENDPOINT, which points at the
                  in-cluster orchestrator (hunter never calls the orchestrator for rule-info, so it
-                 gets no such var). User-provided env (e.g. ANTHROPIC_API_KEY) is appended last and
-                 overrides these if repeated. */}}
+                 gets no such var). User-provided env (e.g. ANTHROPIC_API_KEY) is appended next and
+                 overrides these if repeated - except the proxy vars below, which are appended
+                 last and always win: see that comment for why. */}}
           {{- $autoEnv := list }}
           {{- if eq $family "hunter" }}
           {{- with $cfg.scriptPath }}
@@ -80,7 +81,25 @@ spec:
           {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_RULE_INFO_ENDPOINT" "value" (printf "%s/remediation-agent/rule-info" (include "sonarqube.agentOrchestrator.url" $))) }}
           {{- end }}
           {{- $mergedEnv := concat $autoEnv ($cfg.env | default list) }}
-          {{- with $mergedEnv }}
+          {{- /* Proxy env vars are appended LAST, after $cfg.env, and are NOT part of the
+                 user-overridable merge above (unlike every other auto-generated var in this
+                 file) - a later env entry of the same name wins, so these always take effect
+                 even if hunterAgent.env/remediationAgent.env tries to set the same key. This is
+                 deliberate: all runtime egress must transit the Agent Egress Proxy with no
+                 exceptions, so these vars must not be overridable like the rest of $autoEnv.
+                 Both cases are set since not every HTTP client in these images honours only one
+                 casing. NO_PROXY/no_proxy are forced to "" (not omitted) so no value can carve
+                 out a bypass. */}}
+          {{- $proxyURL := include "sonarqube.agentEgressProxy.url" $ }}
+          {{- $finalEnv := concat $mergedEnv (list
+              (dict "name" "HTTP_PROXY" "value" $proxyURL)
+              (dict "name" "http_proxy" "value" $proxyURL)
+              (dict "name" "HTTPS_PROXY" "value" $proxyURL)
+              (dict "name" "https_proxy" "value" $proxyURL)
+              (dict "name" "NO_PROXY" "value" "")
+              (dict "name" "no_proxy" "value" "")
+          ) }}
+          {{- with $finalEnv }}
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}

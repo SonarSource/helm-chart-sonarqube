@@ -42,6 +42,6 @@ func (c agentChart) orchestratorURL() string {
 }
 
 var agentCharts = []agentChart{
-	{"sonarqube-dce", dceChartPath, dceReleaseName, "test-cases-values/sonarqube-dce", "templates/sonarqube-application.yaml", "-app-config", "applicationNodes.sonarProperties", false},
+	{"sonarqube-dce", dceChartPath, dceReleaseName, "test-cases-values/sonarqube-dce", "templates/sonarqube-application.yaml", "-app-config", "applicationNodes.sonarProperties", true},
 	{"sonarqube", chartPath, releaseName, "test-cases-values/sonarqube", "templates/sonarqube-sts.yaml", "-config", "sonarProperties", true},
 }
