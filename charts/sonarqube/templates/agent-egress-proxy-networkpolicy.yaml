@@ -32,7 +32,7 @@ spec:
         - podSelector:
             matchLabels: {{- include "sonarqube.selectorLabels" . | nindent 14 }}
       ports:
-        - port: {{ .Values.service.externalPort }}
+        - port: {{ .Values.service.internalPort }}
           protocol: TCP
     {{- /* NetworkPolicy is L3/L4-only and cannot match a destination FQDN, so this rule stays
            broad by necessity - the actual per-domain restriction is enforced entirely inside

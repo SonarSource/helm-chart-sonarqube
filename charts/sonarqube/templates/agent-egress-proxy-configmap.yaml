@@ -62,7 +62,6 @@ data:
     http_access allow allowed_domains
     http_access deny all
     {{- with .Values.agentEgressProxy.extraSquidConf }}
-
-    {{ . }}
+{{ . | indent 4 }}
     {{- end }}
 {{- end }}

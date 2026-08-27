@@ -317,7 +317,8 @@ func TestAgentEgressProxyNetworkPolicy(t *testing.T) {
 			// networkPolicy.egressPorts.
 			"agentEgressProxy.networkPolicy.enabled":        "true",
 			"agentEgressProxy.networkPolicy.egressPorts[0]": "8080",
-			"service.externalPort":                          "9001",
+			"service.internalPort":                          "9001",
+			"service.externalPort":                          "9002",
 		}
 		output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
 		require.NoError(t, err)
@@ -334,7 +335,7 @@ func TestAgentEgressProxyNetworkPolicy(t *testing.T) {
 		}
 		require.NotNil(t, sonarqube)
 		require.Len(t, sonarqube.Ports, 1)
-		assert.EqualValues(t, 9001, sonarqube.Ports[0].Port.IntVal, "tracks service.externalPort, not networkPolicy.egressPorts")
+		assert.EqualValues(t, 9001, sonarqube.Ports[0].Port.IntVal, "tracks service.internalPort, not networkPolicy.egressPorts or service.externalPort")
 	})
 }
 

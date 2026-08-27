@@ -1,4 +1,61 @@
 ---
+# Source: sonarqube/templates/agent-egress-proxy-networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-agent-egress-proxy
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: egress-proxy
+    app.kubernetes.io/component: agent-egress-proxy
+spec:
+  podSelector:
+    matchLabels:
+      app: sonarqube-agent-egress-proxy
+      release: remediation-agent-values.yaml
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              sonarqube.agent/component: runtime
+              release: remediation-agent-values.yaml
+      ports:
+        - port: 3128
+          protocol: TCP
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sonarqube
+              release: remediation-agent-values.yaml
+      ports:
+        - port: 9000
+          protocol: TCP
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - port: 80
+          protocol: TCP
+        - port: 443
+          protocol: TCP
+---
 # Source: sonarqube/templates/agent-networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -290,7 +347,7 @@ data:
 
     # No TLS interception (SSL-bump): CONNECT tunnels are passed through as-is, so dstdomain below
     # matches the CONNECT request's target hostname, not a decrypted SNI/certificate.
-    acl allowed_domains dstdomain 
+    acl allowed_domains dstdomain .anthropic.com 
 
     # SonarQube's own rule-lookup and agentic-analysis endpoints must always be reachable, no
     # matter what allowedDomains contains - hardcoded here (not sourced from Values) so it can't
@@ -976,7 +1033,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: e83a8d39f56f05a73b5bea8f2b9fb861071d6232ba1390b8e961ba56bb6f1e11
+        checksum/config: 920fc335f1b4e402f9f3efbc975ec45dc5725a3f8557ef24bce83b5c1236fda3
       labels:
         app: sonarqube-agent-egress-proxy
         release: remediation-agent-values.yaml

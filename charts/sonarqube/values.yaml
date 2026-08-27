@@ -1115,7 +1115,8 @@ agentEgressProxy:
     pullSecrets: []
   port: 3128
   # D7: default 2 so a single pod eviction/restart/drain doesn't cut off every runtime's egress.
-  # Override to 1 for local/dev/kind if the single point of failure is acceptable there.
+  # Override to 1 for local/dev/kind if the single point of failure is acceptable there - also set
+  # podDisruptionBudget: null then, or minAvailable: 1 will block every node drain.
   replicaCount: 2
   nodeSelector: {}
   tolerations: []

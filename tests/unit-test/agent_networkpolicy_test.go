@@ -163,13 +163,14 @@ func TestAgentRuntimeNetworkPolicyEgressProxyMakesEgressAllowInert(t *testing.T)
 			continue
 		}
 		t.Run(chart.name, func(t *testing.T) {
+			valuesKey := map[string]string{"hunter": "hunterAgent", "remediation": "remediationAgent"}
 			for _, family := range []string{"hunter", "remediation"} {
 				t.Run(family, func(t *testing.T) {
 					base := runtimeNetworkPolicy(t, chart, family, nil)
 					require.Len(t, base.Spec.Egress, 2, "DNS and the proxy only")
 
 					withEgressAllow := runtimeNetworkPolicy(t, chart, family, map[string]string{
-						"hunterAgent.networkPolicy.egressAllow[0].cidr": "0.0.0.0/0",
+						valuesKey[family] + ".networkPolicy.egressAllow[0].cidr": "0.0.0.0/0",
 					})
 					assert.Equal(t, base.Spec.Egress, withEgressAllow.Spec.Egress, "egressAllow must be fully inert")
 				})
