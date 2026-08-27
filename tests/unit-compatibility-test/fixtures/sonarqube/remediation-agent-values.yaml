@@ -43,22 +43,10 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app: sonarqube-agent-orchestrator
+              app: sonarqube-agent-egress-proxy
               release: remediation-agent-values.yaml
       ports:
-        - port: 8080
-          protocol: TCP
-    - to:
-        - ipBlock:
-            cidr: 160.79.104.0/23
-      ports:
-        - port: 443
-          protocol: TCP
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-      ports:
-        - port: 443
+        - port: 3128
           protocol: TCP
 ---
 # Source: sonarqube/templates/networkpolicy.yaml
@@ -119,6 +107,25 @@ spec:
             cidr: 0.0.0.0/0
         - ipBlock:
             cidr: "::/0"
+---
+# Source: sonarqube/templates/agent-egress-proxy-poddisruptionbudget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-agent-egress-proxy
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: egress-proxy
+    app.kubernetes.io/component: agent-egress-proxy
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: sonarqube-agent-egress-proxy
+      release: remediation-agent-values.yaml
 ---
 # Source: sonarqube/templates/agent-serviceaccount.yaml
 apiVersion: v1
@@ -244,6 +251,64 @@ type: Opaque
 data:
   VORTEX_ANALYSIS_SONARQUBE_TOKEN: "c3F1X2V4YW1wbGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
 ---
+# Source: sonarqube/templates/agent-egress-proxy-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-agent-egress-proxy
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: egress-proxy
+    app.kubernetes.io/component: agent-egress-proxy
+data:
+  squid.conf: |-
+    http_port 3128
+
+    # Pass-through forward proxy, not a cache - nothing is stored or re-served.
+    cache deny all
+    via off
+    forwarded_for delete
+
+    access_log stdio:/dev/stdout squid
+    cache_log stdio:/dev/stderr
+
+    # Must be set explicitly, or Squid FATALs on startup instead of falling back to a default.
+    cache_effective_user proxy proxy
+
+    request_body_max_size 10 MB
+
+    acl SSL_ports port 443
+    acl Safe_ports port 80
+    acl Safe_ports port 443
+    # SonarQube's own port, so the hardcoded allow rule below can ever match - not user-editable,
+    # unlike extraSafePorts above.
+    acl Safe_ports port 9000
+    acl CONNECT method CONNECT
+
+    # No TLS interception (SSL-bump): CONNECT tunnels are passed through as-is, so dstdomain below
+    # matches the CONNECT request's target hostname, not a decrypted SNI/certificate.
+    acl allowed_domains dstdomain 
+
+    # SonarQube's own rule-lookup and agentic-analysis endpoints must always be reachable, no
+    # matter what allowedDomains contains - hardcoded here (not sourced from Values) so it can't
+    # be edited away. The path match is anchored to the SonarQube service itself via
+    # sonarqube_host; the regexes are suffix-based (not tied to webcontext/API-version prefixes)
+    # so they keep matching regardless of how those are configured. Fully qualified (not the bare
+    # short name) since Squid's DNS resolver doesn't honour /etc/resolv.conf's search list.
+    # urlpath_regex matches the path *and* query string, so both endpoints must tolerate a
+    # trailing "?..." - real calls to rules/show carry a "?key=..." query parameter.
+    acl sonarqube_host dstdomain remediation-agent-values.yaml-sonarqube.default.svc.cluster.local
+    acl sonarqube_agentic_endpoints urlpath_regex /rules/show(\?|$) /agentic-analysis(/|\?|$)
+
+    http_access deny !Safe_ports
+    http_access deny CONNECT !SSL_ports
+    http_access allow sonarqube_host sonarqube_agentic_endpoints
+    http_access allow allowed_domains
+    http_access deny all
+---
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -256,8 +321,8 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
-    sonar.hunteragent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-agent-orchestrator:8080
-    sonar.remediationagent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-agent-orchestrator:8080
+    sonar.hunteragent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
+    sonar.remediationagent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
     sonar.vortex.analysis.url=http://remediation-agent-values.yaml-sonarqube-vortex:8080
 ---
 # Source: sonarqube/templates/gvisor.yaml
@@ -708,6 +773,29 @@ subjects:
     name: remediation-agent-values.yaml-sonarqube-gvisor-installer
     namespace: default
 ---
+# Source: sonarqube/templates/agent-egress-proxy-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-agent-egress-proxy
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: egress-proxy
+    app.kubernetes.io/component: agent-egress-proxy
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3128
+      targetPort: http-proxy
+      protocol: TCP
+      name: http-proxy
+  selector:
+    app: sonarqube-agent-egress-proxy
+    release: remediation-agent-values.yaml
+---
 # Source: sonarqube/templates/agent-orchestrator-service.yaml
 apiVersion: v1
 kind: Service
@@ -867,6 +955,87 @@ spec:
             name: remediation-agent-values.yaml-sonarqube-gvisor-installer
             defaultMode: 0755
 ---
+# Source: sonarqube/templates/agent-egress-proxy.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-agent-egress-proxy
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: egress-proxy
+    app.kubernetes.io/component: agent-egress-proxy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sonarqube-agent-egress-proxy
+      release: remediation-agent-values.yaml
+  template:
+    metadata:
+      annotations:
+        checksum/config: e83a8d39f56f05a73b5bea8f2b9fb861071d6232ba1390b8e961ba56bb6f1e11
+      labels:
+        app: sonarqube-agent-egress-proxy
+        release: remediation-agent-values.yaml
+        sonarqube.agent/component: egress-proxy
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: agent-egress-proxy
+          image: ubuntu/squid:6.6-24.04_edge
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 13
+            runAsNonRoot: true
+            runAsUser: 13
+            seccompProfile:
+              type: RuntimeDefault
+          command: ["squid", "-N", "-f", "/etc/squid/squid.conf"]
+          ports:
+            - name: http-proxy
+              containerPort: 3128
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: http-proxy
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: http-proxy
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: squid-conf
+              mountPath: /etc/squid/squid.conf
+              subPath: squid.conf
+              readOnly: true
+            - name: squid-spool
+              mountPath: /var/spool/squid
+            - name: squid-run
+              mountPath: /var/run
+            - name: tmp
+              mountPath: /tmp
+      serviceAccountName: default
+      volumes:
+        - name: squid-conf
+          configMap:
+            name: remediation-agent-values.yaml-sonarqube-agent-egress-proxy
+        - name: squid-spool
+          emptyDir: {}
+        - name: squid-run
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
 # Source: sonarqube/templates/agent-orchestrator.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -914,7 +1083,7 @@ spec:
             - sh
             - -c
             - |
-              until curl -sf "http://remediation-agent-values.yaml-sonarqube:9000/api/system/status" | grep -q '"status":"UP"'; do
+              until curl -sf "http://remediation-agent-values.yaml-sonarqube.default.svc.cluster.local:9000/api/system/status" | grep -q '"status":"UP"'; do
                 echo "Waiting for SonarQube to be UP..."; sleep 10;
               done
       containers:
@@ -959,14 +1128,14 @@ spec:
             - name: AGENTIC_STORAGE_PATH_STYLE
               value: "false"
             - name: AGENTIC_SONARQUBE_URL
-              value: "http://remediation-agent-values.yaml-sonarqube:9000"
+              value: "http://remediation-agent-values.yaml-sonarqube.default.svc.cluster.local:9000"
             - name: AGENTIC_SONARQUBE_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: remediation-agent-values.yaml-sonarqube-agent-orchestrator
                   key: AGENTIC_SONARQUBE_TOKEN
             - name: AGENTIC_REMEDIATION_RUNTIME_PUSH_URL
-              value: "http://remediation-agent-values.yaml-sonarqube-agent-runtime-remediati:8090/jobs"
+              value: "http://remediation-agent-values.yaml-sonarqube-agent-runtime-remediati.default.svc.cluster.local:8090/jobs"
           resources:
             limits:
               cpu: "1"
@@ -1047,7 +1216,19 @@ spec:
             - name: REMEDIATION_SCRIPT_PATH
               value: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
             - name: REMEDIATION_RULE_INFO_ENDPOINT
-              value: http://remediation-agent-values.yaml-sonarqube-agent-orchestrator:8080/remediation-agent/rule-info
+              value: http://remediation-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080/remediation-agent/rule-info
+            - name: HTTP_PROXY
+              value: http://remediation-agent-values.yaml-sonarqube-agent-egress-proxy:3128
+            - name: http_proxy
+              value: http://remediation-agent-values.yaml-sonarqube-agent-egress-proxy:3128
+            - name: HTTPS_PROXY
+              value: http://remediation-agent-values.yaml-sonarqube-agent-egress-proxy:3128
+            - name: https_proxy
+              value: http://remediation-agent-values.yaml-sonarqube-agent-egress-proxy:3128
+            - name: NO_PROXY
+              value: ""
+            - name: no_proxy
+              value: ""
           resources:
             limits:
               cpu: "4"
@@ -1180,7 +1361,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: c8a0c14c414d145d1d3f6f3d88fa80f8ff8a3c00307e349af0e836bae9318466
+        checksum/config: 831424f9e88ce39682b108572a2848c48eff190297afa372428f7a88d7ddf116
         checksum/init-sysctl: ce666c81517d47aab0e5b3605c523b23b36436380d7cda8e9170fc39bade37b9
         checksum/plugins: 752c942ccadba6461660054653c98008a92a2c37781426fc73f7fa7f2f27ebd0
         checksum/secret: d24ef73025adb7f76efd8cabea0e8fafa9a18ba4696c2d6c30ebc95b264cf641
@@ -1284,9 +1465,9 @@ spec:
             - name: SONAR_VORTEX_ANALYSIS_URL
               value: "http://remediation-agent-values.yaml-sonarqube-vortex:8080"
             - name: SONAR_HUNTERAGENT_ORCHESTRATOR_URL
-              value: "http://remediation-agent-values.yaml-sonarqube-agent-orchestrator:8080"
+              value: "http://remediation-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080"
             - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
-              value: "http://remediation-agent-values.yaml-sonarqube-agent-orchestrator:8080"
+              value: "http://remediation-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080"
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS
