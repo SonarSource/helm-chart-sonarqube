@@ -1,0 +1,40 @@
+community:
+  enabled: true
+monitoringPasscode: test-passcode
+image:
+  pullSecret: app-node-secret
+  pullSecrets:
+    - name: app-node-secret-list
+networkPolicy:
+  enabled: true
+# Vortex enabled, with no agentOrchestrator/hunterAgent/remediationAgent configured.
+vortex:
+  enabled: true
+  image:
+    repository: example.com/vortex
+    tag: "7593"
+    pullSecret: vortex-secret
+    pullSecrets:
+      - name: vortex-secret-list
+  sonarqubeToken:
+    token: "squ_example000000000000000000000000000000"
+  storage:
+    bucket: agent-artifacts
+    region: eu-west-1
+  env:
+    - name: MY_VAR
+      value: my-value
+  nodeSelector:
+    vortex: "true"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: vortex
+                operator: In
+                values: ["true"]
+  tolerations:
+    - key: vortex
+      operator: Exists
+      effect: NoSchedule
