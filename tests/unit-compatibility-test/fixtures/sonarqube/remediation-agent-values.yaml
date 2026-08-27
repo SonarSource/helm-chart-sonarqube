@@ -328,6 +328,10 @@ data:
 
     # Pass-through forward proxy, not a cache - nothing is stored or re-served.
     cache deny all
+    # Squid's default cache_mem is 256 MB even with caching denied above - the pool still holds
+    # in-transit objects - so pin it well under agentEgressProxy.resources' memory limit or the
+    # container gets OOMKilled under concurrent agent traffic.
+    cache_mem 16 MB
     via off
     forwarded_for delete
 
@@ -1044,7 +1048,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 01ce6848513cff990d472fd52328fe7fde144422e07a2f3391dcb837e2ba2c06
+        checksum/config: 41370ac319fc03fea216b066655218fa6b7ed83cdc3b10278ab35ef52c1ac110
       labels:
         app: sonarqube-agent-egress-proxy
         release: remediation-agent-values.yaml
