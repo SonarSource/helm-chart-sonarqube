@@ -1136,8 +1136,9 @@ agentEgressProxy:
   podLabels: {}
   annotations: {}
   # D7 makes this a hard dependency of every runtime's data path (unlike hunterAgent's own
-  # `resources: {}` default) - Squid caching is disabled (no cache_dir), so memory/storage
-  # needs stay small regardless of traffic volume.
+  # `resources: {}` default). Squid caching is disabled (no cache_dir), but cache_mem still
+  # defaults to 256 MB for in-transit objects regardless - the ConfigMap pins it to 16 MB so
+  # it fits comfortably under this limit; raise both together if you bump requestBodyMaxSizeMb.
   resources:
     requests:
       cpu: 50m

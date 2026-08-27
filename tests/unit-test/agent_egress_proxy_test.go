@@ -379,9 +379,9 @@ func testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t *testing.T) {
 		"hunterAgent.enabled":          "true",
 		"hunterAgent.image.repository": "example.com/hunter-agent",
 		"hunterAgent.image.tag":        "1",
-		// networkPolicy left disabled - the whole NetworkPolicy resource doesn't render then,
-		// so this instead pins the port to a non-default value to prove it isn't read from
-		// networkPolicy.egressPorts.
+		// networkPolicy is enabled so the resource renders; egressPorts and service.externalPort
+		// are pinned to non-default values to prove the SonarQube rule's port comes from
+		// service.internalPort and is not gated behind networkPolicy.egressPorts.
 		"agentEgressProxy.networkPolicy.enabled":        "true",
 		"agentEgressProxy.networkPolicy.egressPorts[0]": "8080",
 		"service.internalPort":                          "9001",

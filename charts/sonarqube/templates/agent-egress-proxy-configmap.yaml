@@ -16,6 +16,10 @@ data:
 
     # Pass-through forward proxy, not a cache - nothing is stored or re-served.
     cache deny all
+    # Squid's default cache_mem is 256 MB even with caching denied above - the pool still holds
+    # in-transit objects - so pin it well under agentEgressProxy.resources' memory limit or the
+    # container gets OOMKilled under concurrent agent traffic.
+    cache_mem 16 MB
     via off
     forwarded_for delete
 
