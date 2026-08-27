@@ -185,6 +185,49 @@ func TestAgentEgressProxyConfigMapContent(t *testing.T) {
 	assert.Contains(t, conf, "request_body_max_size 42 MB")
 }
 
+// SonarQube's /rules/show and /agentic-analysis endpoints must always be reachable through the
+// proxy, hardcoded independently of allowedDomains - there is no values key that can remove this
+// allow rule, unlike everything in allowedDomains.
+func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
+	t.Run("present regardless of allowedDomains", func(t *testing.T) {
+		setValues := map[string]string{
+			"hunterAgent.enabled":          "true",
+			"hunterAgent.image.repository": "example.com/hunter-agent",
+			"hunterAgent.image.tag":        "1",
+			// allowedDomains left empty on purpose: the SonarQube allow rule must not depend on it.
+		}
+		output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
+		require.NoError(t, err)
+
+		var cm corev1.ConfigMap
+		helm.UnmarshalK8SYaml(t, output, &cm)
+		conf := cm.Data["squid.conf"]
+
+		assert.Contains(t, conf, "acl sonarqube_host dstdomain "+egressProxyChart.fullnamePrefix())
+		assert.Contains(t, conf, "acl sonarqube_agentic_endpoints urlpath_regex /rules/show$ /agentic-analysis(/|$)")
+		assert.Contains(t, conf, "http_access allow sonarqube_host sonarqube_agentic_endpoints")
+		assert.Contains(t, conf, "acl Safe_ports port 9000", "SonarQube's default externalPort must be reachable too")
+	})
+
+	t.Run("dstdomain tracks the fullname prefix and service.externalPort overrides", func(t *testing.T) {
+		setValues := map[string]string{
+			"hunterAgent.enabled":          "true",
+			"hunterAgent.image.repository": "example.com/hunter-agent",
+			"hunterAgent.image.tag":        "1",
+			"service.externalPort":         "9001",
+		}
+		output, err := renderAgentEgressProxyTemplates(t, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
+		require.NoError(t, err)
+
+		var cm corev1.ConfigMap
+		helm.UnmarshalK8SYaml(t, output, &cm)
+		conf := cm.Data["squid.conf"]
+
+		assert.Contains(t, conf, "acl sonarqube_host dstdomain "+egressProxyChart.fullnamePrefix())
+		assert.Contains(t, conf, "acl Safe_ports port 9001")
+	})
+}
+
 func TestAgentEgressProxyPodDisruptionBudget(t *testing.T) {
 	setValues := map[string]string{
 		"hunterAgent.enabled":                               "true",

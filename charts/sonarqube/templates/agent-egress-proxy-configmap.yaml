@@ -36,14 +36,26 @@ data:
     {{- range .Values.agentEgressProxy.extraSafePorts }}
     acl Safe_ports port {{ . }}
     {{- end }}
+    # SonarQube's own port, so the hardcoded allow rule below can ever match - not user-editable,
+    # unlike extraSafePorts above.
+    acl Safe_ports port {{ .Values.service.externalPort }}
     acl CONNECT method CONNECT
 
     # No TLS interception (SSL-bump): CONNECT tunnels are passed through as-is, so dstdomain below
     # matches the CONNECT request's target hostname, not a decrypted SNI/certificate.
     acl allowed_domains dstdomain {{ range .Values.agentEgressProxy.allowedDomains }}{{ . }} {{ end }}
 
+    # SonarQube's own rule-lookup and agentic-analysis endpoints must always be reachable, no
+    # matter what allowedDomains contains - hardcoded here (not sourced from Values) so it can't
+    # be edited away. The path match is anchored to the SonarQube service itself via
+    # sonarqube_host; the regexes are suffix-based (not tied to webcontext/API-version prefixes)
+    # so they keep matching regardless of how those are configured.
+    acl sonarqube_host dstdomain {{ include "sonarqube.fullname" . }}
+    acl sonarqube_agentic_endpoints urlpath_regex /rules/show$ /agentic-analysis(/|$)
+
     http_access deny !Safe_ports
     http_access deny CONNECT !SSL_ports
+    http_access allow sonarqube_host sonarqube_agentic_endpoints
     http_access allow allowed_domains
     http_access deny all
     {{- with .Values.agentEgressProxy.extraSquidConf }}
