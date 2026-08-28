@@ -406,6 +406,12 @@ data:
     # in-transit objects - so pin it well under agentEgressProxy.resources' memory limit or the
     # container gets OOMKilled under concurrent agent traffic.
     cache_mem 16 MB
+    # Squid sizes its per-descriptor tables from RLIMIT_NOFILE at startup, before serving anything.
+    # Container runtimes routinely hand out 1048576 descriptors, which makes that reservation ~170
+    # MB - over agentEgressProxy.resources' memory limit, so the container is OOMKilled into a
+    # CrashLoop on nodes with a generous ulimit and starts fine on nodes without one. Capping it
+    # here makes the footprint a property of this chart rather than of the node.
+    max_filedescriptors 4096
     via off
     forwarded_for delete
 
@@ -1241,7 +1247,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: e2436e121885cb9cfc4ec1607051f2d7310cf41229393bfe88c59029a605ddfc
+        checksum/config: 0c5c87d23e91671242ba8dc2fb26ccbef8cf51df45d9736ccc5d35fae4c36f53
       labels:
         app: sonarqube-dce-agent-egress-proxy
         release: remediation-agent-values.yaml
