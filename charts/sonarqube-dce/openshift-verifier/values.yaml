@@ -38,3 +38,16 @@ jdbcOverwrite:
 # host-mutating installer is not meant for managed platforms like OpenShift — so disable it here.
 gvisor:
   enabled: false
+
+# ci/ci-values.yaml also flips these on (replicaCount 0, fake images) purely to exercise the gVisor
+# RuntimeClass/installer above, which is disabled on OpenShift anyway. Left enabled, hunterAgent
+# still pulls in the Agent Egress Proxy (sonarqube.agentEgressProxy.required checks .enabled, not
+# replicaCount): its Squid pods pin containerSecurityContext.runAsUser: 13, which the namespace's
+# restricted-v2 SCC rejects (must be in the namespace's allocated UID range) — every replica fails
+# ReplicaSet FailedCreate, and helm install --wait times out after the full 20m. Disabling here
+# avoids rendering the proxy at all.
+hunterAgent:
+  enabled: false
+
+agentOrchestrator:
+  enabled: false
