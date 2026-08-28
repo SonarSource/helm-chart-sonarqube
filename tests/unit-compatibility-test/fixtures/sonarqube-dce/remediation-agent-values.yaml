@@ -425,6 +425,9 @@ data:
     acl Safe_ports port 443
     # SonarQube's own port, so the hardcoded allow rule below can ever match.
     acl Safe_ports port 9000
+    # The chart itself points the remediation runtime at the orchestrator
+    # (REMEDIATION_RULE_INFO_ENDPOINT), so it must always be reachable, like sonarqube_host.
+    acl Safe_ports port 8080
     # To reach an endpoint on another port, append to these ACLs from extraSquidConf - Squid
     # resolves http_access rules to the named ACL object, so entries added there still apply to
     # the `deny !Safe_ports` rule below despite being spliced in after it. Whatever port you add
@@ -447,10 +450,16 @@ data:
     # trailing "?..." - real calls to rules/show carry a "?key=..." query parameter.
     acl sonarqube_host dstdomain remediation-agent-values.yaml-sonarqube-dce.default.svc.cluster.local
     acl sonarqube_agentic_endpoints urlpath_regex /rules/show(\?|$) /agentic-analysis(/|\?|$)
+    # The orchestrator, for the same reason as sonarqube_host above - scoped to the one path the
+    # remediation runtime actually calls (REMEDIATION_RULE_INFO_ENDPOINT), not the whole
+    # orchestrator API surface, the same way sonarqube_agentic_endpoints scopes sonarqube_host.
+    acl orchestrator_host dstdomain remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator.default.svc.cluster.local
+    acl orchestrator_agentic_endpoints urlpath_regex /remediation-agent/rule-info(\?|$)
 
     http_access deny !Safe_ports
     http_access deny CONNECT !SSL_ports
     http_access allow sonarqube_host sonarqube_agentic_endpoints
+    http_access allow orchestrator_host orchestrator_agentic_endpoints
     http_access deny all
 ---
 # Source: sonarqube-dce/templates/config.yaml
@@ -1230,7 +1239,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: dab33b2d9768a9397eb26b984ea7078c497ad5ec5a52a36cf4b7317e4f2ed84e
+        checksum/config: 7c30181748109bbc781db16ce2b1736694034010486fdc275e7127c38229fc78
       labels:
         app: sonarqube-dce-agent-egress-proxy
         release: remediation-agent-values.yaml
