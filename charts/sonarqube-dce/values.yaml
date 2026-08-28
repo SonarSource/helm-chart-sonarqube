@@ -1271,6 +1271,12 @@ agentEgressProxy:
       cpu: 250m
       memory: 128Mi
       ephemeral-storage: 128Mi
+  # Squid's startup memory is driven by RLIMIT_NOFILE, not by traffic: it reserves per-descriptor
+  # tables up front, so the 1048576-descriptor limit most container runtimes hand out costs ~170 MB
+  # and the pod is OOMKilled against the limit above before it serves a request. Pinning it makes
+  # the footprint independent of the node. Squid uses two descriptors per proxied request, so 4096
+  # allows roughly 2000 concurrent ones; raise this and resources.limits.memory together.
+  maxFiledescriptors: 4096
   securityContext: {}
   containerSecurityContext:
     allowPrivilegeEscalation: false
