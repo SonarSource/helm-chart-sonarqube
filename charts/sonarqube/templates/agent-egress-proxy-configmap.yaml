@@ -64,14 +64,16 @@ data:
     # so they keep matching regardless of how those are configured. Fully qualified (not the bare
     # short name) since Squid's DNS resolver doesn't honour /etc/resolv.conf's search list.
     # urlpath_regex matches the path *and* query string, so both endpoints must tolerate a
-    # trailing "?..." - real calls to rules/show carry a "?key=..." query parameter.
+    # trailing "?..." - real calls to rules/show carry a "?key=..." query parameter. Anchored
+    # with ^ because of that same query-string matching: an unanchored pattern would match
+    # `/anything?x=/rules/show` and reopen the whole API surface.
     acl sonarqube_host dstdomain {{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.fullname" .) "ctx" .) }}
-    acl sonarqube_agentic_endpoints urlpath_regex /rules/show(\?|$) /agentic-analysis(/|\?|$)
+    acl sonarqube_agentic_endpoints urlpath_regex ^/rules/show(\?|$) ^/agentic-analysis(/|\?|$)
     # The orchestrator, for the same reason as sonarqube_host above - scoped to the one path the
     # remediation runtime actually calls (REMEDIATION_RULE_INFO_ENDPOINT), not the whole
     # orchestrator API surface, the same way sonarqube_agentic_endpoints scopes sonarqube_host.
     acl orchestrator_host dstdomain {{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.agentOrchestrator.fullname" .) "ctx" .) }}
-    acl orchestrator_agentic_endpoints urlpath_regex /remediation-agent/rule-info(\?|$)
+    acl orchestrator_agentic_endpoints urlpath_regex ^/remediation-agent/rule-info(\?|$)
 
     http_access deny !Safe_ports
     http_access deny CONNECT !SSL_ports

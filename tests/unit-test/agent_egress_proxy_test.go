@@ -287,9 +287,11 @@ func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 				// Fully qualified, not the bare short name - Squid's own DNS resolver doesn't honour
 				// /etc/resolv.conf's search list, so a bare Service name can never resolve for it.
 				assert.Contains(t, conf, "acl sonarqube_host dstdomain "+chart.fullnamePrefix()+".default.svc.cluster.local")
-				assert.Contains(t, conf, "acl sonarqube_agentic_endpoints urlpath_regex /rules/show(\\?|$) /agentic-analysis(/|\\?|$)")
+				assert.Contains(t, conf, "acl sonarqube_agentic_endpoints urlpath_regex ^/rules/show(\\?|$) ^/agentic-analysis(/|\\?|$)")
 				assert.Contains(t, conf, "http_access allow sonarqube_host sonarqube_agentic_endpoints")
 				assert.Contains(t, conf, "acl Safe_ports port 9000", "SonarQube's default externalPort must be reachable too")
+				assert.NotContains(t, conf, "urlpath_regex /rules/show",
+					"the regex must be anchored with ^, or a query string like ?x=/rules/show on any path would bypass the path scoping")
 			})
 
 			t.Run("dstdomain tracks the fullname prefix and service.externalPort overrides", func(t *testing.T) {
@@ -335,9 +337,11 @@ func TestAgentEgressProxyAlwaysAllowsOrchestrator(t *testing.T) {
 			conf := cm.Data["squid.conf"]
 
 			assert.Contains(t, conf, "acl orchestrator_host dstdomain "+chart.fullnamePrefix()+"-agent-orchestrator.default.svc.cluster.local")
-			assert.Contains(t, conf, "acl orchestrator_agentic_endpoints urlpath_regex /remediation-agent/rule-info(\\?|$)")
+			assert.Contains(t, conf, "acl orchestrator_agentic_endpoints urlpath_regex ^/remediation-agent/rule-info(\\?|$)")
 			assert.Contains(t, conf, "http_access allow orchestrator_host orchestrator_agentic_endpoints")
 			assert.Contains(t, conf, "acl Safe_ports port 8080", "the orchestrator's default port must be reachable too")
+			assert.NotContains(t, conf, "urlpath_regex /remediation-agent/rule-info",
+				"the regex must be anchored with ^, or a query string like ?x=/remediation-agent/rule-info on any orchestrator path would bypass the path scoping")
 		})
 	}
 }
