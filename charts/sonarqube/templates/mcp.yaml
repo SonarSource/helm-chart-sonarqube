@@ -20,6 +20,9 @@ spec:
         app: {{ include "sonarqube.name" . }}-mcp
         release: {{ .Release.Name }}
     spec:
+      {{- with (fromYaml (include "sonarqube.mcp.securityContext" .)) }}
+      securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- if or .Values.image.pullSecrets .Values.image.pullSecret .Values.mcp.image.pullSecrets }}
       imagePullSecrets:
         {{- if .Values.image.pullSecret }}
@@ -46,6 +49,9 @@ spec:
               until curl -sf "http://{{ include "sonarqube.fullname" . }}:{{ .Values.service.internalPort }}{{ include "sonarqube.webcontext" . }}api/system/status" | grep -q '"status":"UP"'; do
                 echo "Waiting for SonarQube to be UP..."; sleep 10;
               done
+        {{- with .Values.mcp.initContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       containers:
         - name: mcp
           image: {{ printf "%s:%s" .Values.mcp.image.repository (default "latest" .Values.mcp.image.tag) }}
@@ -56,6 +62,11 @@ spec:
               protocol: TCP
           env:
             - name: STORAGE_PATH
+              value: /data
+            # HOME is set so SonarLint (SLCORE) resolves its user home under the
+            # writable /data volume instead of "/", which is not writable for the
+            # non-root MCP user. Overridable via mcp.env below.
+            - name: HOME
               value: /data
             - name: SONARQUBE_URL
               value: {{ printf "http://%s:%d%s" (include "sonarqube.fullname" .) (.Values.service.internalPort | int) (trimSuffix "/" (include "sonarqube.webcontext" .)) }}
@@ -88,7 +99,7 @@ spec:
             periodSeconds: {{ .Values.mcp.livenessProbe.periodSeconds }}
             failureThreshold: {{ .Values.mcp.livenessProbe.failureThreshold }}
             timeoutSeconds: {{ .Values.mcp.livenessProbe.timeoutSeconds }}
-          {{- with .Values.mcp.containerSecurityContext }}
+          {{- with (fromYaml (include "sonarqube.mcp.containerSecurityContext" .)) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- with .Values.mcp.resources }}

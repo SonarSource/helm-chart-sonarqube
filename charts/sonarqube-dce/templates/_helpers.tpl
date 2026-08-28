@@ -526,6 +526,28 @@ Remove incompatible user/group values that do not work in Openshift out of the b
 {{- end -}}
 
 {{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.mcp.securityContext" -}}
+{{- $adaptedMcpSecurityContext := .Values.mcp.podSecurityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedMcpSecurityContext = omit $adaptedMcpSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedMcpSecurityContext -}}
+{{- end -}}
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.mcp.containerSecurityContext" -}}
+{{- $adaptedMcpContainerSecurityContext := .Values.mcp.containerSecurityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedMcpContainerSecurityContext = omit $adaptedMcpContainerSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedMcpContainerSecurityContext -}}
+{{- end -}}
+
+{{/*
   generate caCerts volume
 */}}
 {{- define "sonarqube.volumes.caCerts" -}}
