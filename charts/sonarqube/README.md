@@ -743,7 +743,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `sonarqubeFolder`              | (DEPRECATED) Directory name of SonarQube, Due to 1-1 mapping between helm version and docker version, there is no need for configuration | `/opt/sonarqube` |
 | `sonarProperties`              | Custom `sonar.properties` key-value pairs (e.g., "sonarProperties.sonar.log.level=DEBUG")                                       | `None`           |
 | `sonarSecretProperties`        | Additional `sonar.properties` key-value pairs to load from a secret                                                                      | `None`           |
-| `sonarSecretKey`               | Name of existing secret used for settings encryption                                                                                     | `None`           |
+| `sonarSecretKey`               | Name of existing secret used for settings encryption. When `agentOrchestrator.enabled`, this secret is also mounted into the orchestrator, with its path exposed via the `AGENTIC_SECRET_KEY_PATH` env var | `None`           |
 | `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes                                                                             | `None`           |
 | `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                                                                    | `None`           |
 | `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                                                                | `None`           |
