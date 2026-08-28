@@ -1341,7 +1341,9 @@ agentEgressProxy:
 # gVisor (runsc) sandboxing for the agent runtimes. Renders whenever gvisor.enabled is true,
 # independent of whether any agent runtime is enabled. See README ("gVisor sandboxing").
 gvisor:
-  enabled: true
+  # Off by default: a privileged, hostPID installer DaemonSet plus a cluster-scoped RuntimeClass
+  # are a lot to mutate on every node for an install that may not even run agent runtimes.
+  enabled: false
   # Name of the RuntimeClass created + referenced by runtimes. RuntimeClass is cluster-scoped:
   # any two installs sharing this value will collide (the second install fails, RuntimeClass owned
   # by the first release) — give each a distinct runtimeClassName. That covers multiple
@@ -1354,7 +1356,7 @@ gvisor:
   nodeSelector:
     gvisor.enabled: "true"
   installer:
-    enabled: true                   # deploy the privileged installer DaemonSet (needs gvisor.enabled)
+    enabled: false                  # deploy the privileged installer DaemonSet (needs gvisor.enabled)
     image:
       repository: debian
       tag: stable-slim

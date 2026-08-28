@@ -67,75 +67,39 @@ func TestGvisorRuntimeClass(t *testing.T) {
 	}
 }
 
-// gvisor.enabled/installer.enabled default to true and take effect regardless of whether any
-// agent runtime is enabled — an install with neither hunterAgent nor remediationAgent enabled
-// must still render the RuntimeClass and installer resources.
-func TestGvisorRendersByDefaultRegardlessOfAgents(t *testing.T) {
+// gvisor.enabled/installer.enabled default to false: a plain install with no agentic value set
+// must render nothing gVisor-related, so a default install doesn't mutate every node's containerd
+// config or claim the cluster-scoped RuntimeClass name.
+func TestGvisorDisabledByDefault(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			output, err := renderGvisor(t, chart, "gvisor-default.yaml")
-			require.NoError(t, err)
-
-			var runtimeClass nodev1.RuntimeClass
-			for _, doc := range splitGvisorDocs(output) {
-				if strings.Contains(doc, "kind: RuntimeClass") {
-					helm.UnmarshalK8SYaml(t, doc, &runtimeClass)
-				}
-			}
-			assert.Equal(t, "gvisor", runtimeClass.Name)
-			assert.Equal(t, "runsc", runtimeClass.Handler)
-			assert.Contains(t, output, "kind: DaemonSet")
-			assert.Contains(t, output, "kind: ServiceAccount")
-			assert.Contains(t, output, "kind: ClusterRole")
-			assert.Contains(t, output, "kind: ConfigMap")
+			require.Error(t, err)
+			assert.Empty(t, strings.TrimSpace(output))
 		})
 	}
 }
 
-// With hunterAgent enabled, gVisor and its installer follow their own true defaults — same as
-// with no agent enabled at all, since gVisor's render gate is independent of agent state.
-func TestGvisorFollowsHunterAgentByDefault(t *testing.T) {
+// hunterAgent being enabled has no bearing on gVisor's own toggle — gVisor's render gate is
+// independent of agent state, so it stays off unless explicitly enabled.
+func TestGvisorNotEnabledByHunterAgentAlone(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			output, err := renderGvisor(t, chart, "gvisor-hunter-only.yaml")
-			require.NoError(t, err)
-
-			var runtimeClass nodev1.RuntimeClass
-			for _, doc := range splitGvisorDocs(output) {
-				if strings.Contains(doc, "kind: RuntimeClass") {
-					helm.UnmarshalK8SYaml(t, doc, &runtimeClass)
-				}
-			}
-			assert.Equal(t, "gvisor", runtimeClass.Name)
-			assert.Equal(t, "runsc", runtimeClass.Handler)
-			assert.Contains(t, output, "kind: DaemonSet")
-			assert.Contains(t, output, "kind: ServiceAccount")
-			assert.Contains(t, output, "kind: ClusterRole")
-			assert.Contains(t, output, "kind: ConfigMap")
+			require.Error(t, err)
+			assert.Empty(t, strings.TrimSpace(output))
 		})
 	}
 }
 
-// remediationAgent alone (no hunterAgent) must also see gVisor up by default — the render
-// condition doesn't depend on agent state at all.
-func TestGvisorFollowsRemediationAgentByDefault(t *testing.T) {
+// remediationAgent alone (no hunterAgent) must not turn gVisor on either — the render condition
+// doesn't depend on agent state at all, in either direction.
+func TestGvisorNotEnabledByRemediationAgentAlone(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			output, err := renderGvisor(t, chart, "gvisor-remediation-only.yaml")
-			require.NoError(t, err)
-
-			var runtimeClass nodev1.RuntimeClass
-			for _, doc := range splitGvisorDocs(output) {
-				if strings.Contains(doc, "kind: RuntimeClass") {
-					helm.UnmarshalK8SYaml(t, doc, &runtimeClass)
-				}
-			}
-			assert.Equal(t, "gvisor", runtimeClass.Name)
-			assert.Equal(t, "runsc", runtimeClass.Handler)
-			assert.Contains(t, output, "kind: DaemonSet")
-			assert.Contains(t, output, "kind: ServiceAccount")
-			assert.Contains(t, output, "kind: ClusterRole")
-			assert.Contains(t, output, "kind: ConfigMap")
+			require.Error(t, err)
+			assert.Empty(t, strings.TrimSpace(output))
 		})
 	}
 }
