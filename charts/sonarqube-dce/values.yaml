@@ -1338,9 +1338,8 @@ agentEgressProxy:
   extraVolumes: []
   extraVolumeMounts: []
 
-# gVisor (runsc) sandboxing for the agent runtimes. Renders only when gvisor.enabled is true
-# AND at least one of hunterAgent.enabled / remediationAgent.enabled is true. See README ("gVisor
-# sandboxing").
+# gVisor (runsc) sandboxing for the agent runtimes. Renders whenever gvisor.enabled is true,
+# independent of whether any agent runtime is enabled. See README ("gVisor sandboxing").
 gvisor:
   enabled: true
   # Name of the RuntimeClass created + referenced by runtimes. RuntimeClass is cluster-scoped:

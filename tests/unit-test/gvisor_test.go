@@ -67,20 +67,33 @@ func TestGvisorRuntimeClass(t *testing.T) {
 	}
 }
 
-// gvisor.enabled/installer.enabled default to true but only take effect when at least one of
-// hunterAgent.enabled / remediationAgent.enabled is also true (SONAR-31689) — an install with
-// neither agent enabled must render nothing.
-func TestGvisorDefaultRequiresAnAgent(t *testing.T) {
+// gvisor.enabled/installer.enabled default to true and take effect regardless of whether any
+// agent runtime is enabled — an install with neither hunterAgent nor remediationAgent enabled
+// must still render the RuntimeClass and installer resources.
+func TestGvisorRendersByDefaultRegardlessOfAgents(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			output, err := renderGvisor(t, chart, "gvisor-default.yaml")
-			require.Error(t, err, "gvisor.yaml must render nothing without hunterAgent/remediationAgent enabled")
-			assert.Empty(t, strings.TrimSpace(output))
+			require.NoError(t, err)
+
+			var runtimeClass nodev1.RuntimeClass
+			for _, doc := range splitGvisorDocs(output) {
+				if strings.Contains(doc, "kind: RuntimeClass") {
+					helm.UnmarshalK8SYaml(t, doc, &runtimeClass)
+				}
+			}
+			assert.Equal(t, "gvisor", runtimeClass.Name)
+			assert.Equal(t, "runsc", runtimeClass.Handler)
+			assert.Contains(t, output, "kind: DaemonSet")
+			assert.Contains(t, output, "kind: ServiceAccount")
+			assert.Contains(t, output, "kind: ClusterRole")
+			assert.Contains(t, output, "kind: ConfigMap")
 		})
 	}
 }
 
-// With hunterAgent enabled, gVisor and its installer follow their own true defaults.
+// With hunterAgent enabled, gVisor and its installer follow their own true defaults — same as
+// with no agent enabled at all, since gVisor's render gate is independent of agent state.
 func TestGvisorFollowsHunterAgentByDefault(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -103,8 +116,8 @@ func TestGvisorFollowsHunterAgentByDefault(t *testing.T) {
 	}
 }
 
-// remediationAgent alone (no hunterAgent) must also bring gVisor up by default — the render
-// condition is an OR across both agents, not hunter-specific (SONAR-31689).
+// remediationAgent alone (no hunterAgent) must also see gVisor up by default — the render
+// condition doesn't depend on agent state at all.
 func TestGvisorFollowsRemediationAgentByDefault(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -127,8 +140,7 @@ func TestGvisorFollowsRemediationAgentByDefault(t *testing.T) {
 	}
 }
 
-// off/off/off: no agent enabled, gvisor and installer both explicitly false, must render nothing
-// (SONAR-31689).
+// gvisor and installer both explicitly false, no agent enabled either: must render nothing.
 func TestGvisorAllOffExplicit(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -139,8 +151,8 @@ func TestGvisorAllOffExplicit(t *testing.T) {
 	}
 }
 
-// on + off = off: hunterAgent being enabled does not force gVisor on — an explicit
-// gvisor.enabled=false still renders nothing at all (SONAR-31689).
+// hunterAgent being enabled has no bearing on gVisor's own toggle — an explicit
+// gvisor.enabled=false still renders nothing at all.
 func TestGvisorExplicitDisableOverridesAgent(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {

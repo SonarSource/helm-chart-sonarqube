@@ -468,12 +468,12 @@ Usage: {{ include "sonarqube.gvisor.fullname" . }}
 {{- end -}}
 
 {{/*
-Effective gvisor.enabled: requires at least one of hunterAgent.enabled / remediationAgent.enabled
-too, so gVisor only ever renders when there's a runtime to sandbox.
+Effective gvisor.enabled: gvisor.enabled alone controls whether gVisor renders, independent of
+whether any agent runtime is enabled.
 Usage: {{ include "sonarqube.gvisor.enabled" . }}
 */}}
 {{- define "sonarqube.gvisor.enabled" -}}
-{{- and .Values.gvisor.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
+{{- .Values.gvisor.enabled -}}
 {{- end -}}
 
 {{/*
