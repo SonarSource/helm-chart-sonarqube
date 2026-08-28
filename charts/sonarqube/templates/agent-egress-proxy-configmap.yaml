@@ -67,13 +67,16 @@ data:
     # trailing "?..." - real calls to rules/show carry a "?key=..." query parameter.
     acl sonarqube_host dstdomain {{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.fullname" .) "ctx" .) }}
     acl sonarqube_agentic_endpoints urlpath_regex /rules/show(\?|$) /agentic-analysis(/|\?|$)
-    # The orchestrator, for the same reason as sonarqube_host above.
+    # The orchestrator, for the same reason as sonarqube_host above - scoped to the one path the
+    # remediation runtime actually calls (REMEDIATION_RULE_INFO_ENDPOINT), not the whole
+    # orchestrator API surface, the same way sonarqube_agentic_endpoints scopes sonarqube_host.
     acl orchestrator_host dstdomain {{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.agentOrchestrator.fullname" .) "ctx" .) }}
+    acl orchestrator_agentic_endpoints urlpath_regex /remediation-agent/rule-info(\?|$)
 
     http_access deny !Safe_ports
     http_access deny CONNECT !SSL_ports
     http_access allow sonarqube_host sonarqube_agentic_endpoints
-    http_access allow orchestrator_host
+    http_access allow orchestrator_host orchestrator_agentic_endpoints
     {{- if .Values.agentEgressProxy.allowedDomains }}
     http_access allow allowed_domains
     {{- end }}

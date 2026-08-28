@@ -313,9 +313,11 @@ func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 	}
 }
 
-// The Agent Orchestrator must always be reachable through the proxy: the remediation runtime's
-// REMEDIATION_RULE_INFO_ENDPOINT points at it directly, hardcoded independently of allowedDomains -
-// there is no values key that can remove this allow rule, unlike everything in allowedDomains.
+// The Agent Orchestrator's rule-info endpoint must always be reachable through the proxy: the
+// remediation runtime's REMEDIATION_RULE_INFO_ENDPOINT points at it directly, hardcoded
+// independently of allowedDomains - there is no values key that can remove this allow rule, unlike
+// everything in allowedDomains. The allow rule is scoped to that one path (not the whole
+// orchestrator_host), the same way sonarqube_agentic_endpoints scopes sonarqube_host above.
 func TestAgentEgressProxyAlwaysAllowsOrchestrator(t *testing.T) {
 	for _, chart := range egressProxyCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -333,7 +335,8 @@ func TestAgentEgressProxyAlwaysAllowsOrchestrator(t *testing.T) {
 			conf := cm.Data["squid.conf"]
 
 			assert.Contains(t, conf, "acl orchestrator_host dstdomain "+chart.fullnamePrefix()+"-agent-orchestrator.default.svc.cluster.local")
-			assert.Contains(t, conf, "http_access allow orchestrator_host")
+			assert.Contains(t, conf, "acl orchestrator_agentic_endpoints urlpath_regex /remediation-agent/rule-info(\\?|$)")
+			assert.Contains(t, conf, "http_access allow orchestrator_host orchestrator_agentic_endpoints")
 			assert.Contains(t, conf, "acl Safe_ports port 8080", "the orchestrator's default port must be reachable too")
 		})
 	}
