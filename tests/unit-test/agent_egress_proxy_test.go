@@ -313,6 +313,32 @@ func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 	}
 }
 
+// The Agent Orchestrator must always be reachable through the proxy: the remediation runtime's
+// REMEDIATION_RULE_INFO_ENDPOINT points at it directly, hardcoded independently of allowedDomains -
+// there is no values key that can remove this allow rule, unlike everything in allowedDomains.
+func TestAgentEgressProxyAlwaysAllowsOrchestrator(t *testing.T) {
+	for _, chart := range egressProxyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			setValues := map[string]string{
+				"remediationAgent.enabled":          "true",
+				"remediationAgent.image.repository": "example.com/remediation-agent",
+				"remediationAgent.image.tag":        "1",
+				// allowedDomains left empty on purpose: the orchestrator allow rule must not depend on it.
+			}
+			output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
+			require.NoError(t, err)
+
+			var cm corev1.ConfigMap
+			helm.UnmarshalK8SYaml(t, output, &cm)
+			conf := cm.Data["squid.conf"]
+
+			assert.Contains(t, conf, "acl orchestrator_host dstdomain "+chart.fullnamePrefix()+"-agent-orchestrator.default.svc.cluster.local")
+			assert.Contains(t, conf, "http_access allow orchestrator_host")
+			assert.Contains(t, conf, "acl Safe_ports port 8080", "the orchestrator's default port must be reachable too")
+		})
+	}
+}
+
 func TestAgentEgressProxyPodDisruptionBudget(t *testing.T) {
 	for _, chart := range egressProxyCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -350,6 +376,12 @@ func isBroadIPBlockRule(rule networkingv1.NetworkPolicyEgressRule) bool {
 func isSonarQubePodRule(chart agentChart) func(networkingv1.NetworkPolicyEgressRule) bool {
 	return func(rule networkingv1.NetworkPolicyEgressRule) bool {
 		return len(rule.To) == 1 && rule.To[0].PodSelector != nil && rule.To[0].PodSelector.MatchLabels["app"] == chart.name
+	}
+}
+
+func isOrchestratorPodRule(chart agentChart) func(networkingv1.NetworkPolicyEgressRule) bool {
+	return func(rule networkingv1.NetworkPolicyEgressRule) bool {
+		return len(rule.To) == 1 && rule.To[0].PodSelector != nil && rule.To[0].PodSelector.MatchLabels["app"] == chart.name+"-agent-orchestrator"
 	}
 }
 
@@ -407,9 +439,10 @@ func testAgentEgressProxyNetworkPolicyEnabled(t *testing.T, chart agentChart) {
 	assert.NotContains(t, ingress.From[0].PodSelector.MatchLabels, "sonarqube.agent/family",
 		"must select both families, not just one")
 
-	require.Len(t, policy.Spec.Egress, 3, "DNS, the SonarQube pod rule, plus the broad 0.0.0.0/0 rule")
+	require.Len(t, policy.Spec.Egress, 4, "DNS, the SonarQube pod rule, the orchestrator pod rule, plus the broad 0.0.0.0/0 rule")
 	broad := findEgressRuleTo(policy.Spec.Egress, isBroadIPBlockRule)
 	sonarqube := findEgressRuleTo(policy.Spec.Egress, isSonarQubePodRule(chart))
+	orchestrator := findEgressRuleTo(policy.Spec.Egress, isOrchestratorPodRule(chart))
 
 	require.NotNil(t, broad, "expected a broad ipBlock egress rule")
 	assert.Equal(t, "0.0.0.0/0", broad.To[0].IPBlock.CIDR)
@@ -421,6 +454,11 @@ func testAgentEgressProxyNetworkPolicyEnabled(t *testing.T, chart agentChart) {
 		"this backs the hardcoded sonarqube_host allow rule in agent-egress-proxy-configmap.yaml")
 	require.Len(t, sonarqube.Ports, 1)
 	assert.EqualValues(t, 9000, sonarqube.Ports[0].Port.IntVal)
+
+	require.NotNil(t, orchestrator, "expected a rule allowing egress to the Agent Orchestrator pod - "+
+		"this backs the hardcoded orchestrator_host allow rule in agent-egress-proxy-configmap.yaml")
+	require.Len(t, orchestrator.Ports, 1)
+	assert.EqualValues(t, 8080, orchestrator.Ports[0].Port.IntVal)
 }
 
 func testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t *testing.T, chart agentChart) {
