@@ -581,10 +581,10 @@ Remove incompatible user/group values that do not work in Openshift out of the b
   {{- else if .Values.caCerts.configMap }}
   configMap:
     name: {{ .Values.caCerts.configMap.name }}
-    {{- if and .Values.caCerts.configMap.key .Values.caCerts.configMap.path }}
+    {{- if or .Values.caCerts.configMap.key .Values.caCerts.configMap.path }}
     items:
-      - key: {{ .Values.caCerts.configMap.key }}
-        path: {{ .Values.caCerts.configMap.path }}
+      - key: {{ required "caCerts.configMap.key is required when caCerts.configMap.path is set" .Values.caCerts.configMap.key }}
+        path: {{ default .Values.caCerts.configMap.key .Values.caCerts.configMap.path }}
     {{- end }}
   {{- end -}}
 {{- end -}}
