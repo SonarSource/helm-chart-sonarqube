@@ -35,10 +35,16 @@ It is used to validate the values.yaml file before the installation starts.
   {{- end -}}
   {{- $agentOrchestratorStorage := .Values.agentOrchestrator.storage -}}
   {{- /* bucket is meaningless for a file-based backend (FILESYSTEM, NFS): those hand the runtime a
-         direct file:// path instead of a presigned URL, per StorageProvider's own semantics. Stay
-         strict for every object-store type - an unset bucket must not silently fall back to
-         StoragePropertiesParser's "agentic-jobs" placeholder. */}}
-  {{- if and (not (has $agentOrchestratorStorage.type (list "FILESYSTEM" "NFS"))) (not $agentOrchestratorStorage.bucket) -}}
+         direct file:// path instead of a presigned URL, per StorageProvider's own semantics - they
+         need filesystem.baseDir instead. Stay strict either way - an unset bucket must not silently
+         fall back to StoragePropertiesParser's "agentic-jobs" placeholder, and an unset baseDir must
+         not silently fall back to its per-service default directory (breaking the shared mount the
+         orchestrator and runtimes rely on). */}}
+  {{- if has $agentOrchestratorStorage.type (list "FILESYSTEM" "NFS") -}}
+    {{- if not $agentOrchestratorStorage.filesystem.baseDir -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.storage.type is FILESYSTEM/NFS but agentOrchestrator.storage.filesystem.baseDir is not set." -}}
+    {{- end -}}
+  {{- else if not $agentOrchestratorStorage.bucket -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but agentOrchestrator.storage.bucket is not set." -}}
   {{- end -}}
   {{- if and (not $agentOrchestratorStorage.existingSecret) (or $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey) (not (and $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey)) -}}
@@ -93,7 +99,11 @@ It is used to validate the values.yaml file before the installation starts.
   {{- end -}}
   {{- /* bucket/region are meaningless for a file-based backend (FILESYSTEM, NFS) - see the
          matching comment on agentOrchestrator.storage above. */}}
-  {{- if not (has $storage.type (list "FILESYSTEM" "NFS")) -}}
+  {{- if has $storage.type (list "FILESYSTEM" "NFS") -}}
+    {{- if not $storage.filesystem.baseDir -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.storage.type is FILESYSTEM/NFS but vortex.storage.filesystem.baseDir is not set." -}}
+    {{- end -}}
+  {{- else -}}
     {{- if not $storage.bucket -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortex.enabled is true but vortex.storage.bucket is not set." -}}
     {{- end -}}

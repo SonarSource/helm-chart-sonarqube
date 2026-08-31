@@ -510,7 +510,25 @@ func TestVortexStorageBucketRegionNotRequiredWhenFileBased(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			for _, storageType := range []string{"FILESYSTEM", "NFS"} {
-				t.Run(storageType, func(t *testing.T) {
+				t.Run(storageType+" with a baseDir succeeds", func(t *testing.T) {
+					opts := &helm.Options{
+						Logger:      logger.Discard,
+						ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
+						SetValues: map[string]string{
+							"vortex.storage.bucket":             "",
+							"vortex.storage.region":             "",
+							"vortex.storage.type":               storageType,
+							"vortex.storage.filesystem.baseDir": "/agentic-storage",
+						},
+					}
+					_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
+					require.NoError(t, err)
+				})
+
+				// Without a baseDir the service falls back to its own default directory -
+				// silently breaking the shared mount, same failure mode the bucket/region checks
+				// exist to prevent for the object-store types.
+				t.Run(storageType+" without a baseDir fails", func(t *testing.T) {
 					opts := &helm.Options{
 						Logger:      logger.Discard,
 						ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
@@ -521,7 +539,8 @@ func TestVortexStorageBucketRegionNotRequiredWhenFileBased(t *testing.T) {
 						},
 					}
 					_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
-					require.NoError(t, err)
+					require.Error(t, err)
+					assert.Contains(t, err.Error(), "vortex.storage.filesystem.baseDir is not set")
 				})
 			}
 		})
