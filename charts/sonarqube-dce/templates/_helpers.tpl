@@ -548,6 +548,20 @@ Remove incompatible user/group values that do not work in Openshift out of the b
 {{- end -}}
 
 {{/*
+Returns non-empty when mcp.env already defines a HOME entry, so the chart's
+default HOME=/data env can be skipped instead of emitted twice.
+*/}}
+{{- define "sonarqube.mcp.envHasHome" -}}
+{{- $found := false -}}
+{{- range .Values.mcp.env -}}
+  {{- if eq .name "HOME" -}}
+    {{- $found = true -}}
+  {{- end -}}
+{{- end -}}
+{{- if $found -}}true{{- end -}}
+{{- end -}}
+
+{{/*
   generate caCerts volume
 */}}
 {{- define "sonarqube.volumes.caCerts" -}}

@@ -846,6 +846,9 @@ mcp:
   # Additional init containers for the MCP pod, running before the MCP container.
   # Typical use: chown /data to 1000:0 on storage drivers that ignore fsGroup.
   # Mount the shared volume as "mcp-data" at /data.
+  # NOTE: the example below runs as root and is rejected by the "restricted" Pod
+  # Security Standard and by OpenShift's default SCC. In those environments
+  # pre-provision a /data volume writable by group 0 instead.
   initContainers: []
   # - name: chown-data
   #   image: busybox:1.36
