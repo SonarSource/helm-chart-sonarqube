@@ -299,6 +299,46 @@ func urlpathRegexMatcher(t *testing.T, squidConf string, aclName string) func(pa
 	}
 }
 
+// agenticEndpointCase is one request path run through the sonarqube_agentic_endpoints ACL, with
+// the verdict the ACL must reach for it.
+type agenticEndpointCase struct {
+	path  string
+	allow bool
+	why   string
+}
+
+// assertAgenticEndpointRegexMatches compiles the rendered sonarqube_agentic_endpoints ACL and runs
+// real request paths through it, for one value of sonarWebContext (pass "" for the default).
+func assertAgenticEndpointRegexMatches(t *testing.T, chart agentChart, webContext string) {
+	t.Helper()
+
+	setValues := map[string]string{
+		"hunterAgent.enabled":          "true",
+		"hunterAgent.image.repository": "example.com/hunter-agent",
+		"hunterAgent.image.tag":        "1",
+	}
+	if webContext != "" {
+		setValues["sonarWebContext"] = webContext
+	}
+	conf := renderAgentEgressProxySquidConf(t, chart, setValues)
+	matches := urlpathRegexMatcher(t, conf, "sonarqube_agentic_endpoints")
+
+	for _, tc := range []agenticEndpointCase{
+		{webContext + "/api/rules/show?key=java:S1481", true, "the real v1 rule-lookup path"},
+		{webContext + "/api/v2/a3s/analyses", true, "the real v2 analysis-creation path"},
+		{webContext + "/rules/show?key=java:S1481", true, "unversioned form must keep matching too"},
+		{webContext + "/a3s/analyses", true, "unversioned analysis-creation form"},
+		{webContext + "/a3s/analyses/123", true, "a sub-resource of analyses"},
+		{"/anything?x=/rules/show", false, "a query string must not smuggle the path past the scoping"},
+		{"/anything?x=/a3s/analyses", false, "same, for a3s/analyses"},
+		{"/rules/showdown", false, "an unrelated path that merely shares a prefix"},
+		{webContext + "/api/v2/a3s/private/analyses", false, "the internal variant is not part of the guarantee"},
+		{webContext + "/api/v2/a3s/contexts", false, "scoping is per-endpoint, not the whole a3s surface"},
+	} {
+		assert.Equal(t, tc.allow, matches(tc.path), "%s: %s", tc.path, tc.why)
+	}
+}
+
 // SonarQube's rule-lookup (api/rules/show) and analysis-creation (api/v2/a3s/analyses) endpoints
 // must always be reachable through the proxy, hardcoded independently of allowedDomains - there is
 // no values key that can remove this allow rule, unlike everything in allowedDomains.
@@ -336,42 +376,16 @@ func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 			// set to. Asserting on the rendered literal alone can't catch a regex that no longer
 			// matches those paths, so compile it and run real request paths through it.
 			t.Run("regex tolerates path prefixes without allowing query-string smuggling", func(t *testing.T) {
-				for _, webContext := range []string{"", "/sonarqube"} {
-					webContext := webContext
-					name := "default web context"
-					if webContext != "" {
-						name = "sonarWebContext=" + webContext
-					}
-					t.Run(name, func(t *testing.T) {
-						setValues := map[string]string{
-							"hunterAgent.enabled":          "true",
-							"hunterAgent.image.repository": "example.com/hunter-agent",
-							"hunterAgent.image.tag":        "1",
-						}
-						if webContext != "" {
-							setValues["sonarWebContext"] = webContext
-						}
-						conf := renderAgentEgressProxySquidConf(t, chart, setValues)
-						matches := urlpathRegexMatcher(t, conf, "sonarqube_agentic_endpoints")
-
-						for _, tc := range []struct {
-							path  string
-							allow bool
-							why   string
-						}{
-							{webContext + "/api/rules/show?key=java:S1481", true, "the real v1 rule-lookup path"},
-							{webContext + "/api/v2/a3s/analyses", true, "the real v2 analysis-creation path"},
-							{webContext + "/rules/show?key=java:S1481", true, "unversioned form must keep matching too"},
-							{webContext + "/a3s/analyses", true, "unversioned analysis-creation form"},
-							{webContext + "/a3s/analyses/123", true, "a sub-resource of analyses"},
-							{"/anything?x=/rules/show", false, "a query string must not smuggle the path past the scoping"},
-							{"/anything?x=/a3s/analyses", false, "same, for a3s/analyses"},
-							{"/rules/showdown", false, "an unrelated path that merely shares a prefix"},
-							{webContext + "/api/v2/a3s/private/analyses", false, "the internal variant is not part of the guarantee"},
-							{webContext + "/api/v2/a3s/contexts", false, "scoping is per-endpoint, not the whole a3s surface"},
-						} {
-							assert.Equal(t, tc.allow, matches(tc.path), "%s: %s", tc.path, tc.why)
-						}
+				for _, wc := range []struct {
+					name       string
+					webContext string
+				}{
+					{"default web context", ""},
+					{"sonarWebContext=/sonarqube", "/sonarqube"},
+				} {
+					wc := wc
+					t.Run(wc.name, func(t *testing.T) {
+						assertAgenticEndpointRegexMatches(t, chart, wc.webContext)
 					})
 				}
 			})
