@@ -63,11 +63,13 @@ spec:
           env:
             - name: STORAGE_PATH
               value: /data
+            {{- if not (include "sonarqube.mcp.envHasHome" .) }}
             # HOME is set so SonarLint (SLCORE) resolves its user home under the
             # writable /data volume instead of "/", which is not writable for the
             # non-root MCP user. Overridable via mcp.env below.
             - name: HOME
               value: /data
+            {{- end }}
             - name: SONARQUBE_URL
               value: {{ printf "http://%s:%d%s" (include "sonarqube.fullname" .) (.Values.service.internalPort | int) (trimSuffix "/" (include "sonarqube.webcontext" .)) }}
             - name: SONARQUBE_HTTP_HOST
