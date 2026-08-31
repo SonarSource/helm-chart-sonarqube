@@ -752,6 +752,7 @@ vortex:
   # S3-compatible object storage for Vortex analysis context restoration. Must point at the same
   # bucket SonarQube Server writes context to (sonar.agentic.storage.*).
   storage:
+    # S3 (default), FILESYSTEM, AZURE, GCS or NFS.
     type: S3
     bucket: ""
     region: ""
@@ -759,6 +760,10 @@ vortex:
     pathStyleAccess: false
     # Custom S3-compatible endpoint (e.g. MinIO). Leave blank for real AWS S3.
     endpoint: ""
+    filesystem:
+      # Path to the shared directory when type is FILESYSTEM or NFS. Must match
+      # agentOrchestrator.storage.filesystem.baseDir - see the comment there.
+      baseDir: ""
     # Credentials for that endpoint. Leave accessKey/secretKey/existingSecret all blank for
     # credential-less access: the AWS SDK then falls back to its default credential chain (the
     # pod's own IAM identity - node instance role, or IRSA via vortex.serviceAccount).
@@ -895,14 +900,22 @@ agentOrchestrator:
     passwordSecretName: ""  # default: the jdbcOverwrite-derived secret name
     passwordSecretKey: ""   # default: the jdbcOverwrite-derived password key
 
-  # Object storage (S3/MinIO) for the shared job folder -> AGENTIC_STORAGE_* env
+  # Object storage for the shared job folder -> AGENTIC_STORAGE_*/SONAR_AGENTIC_ORCHESTRATOR_STORAGE_* env.
   storage:
+    # S3 (default), FILESYSTEM or NFS. FILESYSTEM/NFS hand runtimes a direct file:// path instead
+    # of a presigned URL, so they only work when agentOrchestrator, hunterAgent, remediationAgent
+    # and vortex all mount the exact same directory - see each component's extraVolumes/
+    # extraVolumeMounts and filesystem.baseDir below.
+    type: S3
     # Custom S3 endpoint (e.g. MinIO). Leave blank for real AWS S3 so the SDK uses its regional
     # endpoint. pathStyle should be true for MinIO, false for AWS S3 (virtual-hosted style).
     endpoint: ""
     region: us-east-1
     bucket: agent-jobs
     pathStyle: true
+    filesystem:
+      # Path to the shared directory when type is FILESYSTEM or NFS. Ignored otherwise.
+      baseDir: ""
     # Credentials. Leave accessKey/secretKey/existingSecret all blank for credential-less access:
     # the orchestrator's AWS SDK then falls back to its default credential chain (the pod's IAM
     # identity - node instance role, or IRSA via agentOrchestrator.serviceAccount annotations).
@@ -932,6 +945,22 @@ agentOrchestrator:
     # AGENTIC_GITHUB_API_BASE_URL; blank -> orchestrator's own default (real api.github.com).
     # Override for GitHub Enterprise Server, or to point at a local mock.
     apiBaseUrl: ""
+
+  # Extra env vars for the orchestrator container, appended after the chart-set env - a
+  # user-supplied entry with the same name wins.
+  env: []
+  # - name: SONAR_TELEMETRY_ENABLE
+  #   value: "true"
+
+  # Extra volumes/mounts for the orchestrator container/pod - e.g. the shared filesystem storage
+  # directory (storage.type: FILESYSTEM/NFS above) or a custom CA cert.
+  extraVolumes: []
+  # - name: agentic-storage
+  #   persistentVolumeClaim:
+  #     claimName: agentic-storage
+  extraVolumeMounts: []
+  # - name: agentic-storage
+  #   mountPath: /agentic-storage
 
 # Hunter Agent runtime that detects issues. Requires agentOrchestrator.enabled - see validation.yaml.
 # Process-count limits aren't set here - use your node's kubelet configuration (podPidsLimit).

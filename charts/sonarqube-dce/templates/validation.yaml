@@ -34,10 +34,14 @@
   {{- if not .Values.agentOrchestrator.image.repository -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but agentOrchestrator.image.repository is not set." -}}
   {{- end -}}
-  {{- if not .Values.agentOrchestrator.storage.bucket -}}
+  {{- $agentOrchestratorStorage := .Values.agentOrchestrator.storage -}}
+  {{- /* bucket is meaningless for a file-based backend (FILESYSTEM, NFS): those hand the runtime a
+         direct file:// path instead of a presigned URL, per StorageProvider's own semantics. Stay
+         strict for every object-store type - an unset bucket must not silently fall back to
+         StoragePropertiesParser's "agentic-jobs" placeholder. */}}
+  {{- if and (not (has $agentOrchestratorStorage.type (list "FILESYSTEM" "NFS"))) (not $agentOrchestratorStorage.bucket) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but agentOrchestrator.storage.bucket is not set." -}}
   {{- end -}}
-  {{- $agentOrchestratorStorage := .Values.agentOrchestrator.storage -}}
   {{- if and (not $agentOrchestratorStorage.existingSecret) (or $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey) (not (and $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but only one of agentOrchestrator.storage.accessKey / agentOrchestrator.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
   {{- end -}}
@@ -80,11 +84,15 @@
   {{- if not $storage.type -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortex.enabled is true but vortex.storage.type is not set." -}}
   {{- end -}}
-  {{- if not $storage.bucket -}}
+  {{- /* bucket/region are meaningless for a file-based backend (FILESYSTEM, NFS) - see the
+         matching comment on agentOrchestrator.storage above. */}}
+  {{- if not (has $storage.type (list "FILESYSTEM" "NFS")) -}}
+    {{- if not $storage.bucket -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortex.enabled is true but vortex.storage.bucket is not set." -}}
-  {{- end -}}
-  {{- if not $storage.region -}}
+    {{- end -}}
+    {{- if not $storage.region -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortex.enabled is true but vortex.storage.region is not set." -}}
+    {{- end -}}
   {{- end -}}
   {{- if and (not $storage.existingSecret) (or $storage.accessKey $storage.secretKey) (not (and $storage.accessKey $storage.secretKey)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortex.enabled is true but only one of vortex.storage.accessKey / vortex.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
