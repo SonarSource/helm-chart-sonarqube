@@ -8,6 +8,7 @@ All changes to this chart will be documented in this file.
 * Add optional gVisor (runsc) sandboxing for the agent runtimes
 * Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via `agentOrchestrator.enabled`, `hunterAgent.enabled` and `remediationAgent.enabled`
 * Auto-wire the Hunter Agent's `SCRIPT_PATH` (detection mode) from `hunterAgent.scriptPath`, symmetric with the Remediation Agent's `REMEDIATION_SCRIPT_PATH`
+* Add `agentOrchestrator.env`/`extraVolumes`/`extraVolumeMounts`, and a `agentOrchestrator.storage.type`/`vortex.storage.filesystem.baseDir` FILESYSTEM/NFS backend for the shared agentic job storage
 * Mount the `sonarSecretKey` settings-encryption secret into the Agent Orchestrator pod, exposing its path via the `AGENTIC_SECRET_KEY_PATH` env var
 
 ## [2026.4.0]
