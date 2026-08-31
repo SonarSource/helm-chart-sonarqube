@@ -668,6 +668,18 @@ mcp:
     accessMode: ReadWriteOnce
     size: 1Gi
 
+  # Set pod-level security context for the MCP pod.
+  # fsGroup makes the mounted /data volume group-writable so the non-root MCP
+  # process (runAsGroup: 0) can create its logs, plugins and SonarLint home there.
+  # NOTE: your storage provider must honor fsGroup ownership changes. Drivers such
+  # as NFS, hostPath, CSI drivers with fsGroupPolicy: None, and many pre-provisioned
+  # or existingClaim volumes ignore it - for those, pre-provision a writable volume
+  # or add an ownership-fixing init container via mcp.initContainers.
+  # On OpenShift, fsGroup/runAsUser/runAsGroup are removed automatically (the platform
+  # assigns them from the namespace SCC range).
+  podSecurityContext:
+    fsGroup: 0
+
   # Set security context for the MCP container.
   containerSecurityContext:
     allowPrivilegeEscalation: false
@@ -678,6 +690,22 @@ mcp:
       type: RuntimeDefault
     capabilities:
       drop: ["ALL"]
+
+  # Additional init containers for the MCP pod, running before the MCP container.
+  # Typical use: chown /data to 1000:0 on storage drivers that ignore fsGroup.
+  # Mount the shared volume as "mcp-data" at /data.
+  # NOTE: the example below runs as root and is rejected by the "restricted" Pod
+  # Security Standard and by OpenShift's default SCC. In those environments
+  # pre-provision a /data volume writable by group 0 instead.
+  initContainers: []
+  # - name: chown-data
+  #   image: busybox:1.36
+  #   command: ["sh", "-c", "chown -R 1000:0 /data && chmod -R g+rwX /data"]
+  #   securityContext:
+  #     runAsUser: 0
+  #   volumeMounts:
+  #     - name: mcp-data
+  #       mountPath: /data
 
   livenessProbe:
     initialDelaySeconds: 60
