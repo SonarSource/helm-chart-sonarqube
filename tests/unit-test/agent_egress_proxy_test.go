@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -262,9 +263,45 @@ func renderAgentEgressProxySquidConf(t *testing.T, chart agentChart, setValues m
 	return cm.Data["squid.conf"]
 }
 
-// SonarQube's /rules/show and /agentic-analysis endpoints must always be reachable through the
-// proxy, hardcoded independently of allowedDomains - there is no values key that can remove this
-// allow rule, unlike everything in allowedDomains.
+// urlpathRegexMatcher pulls the patterns off a rendered `acl <name> urlpath_regex ...` line and
+// returns a predicate that reports whether a request path would match the ACL - i.e. whether Squid
+// would let the corresponding http_access allow rule fire. Squid treats each whitespace-separated
+// token as its own POSIX ERE and ORs them; Go's RE2 agrees with ERE on the constructs used here, so
+// compiling them directly lets a test assert on ACL *behaviour* rather than on the literal string.
+func urlpathRegexMatcher(t *testing.T, squidConf string, aclName string) func(path string) bool {
+	t.Helper()
+	prefix := "acl " + aclName + " urlpath_regex "
+
+	var patterns []string
+	for _, line := range strings.Split(squidConf, "\n") {
+		line = strings.TrimSpace(line)
+		if after, found := strings.CutPrefix(line, prefix); found {
+			patterns = strings.Fields(after)
+			break
+		}
+	}
+	require.NotEmpty(t, patterns, "no %q line found in the rendered squid.conf", strings.TrimSpace(prefix))
+
+	compiled := make([]*regexp.Regexp, 0, len(patterns))
+	for _, pattern := range patterns {
+		re, err := regexp.Compile(pattern)
+		require.NoError(t, err, "ACL %s has an uncompilable pattern %q", aclName, pattern)
+		compiled = append(compiled, re)
+	}
+
+	return func(path string) bool {
+		for _, re := range compiled {
+			if re.MatchString(path) {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+// SonarQube's rule-lookup (api/rules/show) and analysis-creation (api/v2/a3s/analyses) endpoints
+// must always be reachable through the proxy, hardcoded independently of allowedDomains - there is
+// no values key that can remove this allow rule, unlike everything in allowedDomains.
 func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 	for _, chart := range egressProxyCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -287,11 +324,56 @@ func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 				// Fully qualified, not the bare short name - Squid's own DNS resolver doesn't honour
 				// /etc/resolv.conf's search list, so a bare Service name can never resolve for it.
 				assert.Contains(t, conf, "acl sonarqube_host dstdomain "+chart.fullnamePrefix()+".default.svc.cluster.local")
-				assert.Contains(t, conf, "acl sonarqube_agentic_endpoints urlpath_regex ^/rules/show(\\?|$) ^/agentic-analysis(/|\\?|$)")
+				assert.Contains(t, conf, "acl sonarqube_agentic_endpoints urlpath_regex ^[^?]*/rules/show(\\?|$) ^[^?]*/a3s/analyses(/|\\?|$)")
 				assert.Contains(t, conf, "http_access allow sonarqube_host sonarqube_agentic_endpoints")
 				assert.Contains(t, conf, "acl Safe_ports port 9000", "SonarQube's default externalPort must be reachable too")
-				assert.NotContains(t, conf, "urlpath_regex /rules/show",
-					"the regex must be anchored with ^, or a query string like ?x=/rules/show on any path would bypass the path scoping")
+			})
+
+			// Prefix tolerance is load-bearing twice over: the two endpoints sit on different API
+			// versions (api/rules/show is v1, api/v2/a3s/analyses is v2), and the chart hands the
+			// agents a web-context-aware base URL (AGENTIC_SONARQUBE_URL is built from
+			// sonarqube.webcontext) so the path Squid sees also carries whatever sonarWebContext is
+			// set to. Asserting on the rendered literal alone can't catch a regex that no longer
+			// matches those paths, so compile it and run real request paths through it.
+			t.Run("regex tolerates path prefixes without allowing query-string smuggling", func(t *testing.T) {
+				for _, webContext := range []string{"", "/sonarqube"} {
+					webContext := webContext
+					name := "default web context"
+					if webContext != "" {
+						name = "sonarWebContext=" + webContext
+					}
+					t.Run(name, func(t *testing.T) {
+						setValues := map[string]string{
+							"hunterAgent.enabled":          "true",
+							"hunterAgent.image.repository": "example.com/hunter-agent",
+							"hunterAgent.image.tag":        "1",
+						}
+						if webContext != "" {
+							setValues["sonarWebContext"] = webContext
+						}
+						conf := renderAgentEgressProxySquidConf(t, chart, setValues)
+						matches := urlpathRegexMatcher(t, conf, "sonarqube_agentic_endpoints")
+
+						for _, tc := range []struct {
+							path  string
+							allow bool
+							why   string
+						}{
+							{webContext + "/api/rules/show?key=java:S1481", true, "the real v1 rule-lookup path"},
+							{webContext + "/api/v2/a3s/analyses", true, "the real v2 analysis-creation path"},
+							{webContext + "/rules/show?key=java:S1481", true, "unversioned form must keep matching too"},
+							{webContext + "/a3s/analyses", true, "unversioned analysis-creation form"},
+							{webContext + "/a3s/analyses/123", true, "a sub-resource of analyses"},
+							{"/anything?x=/rules/show", false, "a query string must not smuggle the path past the scoping"},
+							{"/anything?x=/a3s/analyses", false, "same, for a3s/analyses"},
+							{"/rules/showdown", false, "an unrelated path that merely shares a prefix"},
+							{webContext + "/api/v2/a3s/private/analyses", false, "the internal variant is not part of the guarantee"},
+							{webContext + "/api/v2/a3s/contexts", false, "scoping is per-endpoint, not the whole a3s surface"},
+						} {
+							assert.Equal(t, tc.allow, matches(tc.path), "%s: %s", tc.path, tc.why)
+						}
+					})
+				}
 			})
 
 			t.Run("dstdomain tracks the fullname prefix and service.externalPort overrides", func(t *testing.T) {

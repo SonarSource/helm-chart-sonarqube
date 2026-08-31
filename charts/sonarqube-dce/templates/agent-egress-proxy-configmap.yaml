@@ -63,18 +63,24 @@ data:
     acl allowed_domains dstdomain {{ join " " . }}
     {{- end }}
 
-    # SonarQube's own rule-lookup and agentic-analysis endpoints must always be reachable, no
+    # SonarQube's own rule-lookup and analysis-creation endpoints must always be reachable, no
     # matter what allowedDomains contains - hardcoded here (not sourced from Values) so it can't
     # be edited away. The path match is anchored to the SonarQube service itself via
-    # sonarqube_host; the regexes are suffix-based (not tied to webcontext/API-version prefixes)
-    # so they keep matching regardless of how those are configured. Fully qualified (not the bare
-    # short name) since Squid's DNS resolver doesn't honour /etc/resolv.conf's search list.
+    # sonarqube_host. Fully qualified (not the bare short name) since Squid's DNS resolver doesn't
+    # honour /etc/resolv.conf's search list.
     # urlpath_regex matches the path *and* query string, so both endpoints must tolerate a
-    # trailing "?..." - real calls to rules/show carry a "?key=..." query parameter. Anchored
-    # with ^ because of that same query-string matching: an unanchored pattern would match
-    # `/anything?x=/rules/show` and reopen the whole API surface.
+    # trailing "?..." - real calls to rules/show carry a "?key=..." query parameter.
+    # The leading `^[^?]*` keeps these rules prefix-agnostic, which is load-bearing twice over.
+    # First, the two endpoints live on different API versions - `api/rules/show` (v1) and
+    # `api/v2/a3s/analyses` (v2) - so no single fixed prefix covers both. Second, the chart hands
+    # the agents a web-context-aware base URL (AGENTIC_SONARQUBE_URL, built from
+    # sonarqube.webcontext), so with sonarWebContext=/sonarqube the path Squid sees becomes
+    # `/sonarqube/api/v2/a3s/analyses`. An anchored `^/a3s/analyses` would match none of that and
+    # every such call would fall through to `deny all`. `[^?]*` cannot cross a `?`, so the prefix
+    # tolerance stays confined to the path and `/anything?x=/rules/show` is still denied rather
+    # than reopening the whole API surface.
     acl sonarqube_host dstdomain {{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.fullname" .) "ctx" .) }}
-    acl sonarqube_agentic_endpoints urlpath_regex ^/rules/show(\?|$) ^/agentic-analysis(/|\?|$)
+    acl sonarqube_agentic_endpoints urlpath_regex ^[^?]*/rules/show(\?|$) ^[^?]*/a3s/analyses(/|\?|$)
     # The orchestrator, for the same reason as sonarqube_host above - scoped to the one path the
     # remediation runtime actually calls (REMEDIATION_RULE_INFO_ENDPOINT), not the whole
     # orchestrator API surface, the same way sonarqube_agentic_endpoints scopes sonarqube_host.
