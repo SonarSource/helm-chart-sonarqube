@@ -978,7 +978,7 @@ mcp:
           mountPath: /data
 ```
 
-On OpenShift, do not set `fsGroup`/`runAsUser`/`runAsGroup` — the platform assigns them from the namespace's SCC range, and the chart removes these keys automatically when `OpenShift.enabled=true`.
+On OpenShift, do not set `fsGroup`/`runAsUser`/`runAsGroup` — the platform assigns them from the namespace's SCC range, and the chart removes these keys automatically when `OpenShift.enabled=true`. Note that the `chown` init container above runs as root and is therefore rejected by the `restricted` Pod Security Standard and by OpenShift's default SCC; in those environments, pre-provision a `/data` volume already writable by group `0` (or UID `1000`) instead.
 
 **TLS (encrypted communication):**
 

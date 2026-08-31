@@ -60,6 +60,46 @@ metadata:
 data:
   install_plugins.sh: |-
 ---
+# Source: sonarqube/templates/mcp-pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: openshift-values.yaml-sonarqube-mcp
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: openshift-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: mcp
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "1Gi"
+---
+# Source: sonarqube/templates/mcp-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: openshift-values.yaml-sonarqube-mcp
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: openshift-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: mcp
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: sonarqube-mcp
+    release: openshift-values.yaml
+---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
 kind: Service
@@ -80,6 +120,98 @@ spec:
   selector:
     app: sonarqube
     release: openshift-values.yaml
+---
+# Source: sonarqube/templates/mcp.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openshift-values.yaml-sonarqube-mcp
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: openshift-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarqube-mcp
+      release: openshift-values.yaml
+  template:
+    metadata:
+      labels:
+        app: sonarqube-mcp
+        release: openshift-values.yaml
+    spec:
+      initContainers:
+        - name: wait-for-sonarqube
+          image: sonarqube:2026.4.0-enterprise
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          command:
+            - sh
+            - -c
+            - |
+              until curl -sf "http://openshift-values.yaml-sonarqube:9000/api/system/status" | grep -q '"status":"UP"'; do
+                echo "Waiting for SonarQube to be UP..."; sleep 10;
+              done
+      containers:
+        - name: mcp
+          image: sonarsource/sonarqube-mcp:1.22.0.3040
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: STORAGE_PATH
+              value: /data
+            # HOME is set so SonarLint (SLCORE) resolves its user home under the
+            # writable /data volume instead of "/", which is not writable for the
+            # non-root MCP user. Overridable via mcp.env below.
+            - name: HOME
+              value: /data
+            - name: SONARQUBE_URL
+              value: http://openshift-values.yaml-sonarqube:9000
+            - name: SONARQUBE_HTTP_HOST
+              value: "0.0.0.0"
+            - name: SONARQUBE_HTTP_PORT
+              value: "8080"
+            - name: SONARQUBE_TRANSPORT
+              value: http
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: mcp-data
+              mountPath: /data
+      volumes:
+        - name: mcp-data
+          persistentVolumeClaim:
+            claimName: openshift-values.yaml-sonarqube-mcp
 ---
 # Source: sonarqube/templates/sonarqube-sts.yaml
 apiVersion: apps/v1
@@ -146,6 +278,10 @@ spec:
                 secretKeyRef:
                   name: openshift-values.yaml-sonarqube-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
+            - name: SONAR_MCP_ENABLED
+              value: "true"
+            - name: SONAR_MCP_SERVERURL
+              value: "http://openshift-values.yaml-sonarqube-mcp:8080"
             - name: SONAR_WEB_CONTEXT
               value: /
             - name: SONAR_WEB_JAVAOPTS
