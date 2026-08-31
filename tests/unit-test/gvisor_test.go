@@ -127,8 +127,7 @@ func TestGvisorFollowsRemediationAgentByDefault(t *testing.T) {
 	}
 }
 
-// off/off/off: no agent enabled, gvisor and installer both explicitly false, must render nothing
-// (SONAR-31689).
+// gvisor and installer both explicitly false, no agent enabled either: must render nothing.
 func TestGvisorAllOffExplicit(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -139,8 +138,8 @@ func TestGvisorAllOffExplicit(t *testing.T) {
 	}
 }
 
-// on + off = off: hunterAgent being enabled does not force gVisor on — an explicit
-// gvisor.enabled=false still renders nothing at all (SONAR-31689).
+// hunterAgent being enabled has no bearing on gVisor's own toggle — an explicit
+// gvisor.enabled=false still renders nothing at all.
 func TestGvisorExplicitDisableOverridesAgent(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {

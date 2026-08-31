@@ -67,7 +67,7 @@ func TestOrchestratorUrlsInSonarProperties(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			props := appSonarProperties(t, chart, agentPropertiesOptions(chart, "agent-orchestrator-enabled.yaml", nil))
-			url := "http://" + chart.fullnamePrefix() + "-agent-orchestrator:8080"
+			url := chart.orchestratorURL()
 			assert.Equal(t, url, props[hunterOrchestratorURLProperty])
 			assert.Equal(t, url, props[remediationOrchestratorURLProperty])
 		})
@@ -114,7 +114,7 @@ func TestUserSonarPropertiesOverrideAgentUrls(t *testing.T) {
 			assert.Equal(t, "http://external-orchestrator:9000", props[hunterOrchestratorURLProperty])
 			assert.Equal(t, "false", props["sonar.forceAuthentication"])
 			// Untouched keys still come from the chart.
-			assert.Equal(t, "http://"+chart.fullnamePrefix()+"-agent-orchestrator:8080", props[remediationOrchestratorURLProperty])
+			assert.Equal(t, chart.orchestratorURL(), props[remediationOrchestratorURLProperty])
 		})
 	}
 }

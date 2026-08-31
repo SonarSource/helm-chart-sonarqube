@@ -992,14 +992,6 @@ hunterAgent:
   # Restrict traffic to and from this runtime.
   networkPolicy:
     enabled: false
-    # Additional egress destinations, each a cidr, a podSelector, a namespaceSelector or both
-    # selectors, with optional ports. Use the selectors for destinations inside the cluster.
-    # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
-    # covering agentOrchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
-    # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of
-    # your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
-    egressAllow: []
-    # - cidr: 160.79.104.0/23
   # Path to the detection-agent entrypoint inside the image; the chart exposes it as
   # SCRIPT_PATH, which switches the runtime into hunter/detection mode (symmetric with
   # remediation's remediationScriptPath -> REMEDIATION_SCRIPT_PATH). Override if the image
@@ -1093,19 +1085,138 @@ remediationAgent:
   # Restrict traffic to and from this runtime.
   networkPolicy:
     enabled: false
-    # Additional egress destinations, each a cidr, a podSelector, a namespaceSelector or both
-    # selectors, with optional ports. Use the selectors for destinations inside the cluster.
-    # Runtime egress = storage + LLM only, never SonarQube/DB/other runtimes. Without a peer here
-    # covering agentOrchestrator.storage, jobs fail at the first artifact download (real AWS S3 has no
-    # fixed range, so that's typically a 0.0.0.0/0 cidr scoped to port 443). Add the CIDR(s) of
-    # your LLM provider too; e.g. Anthropic publishes 160.79.104.0/23.
-    egressAllow: []
-    # - cidr: 160.79.104.0/23
   # Path to the remediation-agent entrypoint inside the image; the chart exposes it as
   # REMEDIATION_SCRIPT_PATH, which switches the runtime into remediation mode. Override if the
   # image relocates it (e.g. a Python version bump); set to "" to omit the env var entirely.
   # (REMEDIATION_RULE_INFO_ENDPOINT is also auto-wired, derived from the Agent Orchestrator URL.)
   remediationScriptPath: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
+  env: []
+  extraVolumes: []
+  extraVolumeMounts: []
+
+# Squid forward-proxy that all agent runtime (hunterAgent/remediationAgent) egress is routed
+# through, so FQDN allow-listing (Squid dstdomain ACLs) becomes possible where NetworkPolicy alone
+# cannot express it (L3/L4 only, no hostname matching). Always a standalone Deployment, never a
+# sidecar (NetworkPolicy is enforced per pod - see templates/agent-egress-proxy.yaml).
+#
+# This component has no independent enable/disable switch: it is automatically deployed whenever
+# hunterAgent.enabled or remediationAgent.enabled is true, and renders nothing when both are
+# false. There is no way to enable a runtime without the proxy, or vice versa.
+agentEgressProxy:
+  image:
+    repository: ubuntu/squid
+    # Canonical's Ubuntu LTS Squid rock. `digest` wins over `tag` when both are set, and is what
+    # actually gets deployed here - the tag is kept only as human-readable provenance.
+    #
+    # Pinning matters more than usual for this image: Canonical's channel naming is
+    # <squidVersion>-<ubuntuRelease>_<risk>, and `_edge` is a *floating* risk channel that gets
+    # rebuilt in place. The 6.6-24.04_edge tag already resolves to Squid 6.14, not 6.6, so the tag
+    # alone is not a reproducible reference. Bump both together, deliberately, after re-checking
+    # `docker buildx imagetools inspect ubuntu/squid:<tag>`.
+    tag: "6.6-24.04_edge"
+    # Multi-arch index digest for 6.6-24.04_edge (amd64/arm64/ppc64le/s390x), resolved 2026-08-27.
+    digest: sha256:8a3baed477e2c282ab8aa5edad442f69873246964f225c5c2ae8364b6610963c
+    pullPolicy: IfNotPresent
+    pullSecret: ""
+    pullSecrets: []
+  port: 3128
+  # D7: default 2 so a single pod eviction/restart/drain doesn't cut off every runtime's egress.
+  # Override to 1 for local/dev/kind if the single point of failure is acceptable there - also set
+  # podDisruptionBudget: null then, or minAvailable: 1 will block every node drain.
+  replicaCount: 2
+  nodeSelector: {}
+  tolerations: []
+  # Left empty so the chart can apply a soft (preferred) podAntiAffinity on kubernetes.io/hostname:
+  # with replicaCount 2 and podDisruptionBudget.minAvailable 1, two co-scheduled replicas would let
+  # a single node drain cut all runtime egress while the PDB simultaneously blocks that drain.
+  # Setting a value here replaces that default outright - it is not merged into.
+  affinity: {}
+  revisionHistoryLimit: ""
+  strategy: {}
+  podLabels: {}
+  annotations: {}
+  # D7 makes this a hard dependency of every runtime's data path (unlike hunterAgent's own
+  # `resources: {}` default). Squid caching is disabled (no cache_dir), but cache_mem still
+  # defaults to 256 MB for in-transit objects regardless - the ConfigMap pins it to 16 MB so
+  # it fits comfortably under this limit; raise both together if you bump requestBodyMaxSizeMb.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+      ephemeral-storage: 64Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+      ephemeral-storage: 128Mi
+  # Squid's startup memory is driven by RLIMIT_NOFILE, not by traffic: it reserves per-descriptor
+  # tables up front, so the 1048576-descriptor limit most container runtimes hand out costs ~170 MB
+  # and the pod is OOMKilled against the limit above before it serves a request. Pinning it makes
+  # the footprint independent of the node. Squid uses two descriptors per proxied request, so 4096
+  # allows roughly 2000 concurrent ones; raise this and resources.limits.memory together.
+  maxFiledescriptors: 4096
+  securityContext: {}
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    # The pinned ubuntu/squid image declares no non-root USER (it starts as root by convention,
+    # matching its own cache_effective_user startup-then-drop-privileges model), so runAsNonRoot
+    # requires an explicit runAsUser or the container fails to start (CreateContainerConfigError).
+    # 13 is the image's built-in "proxy" uid/gid — verified to start squid cleanly with no cache_dir
+    # and no TLS interception (D6), matching the cache_effective_user directive in squid.conf below.
+    runAsUser: 13
+    runAsGroup: 13
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
+  probes:
+    readiness:
+      periodSeconds: 10
+      timeoutSeconds: 5
+    liveness:
+      periodSeconds: 10
+      timeoutSeconds: 5
+  serviceAccount:
+    create: false
+    name: ""
+    automountToken: false
+    annotations: {}
+  # Domains runtimes may reach through the proxy (Squid `dstdomain` ACL). A leading dot means
+  # "this domain and all subdomains". HTTPS is CONNECT-tunneled (no TLS interception in v1) -
+  # matched against the CONNECT target hostname, not decrypted SNI.
+  # Leaving this empty is a valid but near-useless configuration: the runtimes can still reach
+  # SonarQube's own agentic endpoints (hardcoded, see squid.conf) but nothing else, so no external
+  # LLM provider is callable. Set at least the provider domain the runtimes are pointed at.
+  allowedDomains: []
+  # - .anthropic.com
+  # Raw squid.conf lines spliced in after the generated allow rules but *before* the final
+  # `http_access deny all`, so an `http_access allow ...` added here does take effect. Squid stops
+  # at the first matching http_access line, so ordering within this block still matters.
+  #
+  # This is also how you reach an endpoint on a port other than 80/443 - Squid resolves
+  # http_access rules to the named ACL object, so appending here still applies to the earlier
+  # `deny !Safe_ports` rule. Mirror any such port in networkPolicy.egressPorts below:
+  #   extraSquidConf: |
+  #     acl Safe_ports port 8443
+  #     acl SSL_ports port 8443
+  #
+  # Unvalidated: a syntax error here means Squid refuses to start, which takes out egress for
+  # every runtime. `squid -k parse -f squid.conf` against the pinned image before rolling out.
+  extraSquidConf: ""
+  networkPolicy:
+    enabled: false
+    egressPorts: [80, 443]
+    # Destinations subtracted from the broad 0.0.0.0/0 egress rule. NetworkPolicy cannot match
+    # FQDNs, so that rule has to stay wide and Squid's allowedDomains does the real filtering;
+    # these CIDRs are the belt-and-braces case where that filtering must not be the only control.
+    # 169.254.0.0/16 is link-local, which carries the cloud metadata service (169.254.169.254) on
+    # AWS/GCP/Azure - a classic SSRF pivot. Add RFC1918 ranges here too if no allowed destination
+    # is on the private network (do NOT if the LLM is reached via an on-prem gateway).
+    egressExcludeCidrs:
+      - 169.254.0.0/16
+  podDisruptionBudget:
+    minAvailable: 1
   env: []
   extraVolumes: []
   extraVolumeMounts: []

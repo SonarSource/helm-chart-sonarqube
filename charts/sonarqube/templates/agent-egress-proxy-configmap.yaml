@@ -1,0 +1,104 @@
+{{- if include "sonarqube.agentEgressProxy.required" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "sonarqube.agentEgressProxy.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agent/component: egress-proxy
+    app.kubernetes.io/component: agent-egress-proxy
+data:
+  squid.conf: |-
+    http_port {{ .Values.agentEgressProxy.port }}
+
+    # Pass-through forward proxy, not a cache - nothing is stored or re-served.
+    cache deny all
+    # Squid's default cache_mem is 256 MB even with caching denied above - the pool still holds
+    # in-transit objects - so pin it well under agentEgressProxy.resources' memory limit or the
+    # container gets OOMKilled under concurrent agent traffic.
+    cache_mem 16 MB
+    # Squid sizes its per-descriptor tables from RLIMIT_NOFILE at startup, before serving anything.
+    # Container runtimes routinely hand out 1048576 descriptors, which makes that reservation ~170
+    # MB - over agentEgressProxy.resources' memory limit, so the container is OOMKilled into a
+    # CrashLoop on nodes with a generous ulimit and starts fine on nodes without one. Capping it
+    # here makes the footprint a property of this chart rather than of the node.
+    max_filedescriptors {{ .Values.agentEgressProxy.maxFiledescriptors }}
+    via off
+    forwarded_for delete
+
+    access_log stdio:/dev/stdout squid
+    cache_log stdio:/dev/stderr
+
+    # Must be set explicitly, or Squid FATALs on startup instead of falling back to a default.
+    cache_effective_user proxy proxy
+
+    # No request_body_max_size: without TLS interception a CONNECT tunnel is opaque to Squid, so
+    # any such cap would miss every HTTPS body (all LLM prompts and uploads) and apply only to
+    # cleartext - which here means SonarQube's own always-reachable endpoints. A limit there would
+    # be a silent ceiling on a path the chart guarantees, so body size is left to SonarQube.
+
+    acl SSL_ports port 443
+    acl Safe_ports port 80
+    acl Safe_ports port 443
+    # SonarQube's own port, so the hardcoded allow rule below can ever match.
+    acl Safe_ports port {{ .Values.service.externalPort }}
+    # The chart itself points the remediation runtime at the orchestrator
+    # (REMEDIATION_RULE_INFO_ENDPOINT), so it must always be reachable, like sonarqube_host.
+    acl Safe_ports port {{ .Values.agentOrchestrator.port }}
+    # To reach an endpoint on another port, append to these ACLs from extraSquidConf - Squid
+    # resolves http_access rules to the named ACL object, so entries added there still apply to
+    # the `deny !Safe_ports` rule below despite being spliced in after it. Whatever port you add
+    # must ALSO be in agentEgressProxy.networkPolicy.egressPorts, or NetworkPolicy drops the
+    # request before Squid ever sees it.
+    acl CONNECT method CONNECT
+
+    # No TLS interception (SSL-bump): CONNECT tunnels are passed through as-is, so dstdomain below
+    # matches the CONNECT request's target hostname, not a decrypted SNI/certificate.
+    # Rendered only when non-empty: a valueless `acl ... dstdomain` makes Squid log
+    # "WARNING: empty ACL" on every start, and the allow rule referencing it can never match.
+    {{- with .Values.agentEgressProxy.allowedDomains }}
+    acl allowed_domains dstdomain {{ join " " . }}
+    {{- end }}
+
+    # SonarQube's own rule-lookup and analysis-creation endpoints must always be reachable, no
+    # matter what allowedDomains contains - hardcoded here (not sourced from Values) so it can't
+    # be edited away. The path match is anchored to the SonarQube service itself via
+    # sonarqube_host. Fully qualified (not the bare short name) since Squid's DNS resolver doesn't
+    # honour /etc/resolv.conf's search list.
+    # urlpath_regex matches the path *and* query string, so both endpoints must tolerate a
+    # trailing "?..." - real calls to rules/show carry a "?key=..." query parameter.
+    # The leading `^[^?]*` keeps these rules prefix-agnostic, which is load-bearing twice over.
+    # First, the two endpoints live on different API versions - `api/rules/show` (v1) and
+    # `api/v2/a3s/analyses` (v2) - so no single fixed prefix covers both. Second, the chart hands
+    # the agents a web-context-aware base URL (AGENTIC_SONARQUBE_URL, built from
+    # sonarqube.webcontext), so with sonarWebContext=/sonarqube the path Squid sees becomes
+    # `/sonarqube/api/v2/a3s/analyses`. An anchored `^/a3s/analyses` would match none of that and
+    # every such call would fall through to `deny all`. `[^?]*` cannot cross a `?`, so the prefix
+    # tolerance stays confined to the path and `/anything?x=/rules/show` is still denied rather
+    # than reopening the whole API surface.
+    acl sonarqube_host dstdomain {{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.fullname" .) "ctx" .) }}
+    acl sonarqube_agentic_endpoints urlpath_regex ^[^?]*/rules/show(\?|$) ^[^?]*/a3s/analyses(/|\?|$)
+    # The orchestrator, for the same reason as sonarqube_host above - scoped to the one path the
+    # remediation runtime actually calls (REMEDIATION_RULE_INFO_ENDPOINT), not the whole
+    # orchestrator API surface, the same way sonarqube_agentic_endpoints scopes sonarqube_host.
+    acl orchestrator_host dstdomain {{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.agentOrchestrator.fullname" .) "ctx" .) }}
+    acl orchestrator_agentic_endpoints urlpath_regex ^/remediation-agent/rule-info(\?|$)
+
+    http_access deny !Safe_ports
+    http_access deny CONNECT !SSL_ports
+    http_access allow sonarqube_host sonarqube_agentic_endpoints
+    http_access allow orchestrator_host orchestrator_agentic_endpoints
+    {{- if .Values.agentEgressProxy.allowedDomains }}
+    http_access allow allowed_domains
+    {{- end }}
+    {{- /* Spliced in *before* the final deny: Squid evaluates http_access top-down and stops at the
+           first match, so anything after `deny all` is unreachable. Placing the user's rules here
+           is what makes an `http_access allow ...` in extraSquidConf actually take effect. */}}
+    {{- with .Values.agentEgressProxy.extraSquidConf }}
+{{ . | indent 4 }}
+    {{- end }}
+    http_access deny all
+{{- end }}

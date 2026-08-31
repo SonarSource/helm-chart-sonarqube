@@ -1,0 +1,21 @@
+{{- if include "sonarqube.agentEgressProxy.required" . }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sonarqube.agentEgressProxy.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agent/component: egress-proxy
+    app.kubernetes.io/component: agent-egress-proxy
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.agentEgressProxy.port }}
+      targetPort: http-proxy
+      protocol: TCP
+      name: http-proxy
+  selector: {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 4 }}
+{{- end }}
