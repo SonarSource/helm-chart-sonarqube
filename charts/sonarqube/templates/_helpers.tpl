@@ -423,9 +423,11 @@ default HOME=/data env can be skipped instead of emitted twice.
   {{- else if .Values.caCerts.configMap }}
   configMap:
     name: {{ .Values.caCerts.configMap.name }}
+    {{- if and .Values.caCerts.configMap.key .Values.caCerts.configMap.path }}
     items:
       - key: {{ .Values.caCerts.configMap.key }}
         path: {{ .Values.caCerts.configMap.path }}
+    {{- end }}
   {{- end -}}
 {{- end -}}
 {{- end -}}
