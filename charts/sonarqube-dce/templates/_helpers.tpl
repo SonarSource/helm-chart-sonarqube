@@ -721,10 +721,22 @@ Same create / pinned-name / fallback logic as the orchestrator helper above.
 {{- end -}}
 
 {{/*
+Fully qualified in-cluster DNS name for a Service, given its short name. Used for every in-cluster
+URL this chart builds (not just proxied ones, for consistency): Squid's own DNS resolver only
+reads `nameserver`/`ndots` from /etc/resolv.conf, not the `search` list, so it can never resolve a
+bare short Service name the way normal container DNS resolution does - any address a runtime
+reaches through the Agent Egress Proxy must be fully qualified or Squid fails with ERR_DNS_FAIL.
+Parameters (dict): name (required, the Service's short name), ctx (required, the root context '.')
+*/}}
+{{- define "sonarqube.svcFQDN" -}}
+{{- printf "%s.%s.svc.cluster.local" .name .ctx.Release.Namespace -}}
+{{- end -}}
+
+{{/*
 URL the app nodes use to reach the shared Agent Orchestrator.
 */}}
 {{- define "sonarqube.agentOrchestrator.url" -}}
-{{- printf "http://%s:%d" (include "sonarqube.agentOrchestrator.fullname" .) (int .Values.agentOrchestrator.port) -}}
+{{- printf "http://%s:%d" (include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.agentOrchestrator.fullname" .) "ctx" .)) (int .Values.agentOrchestrator.port) -}}
 {{- end -}}
 
 {{/*
@@ -733,7 +745,7 @@ and the wait-for-sonarqube init container). Always the co-deployed SonarQube ser
 web context path.
 */}}
 {{- define "sonarqube.agent.sonarqube.url" -}}
-{{- printf "http://%s:%d%s" (include "sonarqube.fullname" .) (int .Values.service.externalPort) (trimSuffix "/" (include "sonarqube.webcontext" .)) -}}
+{{- printf "http://%s:%d%s" (include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.fullname" .) "ctx" .)) (int .Values.service.externalPort) (trimSuffix "/" (include "sonarqube.webcontext" .)) -}}
 {{- end -}}
 
 {{/*
@@ -742,7 +754,116 @@ Parameters (dict): ctx (required, the root context '.'), family (required, the r
 */}}
 {{- define "sonarqube.agentRuntime.pushUrl" -}}
 {{- $port := (get (fromYaml (include "sonarqube.agentRuntimes" .ctx)) .family).port -}}
-{{- printf "http://%s:%d/jobs" (include "sonarqube.agentRuntime.fullname" .) (int $port) -}}
+{{- printf "http://%s:%d/jobs" (include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.agentRuntime.fullname" .) "ctx" .ctx)) (int $port) -}}
+{{- end -}}
+
+{{/*
+Create the fully qualified name for the Agent Egress Proxy.
+*/}}
+{{- define "sonarqube.agentEgressProxy.fullname" -}}
+{{- printf "%s-agent-egress-proxy" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Selector labels for the Agent Egress Proxy: app: <chart>-agent-egress-proxy + release.
+*/}}
+{{- define "sonarqube.agentEgressProxy.selectorLabels" -}}
+app: {{ include "sonarqube.name" . }}-agent-egress-proxy
+release: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Name of the ServiceAccount for the Agent Egress Proxy.
+Same create / pinned-name / fallback logic as the orchestrator helper above.
+*/}}
+{{- define "sonarqube.agentEgressProxy.serviceAccountName" -}}
+{{- if .Values.agentEgressProxy.serviceAccount.create -}}
+{{- default (include "sonarqube.agentEgressProxy.fullname" .) .Values.agentEgressProxy.serviceAccount.name -}}
+{{- else -}}
+{{- include "sonarqube.serviceAccountName" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+In-cluster URL the agent runtimes reach the Agent Egress Proxy through. Plain http:// even for
+HTTPS_PROXY - the runtime talks plain HTTP to Squid itself, which then CONNECT-tunnels the actual
+HTTPS session (no TLS interception between the runtime and the proxy).
+*/}}
+{{- define "sonarqube.agentEgressProxy.url" -}}
+{{- printf "http://%s:%d" (include "sonarqube.agentEgressProxy.fullname" .) (int .Values.agentEgressProxy.port) -}}
+{{- end -}}
+
+{{/*
+Whether the Agent Egress Proxy must be rendered: it has no independent enable/disable switch of
+its own (unlike every other agentic component) - it auto-activates whenever hunterAgent.enabled
+or remediationAgent.enabled is true, and renders nothing when both are false. Every Agent Egress
+Proxy template gates on this helper instead of a values flag.
+Usage: {{- if include "sonarqube.agentEgressProxy.required" . }}
+*/}}
+{{- define "sonarqube.agentEgressProxy.required" -}}
+{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Scheduling block (nodeSelector/tolerations/affinity) for the Agent Egress Proxy.
+
+Identical to sonarqube.agent.scheduling except for the affinity default: with replicaCount 2 and a
+podDisruptionBudget of minAvailable 1, nothing otherwise stops both replicas landing on the same
+node - which would make a single node drain sever every runtime's only egress path *and* be
+blocked by the PDB. So when neither agentEgressProxy.affinity nor the global affinity is set, fall
+back to a soft (preferred, not required) anti-affinity on hostname: spreads across nodes when the
+cluster has them, still schedulable on a single-node cluster such as kind.
+
+Setting agentEgressProxy.affinity replaces this default wholesale - it is not merged.
+*/}}
+{{- define "sonarqube.agentEgressProxy.scheduling" -}}
+{{- $proxy := .Values.agentEgressProxy -}}
+{{- $affinity := default .Values.affinity $proxy.affinity -}}
+{{- if not $affinity -}}
+{{- $affinity = fromYaml (include "sonarqube.agentEgressProxy.defaultAntiAffinity" .) -}}
+{{- end -}}
+{{- include "sonarqube.agent.scheduling" (dict "ctx" . "component" (dict "nodeSelector" $proxy.nodeSelector "tolerations" $proxy.tolerations "affinity" $affinity)) -}}
+{{- end -}}
+
+{{- define "sonarqube.agentEgressProxy.defaultAntiAffinity" -}}
+podAntiAffinity:
+  preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchLabels:
+{{ include "sonarqube.agentEgressProxy.selectorLabels" . | indent 12 }}
+{{- end -}}
+
+{{/*
+Selector labels common to both agent runtime families (family-agnostic), so a single selector can
+match every runtime pod regardless of family - used by the Agent Egress Proxy's own NetworkPolicy
+ingress rule.
+*/}}
+{{- define "sonarqube.agentRuntime.commonSelectorLabels" -}}
+sonarqube.agent/component: runtime
+release: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+The DNS-to-kube-dns egress rule shared by every agent NetworkPolicy (runtime and proxy alike).
+Output is unindented; callers should pipe through `indent`/`nindent` to place it under `egress:`.
+Usage: {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
+*/}}
+{{- define "sonarqube.agent.dnsEgressRule" -}}
+- to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+  ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
 {{- end -}}
 
 {{/*
@@ -762,25 +883,6 @@ for the Agent Orchestrator's CORE_DB_NAME env.
 {{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" .Values.jdbcOverwrite.jdbcUrl "" -}}
 {{- $rest := (splitn "/" 2 $stripped)._1 | default "" -}}
 {{- regexReplaceAll "\\?.*$" $rest "" -}}
-{{- end -}}
-
-{{/*
-Render a single NetworkPolicy egress peer for one `egressAllow` entry
-(either `{ cidr }` or `{ podSelector [, namespaceSelector] }`). A NetworkPolicy ipBlock rule
-can never target a Service's ClusterIP - kube-proxy DNATs to the backing pod IP before policy
-enforcement sees the packet - so in-cluster dependencies must use podSelector, not cidr.
-Output is unindented; callers should pipe through `indent`/`nindent` to place it under a `to:` list.
-*/}}
-{{- define "sonarqube.agent.egressAllow.peer" -}}
-{{- if .cidr -}}
-- ipBlock:
-    cidr: {{ .cidr }}
-{{- else -}}
-{{- $peer := dict -}}
-{{- with .podSelector }}{{ $peer = set $peer "podSelector" . }}{{ end -}}
-{{- with .namespaceSelector }}{{ $peer = set $peer "namespaceSelector" . }}{{ end -}}
-{{- list $peer | toYaml -}}
-{{- end -}}
 {{- end -}}
 
 {{/*
@@ -893,4 +995,25 @@ successThreshold: {{ . }}
 failureThreshold: {{ . }}
 {{- end }}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Render one tcpSocket probe (readiness or liveness) for the Agent Egress Proxy - Squid has no HTTP
+health endpoint worth curling, so unlike sonarqube.agent.probe above this checks the proxy port is
+accepting TCP connections.
+Parameters: the agentEgressProxy.probes.<kind> values block.
+Usage: {{- with (include "sonarqube.agent.egressProxy.probe" .Values.agentEgressProxy.probes.readiness) }}
+          readinessProbe:
+{{ . | indent 12 }}
+          {{- end }}
+*/}}
+{{- define "sonarqube.agent.egressProxy.probe" -}}
+tcpSocket:
+  port: http-proxy
+{{- with .periodSeconds }}
+periodSeconds: {{ . }}
+{{- end }}
+{{- with .timeoutSeconds }}
+timeoutSeconds: {{ . }}
+{{- end }}
 {{- end -}}

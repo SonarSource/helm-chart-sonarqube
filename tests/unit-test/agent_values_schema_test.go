@@ -15,14 +15,22 @@ func TestAgentValuesSchemaRejectsWrongTypes(t *testing.T) {
 	cases := []struct {
 		name string
 		set  map[string]string
+		// requiresEgressProxy restricts this case to charts with an Agent Egress Proxy - an
+		// unknown key like agentEgressProxy.* on a chart without one is silently ignored by the
+		// schema (no additionalProperties: false), not rejected, so it wouldn't error there.
+		requiresEgressProxy bool
 	}{
-		{"agentOrchestrator.replicaCount", map[string]string{"agentOrchestrator.replicaCount": "notanumber"}},
-		{"hunterAgent.enabled", map[string]string{"hunterAgent.enabled": "notabool"}},
-		{"gvisor.installer.image.digest", map[string]string{"gvisor.installer.image.digest": "true"}},
+		{name: "agentOrchestrator.replicaCount", set: map[string]string{"agentOrchestrator.replicaCount": "notanumber"}},
+		{name: "hunterAgent.enabled", set: map[string]string{"hunterAgent.enabled": "notabool"}},
+		{name: "gvisor.installer.image.digest", set: map[string]string{"gvisor.installer.image.digest": "true"}},
+		{name: "agentEgressProxy.replicaCount", set: map[string]string{"agentEgressProxy.replicaCount": "notanumber"}, requiresEgressProxy: true},
 	}
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			for _, tc := range cases {
+				if tc.requiresEgressProxy && !chart.hasEgressProxy {
+					continue
+				}
 				t.Run(tc.name, func(t *testing.T) {
 					opts := &helm.Options{Logger: logger.Discard, SetValues: tc.set}
 					_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-orchestrator.yaml"})

@@ -1,0 +1,112 @@
+{{- /*
+Always a standalone Deployment, never a sidecar on a runtime pod: NetworkPolicy is enforced
+per-pod, so a sidecar would force the untrusted runtime container to share its pod's network
+identity with Squid - which itself needs broad internet egress - leaking that broad egress
+straight back into the runtime's own pod instead of isolating it here.
+*/}}
+{{- if include "sonarqube.agentEgressProxy.required" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sonarqube.agentEgressProxy.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agent/component: egress-proxy
+    app.kubernetes.io/component: agent-egress-proxy
+spec:
+  replicas: {{ .Values.agentEgressProxy.replicaCount }}
+  {{- with .Values.agentEgressProxy.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ . }}
+  {{- end }}
+  {{- with .Values.agentEgressProxy.strategy }}
+  strategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels: {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/agent-egress-proxy-configmap.yaml") . | sha256sum }}
+        {{- with .Values.agentEgressProxy.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 8 }}
+        sonarqube.agent/component: egress-proxy
+        {{- with .Values.agentEgressProxy.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      automountServiceAccountToken: {{ include "sonarqube.agent.automountServiceAccountToken" (dict "ctx" . "serviceAccount" .Values.agentEgressProxy.serviceAccount) }}
+      {{- $pullSecrets := include "sonarqube.agent.imagePullSecrets" (list .Values.agentEgressProxy.image) }}
+      {{- if $pullSecrets }}
+      imagePullSecrets: {{- $pullSecrets | nindent 8 }}
+      {{- end }}
+      {{- with .Values.agentEgressProxy.securityContext }}
+      securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: agent-egress-proxy
+          {{- if .Values.agentEgressProxy.image.digest }}
+          image: {{ printf "%s@%s" .Values.agentEgressProxy.image.repository .Values.agentEgressProxy.image.digest }}
+          {{- else }}
+          image: {{ printf "%s:%s" .Values.agentEgressProxy.image.repository (default "latest" .Values.agentEgressProxy.image.tag) }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.agentEgressProxy.image.pullPolicy }}
+          {{- with .Values.agentEgressProxy.containerSecurityContext }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command: ["squid", "-N", "-f", "/etc/squid/squid.conf"]
+          ports:
+            - name: http-proxy
+              containerPort: {{ .Values.agentEgressProxy.port }}
+              protocol: TCP
+          {{- with .Values.agentEgressProxy.env }}
+          env: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.agentEgressProxy.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with (include "sonarqube.agent.egressProxy.probe" .Values.agentEgressProxy.probes.readiness) }}
+          readinessProbe:
+{{ . | indent 12 }}
+          {{- end }}
+          {{- with (include "sonarqube.agent.egressProxy.probe" .Values.agentEgressProxy.probes.liveness) }}
+          livenessProbe:
+{{ . | indent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: squid-conf
+              mountPath: /etc/squid/squid.conf
+              subPath: squid.conf
+              readOnly: true
+            - name: squid-spool
+              mountPath: /var/spool/squid
+            - name: squid-run
+              mountPath: /var/run
+            - name: tmp
+              mountPath: /tmp
+            {{- with .Values.agentEgressProxy.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      {{- with (include "sonarqube.agentEgressProxy.scheduling" .) }}
+{{ . | indent 6 }}
+      {{- end }}
+      serviceAccountName: {{ include "sonarqube.agentEgressProxy.serviceAccountName" . }}
+      volumes:
+        - name: squid-conf
+          configMap:
+            name: {{ include "sonarqube.agentEgressProxy.fullname" . }}
+        - name: squid-spool
+          emptyDir: {}
+        - name: squid-run
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        {{- with .Values.agentEgressProxy.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+{{- end }}

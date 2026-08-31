@@ -695,29 +695,6 @@
                     "properties": {
                         "enabled": {
                             "type": "boolean"
-                        },
-                        "egressAllow": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "anyOf": [
-                                    {
-                                        "required": [
-                                            "cidr"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "podSelector"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "namespaceSelector"
-                                        ]
-                                    }
-                                ]
-                            }
                         }
                     }
                 },
@@ -890,34 +867,180 @@
                     "properties": {
                         "enabled": {
                             "type": "boolean"
-                        },
-                        "egressAllow": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "anyOf": [
-                                    {
-                                        "required": [
-                                            "cidr"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "podSelector"
-                                        ]
-                                    },
-                                    {
-                                        "required": [
-                                            "namespaceSelector"
-                                        ]
-                                    }
-                                ]
-                            }
                         }
                     }
                 },
                 "remediationScriptPath": {
                     "type": "string"
+                },
+                "env": {
+                    "type": "array"
+                },
+                "extraVolumes": {
+                    "type": "array"
+                },
+                "extraVolumeMounts": {
+                    "type": "array"
+                }
+            }
+        },
+        "agentEgressProxy": {
+            "type": "object",
+            "properties": {
+                "maxFiledescriptors": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "repository": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": [
+                                "string",
+                                "number"
+                            ]
+                        },
+                        "digest": {
+                            "type": "string"
+                        },
+                        "pullPolicy": {
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "pullSecret": {
+                            "type": "string"
+                        },
+                        "pullSecrets": {
+                            "type": "array"
+                        }
+                    }
+                },
+                "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "replicaCount": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "nodeSelector": {
+                    "type": "object"
+                },
+                "tolerations": {
+                    "type": "array"
+                },
+                "affinity": {
+                    "type": "object"
+                },
+                "revisionHistoryLimit": {
+                    "type": [
+                        "string",
+                        "integer"
+                    ]
+                },
+                "strategy": {
+                    "type": "object"
+                },
+                "podLabels": {
+                    "type": "object"
+                },
+                "annotations": {
+                    "type": "object"
+                },
+                "resources": {
+                    "type": "object"
+                },
+                "securityContext": {
+                    "type": "object"
+                },
+                "containerSecurityContext": {
+                    "type": "object"
+                },
+                "probes": {
+                    "type": "object",
+                    "properties": {
+                        "readiness": {
+                            "type": "object",
+                            "properties": {
+                                "periodSeconds": {
+                                    "type": "integer"
+                                },
+                                "timeoutSeconds": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "liveness": {
+                            "type": "object",
+                            "properties": {
+                                "periodSeconds": {
+                                    "type": "integer"
+                                },
+                                "timeoutSeconds": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    }
+                },
+                "serviceAccount": {
+                    "type": "object",
+                    "properties": {
+                        "create": {
+                            "type": "boolean"
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "automountToken": {
+                            "type": "boolean"
+                        },
+                        "annotations": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "allowedDomains": {
+                    "type": "array"
+                },
+                "extraSquidConf": {
+                    "type": "string"
+                },
+                "networkPolicy": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "egressPorts": {
+                            "type": "array"
+                        },
+                        "egressExcludeCidrs": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "podDisruptionBudget": {
+                    "type": "object",
+                    "properties": {
+                        "minAvailable": {
+                            "type": [
+                                "string",
+                                "integer"
+                            ]
+                        }
+                    }
                 },
                 "env": {
                     "type": "array"

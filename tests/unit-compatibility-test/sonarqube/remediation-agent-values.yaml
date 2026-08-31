@@ -1,7 +1,8 @@
 # Exercises the Agent Orchestrator (Deployment/Service/Secret), the Remediation Agent
 # (Deployment/Service), dedicated ServiceAccounts (IRSA annotations), the remediation
-# NetworkPolicy (incl. egressAllow with ports), credential-less S3 storage (no static keys),
-# and the gVisor RuntimeClass wired onto the runtime.
+# NetworkPolicy (egress restricted to the Agent Egress Proxy), the Agent Egress Proxy
+# (ConfigMap/Service/Deployment/PDB/NetworkPolicy with allowedDomains), credential-less S3
+# storage (no static keys), and the gVisor RuntimeClass wired onto the runtime.
 community:
   enabled: true
 
@@ -42,15 +43,6 @@ remediationAgent:
   enabled: true
   networkPolicy:
     enabled: true
-    egressAllow:
-      - cidr: 160.79.104.0/23
-        ports:
-          - port: 443
-            protocol: TCP
-      - cidr: 0.0.0.0/0
-        ports:
-          - port: 443
-            protocol: TCP
   serviceAccount:
     create: true
     automountToken: true
@@ -60,6 +52,12 @@ remediationAgent:
   image:
     repository: example.com/remediation-agent
     tag: "1.0.0"
+
+agentEgressProxy:
+  allowedDomains:
+    - .anthropic.com
+  networkPolicy:
+    enabled: true
 
 vortex:
   enabled: true

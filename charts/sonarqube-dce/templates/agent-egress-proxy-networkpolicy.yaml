@@ -1,0 +1,69 @@
+{{- if and (include "sonarqube.agentEgressProxy.required" .) .Values.agentEgressProxy.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "sonarqube.agentEgressProxy.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agent/component: egress-proxy
+    app.kubernetes.io/component: agent-egress-proxy
+spec:
+  podSelector:
+    matchLabels: {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {{- include "sonarqube.agentRuntime.commonSelectorLabels" . | nindent 14 }}
+      ports:
+        - port: {{ .Values.agentEgressProxy.port }}
+          protocol: TCP
+  egress:
+{{ include "sonarqube.agent.dnsEgressRule" . | indent 4 }}
+    {{- /* Backs the hardcoded sonarqube_host allow rule in agent-egress-proxy-configmap.yaml,
+           which must stay reachable unconditionally - so this rule is not gated behind
+           networkPolicy.egressPorts, unlike the allowedDomains rule below. dce has no monolith
+           pod (no "sonarqube.selectorLabels" helper) - the application nodes behind the
+           sonarqube.fullname Service are matched the same way templates/networkpolicy.yaml's
+           app NetworkPolicy already does. */}}
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ template "sonarqube.name" . }}
+              sonarqube.datacenter/type: app
+      ports:
+        - port: {{ .Values.service.internalPort }}
+          protocol: TCP
+    {{- /* Backs the hardcoded orchestrator_host allow rule in agent-egress-proxy-configmap.yaml,
+           which must stay reachable unconditionally - so this rule is not gated behind
+           networkPolicy.egressPorts, unlike the allowedDomains rule below. */}}
+    - to:
+        - podSelector:
+            matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 14 }}
+      ports:
+        - port: {{ .Values.agentOrchestrator.port }}
+          protocol: TCP
+    {{- /* NetworkPolicy is L3/L4-only and cannot match a destination FQDN, so this rule stays
+           broad by necessity - the actual per-domain restriction is enforced entirely inside
+           Squid via allowedDomains (dstdomain ACL), not here. `except` carves back out the
+           destinations that should never be proxy-reachable no matter what Squid is configured to
+           allow (by default the link-local range carrying the cloud metadata service), so a
+           mistaken allowedDomains entry or extraSquidConf rule can't turn the proxy into an SSRF
+           pivot on its own. */}}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            {{- with .Values.agentEgressProxy.networkPolicy.egressExcludeCidrs }}
+            except: {{- toYaml . | nindent 14 }}
+            {{- end }}
+      ports:
+        {{- range .Values.agentEgressProxy.networkPolicy.egressPorts }}
+        - port: {{ . }}
+          protocol: TCP
+        {{- end }}
+{{- end }}
