@@ -744,6 +744,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `sonarProperties`              | Custom `sonar.properties` key-value pairs (e.g., "sonarProperties.sonar.log.level=DEBUG")                                       | `None`           |
 | `sonarSecretProperties`        | Additional `sonar.properties` key-value pairs to load from a secret                                                                      | `None`           |
 | `sonarSecretKey`               | Name of existing secret used for settings encryption                                                                                     | `None`           |
+| `agenticSigningSecretKey`      | Name of existing secret containing the agentic signing secret, shared by SonarQube Server, the Agent Orchestrator, and Vortex to sign/verify agentic requests to each other | `None`           |
 | `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes                                                                             | `None`           |
 | `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                                                                    | `None`           |
 | `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                                                                | `None`           |

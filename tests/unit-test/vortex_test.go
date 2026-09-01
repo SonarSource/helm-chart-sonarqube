@@ -66,6 +66,22 @@ func vortexContainerEnv(container corev1.Container) map[string]corev1.EnvVar {
 	return env
 }
 
+func vortexDeploymentWithValues(t *testing.T, chart agentChart, fixture string, setValues map[string]string) appsv1.Deployment {
+	t.Helper()
+	opts := &helm.Options{
+		Logger:      logger.Discard,
+		ValuesFiles: []string{chart.valuesDir + "/" + fixture},
+		SetValues:   setValues,
+	}
+	output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
+	require.NoError(t, err)
+
+	var deployment appsv1.Deployment
+	helm.UnmarshalK8SYaml(t, output, &deployment)
+	require.NotEmpty(t, deployment.Name, "no Deployment rendered by templates/vortex.yaml")
+	return deployment
+}
+
 // Off by default, so an existing install picks up nothing new until vortex.enabled is set.
 func TestVortexDisabledByDefault(t *testing.T) {
 	for _, chart := range agentCharts {
@@ -242,6 +258,69 @@ func TestVortexStorageExistingSecret(t *testing.T) {
 			output, err := renderVortex(t, chart, "vortex-storage-existing-secret.yaml", "templates/vortex-secret.yaml")
 			require.Error(t, err, "no Secret may be rendered when both the token and the storage credentials come from an existingSecret")
 			assert.Empty(t, strings.TrimSpace(output))
+		})
+	}
+}
+
+// When the agentic signing secret (.Values.agenticSigningSecretKey) is set, it must be mounted
+// into Vortex too, with its path exposed via SONAR_AGENTIC_SIGNING_SECRET_FILE (SONAR-32028).
+// Vortex has no image-intrinsic base path convention, so it uses a dedicated, convention-free
+// mount point rather than the orchestrator's /sonarcloud one.
+func TestVortexSigningSecretMount(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("unset renders no signing secret env var, volume, or volumeMount", func(t *testing.T) {
+				deployment := vortexDeployment(t, chart, "vortex-enabled.yaml")
+				container := deployment.Spec.Template.Spec.Containers[0]
+				env := vortexContainerEnv(container)
+
+				_, hasEnv := env["SONAR_AGENTIC_SIGNING_SECRET_FILE"]
+				assert.False(t, hasEnv)
+				assert.Nil(t, findVolumeMountByName(container, "agentic-signing-secret"))
+				assert.Nil(t, findVolumeByName(deployment.Spec.Template.Spec.Volumes, "agentic-signing-secret"))
+			})
+
+			t.Run("set mounts the secret and exposes its path", func(t *testing.T) {
+				deployment := vortexDeploymentWithValues(t, chart, "vortex-enabled.yaml", map[string]string{
+					"agenticSigningSecretKey": "agentic-signing-secret",
+				})
+				podSpec := deployment.Spec.Template.Spec
+				container := podSpec.Containers[0]
+				env := vortexContainerEnv(container)
+
+				require.Contains(t, env, "SONAR_AGENTIC_SIGNING_SECRET_FILE")
+				assert.Equal(t, "/etc/sonar-agentic-signing/sonar-agentic-signing-secret.txt", env["SONAR_AGENTIC_SIGNING_SECRET_FILE"].Value)
+
+				volumeMount := findVolumeMountByName(container, "agentic-signing-secret")
+				require.NotNil(t, volumeMount)
+				assert.Equal(t, "/etc/sonar-agentic-signing/", volumeMount.MountPath)
+				assert.True(t, volumeMount.ReadOnly)
+
+				volume := findVolumeByName(podSpec.Volumes, "agentic-signing-secret")
+				require.NotNil(t, volume)
+				require.NotNil(t, volume.Secret)
+				assert.Equal(t, "agentic-signing-secret", volume.Secret.SecretName)
+				require.Len(t, volume.Secret.Items, 1)
+				assert.Equal(t, "sonar-agentic-signing-secret.txt", volume.Secret.Items[0].Key)
+				assert.Equal(t, "sonar-agentic-signing-secret.txt", volume.Secret.Items[0].Path)
+			})
+
+			t.Run("set still renders alongside user-supplied extraVolumeMounts/extraVolumes", func(t *testing.T) {
+				deployment := vortexDeploymentWithValues(t, chart, "vortex-enabled.yaml", map[string]string{
+					"agenticSigningSecretKey":                "agentic-signing-secret",
+					"vortex.extraVolumeMounts[0].name":       "custom-volume",
+					"vortex.extraVolumeMounts[0].mountPath":  "/custom",
+					"vortex.extraVolumes[0].name":            "custom-volume",
+					"vortex.extraVolumes[0].emptyDir.medium": "",
+				})
+				podSpec := deployment.Spec.Template.Spec
+				container := podSpec.Containers[0]
+
+				assert.NotNil(t, findVolumeMountByName(container, "agentic-signing-secret"))
+				assert.NotNil(t, findVolumeMountByName(container, "custom-volume"))
+				assert.NotNil(t, findVolumeByName(podSpec.Volumes, "agentic-signing-secret"))
+				assert.NotNil(t, findVolumeByName(podSpec.Volumes, "custom-volume"))
+			})
 		})
 	}
 }

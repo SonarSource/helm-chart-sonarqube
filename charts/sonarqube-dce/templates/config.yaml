@@ -19,6 +19,9 @@ data:
   {{- if .Values.sonarSecretKey }}
     sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
   {{- end }}
+  {{- if .Values.agenticSigningSecretKey }}
+    sonar.agentic.signing.secretFile={{ .Values.sonarqubeFolder }}/secret-agentic-signing/sonar-agentic-signing-secret.txt
+  {{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -36,4 +39,7 @@ data:
   {{- end }}
   {{- if .Values.sonarSecretKey }}
     sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
+  {{- end }}
+  {{- if .Values.agenticSigningSecretKey }}
+    sonar.agentic.signing.secretFile={{ .Values.sonarqubeFolder }}/secret-agentic-signing/sonar-agentic-signing-secret.txt
   {{- end }}

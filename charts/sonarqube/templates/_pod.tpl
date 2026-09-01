@@ -92,7 +92,7 @@ spec:
       env:
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
     {{- end }}
-    {{- if or $hasMergedProps .Values.sonarSecretProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
+    {{- if or $hasMergedProps .Values.sonarSecretProperties .Values.sonarSecretKey .Values.agenticSigningSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
     - name: concat-properties
       image: {{ default (include "sonarqube.image" $) .Values.initContainers.image }}
       imagePullPolicy: {{ .Values.image.pullPolicy  }}
@@ -113,7 +113,7 @@ spec:
       volumeMounts:
         - mountPath: /tmp/result
           name: concat-dir
-        {{- if or $hasMergedProps .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
+        {{- if or $hasMergedProps .Values.sonarSecretKey .Values.agenticSigningSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
         - mountPath: /tmp/props/sonar.properties
           name: config
           subPath: sonar.properties
@@ -364,13 +364,17 @@ spec:
           subPath: logs
         - mountPath: /tmp
           name: tmp-dir
-        {{- if or $hasMergedProps .Values.sonarSecretProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
+        {{- if or $hasMergedProps .Values.sonarSecretProperties .Values.sonarSecretKey .Values.agenticSigningSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
         - mountPath: {{ .Values.sonarqubeFolder }}/conf/
           name: concat-dir
         {{- end }}
         {{- if .Values.sonarSecretKey }}
         - mountPath: {{ .Values.sonarqubeFolder }}/secret/
           name: secret
+        {{- end }}
+        {{- if .Values.agenticSigningSecretKey }}
+        - mountPath: {{ .Values.sonarqubeFolder }}/secret-agentic-signing/
+          name: agentic-signing-secret
         {{- end }}
         {{- if .Values.caCerts.enabled }}
         - mountPath: {{ .Values.sonarqubeFolder }}/certs
@@ -417,7 +421,7 @@ spec:
     {{- with .Values.extraVolumes }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-    {{- if or $hasMergedProps .Values.sonarSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
+    {{- if or $hasMergedProps .Values.sonarSecretKey .Values.agenticSigningSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
     - name: config
       configMap:
         name: {{ include "sonarqube.fullname" . }}-config
@@ -440,6 +444,14 @@ spec:
         items:
         - key: sonar-secret.txt
           path: sonar-secret.txt
+    {{- end }}
+    {{- if .Values.agenticSigningSecretKey }}
+    - name: agentic-signing-secret
+      secret:
+        secretName: {{ .Values.agenticSigningSecretKey }}
+        items:
+        - key: sonar-agentic-signing-secret.txt
+          path: sonar-agentic-signing-secret.txt
     {{- end }}
     {{- include "sonarqube.volumes.caCerts" . | nindent 4 }}
     {{- if .Values.plugins.netrcCreds }}
@@ -517,7 +529,7 @@ spec:
       {{- end }}
     - name : tmp-dir
       emptyDir: {{- toYaml .Values.emptyDir | nindent 8 }}
-      {{- if or $hasMergedProps .Values.sonarSecretProperties .Values.sonarSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
+      {{- if or $hasMergedProps .Values.sonarSecretProperties .Values.sonarSecretKey .Values.agenticSigningSecretKey ( not .Values.elasticsearch.bootstrapChecks) }}
     - name : concat-dir
       emptyDir: {{- toYaml .Values.emptyDir | nindent 8 }}
       {{- end }}

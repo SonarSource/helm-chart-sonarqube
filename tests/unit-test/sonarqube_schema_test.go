@@ -9,6 +9,7 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 )
@@ -183,4 +184,36 @@ func TestPersistenceWithoutHostpath(t *testing.T) {
 	assert.NotNil(t, volume, "Volume 'sonarqube' should exist but was not found")
 	assert.Nil(t, volume.HostPath, "sonarqube volume should NOT have a HostPath source")
 	assert.Equal(t, "sonarqube-sonarqube", volume.PersistentVolumeClaim.ClaimName)
+}
+
+// When the agentic signing secret (.Values.agenticSigningSecretKey) is set, it must be mounted
+// into the main SonarQube pod, using its own volume/mount distinct from the sonarSecretKey one
+// (SONAR-32028).
+func TestMainPodSigningSecretMount(t *testing.T) {
+	t.Run("unset renders no signing secret volume or volumeMount", func(t *testing.T) {
+		rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/agent-all-disabled.yaml", newSQHelmOptions())
+		container := rendered.Spec.Template.Spec.Containers[0]
+		assert.Nil(t, findVolumeMountByName(container, "agentic-signing-secret"))
+		assert.Nil(t, findVolumeByName(rendered.Spec.Template.Spec.Volumes, "agentic-signing-secret"))
+	})
+
+	t.Run("set mounts the secret", func(t *testing.T) {
+		opts := newSQHelmOptions()
+		opts.SetValues["agenticSigningSecretKey"] = "agentic-signing-secret"
+		rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/agent-all-disabled.yaml", opts)
+		podSpec := rendered.Spec.Template.Spec
+		container := podSpec.Containers[0]
+
+		volumeMount := findVolumeMountByName(container, "agentic-signing-secret")
+		require.NotNil(t, volumeMount)
+		assert.Equal(t, "/opt/sonarqube/secret-agentic-signing/", volumeMount.MountPath)
+
+		volume := findVolumeByName(podSpec.Volumes, "agentic-signing-secret")
+		require.NotNil(t, volume)
+		require.NotNil(t, volume.Secret)
+		assert.Equal(t, "agentic-signing-secret", volume.Secret.SecretName)
+		require.Len(t, volume.Secret.Items, 1)
+		assert.Equal(t, "sonar-agentic-signing-secret.txt", volume.Secret.Items[0].Key)
+		assert.Equal(t, "sonar-agentic-signing-secret.txt", volume.Secret.Items[0].Path)
+	})
 }

@@ -145,7 +145,7 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
+      {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey .Values.agenticSigningSecretKey }}
         - name: concat-properties
           image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
@@ -164,7 +164,7 @@ spec:
               awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
             fi
           volumeMounts:
-          {{- if or .Values.searchNodes.sonarProperties .Values.sonarSecretKey }}
+          {{- if or .Values.searchNodes.sonarProperties .Values.sonarSecretKey .Values.agenticSigningSecretKey }}
             - mountPath: /tmp/props/sonar.properties
               name: config
               subPath: sonar.properties
@@ -413,7 +413,7 @@ spec:
 {{- if .Values.searchNodes.persistence.mounts }}
 {{ toYaml .Values.searchNodes.persistence.mounts | indent 12 }}
 {{- end }}
-            {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
+            {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey .Values.agenticSigningSecretKey }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
               subPath: sonar.properties
               name: concat-dir
@@ -421,6 +421,11 @@ spec:
             {{- if .Values.sonarSecretKey }}
             - mountPath: {{ .Values.sonarqubeFolder }}/secret/
               name: secret
+              readOnly: true
+            {{- end }}
+            {{- if .Values.agenticSigningSecretKey }}
+            - mountPath: {{ .Values.sonarqubeFolder }}/secret-agentic-signing/
+              name: agentic-signing-secret
               readOnly: true
             {{- end }}
             {{- if .Values.searchNodes.searchAuthentication.enabled }}
@@ -486,7 +491,15 @@ spec:
           - key: sonar-secret.txt
             path: sonar-secret.txt
       {{- end }}
-      {{- if or .Values.searchNodes.sonarProperties .Values.sonarSecretKey }}
+      {{- if .Values.agenticSigningSecretKey }}
+      - name: agentic-signing-secret
+        secret:
+          secretName: {{ .Values.agenticSigningSecretKey }}
+          items:
+          - key: sonar-agentic-signing-secret.txt
+            path: sonar-agentic-signing-secret.txt
+      {{- end }}
+      {{- if or .Values.searchNodes.sonarProperties .Values.sonarSecretKey .Values.agenticSigningSecretKey }}
       - name: config
         configMap:
           name: {{ template "sonarqube.fullname" . }}-search-config
@@ -532,7 +545,7 @@ spec:
       {{- end }}
       - name : tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
-        {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
+        {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey .Values.agenticSigningSecretKey }}
       - name : concat-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 -}}
         {{- end }}

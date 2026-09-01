@@ -6,6 +6,7 @@ import (
 	"github.com/gruntwork-io/terratest/modules/helm"
 	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 )
@@ -91,4 +92,75 @@ func TestApplicationNodeExtraInitContainers(t *testing.T) {
 	rendered := renderDCEAppTemplate(t, "test-cases-values/sonarqube-dce/test-app-extra-init-containers.yaml", dceHelmOptions)
 	container := findInitContainerByName(rendered.Spec.Template.Spec.InitContainers, "extra-app-init")
 	assert.NotNil(t, container, "Expected 'extra-app-init' init container to be present in application pod")
+}
+
+// When the agentic signing secret (.Values.agenticSigningSecretKey) is set, it must be mounted
+// into the search node, using its own volume/mount distinct from the sonarSecretKey one, mirroring
+// that mount's own readOnly: true (SONAR-32028).
+func TestSearchNodeSigningSecretMount(t *testing.T) {
+	t.Run("unset renders no signing secret volume or volumeMount", func(t *testing.T) {
+		dceHelmOptions := &helm.Options{Logger: logger.Discard}
+		rendered := renderDCESearchTemplate(t, "test-cases-values/sonarqube-dce/agent-all-disabled.yaml", dceHelmOptions)
+		container := rendered.Spec.Template.Spec.Containers[0]
+		assert.Nil(t, findVolumeMountByName(container, "agentic-signing-secret"))
+		assert.Nil(t, findVolumeByName(rendered.Spec.Template.Spec.Volumes, "agentic-signing-secret"))
+	})
+
+	t.Run("set mounts the secret read-only", func(t *testing.T) {
+		dceHelmOptions := &helm.Options{
+			Logger:    logger.Discard,
+			SetValues: map[string]string{"agenticSigningSecretKey": "agentic-signing-secret"},
+		}
+		rendered := renderDCESearchTemplate(t, "test-cases-values/sonarqube-dce/agent-all-disabled.yaml", dceHelmOptions)
+		podSpec := rendered.Spec.Template.Spec
+		container := podSpec.Containers[0]
+
+		volumeMount := findVolumeMountByName(container, "agentic-signing-secret")
+		require.NotNil(t, volumeMount)
+		assert.Equal(t, "/opt/sonarqube/secret-agentic-signing/", volumeMount.MountPath)
+		assert.True(t, volumeMount.ReadOnly)
+
+		volume := findVolumeByName(podSpec.Volumes, "agentic-signing-secret")
+		require.NotNil(t, volume)
+		require.NotNil(t, volume.Secret)
+		assert.Equal(t, "agentic-signing-secret", volume.Secret.SecretName)
+		require.Len(t, volume.Secret.Items, 1)
+		assert.Equal(t, "sonar-agentic-signing-secret.txt", volume.Secret.Items[0].Key)
+		assert.Equal(t, "sonar-agentic-signing-secret.txt", volume.Secret.Items[0].Path)
+	})
+}
+
+// Same as TestSearchNodeSigningSecretMount, but for the application node, which mirrors its own
+// sonarSecretKey mount by NOT setting readOnly (SONAR-32028).
+func TestApplicationNodeSigningSecretMount(t *testing.T) {
+	t.Run("unset renders no signing secret volume or volumeMount", func(t *testing.T) {
+		dceHelmOptions := &helm.Options{Logger: logger.Discard}
+		rendered := renderDCEAppTemplate(t, "test-cases-values/sonarqube-dce/agent-all-disabled.yaml", dceHelmOptions)
+		container := rendered.Spec.Template.Spec.Containers[0]
+		assert.Nil(t, findVolumeMountByName(container, "agentic-signing-secret"))
+		assert.Nil(t, findVolumeByName(rendered.Spec.Template.Spec.Volumes, "agentic-signing-secret"))
+	})
+
+	t.Run("set mounts the secret", func(t *testing.T) {
+		dceHelmOptions := &helm.Options{
+			Logger:    logger.Discard,
+			SetValues: map[string]string{"agenticSigningSecretKey": "agentic-signing-secret"},
+		}
+		rendered := renderDCEAppTemplate(t, "test-cases-values/sonarqube-dce/agent-all-disabled.yaml", dceHelmOptions)
+		podSpec := rendered.Spec.Template.Spec
+		container := podSpec.Containers[0]
+
+		volumeMount := findVolumeMountByName(container, "agentic-signing-secret")
+		require.NotNil(t, volumeMount)
+		assert.Equal(t, "/opt/sonarqube/secret-agentic-signing/", volumeMount.MountPath)
+		assert.False(t, volumeMount.ReadOnly)
+
+		volume := findVolumeByName(podSpec.Volumes, "agentic-signing-secret")
+		require.NotNil(t, volume)
+		require.NotNil(t, volume.Secret)
+		assert.Equal(t, "agentic-signing-secret", volume.Secret.SecretName)
+		require.Len(t, volume.Secret.Items, 1)
+		assert.Equal(t, "sonar-agentic-signing-secret.txt", volume.Secret.Items[0].Key)
+		assert.Equal(t, "sonar-agentic-signing-secret.txt", volume.Secret.Items[0].Path)
+	})
 }

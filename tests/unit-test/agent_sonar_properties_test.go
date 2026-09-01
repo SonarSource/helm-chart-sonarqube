@@ -21,23 +21,20 @@ const (
 	hunterOrchestratorURLProperty      = "sonar.hunteragent.orchestrator.url"
 	remediationOrchestratorURLProperty = "sonar.remediationagent.orchestrator.url"
 	vortexAnalysisURLProperty          = "sonar.vortex.analysis.url"
+	agenticSigningSecretFileProperty   = "sonar.agentic.signing.secretFile"
 )
 
-// appSonarProperties renders templates/config.yaml and parses the conf/sonar.properties body of the
-// application nodes' ConfigMap into key/value pairs.
-func appSonarProperties(t *testing.T, chart agentChart, opts *helm.Options) map[string]string {
+// sonarPropertiesFromConfigMap parses the conf/sonar.properties body of the ConfigMap named
+// configMapName out of a rendered templates/config.yaml output into key/value pairs.
+func sonarPropertiesFromConfigMap(t *testing.T, output string, configMapName string) map[string]string {
 	t.Helper()
-	output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/config.yaml"})
-	require.NoError(t, err)
-
-	want := chart.fullnamePrefix() + chart.appConfigMapSuffix
 	for _, doc := range strings.Split(output, "\n---") {
 		if strings.TrimSpace(doc) == "" {
 			continue
 		}
 		var cm corev1.ConfigMap
 		helm.UnmarshalK8SYaml(t, doc, &cm)
-		if cm.Name != want {
+		if cm.Name != configMapName {
 			continue
 		}
 		props := map[string]string{}
@@ -49,8 +46,17 @@ func appSonarProperties(t *testing.T, chart agentChart, opts *helm.Options) map[
 		return props
 	}
 
-	t.Fatalf("templates/config.yaml rendered no ConfigMap named %q", want)
+	t.Fatalf("templates/config.yaml rendered no ConfigMap named %q", configMapName)
 	return nil
+}
+
+// appSonarProperties renders templates/config.yaml and parses the conf/sonar.properties body of the
+// application nodes' ConfigMap into key/value pairs.
+func appSonarProperties(t *testing.T, chart agentChart, opts *helm.Options) map[string]string {
+	t.Helper()
+	output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/config.yaml"})
+	require.NoError(t, err)
+	return sonarPropertiesFromConfigMap(t, output, chart.fullnamePrefix()+chart.appConfigMapSuffix)
 }
 
 func agentPropertiesOptions(chart agentChart, fixture string, setValues map[string]string) *helm.Options {
@@ -117,4 +123,52 @@ func TestUserSonarPropertiesOverrideAgentUrls(t *testing.T) {
 			assert.Equal(t, chart.orchestratorURL(), props[remediationOrchestratorURLProperty])
 		})
 	}
+}
+
+// The agentic signing secret (.Values.agenticSigningSecretKey) follows the same sonar.properties-file
+// pattern as sonarSecretKey (SONAR-31416): a SONAR_* env var override is silently ignored unless the
+// property already has a properties-file line, so sonar.agentic.signing.secretFile must be written
+// here too rather than only exposed as an env var (SONAR-32028). It must reach every node that reads
+// conf/sonar.properties directly - the single ConfigMap in sonarqube, and both the app and search
+// ConfigMaps in sonarqube-dce.
+func TestAgenticSigningSecretFileInSonarProperties(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("unset renders no property", func(t *testing.T) {
+				props := appSonarProperties(t, chart, agentPropertiesOptions(chart, "agent-all-disabled.yaml", nil))
+				assert.NotContains(t, props, agenticSigningSecretFileProperty)
+			})
+
+			t.Run("set renders the property pointing at the mounted file", func(t *testing.T) {
+				props := appSonarProperties(t, chart, agentPropertiesOptions(chart, "agent-all-disabled.yaml", map[string]string{
+					"agenticSigningSecretKey": "agentic-signing-secret",
+				}))
+				assert.Equal(t, "/opt/sonarqube/secret-agentic-signing/sonar-agentic-signing-secret.txt", props[agenticSigningSecretFileProperty])
+			})
+		})
+	}
+
+	t.Run("sonarqube-dce search-config", func(t *testing.T) {
+		dce := agentCharts[0]
+		require.Equal(t, "sonarqube-dce", dce.name)
+		searchConfigMap := dce.fullnamePrefix() + "-search-config"
+
+		t.Run("unset renders no property", func(t *testing.T) {
+			opts := agentPropertiesOptions(dce, "agent-all-disabled.yaml", nil)
+			output, err := helm.RenderTemplateE(t, opts, dce.path, dce.release, []string{"templates/config.yaml"})
+			require.NoError(t, err)
+			props := sonarPropertiesFromConfigMap(t, output, searchConfigMap)
+			assert.NotContains(t, props, agenticSigningSecretFileProperty)
+		})
+
+		t.Run("set renders the property pointing at the mounted file", func(t *testing.T) {
+			opts := agentPropertiesOptions(dce, "agent-all-disabled.yaml", map[string]string{
+				"agenticSigningSecretKey": "agentic-signing-secret",
+			})
+			output, err := helm.RenderTemplateE(t, opts, dce.path, dce.release, []string{"templates/config.yaml"})
+			require.NoError(t, err)
+			props := sonarPropertiesFromConfigMap(t, output, searchConfigMap)
+			assert.Equal(t, "/opt/sonarqube/secret-agentic-signing/sonar-agentic-signing-secret.txt", props[agenticSigningSecretFileProperty])
+		})
+	})
 }

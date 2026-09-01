@@ -86,6 +86,10 @@ spec:
             - name: AGENTIC_SECRET_KEY_PATH
               value: "/sonarcloud/secret/sonar-secret.txt"
             {{- end }}
+            {{- if .Values.agenticSigningSecretKey }}
+            - name: SONAR_AGENTIC_SIGNING_SECRET_FILE
+              value: "/sonarcloud/secret-agentic-signing/sonar-agentic-signing-secret.txt"
+            {{- end }}
             {{- /* CORE DB (SonarQube's database) connection for the orchestrator. Each field is
                    independently configurable via agentOrchestrator.coreDb, defaulting to
                    the shared jdbcOverwrite so it targets the same DB as SonarQube out of the box.
@@ -172,7 +176,7 @@ spec:
           {{- with .Values.agentOrchestrator.resources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey .Values.agentOrchestrator.extraVolumeMounts }}
+          {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey .Values.agenticSigningSecretKey .Values.agentOrchestrator.extraVolumeMounts }}
           volumeMounts:
             {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
             - name: tmp
@@ -181,6 +185,10 @@ spec:
             {{- if .Values.sonarSecretKey }}
             - name: secret
               mountPath: /sonarcloud/secret/
+            {{- end }}
+            {{- if .Values.agenticSigningSecretKey }}
+            - name: agentic-signing-secret
+              mountPath: /sonarcloud/secret-agentic-signing/
             {{- end }}
             {{- with .Values.agentOrchestrator.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
@@ -198,7 +206,7 @@ spec:
 {{ . | indent 6 }}
       {{- end }}
       serviceAccountName: {{ include "sonarqube.agentOrchestrator.serviceAccountName" . }}
-      {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey .Values.agentOrchestrator.extraVolumes }}
+      {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey .Values.agenticSigningSecretKey .Values.agentOrchestrator.extraVolumes }}
       volumes:
         {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
         - name: tmp
@@ -211,6 +219,14 @@ spec:
             items:
             - key: sonar-secret.txt
               path: sonar-secret.txt
+        {{- end }}
+        {{- if .Values.agenticSigningSecretKey }}
+        - name: agentic-signing-secret
+          secret:
+            secretName: {{ .Values.agenticSigningSecretKey }}
+            items:
+            - key: sonar-agentic-signing-secret.txt
+              path: sonar-agentic-signing-secret.txt
         {{- end }}
         {{- with .Values.agentOrchestrator.extraVolumes }}
         {{- toYaml . | nindent 8 }}

@@ -518,6 +518,14 @@ emptyDir:
 # path exposed via the AGENTIC_SECRET_KEY_PATH env var.
 # sonarSecretKey: "settings-encryption-secret"
 
+# Kubernetes secret containing the agentic signing secret, shared by SonarQube Server, the Agent
+# Orchestrator, and Vortex to sign/verify agentic requests to each other.
+# The secret must contain the key 'sonar-agentic-signing-secret.txt'.
+# The 'sonar.agentic.signing.secretFile' property will be set automatically on SonarQube Server;
+# when the orchestrator/Vortex are enabled, this secret is also mounted into them, with its path
+# exposed via the SONAR_AGENTIC_SIGNING_SECRET_FILE env var.
+# agenticSigningSecretKey: "agentic-signing-secret"
+
 ## Override JDBC values
 ## for external Databases
 jdbcOverwrite:

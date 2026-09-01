@@ -81,6 +81,10 @@ spec:
                   name: {{ default (include "sonarqube.vortex.fullname" .) $vortex.storage.existingSecret }}
                   key: SONAR_AGENTIC_STORAGE_SECRET_KEY
             {{- end }}
+            {{- if .Values.agenticSigningSecretKey }}
+            - name: SONAR_AGENTIC_SIGNING_SECRET_FILE
+              value: "/etc/sonar-agentic-signing/sonar-agentic-signing-secret.txt"
+            {{- end }}
             {{- with $vortex.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -103,15 +107,32 @@ spec:
               path: /health
               port: http
             periodSeconds: 30
-          {{- with $vortex.extraVolumeMounts }}
+          {{- if or $vortex.extraVolumeMounts .Values.agenticSigningSecretKey }}
           volumeMounts:
+            {{- if .Values.agenticSigningSecretKey }}
+            - name: agentic-signing-secret
+              mountPath: /etc/sonar-agentic-signing/
+              readOnly: true
+            {{- end }}
+            {{- with $vortex.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
       {{- with (include "sonarqube.agent.scheduling" (dict "ctx" . "component" $vortex)) }}
 {{ . | indent 6 }}
       {{- end }}
-      {{- with $vortex.extraVolumes }}
+      {{- if or $vortex.extraVolumes .Values.agenticSigningSecretKey }}
       volumes:
+        {{- if .Values.agenticSigningSecretKey }}
+        - name: agentic-signing-secret
+          secret:
+            secretName: {{ .Values.agenticSigningSecretKey }}
+            items:
+            - key: sonar-agentic-signing-secret.txt
+              path: sonar-agentic-signing-secret.txt
+        {{- end }}
+        {{- with $vortex.extraVolumes }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
 {{- end }}

@@ -101,7 +101,7 @@ spec:
           {{- end }}
       {{- end }}
       {{- $hasMergedProps := or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.port .Values.ApplicationNodes.webPort .Values.ApplicationNodes.cePort .Values.agentOrchestrator.enabled .Values.vortex.enabled }}
-      {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
+      {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey .Values.agenticSigningSecretKey }}
         - name: concat-properties
           image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
@@ -120,7 +120,7 @@ spec:
               awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
             fi
           volumeMounts:
-          {{- if or $hasMergedProps .Values.sonarSecretKey }}
+          {{- if or $hasMergedProps .Values.sonarSecretKey .Values.agenticSigningSecretKey }}
             - mountPath: /tmp/props/sonar.properties
               name: config
               subPath: sonar.properties
@@ -383,7 +383,7 @@ spec:
           securityContext: {{- . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
+            {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey .Values.agenticSigningSecretKey }}
             - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
               subPath: sonar.properties
               name: concat-dir
@@ -391,6 +391,10 @@ spec:
             {{- if .Values.sonarSecretKey }}
             - mountPath: {{ .Values.sonarqubeFolder }}/secret/
               name: secret
+            {{- end }}
+            {{- if .Values.agenticSigningSecretKey }}
+            - mountPath: {{ .Values.sonarqubeFolder }}/secret-agentic-signing/
+              name: agentic-signing-secret
             {{- end }}
             {{- if .Values.caCerts.enabled }}
             - mountPath: {{ .Values.sonarqubeFolder }}/certs
@@ -464,7 +468,7 @@ spec:
     {{- end }}
       serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
       volumes:
-      {{- if or $hasMergedProps .Values.sonarSecretKey }}
+      {{- if or $hasMergedProps .Values.sonarSecretKey .Values.agenticSigningSecretKey }}
       - name: config
         configMap:
           name: {{ template "sonarqube.fullname" . }}-app-config
@@ -487,6 +491,14 @@ spec:
           items:
           - key: sonar-secret.txt
             path: sonar-secret.txt
+      {{- end }}
+      {{- if .Values.agenticSigningSecretKey }}
+      - name: agentic-signing-secret
+        secret:
+          secretName: {{ .Values.agenticSigningSecretKey }}
+          items:
+          - key: sonar-agentic-signing-secret.txt
+            path: sonar-agentic-signing-secret.txt
       {{- end }}
       {{- include "sonarqube.volumes.caCerts" . | nindent 6 }}
       {{- if .Values.ApplicationNodes.plugins.netrcCreds }}
@@ -542,7 +554,7 @@ spec:
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
       - name : tmp-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 }}
-        {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
+        {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey .Values.agenticSigningSecretKey }}
       - name : concat-dir
         emptyDir: {{- toYaml .Values.emptyDir | nindent 10 -}}
         {{- end }}

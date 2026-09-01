@@ -9,6 +9,7 @@ All changes to this chart will be documented in this file.
 * Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via `agentOrchestrator.enabled`, `hunterAgent.enabled` and `remediationAgent.enabled`
 * Auto-wire the Hunter Agent's `SCRIPT_PATH` (detection mode) from `hunterAgent.scriptPath`, symmetric with the Remediation Agent's `REMEDIATION_SCRIPT_PATH`
 * Add `agentOrchestrator.env`/`extraVolumes`/`extraVolumeMounts`, and a `agentOrchestrator.storage.type`/`vortex.storage.filesystem.baseDir` FILESYSTEM/NFS backend for the shared agentic job storage
+* Add `agenticSigningSecretKey` to mount an agentic signing secret into SonarQube Server, the Agent Orchestrator, and Vortex, exposing its path via `sonar.agentic.signing.secretFile`/`SONAR_AGENTIC_SIGNING_SECRET_FILE`
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0

@@ -275,6 +275,75 @@ func TestAgentOrchestratorEncryptionKeyMount(t *testing.T) {
 	}
 }
 
+// When the agentic signing secret (.Values.agenticSigningSecretKey) is set, it must be mounted
+// into the orchestrator, with its path exposed via SONAR_AGENTIC_SIGNING_SECRET_FILE (SONAR-32028).
+// It uses its own volume/mount, distinct from the sonarSecretKey one.
+func TestAgentOrchestratorSigningSecretMount(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("unset renders no signing secret env var, volume, or volumeMount", func(t *testing.T) {
+				deployment := renderAgentOrchestrator(t, chart, nil)
+				container := deployment.Spec.Template.Spec.Containers[0]
+				assert.Nil(t, findEnvByName(container, "SONAR_AGENTIC_SIGNING_SECRET_FILE"))
+				assert.Nil(t, findVolumeMountByName(container, "agentic-signing-secret"))
+				assert.Nil(t, findVolumeByName(deployment.Spec.Template.Spec.Volumes, "agentic-signing-secret"))
+			})
+
+			t.Run("set mounts the secret and exposes its path", func(t *testing.T) {
+				deployment := renderAgentOrchestrator(t, chart, map[string]string{
+					"agenticSigningSecretKey": "agentic-signing-secret",
+				})
+				podSpec := deployment.Spec.Template.Spec
+				container := podSpec.Containers[0]
+
+				env := findEnvByName(container, "SONAR_AGENTIC_SIGNING_SECRET_FILE")
+				require.NotNil(t, env)
+				assert.Equal(t, "/sonarcloud/secret-agentic-signing/sonar-agentic-signing-secret.txt", env.Value)
+
+				volumeMount := findVolumeMountByName(container, "agentic-signing-secret")
+				require.NotNil(t, volumeMount)
+				assert.Equal(t, "/sonarcloud/secret-agentic-signing/", volumeMount.MountPath)
+
+				volume := findVolumeByName(podSpec.Volumes, "agentic-signing-secret")
+				require.NotNil(t, volume)
+				require.NotNil(t, volume.Secret)
+				assert.Equal(t, "agentic-signing-secret", volume.Secret.SecretName)
+				require.Len(t, volume.Secret.Items, 1)
+				assert.Equal(t, "sonar-agentic-signing-secret.txt", volume.Secret.Items[0].Key)
+				assert.Equal(t, "sonar-agentic-signing-secret.txt", volume.Secret.Items[0].Path)
+			})
+
+			t.Run("set still mounts the secret without readOnlyRootFilesystem", func(t *testing.T) {
+				deployment := renderAgentOrchestrator(t, chart, map[string]string{
+					"agenticSigningSecretKey": "agentic-signing-secret",
+					"agentOrchestrator.containerSecurityContext.readOnlyRootFilesystem": "false",
+				})
+				podSpec := deployment.Spec.Template.Spec
+				container := podSpec.Containers[0]
+
+				assert.NotNil(t, findVolumeMountByName(container, "agentic-signing-secret"))
+				assert.NotNil(t, findVolumeByName(podSpec.Volumes, "agentic-signing-secret"))
+				assert.Nil(t, findVolumeMountByName(container, "tmp"))
+				assert.Nil(t, findVolumeByName(podSpec.Volumes, "tmp"))
+			})
+
+			t.Run("both secrets can be mounted together without collision", func(t *testing.T) {
+				deployment := renderAgentOrchestrator(t, chart, map[string]string{
+					"sonarSecretKey":          "settings-encryption-secret",
+					"agenticSigningSecretKey": "agentic-signing-secret",
+				})
+				podSpec := deployment.Spec.Template.Spec
+				container := podSpec.Containers[0]
+
+				assert.NotNil(t, findVolumeMountByName(container, "secret"))
+				assert.NotNil(t, findVolumeMountByName(container, "agentic-signing-secret"))
+				assert.NotNil(t, findVolumeByName(podSpec.Volumes, "secret"))
+				assert.NotNil(t, findVolumeByName(podSpec.Volumes, "agentic-signing-secret"))
+			})
+		})
+	}
+}
+
 func agentOrchestratorPullSecretNames(deployment appsv1.Deployment) []string {
 	var names []string
 	for _, s := range deployment.Spec.Template.Spec.ImagePullSecrets {

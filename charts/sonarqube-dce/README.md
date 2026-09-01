@@ -770,6 +770,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `noProxy`                | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables      | ``      |
 | `nodeEncryption.enabled` | Secure the communication between Application and Search nodes using TLS                                               | `false` |
 | `sonarSecretKey`         | Name of existing secret used for settings encryption. When `agentOrchestrator.enabled`, this secret is also mounted into the orchestrator, with its path exposed via the `AGENTIC_SECRET_KEY_PATH` env var | `None`  |
+| `agenticSigningSecretKey` | Name of existing secret containing the agentic signing secret, shared by SonarQube Server, the Agent Orchestrator, and Vortex to sign/verify agentic requests to each other | `None`  |
 
 ### NetworkPolicies
 
