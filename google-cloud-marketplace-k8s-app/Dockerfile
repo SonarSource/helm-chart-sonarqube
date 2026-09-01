@@ -1,4 +1,4 @@
-ARG FROM=gcr.io/cloud-marketplace-tools/k8s/deployer_helm:13.0.9
+ARG FROM=gcr.io/cloud-marketplace-tools/k8s/deployer_helm:13.0.10
 FROM $FROM
 
 ENV WAIT_FOR_READY_TIMEOUT 1200
