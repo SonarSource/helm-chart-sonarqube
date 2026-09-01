@@ -7,8 +7,8 @@ GCLOUD_CLI_VERSION=525.0.0
 GCLOUD_CLI_CHECKSUM_NO_RENOVATE="75941a1017e233bf42f7d7240488ed29b42dd3f347a4e453ee3d505932d2c475"
 
 # renovate: datasource=github-releases depName=mpdev-vm packageName=GoogleCloudPlatform/marketplace-k8s-app-tools
-MPDEV_VERSION=13.0.9
-MPDEV_CHECKSUM_NO_RENOVATE="4b792347ada9d274ab79d9383af5ce112193e49a5219e2cf957e4eb5f6f801d3"
+MPDEV_VERSION=13.0.10
+MPDEV_CHECKSUM_NO_RENOVATE="c7cf77c990e7ed6cc7d99abfbd3b26528b146a03fab449fba9f284dda8d4fcc6"
 BASE_FOLDER="${BASE_FOLDER:-"/root/.gcp/cache"}"
 
 mkdir -p ${BASE_FOLDER}
