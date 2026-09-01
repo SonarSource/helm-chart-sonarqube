@@ -153,6 +153,46 @@ func TestOrchestratorRequiresBothStorageCredentialsOrNeither(t *testing.T) {
 	}
 }
 
+// agentOrchestrator.storage.bucket is required for the default S3 type (an unset bucket must not
+// silently fall back to StoragePropertiesParser's "agentic-jobs" placeholder), but meaningless -
+// and so not required - for a file-based backend that hands the runtime a direct file:// path
+// instead; that backend requires filesystem.baseDir instead, for the same reason: an unset baseDir
+// must not silently fall back to each service's own default directory, which would break the
+// shared mount the orchestrator and runtimes rely on (SONAR-31980).
+func TestOrchestratorStorageBucketRequiredUnlessFileBased(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("S3 without a bucket fails", func(t *testing.T) {
+				values := orchestratorCoreDbBase()
+				values["agentOrchestrator.storage.bucket"] = ""
+				_, err := renderWithValidation(t, chart, values)
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "agentOrchestrator.storage.bucket is not set")
+			})
+
+			for _, storageType := range []string{"FILESYSTEM", "NFS"} {
+				t.Run(storageType+" without a bucket but with a baseDir succeeds", func(t *testing.T) {
+					values := orchestratorCoreDbBase()
+					values["agentOrchestrator.storage.bucket"] = ""
+					values["agentOrchestrator.storage.type"] = storageType
+					values["agentOrchestrator.storage.filesystem.baseDir"] = "/agentic-storage"
+					_, err := renderWithValidation(t, chart, values)
+					require.NoError(t, err)
+				})
+
+				t.Run(storageType+" without a baseDir fails", func(t *testing.T) {
+					values := orchestratorCoreDbBase()
+					values["agentOrchestrator.storage.bucket"] = ""
+					values["agentOrchestrator.storage.type"] = storageType
+					_, err := renderWithValidation(t, chart, values)
+					require.Error(t, err)
+					assert.Contains(t, err.Error(), "agentOrchestrator.storage.filesystem.baseDir is not set")
+				})
+			}
+		})
+	}
+}
+
 // The orchestrator shares SonarQube's database, so it cannot run against the embedded one that
 // jdbcOverwrite.enabled=false selects - not even with an explicit agentOrchestrator.coreDb, since
 // the CORE_DB_USERNAME/PASSWORD defaults still come from the (then empty) jdbcOverwrite helpers.

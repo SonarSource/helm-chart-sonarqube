@@ -172,11 +172,28 @@ func TestVortexStorageEnv(t *testing.T) {
 			assert.Equal(t, "eu-west-1", env["SONAR_AGENTIC_STORAGE_REGION"].Value)
 			assert.Equal(t, "false", env["SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS"].Value)
 			assert.Equal(t, "", env["SONAR_AGENTIC_STORAGE_ENDPOINT"].Value)
+			assert.Equal(t, "", env["SONAR_AGENTIC_STORAGE_FILESYSTEM_BASE_DIR"].Value)
 
 			_, hasAccessKey := env["SONAR_AGENTIC_STORAGE_ACCESS_KEY"]
 			_, hasSecretKey := env["SONAR_AGENTIC_STORAGE_SECRET_KEY"]
 			assert.False(t, hasAccessKey, "no static credentials configured, so the AWS SDK must fall back to its default credential chain")
 			assert.False(t, hasSecretKey)
+		})
+	}
+}
+
+// A FILESYSTEM backend needs no bucket/region (SONAR-31980) and hands the base dir through
+// instead - it must reach the same directory agentOrchestrator.storage.filesystem.baseDir mounts.
+func TestVortexFilesystemStorage(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			container := vortexDeployment(t, chart, "vortex-storage-filesystem.yaml").Spec.Template.Spec.Containers[0]
+			env := vortexContainerEnv(container)
+
+			assert.Equal(t, "FILESYSTEM", env["SONAR_AGENTIC_STORAGE_TYPE"].Value)
+			assert.Equal(t, "/agentic-storage", env["SONAR_AGENTIC_STORAGE_FILESYSTEM_BASE_DIR"].Value)
+			assert.Equal(t, "", env["SONAR_AGENTIC_STORAGE_BUCKET"].Value)
+			assert.Equal(t, "", env["SONAR_AGENTIC_STORAGE_REGION"].Value)
 		})
 	}
 }
@@ -480,6 +497,50 @@ func TestVortexRequiresTagAndToken(t *testing.T) {
 					_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
 					require.Error(t, err)
 					assert.Contains(t, err.Error(), tc.expected)
+				})
+			}
+		})
+	}
+}
+
+// vortex.storage.bucket/region are required for the default S3 type (see TestVortexRequiresTagAndToken
+// above), but meaningless - and so not required - for a file-based backend that hands the runtime
+// a direct file:// path instead (SONAR-31980).
+func TestVortexStorageBucketRegionNotRequiredWhenFileBased(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, storageType := range []string{"FILESYSTEM", "NFS"} {
+				t.Run(storageType+" with a baseDir succeeds", func(t *testing.T) {
+					opts := &helm.Options{
+						Logger:      logger.Discard,
+						ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
+						SetValues: map[string]string{
+							"vortex.storage.bucket":             "",
+							"vortex.storage.region":             "",
+							"vortex.storage.type":               storageType,
+							"vortex.storage.filesystem.baseDir": "/agentic-storage",
+						},
+					}
+					_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
+					require.NoError(t, err)
+				})
+
+				// Without a baseDir the service falls back to its own default directory -
+				// silently breaking the shared mount, same failure mode the bucket/region checks
+				// exist to prevent for the object-store types.
+				t.Run(storageType+" without a baseDir fails", func(t *testing.T) {
+					opts := &helm.Options{
+						Logger:      logger.Discard,
+						ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
+						SetValues: map[string]string{
+							"vortex.storage.bucket": "",
+							"vortex.storage.region": "",
+							"vortex.storage.type":   storageType,
+						},
+					}
+					_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
+					require.Error(t, err)
+					assert.Contains(t, err.Error(), "vortex.storage.filesystem.baseDir is not set")
 				})
 			}
 		})
