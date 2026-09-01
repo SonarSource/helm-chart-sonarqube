@@ -120,6 +120,16 @@ spec:
               value: {{ .Values.agentOrchestrator.storage.bucket | quote }}
             - name: AGENTIC_STORAGE_PATH_STYLE
               value: {{ .Values.agentOrchestrator.storage.pathStyle | quote }}
+            {{- /* type/filesystem.baseDir have no equivalent short AGENTIC_STORAGE_* var: the
+                   orchestrator's own StoragePropertiesParser reads them straight off its
+                   sonar.agentic.orchestrator.storage.* namespace, which these long, SONAR_-prefixed
+                   names satisfy via Spring's relaxed env-var binding - unlike the vars above, which
+                   are bound through an explicit ${AGENTIC_STORAGE_*} placeholder in its own
+                   application.yml. */}}
+            - name: SONAR_AGENTIC_ORCHESTRATOR_STORAGE_TYPE
+              value: {{ .Values.agentOrchestrator.storage.type | quote }}
+            - name: SONAR_AGENTIC_ORCHESTRATOR_STORAGE_FILESYSTEM_BASE_DIR
+              value: {{ .Values.agentOrchestrator.storage.filesystem.baseDir | quote }}
             {{- /* Inject static storage keys only when provided (inline or via existingSecret). When
                    none are set, the env vars are omitted so the orchestrator's AWS SDK falls back to
                    its default credential chain - i.e. the pod's IAM identity (node instance role or
@@ -158,10 +168,13 @@ spec:
             {{- /* No AGENTIC_GITHUB_TOKEN: since SONAR-30903 the orchestrator obtains a short-lived
                    GitHub App installation token from SonarQube on demand (via AGENTIC_SONARQUBE_URL/
                    TOKEN), not from a static env var. */}}
+            {{- with .Values.agentOrchestrator.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- with .Values.agentOrchestrator.resources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey }}
+          {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey .Values.agentOrchestrator.extraVolumeMounts }}
           volumeMounts:
             {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
             - name: tmp
@@ -170,6 +183,9 @@ spec:
             {{- if .Values.sonarSecretKey }}
             - name: secret
               mountPath: /sonarcloud/secret/
+            {{- end }}
+            {{- with .Values.agentOrchestrator.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- end }}
           {{- with (include "sonarqube.agent.probe" (dict "probe" .Values.agentOrchestrator.probes.readiness)) }}
@@ -184,7 +200,7 @@ spec:
 {{ . | indent 6 }}
       {{- end }}
       serviceAccountName: {{ include "sonarqube.agentOrchestrator.serviceAccountName" . }}
-      {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey }}
+      {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey .Values.agentOrchestrator.extraVolumes }}
       volumes:
         {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
         - name: tmp
@@ -197,6 +213,9 @@ spec:
             items:
             - key: sonar-secret.txt
               path: sonar-secret.txt
+        {{- end }}
+        {{- with .Values.agentOrchestrator.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
 {{- end }}

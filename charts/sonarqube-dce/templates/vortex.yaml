@@ -63,6 +63,8 @@ spec:
               value: {{ $vortex.storage.pathStyleAccess | quote }}
             - name: SONAR_AGENTIC_STORAGE_ENDPOINT
               value: {{ $vortex.storage.endpoint | quote }}
+            - name: SONAR_AGENTIC_STORAGE_FILESYSTEM_BASE_DIR
+              value: {{ $vortex.storage.filesystem.baseDir | quote }}
             {{- /* Inject static storage keys only when provided (inline or via existingSecret). When
                    none are set, the env vars are omitted so the AWS SDK falls back to its default
                    credential chain - i.e. the pod's IAM identity (node instance role or IRSA) for

@@ -354,3 +354,112 @@ func TestAgentOrchestratorPullSecretsSonarqube(t *testing.T) {
 		assert.Equal(t, []string{"app-secret", "orch-secret"}, names)
 	})
 }
+
+// The default S3 backend is unaffected by the FILESYSTEM/NFS addition (SONAR-31980): the
+// long, SONAR_-prefixed vars must still render with their StoragePropertiesParser defaults, since
+// the orchestrator's own application.yml has no placeholder for either of them.
+func TestAgentOrchestratorStorageEnv(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("defaults to S3, no filesystem base dir", func(t *testing.T) {
+				container := renderAgentOrchestrator(t, chart, nil).Spec.Template.Spec.Containers[0]
+
+				typeEnv := findEnvByName(container, "SONAR_AGENTIC_ORCHESTRATOR_STORAGE_TYPE")
+				require.NotNil(t, typeEnv)
+				assert.Equal(t, "S3", typeEnv.Value)
+
+				baseDirEnv := findEnvByName(container, "SONAR_AGENTIC_ORCHESTRATOR_STORAGE_FILESYSTEM_BASE_DIR")
+				require.NotNil(t, baseDirEnv)
+				assert.Equal(t, "", baseDirEnv.Value)
+			})
+
+			// A FILESYSTEM backend needs no bucket/region (see agent_dependency_validation_test.go
+			// for the matching validation-relaxation case) and hands the base dir through instead.
+			t.Run("FILESYSTEM sets the base dir, no bucket needed", func(t *testing.T) {
+				container := renderAgentOrchestrator(t, chart, map[string]string{
+					"agentOrchestrator.storage.bucket":             "",
+					"agentOrchestrator.storage.type":               "FILESYSTEM",
+					"agentOrchestrator.storage.filesystem.baseDir": "/agentic-storage",
+				}).Spec.Template.Spec.Containers[0]
+
+				typeEnv := findEnvByName(container, "SONAR_AGENTIC_ORCHESTRATOR_STORAGE_TYPE")
+				require.NotNil(t, typeEnv)
+				assert.Equal(t, "FILESYSTEM", typeEnv.Value)
+
+				baseDirEnv := findEnvByName(container, "SONAR_AGENTIC_ORCHESTRATOR_STORAGE_FILESYSTEM_BASE_DIR")
+				require.NotNil(t, baseDirEnv)
+				assert.Equal(t, "/agentic-storage", baseDirEnv.Value)
+			})
+		})
+	}
+}
+
+// User-supplied env comes last, so it can override the values the chart wires automatically -
+// same contract as agent-runtime.yaml's hunterAgent.env/remediationAgent.env (SONAR-31980).
+func TestAgentOrchestratorExtraEnv(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			container := renderAgentOrchestrator(t, chart, map[string]string{
+				"agentOrchestrator.env[0].name":  "MY_VAR",
+				"agentOrchestrator.env[0].value": "my-value",
+			}).Spec.Template.Spec.Containers[0]
+
+			extra := findEnvByName(container, "MY_VAR")
+			require.NotNil(t, extra, "extra env must reach the container")
+			assert.Equal(t, "my-value", extra.Value)
+			assert.Equal(t, "MY_VAR", container.Env[len(container.Env)-1].Name,
+				"user-supplied env must come last so it overrides the auto-wired vars")
+		})
+	}
+}
+
+// extraVolumes/extraVolumeMounts merge into the pod's existing volumes/volumeMounts (the tmp
+// volume from readOnlyRootFilesystem, the secret volume from sonarSecretKey) rather than
+// replacing them - mirrors agent-runtime.yaml's hunterAgent/remediationAgent equivalents
+// (SONAR-31980). This is the mechanism a shared FILESYSTEM storage mount relies on.
+func TestAgentOrchestratorExtraVolumes(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("merges alongside the tmp volume", func(t *testing.T) {
+				deployment := renderAgentOrchestrator(t, chart, map[string]string{
+					"agentOrchestrator.extraVolumes[0].name":                            "agentic-storage",
+					"agentOrchestrator.extraVolumes[0].persistentVolumeClaim.claimName": "agentic-storage",
+					"agentOrchestrator.extraVolumeMounts[0].name":                       "agentic-storage",
+					"agentOrchestrator.extraVolumeMounts[0].mountPath":                  "/agentic-storage",
+				})
+				podSpec := deployment.Spec.Template.Spec
+				container := podSpec.Containers[0]
+
+				require.NotNil(t, findVolumeMountByName(container, "tmp"), "readOnlyRootFilesystem's tmp mount must survive")
+				extraMount := findVolumeMountByName(container, "agentic-storage")
+				require.NotNil(t, extraMount)
+				assert.Equal(t, "/agentic-storage", extraMount.MountPath)
+
+				require.NotNil(t, findVolumeByName(podSpec.Volumes, "tmp"))
+				extraVolume := findVolumeByName(podSpec.Volumes, "agentic-storage")
+				require.NotNil(t, extraVolume)
+				require.NotNil(t, extraVolume.PersistentVolumeClaim)
+				assert.Equal(t, "agentic-storage", extraVolume.PersistentVolumeClaim.ClaimName)
+			})
+
+			// Independent of readOnlyRootFilesystem/sonarSecretKey, same as the encryption key
+			// mount (SONAR-31746 must not regress; see TestAgentOrchestratorEncryptionKeyMount).
+			t.Run("renders without readOnlyRootFilesystem or sonarSecretKey", func(t *testing.T) {
+				deployment := renderAgentOrchestrator(t, chart, map[string]string{
+					"agentOrchestrator.containerSecurityContext.readOnlyRootFilesystem": "false",
+					"agentOrchestrator.extraVolumes[0].name":                            "agentic-storage",
+					"agentOrchestrator.extraVolumes[0].persistentVolumeClaim.claimName": "agentic-storage",
+					"agentOrchestrator.extraVolumeMounts[0].name":                       "agentic-storage",
+					"agentOrchestrator.extraVolumeMounts[0].mountPath":                  "/agentic-storage",
+				})
+				podSpec := deployment.Spec.Template.Spec
+				container := podSpec.Containers[0]
+
+				require.Nil(t, findVolumeMountByName(container, "tmp"))
+				extraMount := findVolumeMountByName(container, "agentic-storage")
+				require.NotNil(t, extraMount)
+				assert.Equal(t, "/agentic-storage", extraMount.MountPath)
+			})
+		})
+	}
+}
