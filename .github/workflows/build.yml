@@ -264,7 +264,7 @@ jobs:
       - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
           version: 2026.3.13
-      - uses: SonarSource/ci-github-actions/get-build-number@v1
+      - uses: SonarSource/ci-github-actions/get-build-number@v2
         id: build-number
       - id: secrets
         uses: SonarSource/vault-action-wrapper@v3
@@ -317,7 +317,7 @@ jobs:
         with:
           cache_save: false
           version: 2026.3.13
-      - uses: SonarSource/ci-github-actions/get-build-number@v1
+      - uses: SonarSource/ci-github-actions/get-build-number@v2
         id: build-number
       - name: Download ${{ matrix.chart }} chart artifact
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -342,10 +342,10 @@ jobs:
     runs-on: github-ubuntu-latest-s
     name: Output Build Number
     permissions:
-      contents: read
+      contents: write # required by ci-github-actions/get-build-number@v2 (atomic build-number claim)
     if: ${{ github.event_name == 'push' && (github.ref_name == 'master' || startsWith(github.ref_name, 'release/')) }}
     steps:
-      - uses: SonarSource/ci-github-actions/get-build-number@v1
+      - uses: SonarSource/ci-github-actions/get-build-number@v2
         id: build-number
       - name: Download SonarQube chart artifact
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
