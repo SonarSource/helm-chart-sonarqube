@@ -518,6 +518,14 @@ emptyDir:
 # path exposed via the AGENTIC_SECRET_KEY_PATH env var.
 # sonarSecretKey: "settings-encryption-secret"
 
+# Name of an existing Secret holding the operator-provided agentic instance secret that
+# derive-keys.sh (baked into the orchestrator image, per EA-791/ADR-10) expands into the
+# per-consumer signing/verification keys below. Not chart-managed - create it out of band,
+# same convention as sonarSecretKey.
+# agenticSigningSecret:
+#   existingSecret: "agentic-instance-secret"
+#   key: "instance-secret"          # key within the Secret; defaults to this
+
 ## Override JDBC values
 ## for external Databases
 jdbcOverwrite:
@@ -1298,3 +1306,38 @@ gvisor:
     tolerations:                    # run everywhere incl. tainted/control-plane nodes
       - operator: Exists
     annotations: {}
+
+# Hook Job that runs derive-keys.sh (baked into the Agent Orchestrator image) and materializes
+# the per-consumer signing/verification key Secrets consumed by the Agent Orchestrator, Hunter
+# Agent, Remediation Agent, Vortex, and SQS. Renders only when agenticSigningSecret is set AND at
+# least one of hunterAgent.enabled / remediationAgent.enabled / vortex.enabled is true - see
+# validation.yaml, which hard-fails the chart if a component is enabled without
+# agenticSigningSecret.
+agentKeyDerivation:
+  # Set to false only if you materialize the <fullname>-agentic-keys-* Secrets yourself (GitOps,
+  # sealed-secrets, an external KMS...). The consumer pods mount those Secrets either way, so
+  # opting out without providing them leaves the pods stuck in ContainerCreating.
+  enabled: true
+  # The Job runs derive-keys.sh, which ships inside the Agent Orchestrator image - so this
+  # defaults to agentOrchestrator.image and normally needs nothing set here. Set it only when the
+  # orchestrator isn't part of the install but derived keys still are (vortex.enabled on its own),
+  # so the release doesn't have to pull an orchestrator it never deploys.
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: IfNotPresent
+    # pullSecrets:
+    #   - name: my-repo-secret
+  serviceAccount:
+    # The Job needs its own ServiceAccount: it writes the derived Secrets through the Kubernetes
+    # API, which means a Role granting get/create/update on secrets. Set create: false and name to
+    # an existing account only if you'd rather bind that Role yourself.
+    create: true
+    name: ""
+    annotations: {}
+  resources: {}
+  securityContext: {}
+  containerSecurityContext: {}
+  # Fails the hook Job (and the release) if derive-keys.sh / the Secret writes don't complete
+  # within this window, rather than hanging the install/upgrade indefinitely.
+  activeDeadlineSeconds: 300

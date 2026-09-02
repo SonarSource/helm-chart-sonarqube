@@ -116,6 +116,22 @@ It is used to validate the values.yaml file before the installation starts.
   {{- end -}}
 {{- end -}}
 
+{{/* Validation for the agentic signing secret: fail closed if any agentic component that needs
+     derived signing/verification keys (hunterAgent/remediationAgent/vortex) is enabled without an
+     instance secret for the key-derivation hook Job to derive them from. */}}
+{{- if eq (include "sonarqube.agentic.enabled" .) "true" -}}
+  {{- if or (not .Values.agenticSigningSecret) (not .Values.agenticSigningSecret.existingSecret) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n One of hunterAgent.enabled / remediationAgent.enabled / vortex.enabled is true but agenticSigningSecret.existingSecret is not set. Provide the name of an existing Secret holding the operator-provided agentic instance secret." -}}
+  {{- end -}}
+  {{/* The hook Job runs derive-keys.sh, which only exists inside the Agent Orchestrator image
+       (baked in there so air-gapped installs don't need a second image pull, per EA-791/ADR-10).
+       vortex.enabled alone needs derived keys without otherwise deploying the orchestrator, hence
+       agentKeyDerivation.image as an override rather than a hard read of agentOrchestrator.image. */}}
+  {{- if and .Values.agentKeyDerivation.enabled (not (include "sonarqube.agentKeyDerivation.imageRepository" .)) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n The agentic key-derivation hook Job needs an image carrying derive-keys.sh. Set agentOrchestrator.image.repository, or agentKeyDerivation.image.repository when the orchestrator isn't part of this install, or set agentKeyDerivation.enabled=false and provide the <fullname>-agentic-keys-* Secrets yourself." -}}
+  {{- end -}}
+{{- end -}}
+
 {{/* Validation for the gVisor toggles (gvisor.*). The sub-options are only checked
      when gVisor is enabled: with gvisor.enabled=false the whole feature renders nothing, so a
      leftover installer.enabled (e.g. a base values file overlaid by one that disables gVisor) is

@@ -86,6 +86,12 @@ spec:
             - name: AGENTIC_SECRET_KEY_PATH
               value: "/sonarcloud/secret/sonar-secret.txt"
             {{- end }}
+            {{- /* One variable per HKDF-derived key file the orchestrator mounts - the key it
+                   signs hunter's work with, and the one it signs remediation's with. See
+                   sonarqube.agentic.keyPathEnv. */}}
+            {{- with (include "sonarqube.agentic.keyPathEnv" (dict "ctx" . "consumer" "orchestrator") | fromYamlArray) }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
             {{- /* CORE DB (SonarQube's database) connection for the orchestrator. Each field is
                    independently configurable via agentOrchestrator.coreDb, defaulting to
                    the shared jdbcOverwrite so it targets the same DB as SonarQube out of the box.
@@ -172,7 +178,8 @@ spec:
           {{- with .Values.agentOrchestrator.resources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey .Values.agentOrchestrator.extraVolumeMounts }}
+          {{- $keyMount := include "sonarqube.agentic.keyVolumeMount" (dict "ctx" . "consumer" "orchestrator" "mountPath" (include "sonarqube.agentic.keyDir" .)) }}
+          {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey $keyMount .Values.agentOrchestrator.extraVolumeMounts }}
           volumeMounts:
             {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
             - name: tmp
@@ -181,6 +188,9 @@ spec:
             {{- if .Values.sonarSecretKey }}
             - name: secret
               mountPath: /sonarcloud/secret/
+            {{- end }}
+            {{- with $keyMount }}
+            {{- . | trim | nindent 12 }}
             {{- end }}
             {{- with .Values.agentOrchestrator.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
@@ -198,7 +208,8 @@ spec:
 {{ . | indent 6 }}
       {{- end }}
       serviceAccountName: {{ include "sonarqube.agentOrchestrator.serviceAccountName" . }}
-      {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey .Values.agentOrchestrator.extraVolumes }}
+      {{- $keyVolume := include "sonarqube.agentic.keyVolume" (dict "ctx" . "consumer" "orchestrator") }}
+      {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey $keyVolume .Values.agentOrchestrator.extraVolumes }}
       volumes:
         {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
         - name: tmp
@@ -211,6 +222,9 @@ spec:
             items:
             - key: sonar-secret.txt
               path: sonar-secret.txt
+        {{- end }}
+        {{- with $keyVolume }}
+        {{- . | trim | nindent 8 }}
         {{- end }}
         {{- with .Values.agentOrchestrator.extraVolumes }}
         {{- toYaml . | nindent 8 }}

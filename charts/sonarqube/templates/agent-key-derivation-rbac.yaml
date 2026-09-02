@@ -1,0 +1,80 @@
+{{- /*
+ServiceAccount + namespace-scoped RBAC for the agentic key-derivation hook Job.
+
+These are hook resources rather than ordinary chart resources on purpose: ordinary resources are
+applied *after* pre-install hooks run, so a plain ServiceAccount wouldn't exist yet when the Job
+pod is scheduled. They sit at hook-weight -5 so they land before the Job (weight 0), and use
+before-hook-creation rather than hook-succeeded as their delete policy - hook-succeeded would race
+the Job, deleting the ServiceAccount out from under a pod that is still running.
+
+The Role is deliberately minimal: only secrets, only in the release namespace, and no delete/list
+(the Job upserts by exact name and never enumerates).
+*/}}
+{{- if eq (include "sonarqube.agentKeyDerivation.required" .) "true" }}
+{{- if .Values.agentKeyDerivation.serviceAccount.create }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "sonarqube.agentKeyDerivation.serviceAccountName" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agent/component: key-derivation
+    app.kubernetes.io/component: agent-key-derivation
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+    {{- with .Values.agentKeyDerivation.serviceAccount.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+automountServiceAccountToken: true
+{{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "sonarqube.agentKeyDerivation.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agent/component: key-derivation
+    app.kubernetes.io/component: agent-key-derivation
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "sonarqube.agentKeyDerivation.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agent/component: key-derivation
+    app.kubernetes.io/component: agent-key-derivation
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "sonarqube.agentKeyDerivation.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "sonarqube.agentKeyDerivation.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}

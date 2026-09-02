@@ -49,13 +49,15 @@ func TestAgentOrchestratorContainerSecurityContext(t *testing.T) {
 			require.NotNil(t, sc.Capabilities)
 			assert.Contains(t, sc.Capabilities.Drop, corev1.Capability("ALL"))
 
-			require.Len(t, container.VolumeMounts, 1)
-			assert.Equal(t, "tmp", container.VolumeMounts[0].Name)
-			assert.Equal(t, "/tmp", container.VolumeMounts[0].MountPath)
+			// agentic-keys comes from the fixture enabling hunterAgent; the /tmp emptyDir is what
+			// this test is about, and it exists because readOnlyRootFilesystem is on.
+			mounts := agentVolumeMountsByName(container.VolumeMounts)
+			require.Contains(t, mounts, "tmp")
+			assert.Equal(t, "/tmp", mounts["tmp"].MountPath)
 
-			require.Len(t, podSpec.Volumes, 1)
-			assert.Equal(t, "tmp", podSpec.Volumes[0].Name)
-			require.NotNil(t, podSpec.Volumes[0].EmptyDir)
+			volumes := agentVolumesByName(podSpec.Volumes)
+			require.Contains(t, volumes, "tmp")
+			require.NotNil(t, volumes["tmp"].EmptyDir)
 		})
 	}
 }
@@ -71,8 +73,8 @@ func TestAgentOrchestratorNoReadOnlyRootFilesystemNoTmpVolume(t *testing.T) {
 				})
 				podSpec := deployment.Spec.Template.Spec
 				require.Len(t, podSpec.Containers, 1)
-				assert.Empty(t, podSpec.Containers[0].VolumeMounts)
-				assert.Empty(t, podSpec.Volumes)
+				assert.NotContains(t, agentVolumeMountsByName(podSpec.Containers[0].VolumeMounts), "tmp")
+				assert.NotContains(t, agentVolumesByName(podSpec.Volumes), "tmp")
 			})
 
 			// containerSecurityContext: null is the chart's documented convention for disabling a
@@ -84,8 +86,8 @@ func TestAgentOrchestratorNoReadOnlyRootFilesystemNoTmpVolume(t *testing.T) {
 				podSpec := deployment.Spec.Template.Spec
 				require.Len(t, podSpec.Containers, 1)
 				assert.Nil(t, podSpec.Containers[0].SecurityContext)
-				assert.Empty(t, podSpec.Containers[0].VolumeMounts)
-				assert.Empty(t, podSpec.Volumes)
+				assert.NotContains(t, agentVolumeMountsByName(podSpec.Containers[0].VolumeMounts), "tmp")
+				assert.NotContains(t, agentVolumesByName(podSpec.Volumes), "tmp")
 			})
 		})
 	}

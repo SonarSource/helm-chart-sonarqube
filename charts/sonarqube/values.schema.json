@@ -1163,6 +1163,83 @@
                     }
                 }
             }
+        },
+        "agenticSigningSecret": {
+            "type": "object",
+            "properties": {
+                "existingSecret": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                }
+            }
+        },
+        "agentKeyDerivation": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "repository": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": [
+                                "string",
+                                "number"
+                            ]
+                        },
+                        "pullPolicy": {
+                            "type": "string",
+                            "enum": [
+                                "Always",
+                                "IfNotPresent",
+                                "Never"
+                            ]
+                        },
+                        "pullSecret": {
+                            "type": "string"
+                        },
+                        "pullSecrets": {
+                            "type": "array"
+                        }
+                    }
+                },
+                "serviceAccount": {
+                    "type": "object",
+                    "properties": {
+                        "create": {
+                            "type": "boolean"
+                        },
+                        "name": {
+                            "type": "string"
+                        },
+                        "annotations": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "resources": {
+                    "type": "object"
+                },
+                "securityContext": {
+                    "type": "object"
+                },
+                "containerSecurityContext": {
+                    "type": "object"
+                },
+                "activeDeadlineSeconds": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 1
+                }
+            }
         }
     }
 }
