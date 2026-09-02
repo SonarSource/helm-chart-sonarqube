@@ -45,6 +45,8 @@ annotations:
       description: "Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via agentOrchestrator.enabled, hunterAgent.enabled and remediationAgent.enabled"
     - kind: added
       description: "Add agentOrchestrator.env/extraVolumes/extraVolumeMounts, and a FILESYSTEM/NFS backend for the shared agentic job storage via agentOrchestrator.storage.type and vortex.storage.filesystem.baseDir"
+    - kind: added
+      description: "Add autoscaling for the Agent Orchestrator (agentOrchestrator.autoscaling, a plain CPU/Memory HorizontalPodAutoscaler) and each agent runtime family (hunterAgent/remediationAgent.autoscaling, a KEDA ScaledObject; requires KEDA installed in-cluster, or agentKeda.assumeInstalled set explicitly), with terminationGracePeriodSeconds hardening so an in-flight job survives any scale-down, not just an autoscaler-driven one"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/

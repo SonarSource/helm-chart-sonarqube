@@ -388,6 +388,28 @@
                 },
                 "extraVolumeMounts": {
                     "type": "array"
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "minReplicas": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "maxReplicas": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "metrics": {
+                            "type": "array"
+                        },
+                        "behavior": {
+                            "type": "object"
+                        }
+                    }
                 }
             }
         },
@@ -560,6 +582,34 @@
                 },
                 "extraVolumeMounts": {
                     "type": "array"
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "minReplicas": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "maxReplicas": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "pollingInterval": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "scaleDownStabilizationSeconds": {
+                            "type": "integer",
+                            "minimum": 0
+                        }
+                    }
+                },
+                "terminationGracePeriodSeconds": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -732,6 +782,34 @@
                 },
                 "extraVolumeMounts": {
                     "type": "array"
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "minReplicas": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "maxReplicas": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "pollingInterval": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "scaleDownStabilizationSeconds": {
+                            "type": "integer",
+                            "minimum": 0
+                        }
+                    }
+                },
+                "terminationGracePeriodSeconds": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -901,6 +979,14 @@
                 },
                 "extraVolumeMounts": {
                     "type": "array"
+                }
+            }
+        },
+        "agentKeda": {
+            "type": "object",
+            "properties": {
+                "assumeInstalled": {
+                    "type": ["boolean", "null"]
                 }
             }
         },
