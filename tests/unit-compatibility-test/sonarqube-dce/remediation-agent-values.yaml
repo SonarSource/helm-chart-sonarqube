@@ -55,6 +55,12 @@ remediationAgent:
     repository: example.com/remediation-agent
     tag: "1.0.0"
 
+# The instance secret the key-derivation hook derives the per-hop signing keys from. Required
+# whenever an agentic component that signs or verifies is enabled; derive-keys.sh comes from the
+# orchestrator image, which this case already sets.
+agenticSigningSecret:
+  existingSecret: agentic-instance-secret
+
 vortex:
   enabled: true
   image:

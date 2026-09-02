@@ -19,16 +19,16 @@ func TestAgentValuesSchemaRejectsWrongTypes(t *testing.T) {
 		// unknown key like agentEgressProxy.* on a chart without one is silently ignored by the
 		// schema (no additionalProperties: false), not rejected, so it wouldn't error there.
 		requiresEgressProxy bool
-		// onlyChart restricts this case to one chart, for the same reason: a key the other
-		// chart's schema doesn't declare yet is ignored rather than rejected there.
-		onlyChart string
+		// requiresAgenticKeys restricts this case to charts that derive agentic signing keys,
+		// for the same reason.
+		requiresAgenticKeys bool
 	}{
 		{name: "agentOrchestrator.replicaCount", set: map[string]string{"agentOrchestrator.replicaCount": "notanumber"}},
 		{name: "hunterAgent.enabled", set: map[string]string{"hunterAgent.enabled": "notabool"}},
 		{name: "gvisor.installer.image.digest", set: map[string]string{"gvisor.installer.image.digest": "true"}},
 		{name: "agentEgressProxy.replicaCount", set: map[string]string{"agentEgressProxy.replicaCount": "notanumber"}, requiresEgressProxy: true},
-		{name: "agentKeyDerivation.enabled", set: map[string]string{"agentKeyDerivation.enabled": "notabool"}, onlyChart: "sonarqube"},
-		{name: "agenticSigningSecret.existingSecret", set: map[string]string{"agenticSigningSecret.existingSecret": "true"}, onlyChart: "sonarqube"},
+		{name: "agentKeyDerivation.enabled", set: map[string]string{"agentKeyDerivation.enabled": "notabool"}, requiresAgenticKeys: true},
+		{name: "agenticSigningSecret.existingSecret", set: map[string]string{"agenticSigningSecret.existingSecret": "true"}, requiresAgenticKeys: true},
 	}
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -36,7 +36,7 @@ func TestAgentValuesSchemaRejectsWrongTypes(t *testing.T) {
 				if tc.requiresEgressProxy && !chart.hasEgressProxy {
 					continue
 				}
-				if tc.onlyChart != "" && tc.onlyChart != chart.name {
+				if tc.requiresAgenticKeys && !chart.hasAgenticKeys {
 					continue
 				}
 				t.Run(tc.name, func(t *testing.T) {

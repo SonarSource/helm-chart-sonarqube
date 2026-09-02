@@ -41,8 +41,8 @@ type agentChart struct {
 	// Egress Proxy component instead of the legacy networkPolicy.egressAllow escape hatch.
 	hasEgressProxy bool
 	// hasAgenticKeys is true for charts that derive per-hop agentic signing keys from
-	// agenticSigningSecret and mount them on the consuming pods (SONAR-32065). Flip it on when the
-	// feature lands in the other chart and its whole test file starts running against it.
+	// agenticSigningSecret and mount them on the consuming pods (SONAR-32065). Both charts have
+	// the feature; the flag stays so a chart that ever drops it can opt out of the whole file.
 	hasAgenticKeys bool
 }
 
@@ -67,6 +67,6 @@ func (c agentChart) orchestratorURL() string {
 }
 
 var agentCharts = []agentChart{
-	{"sonarqube-dce", dceChartPath, dceReleaseName, "test-cases-values/sonarqube-dce", "templates/sonarqube-application.yaml", "-app-config", "applicationNodes.sonarProperties", true, false},
+	{"sonarqube-dce", dceChartPath, dceReleaseName, "test-cases-values/sonarqube-dce", "templates/sonarqube-application.yaml", "-app-config", "applicationNodes.sonarProperties", true, true},
 	{"sonarqube", chartPath, releaseName, "test-cases-values/sonarqube", "templates/sonarqube-sts.yaml", "-config", "sonarProperties", true, true},
 }

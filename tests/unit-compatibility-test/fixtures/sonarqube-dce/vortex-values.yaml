@@ -250,6 +250,8 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+    sonar.agentic.orchestrator.signingKeyPath=/opt/sonarqube/agentic-keys/agentic-shared
+    sonar.agentic.signing.secretFile=/opt/sonarqube/agentic-secret/instance-secret
     sonar.vortex.analysis.url=http://vortex-values.yaml-sonarqube-dce-vortex:8080
 ---
 # Source: sonarqube-dce/templates/config.yaml
@@ -513,7 +515,7 @@ spec:
         sonarqube.datacenter/type: "app"
       annotations:
         checksum/plugins: 7b6c1707a57a2164b96c7055fd281684cad31ea41094df4ceffb358b299428ea
-        checksum/config: 07f0d4057cab62e97acc3fc3e04ff4bde2f5e35fc355c32276f0297449f1f976
+        checksum/config: f22f16c029097a89b019b9a362446b4f5853df9def0d7daae22d89d1125039b4
         checksum/secret: ee34b538cb7044d2743f408d8c33832b99f8515c7869b31cbf26e2d3f6cf83eb
     spec:
       automountServiceAccountToken: false
@@ -618,6 +620,10 @@ spec:
                   key: SONAR_WEB_SYSTEMPASSCODE
             - name: SONAR_VORTEX_ANALYSIS_URL
               value: "http://vortex-values.yaml-sonarqube-dce-vortex:8080"
+            - name: AGENTIC_SIGNING_SECRET_FILE
+              value: "/opt/sonarqube/agentic-secret/instance-secret"
+            - name: AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
+              value: /opt/sonarqube/agentic-keys/agentic-shared
           envFrom:
             - configMapRef:
                 name: vortex-values.yaml-sonarqube-dce-jdbc-config
@@ -678,6 +684,12 @@ spec:
             - mountPath: /opt/sonarqube/conf/sonar.properties
               subPath: sonar.properties
               name: concat-dir
+            - mountPath: /opt/sonarqube/agentic-secret
+              name: agentic-instance-secret
+              readOnly: true
+            - name: agentic-keys
+              mountPath: /opt/sonarqube/agentic-keys
+              readOnly: true
             - mountPath: /opt/sonarqube/data
               name: sonarqube
               subPath: data
@@ -697,6 +709,18 @@ spec:
           items:
           - key: sonar.properties
             path: sonar.properties
+      - name: agentic-instance-secret
+        secret:
+          secretName: agentic-instance-secret
+          items:
+          - key: instance-secret
+            path: instance-secret
+      - name: agentic-keys
+        secret:
+          secretName: vortex-values.yaml-sonarqube-dce-agentic-keys-sqs
+          items:
+          - key: agentic-shared
+            path: agentic-shared
       
       - name: install-plugins
         configMap:
@@ -781,6 +805,8 @@ spec:
               value: ""
             - name: SONAR_AGENTIC_STORAGE_FILESYSTEM_BASE_DIR
               value: ""
+            - name: AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
+              value: /etc/agentic/keys/agentic-shared
             - name: MY_VAR
               value: my-value
           startupProbe:
@@ -799,6 +825,17 @@ spec:
               path: /health
               port: http
             periodSeconds: 30
+          volumeMounts:
+            - name: agentic-keys
+              mountPath: /etc/agentic/keys
+              readOnly: true
+      volumes:
+        - name: agentic-keys
+          secret:
+            secretName: vortex-values.yaml-sonarqube-dce-agentic-keys-vortex
+            items:
+            - key: agentic-shared
+              path: agentic-shared
 ---
 # Source: sonarqube-dce/templates/sonarqube-search.yaml
 apiVersion: apps/v1
@@ -847,7 +884,7 @@ spec:
       annotations:
         checksum/init-sysctl: 78765817f42252d0bd2c6d75a4c09519ebdfbc2e34ebcda0f15123b168cd28ba
         checksum/init-fs: 403f3deed296e86cd6673fb822cbf4750c63dfeff28385e9576f61556a0fd1db
-        checksum/config: 07f0d4057cab62e97acc3fc3e04ff4bde2f5e35fc355c32276f0297449f1f976
+        checksum/config: f22f16c029097a89b019b9a362446b4f5853df9def0d7daae22d89d1125039b4
         checksum/secret: ee34b538cb7044d2743f408d8c33832b99f8515c7869b31cbf26e2d3f6cf83eb
     spec:
       automountServiceAccountToken: false
@@ -1045,6 +1082,70 @@ spec:
         emptyDir:
           {}
 ---
+# Source: sonarqube-dce/templates/agent-key-derivation-rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vortex-values.yaml-sonarqube-dce-agent-key-derivation
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: vortex-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: key-derivation
+    app.kubernetes.io/component: agent-key-derivation
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+automountServiceAccountToken: true
+---
+# Source: sonarqube-dce/templates/agent-key-derivation-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vortex-values.yaml-sonarqube-dce-agent-key-derivation
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: vortex-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: key-derivation
+    app.kubernetes.io/component: agent-key-derivation
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update"]
+---
+# Source: sonarqube-dce/templates/agent-key-derivation-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vortex-values.yaml-sonarqube-dce-agent-key-derivation
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: vortex-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: key-derivation
+    app.kubernetes.io/component: agent-key-derivation
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vortex-values.yaml-sonarqube-dce-agent-key-derivation
+subjects:
+  - kind: ServiceAccount
+    name: vortex-values.yaml-sonarqube-dce-agent-key-derivation
+    namespace: default
+---
 # Source: sonarqube-dce/templates/tests/sonarqube-test.yaml
 apiVersion: v1
 kind: Pod
@@ -1087,3 +1188,151 @@ spec:
           ephemeral-storage: 100M
           memory: 200M
   restartPolicy: Never
+---
+# Source: sonarqube-dce/templates/agent-key-derivation-hook.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vortex-values.yaml-sonarqube-dce-agent-key-derivation
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: vortex-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: key-derivation
+    app.kubernetes.io/component: agent-key-derivation
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      name: vortex-values.yaml-sonarqube-dce-agent-key-derivation
+      labels:
+        app: sonarqube-dce
+        release: vortex-values.yaml
+        sonarqube.agent/component: key-derivation
+        app.kubernetes.io/component: agent-key-derivation
+      annotations:
+        # The hook Job talks to the Kubernetes API and then exits; an Istio sidecar would keep the
+        # pod running forever and the hook would never be seen to succeed.
+        "sidecar.istio.io/inject": "false"
+    spec:
+      restartPolicy: OnFailure
+      # The script authenticates to the API with the projected token, so force the mount here
+      # rather than inheriting it: with serviceAccount.create=false the Job runs under the
+      # release's top-level ServiceAccount, whose automountToken defaults to false - the `cat` of
+      # the token would fail under `set -eu` and take the whole release down with it.
+      automountServiceAccountToken: true
+      serviceAccountName: vortex-values.yaml-sonarqube-dce-agent-key-derivation
+      containers:
+        - name: derive-keys
+          image: "example.com/agent-orchestrator:1.0.0"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 900
+            runAsNonRoot: true
+            runAsUser: 900
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            limits:
+              cpu: 250m
+              ephemeral-storage: 64Mi
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              ephemeral-storage: 32Mi
+              memory: 64Mi
+          env:
+            - name: TMPDIR
+              value: /tmp
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+
+              SECRET_FILE=/etc/agentic/instance-secret/instance-secret
+              KEYS=$(mktemp -d)
+              RESP=$(mktemp)
+
+              # Derive every label any enabled consumer needs, in one pass. derive-keys.sh is
+              # deterministic, so re-running it on upgrade reproduces the same keys - an upgrade
+              # that doesn't change agenticSigningSecret rewrites the Secrets byte-identically and
+              # therefore doesn't churn the consumer pods.
+              /derive-keys.sh --secret-file "$SECRET_FILE" \
+                --label agentic-shared="$KEYS/agentic-shared" \
+                --mode 0444
+
+              API=https://kubernetes.default.svc
+              SA=/var/run/secrets/kubernetes.io/serviceaccount
+              TOKEN=$(cat "$SA/token")
+              NS=$(cat "$SA/namespace")
+
+              # Upsert: PUT first (the common case is an upgrade over an existing Secret), fall
+              # back to POST when it isn't there yet. Any other status is fatal - notably 403,
+              # which means the Role didn't apply and silently continuing would leave the
+              # consumers mounting nothing.
+              api_write() {
+                curl -sS -o "$RESP" -w '%{http_code}' \
+                  --cacert "$SA/ca.crt" \
+                  -H "Authorization: Bearer $TOKEN" \
+                  -H 'Content-Type: application/json' \
+                  -X "$1" --data "$3" "$2"
+              }
+
+              write_secret() {
+                name=$1
+                shift
+                data=""
+                for label in "$@"; do
+                  # Derived keys are lowercase hex, so no JSON escaping is needed here.
+                  value=$(cat "$KEYS/$label")
+                  # Not `[ -n "$data" ] && ...`: under set -e a false test as the last command of
+                  # a loop body is an exit in some shells.
+                  if [ -n "$data" ]; then data="$data,"; fi
+                  data="$data\"$label\":\"$value\""
+                done
+                body="{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"type\":\"Opaque\",\"metadata\":{\"name\":\"$name\",\"labels\":{\"app.kubernetes.io/managed-by\":\"Helm\",\"app.kubernetes.io/component\":\"agent-key-derivation\",\"release\":\"vortex-values.yaml\"}},\"stringData\":{$data}}"
+
+                code=$(api_write PUT "$API/api/v1/namespaces/$NS/secrets/$name" "$body")
+                if [ "$code" = "404" ]; then
+                  code=$(api_write POST "$API/api/v1/namespaces/$NS/secrets" "$body")
+                fi
+                case "$code" in
+                  200|201)
+                    echo "wrote Secret $name ($*)"
+                    ;;
+                  *)
+                    echo "FATAL: writing Secret $name failed with HTTP $code" >&2
+                    cat "$RESP" >&2
+                    exit 1
+                    ;;
+                esac
+              }
+              write_secret vortex-values.yaml-sonarqube-dce-agentic-keys-sqs agentic-shared
+              write_secret vortex-values.yaml-sonarqube-dce-agentic-keys-vortex agentic-shared
+          volumeMounts:
+            - name: instance-secret
+              mountPath: /etc/agentic/instance-secret
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: instance-secret
+          secret:
+            secretName: agentic-instance-secret
+            items:
+              - key: instance-secret
+                path: instance-secret
+        - name: tmp
+          emptyDir: {}
