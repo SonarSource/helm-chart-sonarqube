@@ -1299,7 +1299,7 @@ spec:
           emptyDir: {}
         - name: agentic-keys
           secret:
-            secretName: remediation-agent-values.yaml-sonarqube-agentic-keys-orchestrat
+            secretName: remediation-agent-values.yaml-sonarq-agentic-keys-orchestrator
             items:
             - key: orchestrator-to-remediation
               path: orchestrator-to-remediation
@@ -1405,7 +1405,7 @@ spec:
       volumes:
         - name: agentic-keys
           secret:
-            secretName: remediation-agent-values.yaml-sonarqube-agentic-keys-remediatio
+            secretName: remediation-agent-values.yaml-sonarq-agentic-keys-remediation
             items:
             - key: orchestrator-to-remediation
               path: orchestrator-to-remediation
@@ -1504,7 +1504,7 @@ spec:
       volumes:
         - name: agentic-keys
           secret:
-            secretName: remediation-agent-values.yaml-sonarqube-agentic-keys-vortex
+            secretName: remediation-agent-values.yaml-sonarq-agentic-keys-vortex
             items:
             - key: agentic-shared
               path: agentic-shared
@@ -1742,7 +1742,7 @@ spec:
               path: instance-secret
         - name: agentic-keys
           secret:
-            secretName: remediation-agent-values.yaml-sonarqube-agentic-keys-sqs
+            secretName: remediation-agent-values.yaml-sonarq-agentic-keys-sqs
             items:
             - key: agentic-shared
               path: agentic-shared
@@ -1923,6 +1923,11 @@ spec:
         "sidecar.istio.io/inject": "false"
     spec:
       restartPolicy: OnFailure
+      # The script authenticates to the API with the projected token, so force the mount here
+      # rather than inheriting it: with serviceAccount.create=false the Job runs under the
+      # release's top-level ServiceAccount, whose automountToken defaults to false - the `cat` of
+      # the token would fail under `set -eu` and take the whole release down with it.
+      automountServiceAccountToken: true
       serviceAccountName: remediation-agent-values.yaml-sonarqube-agent-key-derivation
       containers:
         - name: derive-keys
@@ -2017,10 +2022,10 @@ spec:
                     ;;
                 esac
               }
-              write_secret remediation-agent-values.yaml-sonarqube-agentic-keys-orchestrat orchestrator-to-remediation agentic-shared
-              write_secret remediation-agent-values.yaml-sonarqube-agentic-keys-remediatio orchestrator-to-remediation remediation-to-sqs
-              write_secret remediation-agent-values.yaml-sonarqube-agentic-keys-sqs agentic-shared
-              write_secret remediation-agent-values.yaml-sonarqube-agentic-keys-vortex agentic-shared
+              write_secret remediation-agent-values.yaml-sonarq-agentic-keys-orchestrator orchestrator-to-remediation agentic-shared
+              write_secret remediation-agent-values.yaml-sonarq-agentic-keys-remediation orchestrator-to-remediation remediation-to-sqs
+              write_secret remediation-agent-values.yaml-sonarq-agentic-keys-sqs agentic-shared
+              write_secret remediation-agent-values.yaml-sonarq-agentic-keys-vortex agentic-shared
           volumeMounts:
             - name: instance-secret
               mountPath: /etc/agentic/instance-secret

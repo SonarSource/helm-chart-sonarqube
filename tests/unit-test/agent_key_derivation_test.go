@@ -303,6 +303,35 @@ func TestAgentKeyDerivationDistributesKeysPerHop(t *testing.T) {
 	}
 }
 
+// The per-consumer suffix is what makes the five Secret names distinct, so it has to survive the
+// 63-character limit that a long release name pushes them against. If it didn't, the hook's five
+// write_secret calls would overwrite one another and every pod's items: projection would ask the
+// surviving Secret for labels it doesn't hold - ContainerCreating across the whole agentic pack.
+func TestAgenticKeySecretNamesSurviveALongReleaseName(t *testing.T) {
+	for _, chart := range agenticKeyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			// Long enough that truncating the composed name instead of the prefix would collapse
+			// the consumers, but still inside what Helm accepts as a release name.
+			longRelease := "sonarqube-agentic-release-with-a-long-name"
+
+			output, err := helm.RenderTemplateE(t, agentPropertiesOptions(chart, "agent-runtimes-enabled.yaml", nil),
+				chart.path, longRelease, []string{keyDerivationHookTemplate})
+			require.NoError(t, err)
+			var job batchv1.Job
+			helm.UnmarshalK8SYaml(t, output, &job)
+
+			var consumers []string
+			for name := range writtenSecrets(t, job) {
+				assert.LessOrEqual(t, len(name), 63, "%s is not a valid Secret name", name)
+				_, consumer, found := strings.Cut(name, "-agentic-keys-")
+				require.True(t, found, "%s lost its -agentic-keys- infix", name)
+				consumers = append(consumers, consumer)
+			}
+			assert.ElementsMatch(t, []string{"orchestrator", "hunter", "remediation", "sqs", "vortex"}, consumers)
+		})
+	}
+}
+
 func uniqueStrings(in []string) []string {
 	seen := map[string]bool{}
 	var out []string
@@ -353,6 +382,24 @@ func TestAgentKeyDerivationImage(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "derive-keys.sh")
 			})
+
+			// The fallback is all-or-nothing, so an override repository without a tag renders
+			// "repo:" - an invalid reference no node can pull. Left unchecked the hook would hang
+			// until activeDeadlineSeconds and fail the release with a timeout instead of this.
+			t.Run("fails closed on an override repository with no tag", func(t *testing.T) {
+				_, err := renderKeyDerivation(t, chart, "vortex-enabled.yaml", map[string]string{
+					"agentKeyDerivation.image.tag": "",
+				})
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "agentKeyDerivation.image.tag")
+			})
+
+			// The orchestrator fallback is a different case: whether that image carries a tag is
+			// the orchestrator's own concern, and fixtures legitimately leave it unset.
+			t.Run("no tag on the fallback image is not our business", func(t *testing.T) {
+				job := keyDerivationJob(t, chart, "gvisor-hunter-only.yaml", nil)
+				assert.Equal(t, "example.com/agent-orchestrator:", job.Spec.Template.Spec.Containers[0].Image)
+			})
 		})
 	}
 }
@@ -401,15 +448,49 @@ func TestAgentKeyDerivationServiceAccount(t *testing.T) {
 				assert.Equal(t, chart.fullnamePrefix()+"-agent-key-derivation", job.Spec.Template.Spec.ServiceAccountName)
 			})
 
-			t.Run("create=false reuses the release ServiceAccount", func(t *testing.T) {
-				setValues := map[string]string{"agentKeyDerivation.serviceAccount.create": "false"}
+			t.Run("create=false reuses the named release ServiceAccount", func(t *testing.T) {
+				setValues := map[string]string{
+					"agentKeyDerivation.serviceAccount.create": "false",
+					"serviceAccount.name":                      "sonarqube-release",
+				}
 				output, err := renderKeyDerivation(t, chart, "agent-runtimes-enabled.yaml", setValues)
 				require.NoError(t, err)
 				assert.ElementsMatch(t, []string{"Job", "Role", "RoleBinding"}, renderedKinds(t, output),
 					"no ServiceAccount of our own, but the reused account still has to be granted the Role")
 
 				job := keyDerivationJob(t, chart, "agent-runtimes-enabled.yaml", setValues)
-				assert.Equal(t, "default", job.Spec.Template.Spec.ServiceAccountName)
+				assert.Equal(t, "sonarqube-release", job.Spec.Template.Spec.ServiceAccountName)
+			})
+
+			// The Role grants get/create/update on every Secret in the namespace. Binding that to
+			// "default" - which is what the reuse resolves to when the release names no account -
+			// would hand Secret-write access to every unrelated pod running as default.
+			t.Run("create=false without a name fails closed", func(t *testing.T) {
+				_, err := renderKeyDerivation(t, chart, "agent-runtimes-enabled.yaml", map[string]string{
+					"agentKeyDerivation.serviceAccount.create": "false",
+				})
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "'default' ServiceAccount")
+			})
+
+			// The script reads the projected token under `set -eu`, so a pod without one fails the
+			// hook and takes the release with it. The reused account's automountToken is the
+			// operator's business and defaults to false, hence the pod-level override.
+			t.Run("forces token projection on the pod", func(t *testing.T) {
+				for name, setValues := range map[string]map[string]string{
+					"dedicated": nil,
+					"reused": {
+						"agentKeyDerivation.serviceAccount.create": "false",
+						"serviceAccount.name":                      "sonarqube-release",
+					},
+				} {
+					t.Run(name, func(t *testing.T) {
+						job := keyDerivationJob(t, chart, "agent-runtimes-enabled.yaml", setValues)
+						automount := job.Spec.Template.Spec.AutomountServiceAccountToken
+						require.NotNil(t, automount, "the pod must not inherit the account's setting")
+						assert.True(t, *automount)
+					})
+				}
 			})
 		})
 	}

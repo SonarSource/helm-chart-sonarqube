@@ -701,6 +701,11 @@ spec:
         "sidecar.istio.io/inject": "false"
     spec:
       restartPolicy: OnFailure
+      # The script authenticates to the API with the projected token, so force the mount here
+      # rather than inheriting it: with serviceAccount.create=false the Job runs under the
+      # release's top-level ServiceAccount, whose automountToken defaults to false - the `cat` of
+      # the token would fail under `set -eu` and take the whole release down with it.
+      automountServiceAccountToken: true
       serviceAccountName: vortex-values.yaml-sonarqube-agent-key-derivation
       containers:
         - name: derive-keys

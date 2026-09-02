@@ -682,7 +682,14 @@ Parameters (dict): ctx (required, the root context '.'), consumer (required, one
 "hunter", "remediation", "sqs", "vortex").
 */}}
 {{- define "sonarqube.agentic.keySecretName" -}}
-{{- printf "%s-agentic-keys-%s" (include "sonarqube.fullname" .ctx) .consumer | trunc 63 | trimSuffix "-" -}}
+{{- /* Truncate the fullname prefix, not the consumer suffix. Truncating the whole thing at 63
+       would collapse every consumer onto one name once the fullname passes 49 characters (a
+       release name of ~39 is well inside the fullname budget): the hook's five write_secret calls
+       would overwrite each other, and every pod's items: projection would then ask the surviving
+       Secret for labels it doesn't hold, wedging them in ContainerCreating. 36 + len
+       "-agentic-keys-" + the longest consumer ("remediation") is 61, so the suffix always
+       survives intact. */}}
+{{- printf "%s-agentic-keys-%s" (include "sonarqube.fullname" .ctx | trunc 36 | trimSuffix "-") .consumer | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
