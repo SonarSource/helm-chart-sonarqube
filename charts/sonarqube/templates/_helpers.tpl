@@ -901,7 +901,11 @@ true
 {{- if .Values.agentKeyDerivation.serviceAccount.create -}}
 {{- default (include "sonarqube.agentKeyDerivation.fullname" .) .Values.agentKeyDerivation.serviceAccount.name -}}
 {{- else -}}
-{{- include "sonarqube.serviceAccountName" . -}}
+{{- /* An explicit name still wins when create is false: that's the "I bound the Role myself"
+       path, and it's the one the validation error points operators at. Without the override it
+       would fall through to the release's top-level ServiceAccount - "default" unless that one is
+       named too - and the same failure would come straight back. */ -}}
+{{- default (include "sonarqube.serviceAccountName" .) .Values.agentKeyDerivation.serviceAccount.name -}}
 {{- end -}}
 {{- end -}}
 

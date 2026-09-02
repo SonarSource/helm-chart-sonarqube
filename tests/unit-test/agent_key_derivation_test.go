@@ -462,6 +462,25 @@ func TestAgentKeyDerivationServiceAccount(t *testing.T) {
 				assert.Equal(t, "sonarqube-release", job.Spec.Template.Spec.ServiceAccountName)
 			})
 
+			// The name override is what the create=false failure message tells operators to
+			// set, so it has to be read on that path too - otherwise following the message
+			// returns the identical failure.
+			t.Run("create=false honours agentKeyDerivation.serviceAccount.name", func(t *testing.T) {
+				setValues := map[string]string{
+					"agentKeyDerivation.serviceAccount.create": "false",
+					"agentKeyDerivation.serviceAccount.name":   "operator-bound-sa",
+					// Deliberately different, to pin down which of the two wins.
+					"serviceAccount.name": "sonarqube-release",
+				}
+				output, err := renderKeyDerivation(t, chart, "agent-runtimes-enabled.yaml", setValues)
+				require.NoError(t, err)
+				assert.ElementsMatch(t, []string{"Job", "Role", "RoleBinding"}, renderedKinds(t, output),
+					"the operator owns the account; we only bind the Role to it")
+
+				job := keyDerivationJob(t, chart, "agent-runtimes-enabled.yaml", setValues)
+				assert.Equal(t, "operator-bound-sa", job.Spec.Template.Spec.ServiceAccountName)
+			})
+
 			// The Role grants get/create/update on every Secret in the namespace. Binding that to
 			// "default" - which is what the reuse resolves to when the release names no account -
 			// would hand Secret-write access to every unrelated pod running as default.
