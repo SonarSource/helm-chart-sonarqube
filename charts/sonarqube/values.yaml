@@ -1335,9 +1335,33 @@ agentKeyDerivation:
     create: true
     name: ""
     annotations: {}
-  resources: {}
+  # The Job does a handful of HKDF derivations and a few API writes, then exits - it is sized for
+  # that, not for a long-lived workload. Requests are kept small so the hook schedules on a busy
+  # cluster (a pending hook blocks the whole install), and limits are still generous enough that a
+  # slow image start or a retried API write doesn't get it throttled or OOMKilled.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+      ephemeral-storage: 32Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+      ephemeral-storage: 64Mi
   securityContext: {}
-  containerSecurityContext: {}
+  # Same hardening as the Agent Orchestrator, whose image this Job runs (and so whose 900:900 user
+  # it has). readOnlyRootFilesystem is safe because derive-keys.sh only writes under TMPDIR, which
+  # the Job points at the `tmp` emptyDir.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 900
+    runAsGroup: 900
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
+    readOnlyRootFilesystem: true
   # Fails the hook Job (and the release) if derive-keys.sh / the Secret writes don't complete
   # within this window, rather than hanging the install/upgrade indefinitely.
   activeDeadlineSeconds: 300

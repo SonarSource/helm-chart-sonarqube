@@ -590,33 +590,40 @@ func TestAgenticSigningPathsResolveToProjectedFiles(t *testing.T) {
 					assert.Equal(t, path, env[envName],
 						"the redundant env var and the property that takes effect must name the same file")
 
-					cut := strings.LastIndex(path, "/")
-					require.Positive(t, cut, "%s must be a file inside a mount, not a bare path", property)
-					dir, file := path[:cut], path[cut+1:]
-
-					// The path has to fall inside a mount, and the mount's volume has to project a
-					// file by that name - a Secret volume only surfaces the items it lists.
-					var mountName string
-					for name, mount := range mounts {
-						if mount.MountPath == dir {
-							mountName = name
-						}
-					}
-					require.NotEmpty(t, mountName, "%s points into %s, which the pod does not mount", property, dir)
-					assert.True(t, mounts[mountName].ReadOnly, "%s must be mounted read-only", mountName)
-
-					volume, ok := volumes[mountName]
-					require.True(t, ok)
-					require.NotNil(t, volume.Secret, "%s must come from a Secret", mountName)
-					var projected []string
-					for _, item := range volume.Secret.Items {
-						projected = append(projected, item.Path)
-					}
-					assert.Contains(t, projected, file, "%s names %s, which %s does not project", property, path, mountName)
+					assertPathIsProjected(t, property, path, mounts, volumes)
 				})
 			}
 		})
 	}
+}
+
+// assertPathIsProjected resolves an absolute in-container path against what the pod actually
+// projects: the directory has to be a read-only mount, and the Secret behind it has to carry an
+// item of that name - a Secret volume only surfaces the items it lists.
+func assertPathIsProjected(t *testing.T, what, path string, mounts map[string]corev1.VolumeMount, volumes map[string]corev1.Volume) {
+	t.Helper()
+
+	cut := strings.LastIndex(path, "/")
+	require.Positive(t, cut, "%s must be a file inside a mount, not a bare path", what)
+	dir, file := path[:cut], path[cut+1:]
+
+	var mountName string
+	for name, mount := range mounts {
+		if mount.MountPath == dir {
+			mountName = name
+		}
+	}
+	require.NotEmpty(t, mountName, "%s points into %s, which the pod does not mount", what, dir)
+	assert.True(t, mounts[mountName].ReadOnly, "%s must be mounted read-only", mountName)
+
+	volume, ok := volumes[mountName]
+	require.True(t, ok)
+	require.NotNil(t, volume.Secret, "%s must come from a Secret", mountName)
+	var projected []string
+	for _, item := range volume.Secret.Items {
+		projected = append(projected, item.Path)
+	}
+	assert.Contains(t, projected, file, "%s names %s, which %s does not project", what, path, mountName)
 }
 
 // Each consumer is pointed at its keys one env var per key *file*, and the same key is named
@@ -629,87 +636,108 @@ func TestAgenticSigningPathsResolveToProjectedFiles(t *testing.T) {
 func TestAgenticKeyPathEnvPointsAtProjectedFiles(t *testing.T) {
 	for _, chart := range agenticKeyCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			cases := []struct {
-				name        string
-				template    string
-				familyLabel string
-				// want maps the env var the consumer reads to the label it must resolve to.
-				want map[string]string
-				// wantIDs maps the companion *_KEY_ID vars to the label they must name. Unlike
-				// want, the value is the bare label, not a path under the mount.
-				wantIDs map[string]string
-			}{
-				{name: "orchestrator", template: "templates/agent-orchestrator.yaml", want: map[string]string{
-					"AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH":      "orchestrator-to-hunter",
-					"AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH": "orchestrator-to-remediation",
-				}},
-				{name: "hunter", template: "templates/agent-runtime.yaml", familyLabel: "hunter", want: map[string]string{
-					"AGENTIC_VERIFY_KEY_PATH": "orchestrator-to-hunter",
-				}, wantIDs: map[string]string{
-					"AGENTIC_VERIFY_KEY_ID": "orchestrator-to-hunter",
-				}},
-				{name: "remediation", template: "templates/agent-runtime.yaml", familyLabel: "remediation", want: map[string]string{
-					"AGENTIC_VERIFY_KEY_PATH":              "orchestrator-to-remediation",
-					"REMEDIATION_AGENTIC_SIGNING_KEY_PATH": "remediation-to-sqs",
-				}, wantIDs: map[string]string{
-					"AGENTIC_VERIFY_KEY_ID": "orchestrator-to-remediation",
-				}},
-				{name: "sqs", template: chart.appTemplate, want: map[string]string{
-					"AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH": "agentic-shared",
-				}},
-				// Same variable as SQS, and no _KEY_ID companion: both pods use the key for the
-				// same thing, signing their own outbound calls, so the name is unambiguous.
-				{name: "vortex", template: "templates/vortex.yaml", want: map[string]string{
-					"AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH": "agentic-shared",
-				}},
-			}
-			for _, tc := range cases {
+			for _, tc := range agenticKeyEnvCases(chart.appTemplate) {
 				t.Run(tc.name, func(t *testing.T) {
-					podSpec := agenticPodSpec(t, chart, tc.template, "agent-runtimes-enabled.yaml", nil, tc.familyLabel)
-					container := podSpec.Containers[0]
-
-					mount, ok := agentVolumeMountsByName(container.VolumeMounts)[agenticKeyVolumeName]
-					require.True(t, ok, "%s does not mount its derived keys", tc.name)
-
-					projected := map[string]bool{}
-					for _, item := range agentVolumesByName(podSpec.Volumes)[agenticKeyVolumeName].Secret.Items {
-						projected[item.Path] = true
-					}
-
-					got, gotIDs := map[string]string{}, map[string]string{}
-					for _, env := range container.Env {
-						switch {
-						// AGENTIC_SECRET_KEY_PATH is the chart-wide encryption key (sonarSecretKey),
-						// not a signing key - it happens to share the suffix.
-						case strings.HasSuffix(env.Name, "_KEY_PATH") && env.Name != "AGENTIC_SECRET_KEY_PATH":
-							got[env.Name] = env.Value
-							// A directory variable would silently pass the checks below; the
-							// contract is one variable per file, so guard the shape too.
-							assert.NotEqual(t, mount.MountPath, env.Value, "%s points at the key directory, not a key file", env.Name)
-						case strings.HasSuffix(env.Name, "_KEY_ID"):
-							gotIDs[env.Name] = env.Value
-						}
-					}
-
-					want := map[string]string{}
-					for name, label := range tc.want {
-						want[name] = mount.MountPath + "/" + label
-						assert.True(t, projected[label], "%s resolves to %s, which this pod does not project", name, label)
-					}
-					assert.Equal(t, want, got)
-
-					wantIDs := tc.wantIDs
-					if wantIDs == nil {
-						wantIDs = map[string]string{}
-					}
-					for name, label := range wantIDs {
-						assert.True(t, projected[label], "%s names %s, which this pod does not project", name, label)
-					}
-					assert.Equal(t, wantIDs, gotIDs)
+					assertKeyPathEnvResolves(t, chart, tc)
 				})
 			}
 		})
 	}
+}
+
+// agenticKeyEnvCase is one consumer's expected view of the derived keys.
+type agenticKeyEnvCase struct {
+	name        string
+	template    string
+	familyLabel string
+	// want maps the env var the consumer reads to the label it must resolve to.
+	want map[string]string
+	// wantIDs maps the companion *_KEY_ID vars to the label they must name. Unlike want, the
+	// value is the bare label, not a path under the mount.
+	wantIDs map[string]string
+}
+
+func agenticKeyEnvCases(appTemplate string) []agenticKeyEnvCase {
+	return []agenticKeyEnvCase{
+		{name: "orchestrator", template: "templates/agent-orchestrator.yaml", want: map[string]string{
+			"AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH":      "orchestrator-to-hunter",
+			"AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH": "orchestrator-to-remediation",
+		}},
+		{name: "hunter", template: "templates/agent-runtime.yaml", familyLabel: "hunter", want: map[string]string{
+			"AGENTIC_VERIFY_KEY_PATH": "orchestrator-to-hunter",
+		}, wantIDs: map[string]string{
+			"AGENTIC_VERIFY_KEY_ID": "orchestrator-to-hunter",
+		}},
+		{name: "remediation", template: "templates/agent-runtime.yaml", familyLabel: "remediation", want: map[string]string{
+			"AGENTIC_VERIFY_KEY_PATH":              "orchestrator-to-remediation",
+			"REMEDIATION_AGENTIC_SIGNING_KEY_PATH": "remediation-to-sqs",
+		}, wantIDs: map[string]string{
+			"AGENTIC_VERIFY_KEY_ID": "orchestrator-to-remediation",
+		}},
+		{name: "sqs", template: appTemplate, want: map[string]string{
+			"AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH": "agentic-shared",
+		}},
+		// Same variable as SQS, and no _KEY_ID companion: both pods use the key for the same
+		// thing, signing their own outbound calls, so the name is unambiguous.
+		{name: "vortex", template: "templates/vortex.yaml", want: map[string]string{
+			"AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH": "agentic-shared",
+		}},
+	}
+}
+
+func assertKeyPathEnvResolves(t *testing.T, chart agentChart, tc agenticKeyEnvCase) {
+	t.Helper()
+
+	podSpec := agenticPodSpec(t, chart, tc.template, "agent-runtimes-enabled.yaml", nil, tc.familyLabel)
+	container := podSpec.Containers[0]
+
+	mount, ok := agentVolumeMountsByName(container.VolumeMounts)[agenticKeyVolumeName]
+	require.True(t, ok, "%s does not mount its derived keys", tc.name)
+
+	projected := map[string]bool{}
+	for _, item := range agentVolumesByName(podSpec.Volumes)[agenticKeyVolumeName].Secret.Items {
+		projected[item.Path] = true
+	}
+
+	got, gotIDs := keyEnvByKind(t, container.Env, mount.MountPath)
+
+	want := map[string]string{}
+	for name, label := range tc.want {
+		want[name] = mount.MountPath + "/" + label
+		assert.True(t, projected[label], "%s resolves to %s, which this pod does not project", name, label)
+	}
+	assert.Equal(t, want, got)
+
+	wantIDs := tc.wantIDs
+	if wantIDs == nil {
+		wantIDs = map[string]string{}
+	}
+	for name, label := range wantIDs {
+		assert.True(t, projected[label], "%s names %s, which this pod does not project", name, label)
+	}
+	assert.Equal(t, wantIDs, gotIDs)
+}
+
+// keyEnvByKind splits a container's environment into the signing-key path vars and the companion
+// key-ID vars, and asserts along the way that no path var names the mount directory itself.
+func keyEnvByKind(t *testing.T, env []corev1.EnvVar, mountPath string) (paths, ids map[string]string) {
+	t.Helper()
+
+	paths, ids = map[string]string{}, map[string]string{}
+	for _, e := range env {
+		switch {
+		// AGENTIC_SECRET_KEY_PATH is the chart-wide encryption key (sonarSecretKey), not a
+		// signing key - it happens to share the suffix.
+		case strings.HasSuffix(e.Name, "_KEY_PATH") && e.Name != "AGENTIC_SECRET_KEY_PATH":
+			paths[e.Name] = e.Value
+			// A directory variable would silently pass the caller's checks; the contract is one
+			// variable per file, so guard the shape too.
+			assert.NotEqual(t, mountPath, e.Value, "%s points at the key directory, not a key file", e.Name)
+		case strings.HasSuffix(e.Name, "_KEY_ID"):
+			ids[e.Name] = e.Value
+		}
+	}
+	return paths, ids
 }
 
 // Regression guard on the least-privilege property itself, stated once as an invariant rather than
