@@ -13,7 +13,11 @@ metadata:
     sonarqube.agent/component: orchestrator
     app.kubernetes.io/component: agent-orchestrator
 spec:
+  {{- /* Omit replicas once the HPA owns it, except on the very first install, so a fresh install
+         still gets a sane initial count while a later `helm upgrade` doesn't fight the HPA. */}}
+  {{- if or (not .Values.agentOrchestrator.autoscaling.enabled) .Release.IsInstall }}
   replicas: {{ .Values.agentOrchestrator.replicaCount }}
+  {{- end }}
   {{- with .Values.agentOrchestrator.revisionHistoryLimit }}
   revisionHistoryLimit: {{ . }}
   {{- end }}
