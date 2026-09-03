@@ -3,4 +3,6 @@ charts:
  -  charts/sonarqube
 chart-repos:
   - bitnami-pre2022=https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
-helm-extra-args: --timeout 600s --debug
+# No --debug here: see the same note in ct-sonarqube-dce-test.yaml. Kept in sync so this chart
+# cannot grow into the same ct/helm-4 stderr deadlock as sonarqube-dce did.
+helm-extra-args: --timeout 600s

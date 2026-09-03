@@ -3,4 +3,8 @@ charts:
  -  charts/sonarqube-dce
 chart-repos:
   - bitnami-pre2022=https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
-helm-extra-args: --timeout 600s --debug
+# No --debug here: ct reads the helm subprocess via io.MultiReader(stdout, stderr), which drains
+# stdout to EOF before ever reading stderr. Helm 4 logs --debug to stderr, so once that pipe hits
+# its 64KB buffer helm blocks in write() and ct deadlocks in cmd.Wait() - the install then never
+# returns and helm's own --timeout cannot fire. See helm/chart-testing#471, #557, #854.
+helm-extra-args: --timeout 600s
