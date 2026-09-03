@@ -189,6 +189,9 @@ jobs:
             secrets_id: dcesecrets
     runs-on: ${{ matrix.runner }}
     name: Kind Test (${{ matrix.chart }})
+    # Safety net: this job has hung for over an hour holding a runner. Healthy runs are ~5min
+    # (sonarqube) / ~8min (sonarqube-dce), so 30 fails fast without risking a false negative.
+    timeout-minutes: 30
     permissions:
       id-token: write
       contents: read
@@ -245,7 +248,44 @@ jobs:
       - name: Run chart testing
         run: |
           ct lint --config ${{ matrix.config }}
-          ct install --namespace test --config ${{ matrix.config }} --debug
+
+          # TEMP DIAGNOSTIC (EA-872): the sonarqube-dce install hangs past its own --timeout 600s
+          # while emitting no helm output, so cancellation discards whatever it was blocked on.
+          # Stream cluster state during the install and bound it ourselves, so the evidence is
+          # flushed to the log instead of lost. REMOVE once the hang is diagnosed.
+          (
+            while true; do
+              echo "--- watch $(date -u +%H:%M:%S) ---"
+              kubectl get pods -n test -o wide 2>&1 | head -40
+              sleep 30
+            done
+          ) &
+          WATCHER=$!
+          trap 'kill "$WATCHER" 2>/dev/null || true' EXIT
+
+          set +e
+          timeout --signal=INT --kill-after=60 900 \
+            ct install --namespace test --config ${{ matrix.config }} --debug
+          RC=$?
+          set -e
+          kill "$WATCHER" 2>/dev/null || true
+
+          if [ "$RC" -ne 0 ]; then
+            echo "::group::DIAGNOSTICS (ct install exited $RC; 124 = hit our 900s bound)"
+            echo "===== pods ====="; kubectl get pods -n test -o wide 2>&1
+            echo "===== not-Running pods, described ====="
+            for p in $(kubectl get pods -n test --no-headers 2>/dev/null \
+                       | awk '$3!="Running" && $3!="Completed" {print $1}'); do
+              echo "----- $p -----"; kubectl describe pod "$p" -n test 2>&1 | tail -40
+            done
+            echo "===== workloads ====="; kubectl get deploy,sts,ds -n test -o wide 2>&1
+            echo "===== recent events ====="
+            kubectl get events -n test --sort-by=.lastTimestamp 2>&1 | tail -60
+            echo "===== node pressure / capacity ====="
+            kubectl describe nodes 2>&1 | grep -A8 -E "Allocated resources|Conditions:" | head -60
+            echo "::endgroup::"
+          fi
+          exit "$RC"
       - name: Verify gVisor installed on the cluster
         if: matrix.chart == 'sonarqube-dce'
         run: |
