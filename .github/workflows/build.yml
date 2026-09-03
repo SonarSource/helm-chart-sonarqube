@@ -269,12 +269,19 @@ jobs:
             # discarded the "waiting for resource" lines that name what is actually stuck. Run
             # helm directly here so --debug streams live. Previous run proved every workload is
             # Ready ~5min in, yet helm neither returned nor honoured its own --timeout 600s.
+            # Previous run: direct helm install as "diag-dce" SUCCEEDED (rc=0, 7m52s) where
+            # ct install hung 5/5. The commands are identical except the release name, and ct's
+            # is 24 chars ("sonarqube-dce-rtzopu98t0") vs 8, which pushes derived pod names to
+            # exactly 63 - Kubernetes' limit. Re-run with a ct-length name to isolate that one
+            # variable: hang here => name length; success => ct itself (or flakiness).
             timeout --signal=INT --kill-after=60 900 \
-              helm install diag-dce charts/sonarqube-dce --namespace test \
+              helm install sonarqube-dce-diag012345 charts/sonarqube-dce --namespace test \
                 --values charts/sonarqube-dce/ci/ci-values.yaml \
                 --wait --timeout 600s --debug
             RC=$?
             echo "=== helm install returned rc=$RC at $(date -u +%H:%M:%S) ==="
+            echo "=== generated names (watch for 63-char truncation) ==="
+            kubectl get deploy,sts,ds,pods -n test -o name 2>&1 | awk '{print length($0)-index($0,"/"), $0}' | sort -rn | head -12
           else
             timeout --signal=INT --kill-after=60 900 \
               ct install --namespace test --config ${{ matrix.config }} --debug
