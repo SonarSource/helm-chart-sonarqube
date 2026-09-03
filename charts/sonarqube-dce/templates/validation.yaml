@@ -76,10 +76,17 @@
 
 {{/* Validation for the Agent Orchestrator / runtime autoscaling knobs (agentOrchestrator.
      autoscaling, hunterAgent.autoscaling, remediationAgent.autoscaling): never below the floor
-     of 2 replicas (no scale-to-zero for this fleet), and the KEDA CRDs must be present for any
-     runtime family with autoscaling enabled - the plain orchestrator HPA needs no CRD check. */}}
-{{- if and .Values.agentOrchestrator.autoscaling.enabled (lt (int .Values.agentOrchestrator.autoscaling.minReplicas) 2) -}}
+     of 2 replicas (no scale-to-zero for this fleet), maxReplicas must not be below minReplicas,
+     and the KEDA CRDs must be present for any runtime family with autoscaling enabled - the plain
+     orchestrator HPA needs no CRD check. Gated on the component's own enabled flag too, matching
+     the render guards in agent-orchestrator-hpa.yaml/agent-runtime-scaledobject.yaml, so a
+     disabled component's autoscaling block is never validated. */}}
+{{- $agentOrchestratorAutoscaling := and .Values.agentOrchestrator.enabled .Values.agentOrchestrator.autoscaling.enabled -}}
+{{- if and $agentOrchestratorAutoscaling (lt (int .Values.agentOrchestrator.autoscaling.minReplicas) 2) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.autoscaling.minReplicas must be >= 2." -}}
+{{- end -}}
+{{- if and $agentOrchestratorAutoscaling (gt (int .Values.agentOrchestrator.autoscaling.minReplicas) (int .Values.agentOrchestrator.autoscaling.maxReplicas)) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.autoscaling.maxReplicas must be >= minReplicas." -}}
 {{- end -}}
 {{- $kedaOverride := .Values.agentKeda.assumeInstalled -}}
 {{- $kedaAvailable := $.Capabilities.APIVersions.Has "keda.sh/v1alpha1" -}}
@@ -87,9 +94,12 @@
   {{- $kedaAvailable = $kedaOverride -}}
 {{- end -}}
 {{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" $) -}}
-  {{- if $cfg.autoscaling.enabled -}}
+  {{- if and $cfg.enabled $cfg.autoscaling.enabled -}}
     {{- if lt (int $cfg.autoscaling.minReplicas) 2 -}}
 {{- fail (printf "\n ** The values.yaml file is not valid. ** \n %sAgent.autoscaling.minReplicas must be >= 2 (scale-to-zero and single-replica autoscaling are not supported for the agent runtimes)." $family) -}}
+    {{- end -}}
+    {{- if gt (int $cfg.autoscaling.minReplicas) (int $cfg.autoscaling.maxReplicas) -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n %sAgent.autoscaling.maxReplicas must be >= minReplicas." $family) -}}
     {{- end -}}
     {{- if not $kedaAvailable -}}
 {{- fail (printf "\n ** The values.yaml file is not valid. ** \n %sAgent.autoscaling.enabled is true but the KEDA CRDs (keda.sh/v1alpha1) were not detected. Install KEDA (https://keda.sh) first, or set agentKeda.assumeInstalled=true once it is, or disable autoscaling for this family." $family) -}}
