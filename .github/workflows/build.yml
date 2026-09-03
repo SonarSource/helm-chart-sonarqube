@@ -189,9 +189,6 @@ jobs:
             secrets_id: dcesecrets
     runs-on: ${{ matrix.runner }}
     name: Kind Test (${{ matrix.chart }})
-    # Safety net: this job has hung for over an hour holding a runner. Healthy runs are ~5min
-    # (sonarqube) / ~8min (sonarqube-dce), so 30 fails fast without risking a false negative.
-    timeout-minutes: 30
     permissions:
       id-token: write
       contents: read
@@ -248,64 +245,7 @@ jobs:
       - name: Run chart testing
         run: |
           ct lint --config ${{ matrix.config }}
-
-          # TEMP DIAGNOSTIC (EA-872): the sonarqube-dce install hangs past its own --timeout 600s
-          # while emitting no helm output, so cancellation discards whatever it was blocked on.
-          # Stream cluster state during the install and bound it ourselves, so the evidence is
-          # flushed to the log instead of lost. REMOVE once the hang is diagnosed.
-          (
-            while true; do
-              echo "--- watch $(date -u +%H:%M:%S) ---"
-              kubectl get pods -n test -o wide 2>&1 | head -40
-              sleep 30
-            done
-          ) &
-          WATCHER=$!
-          trap 'kill "$WATCHER" 2>/dev/null || true' EXIT
-
-          set +e
-          if [ "${{ matrix.chart }}" = "sonarqube-dce" ]; then
-            # ct captures helm's stdout and only flushes it when helm exits, so every killed run
-            # discarded the "waiting for resource" lines that name what is actually stuck. Run
-            # helm directly here so --debug streams live. Previous run proved every workload is
-            # Ready ~5min in, yet helm neither returned nor honoured its own --timeout 600s.
-            # Previous run: direct helm install as "diag-dce" SUCCEEDED (rc=0, 7m52s) where
-            # ct install hung 5/5. The commands are identical except the release name, and ct's
-            # is 24 chars ("sonarqube-dce-rtzopu98t0") vs 8, which pushes derived pod names to
-            # exactly 63 - Kubernetes' limit. Re-run with a ct-length name to isolate that one
-            # variable: hang here => name length; success => ct itself (or flakiness).
-            timeout --signal=INT --kill-after=60 900 \
-              helm install sonarqube-dce-diag012345 charts/sonarqube-dce --namespace test \
-                --values charts/sonarqube-dce/ci/ci-values.yaml \
-                --wait --timeout 600s --debug
-            RC=$?
-            echo "=== helm install returned rc=$RC at $(date -u +%H:%M:%S) ==="
-            echo "=== generated names (watch for 63-char truncation) ==="
-            kubectl get deploy,sts,ds,pods -n test -o name 2>&1 | awk '{print length($0)-index($0,"/"), $0}' | sort -rn | head -12
-          else
-            timeout --signal=INT --kill-after=60 900 \
-              ct install --namespace test --config ${{ matrix.config }} --debug
-            RC=$?
-          fi
-          set -e
-          kill "$WATCHER" 2>/dev/null || true
-
-          if [ "$RC" -ne 0 ]; then
-            echo "::group::DIAGNOSTICS (ct install exited $RC; 124 = hit our 900s bound)"
-            echo "===== pods ====="; kubectl get pods -n test -o wide 2>&1
-            echo "===== not-Running pods, described ====="
-            for p in $(kubectl get pods -n test --no-headers 2>/dev/null \
-                       | awk '$3!="Running" && $3!="Completed" {print $1}'); do
-              echo "----- $p -----"; kubectl describe pod "$p" -n test 2>&1 | tail -40
-            done
-            echo "===== workloads ====="; kubectl get deploy,sts,ds -n test -o wide 2>&1
-            echo "===== recent events ====="
-            kubectl get events -n test --sort-by=.lastTimestamp 2>&1 | tail -60
-            echo "===== node pressure / capacity ====="
-            kubectl describe nodes 2>&1 | grep -A8 -E "Allocated resources|Conditions:" | head -60
-            echo "::endgroup::"
-          fi
-          exit "$RC"
+          ct install --namespace test --config ${{ matrix.config }} --debug
       - name: Verify gVisor installed on the cluster
         if: matrix.chart == 'sonarqube-dce'
         run: |
