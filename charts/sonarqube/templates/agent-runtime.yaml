@@ -15,8 +15,9 @@ metadata:
     app.kubernetes.io/component: agent-runtime-{{ $family }}
 spec:
   {{- /* Omit replicas once the KEDA ScaledObject owns it, except on the very first install - see
-         the same guard in agent-orchestrator.yaml for why. */}}
-  {{- if or (not $cfg.autoscaling.enabled) $.Release.IsInstall }}
+         the same guard (and its manageReplicas GitOps opt-out) in agent-orchestrator.yaml for
+         why. */}}
+  {{- if and (or (not $cfg.autoscaling.enabled) $.Release.IsInstall) $cfg.autoscaling.manageReplicas }}
   replicas: {{ $cfg.replicaCount }}
   {{- end }}
   {{- with $cfg.revisionHistoryLimit }}

@@ -174,6 +174,24 @@ func TestAgentOrchestratorReplicasOmittedOnUpgradeWhenAutoscalingEnabled(t *test
 	}
 }
 
+// manageReplicas=false is the GitOps escape hatch: Release.IsInstall is always true under `helm
+// template` (Argo CD, Flux, --dry-run=client), so without it those consumers would always hit the
+// "fresh install" branch above and keep resetting replicas on every sync.
+func TestAgentOrchestratorReplicasSuppressedByManageReplicasFalse(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			setValues := map[string]string{
+				"agentOrchestrator.autoscaling.enabled":        "true",
+				"agentOrchestrator.autoscaling.manageReplicas": "false",
+			}
+
+			install, err := renderAgentOrchestratorDeployment(t, chart, setValues)
+			require.NoError(t, err)
+			assert.Nil(t, install.Spec.Replicas, "replicas should be omitted even on install when manageReplicas=false")
+		})
+	}
+}
+
 func TestAgentRuntimeScaledObjectNotRenderedByDefault(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -254,6 +272,7 @@ func TestAgentAutoscalingMinReplicasFloor(t *testing.T) {
 		t.Run(chart.name, func(t *testing.T) {
 			t.Run("orchestrator", func(t *testing.T) {
 				_, err := renderWithValidation(t, chart, map[string]string{
+					"agentOrchestrator.enabled":                 "true",
 					"agentOrchestrator.image.repository":        "example.com/agent-orchestrator",
 					"agentOrchestrator.autoscaling.enabled":     "true",
 					"agentOrchestrator.autoscaling.minReplicas": "1",
@@ -281,6 +300,87 @@ func TestAgentAutoscalingMinReplicasFloor(t *testing.T) {
 					})
 					require.Error(t, err)
 					assert.Contains(t, err.Error(), family+"Agent.autoscaling.minReplicas must be >= 2")
+				})
+			}
+		})
+	}
+}
+
+// maxReplicas must not be below minReplicas - a template-time check giving an actionable error
+// instead of an opaque HPA/ScaledObject rejection at apply time.
+func TestAgentAutoscalingMaxReplicasBelowMinReplicas(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("orchestrator", func(t *testing.T) {
+				_, err := renderWithValidation(t, chart, map[string]string{
+					"agentOrchestrator.enabled":                 "true",
+					"agentOrchestrator.image.repository":        "example.com/agent-orchestrator",
+					"agentOrchestrator.autoscaling.enabled":     "true",
+					"agentOrchestrator.autoscaling.minReplicas": "4",
+					"agentOrchestrator.autoscaling.maxReplicas": "3",
+				})
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "agentOrchestrator.autoscaling.maxReplicas must be >= minReplicas")
+			})
+
+			for _, family := range []string{"hunter", "remediation"} {
+				t.Run(family, func(t *testing.T) {
+					_, err := renderWithValidation(t, chart, map[string]string{
+						"agentOrchestrator.enabled":              "true",
+						"agentOrchestrator.image.repository":     "example.com/agent-orchestrator",
+						family + "Agent.enabled":                 "true",
+						family + "Agent.image.repository":        "example.com/" + family + "-agent",
+						family + "Agent.autoscaling.enabled":     "true",
+						family + "Agent.autoscaling.minReplicas": "4",
+						family + "Agent.autoscaling.maxReplicas": "3",
+						"agentKeda.assumeInstalled":              "true",
+						"vortex.enabled":                         "true",
+						"vortex.image.repository":                "example.com/vortex",
+						"vortex.image.tag":                       "1",
+						"vortex.sonarqubeToken.token":            "squ_example",
+						"vortex.storage.bucket":                  "vortex-artifacts",
+						"vortex.storage.region":                  "eu-west-1",
+					})
+					require.Error(t, err)
+					assert.Contains(t, err.Error(), family+"Agent.autoscaling.maxReplicas must be >= minReplicas")
+				})
+			}
+		})
+	}
+}
+
+// The autoscaling validation must be gated on the component's own enabled flag, matching the
+// render guards in agent-orchestrator-hpa.yaml/agent-runtime-scaledobject.yaml - otherwise a
+// values layer that sets autoscaling defaults once and toggles components per environment (e.g.
+// hunterAgent.enabled=false while hunterAgent.autoscaling.enabled stays true) would hard-fail even
+// though no HPA/ScaledObject would ever render.
+func TestAgentAutoscalingValidationSkippedWhenComponentDisabled(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("orchestrator disabled", func(t *testing.T) {
+				// agent-orchestrator.yaml itself renders zero documents when disabled, and
+				// --show-only errors rather than returning empty for that (see the comment on
+				// TestAgentOrchestratorHPANotRenderedByDefault) - target secret.yaml instead,
+				// which always renders given agentValidationBase's monitoringPasscode.
+				base := agentValidationBase(chart)
+				base["agentOrchestrator.enabled"] = "false"
+				base["agentOrchestrator.autoscaling.enabled"] = "true"
+				base["agentOrchestrator.autoscaling.minReplicas"] = "1"
+				opts := &helm.Options{Logger: logger.Discard, SetValues: base}
+				_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/secret.yaml"})
+				require.NoError(t, err)
+			})
+
+			for _, family := range []string{"hunter", "remediation"} {
+				t.Run(family+" disabled", func(t *testing.T) {
+					_, err := renderWithValidation(t, chart, map[string]string{
+						"agentOrchestrator.enabled":              "true",
+						"agentOrchestrator.image.repository":     "example.com/agent-orchestrator",
+						family + "Agent.enabled":                 "false",
+						family + "Agent.autoscaling.enabled":     "true",
+						family + "Agent.autoscaling.minReplicas": "1",
+					})
+					require.NoError(t, err)
 				})
 			}
 		})
@@ -346,6 +446,25 @@ func TestAgentRuntimeReplicasOmittedOnUpgradeWhenAutoscalingEnabled(t *testing.T
 			remediationUpgrade, err := renderAgentRuntimeDeploymentFamily(t, chart, "remediation", setValues, "--is-upgrade")
 			require.NoError(t, err)
 			require.NotNil(t, remediationUpgrade.Spec.Replicas)
+		})
+	}
+}
+
+// manageReplicas=false is the GitOps escape hatch: Release.IsInstall is always true under `helm
+// template` (Argo CD, Flux, --dry-run=client), so without it those consumers would always hit the
+// "fresh install" branch above and keep resetting replicas on every sync.
+func TestAgentRuntimeReplicasSuppressedByManageReplicasFalse(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			setValues := map[string]string{
+				"hunterAgent.autoscaling.enabled":        "true",
+				"hunterAgent.autoscaling.manageReplicas": "false",
+				"agentKeda.assumeInstalled":              "true",
+			}
+
+			install, err := renderAgentRuntimeDeploymentFamily(t, chart, "hunter", setValues)
+			require.NoError(t, err)
+			assert.Nil(t, install.Spec.Replicas, "replicas should be omitted even on install when manageReplicas=false")
 		})
 	}
 }
