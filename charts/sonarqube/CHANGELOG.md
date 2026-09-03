@@ -9,6 +9,7 @@ All changes to this chart will be documented in this file.
 * Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via `agentOrchestrator.enabled`, `hunterAgent.enabled` and `remediationAgent.enabled`
 * Auto-wire the Hunter Agent's `SCRIPT_PATH` (detection mode) from `hunterAgent.scriptPath`, symmetric with the Remediation Agent's `REMEDIATION_SCRIPT_PATH`
 * Add `agentOrchestrator.env`/`extraVolumes`/`extraVolumeMounts`, and a `agentOrchestrator.storage.type`/`vortex.storage.filesystem.baseDir` FILESYSTEM/NFS backend for the shared agentic job storage
+* Add autoscaling for the Agent Orchestrator (`agentOrchestrator.autoscaling`, a plain CPU/Memory `HorizontalPodAutoscaler`) and each agent runtime family (`<hunterAgent|remediationAgent>.autoscaling`, a KEDA `ScaledObject`; requires KEDA installed in-cluster, or `agentKeda.assumeInstalled` set explicitly), with `terminationGracePeriodSeconds` hardening so an in-flight job survives any scale-down, not just an autoscaler-driven one, and an `autoscaling.manageReplicas` opt-out for GitOps tooling (Argo CD, Flux) that applies `helm template` output directly
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0

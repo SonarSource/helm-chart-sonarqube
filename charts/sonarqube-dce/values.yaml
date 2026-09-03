@@ -1092,6 +1092,23 @@ agentOrchestrator:
   extraVolumeMounts: []
   # - name: agentic-storage
   #   mountPath: /agentic-storage
+  # Plain Kubernetes HPA on CPU/Memory for the orchestrator. Off by default; replicaCount above
+  # still governs a non-autoscaled install.
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    manageReplicas: true
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 75
+    behavior:
+      scaleDown:
+        stabilizationWindowSeconds: 300
 
 # Hunter Agent runtime that detects issues. Requires agentOrchestrator.enabled - see validation.yaml.
 # Process-count limits aren't set here - use your node's kubelet configuration (podPidsLimit).
@@ -1178,6 +1195,20 @@ hunterAgent:
   # - name: custom-ca
   #   mountPath: /custom-ca
   #   readOnly: true
+  # KEDA ScaledObject reading the Agent Orchestrator's GET /metrics/queue. Requires KEDA
+  # installed in-cluster - see agentKeda.assumeInstalled below. minReplicas is validated >= 2:
+  # this family never scales to zero.
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 25
+    manageReplicas: true
+    pollingInterval: 15
+    scaleDownStabilizationSeconds: 600
+  # Hunter jobs run up to ~3h; must stay comfortably above hunter-agent-runtime's own fixed
+  # `uvicorn --timeout-graceful-shutdown 14400`s (its Dockerfile), or Kubernetes SIGKILLs the pod
+  # before that bounded wait finishes. Don't set SHUTDOWN_GRACE_SECONDS - the image sizes it itself.
+  terminationGracePeriodSeconds: 14430
 
 # Remediation Agent runtime that remediates issues. Requires agentOrchestrator.enabled AND
 # vortex.enabled - see validation.yaml.
@@ -1253,6 +1284,19 @@ remediationAgent:
   env: []
   extraVolumes: []
   extraVolumeMounts: []
+  # KEDA ScaledObject reading the Agent Orchestrator's GET /metrics/queue - same shape as
+  # hunterAgent.autoscaling above.
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 25
+    manageReplicas: true
+    pollingInterval: 15
+    scaleDownStabilizationSeconds: 600
+  # Remediation jobs run up to ~30min; must stay comfortably above remediation-agent-runtime's
+  # own fixed `uvicorn --timeout-graceful-shutdown 3600`s (its Dockerfile), or Kubernetes SIGKILLs
+  # the pod before that bounded wait finishes. Don't set SHUTDOWN_GRACE_SECONDS - the image sizes it itself.
+  terminationGracePeriodSeconds: 3630
 
 agentEgressProxy:
   image:
@@ -1468,3 +1512,10 @@ gvisor:
 
 # (DEPRECATED) This value is not used in the templates.
 terminationGracePeriodSeconds: 60
+
+# Cluster-capability guard for the KEDA-based agent runtime ScaledObjects (hunterAgent/
+# remediationAgent.autoscaling above).
+agentKeda:
+  # null auto-detects KEDA CRDs via .Capabilities.APIVersions - always EMPTY under `helm
+  # template`/`--dry-run=client`, so set this explicitly there to avoid a spurious pass/fail.
+  assumeInstalled: null

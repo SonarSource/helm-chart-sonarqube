@@ -11,7 +11,13 @@ metadata:
     sonarqube.agent/component: orchestrator
     app.kubernetes.io/component: agent-orchestrator
 spec:
+  {{- /* Omit replicas once the HPA owns it, except on install, so upgrades don't fight it.
+         Release.IsInstall is also true under `helm template`, so GitOps tooling needs
+         manageReplicas=false to opt out - which must only gate this branch, or a plain
+         non-autoscaled install would wrongly drop replicas too. */}}
+  {{- if or (not .Values.agentOrchestrator.autoscaling.enabled) (and .Release.IsInstall .Values.agentOrchestrator.autoscaling.manageReplicas) }}
   replicas: {{ .Values.agentOrchestrator.replicaCount }}
+  {{- end }}
   {{- with .Values.agentOrchestrator.revisionHistoryLimit }}
   revisionHistoryLimit: {{ . }}
   {{- end }}
