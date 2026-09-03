@@ -192,6 +192,21 @@ func TestAgentOrchestratorReplicasSuppressedByManageReplicasFalse(t *testing.T) 
 	}
 }
 
+// manageReplicas must only gate the autoscaling-enabled branch, not suppress replicas whenever a
+// shared values layer sets it false regardless of autoscaling.enabled.
+func TestAgentOrchestratorReplicasRenderedWhenAutoscalingDisabledEvenIfManageReplicasFalse(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			deployment, err := renderAgentOrchestratorDeployment(t, chart, map[string]string{
+				"agentOrchestrator.autoscaling.enabled":        "false",
+				"agentOrchestrator.autoscaling.manageReplicas": "false",
+			})
+			require.NoError(t, err)
+			require.NotNil(t, deployment.Spec.Replicas, "replicas must still render when autoscaling is disabled, regardless of manageReplicas")
+		})
+	}
+}
+
 func TestAgentRuntimeScaledObjectNotRenderedByDefault(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -349,19 +364,15 @@ func TestAgentAutoscalingMaxReplicasBelowMinReplicas(t *testing.T) {
 	}
 }
 
-// The autoscaling validation must be gated on the component's own enabled flag, matching the
-// render guards in agent-orchestrator-hpa.yaml/agent-runtime-scaledobject.yaml - otherwise a
-// values layer that sets autoscaling defaults once and toggles components per environment (e.g.
-// hunterAgent.enabled=false while hunterAgent.autoscaling.enabled stays true) would hard-fail even
-// though no HPA/ScaledObject would ever render.
+// Validation must be gated on the component's own enabled flag too, matching the render guards -
+// otherwise hunterAgent.enabled=false with hunterAgent.autoscaling.enabled=true would hard-fail
+// even though no HPA/ScaledObject would ever render.
 func TestAgentAutoscalingValidationSkippedWhenComponentDisabled(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			t.Run("orchestrator disabled", func(t *testing.T) {
-				// agent-orchestrator.yaml itself renders zero documents when disabled, and
-				// --show-only errors rather than returning empty for that (see the comment on
-				// TestAgentOrchestratorHPANotRenderedByDefault) - target secret.yaml instead,
-				// which always renders given agentValidationBase's monitoringPasscode.
+				// agent-orchestrator.yaml renders nothing when disabled, and --show-only errors
+				// on that rather than returning empty - target secret.yaml instead.
 				base := agentValidationBase(chart)
 				base["agentOrchestrator.enabled"] = "false"
 				base["agentOrchestrator.autoscaling.enabled"] = "true"
@@ -387,13 +398,10 @@ func TestAgentAutoscalingValidationSkippedWhenComponentDisabled(t *testing.T) {
 	}
 }
 
-// terminationGracePeriodSeconds/SHUTDOWN_GRACE_SECONDS are unconditional hardening - they must be
-// present even with autoscaling off (protects any scale-down: manual, rollout, or node drain).
-// Defaults must clear each runtime image's own fixed, non-overridable `uvicorn
-// --timeout-graceful-shutdown` (14400s hunter-agent-runtime, 3600s remediation-agent-runtime) - see
-// those Dockerfiles. The chart does not set SHUTDOWN_GRACE_SECONDS itself; the image already sizes
-// that env var correctly against its own ceiling, so asserting its absence here guards against
-// reintroducing an override that would clobber it with a too-small value.
+// terminationGracePeriodSeconds is unconditional hardening (protects any scale-down, not just an
+// autoscaler-driven one) and must exceed each image's own fixed `uvicorn --timeout-graceful-
+// shutdown` (14400s hunter, 3600s remediation) - never set SHUTDOWN_GRACE_SECONDS from the chart,
+// the image already sizes it against that ceiling.
 func TestAgentRuntimeTerminationGraceUnconditional(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -465,6 +473,30 @@ func TestAgentRuntimeReplicasSuppressedByManageReplicasFalse(t *testing.T) {
 			install, err := renderAgentRuntimeDeploymentFamily(t, chart, "hunter", setValues)
 			require.NoError(t, err)
 			assert.Nil(t, install.Spec.Replicas, "replicas should be omitted even on install when manageReplicas=false")
+
+			// The other family, with autoscaling untouched, is unaffected.
+			remediationInstall, err := renderAgentRuntimeDeploymentFamily(t, chart, "remediation", setValues)
+			require.NoError(t, err)
+			require.NotNil(t, remediationInstall.Spec.Replicas)
+		})
+	}
+}
+
+// manageReplicas must only gate the autoscaling-enabled branch, not suppress replicas whenever a
+// shared values layer sets it false regardless of autoscaling.enabled.
+func TestAgentRuntimeReplicasRenderedWhenAutoscalingDisabledEvenIfManageReplicasFalse(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, family := range []string{"hunter", "remediation"} {
+				t.Run(family, func(t *testing.T) {
+					deployment, err := renderAgentRuntimeDeploymentFamily(t, chart, family, map[string]string{
+						family + "Agent.autoscaling.enabled":        "false",
+						family + "Agent.autoscaling.manageReplicas": "false",
+					})
+					require.NoError(t, err)
+					require.NotNil(t, deployment.Spec.Replicas, "replicas must still render when autoscaling is disabled, regardless of manageReplicas")
+				})
+			}
 		})
 	}
 }

@@ -1074,13 +1074,9 @@ hunterAgent:
     manageReplicas: true
     pollingInterval: 15
     scaleDownStabilizationSeconds: 600
-  # A hunter job can legitimately run up to ~3h (SCRIPT_TIMEOUT_SECONDS is typically raised well
-  # past the runtime image's own 1200s default to match, via hunterAgent.env). Independently of
-  # that, hunter-agent-runtime's own Dockerfile hardcodes `uvicorn --timeout-graceful-shutdown
-  # 14400` as a fixed, non-overridable ceiling on how long the process waits during shutdown (it
-  # governs SHUTDOWN_GRACE_SECONDS internally - do not set that env var from this chart, the image
-  # already sizes it correctly against its own 14400s). This value must stay comfortably above
-  # that fixed 14400s, or Kubernetes SIGKILLs the pod before uvicorn's own bounded wait finishes.
+  # Hunter jobs run up to ~3h; must stay comfortably above hunter-agent-runtime's own fixed
+  # `uvicorn --timeout-graceful-shutdown 14400`s (its Dockerfile), or Kubernetes SIGKILLs the pod
+  # before that bounded wait finishes. Don't set SHUTDOWN_GRACE_SECONDS - the image sizes it itself.
   terminationGracePeriodSeconds: 14430
 
 # Remediation Agent runtime that remediates issues. Requires agentOrchestrator.enabled AND
@@ -1166,12 +1162,9 @@ remediationAgent:
     manageReplicas: true
     pollingInterval: 15
     scaleDownStabilizationSeconds: 600
-  # A remediation job can legitimately run up to ~30min. Independently of SCRIPT_TIMEOUT_SECONDS,
-  # remediation-agent-runtime's own Dockerfile hardcodes `uvicorn --timeout-graceful-shutdown
-  # 3600` as a fixed, non-overridable ceiling on how long the process waits during shutdown (it
-  # governs SHUTDOWN_GRACE_SECONDS internally - do not set that env var from this chart, the image
-  # already sizes it correctly against its own 3600s). This value must stay comfortably above
-  # that fixed 3600s, or Kubernetes SIGKILLs the pod before uvicorn's own bounded wait finishes.
+  # Remediation jobs run up to ~30min; must stay comfortably above remediation-agent-runtime's
+  # own fixed `uvicorn --timeout-graceful-shutdown 3600`s (its Dockerfile), or Kubernetes SIGKILLs
+  # the pod before that bounded wait finishes. Don't set SHUTDOWN_GRACE_SECONDS - the image sizes it itself.
   terminationGracePeriodSeconds: 3630
 
 # Squid forward-proxy that all agent runtime (hunterAgent/remediationAgent) egress is routed
@@ -1353,9 +1346,6 @@ gvisor:
 # Cluster-capability guard for the KEDA-based agent runtime ScaledObjects (hunterAgent/
 # remediationAgent.autoscaling above).
 agentKeda:
-  # Whether to assume the KEDA CRDs (keda.sh/v1alpha1) are already installed in the target
-  # cluster. null (default) auto-detects via .Capabilities.APIVersions, which is authoritative
-  # for a real `helm install`/`upgrade` but is EMPTY under `helm template`/`--dry-run=client` -
-  # set this explicitly (true/false) so CI rendering and GitOps diff tooling don't spuriously
-  # fail (or spuriously pass) the check in validation.yaml.
+  # null auto-detects KEDA CRDs via .Capabilities.APIVersions - always EMPTY under `helm
+  # template`/`--dry-run=client`, so set this explicitly there to avoid a spurious pass/fail.
   assumeInstalled: null

@@ -81,13 +81,9 @@ It is used to validate the values.yaml file before the installation starts.
   {{- end -}}
 {{- end -}}
 
-{{/* Validation for the Agent Orchestrator / runtime autoscaling knobs (agentOrchestrator.
-     autoscaling, hunterAgent.autoscaling, remediationAgent.autoscaling): never below the floor
-     of 2 replicas (no scale-to-zero for this fleet), maxReplicas must not be below minReplicas,
-     and the KEDA CRDs must be present for any runtime family with autoscaling enabled - the plain
-     orchestrator HPA needs no CRD check. Gated on the component's own enabled flag too, matching
-     the render guards in agent-orchestrator-hpa.yaml/agent-runtime-scaledobject.yaml, so a
-     disabled component's autoscaling block is never validated. */}}
+{{/* Autoscaling validation: minReplicas floor of 2 (no scale-to-zero), maxReplicas >= minReplicas,
+     and KEDA CRDs present for any runtime family - gated on the component's own enabled flag too,
+     matching the render guards in agent-orchestrator-hpa.yaml/agent-runtime-scaledobject.yaml. */}}
 {{- $agentOrchestratorAutoscaling := and .Values.agentOrchestrator.enabled .Values.agentOrchestrator.autoscaling.enabled -}}
 {{- if and $agentOrchestratorAutoscaling (lt (int .Values.agentOrchestrator.autoscaling.minReplicas) 2) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.autoscaling.minReplicas must be >= 2." -}}
