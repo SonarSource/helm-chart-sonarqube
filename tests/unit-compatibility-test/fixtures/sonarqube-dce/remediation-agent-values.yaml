@@ -656,8 +656,20 @@ data:
           echo "[install-gvisor] ERROR: need curl or wget on the node to download runsc" >&2
           exit 1
         fi
+        # Retry any fetch failure (DNS, connection reset, 5xx) with a portable loop rather than
+        # tool-specific retry flags (curl's --retry-connrefused needs curl >=7.52, missing on some
+        # host images) - a DaemonSet blocks `helm install --wait` until Ready, so one flaky fetch of
+        # this external download would otherwise stall the whole install until its timeout.
+        fetch_retry() {
+          for attempt in 1 2 3 4 5; do
+            fetch "$1" "$2" && return 0
+            echo "[install-gvisor] fetch of $1 failed (attempt ${attempt}); retrying" >&2
+            sleep $((attempt * 3))
+          done
+          return 1
+        }
         for f in runsc runsc.sha512 containerd-shim-runsc-v1 containerd-shim-runsc-v1.sha512; do
-          fetch "${URL}/${f}" "${f}"
+          fetch_retry "${URL}/${f}" "${f}"
         done
         sha512sum -c runsc.sha512 -c containerd-shim-runsc-v1.sha512
         rm -f -- *.sha512
