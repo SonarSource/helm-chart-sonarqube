@@ -264,9 +264,22 @@ jobs:
           trap 'kill "$WATCHER" 2>/dev/null || true' EXIT
 
           set +e
-          timeout --signal=INT --kill-after=60 900 \
-            ct install --namespace test --config ${{ matrix.config }} --debug
-          RC=$?
+          if [ "${{ matrix.chart }}" = "sonarqube-dce" ]; then
+            # ct captures helm's stdout and only flushes it when helm exits, so every killed run
+            # discarded the "waiting for resource" lines that name what is actually stuck. Run
+            # helm directly here so --debug streams live. Previous run proved every workload is
+            # Ready ~5min in, yet helm neither returned nor honoured its own --timeout 600s.
+            timeout --signal=INT --kill-after=60 900 \
+              helm install diag-dce charts/sonarqube-dce --namespace test \
+                --values charts/sonarqube-dce/ci/ci-values.yaml \
+                --wait --timeout 600s --debug
+            RC=$?
+            echo "=== helm install returned rc=$RC at $(date -u +%H:%M:%S) ==="
+          else
+            timeout --signal=INT --kill-after=60 900 \
+              ct install --namespace test --config ${{ matrix.config }} --debug
+            RC=$?
+          fi
           set -e
           kill "$WATCHER" 2>/dev/null || true
 
