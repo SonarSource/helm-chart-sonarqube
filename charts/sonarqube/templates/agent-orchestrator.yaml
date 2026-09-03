@@ -11,12 +11,11 @@ metadata:
     sonarqube.agent/component: orchestrator
     app.kubernetes.io/component: agent-orchestrator
 spec:
-  {{- /* Omit replicas once the HPA owns it, except on the very first install, so a fresh install
-         still gets a sane initial count while a later `helm upgrade` doesn't fight the HPA.
-         Release.IsInstall is also true under `helm template`, so GitOps tooling applying that
-         output directly (Argo CD, Flux, --dry-run=client) would otherwise always hit the install
-         branch and keep resetting replicas - autoscaling.manageReplicas=false opts out of that. */}}
-  {{- if and (or (not .Values.agentOrchestrator.autoscaling.enabled) .Release.IsInstall) .Values.agentOrchestrator.autoscaling.manageReplicas }}
+  {{- /* Omit replicas once the HPA owns it, except on install, so upgrades don't fight it.
+         Release.IsInstall is also true under `helm template`, so GitOps tooling needs
+         manageReplicas=false to opt out - which must only gate this branch, or a plain
+         non-autoscaled install would wrongly drop replicas too. */}}
+  {{- if or (not .Values.agentOrchestrator.autoscaling.enabled) (and .Release.IsInstall .Values.agentOrchestrator.autoscaling.manageReplicas) }}
   replicas: {{ .Values.agentOrchestrator.replicaCount }}
   {{- end }}
   {{- with .Values.agentOrchestrator.revisionHistoryLimit }}
