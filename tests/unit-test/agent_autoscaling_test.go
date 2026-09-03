@@ -12,6 +12,10 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 )
 
+type scaledObjectScaleTargetRef struct {
+	Name string `json:"name"`
+}
+
 // scaledObject captures only the fields these tests assert on - there is no k8s.io/api type for a
 // KEDA CRD, and the full KEDA client types are not worth adding as a dependency for this.
 type scaledObject struct {
@@ -20,12 +24,10 @@ type scaledObject struct {
 		Labels map[string]string `json:"labels"`
 	} `json:"metadata"`
 	Spec struct {
-		ScaleTargetRef struct {
-			Name string `json:"name"`
-		} `json:"scaleTargetRef"`
-		MinReplicaCount int64 `json:"minReplicaCount"`
-		MaxReplicaCount int64 `json:"maxReplicaCount"`
-		PollingInterval int64 `json:"pollingInterval"`
+		ScaleTargetRef  scaledObjectScaleTargetRef `json:"scaleTargetRef"`
+		MinReplicaCount int64                      `json:"minReplicaCount"`
+		MaxReplicaCount int64                      `json:"maxReplicaCount"`
+		PollingInterval int64                      `json:"pollingInterval"`
 		Triggers        []struct {
 			Type     string            `json:"type"`
 			Metadata map[string]string `json:"metadata"`
