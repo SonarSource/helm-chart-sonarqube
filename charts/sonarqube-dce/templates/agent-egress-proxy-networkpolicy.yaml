@@ -39,15 +39,6 @@ spec:
       ports:
         - port: {{ .Values.service.internalPort }}
           protocol: TCP
-    {{- /* Backs the hardcoded orchestrator_host allow rule in agent-egress-proxy-configmap.yaml,
-           which must stay reachable unconditionally - so this rule is not gated behind
-           networkPolicy.egressPorts, unlike the allowedDomains rule below. */}}
-    - to:
-        - podSelector:
-            matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 14 }}
-      ports:
-        - port: {{ .Values.agentOrchestrator.port }}
-          protocol: TCP
     {{- /* NetworkPolicy is L3/L4-only and cannot match a destination FQDN, so this rule stays
            broad by necessity - the actual per-domain restriction is enforced entirely inside
            Squid via allowedDomains (dstdomain ACL), not here. `except` carves back out the
