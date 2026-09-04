@@ -62,6 +62,32 @@ func TestAgentOrchestratorContainerSecurityContext(t *testing.T) {
 	}
 }
 
+// On OpenShift's restricted-v2 SCC, an explicit runAsUser/runAsGroup outside the namespace's
+// allocated range gets the pod rejected at admission - sonarqube.agent.containerSecurityContext
+// exists to strip both (and fsGroup) so the platform can assign its own.
+func TestAgentOrchestratorOpenShiftDropsRunAsUser(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			deployment := renderAgentOrchestrator(t, chart, map[string]string{
+				"OpenShift.enabled": "true",
+			})
+			podSpec := deployment.Spec.Template.Spec
+			require.Len(t, podSpec.Containers, 1)
+
+			sc := podSpec.Containers[0].SecurityContext
+			require.NotNil(t, sc)
+			assert.Nil(t, sc.RunAsUser)
+			assert.Nil(t, sc.RunAsGroup)
+			// Everything else the default carries (dropped capabilities, non-root, read-only FS)
+			// is unrelated to the SCC-assigned UID and must survive.
+			require.NotNil(t, sc.RunAsNonRoot)
+			assert.True(t, *sc.RunAsNonRoot)
+			require.NotNil(t, sc.ReadOnlyRootFilesystem)
+			assert.True(t, *sc.ReadOnlyRootFilesystem)
+		})
+	}
+}
+
 // Clearing readOnlyRootFilesystem drops the securityContext key and the chart-managed /tmp
 // emptyDir, since neither is needed without it.
 func TestAgentOrchestratorNoReadOnlyRootFilesystemNoTmpVolume(t *testing.T) {

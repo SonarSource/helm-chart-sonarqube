@@ -559,9 +559,10 @@ func TestAgentKeyDerivationServiceAccount(t *testing.T) {
 				assert.Equal(t, "operator-bound-sa", job.Spec.Template.Spec.ServiceAccountName)
 			})
 
-			// The Role grants get/create/update on every Secret in the namespace. Binding that to
-			// "default" - which is what the reuse resolves to when the release names no account -
-			// would hand Secret-write access to every unrelated pod running as default.
+			// The Role grants namespace-wide create plus update scoped to this release's Secrets.
+			// Binding that to "default" - which is what the reuse resolves to when the release
+			// names no account - would hand Secret-create access to every unrelated pod running
+			// as default.
 			t.Run("create=false without a name fails closed", func(t *testing.T) {
 				_, err := renderKeyDerivation(t, chart, "agent-runtimes-enabled.yaml", map[string]string{
 					"agentKeyDerivation.serviceAccount.create": "false",

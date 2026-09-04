@@ -45,7 +45,7 @@ spec:
       {{- if $pullSecrets }}
       imagePullSecrets: {{- $pullSecrets | nindent 8 }}
       {{- end }}
-      {{- with .Values.agentEgressProxy.securityContext }}
+      {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" .Values.agentEgressProxy.securityContext))) }}
       securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
@@ -56,7 +56,7 @@ spec:
           image: {{ printf "%s:%s" .Values.agentEgressProxy.image.repository (default "latest" .Values.agentEgressProxy.image.tag) }}
           {{- end }}
           imagePullPolicy: {{ .Values.agentEgressProxy.image.pullPolicy }}
-          {{- with .Values.agentEgressProxy.containerSecurityContext }}
+          {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" .Values.agentEgressProxy.containerSecurityContext))) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           command: ["squid", "-N", "-f", "/etc/squid/squid.conf"]

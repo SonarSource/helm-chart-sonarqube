@@ -138,10 +138,11 @@ It is used to validate the values.yaml file before the installation starts.
   {{- if and .Values.agentKeyDerivation.enabled .Values.agentKeyDerivation.image.repository (not .Values.agentKeyDerivation.image.tag) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentKeyDerivation.image.repository is set but agentKeyDerivation.image.tag is not. The image fallback is all-or-nothing: once you name a repository, the tag has to come from the same block." -}}
   {{- end -}}
-  {{/* The hook's Role grants get/create/update on every Secret in the namespace. With
+  {{/* The hook's Role grants namespace-wide `create` on Secrets (create can't be scoped by
+       name) plus `update` restricted to this release's <fullname>-agentic-keys-* Secrets. With
        agentKeyDerivation.serviceAccount.create=false the binding follows the release's top-level
        ServiceAccount, which is "default" unless it is created or named - that would hand
-       Secret-write access to every unrelated pod in the namespace running as default. */}}
+       Secret-create access to every unrelated pod in the namespace running as default. */}}
   {{- if and (eq (include "sonarqube.agentKeyDerivation.required" .) "true") (not .Values.agentKeyDerivation.serviceAccount.create) (eq (include "sonarqube.agentKeyDerivation.serviceAccountName" .) "default") -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentKeyDerivation.serviceAccount.create=false needs a dedicated ServiceAccount to bind the Secret-writing Role to. Set agentKeyDerivation.serviceAccount.name (or serviceAccount.name), so the Role isn't bound to the namespace's 'default' ServiceAccount." -}}
   {{- end -}}

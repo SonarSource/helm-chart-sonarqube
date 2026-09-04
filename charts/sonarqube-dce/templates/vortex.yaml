@@ -36,7 +36,7 @@ spec:
         - name: vortex
           image: "{{ $vortex.image.repository }}:{{ $vortex.image.tag }}"
           imagePullPolicy: {{ $vortex.image.pullPolicy }}
-          {{- with $vortex.containerSecurityContext }}
+          {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" $vortex.containerSecurityContext))) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:

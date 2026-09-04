@@ -41,7 +41,7 @@ spec:
       {{- if $pullSecrets }}
       imagePullSecrets: {{- $pullSecrets | nindent 8 }}
       {{- end }}
-      {{- with .Values.agentOrchestrator.securityContext }}
+      {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" .Values.agentOrchestrator.securityContext))) }}
       securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       initContainers:
@@ -63,7 +63,7 @@ spec:
           image: "{{ .Values.agentOrchestrator.image.repository }}:{{ .Values.agentOrchestrator.image.tag }}"
           imagePullPolicy: {{ .Values.agentOrchestrator.image.pullPolicy }}
           {{- $orchestratorSecurityContext := .Values.agentOrchestrator.containerSecurityContext | default dict }}
-          {{- with $orchestratorSecurityContext }}
+          {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" $orchestratorSecurityContext))) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:

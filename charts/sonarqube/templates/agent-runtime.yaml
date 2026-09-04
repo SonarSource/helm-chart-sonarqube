@@ -47,14 +47,14 @@ spec:
       {{- if $pullSecrets }}
       imagePullSecrets: {{- $pullSecrets | nindent 8 }}
       {{- end }}
-      {{- with $cfg.securityContext }}
+      {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" $ "securityContext" $cfg.securityContext))) }}
       securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: agent-runtime
           image: "{{ $cfg.image.repository }}:{{ $cfg.image.tag }}"
           imagePullPolicy: {{ $cfg.image.pullPolicy }}
-          {{- with $cfg.containerSecurityContext }}
+          {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" $ "securityContext" $cfg.containerSecurityContext))) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
