@@ -2213,7 +2213,7 @@ scheduling:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: remediation-agent-values.yaml-sonarqube-dce-agent-key-derivatio
+  name: remediation-agent-values.yaml-sonarqube-d-agent-key-derivation
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
@@ -2231,7 +2231,7 @@ automountServiceAccountToken: true
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: remediation-agent-values.yaml-sonarqube-dce-agent-key-derivatio
+  name: remediation-agent-values.yaml-sonarqube-d-agent-key-derivation
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
@@ -2246,13 +2246,21 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "create", "update"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["update"]
+    resourceNames:
+      - remediation-agent-values.yaml-sonarq-agentic-keys-orchestrator
+      - remediation-agent-values.yaml-sonarq-agentic-keys-remediation
+      - remediation-agent-values.yaml-sonarq-agentic-keys-sqs
+      - remediation-agent-values.yaml-sonarq-agentic-keys-vortex
 ---
 # Source: sonarqube-dce/templates/agent-key-derivation-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: remediation-agent-values.yaml-sonarqube-dce-agent-key-derivatio
+  name: remediation-agent-values.yaml-sonarqube-d-agent-key-derivation
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
@@ -2267,10 +2275,10 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: remediation-agent-values.yaml-sonarqube-dce-agent-key-derivatio
+  name: remediation-agent-values.yaml-sonarqube-d-agent-key-derivation
 subjects:
   - kind: ServiceAccount
-    name: remediation-agent-values.yaml-sonarqube-dce-agent-key-derivatio
+    name: remediation-agent-values.yaml-sonarqube-d-agent-key-derivation
     namespace: default
 ---
 # Source: sonarqube-dce/templates/tests/sonarqube-test.yaml
@@ -2320,7 +2328,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: remediation-agent-values.yaml-sonarqube-dce-agent-key-derivatio
+  name: remediation-agent-values.yaml-sonarqube-d-agent-key-derivation
   labels:
     app: sonarqube-dce
     chart: sonarqube-dce-2026.5.0
@@ -2337,7 +2345,7 @@ spec:
   activeDeadlineSeconds: 300
   template:
     metadata:
-      name: remediation-agent-values.yaml-sonarqube-dce-agent-key-derivatio
+      name: remediation-agent-values.yaml-sonarqube-d-agent-key-derivation
       labels:
         app: sonarqube-dce
         release: remediation-agent-values.yaml
@@ -2354,7 +2362,7 @@ spec:
       # release's top-level ServiceAccount, whose automountToken defaults to false - the `cat` of
       # the token would fail under `set -eu` and take the whole release down with it.
       automountServiceAccountToken: true
-      serviceAccountName: remediation-agent-values.yaml-sonarqube-dce-agent-key-derivatio
+      serviceAccountName: remediation-agent-values.yaml-sonarqube-d-agent-key-derivation
       containers:
         - name: derive-keys
           image: "example.com/agent-orchestrator:1.0.0"
@@ -2391,6 +2399,8 @@ spec:
               SECRET_FILE=/etc/agentic/instance-secret/instance-secret
               KEYS=$(mktemp -d)
               RESP=$(mktemp)
+              BODY_FILE=$(mktemp)
+              CFG_FILE=$(mktemp)
 
               # Derive every label any enabled consumer needs, in one pass. derive-keys.sh is
               # deterministic, so re-running it on upgrade reproduces the same keys - an upgrade
@@ -2411,12 +2421,21 @@ spec:
               # back to POST when it isn't there yet. Any other status is fatal - notably 403,
               # which means the Role didn't apply and silently continuing would leave the
               # consumers mounting nothing.
+              #
+              # Method/URL are passed as argv (no secret material there); the token and body go
+              # through a curl config file instead of -H/--data, since curl's own argv is readable
+              # by anything with host /proc access via /proc/<pid>/cmdline for as long as the
+              # request is in flight. printf is a shell builtin here (no execve, so its arguments
+              # never appear in any process's /proc/<pid>/cmdline either).
               api_write() {
-                curl -sS -o "$RESP" -w '%{http_code}' \
-                  --cacert "$SA/ca.crt" \
-                  -H "Authorization: Bearer $TOKEN" \
-                  -H 'Content-Type: application/json' \
-                  -X "$1" --data "$3" "$2"
+                printf '%s' "$3" > "$BODY_FILE"
+                {
+                  printf 'cacert = "%s/ca.crt"\n' "$SA"
+                  printf 'header = "Authorization: Bearer %s"\n' "$TOKEN"
+                  printf 'header = "Content-Type: application/json"\n'
+                  printf 'data-binary = "@%s"\n' "$BODY_FILE"
+                } > "$CFG_FILE"
+                curl -sS -o "$RESP" -w '%{http_code}' -X "$1" "$2" -K "$CFG_FILE"
               }
 
               write_secret() {
