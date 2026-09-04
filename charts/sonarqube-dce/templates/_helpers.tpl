@@ -621,6 +621,15 @@ for consumers like hunter-agent-unified-app that read them via Spring instead.
 {{- if .Values.vortex.enabled -}}
 {{- $_ := set $props "sonar.vortex.analysis.url" (include "sonarqube.vortex.url" .) -}}
 {{- end -}}
+{{- if eq (include "sonarqube.agentic.enabled" .) "true" -}}
+{{- $_ := set $props "sonar.agentic.signing.secretFile" (include "sonarqube.agentic.sqsSecretFile" .) -}}
+{{- /* Inbound and outbound are two different settings. The secret above is what SQS *verifies*
+       with: it derives remediation-to-sqs and agentic-shared from it in-process, which is why it
+       mounts neither. This one is what it *signs* with when it calls the orchestrator itself
+       (health, supported models, the hunter/remediation web configs) - a path, since the key is
+       mounted rather than derived. Unset leaves those calls unsigned. */}}
+{{- $_ := set $props "sonar.agentic.orchestrator.signingKeyPath" (printf "%s/agentic-shared" (include "sonarqube.agentic.sqsKeyDir" .)) -}}
+{{- end -}}
 {{- toYaml $props -}}
 {{- end -}}
 
@@ -807,6 +816,285 @@ true
 {{- end -}}
 
 {{/*
+Whether any agentic component that needs derived signing/verification keys is enabled: hunterAgent,
+remediationAgent, or vortex. Broader than sonarqube.agentEgressProxy.required (which excludes
+vortex - vortex doesn't route through the egress proxy) - gates the key-derivation hook Job, its
+RBAC/ServiceAccount, the fail-closed agenticSigningSecret validation, and the "agentic-shared" key
+mount everywhere it's needed.
+Usage: {{- if include "sonarqube.agentic.enabled" . }}
+*/}}
+{{- define "sonarqube.agentic.enabled" -}}
+{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled .Values.vortex.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Name of the per-consumer derived signing/verification key Secret produced by the key-derivation
+hook Job.
+Parameters (dict): ctx (required, the root context '.'), consumer (required, one of "orchestrator",
+"hunter", "remediation", "sqs", "vortex").
+*/}}
+{{- define "sonarqube.agentic.keySecretName" -}}
+{{- /* Truncate the fullname prefix, not the consumer suffix. Truncating the whole thing at 63
+       would collapse every consumer onto one name once the fullname passes 49 characters (a
+       release name of ~39 is well inside the fullname budget): the hook's five write_secret calls
+       would overwrite each other, and every pod's items: projection would then ask the surviving
+       Secret for labels it doesn't hold, wedging them in ContainerCreating. 36 + len
+       "-agentic-keys-" + the longest consumer ("remediation") is 61, so the suffix always
+       survives intact. */}}
+{{- printf "%s-agentic-keys-%s" (include "sonarqube.fullname" .ctx | trunc 36 | trimSuffix "-") .consumer | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Which derived key labels a given consumer needs mounted. Single source of truth: the
+key-derivation hook Job derives and writes exactly these per consumer, and every pod template
+projects exactly these out of its own Secret - so the Secret's data keys and the volume's
+items: projection can never drift apart (a projected key that doesn't exist wedges the pod in
+ContainerCreating).
+
+Least privilege: each pod only ever holds the keys for the hops it actually participates in.
+
+  orchestrator -> orchestrator-to-hunter (hunter), orchestrator-to-remediation (remediation),
+                  agentic-shared (SQS <-> orchestrator)
+  hunter       -> orchestrator-to-hunter
+  remediation  -> orchestrator-to-remediation, remediation-to-sqs
+  sqs          -> agentic-shared
+  vortex       -> agentic-shared (Vortex -> SQS)
+
+Note SQS does *not* mount remediation-to-sqs even though it verifies that hop: it has the
+instance secret itself (sonarqube.agentic.sqsSecretFile) and re-derives the key in-process.
+
+Parameters (dict): ctx (required, the root context '.'), consumer (required).
+Returns a YAML list; "[]" when the consumer needs none.
+*/}}
+{{- define "sonarqube.agentic.keyLabels" -}}
+{{- $v := .ctx.Values -}}
+{{- $any := eq (include "sonarqube.agentic.enabled" .ctx) "true" -}}
+{{- $labels := list -}}
+{{- if eq .consumer "orchestrator" -}}
+{{- if $v.hunterAgent.enabled }}{{- $labels = append $labels "orchestrator-to-hunter" }}{{- end }}
+{{- if $v.remediationAgent.enabled }}{{- $labels = append $labels "orchestrator-to-remediation" }}{{- end }}
+{{- if and $any $v.agentOrchestrator.enabled }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
+{{- else if eq .consumer "hunter" -}}
+{{- if $v.hunterAgent.enabled }}{{- $labels = append $labels "orchestrator-to-hunter" }}{{- end }}
+{{- else if eq .consumer "remediation" -}}
+{{- if $v.remediationAgent.enabled }}{{- $labels = concat $labels (list "orchestrator-to-remediation" "remediation-to-sqs") }}{{- end }}
+{{- else if eq .consumer "sqs" -}}
+{{- if $any }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
+{{- else if eq .consumer "vortex" -}}
+{{- if and $any $v.vortex.enabled }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
+{{- end -}}
+{{- toYaml $labels -}}
+{{- end -}}
+
+{{/*
+The union of every derived key label any enabled consumer needs - i.e. exactly what the hook Job
+has to run derive-keys.sh for. Returns a YAML list.
+*/}}
+{{- define "sonarqube.agentic.allKeyLabels" -}}
+{{- $all := list -}}
+{{- range $consumer := (list "orchestrator" "hunter" "remediation" "sqs" "vortex") -}}
+{{- $all = concat $all (fromYamlArray (include "sonarqube.agentic.keyLabels" (dict "ctx" $ "consumer" $consumer))) -}}
+{{- end -}}
+{{- toYaml (uniq $all) -}}
+{{- end -}}
+
+{{/*
+Whether a given consumer mounts any derived keys at all. Emits "true" or "".
+Parameters (dict): ctx, consumer.
+*/}}
+{{- define "sonarqube.agentic.hasKeys" -}}
+{{- if (fromYamlArray (include "sonarqube.agentic.keyLabels" .)) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Where the derived keys are mounted. Agent-side components (orchestrator, runtimes, Vortex) share
+one neutral path since they're three different base images; SQS keeps its material under
+sonarqubeFolder alongside the existing secret/ mount.
+*/}}
+{{- define "sonarqube.agentic.keyDir" -}}/etc/agentic/keys{{- end -}}
+{{- define "sonarqube.agentic.sqsKeyDir" -}}{{ .Values.sonarqubeFolder }}/agentic-keys{{- end -}}
+
+{{/*
+The key directory for one consumer - sqsKeyDir on the application nodes, the neutral keyDir
+everywhere else.
+Parameters (dict): ctx, consumer.
+*/}}
+{{- define "sonarqube.agentic.consumerKeyDir" -}}
+{{- if eq .consumer "sqs" -}}
+{{- include "sonarqube.agentic.sqsKeyDir" .ctx -}}
+{{- else -}}
+{{- include "sonarqube.agentic.keyDir" .ctx -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Env vars pointing each consumer at the individual key *files* it mounts. The contract is one
+variable per key path, and the same key is named differently on either side of a hop - it is the
+consumer's role in the hop that picks the name, not the key:
+
+  orchestrator  orchestrator-to-hunter       -> AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH
+                orchestrator-to-remediation  -> AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH
+                agentic-shared               -> AGENTIC_SONARQUBE_SIGNING_KEY_PATH
+  hunter        orchestrator-to-hunter       -> AGENTIC_VERIFY_KEY_PATH
+  remediation   orchestrator-to-remediation  -> AGENTIC_VERIFY_KEY_PATH
+                remediation-to-sqs           -> REMEDIATION_AGENTIC_SIGNING_KEY_PATH
+  vortex        agentic-shared               -> AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
+
+AGENTIC_VERIFY_KEY_PATH is reused across the two runtimes without colliding: each pod mounts
+exactly one verification key. Because the name is the same on both, it is paired with
+AGENTIC_VERIFY_KEY_ID, whose value is the label itself (orchestrator-to-hunter or
+orchestrator-to-remediation) - that is what tells the runtime which hop the key belongs to.
+
+SQS deliberately has no entry here even though it mounts agentic-shared too (see keyLabels): what
+the JVM reads to sign its own outbound calls to the orchestrator is the
+sonar.agentic.orchestrator.signingKeyPath property (SONAR-31996), set by
+sonarqube.agentHealthProperties - Configuration.get() does not fall back to plain env vars
+(SONAR-31416), so an env var here would just go unread. Vortex has no properties mechanism (it's a
+standalone Deployment, not a SonarQube JVM process), so AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
+remains its only way to find the key.
+
+AGENTIC_SONARQUBE_SIGNING_KEY_PATH fills in the previously-unnamed use of agentic-shared on the
+orchestrator: the file was already mounted (sonarqube.agentic.keyLabels), it just had no variable
+pointing at it.
+
+Driven off sonarqube.agentic.keyLabels, so a variable can only appear when the file behind it is
+actually projected into the pod. Returns a YAML list of env entries; "[]" when there are none.
+Parameters (dict): ctx, consumer.
+*/}}
+{{- define "sonarqube.agentic.keyPathEnv" -}}
+{{- $names := dict
+  "orchestrator" (dict "orchestrator-to-hunter" "AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH" "orchestrator-to-remediation" "AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH" "agentic-shared" "AGENTIC_SONARQUBE_SIGNING_KEY_PATH")
+  "hunter" (dict "orchestrator-to-hunter" "AGENTIC_VERIFY_KEY_PATH")
+  "remediation" (dict "orchestrator-to-remediation" "AGENTIC_VERIFY_KEY_PATH" "remediation-to-sqs" "REMEDIATION_AGENTIC_SIGNING_KEY_PATH")
+  "vortex" (dict "agentic-shared" "AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH")
+-}}
+{{- /* Path variables that need a companion variable naming *which* key the file holds, keyed by
+       the path variable they accompany. Only the runtimes need one: AGENTIC_VERIFY_KEY_PATH is
+       the same name on both, so the label is what tells the runtime which hop it is verifying. */}}
+{{- $idNames := dict "AGENTIC_VERIFY_KEY_PATH" "AGENTIC_VERIFY_KEY_ID" -}}
+{{- $forConsumer := get $names .consumer | default dict -}}
+{{- $dir := include "sonarqube.agentic.consumerKeyDir" . -}}
+{{- $env := list -}}
+{{- range $label := (fromYamlArray (include "sonarqube.agentic.keyLabels" .)) -}}
+{{- with (get $forConsumer $label) -}}
+{{- $env = append $env (dict "name" . "value" (printf "%s/%s" $dir $label)) -}}
+{{- with (get $idNames .) -}}
+{{- $env = append $env (dict "name" . "value" $label) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- toYaml $env -}}
+{{- end -}}
+
+{{/*
+Where the operator-provided instance secret is mounted on SQS, and the file it's projected to.
+Projected to a fixed filename so the mount path doesn't change with agenticSigningSecret.key.
+*/}}
+{{- define "sonarqube.agentic.sqsSecretDir" -}}{{ .Values.sonarqubeFolder }}/agentic-secret{{- end -}}
+{{- define "sonarqube.agentic.sqsSecretFile" -}}{{ include "sonarqube.agentic.sqsSecretDir" . }}/instance-secret{{- end -}}
+
+{{/*
+Key within .Values.agenticSigningSecret.existingSecret holding the instance secret.
+*/}}
+{{- define "sonarqube.agentic.signingSecretKey" -}}
+{{- .Values.agenticSigningSecret.key | default "instance-secret" -}}
+{{- end -}}
+
+{{/*
+volumeMount for a consumer's derived-key Secret. Renders nothing when the consumer needs no keys.
+Parameters (dict): ctx, consumer, mountPath.
+*/}}
+{{- define "sonarqube.agentic.keyVolumeMount" -}}
+{{- if eq (include "sonarqube.agentic.hasKeys" (dict "ctx" .ctx "consumer" .consumer)) "true" }}
+- name: agentic-keys
+  mountPath: {{ .mountPath }}
+  readOnly: true
+{{- end }}
+{{- end -}}
+
+{{/*
+volume for a consumer's derived-key Secret, projecting only that consumer's labels (one file per
+label, named after the label). Renders nothing when the consumer needs no keys.
+Parameters (dict): ctx, consumer.
+*/}}
+{{- define "sonarqube.agentic.keyVolume" -}}
+{{- $labels := fromYamlArray (include "sonarqube.agentic.keyLabels" (dict "ctx" .ctx "consumer" .consumer)) }}
+{{- if $labels }}
+- name: agentic-keys
+  secret:
+    secretName: {{ include "sonarqube.agentic.keySecretName" (dict "ctx" .ctx "consumer" .consumer) }}
+    items:
+    {{- range $label := $labels }}
+    - key: {{ $label }}
+      path: {{ $label }}
+    {{- end }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Whether the key-derivation hook Job (and its ServiceAccount/RBAC) renders. Emits "true" or "".
+It has no enable switch of its own beyond the explicit agentKeyDerivation.enabled opt-out: it
+follows the components that consume its output. validation.yaml guarantees agenticSigningSecret
+is set whenever any of them is enabled, so the check here is belt-and-braces for `helm template`
+runs that bypass validation.
+*/}}
+{{- define "sonarqube.agentKeyDerivation.required" -}}
+{{- if and .Values.agentKeyDerivation.enabled (eq (include "sonarqube.agentic.enabled" .) "true") .Values.agenticSigningSecret .Values.agenticSigningSecret.existingSecret -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "sonarqube.agentKeyDerivation.fullname" -}}
+{{- /* Truncate the fullname prefix, not the "-agent-key-derivation" suffix (21 chars) - the same
+       collision sonarqube.agentic.keySecretName guards against. Truncating the concatenation at 63
+       would render this exactly as sonarqube.fullname once that name reaches 63 characters,
+       colliding the Job/Role/RoleBinding/ServiceAccount with the chart's own primary resources. */}}
+{{- printf "%s-agent-key-derivation" (include "sonarqube.fullname" . | trunc 41 | trimSuffix "-") | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "sonarqube.agentKeyDerivation.serviceAccountName" -}}
+{{- if .Values.agentKeyDerivation.serviceAccount.create -}}
+{{- default (include "sonarqube.agentKeyDerivation.fullname" .) .Values.agentKeyDerivation.serviceAccount.name -}}
+{{- else -}}
+{{- /* An explicit name still wins when create is false: that's the "I bound the Role myself"
+       path, and it's the one the validation error points operators at. Without the override it
+       would fall through to the release's top-level ServiceAccount - "default" unless that one is
+       named too - and the same failure would come straight back. */ -}}
+{{- default (include "sonarqube.serviceAccountName" .) .Values.agentKeyDerivation.serviceAccount.name -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+The image the hook Job runs. What it actually needs is *an* image carrying /derive-keys.sh, which
+today is the Agent Orchestrator image (baked in there so air-gapped installs don't need a second
+pull, per EA-791/ADR-10) - hence the fallback to agentOrchestrator.image. It is a separate value
+rather than a hard reference to agentOrchestrator.image because vortex.enabled alone still needs
+derived keys while not otherwise deploying, or even pulling, the orchestrator: such an install sets
+agentKeyDerivation.image.* and keeps agentOrchestrator untouched.
+Returns the image block as a dict, so callers can read .repository/.tag/.pullPolicy/.pullSecrets.
+*/}}
+{{- define "sonarqube.agentKeyDerivation.image" -}}
+{{- $own := .Values.agentKeyDerivation.image | default dict -}}
+{{- if $own.repository -}}
+{{- toYaml $own -}}
+{{- else -}}
+{{- toYaml (.Values.agentOrchestrator.image | default dict) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+The repository of the image above, or "" when neither it nor agentOrchestrator.image sets one.
+validation.yaml fails closed on the empty case.
+*/}}
+{{- define "sonarqube.agentKeyDerivation.imageRepository" -}}
+{{- (fromYaml (include "sonarqube.agentKeyDerivation.image" .)).repository | default "" -}}
+{{- end -}}
+
+{{/*
 Scheduling block (nodeSelector/tolerations/affinity) for the Agent Egress Proxy.
 
 Identical to sonarqube.agent.scheduling except for the affinity default: with replicaCount 2 and a
@@ -934,6 +1222,21 @@ Security context for the wait-for-sonarqube init container.
 */}}
 {{- define "sonarqube.agent.initContainerSecurityContext" -}}
 {{- include "sonarqube.initContainersSecurityContext" . -}}
+{{- end -}}
+
+{{/*
+Container/pod securityContext for an agent workload, omitting runAsUser/runAsGroup/fsGroup under
+OpenShift's restricted-v2 SCC (same reasoning as sonarqube.containerSecurityContext) - unlike that
+helper, this one is parameterized per-component since agent workloads hardcode different UIDs.
+Parameters (dict): ctx (required, the root context '.'), securityContext (required, the
+component's own securityContext block)
+*/}}
+{{- define "sonarqube.agent.containerSecurityContext" -}}
+{{- $securityContext := .securityContext -}}
+{{- if .ctx.Values.OpenShift.enabled -}}
+{{- $securityContext = omit $securityContext "runAsUser" "runAsGroup" "fsGroup" -}}
+{{- end -}}
+{{- toYaml $securityContext -}}
 {{- end -}}
 
 {{/*

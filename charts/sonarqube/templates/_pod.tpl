@@ -1,5 +1,5 @@
 {{- define "sonarqube.pod" -}}
-{{- $hasMergedProps := or .Values.sonarProperties .Values.agentOrchestrator.enabled .Values.vortex.enabled -}}
+{{- $hasMergedProps := or .Values.sonarProperties .Values.agentOrchestrator.enabled .Values.vortex.enabled (eq (include "sonarqube.agentic.enabled" .) "true") -}}
 metadata:
   annotations:
     checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
@@ -318,6 +318,24 @@ spec:
         - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
           value: {{ include "sonarqube.agentOrchestrator.url" . | quote }}
         {{- end }}
+        {{- /* The instance secret is mounted here because SQS derives material in-process from it
+               (the remediation-to-sqs key it verifies, which is why it doesn't mount that key).
+               What the JVM actually reads is the sonar.agentic.signing.secretFile property, set by
+               sonarqube.agentHealthProperties; unlike the SONAR_*-prefixed vars above, this name
+               is not mapped onto a property, so it only reaches a consumer reading the environment
+               directly. Emitted because SONAR-32065 names it alongside the property - drop it if
+               nothing turns out to read it.
+
+               SQS's other agentic key, agentic-shared, gets no env var at all (see
+               sonarqube.agentic.keyPathEnv): it signs its own calls to the orchestrator using the
+               sonar.agentic.orchestrator.signingKeyPath property instead, since Configuration.get()
+               doesn't fall back to plain env vars (SONAR-31416). Vortex - a separate process with
+               no properties mechanism - still reads that same key via
+               AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH. */}}
+        {{- if eq (include "sonarqube.agentic.enabled" .) "true" }}
+        - name: AGENTIC_SIGNING_SECRET_FILE
+          value: {{ include "sonarqube.agentic.sqsSecretFile" . | quote }}
+        {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
       envFrom:
         {{- if or .Values.jdbcOverwrite.enabled .Values.jdbcOverwrite.enable }}
@@ -371,6 +389,14 @@ spec:
         {{- if .Values.sonarSecretKey }}
         - mountPath: {{ .Values.sonarqubeFolder }}/secret/
           name: secret
+        {{- end }}
+        {{- if eq (include "sonarqube.agentic.enabled" .) "true" }}
+        - mountPath: {{ include "sonarqube.agentic.sqsSecretDir" . }}
+          name: agentic-instance-secret
+          readOnly: true
+        {{- end }}
+        {{- with (include "sonarqube.agentic.keyVolumeMount" (dict "ctx" . "consumer" "sqs" "mountPath" (include "sonarqube.agentic.sqsKeyDir" .))) }}
+        {{- . | trim | nindent 8 }}
         {{- end }}
         {{- if .Values.caCerts.enabled }}
         - mountPath: {{ .Values.sonarqubeFolder }}/certs
@@ -440,6 +466,20 @@ spec:
         items:
         - key: sonar-secret.txt
           path: sonar-secret.txt
+    {{- end }}
+    {{- /* The instance secret itself, not just the derived keys: SQS derives some material
+           in-process. Projected to a fixed filename so the property/env value below is
+           independent of whatever key name the operator chose in their Secret. */}}
+    {{- if eq (include "sonarqube.agentic.enabled" .) "true" }}
+    - name: agentic-instance-secret
+      secret:
+        secretName: {{ .Values.agenticSigningSecret.existingSecret }}
+        items:
+        - key: {{ include "sonarqube.agentic.signingSecretKey" . }}
+          path: instance-secret
+    {{- end }}
+    {{- with (include "sonarqube.agentic.keyVolume" (dict "ctx" . "consumer" "sqs")) }}
+    {{- . | trim | nindent 4 }}
     {{- end }}
     {{- include "sonarqube.volumes.caCerts" . | nindent 4 }}
     {{- if .Values.plugins.netrcCreds }}

@@ -232,6 +232,24 @@ jobs:
           DOCKER_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_PASSWORD }}
         run: kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
+      - name: Setup agentic signing secrets
+        if: matrix.chart == 'sonarqube-dce'
+        # The DCE ci-values enable a runtime so gVisor renders, which also turns on the agentic
+        # signing path. The image carrying derive-keys.sh isn't pullable here, so the derivation
+        # hook is off in ci-values and the Secrets its Job would have written are pre-created with
+        # throwaway values. Their names come from fullnameOverride in the same file.
+        run: |
+          kubectl create secret generic agentic-ci-instance-secret --namespace test \
+            --from-literal=instance-secret="$(openssl rand -hex 32)" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          for consumer in orchestrator hunter sqs; do
+            kubectl create secret generic "sonarqube-dce-ci-agentic-keys-$consumer" --namespace test \
+              --from-literal=orchestrator-to-hunter="$(openssl rand -hex 32)" \
+              --from-literal=orchestrator-to-remediation="$(openssl rand -hex 32)" \
+              --from-literal=remediation-to-sqs="$(openssl rand -hex 32)" \
+              --from-literal=agentic-shared="$(openssl rand -hex 32)" \
+              --dry-run=client -o yaml | kubectl apply -f -
+          done
       - name: Install ArtifactHub CLI
         run: |
           curl -LO https://github.com/artifacthub/hub/releases/download/v1.21.0/ah_1.21.0_linux_amd64.tar.gz
