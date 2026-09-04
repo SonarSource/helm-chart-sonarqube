@@ -67,3 +67,17 @@ gvisor:
     tolerations: []
     annotations:
       sidecar.istio.io/inject: "false"
+
+# Enabling a runtime above also turns on the agentic signing path, so the Application Nodes mount
+# the instance secret and the derived per-hop keys (SONAR-32065). The image carrying derive-keys.sh
+# isn't pullable from CI, so the derivation hook is off and the workflow pre-creates both Secrets
+# with dummy values - the "bring your own keys" mode agentKeyDerivation.enabled documents.
+# fullnameOverride pins the derived Secret's name, which is otherwise built from the release name
+# chart-testing generates at random.
+fullnameOverride: sonarqube-dce-ci
+
+agenticSigningSecret:
+  existingSecret: agentic-ci-instance-secret
+
+agentKeyDerivation:
+  enabled: false

@@ -11,3 +11,12 @@ vortex:
   image:
     repository: ""
     tag: "7593"
+agenticSigningSecret:
+  existingSecret: test-agentic-instance-secret
+# The missing vortex image is the only defect under test here, so the key-derivation hook gets a
+# valid image of its own - otherwise the fixture has two validation failures and the test only
+# passes on the order the checks happen to run in.
+agentKeyDerivation:
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "42"

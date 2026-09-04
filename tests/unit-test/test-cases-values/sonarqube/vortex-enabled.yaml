@@ -38,3 +38,11 @@ vortex:
     - key: vortex
       operator: Exists
       effect: NoSchedule
+agenticSigningSecret:
+  existingSecret: test-agentic-instance-secret
+# Vortex needs derived signing keys but no orchestrator, so the key-derivation hook Job gets
+# its image here rather than from agentOrchestrator.image.
+agentKeyDerivation:
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "42"
