@@ -1033,7 +1033,7 @@ hunterAgent:
   # SCRIPT_PATH, which switches the runtime into hunter/detection mode (symmetric with
   # remediation's remediationScriptPath -> REMEDIATION_SCRIPT_PATH). Override if the image
   # relocates it; set to "" to omit the env var entirely. Unlike remediation, the hunter
-  # runtime never calls the orchestrator for rule-info, so no rule-info endpoint is wired.
+  # runtime never calls SonarQube Server for rule-info/analysis, so no such endpoints are wired.
   scriptPath: /home/agent/app/.venv/bin/detection-agent
   # Extra env vars for the runtime container. The chart only sets `port` on the Service /
   # containerPort - it does not assume a listen-port convention for arbitrary runtime images
@@ -1125,7 +1125,8 @@ remediationAgent:
   # Path to the remediation-agent entrypoint inside the image; the chart exposes it as
   # REMEDIATION_SCRIPT_PATH, which switches the runtime into remediation mode. Override if the
   # image relocates it (e.g. a Python version bump); set to "" to omit the env var entirely.
-  # (REMEDIATION_RULE_INFO_ENDPOINT is also auto-wired, derived from the Agent Orchestrator URL.)
+  # (REMEDIATION_RULE_INFO_ENDPOINT and REMEDIATION_ANALYSIS_ENDPOINT are also auto-wired,
+  # derived from the SonarQube Server URL - not the orchestrator.)
   remediationScriptPath: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
   env: []
   extraVolumes: []

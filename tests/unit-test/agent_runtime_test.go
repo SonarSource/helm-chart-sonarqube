@@ -214,6 +214,43 @@ func TestAgentRuntimeContainerSecurityContext(t *testing.T) {
 	}
 }
 
+// The remediation runtime calls SonarQube Server directly for rule-info and
+// analysis-creation instead of proxying through the Agent Orchestrator, so both endpoint env
+// vars must be built from sonarqube.agent.sonarqube.url - including honouring sonarWebContext,
+// exactly like AGENTIC_SONARQUBE_URL already does for the orchestrator.
+func TestAgentRuntimeRemediationSonarQubeEndpoints(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, wc := range []struct {
+				name       string
+				webContext string
+			}{
+				{"default web context", ""},
+				{"sonarWebContext=/sonarqube", "/sonarqube"},
+			} {
+				t.Run(wc.name, func(t *testing.T) {
+					setValues := map[string]string{}
+					if wc.webContext != "" {
+						setValues["sonarWebContext"] = wc.webContext
+					}
+					container := renderAgentRuntime(t, chart, "remediation", setValues).Spec.Template.Spec.Containers[0]
+
+					env := map[string]string{}
+					for _, e := range container.Env {
+						env[e.Name] = e.Value
+					}
+
+					// Fully qualified, not the bare short name - same reasoning as the orchestrator's own
+					// URL: Squid's own DNS resolver doesn't honour /etc/resolv.conf's search list.
+					sonarqubeURL := "http://" + chart.fullnamePrefix() + ".default.svc.cluster.local:9000" + wc.webContext
+					assert.Equal(t, sonarqubeURL+"/api/rules/show", env["REMEDIATION_RULE_INFO_ENDPOINT"])
+					assert.Equal(t, sonarqubeURL+"/api/v2/a3s/private/analyses", env["REMEDIATION_ANALYSIS_ENDPOINT"])
+				})
+			}
+		})
+	}
+}
+
 // Only remediation ships sized resource defaults; hunter's sizing is out of scope for this
 // ticket (SONAR-31656) - tracked separately.
 func TestAgentRuntimeResources(t *testing.T) {
