@@ -82,8 +82,10 @@ spec:
                   key: SONAR_AGENTIC_STORAGE_SECRET_KEY
             {{- end }}
             {{- /* Points Vortex at the agentic-shared key mounted below, which it signs its
-                   handoffs to SQS with - AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH, the same name SQS
-                   uses for its own outbound signing (see sonarqube.agentic.keyPathEnv). */}}
+                   handoffs to SQS with - AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH. SQS reads the same
+                   key via the sonar.agentic.orchestrator.signingKeyPath property instead of an env
+                   var (it has a properties mechanism Vortex, a standalone process, does not); see
+                   sonarqube.agentic.keyPathEnv. */}}
             {{- with (include "sonarqube.agentic.keyPathEnv" (dict "ctx" . "consumer" "vortex") | fromYamlArray) }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

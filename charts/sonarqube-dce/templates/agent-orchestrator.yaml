@@ -89,8 +89,9 @@ spec:
               value: "/sonarcloud/secret/sonar-secret.txt"
             {{- end }}
             {{- /* One variable per HKDF-derived key file the orchestrator mounts - the key it
-                   signs hunter's work with, and the one it signs remediation's with. See
-                   sonarqube.agentic.keyPathEnv. */}}
+                   signs hunter's work with, the one it signs remediation's with, and
+                   AGENTIC_SONARQUBE_SIGNING_KEY_PATH for the agentic-shared key it shares with
+                   SQS/Vortex. See sonarqube.agentic.keyPathEnv. */}}
             {{- with (include "sonarqube.agentic.keyPathEnv" (dict "ctx" . "consumer" "orchestrator") | fromYamlArray) }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

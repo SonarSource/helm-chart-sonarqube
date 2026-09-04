@@ -911,23 +911,23 @@ The Agent Orchestrator reads and writes SonarQube's own database, so `agentOrche
 - **Mount paths.** The orchestrator, the runtimes and Vortex mount their keys at `/etc/agentic/keys` (three different base images, so one neutral path); the SonarQube app nodes get theirs at `<sonarqubeFolder>/agentic-keys`, and the instance secret itself at `<sonarqubeFolder>/agentic-secret/instance-secret`. Both app-node paths are also written into `conf/sonar.properties` (as `sonar.agentic.signing.secretFile` and `sonar.agentic.orchestrator.signingKeyPath`), since a property with a properties-file line ignores its env override.
 - **Each pod is pointed at its keys one env var per key file**, named for the pod's role in the hop rather than for the key — so the two ends of a hop read the same file under different names:
 
-  | Pod           | Env var                                        | Key                           |
-  | ------------- | ---------------------------------------------- | ----------------------------- |
-  | orchestrator  | `AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH`      | `orchestrator-to-hunter`      |
-  | orchestrator  | `AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH` | `orchestrator-to-remediation` |
-  | hunter        | `AGENTIC_VERIFY_KEY_PATH`                      | `orchestrator-to-hunter`      |
-  | hunter        | `AGENTIC_VERIFY_KEY_ID`                        | `orchestrator-to-hunter`      |
-  | remediation   | `AGENTIC_VERIFY_KEY_PATH`                      | `orchestrator-to-remediation` |
-  | remediation   | `AGENTIC_VERIFY_KEY_ID`                        | `orchestrator-to-remediation` |
-  | remediation   | `REMEDIATION_AGENTIC_SIGNING_KEY_PATH`         | `remediation-to-sqs`          |
-  | SQS app nodes | `AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH`        | `agentic-shared`              |
-  | Vortex        | `AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH`        | `agentic-shared`              |
+  | Pod          | Env var                                        | Key                           |
+  | ------------ | ---------------------------------------------- | ----------------------------- |
+  | orchestrator | `AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH`      | `orchestrator-to-hunter`      |
+  | orchestrator | `AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH` | `orchestrator-to-remediation` |
+  | orchestrator | `AGENTIC_SONARQUBE_SIGNING_KEY_PATH`           | `agentic-shared`              |
+  | hunter       | `AGENTIC_VERIFY_KEY_PATH`                      | `orchestrator-to-hunter`      |
+  | hunter       | `AGENTIC_VERIFY_KEY_ID`                        | `orchestrator-to-hunter`      |
+  | remediation  | `AGENTIC_VERIFY_KEY_PATH`                      | `orchestrator-to-remediation` |
+  | remediation  | `AGENTIC_VERIFY_KEY_ID`                        | `orchestrator-to-remediation` |
+  | remediation  | `REMEDIATION_AGENTIC_SIGNING_KEY_PATH`         | `remediation-to-sqs`          |
+  | Vortex       | `AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH`        | `agentic-shared`              |
 
-  A variable is only set when the key behind it is actually mounted. The orchestrator mounts `agentic-shared` but no variable points at it yet.
+  A variable is only set when the key behind it is actually mounted. The SonarQube app nodes are the exception: they mount `agentic-shared` too, but get no variable for it — see below.
 
-  `AGENTIC_VERIFY_KEY_PATH` is the one name that appears on two pods for *different* keys, since each runtime mounts exactly one verification key — so it is paired with `AGENTIC_VERIFY_KEY_ID`, which carries the label itself and is what tells the runtime which hop the key belongs to. `AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH` also appears twice but names the same key for the same purpose on both pods — signing their own outbound calls — so it needs no companion.
+  `AGENTIC_VERIFY_KEY_PATH` is the one name that appears on two pods for *different* keys, since each runtime mounts exactly one verification key — so it is paired with `AGENTIC_VERIFY_KEY_ID`, which carries the label itself and is what tells the runtime which hop the key belongs to.
 
-  On the app nodes that variable is the redundant half of a pair: what SonarQube actually reads is the `sonar.agentic.orchestrator.signingKeyPath` property, written into `conf/sonar.properties` alongside `sonar.agentic.signing.secretFile`. The two are opposite directions — the secret is what SQS verifies incoming agentic calls with, the key path is what it signs its own calls to the orchestrator with. Leaving the key path unset would leave those calls unsigned rather than fail.
+  The app nodes read `agentic-shared`'s path a different way: through the `sonar.agentic.orchestrator.signingKeyPath` property in `conf/sonar.properties`, not an env var — `Configuration.get()` doesn't fall back to plain env vars, so a variable here would just go unread. Vortex has no properties mechanism (it's a standalone Deployment, not a SonarQube JVM process), so `AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH` remains its only way to find the key. The property sits alongside `sonar.agentic.signing.secretFile` in `conf/sonar.properties`; the two are opposite directions — the secret is what SQS verifies incoming agentic calls with, the key path is what it signs its own calls to the orchestrator with. Leaving the key path unset would leave those calls unsigned rather than fail.
 - **The hook needs RBAC, hence its own ServiceAccount.** Writing the derived Secrets means a namespace-scoped Role granting `get`/`create`/`update` on `secrets` — nothing cluster-scoped, no `list`, no `delete`. The chart creates the account and binds the Role at hook weight `-5`, so both exist before the Job runs at weight `0`. `agentKeyDerivation.serviceAccount.create=false` runs the Job under `agentKeyDerivation.serviceAccount.name`, or the release's top-level `serviceAccount` when that is empty; the chart still binds the Role to whichever it lands on.
 - **Image defaults to the orchestrator's.** `derive-keys.sh` ships inside the Agent Orchestrator image, so `agentKeyDerivation.image` normally needs nothing set: leave `repository` blank and the whole block falls back to `agentOrchestrator.image`. Set it only when derived keys are part of the install but the orchestrator isn't (`vortex.enabled` on its own), so the release doesn't pull an orchestrator image it never deploys. The fallback is all-or-nothing — once you set `repository`, the rest of `agentKeyDerivation.image` is used as-is rather than filled in from the orchestrator's.
 - **Opting out.** `agentKeyDerivation.enabled=false` skips the hook, for when you materialize the `<fullname>-agentic-keys-*` Secrets yourself (GitOps, sealed-secrets, an external KMS). The consumer pods mount those Secrets either way, so opting out *without* providing them leaves the pods stuck in `ContainerCreating`.

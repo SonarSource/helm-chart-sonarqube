@@ -638,11 +638,13 @@ func TestAgenticKeysNotMountedWithoutHops(t *testing.T) {
 	}
 }
 
-// SQS reads both signing paths through conf/sonar.properties, not just through the matching env
-// vars: a property with a properties-file line ignores its env override, so the properties half is
-// the one that actually takes effect (see SONAR-31416). secretFile is what SQS verifies incoming
-// calls with; signingKeyPath is what it signs its own calls to the orchestrator with
-// (SONAR-31996), and unset leaves those unsigned rather than failing.
+// SQS reads both signing settings through conf/sonar.properties. secretFile also has a redundant
+// env var carrying the same value (AGENTIC_SIGNING_SECRET_FILE), but the properties file is what
+// actually takes effect - Configuration.get() doesn't fall back to plain env vars (SONAR-31416).
+// signingKeyPath has no env-var companion at all (see sonarqube.agentic.keyPathEnv); the property
+// is its only path in. secretFile is what SQS verifies incoming calls with; signingKeyPath is what
+// it signs its own calls to the orchestrator with (SONAR-31996), and unset leaves those unsigned
+// rather than failing.
 func TestAgenticSigningPathsInSonarProperties(t *testing.T) {
 	for _, chart := range agenticKeyCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -662,14 +664,10 @@ func TestAgenticSigningPathsInSonarProperties(t *testing.T) {
 // sonarqube.agentHealthProperties, the mounts by keyVolumeMount/the instance-secret block. Drift
 // points the JVM at a path that isn't in the container, and the only symptom is at runtime - an
 // ERROR on startup for secretFile, an unsigned first orchestrator call for signingKeyPath. Each
-// property is therefore resolved against what the pod actually projects, and cross-checked against
-// the redundant env var carrying the same value.
+// property is therefore resolved against what the pod actually projects; secretFile is additionally
+// cross-checked against the redundant env var that carries the same value, since signingKeyPath has
+// no such env var to cross-check against (see sonarqube.agentic.keyPathEnv).
 func TestAgenticSigningPathsResolveToProjectedFiles(t *testing.T) {
-	// Each property, and the env var that redundantly carries the same path.
-	paths := map[string]string{
-		"sonar.agentic.signing.secretFile":          "AGENTIC_SIGNING_SECRET_FILE",
-		"sonar.agentic.orchestrator.signingKeyPath": "AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH",
-	}
 	for _, chart := range agenticKeyCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			props := appSonarProperties(t, chart, agentPropertiesOptions(chart, "agent-runtimes-enabled.yaml", nil))
@@ -683,16 +681,25 @@ func TestAgenticSigningPathsResolveToProjectedFiles(t *testing.T) {
 			mounts := agentVolumeMountsByName(container.VolumeMounts)
 			volumes := agentVolumesByName(podSpec.Volumes)
 
-			for property, envName := range paths {
-				t.Run(property, func(t *testing.T) {
-					path := props[property]
-					require.NotEmpty(t, path, "%s is not in conf/sonar.properties", property)
-					assert.Equal(t, path, env[envName],
-						"the redundant env var and the property that takes effect must name the same file")
+			t.Run("sonar.agentic.signing.secretFile", func(t *testing.T) {
+				property, envName := "sonar.agentic.signing.secretFile", "AGENTIC_SIGNING_SECRET_FILE"
+				path := props[property]
+				require.NotEmpty(t, path, "%s is not in conf/sonar.properties", property)
+				assert.Equal(t, path, env[envName],
+					"the redundant env var and the property that takes effect must name the same file")
 
-					assertPathIsProjected(t, property, path, mounts, volumes)
-				})
-			}
+				assertPathIsProjected(t, property, path, mounts, volumes)
+			})
+
+			t.Run("sonar.agentic.orchestrator.signingKeyPath", func(t *testing.T) {
+				property := "sonar.agentic.orchestrator.signingKeyPath"
+				path := props[property]
+				require.NotEmpty(t, path, "%s is not in conf/sonar.properties", property)
+				assert.NotContains(t, env, "AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH",
+					"SQS must read this path only through the property, not a plain env var (SONAR-31416)")
+
+				assertPathIsProjected(t, property, path, mounts, volumes)
+			})
 		})
 	}
 }
@@ -762,6 +769,7 @@ func agenticKeyEnvCases(appTemplate string) []agenticKeyEnvCase {
 		{name: "orchestrator", template: "templates/agent-orchestrator.yaml", want: map[string]string{
 			"AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH":      "orchestrator-to-hunter",
 			"AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH": "orchestrator-to-remediation",
+			"AGENTIC_SONARQUBE_SIGNING_KEY_PATH":           "agentic-shared",
 		}},
 		{name: "hunter", template: "templates/agent-runtime.yaml", familyLabel: "hunter", want: map[string]string{
 			"AGENTIC_VERIFY_KEY_PATH": "orchestrator-to-hunter",
@@ -774,11 +782,15 @@ func agenticKeyEnvCases(appTemplate string) []agenticKeyEnvCase {
 		}, wantIDs: map[string]string{
 			"AGENTIC_VERIFY_KEY_ID": "orchestrator-to-remediation",
 		}},
-		{name: "sqs", template: appTemplate, want: map[string]string{
-			"AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH": "agentic-shared",
-		}},
-		// Same variable as SQS, and no _KEY_ID companion: both pods use the key for the same
-		// thing, signing their own outbound calls, so the name is unambiguous.
+		// SQS mounts agentic-shared (see keyLabels) but gets no path env var for it: it reads the
+		// path via the sonar.agentic.orchestrator.signingKeyPath property instead. Kept as an
+		// explicit case, with an empty want, so a regression that reintroduces the env var fails
+		// here rather than going unnoticed.
+		{name: "sqs", template: appTemplate, want: map[string]string{}},
+		// Vortex has no properties mechanism (it's a standalone Deployment, not a SonarQube JVM
+		// process), so it's the only consumer that still reads this key through an env var. No
+		// _KEY_ID companion: it uses the key for one thing, signing its own outbound calls, so the
+		// name is unambiguous.
 		{name: "vortex", template: "templates/vortex.yaml", want: map[string]string{
 			"AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH": "agentic-shared",
 		}},

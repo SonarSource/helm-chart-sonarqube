@@ -1408,6 +1408,8 @@ spec:
               value: "8080"
             - name: AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH
               value: /etc/agentic/keys/orchestrator-to-remediation
+            - name: AGENTIC_SONARQUBE_SIGNING_KEY_PATH
+              value: /etc/agentic/keys/agentic-shared
             - name: CORE_DB_READ_WRITE_ENDPOINT
               value: "myPostgres"
             - name: CORE_DB_NAME
@@ -1731,8 +1733,6 @@ spec:
               value: "http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator.default.svc.cluster.local:8080"
             - name: AGENTIC_SIGNING_SECRET_FILE
               value: "/opt/sonarqube/agentic-secret/instance-secret"
-            - name: AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
-              value: /opt/sonarqube/agentic-keys/agentic-shared
           envFrom:
             - configMapRef:
                 name: remediation-agent-values.yaml-sonarqube-dce-jdbc-config

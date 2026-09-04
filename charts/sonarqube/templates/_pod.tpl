@@ -326,14 +326,15 @@ spec:
                directly. Emitted because SONAR-32065 names it alongside the property - drop it if
                nothing turns out to read it.
 
-               Same for AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH below: what takes effect is the
-               sonar.agentic.orchestrator.signingKeyPath property, set alongside the one above. */}}
+               SQS's other agentic key, agentic-shared, gets no env var at all (see
+               sonarqube.agentic.keyPathEnv): it signs its own calls to the orchestrator using the
+               sonar.agentic.orchestrator.signingKeyPath property instead, since Configuration.get()
+               doesn't fall back to plain env vars (SONAR-31416). Vortex - a separate process with
+               no properties mechanism - still reads that same key via
+               AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH. */}}
         {{- if eq (include "sonarqube.agentic.enabled" .) "true" }}
         - name: AGENTIC_SIGNING_SECRET_FILE
           value: {{ include "sonarqube.agentic.sqsSecretFile" . | quote }}
-        {{- end }}
-        {{- with (include "sonarqube.agentic.keyPathEnv" (dict "ctx" . "consumer" "sqs") | fromYamlArray) }}
-        {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
       envFrom:

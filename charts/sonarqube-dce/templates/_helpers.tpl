@@ -938,10 +938,10 @@ consumer's role in the hop that picks the name, not the key:
 
   orchestrator  orchestrator-to-hunter       -> AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH
                 orchestrator-to-remediation  -> AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH
+                agentic-shared               -> AGENTIC_SONARQUBE_SIGNING_KEY_PATH
   hunter        orchestrator-to-hunter       -> AGENTIC_VERIFY_KEY_PATH
   remediation   orchestrator-to-remediation  -> AGENTIC_VERIFY_KEY_PATH
                 remediation-to-sqs           -> REMEDIATION_AGENTIC_SIGNING_KEY_PATH
-  sqs           agentic-shared               -> AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
   vortex        agentic-shared               -> AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
 
 AGENTIC_VERIFY_KEY_PATH is reused across the two runtimes without colliding: each pod mounts
@@ -949,15 +949,17 @@ exactly one verification key. Because the name is the same on both, it is paired
 AGENTIC_VERIFY_KEY_ID, whose value is the label itself (orchestrator-to-hunter or
 orchestrator-to-remediation) - that is what tells the runtime which hop the key belongs to.
 
-AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH needs no such companion: it names one key on both pods that
-set it, and both use it for the same thing - signing their own outbound calls with agentic-shared.
-On SQS it is the redundant half of the pair: what the JVM reads is the
+SQS deliberately has no entry here even though it mounts agentic-shared too (see keyLabels): what
+the JVM reads to sign its own outbound calls to the orchestrator is the
 sonar.agentic.orchestrator.signingKeyPath property (SONAR-31996), set by
-sonarqube.agentHealthProperties.
+sonarqube.agentHealthProperties - Configuration.get() does not fall back to plain env vars
+(SONAR-31416), so an env var here would just go unread. Vortex has no properties mechanism (it's a
+standalone Deployment, not a SonarQube JVM process), so AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
+remains its only way to find the key.
 
-agentic-shared is deliberately absent for the orchestrator alone - it mounts the key (it has no
-instance secret of its own to derive it from) but the variable naming it there isn't settled yet,
-so the chart mounts it without pointing at it rather than inventing a name.
+AGENTIC_SONARQUBE_SIGNING_KEY_PATH fills in the previously-unnamed use of agentic-shared on the
+orchestrator: the file was already mounted (sonarqube.agentic.keyLabels), it just had no variable
+pointing at it.
 
 Driven off sonarqube.agentic.keyLabels, so a variable can only appear when the file behind it is
 actually projected into the pod. Returns a YAML list of env entries; "[]" when there are none.
@@ -965,10 +967,9 @@ Parameters (dict): ctx, consumer.
 */}}
 {{- define "sonarqube.agentic.keyPathEnv" -}}
 {{- $names := dict
-  "orchestrator" (dict "orchestrator-to-hunter" "AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH" "orchestrator-to-remediation" "AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH")
+  "orchestrator" (dict "orchestrator-to-hunter" "AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH" "orchestrator-to-remediation" "AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH" "agentic-shared" "AGENTIC_SONARQUBE_SIGNING_KEY_PATH")
   "hunter" (dict "orchestrator-to-hunter" "AGENTIC_VERIFY_KEY_PATH")
   "remediation" (dict "orchestrator-to-remediation" "AGENTIC_VERIFY_KEY_PATH" "remediation-to-sqs" "REMEDIATION_AGENTIC_SIGNING_KEY_PATH")
-  "sqs" (dict "agentic-shared" "AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH")
   "vortex" (dict "agentic-shared" "AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH")
 -}}
 {{- /* Path variables that need a companion variable naming *which* key the file holds, keyed by
