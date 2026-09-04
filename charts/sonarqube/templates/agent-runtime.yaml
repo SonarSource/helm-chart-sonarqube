@@ -47,14 +47,14 @@ spec:
       {{- if $pullSecrets }}
       imagePullSecrets: {{- $pullSecrets | nindent 8 }}
       {{- end }}
-      {{- with $cfg.securityContext }}
+      {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" $ "securityContext" $cfg.securityContext))) }}
       securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: agent-runtime
           image: "{{ $cfg.image.repository }}:{{ $cfg.image.tag }}"
           imagePullPolicy: {{ $cfg.image.pullPolicy }}
-          {{- with $cfg.containerSecurityContext }}
+          {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" $ "securityContext" $cfg.containerSecurityContext))) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
@@ -80,6 +80,10 @@ spec:
           {{- end }}
           {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_RULE_INFO_ENDPOINT" "value" (printf "%s/remediation-agent/rule-info" (include "sonarqube.agentOrchestrator.url" $))) }}
           {{- end }}
+          {{- /* One variable per HKDF-derived key file mounted below - a runtime only ever holds
+                 the key for its own hop with the orchestrator (plus, for remediation, its hop to
+                 SQS). See sonarqube.agentic.keyPathEnv. */}}
+          {{- $autoEnv = concat $autoEnv (include "sonarqube.agentic.keyPathEnv" (dict "ctx" $ "consumer" $family) | fromYamlArray) }}
           {{- $mergedEnv := concat $autoEnv ($cfg.env | default list) }}
           {{- /* Proxy env vars are appended LAST, after $cfg.env, and are NOT part of the
                  user-overridable merge above (unlike every other auto-generated var in this
@@ -114,17 +118,29 @@ spec:
           livenessProbe:
 {{ . | indent 12 }}
           {{- end }}
-          {{- with $cfg.extraVolumeMounts }}
+          {{- $keyMount := include "sonarqube.agentic.keyVolumeMount" (dict "ctx" $ "consumer" $family "mountPath" (include "sonarqube.agentic.keyDir" $)) }}
+          {{- if or $keyMount $cfg.extraVolumeMounts }}
           volumeMounts:
+            {{- with $keyMount }}
+            {{- . | trim | nindent 12 }}
+            {{- end }}
+            {{- with $cfg.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
       {{- with (include "sonarqube.agent.scheduling" (dict "ctx" $ "component" $cfg)) }}
 {{ . | indent 6 }}
       {{- end }}
       serviceAccountName: {{ include "sonarqube.agentRuntime.serviceAccountName" (dict "ctx" $ "family" $family) }}
-      {{- with $cfg.extraVolumes }}
+      {{- $keyVolume := include "sonarqube.agentic.keyVolume" (dict "ctx" $ "consumer" $family) }}
+      {{- if or $keyVolume $cfg.extraVolumes }}
       volumes:
+        {{- with $keyVolume }}
+        {{- . | trim | nindent 8 }}
+        {{- end }}
+        {{- with $cfg.extraVolumes }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
 {{- end }}
 {{- end }}

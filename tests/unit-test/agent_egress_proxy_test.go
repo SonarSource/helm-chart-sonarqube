@@ -54,6 +54,9 @@ func renderAgentEgressProxyTemplates(t *testing.T, chart agentChart, setValues m
 		"vortex.storage.type":                "s3",
 		"vortex.storage.bucket":              "vortex-artifacts",
 		"vortex.storage.region":              "eu-west-1",
+		// Enabling any runtime family also enables agentic signing, which validation.yaml fails
+		// closed on without an instance secret to derive the per-hop keys from.
+		"agenticSigningSecret.existingSecret": "test-agentic-instance-secret",
 	}
 	for k, v := range setValues {
 		merged[k] = v

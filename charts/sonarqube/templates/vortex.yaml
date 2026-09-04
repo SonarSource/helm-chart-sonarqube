@@ -36,7 +36,7 @@ spec:
         - name: vortex
           image: "{{ $vortex.image.repository }}:{{ $vortex.image.tag }}"
           imagePullPolicy: {{ $vortex.image.pullPolicy }}
-          {{- with $vortex.containerSecurityContext }}
+          {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" $vortex.containerSecurityContext))) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
@@ -81,6 +81,14 @@ spec:
                   name: {{ default (include "sonarqube.vortex.fullname" .) $vortex.storage.existingSecret }}
                   key: SONAR_AGENTIC_STORAGE_SECRET_KEY
             {{- end }}
+            {{- /* Points Vortex at the agentic-shared key mounted below, which it signs its
+                   handoffs to SQS with - AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH. SQS reads the same
+                   key via the sonar.agentic.orchestrator.signingKeyPath property instead of an env
+                   var (it has a properties mechanism Vortex, a standalone process, does not); see
+                   sonarqube.agentic.keyPathEnv. */}}
+            {{- with (include "sonarqube.agentic.keyPathEnv" (dict "ctx" . "consumer" "vortex") | fromYamlArray) }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
             {{- with $vortex.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -103,15 +111,27 @@ spec:
               path: /health
               port: http
             periodSeconds: 30
-          {{- with $vortex.extraVolumeMounts }}
+          {{- $keyMount := include "sonarqube.agentic.keyVolumeMount" (dict "ctx" . "consumer" "vortex" "mountPath" (include "sonarqube.agentic.keyDir" .)) }}
+          {{- if or $keyMount $vortex.extraVolumeMounts }}
           volumeMounts:
+            {{- with $keyMount }}
+            {{- . | trim | nindent 12 }}
+            {{- end }}
+            {{- with $vortex.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
+            {{- end }}
           {{- end }}
       {{- with (include "sonarqube.agent.scheduling" (dict "ctx" . "component" $vortex)) }}
 {{ . | indent 6 }}
       {{- end }}
-      {{- with $vortex.extraVolumes }}
+      {{- $keyVolume := include "sonarqube.agentic.keyVolume" (dict "ctx" . "consumer" "vortex") }}
+      {{- if or $keyVolume $vortex.extraVolumes }}
       volumes:
+        {{- with $keyVolume }}
+        {{- . | trim | nindent 8 }}
+        {{- end }}
+        {{- with $vortex.extraVolumes }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
 {{- end }}

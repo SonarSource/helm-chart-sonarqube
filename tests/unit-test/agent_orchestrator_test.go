@@ -49,13 +49,41 @@ func TestAgentOrchestratorContainerSecurityContext(t *testing.T) {
 			require.NotNil(t, sc.Capabilities)
 			assert.Contains(t, sc.Capabilities.Drop, corev1.Capability("ALL"))
 
-			require.Len(t, container.VolumeMounts, 1)
-			assert.Equal(t, "tmp", container.VolumeMounts[0].Name)
-			assert.Equal(t, "/tmp", container.VolumeMounts[0].MountPath)
+			// agentic-keys comes from the fixture enabling hunterAgent; the /tmp emptyDir is what
+			// this test is about, and it exists because readOnlyRootFilesystem is on.
+			mounts := agentVolumeMountsByName(container.VolumeMounts)
+			require.Contains(t, mounts, "tmp")
+			assert.Equal(t, "/tmp", mounts["tmp"].MountPath)
 
-			require.Len(t, podSpec.Volumes, 1)
-			assert.Equal(t, "tmp", podSpec.Volumes[0].Name)
-			require.NotNil(t, podSpec.Volumes[0].EmptyDir)
+			volumes := agentVolumesByName(podSpec.Volumes)
+			require.Contains(t, volumes, "tmp")
+			require.NotNil(t, volumes["tmp"].EmptyDir)
+		})
+	}
+}
+
+// On OpenShift's restricted-v2 SCC, an explicit runAsUser/runAsGroup outside the namespace's
+// allocated range gets the pod rejected at admission - sonarqube.agent.containerSecurityContext
+// exists to strip both (and fsGroup) so the platform can assign its own.
+func TestAgentOrchestratorOpenShiftDropsRunAsUser(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			deployment := renderAgentOrchestrator(t, chart, map[string]string{
+				"OpenShift.enabled": "true",
+			})
+			podSpec := deployment.Spec.Template.Spec
+			require.Len(t, podSpec.Containers, 1)
+
+			sc := podSpec.Containers[0].SecurityContext
+			require.NotNil(t, sc)
+			assert.Nil(t, sc.RunAsUser)
+			assert.Nil(t, sc.RunAsGroup)
+			// Everything else the default carries (dropped capabilities, non-root, read-only FS)
+			// is unrelated to the SCC-assigned UID and must survive.
+			require.NotNil(t, sc.RunAsNonRoot)
+			assert.True(t, *sc.RunAsNonRoot)
+			require.NotNil(t, sc.ReadOnlyRootFilesystem)
+			assert.True(t, *sc.ReadOnlyRootFilesystem)
 		})
 	}
 }
@@ -71,8 +99,8 @@ func TestAgentOrchestratorNoReadOnlyRootFilesystemNoTmpVolume(t *testing.T) {
 				})
 				podSpec := deployment.Spec.Template.Spec
 				require.Len(t, podSpec.Containers, 1)
-				assert.Empty(t, podSpec.Containers[0].VolumeMounts)
-				assert.Empty(t, podSpec.Volumes)
+				assert.NotContains(t, agentVolumeMountsByName(podSpec.Containers[0].VolumeMounts), "tmp")
+				assert.NotContains(t, agentVolumesByName(podSpec.Volumes), "tmp")
 			})
 
 			// containerSecurityContext: null is the chart's documented convention for disabling a
@@ -84,8 +112,8 @@ func TestAgentOrchestratorNoReadOnlyRootFilesystemNoTmpVolume(t *testing.T) {
 				podSpec := deployment.Spec.Template.Spec
 				require.Len(t, podSpec.Containers, 1)
 				assert.Nil(t, podSpec.Containers[0].SecurityContext)
-				assert.Empty(t, podSpec.Containers[0].VolumeMounts)
-				assert.Empty(t, podSpec.Volumes)
+				assert.NotContains(t, agentVolumeMountsByName(podSpec.Containers[0].VolumeMounts), "tmp")
+				assert.NotContains(t, agentVolumesByName(podSpec.Volumes), "tmp")
 			})
 		})
 	}
