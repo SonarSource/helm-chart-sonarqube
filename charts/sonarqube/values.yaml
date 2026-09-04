@@ -1330,11 +1330,16 @@ agentKeyDerivation:
     #   - name: my-repo-secret
   serviceAccount:
     # The Job needs its own ServiceAccount: it writes the derived Secrets through the Kubernetes
-    # API, which means a Role granting get/create/update on secrets. Set create: false and name to
+    # API, which means a Role granting create/update on secrets. Set create: false and name to
     # an existing account only if you'd rather bind that Role yourself.
     create: true
     name: ""
     annotations: {}
+  # Scheduling knobs for the hook Job's pod. Each wins over the chart's global one of the same name
+  # (.Values.nodeSelector/tolerations/affinity) when set.
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
   # The Job does a handful of HKDF derivations and a few API writes, then exits - it is sized for
   # that, not for a long-lived workload. Requests are kept small so the hook schedules on a busy
   # cluster (a pending hook blocks the whole install), and limits are still generous enough that a

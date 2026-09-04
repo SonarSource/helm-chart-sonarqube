@@ -895,7 +895,11 @@ true
 {{- end -}}
 
 {{- define "sonarqube.agentKeyDerivation.fullname" -}}
-{{- printf "%s-agent-key-derivation" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- /* Truncate the fullname prefix, not the "-agent-key-derivation" suffix (21 chars) - the same
+       collision sonarqube.agentic.keySecretName guards against. Truncating the concatenation at 63
+       would render this exactly as sonarqube.fullname once that name reaches 63 characters,
+       colliding the Job/Role/RoleBinding/ServiceAccount with the chart's own primary resources. */}}
+{{- printf "%s-agent-key-derivation" (include "sonarqube.fullname" . | trunc 41 | trimSuffix "-") | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "sonarqube.agentKeyDerivation.serviceAccountName" -}}
@@ -1064,6 +1068,21 @@ Security context for the wait-for-sonarqube init container.
 */}}
 {{- define "sonarqube.agent.initContainerSecurityContext" -}}
 {{- include "sonarqube.initContainerSecurityContext" . -}}
+{{- end -}}
+
+{{/*
+Container/pod securityContext for an agent workload, omitting runAsUser/runAsGroup/fsGroup under
+OpenShift's restricted-v2 SCC (same reasoning as sonarqube.containerSecurityContext) - unlike that
+helper, this one is parameterized per-component since agent workloads hardcode different UIDs.
+Parameters (dict): ctx (required, the root context '.'), securityContext (required, the
+component's own securityContext block)
+*/}}
+{{- define "sonarqube.agent.containerSecurityContext" -}}
+{{- $securityContext := .securityContext -}}
+{{- if .ctx.Values.OpenShift.enabled -}}
+{{- $securityContext = omit $securityContext "runAsUser" "runAsGroup" "fsGroup" -}}
+{{- end -}}
+{{- toYaml $securityContext -}}
 {{- end -}}
 
 {{/*

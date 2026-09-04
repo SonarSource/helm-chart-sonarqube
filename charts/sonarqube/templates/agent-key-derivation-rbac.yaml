@@ -7,8 +7,11 @@ pod is scheduled. They sit at hook-weight -5 so they land before the Job (weight
 before-hook-creation rather than hook-succeeded as their delete policy - hook-succeeded would race
 the Job, deleting the ServiceAccount out from under a pod that is still running.
 
-The Role is deliberately minimal: only secrets, only in the release namespace, and no delete/list
-(the Job upserts by exact name and never enumerates).
+The Role is deliberately minimal: only secrets, only in the release namespace, and no get/delete/
+list (the Job upserts by exact name via PUT/POST and never reads or enumerates). `create` cannot be
+scoped by resourceNames (the object doesn't exist yet), so it stays namespace-wide out of
+necessity; `update` is scoped to exactly the Secrets this release writes, since - unlike `create` -
+this Role survives `helm uninstall` (see below).
 */}}
 {{- if eq (include "sonarqube.agentKeyDerivation.required" .) "true" }}
 {{- if .Values.agentKeyDerivation.serviceAccount.create }}
@@ -52,7 +55,17 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "create", "update"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["update"]
+    resourceNames:
+      {{- range $consumer := (list "orchestrator" "hunter" "remediation" "sqs" "vortex") }}
+      {{- $labels := fromYamlArray (include "sonarqube.agentic.keyLabels" (dict "ctx" $ "consumer" $consumer)) }}
+      {{- if $labels }}
+      - {{ include "sonarqube.agentic.keySecretName" (dict "ctx" $ "consumer" $consumer) }}
+      {{- end }}
+      {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

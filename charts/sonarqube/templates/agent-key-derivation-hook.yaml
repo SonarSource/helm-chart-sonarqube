@@ -66,14 +66,17 @@ spec:
       imagePullSecrets: {{- $pullSecrets | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "sonarqube.agentKeyDerivation.serviceAccountName" . }}
-      {{- with .Values.agentKeyDerivation.securityContext }}
+      {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" .Values.agentKeyDerivation.securityContext))) }}
       securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (include "sonarqube.agent.scheduling" (dict "ctx" . "component" .Values.agentKeyDerivation)) }}
+{{ . | indent 6 }}
       {{- end }}
       containers:
         - name: derive-keys
           image: "{{ $image.repository }}:{{ $image.tag }}"
           imagePullPolicy: {{ $image.pullPolicy | default "IfNotPresent" }}
-          {{- with .Values.agentKeyDerivation.containerSecurityContext }}
+          {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" .Values.agentKeyDerivation.containerSecurityContext))) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- with .Values.agentKeyDerivation.resources }}
@@ -91,6 +94,8 @@ spec:
               SECRET_FILE=/etc/agentic/instance-secret/instance-secret
               KEYS=$(mktemp -d)
               RESP=$(mktemp)
+              BODY_FILE=$(mktemp)
+              CFG_FILE=$(mktemp)
 
               # Derive every label any enabled consumer needs, in one pass. derive-keys.sh is
               # deterministic, so re-running it on upgrade reproduces the same keys - an upgrade
@@ -111,12 +116,21 @@ spec:
               # back to POST when it isn't there yet. Any other status is fatal - notably 403,
               # which means the Role didn't apply and silently continuing would leave the
               # consumers mounting nothing.
+              #
+              # Method/URL are passed as argv (no secret material there); the token and body go
+              # through a curl config file instead of -H/--data, since curl's own argv is readable
+              # by anything with host /proc access via /proc/<pid>/cmdline for as long as the
+              # request is in flight. printf is a shell builtin here (no execve, so its arguments
+              # never appear in any process's /proc/<pid>/cmdline either).
               api_write() {
-                curl -sS -o "$RESP" -w '%{http_code}' \
-                  --cacert "$SA/ca.crt" \
-                  -H "Authorization: Bearer $TOKEN" \
-                  -H 'Content-Type: application/json' \
-                  -X "$1" --data "$3" "$2"
+                printf '%s' "$3" > "$BODY_FILE"
+                {
+                  printf 'cacert = "%s/ca.crt"\n' "$SA"
+                  printf 'header = "Authorization: Bearer %s"\n' "$TOKEN"
+                  printf 'header = "Content-Type: application/json"\n'
+                  printf 'data-binary = "@%s"\n' "$BODY_FILE"
+                } > "$CFG_FILE"
+                curl -sS -o "$RESP" -w '%{http_code}' -X "$1" "$2" -K "$CFG_FILE"
               }
 
               write_secret() {

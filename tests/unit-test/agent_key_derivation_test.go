@@ -207,7 +207,11 @@ func TestAgentKeyDerivationRBACPrecedesTheJob(t *testing.T) {
 }
 
 // The Role is the blast radius of the hook. It upserts Secrets by exact name and never enumerates,
-// so it must not have list/watch/delete - and it must stay a namespaced Role, never a ClusterRole.
+// so it must not have list/watch/delete or a bare get - and it must stay a namespaced Role, never
+// a ClusterRole. create can't be scoped by name (the Secret doesn't exist yet on install), but
+// update must be pinned to exactly the Secrets the enabled consumers actually write - anything
+// wider hands this Role, which survives a helm uninstall, standing write access to every other
+// Secret in the namespace.
 func TestAgentKeyDerivationRoleIsLeastPrivilege(t *testing.T) {
 	for _, chart := range agenticKeyCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -226,10 +230,55 @@ func TestAgentKeyDerivationRoleIsLeastPrivilege(t *testing.T) {
 			}
 			require.True(t, found, "no Role rendered")
 
-			require.Len(t, role.Rules, 1)
-			assert.Equal(t, []string{""}, role.Rules[0].APIGroups)
-			assert.Equal(t, []string{"secrets"}, role.Rules[0].Resources)
-			assert.Equal(t, []string{"get", "create", "update"}, role.Rules[0].Verbs)
+			require.Len(t, role.Rules, 2)
+
+			createRule := role.Rules[0]
+			assert.Equal(t, []string{""}, createRule.APIGroups)
+			assert.Equal(t, []string{"secrets"}, createRule.Resources)
+			assert.Equal(t, []string{"create"}, createRule.Verbs)
+			assert.Empty(t, createRule.ResourceNames, "create can't be scoped by name, but must not be widened to other verbs")
+
+			updateRule := role.Rules[1]
+			assert.Equal(t, []string{""}, updateRule.APIGroups)
+			assert.Equal(t, []string{"secrets"}, updateRule.Resources)
+			assert.Equal(t, []string{"update"}, updateRule.Verbs)
+			assert.ElementsMatch(t, []string{
+				chart.keySecretName("orchestrator"),
+				chart.keySecretName("hunter"),
+				chart.keySecretName("remediation"),
+				chart.keySecretName("sqs"),
+				chart.keySecretName("vortex"),
+			}, updateRule.ResourceNames)
+		})
+	}
+}
+
+// A partial agentic install must only be able to update the Secrets it actually writes - the
+// resourceNames list has to track the enabled-consumer set exactly, not the full five-consumer
+// matrix.
+func TestAgentKeyDerivationRoleResourceNamesTrackEnabledConsumers(t *testing.T) {
+	for _, chart := range agenticKeyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			output, err := renderKeyDerivation(t, chart, "gvisor-hunter-only.yaml", nil)
+			require.NoError(t, err)
+
+			var role rbacv1.Role
+			var found bool
+			for _, doc := range strings.Split(output, "\n---") {
+				if !strings.Contains(doc, "kind: Role\n") {
+					continue
+				}
+				helm.UnmarshalK8SYaml(t, doc, &role)
+				found = true
+			}
+			require.True(t, found, "no Role rendered")
+
+			require.Len(t, role.Rules, 2)
+			assert.ElementsMatch(t, []string{
+				chart.keySecretName("orchestrator"),
+				chart.keySecretName("hunter"),
+				chart.keySecretName("sqs"),
+			}, role.Rules[1].ResourceNames, "no remediation or vortex Secret in this fixture")
 		})
 	}
 }
@@ -328,6 +377,35 @@ func TestAgenticKeySecretNamesSurviveALongReleaseName(t *testing.T) {
 				consumers = append(consumers, consumer)
 			}
 			assert.ElementsMatch(t, []string{"orchestrator", "hunter", "remediation", "sqs", "vortex"}, consumers)
+		})
+	}
+}
+
+// sonarqube.agentKeyDerivation.fullname appends its suffix to sonarqube.fullname and only then
+// truncates to 63 - so once sonarqube.fullname itself already sits at the cap, appending and
+// re-truncating must not collapse right back onto it. If it did, the hook's Job/ServiceAccount/
+// Role/RoleBinding would collide with the chart's own primary resources instead of just with each
+// other.
+func TestAgentKeyDerivationFullnameSurvivesALongReleaseName(t *testing.T) {
+	for _, chart := range agenticKeyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			// Chosen so release name + "-" + chart name lands exactly on sonarqube.fullname's
+			// 63-character cap for this chart.
+			longRelease := strings.Repeat("x", 63-len(chart.name)-1)
+			mainFullname := longRelease + "-" + chart.name
+			require.Len(t, mainFullname, 63)
+
+			output, err := helm.RenderTemplateE(t, agentPropertiesOptions(chart, "agent-runtimes-enabled.yaml", nil),
+				chart.path, longRelease, []string{keyDerivationHookTemplate})
+			require.NoError(t, err)
+			var job batchv1.Job
+			helm.UnmarshalK8SYaml(t, output, &job)
+
+			assert.LessOrEqual(t, len(job.Name), 63, "%s is not a valid resource name", job.Name)
+			assert.NotEqual(t, mainFullname, job.Name,
+				"the hook's name must not collapse onto the chart's own fullname")
+			assert.True(t, strings.HasSuffix(job.Name, "-agent-key-derivation"),
+				"truncating the prefix must not eat the suffix that makes this name distinct: got %q", job.Name)
 		})
 	}
 }
