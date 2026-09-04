@@ -63,11 +63,12 @@ spec:
               protocol: TCP
           {{- /* Auto-wire each family's mode-switch env var so users don't hand-set it. The hunter
                  runtime reads SCRIPT_PATH (detection mode); the remediation runtime reads
-                 REMEDIATION_SCRIPT_PATH plus REMEDIATION_RULE_INFO_ENDPOINT, which points at the
-                 in-cluster orchestrator (hunter never calls the orchestrator for rule-info, so it
-                 gets no such var). User-provided env (e.g. ANTHROPIC_API_KEY) is appended next and
-                 overrides these if repeated - except the proxy vars below, which are appended
-                 last and always win: see that comment for why. */}}
+                 REMEDIATION_SCRIPT_PATH plus REMEDIATION_RULE_INFO_ENDPOINT and
+                 REMEDIATION_ANALYSIS_ENDPOINT, which point directly at SonarQube Server, not the
+                 orchestrator (hunter never calls these endpoints, so it gets no such vars).
+                 User-provided env (e.g. ANTHROPIC_API_KEY) is appended next and overrides these
+                 if repeated - except the proxy vars below, which are appended last and always
+                 win: see that comment for why. */}}
           {{- $autoEnv := list }}
           {{- if eq $family "hunter" }}
           {{- with $cfg.scriptPath }}
@@ -78,7 +79,8 @@ spec:
           {{- with $cfg.remediationScriptPath }}
           {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_SCRIPT_PATH" "value" .) }}
           {{- end }}
-          {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_RULE_INFO_ENDPOINT" "value" (printf "%s/remediation-agent/rule-info" (include "sonarqube.agentOrchestrator.url" $))) }}
+          {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_RULE_INFO_ENDPOINT" "value" (printf "%s/api/rules/show" (include "sonarqube.agent.sonarqube.url" $))) }}
+          {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_ANALYSIS_ENDPOINT" "value" (printf "%s/api/v2/a3s/private/analyses" (include "sonarqube.agent.sonarqube.url" $))) }}
           {{- end }}
           {{- /* One variable per HKDF-derived key file mounted below - a runtime only ever holds
                  the key for its own hop with the orchestrator (plus, for remediation, its hop to

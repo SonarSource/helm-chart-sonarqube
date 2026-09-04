@@ -328,23 +328,23 @@ func assertAgenticEndpointRegexMatches(t *testing.T, chart agentChart, webContex
 
 	for _, tc := range []agenticEndpointCase{
 		{webContext + "/api/rules/show?key=java:S1481", true, "the real v1 rule-lookup path"},
-		{webContext + "/api/v2/a3s/analyses", true, "the real v2 analysis-creation path"},
+		{webContext + "/api/v2/a3s/private/analyses", true, "the real v2 analysis-creation path"},
 		{webContext + "/rules/show?key=java:S1481", true, "unversioned form must keep matching too"},
-		{webContext + "/a3s/analyses", true, "unversioned analysis-creation form"},
-		{webContext + "/a3s/analyses/123", true, "a sub-resource of analyses"},
+		{webContext + "/a3s/private/analyses", true, "unversioned analysis-creation form"},
+		{webContext + "/a3s/private/analyses/123", true, "a sub-resource of analyses"},
 		{"/anything?x=/rules/show", false, "a query string must not smuggle the path past the scoping"},
-		{"/anything?x=/a3s/analyses", false, "same, for a3s/analyses"},
+		{"/anything?x=/a3s/private/analyses", false, "same, for a3s/private/analyses"},
 		{"/rules/showdown", false, "an unrelated path that merely shares a prefix"},
-		{webContext + "/api/v2/a3s/private/analyses", false, "the internal variant is not part of the guarantee"},
+		{webContext + "/api/v2/a3s/analyses", false, "missing the private/ segment is not the real endpoint"},
 		{webContext + "/api/v2/a3s/contexts", false, "scoping is per-endpoint, not the whole a3s surface"},
 	} {
 		assert.Equal(t, tc.allow, matches(tc.path), "%s: %s", tc.path, tc.why)
 	}
 }
 
-// SonarQube's rule-lookup (api/rules/show) and analysis-creation (api/v2/a3s/analyses) endpoints
-// must always be reachable through the proxy, hardcoded independently of allowedDomains - there is
-// no values key that can remove this allow rule, unlike everything in allowedDomains.
+// SonarQube's rule-lookup (api/rules/show) and analysis-creation (api/v2/a3s/private/analyses)
+// endpoints must always be reachable through the proxy, hardcoded independently of allowedDomains -
+// there is no values key that can remove this allow rule, unlike everything in allowedDomains.
 func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 	for _, chart := range egressProxyCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -367,13 +367,13 @@ func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 				// Fully qualified, not the bare short name - Squid's own DNS resolver doesn't honour
 				// /etc/resolv.conf's search list, so a bare Service name can never resolve for it.
 				assert.Contains(t, conf, "acl sonarqube_host dstdomain "+chart.fullnamePrefix()+".default.svc.cluster.local")
-				assert.Contains(t, conf, "acl sonarqube_agentic_endpoints urlpath_regex ^[^?]*/rules/show(\\?|$) ^[^?]*/a3s/analyses(/|\\?|$)")
+				assert.Contains(t, conf, "acl sonarqube_agentic_endpoints urlpath_regex ^[^?]*/rules/show(\\?|$) ^[^?]*/a3s/private/analyses(/|\\?|$)")
 				assert.Contains(t, conf, "http_access allow sonarqube_host sonarqube_agentic_endpoints")
 				assert.Contains(t, conf, "acl Safe_ports port 9000", "SonarQube's default externalPort must be reachable too")
 			})
 
 			// Prefix tolerance is load-bearing twice over: the two endpoints sit on different API
-			// versions (api/rules/show is v1, api/v2/a3s/analyses is v2), and the chart hands the
+			// versions (api/rules/show is v1, api/v2/a3s/private/analyses is v2), and the chart hands the
 			// agents a web-context-aware base URL (AGENTIC_SONARQUBE_URL is built from
 			// sonarqube.webcontext) so the path Squid sees also carries whatever sonarWebContext is
 			// set to. Asserting on the rendered literal alone can't catch a regex that no longer
@@ -414,19 +414,16 @@ func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 	}
 }
 
-// The Agent Orchestrator's rule-info endpoint must always be reachable through the proxy: the
-// remediation runtime's REMEDIATION_RULE_INFO_ENDPOINT points at it directly, hardcoded
-// independently of allowedDomains - there is no values key that can remove this allow rule, unlike
-// everything in allowedDomains. The allow rule is scoped to that one path (not the whole
-// orchestrator_host), the same way sonarqube_agentic_endpoints scopes sonarqube_host above.
-func TestAgentEgressProxyAlwaysAllowsOrchestrator(t *testing.T) {
+// The remediation runtime now calls SonarQube Server directly for rule-info and
+// analysis-creation instead of proxying through the Agent Orchestrator, so the egress proxy must
+// no longer carry any orchestrator-specific allow rule.
+func TestAgentEgressProxyNeverAllowsOrchestrator(t *testing.T) {
 	for _, chart := range egressProxyCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			setValues := map[string]string{
 				"remediationAgent.enabled":          "true",
 				"remediationAgent.image.repository": "example.com/remediation-agent",
 				"remediationAgent.image.tag":        "1",
-				// allowedDomains left empty on purpose: the orchestrator allow rule must not depend on it.
 			}
 			output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
 			require.NoError(t, err)
@@ -435,12 +432,9 @@ func TestAgentEgressProxyAlwaysAllowsOrchestrator(t *testing.T) {
 			helm.UnmarshalK8SYaml(t, output, &cm)
 			conf := cm.Data["squid.conf"]
 
-			assert.Contains(t, conf, "acl orchestrator_host dstdomain "+chart.fullnamePrefix()+"-agent-orchestrator.default.svc.cluster.local")
-			assert.Contains(t, conf, "acl orchestrator_agentic_endpoints urlpath_regex ^/remediation-agent/rule-info(\\?|$)")
-			assert.Contains(t, conf, "http_access allow orchestrator_host orchestrator_agentic_endpoints")
-			assert.Contains(t, conf, "acl Safe_ports port 8080", "the orchestrator's default port must be reachable too")
-			assert.NotContains(t, conf, "urlpath_regex /remediation-agent/rule-info",
-				"the regex must be anchored with ^, or a query string like ?x=/remediation-agent/rule-info on any orchestrator path would bypass the path scoping")
+			assert.NotContains(t, conf, "orchestrator_host")
+			assert.NotContains(t, conf, "orchestrator_agentic_endpoints")
+			assert.NotContains(t, conf, "acl Safe_ports port 8080", "the orchestrator's port has no reason to be reachable through the proxy anymore")
 		})
 	}
 }
@@ -545,10 +539,9 @@ func testAgentEgressProxyNetworkPolicyEnabled(t *testing.T, chart agentChart) {
 	assert.NotContains(t, ingress.From[0].PodSelector.MatchLabels, "sonarqube.agent/family",
 		"must select both families, not just one")
 
-	require.Len(t, policy.Spec.Egress, 4, "DNS, the SonarQube pod rule, the orchestrator pod rule, plus the broad 0.0.0.0/0 rule")
+	require.Len(t, policy.Spec.Egress, 3, "DNS, the SonarQube pod rule, plus the broad 0.0.0.0/0 rule")
 	broad := findEgressRuleTo(policy.Spec.Egress, isBroadIPBlockRule)
 	sonarqube := findEgressRuleTo(policy.Spec.Egress, isSonarQubePodRule(chart))
-	orchestrator := findEgressRuleTo(policy.Spec.Egress, isOrchestratorPodRule(chart))
 
 	require.NotNil(t, broad, "expected a broad ipBlock egress rule")
 	assert.Equal(t, "0.0.0.0/0", broad.To[0].IPBlock.CIDR)
@@ -561,10 +554,8 @@ func testAgentEgressProxyNetworkPolicyEnabled(t *testing.T, chart agentChart) {
 	require.Len(t, sonarqube.Ports, 1)
 	assert.EqualValues(t, 9000, sonarqube.Ports[0].Port.IntVal)
 
-	require.NotNil(t, orchestrator, "expected a rule allowing egress to the Agent Orchestrator pod - "+
-		"this backs the hardcoded orchestrator_host allow rule in agent-egress-proxy-configmap.yaml")
-	require.Len(t, orchestrator.Ports, 1)
-	assert.EqualValues(t, 8080, orchestrator.Ports[0].Port.IntVal)
+	assert.Nil(t, findEgressRuleTo(policy.Spec.Egress, isOrchestratorPodRule(chart)),
+		"the orchestrator egress rule must no longer exist - remediation now calls SonarQube Server directly")
 }
 
 func testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t *testing.T, chart agentChart) {
