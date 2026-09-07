@@ -133,6 +133,16 @@ networkPolicy:
   # expects https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#networkpolicyspec-v1-networking-k8s-io
   # additionalNetworkPolicies:
 
+# Set enabled to true when this namespace has Istio sidecar injection turned on (e.g. the
+# istio-injection=enabled namespace label). The agent NetworkPolicies (agentEgressProxy.networkPolicy,
+# agentOrchestrator's hunter/remediation runtime networkPolicy) are explicit egress allow-lists, so
+# without this a pod's own injected sidecar can never reach istiod's control plane and the pod stays
+# NotReady forever. Has no effect on any NetworkPolicy left at its default enabled: false.
+istio:
+  enabled: false
+  # Namespace istiod runs in.
+  namespace: "istio-system"
+
 # will be used as default for ingress/httproute path and probes path, will be injected in .Values.env as SONAR_WEB_CONTEXT
 # if .Values.env.SONAR_WEB_CONTEXT is set, this value will be ignored
 sonarWebContext: ""

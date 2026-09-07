@@ -28,6 +28,11 @@ spec:
           protocol: TCP
   egress:
 {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
+    {{- /* Only when this family actually gets a sidecar: under gVisor it's excluded from
+           injection entirely (see agent-runtime.yaml) and so never needs to reach istiod. */}}
+    {{- if and $.Values.istio.enabled (ne (include "sonarqube.gvisor.enabled" $) "true") }}
+{{ include "sonarqube.agent.istiodEgressRule" $ | indent 4 }}
+    {{- end }}
     {{- /* All other runtime egress - including reaching the orchestrator and reading/writing job
            artifacts against object storage via presigned URLs - transits the Agent Egress Proxy.
            There is no direct-to-orchestrator or direct-to-storage rule here: the proxy's own
