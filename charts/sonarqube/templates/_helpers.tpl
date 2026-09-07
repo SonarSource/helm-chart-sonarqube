@@ -1214,7 +1214,7 @@ Usage: {{- with (include "sonarqube.agent.egressProxy.probe" .Values.agentEgress
 */}}
 {{- define "sonarqube.agent.egressProxy.probe" -}}
 tcpSocket:
-  port: http-proxy
+  port: tcp-proxy
 {{- with .periodSeconds }}
 periodSeconds: {{ . }}
 {{- end }}
