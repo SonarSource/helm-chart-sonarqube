@@ -5,8 +5,13 @@ metadata:
   name: "{{ .Release.Name }}-ui-test"
   annotations:
     "helm.sh/hook": test-success
+    {{- if .Values.istio.enabled }}
+    {{- /* Join the mesh: the app pod's STRICT mTLS otherwise rejects this plaintext curl. */}}
+    "sidecar.istio.io/inject": "true"
+    {{- else }}
     # Disable Istio sidecar injection for this test pod
     "sidecar.istio.io/inject": "false"
+    {{- end }}
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 spec:
   automountServiceAccountToken: false
@@ -23,6 +28,12 @@ spec:
     - name: {{ .Release.Name }}-ui-test
       image: {{ .Values.tests.image | default (include "sonarqube.image" .) | quote }}
       imagePullPolicy: {{ .Values.image.pullPolicy }}
+      {{- if .Values.istio.enabled }}
+      {{- /* Without a native sidecar (Istio >= 1.27 + Kubernetes >= 1.29), istio-proxy keeps
+             running after curl exits, so this test Pod never reaches Succeeded and `helm test`
+             times out - request its shutdown, but always exit with curl's own status. */}}
+      command: ["sh", "-c", 'curl --retry-connrefused --retry 12 --retry-delay 1 --max-time 5 -s "{{ template "sonarqube.fullname" . }}:{{ .Values.service.internalPort }}/api/system/status"; rc=$?; curl -sS -m 5 -X POST http://127.0.0.1:15020/quitquitquit || true; exit $rc']
+      {{- else }}
       command: ['curl']
       args: [
         '--retry-connrefused',
@@ -35,6 +46,7 @@ spec:
         '-s',
         '{{ template "sonarqube.fullname" . }}:{{ .Values.service.internalPort }}/api/system/status'
         ]
+      {{- end }}
       {{- with .Values.tests.resources }}
       resources: {{- toYaml . | nindent 8 }}
       {{- end }}
