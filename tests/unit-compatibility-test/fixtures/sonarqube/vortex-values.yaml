@@ -98,7 +98,8 @@ metadata:
     app.kubernetes.io/component: vortex
 type: Opaque
 data:
-  VORTEX_ANALYSIS_SONARQUBE_TOKEN: "c3F1X2V4YW1wbGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+  SONAR_AGENTIC_STORAGE_ACCESS_KEY: "bWluaW9hZG1pbg=="
+  SONAR_AGENTIC_STORAGE_SECRET_KEY: "bWluaW9zZWNyZXQ="
 ---
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
@@ -241,7 +242,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secret: 1e79a8495bf6dc1d83602f4636f794bb7e4176aa5aeca1924d62560d61d384bc
+        checksum/secret: 594e512ffd756edf3b4eb7d310b2134687497dd79c67d345ee912f4ada7b9166
       labels:
         app: sonarqube-vortex
         release: vortex-values.yaml
@@ -269,11 +270,6 @@ spec:
           env:
             - name: VORTEX_ANALYSIS_SONARQUBE_URL
               value: "http://vortex-values.yaml-sonarqube:9000"
-            - name: VORTEX_ANALYSIS_SONARQUBE_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: vortex-values.yaml-sonarqube-vortex
-                  key: VORTEX_ANALYSIS_SONARQUBE_TOKEN
             - name: SONAR_AGENTIC_STORAGE_TYPE
               value: "S3"
             - name: SONAR_AGENTIC_STORAGE_BUCKET
@@ -286,6 +282,16 @@ spec:
               value: ""
             - name: SONAR_AGENTIC_STORAGE_FILESYSTEM_BASE_DIR
               value: ""
+            - name: SONAR_AGENTIC_STORAGE_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vortex-values.yaml-sonarqube-vortex
+                  key: SONAR_AGENTIC_STORAGE_ACCESS_KEY
+            - name: SONAR_AGENTIC_STORAGE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vortex-values.yaml-sonarqube-vortex
+                  key: SONAR_AGENTIC_STORAGE_SECRET_KEY
             - name: AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
               value: /etc/agentic/keys/agentic-shared
             - name: MY_VAR

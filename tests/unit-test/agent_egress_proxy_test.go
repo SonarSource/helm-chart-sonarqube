@@ -50,7 +50,6 @@ func renderAgentEgressProxyTemplates(t *testing.T, chart agentChart, setValues m
 		"vortex.enabled":                     "true",
 		"vortex.image.repository":            "example.com/vortex",
 		"vortex.image.tag":                   "1",
-		"vortex.sonarqubeToken.token":        "squ_example000000000000000000000000000000",
 		"vortex.storage.type":                "s3",
 		"vortex.storage.bucket":              "vortex-artifacts",
 		"vortex.storage.region":              "eu-west-1",

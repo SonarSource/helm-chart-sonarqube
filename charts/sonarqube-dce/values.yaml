@@ -908,15 +908,6 @@ vortex:
   strategy:
     type: Recreate
 
-  # Token Vortex analysis uses to call the SonarQube Web API. Required for analysis to succeed.
-  sonarqubeToken:
-    # The token itself. Ignored when existingSecret is set.
-    token: ""
-    # Name of an existing Secret containing the token.
-    existingSecret: ""
-    # Key inside existingSecret. Defaults to VORTEX_ANALYSIS_SONARQUBE_TOKEN.
-    existingSecretKey: ""
-
   # S3-compatible object storage for Vortex analysis context restoration. Must point at the same
   # bucket SonarQube Server writes context to (sonar.agentic.storage.*).
   storage:
@@ -1092,22 +1083,12 @@ agentOrchestrator:
     # Existing secret providing AGENTIC_STORAGE_ACCESS_KEY / AGENTIC_STORAGE_SECRET_KEY
     existingSecret: ""
 
-  # Bearer token for AGENTIC_SONARQUBE_URL's /api/issues/search, used by the remediation
-  # dispatcher to enrich issues before pushing a job. Blank -> anonymous access (fails against a
-  # SonarQube instance that requires auth; the remediation job then fails at dispatch).
-  sonarqubeToken:
-    # Inline token; ignored when existingSecret is set -> AGENTIC_SONARQUBE_TOKEN
-    token: ""
-    # Existing secret providing the token
-    existingSecret: ""
-    # Key within existingSecret; defaults to AGENTIC_SONARQUBE_TOKEN
-    existingSecretKey: ""
-
   # Remediation flow: push a fix branch and open a PR via the GitHub REST API. No token is
   # configured here: since SONAR-30903 the orchestrator obtains a short-lived GitHub App
-  # installation token from SonarQube on demand (via sonarqubeToken above), right
-  # before each git operation. Configure a GitHub App DevOps integration on SonarQube and bind
-  # the project for the PR flow to succeed.
+  # installation token from SonarQube on demand, authenticating with the derived agentic signing
+  # key (agenticSigningSecret) rather than a static token, right before each git operation.
+  # Configure a GitHub App DevOps integration on SonarQube and bind the project for the PR flow to
+  # succeed.
   github:
     # AGENTIC_GITHUB_API_BASE_URL; blank -> orchestrator's own default (real api.github.com).
     # Override for GitHub Enterprise Server, or to point at a local mock.
