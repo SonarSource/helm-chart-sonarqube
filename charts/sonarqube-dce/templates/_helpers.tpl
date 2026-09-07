@@ -1366,10 +1366,12 @@ Elasticsearch major (8 or 9) inferred from a search image tag.
 {{- if $ver -}}
 {{- $year := int (split "." $ver)._0 -}}
 {{- $minor := int (split "." $ver)._1 -}}
+{{- if ge $year 2025 -}}
 {{- if or (gt $year 2026) (and (eq $year 2026) (ge $minor 4)) -}}
 9
 {{- else -}}
 8
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -1391,8 +1393,12 @@ Fail helm upgrade across an Elasticsearch major while search pods are still runn
 {{- $currentMajor = index . "sonarqube.datacenter/elasticsearch-major" | default "" | toString -}}
 {{- end -}}
 {{- if and (not $currentMajor) $sts.spec $sts.spec.template $sts.spec.template.spec $sts.spec.template.spec.containers -}}
-{{- $image := (index $sts.spec.template.spec.containers 0).image | toString -}}
-{{- $currentMajor = include "sonarqube.search.esMajorFromTag" (regexFind "[^:]+$" $image) -}}
+{{- $searchContainerName := printf "%s-search" .Chart.Name -}}
+{{- range $sts.spec.template.spec.containers -}}
+{{- if eq (.name | toString) $searchContainerName -}}
+{{- $currentMajor = include "sonarqube.search.esMajorFromTag" (regexFind "[^:]+$" (.image | toString)) -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 {{- $targetMajor := include "sonarqube.search.esMajor" . -}}
 {{- if and $currentMajor $targetMajor (ne $currentMajor $targetMajor) -}}

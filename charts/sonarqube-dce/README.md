@@ -85,7 +85,12 @@ A rolling update of the search StatefulSet cannot cross an Elasticsearch major v
 helm upgrade -n sonarqube-dce <yourReleaseName> <yourCurrentChart> --reuse-values --set searchNodes.replicaCount=0
 ```
 
-2. Upgrade to the new chart (default `searchNodes.replicaCount` is 3). Do not change the image tag in step 1.
+2. Upgrade to the new chart and restore the search replica count. Do not change the image tag in step 1:
+
+```bash
+helm upgrade -n sonarqube-dce <yourReleaseName> <yourNewChart> --reuse-values --set searchNodes.replicaCount=3
+```
+
 3. After search is Ready, browse to `/setup` and follow the instructions. Indexes are rebuilt into `es9`; rolling back in place is not supported.
 
 The upgrade fails while search pods are still running on the previous Elasticsearch major.

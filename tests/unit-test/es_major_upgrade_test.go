@@ -47,6 +47,8 @@ func TestSearchEsMajorAnnotationFromImageTag(t *testing.T) {
 		{"2026.3.1-datacenter-search", "8"},
 		{"2026.4.0-datacenter-search", "9"},
 		{"2026.5.0-datacenter-search", "9"},
+		{"2025.1.0-datacenter-search", "8"},
+		{"9.9.0-datacenter-search", ""},
 		{"custom-build", ""},
 	}
 	for _, tc := range cases {
