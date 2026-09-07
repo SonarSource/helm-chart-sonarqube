@@ -29,6 +29,53 @@
                 }
             }
         },
+        "istio": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "meshSidecar": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "meshPort": {
+                            "type": "integer",
+                            "minimum": 1024,
+                            "maximum": 65535,
+                            "not": {
+                                "allOf": [
+                                    { "minimum": 15000 },
+                                    { "maximum": 15100 }
+                                ]
+                            }
+                        },
+                        "proxyImage": {
+                            "type": "object",
+                            "properties": {
+                                "repository": {
+                                    "type": "string"
+                                },
+                                "tag": {
+                                    "type": [
+                                        "string",
+                                        "number"
+                                    ]
+                                }
+                            }
+                        },
+                        "resources": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
         "OpenShift": {
             "type": "object",
             "properties": {
@@ -1421,6 +1468,17 @@
                             "type": "object"
                         }
                     }
+                }
+            }
+        },
+        "agentRuntimeSandbox": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "runtimeClassName": {
+                    "type": "string"
                 }
             }
         },
