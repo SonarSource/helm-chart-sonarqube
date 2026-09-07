@@ -295,21 +295,6 @@ stringData:
   PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
   PROMETHEUS-EXPORTER-NO-PROXY: ""
 ---
-# Source: sonarqube/templates/vortex-secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: remediation-agent-values.yaml-sonarqube-vortex
-  labels:
-    app: sonarqube
-    chart: sonarqube-2026.5.0
-    release: remediation-agent-values.yaml
-    heritage: Helm
-    app.kubernetes.io/component: vortex
-type: Opaque
-data:
-  VORTEX_ANALYSIS_SONARQUBE_TOKEN: "c3F1X2V4YW1wbGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
----
 # Source: sonarqube/templates/agent-egress-proxy-configmap.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -1421,7 +1406,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secret: 4dad0a15bfa711c65b72e845ca47257cb8e343c74c87e873f091bd269db8f1c0
+        checksum/secret: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
       labels:
         app: sonarqube-vortex
         release: remediation-agent-values.yaml
@@ -1449,11 +1434,6 @@ spec:
           env:
             - name: VORTEX_ANALYSIS_SONARQUBE_URL
               value: "http://remediation-agent-values.yaml-sonarqube:9000"
-            - name: VORTEX_ANALYSIS_SONARQUBE_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: remediation-agent-values.yaml-sonarqube-vortex
-                  key: VORTEX_ANALYSIS_SONARQUBE_TOKEN
             - name: SONAR_AGENTIC_STORAGE_TYPE
               value: "S3"
             - name: SONAR_AGENTIC_STORAGE_BUCKET

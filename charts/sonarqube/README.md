@@ -969,9 +969,6 @@ The Agent Orchestrator reads and writes SonarQube's own database, so `agentOrche
 | `vortex.port`                           | Port the container / Service serves HTTP on                                                                      | `8080`                                                                 |
 | `vortex.replicaCount`                   | Vortex replica count                                                                                    | `1`                                                                    |
 | `vortex.strategy`                       | Deployment update strategy; `Recreate` avoids running two pods at once during an upgrade                         | `{type: Recreate}`                                                     |
-| `vortex.sonarqubeToken.token`           | Inline SonarQube token for the callback (`VORTEX_ANALYSIS_SONARQUBE_TOKEN`); required unless `existingSecret` is set | `""`                                                                |
-| `vortex.sonarqubeToken.existingSecret`  | Existing secret providing the callback token; required unless `token` is set                                     | `""`                                                                   |
-| `vortex.sonarqubeToken.existingSecretKey` | Key within `existingSecret` (defaults to `VORTEX_ANALYSIS_SONARQUBE_TOKEN`)                                     | `""`                                                                   |
 | `vortex.storage.type`                   | Object storage backend for Vortex analysis context restoration (`SONAR_AGENTIC_STORAGE_TYPE`); `S3`, `FILESYSTEM`, `AZURE`, `GCS` or `NFS`; required | `S3`                                                       |
 | `vortex.storage.bucket`                 | Bucket holding Vortex analysis context items (`SONAR_AGENTIC_STORAGE_BUCKET`); required for an object-store type, ignored for `FILESYSTEM`/`NFS` | `""`                                                        |
 | `vortex.storage.region`                 | AWS region of the bucket (`SONAR_AGENTIC_STORAGE_REGION`); required for an object-store type, ignored for `FILESYSTEM`/`NFS` | `""`                                                        |
@@ -1128,9 +1125,7 @@ The Agent Orchestrator reads and writes SonarQube's own database, so `agentOrche
 
 When `vortex.enabled` is set to `true`, the chart deploys a separate Vortex pod alongside the SonarQube application nodes, and SonarQube starts sending analysis requests to it. While it is disabled, SonarQube sends none.
 
-Vortex analysis calls the SonarQube Web API, so a token is required: set either `vortex.sonarqubeToken.token` or `vortex.sonarqubeToken.existingSecret`.
-
-Context restoration also requires an S3-compatible object store matching `sonar.agentic.storage.*`: set `vortex.storage.bucket` and `vortex.storage.region`, and, if needed, `vortex.serviceAccount` for IRSA access to it.
+Context restoration requires an S3-compatible object store matching `sonar.agentic.storage.*`: set `vortex.storage.bucket` and `vortex.storage.region`, and, if needed, `vortex.serviceAccount` for IRSA access to it.
 
 The Vortex pod can take several minutes to become ready on a first start, while it loads its analyzers.
 

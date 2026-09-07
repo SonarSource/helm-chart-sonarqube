@@ -223,21 +223,6 @@ stringData:
   PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
   PROMETHEUS-EXPORTER-NO-PROXY: ""
 ---
-# Source: sonarqube-dce/templates/vortex-secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: vortex-values.yaml-sonarqube-dce-vortex
-  labels:
-    app: sonarqube-dce
-    chart: sonarqube-dce-2026.5.0
-    release: vortex-values.yaml
-    heritage: Helm
-    app.kubernetes.io/component: vortex
-type: Opaque
-data:
-  VORTEX_ANALYSIS_SONARQUBE_TOKEN: "c3F1X2V4YW1wbGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
----
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -758,7 +743,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secret: 8a67e873e447f277707e957c77d23201a7dd2f819ffab5c4e0747e8c8dba1ee6
+        checksum/secret: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
       labels:
         app: sonarqube-dce-vortex
         release: vortex-values.yaml
@@ -786,11 +771,6 @@ spec:
           env:
             - name: VORTEX_ANALYSIS_SONARQUBE_URL
               value: "http://vortex-values.yaml-sonarqube-dce:9000"
-            - name: VORTEX_ANALYSIS_SONARQUBE_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: vortex-values.yaml-sonarqube-dce-vortex
-                  key: VORTEX_ANALYSIS_SONARQUBE_TOKEN
             - name: SONAR_AGENTIC_STORAGE_TYPE
               value: "S3"
             - name: SONAR_AGENTIC_STORAGE_BUCKET
