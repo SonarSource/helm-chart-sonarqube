@@ -191,6 +191,8 @@ spec:
         app: sonarqube-mcp
         release: mcp-values.yaml
     spec:
+      securityContext:
+        fsGroup: 0
       initContainers:
         - name: wait-for-sonarqube
           image: sonarqube:2026.4.0-enterprise
@@ -223,6 +225,11 @@ spec:
               protocol: TCP
           env:
             - name: STORAGE_PATH
+              value: /data
+            # HOME is set so SonarLint (SLCORE) resolves its user home under the
+            # writable /data volume instead of "/", which is not writable for the
+            # non-root MCP user. Overridable via mcp.env below.
+            - name: HOME
               value: /data
             - name: SONARQUBE_URL
               value: http://mcp-values.yaml-sonarqube:9000
