@@ -497,6 +497,27 @@ mcp:
     enabled: false
 ```
 
+**Storage permissions:**
+
+The MCP server runs as a non-root user (UID 1000, GID 0) and must write to `/data`. The chart sets `mcp.podSecurityContext.fsGroup: 0` by default so the mounted volume is group-writable by the MCP process.
+
+**Your storage provider must honor filesystem group ownership changes (`fsGroup`).** Drivers such as NFS, hostPath, CSI drivers configured with `fsGroupPolicy: None`, and many pre-provisioned or `existingClaim` volumes ignore `fsGroup`. In those cases the volume stays root-owned and MCP fails to start with errors like `Cannot create directory` under `/data`. To handle them, either pre-provision a `/data` volume writable by group `0` (or UID `1000`), or add an ownership-fixing init container:
+
+```yaml
+mcp:
+  initContainers:
+    - name: chown-data
+      image: busybox:1.36
+      command: ["sh", "-c", "chown -R 1000:0 /data && chmod -R g+rwX /data"]
+      securityContext:
+        runAsUser: 0
+      volumeMounts:
+        - name: mcp-data
+          mountPath: /data
+```
+
+On OpenShift, do not set `fsGroup`/`runAsUser`/`runAsGroup` — the platform assigns the UID from the namespace's SCC range, and the chart removes these keys automatically when `OpenShift.enabled=true`. Note that the `chown` init container above runs as root and is therefore rejected by the `restricted` Pod Security Standard and by OpenShift's default SCC; in those environments, pre-provision a `/data` volume writable by group `0` instead — the MCP image's process runs under group `0` regardless of which UID the SCC assigns, so a UID-specific owner will not work.
+
 **TLS (encrypted communication):**
 
 When `mcp.tls.enabled` is set to `true`, the MCP server starts in HTTPS mode using the keystore from `mcp.tls.keystoreSecretName`. SonarQube connects to it over `https://`.
@@ -882,7 +903,9 @@ and set `persistence.hostPath.path` and `persistence.hostPath.type`.
 | `mcp.tls.passwordSecretName`           | Name of the Secret containing the keystore password                                                      | `""`                                                                   |
 | `mcp.tls.passwordSecretKey`            | Key inside the password Secret                                                                           | `password`                                                             |
 | `mcp.tls.keystoreType`                 | Keystore format (`PKCS12` or `JKS`)                                                                     | `PKCS12`                                                               |
+| `mcp.podSecurityContext`               | Pod-level security context for the MCP pod. `fsGroup` makes `/data` group-writable (omitted on OpenShift) | `{fsGroup: 0}`                                                         |
 | `mcp.containerSecurityContext`         | Security context for the MCP container                                                                   | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
+| `mcp.initContainers`                   | Additional init containers for the MCP pod (e.g. to chown `/data` when the storage driver ignores `fsGroup`) | `[]`                                                                   |
 | `mcp.env`                              | Additional environment variables for the MCP container                                                   | `[]`                                                                   |
 | `mcp.resources`                        | CPU/memory resource requests and limits for the MCP container                                            | `{}`                                                                   |
 | `mcp.annotations`                      | Annotations for the MCP pod                                                                              | `{}`                                                                   |
