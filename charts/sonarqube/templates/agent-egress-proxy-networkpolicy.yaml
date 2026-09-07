@@ -23,6 +23,10 @@ spec:
       ports:
         - port: {{ .Values.agentEgressProxy.port }}
           protocol: TCP
+    {{- if .Values.istio.enabled }}
+{{ include "sonarqube.istio.ambient.hboneRule" . | indent 4 }}
+{{ include "sonarqube.istio.ambient.kubeletProbeIngressRule" .Values.agentEgressProxy.port | indent 4 }}
+    {{- end }}
   egress:
 {{ include "sonarqube.agent.dnsEgressRule" . | indent 4 }}
     {{- /* Backs the hardcoded sonarqube_host allow rule in agent-egress-proxy-configmap.yaml,
@@ -52,4 +56,7 @@ spec:
         - port: {{ . }}
           protocol: TCP
         {{- end }}
+    {{- if .Values.istio.enabled }}
+{{ include "sonarqube.istio.ambient.hboneRule" . | indent 4 }}
+    {{- end }}
 {{- end }}

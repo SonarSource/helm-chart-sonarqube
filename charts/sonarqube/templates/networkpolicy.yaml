@@ -49,6 +49,9 @@ spec:
         - port: {{ .Values.service.internalPort }}
           protocol: TCP
     {{- end }}
+    {{- if .Values.istio.enabled }}
+{{ include "sonarqube.istio.ambient.hboneRule" . | indent 4 }}
+    {{- end }}
   egress:
     - to:
         - namespaceSelector:
