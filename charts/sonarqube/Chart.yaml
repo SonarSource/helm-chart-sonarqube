@@ -77,6 +77,8 @@ annotations:
       description: "Default JMX Prometheus Exporter downloads use GitHub Releases and require network access to github.com and release-assets.githubusercontent.com"
     - kind: added
       description: "Add autoscaling for Vortex (vortex.autoscaling, a KEDA ScaledObject reading Vortex's own unauthenticated GET /metrics/max-concurrent-requests endpoint, aggregated across replicas via KEDA's aggregateFromKubeServiceEndpoints; requires KEDA >= 2.20.0, with a single-replica fallback via vortex.autoscaling.aggregateAcrossReplicas), plus an unconditional vortex.terminationGracePeriodSeconds"
+    - kind: added
+      description: "Add istio.enabled to put every chart-owned workload (the SonarQube pod, Agent Orchestrator, MCP, Vortex, Agent Egress Proxy, and each agent runtime when gvisor.enabled is false) under STRICT mTLS with an explicit sidecar.istio.io/inject annotation and label on each pod - including the change-admin-password hook Job and the helm test pod, which now join the mesh instead of opting out - and istio.meshSidecar.enabled (plus the generic agentRuntimeSandbox.enabled/runtimeClassName, for sandboxes other than gVisor such as Kata Containers) to give sandboxed agent runtimes a real mTLS identity: a hand-authored istio-proxy sidecar plus a chart-owned Sidecar resource, with no istio-init and no elevated pod capabilities; requires Kubernetes >= 1.29 (the istio-proxy container is a native sidecar), checked at render time"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-community

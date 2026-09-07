@@ -27,9 +27,15 @@ spec:
         {{- with $vortex.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
       labels:
         app: {{ include "sonarqube.name" . }}-vortex
         release: {{ .Release.Name }}
+        {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
     spec:
       {{- /* Protects an in-flight analysis from an ordinary scale-down (manual, rollout, node
              drain, or KEDA-driven) dropping it mid-run - independent of whether autoscaling is

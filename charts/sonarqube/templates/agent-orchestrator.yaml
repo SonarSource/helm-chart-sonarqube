@@ -33,11 +33,17 @@ spec:
         {{- with .Values.agentOrchestrator.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
       labels:
         {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 8 }}
         sonarqube.agent/component: orchestrator
         {{- with .Values.agentOrchestrator.podLabels }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+        {{- . | nindent 8 }}
         {{- end }}
     spec:
       {{- /* Protects an in-flight graceful drain (server.shutdown: graceful) from the k8s default
