@@ -75,6 +75,21 @@ When upgrading to the 2025.6 LTA version, you will experience a few changes.
 4. Browse to <http://yourSonarQubeServerURL/setup> and follow the setup instructions
 5. Reanalyze your projects to get fresh data
 
+### Elasticsearch 8 to 9 (2026.1 LTA to 2026.5 LTA)
+
+A rolling update of the search StatefulSet cannot cross an Elasticsearch major version. Plan a maintenance window and back up the database first.
+
+1. Scale search to 0 with your **current** chart and wait until the search pods are gone:
+
+```bash
+helm upgrade -n sonarqube-dce <yourReleaseName> <yourCurrentChart> --reuse-values --set searchNodes.replicaCount=0
+```
+
+2. Upgrade to the new chart (default `searchNodes.replicaCount` is 3). Do not change the image tag in step 1.
+3. After search is Ready, browse to `/setup` and follow the instructions. Indexes are rebuilt into `es9`; rolling back in place is not supported.
+
+The upgrade fails while search pods are still running on the previous Elasticsearch major.
+
 ### Upgrade from versions prior to 2026.1.0
 
 > **Note**: If you are not using the PostgreSQL dependency (`postgresql.enabled=false`), you can skip this section.
