@@ -1,4 +1,4 @@
-# Exercises the Agent Orchestrator (Deployment/Service/Secret), the Remediation Agent
+# Exercises the Agent Orchestrator (Deployment/Service), the Remediation Agent
 # (Deployment/Service), dedicated ServiceAccounts (IRSA annotations), the remediation
 # NetworkPolicy (incl. egressAllow with ports), credential-less S3 storage (no static keys),
 # and the gVisor RuntimeClass wired onto the runtime.
@@ -29,8 +29,6 @@ agentOrchestrator:
     region: eu-west-1
     bucket: agent-artifacts
     pathStyle: false
-  sonarqubeToken:
-    token: "squ_example000000000000000000000000000000"
 
 remediationAgent:
   enabled: true
@@ -66,8 +64,6 @@ vortex:
   image:
     repository: example.com/vortex
     tag: "1"
-  sonarqubeToken:
-    token: "squ_example000000000000000000000000000000"
   storage:
     bucket: vortex-artifacts
     region: eu-west-1

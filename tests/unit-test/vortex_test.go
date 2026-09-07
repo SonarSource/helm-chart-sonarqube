@@ -130,8 +130,9 @@ func TestVortexAppNodeWiring(t *testing.T) {
 	}
 }
 
-// Vortex analysis calls the SonarQube Web API, so it needs the SonarQube URL and a token. User
-// supplied env comes last, so it can override the values the chart wires automatically.
+// Vortex analysis calls the SonarQube Web API, so it needs the SonarQube URL. It authenticates
+// with the derived agentic signing key rather than a callback token (SONAR-32130). User supplied
+// env comes last, so it can override the values the chart wires automatically.
 func TestVortexContainerEnv(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -142,12 +143,8 @@ func TestVortexContainerEnv(t *testing.T) {
 			require.True(t, ok)
 			assert.Equal(t, "http://"+chart.fullnamePrefix()+":9000", url.Value)
 
-			token, ok := env["VORTEX_ANALYSIS_SONARQUBE_TOKEN"]
-			require.True(t, ok, "the callback token must be wired when a token is configured")
-			require.NotNil(t, token.ValueFrom)
-			require.NotNil(t, token.ValueFrom.SecretKeyRef)
-			assert.Equal(t, chart.fullnamePrefix()+vortexFullnameSuffix, token.ValueFrom.SecretKeyRef.Name)
-			assert.Equal(t, "VORTEX_ANALYSIS_SONARQUBE_TOKEN", token.ValueFrom.SecretKeyRef.Key)
+			_, ok = env["VORTEX_ANALYSIS_SONARQUBE_TOKEN"]
+			assert.False(t, ok, "Vortex no longer reads a callback token; it authenticates with the derived agentic signing key")
 
 			extra, ok := env["MY_VAR"]
 			require.True(t, ok, "extra env must reach the container")
@@ -240,14 +237,14 @@ func TestVortexStorageExistingSecret(t *testing.T) {
 			assert.Equal(t, "SONAR_AGENTIC_STORAGE_ACCESS_KEY", accessKey.ValueFrom.SecretKeyRef.Key)
 
 			output, err := renderVortex(t, chart, "vortex-storage-existing-secret.yaml", "templates/vortex-secret.yaml")
-			require.Error(t, err, "no Secret may be rendered when both the token and the storage credentials come from an existingSecret")
+			require.Error(t, err, "no Secret may be rendered when the storage credentials come from an existingSecret")
 			assert.Empty(t, strings.TrimSpace(output))
 		})
 	}
 }
 
-// By default the pod talks to the Web API with its own token and never to the Kubernetes API, so
-// it must not get a ServiceAccount token mounted, and it uses "default" rather than a pinned name.
+// By default the pod talks to the Web API on its own and never to the Kubernetes API, so it must
+// not get a ServiceAccount token mounted, and it uses "default" rather than a pinned name.
 func TestVortexDoesNotAutomountServiceAccountToken(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -283,20 +280,21 @@ func TestVortexServiceAccount(t *testing.T) {
 	}
 }
 
-// The token reaches the container through secretKeyRef, which is only read at startup. Without a
-// checksum annotation, rotating it would leave the running pod on the old token.
-func TestVortexRollsOnTokenChange(t *testing.T) {
+// Static storage credentials reach the container through secretKeyRef, which is only read at
+// startup. Without a checksum annotation, rotating them would leave the running pod on the old
+// credentials.
+func TestVortexRollsOnStorageCredentialChange(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			annotations := vortexDeployment(t, chart, "vortex-enabled.yaml").Spec.Template.Annotations
+			annotations := vortexDeployment(t, chart, "vortex-storage-credentials.yaml").Spec.Template.Annotations
 			checksum, ok := annotations["checksum/secret"]
-			require.True(t, ok, "the pod template must carry a checksum of the token Secret")
+			require.True(t, ok, "the pod template must carry a checksum of the credentials Secret")
 
-			// A different token must produce a different pod template, so the upgrade rolls the pod.
+			// Different credentials must produce a different pod template, so the upgrade rolls the pod.
 			opts := &helm.Options{
 				Logger:      logger.Discard,
-				ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
-				SetValues:   map[string]string{"vortex.sonarqubeToken.token": "squ_rotated0000000000000000000000000000000"},
+				ValuesFiles: []string{chart.valuesDir + "/vortex-storage-credentials.yaml"},
+				SetValues:   map[string]string{"vortex.storage.secretKey": "rotated-secret"},
 			}
 			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
 			require.NoError(t, err)
@@ -423,37 +421,6 @@ func TestVortexService(t *testing.T) {
 	}
 }
 
-// An inline token becomes a chart-managed Secret; an existingSecret must not produce one.
-func TestVortexSecret(t *testing.T) {
-	for _, chart := range agentCharts {
-		t.Run(chart.name, func(t *testing.T) {
-			t.Run("inline token renders a Secret", func(t *testing.T) {
-				output, err := renderVortex(t, chart, "vortex-enabled.yaml", "templates/vortex-secret.yaml")
-				require.NoError(t, err)
-
-				var secret corev1.Secret
-				helm.UnmarshalK8SYaml(t, output, &secret)
-				assert.Equal(t, chart.fullnamePrefix()+vortexFullnameSuffix, secret.Name)
-				assert.Equal(t,
-					"squ_example000000000000000000000000000000",
-					string(secret.Data["VORTEX_ANALYSIS_SONARQUBE_TOKEN"]))
-			})
-
-			t.Run("existingSecret renders none and is referenced directly", func(t *testing.T) {
-				output, err := renderVortex(t, chart, "vortex-existing-secret.yaml", "templates/vortex-secret.yaml")
-				require.Error(t, err, "no Secret may be rendered when the token comes from an existingSecret")
-				assert.Empty(t, strings.TrimSpace(output))
-
-				token := vortexContainerEnv(vortexDeployment(t, chart, "vortex-existing-secret.yaml").
-					Spec.Template.Spec.Containers[0])["VORTEX_ANALYSIS_SONARQUBE_TOKEN"]
-				require.NotNil(t, token.ValueFrom)
-				assert.Equal(t, "my-vortex-token", token.ValueFrom.SecretKeyRef.Name)
-				assert.Equal(t, "TOKEN", token.ValueFrom.SecretKeyRef.Key)
-			})
-		})
-	}
-}
-
 // Enabling the service without an image must fail validation rather than deploy an invalid image
 // reference.
 func TestVortexRequiresImageRepository(t *testing.T) {
@@ -467,15 +434,14 @@ func TestVortexRequiresImageRepository(t *testing.T) {
 }
 
 // The remaining settings the service cannot start without: an image tag, since the reference is
-// built verbatim, a token, since every Web API call needs one, and the storage settings backing
-// context restoration, which have to resolve to the store SonarQube Server writes the items to.
-func TestVortexRequiresTagAndToken(t *testing.T) {
+// built verbatim, and the storage settings backing context restoration, which have to resolve to
+// the store SonarQube Server writes the items to.
+func TestVortexRequiresTagAndStorage(t *testing.T) {
 	cases := map[string]struct {
 		unset    map[string]string
 		expected string
 	}{
 		"image tag":      {map[string]string{"vortex.image.tag": ""}, "vortex.image.tag is not set"},
-		"token":          {map[string]string{"vortex.sonarqubeToken.token": ""}, "no token is set"},
 		"storage type":   {map[string]string{"vortex.storage.type": ""}, "vortex.storage.type is not set"},
 		"storage bucket": {map[string]string{"vortex.storage.bucket": ""}, "vortex.storage.bucket is not set"},
 		"storage region": {map[string]string{"vortex.storage.region": ""}, "vortex.storage.region is not set"},
@@ -503,7 +469,7 @@ func TestVortexRequiresTagAndToken(t *testing.T) {
 	}
 }
 
-// vortex.storage.bucket/region are required for the default S3 type (see TestVortexRequiresTagAndToken
+// vortex.storage.bucket/region are required for the default S3 type (see TestVortexRequiresTagAndStorage
 // above), but meaningless - and so not required - for a file-based backend that hands the runtime
 // a direct file:// path instead (SONAR-31980).
 func TestVortexStorageBucketRegionNotRequiredWhenFileBased(t *testing.T) {
