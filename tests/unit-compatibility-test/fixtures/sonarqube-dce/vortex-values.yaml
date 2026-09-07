@@ -223,6 +223,22 @@ stringData:
   PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
   PROMETHEUS-EXPORTER-NO-PROXY: ""
 ---
+# Source: sonarqube-dce/templates/vortex-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vortex-values.yaml-sonarqube-dce-vortex
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: vortex-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: vortex
+type: Opaque
+data:
+  SONAR_AGENTIC_STORAGE_ACCESS_KEY: "bWluaW9hZG1pbg=="
+  SONAR_AGENTIC_STORAGE_SECRET_KEY: "bWluaW9zZWNyZXQ="
+---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -743,7 +759,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secret: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/secret: 71af090c1706acb4e62e47f81b748658a42bee94bae7bd57ff97d6e1fd3bc9db
       labels:
         app: sonarqube-dce-vortex
         release: vortex-values.yaml
@@ -783,6 +799,16 @@ spec:
               value: ""
             - name: SONAR_AGENTIC_STORAGE_FILESYSTEM_BASE_DIR
               value: ""
+            - name: SONAR_AGENTIC_STORAGE_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vortex-values.yaml-sonarqube-dce-vortex
+                  key: SONAR_AGENTIC_STORAGE_ACCESS_KEY
+            - name: SONAR_AGENTIC_STORAGE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vortex-values.yaml-sonarqube-dce-vortex
+                  key: SONAR_AGENTIC_STORAGE_SECRET_KEY
             - name: AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
               value: /etc/agentic/keys/agentic-shared
             - name: MY_VAR

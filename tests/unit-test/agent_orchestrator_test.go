@@ -422,6 +422,42 @@ func TestAgentOrchestratorStorageEnv(t *testing.T) {
 	}
 }
 
+// With sonarqubeToken gone (SONAR-32130), inline storage credentials are the only remaining
+// condition that renders agent-orchestrator-secret.yaml at all - cover its name and keys directly
+// so a regression there ships noticed, since no fixture otherwise exercises this template.
+func TestAgentOrchestratorStorageSecret(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			setValues := map[string]string{
+				"agentOrchestrator.storage.accessKey": "minioadmin",
+				"agentOrchestrator.storage.secretKey": "miniosecret",
+			}
+
+			opts := &helm.Options{
+				Logger:      logger.Discard,
+				ValuesFiles: []string{chart.valuesDir + "/agent-orchestrator-enabled.yaml"},
+				SetValues:   setValues,
+			}
+			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-orchestrator-secret.yaml"})
+			require.NoError(t, err)
+
+			var secret corev1.Secret
+			helm.UnmarshalK8SYaml(t, output, &secret)
+			assert.Equal(t, chart.fullnamePrefix()+"-agent-orchestrator", secret.Name)
+			assert.Equal(t, "minioadmin", string(secret.Data["AGENTIC_STORAGE_ACCESS_KEY"]))
+			assert.Equal(t, "miniosecret", string(secret.Data["AGENTIC_STORAGE_SECRET_KEY"]))
+
+			container := renderAgentOrchestrator(t, chart, setValues).Spec.Template.Spec.Containers[0]
+			accessKey := findEnvByName(container, "AGENTIC_STORAGE_ACCESS_KEY")
+			require.NotNil(t, accessKey)
+			require.NotNil(t, accessKey.ValueFrom)
+			require.NotNil(t, accessKey.ValueFrom.SecretKeyRef)
+			assert.Equal(t, secret.Name, accessKey.ValueFrom.SecretKeyRef.Name)
+			assert.Equal(t, "AGENTIC_STORAGE_ACCESS_KEY", accessKey.ValueFrom.SecretKeyRef.Key)
+		})
+	}
+}
+
 // User-supplied env comes last, so it can override the values the chart wires automatically -
 // same contract as agent-runtime.yaml's hunterAgent.env/remediationAgent.env (SONAR-31980).
 func TestAgentOrchestratorExtraEnv(t *testing.T) {
