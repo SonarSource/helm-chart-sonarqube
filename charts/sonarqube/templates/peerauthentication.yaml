@@ -1,0 +1,88 @@
+{{- /*
+Enforces STRICT mTLS for every chart-owned mesh workload via Istio ambient mode. Unlike sidecar
+injection, ambient's per-node ztunnel doesn't need iptables manipulation inside the pod, so it
+covers the gVisor-sandboxed hunter/remediation runtimes the same way as everything else - there's
+no PERMISSIVE exception to carve out here.
+
+Enrolling workloads in ambient mode itself (labelling the release namespace
+istio.io/dataplane-mode: ambient) is Istio's own mechanism and isn't managed by this chart.
+*/}}
+{{- if .Values.istio.enabled }}
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.selectorLabels" . | nindent 6 }}
+  mtls:
+    mode: STRICT
+{{- if .Values.agentOrchestrator.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.agentOrchestrator.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 6 }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- if .Values.mcp.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.mcp.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-mcp
+      release: {{ .Release.Name }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- if .Values.vortex.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.vortex.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-vortex
+      release: {{ .Release.Name }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- if include "sonarqube.agentEgressProxy.required" . }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.agentEgressProxy.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 6 }}
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.fullname" . }}-agent-runtime
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.agentRuntime.commonSelectorLabels" . | nindent 6 }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- end }}

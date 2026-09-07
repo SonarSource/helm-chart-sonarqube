@@ -133,6 +133,15 @@ networkPolicy:
   # expects https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#networkpolicyspec-v1-networking-k8s-io
   # additionalNetworkPolicies:
 
+# Set enabled to true when the release namespace is enrolled in Istio ambient mode (label the
+# namespace istio.io/dataplane-mode: ambient - Istio's own mechanism, not managed by this chart).
+# Renders a STRICT PeerAuthentication for every chart-owned workload, including the gVisor-sandboxed
+# hunter/remediation runtimes: ambient mode enforces mTLS via a per-node ztunnel rather than a
+# per-pod sidecar, so it doesn't need the iptables setup inside the pod that gVisor's runsc runtime
+# can't support.
+istio:
+  enabled: false
+
 # will be used as default for ingress/httproute path and probes path, will be injected in .Values.env as SONAR_WEB_CONTEXT
 # if .Values.env.SONAR_WEB_CONTEXT is set, this value will be ignored
 sonarWebContext: ""
