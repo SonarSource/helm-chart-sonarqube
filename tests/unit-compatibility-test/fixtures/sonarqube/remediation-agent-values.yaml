@@ -231,22 +231,6 @@ metadata:
     heritage: Helm
     app.kubernetes.io/component: gvisor
 ---
-# Source: sonarqube/templates/agent-orchestrator-secret.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: remediation-agent-values.yaml-sonarqube-agent-orchestrator
-  labels:
-    app: sonarqube
-    chart: sonarqube-2026.5.0
-    release: remediation-agent-values.yaml
-    heritage: Helm
-    sonarqube.agent/component: orchestrator
-    app.kubernetes.io/component: agent-orchestrator
-type: Opaque
-data:
-  AGENTIC_SONARQUBE_TOKEN: "c3F1X2V4YW1wbGUwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
----
 # Source: sonarqube/templates/secret.yaml
 apiVersion: v1
 kind: Secret
@@ -1149,7 +1133,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secret: a3fa10fdfa058471fdcfe477bd8eb5742a85a2459304a26ce2c6a68c6e1fc94a
+        checksum/secret: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
       labels:
         app: sonarqube-agent-orchestrator
         release: remediation-agent-values.yaml
@@ -1229,11 +1213,6 @@ spec:
               value: ""
             - name: AGENTIC_SONARQUBE_URL
               value: "http://remediation-agent-values.yaml-sonarqube.default.svc.cluster.local:9000"
-            - name: AGENTIC_SONARQUBE_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: remediation-agent-values.yaml-sonarqube-agent-orchestrator
-                  key: AGENTIC_SONARQUBE_TOKEN
             - name: AGENTIC_REMEDIATION_RUNTIME_PUSH_URL
               value: "http://remediation-agent-values.yaml-sonarqube-agent-runtime-remediati.default.svc.cluster.local:8090/jobs"
           resources:

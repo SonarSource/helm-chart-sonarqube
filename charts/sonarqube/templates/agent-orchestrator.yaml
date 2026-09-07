@@ -153,13 +153,6 @@ spec:
             {{- end }}
             - name: AGENTIC_SONARQUBE_URL
               value: {{ include "sonarqube.agent.sonarqube.url" . | quote }}
-            {{- if or .Values.agentOrchestrator.sonarqubeToken.token .Values.agentOrchestrator.sonarqubeToken.existingSecret }}
-            - name: AGENTIC_SONARQUBE_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ default (include "sonarqube.agentOrchestrator.fullname" .) .Values.agentOrchestrator.sonarqubeToken.existingSecret }}
-                  key: {{ .Values.agentOrchestrator.sonarqubeToken.existingSecretKey | default "AGENTIC_SONARQUBE_TOKEN" }}
-            {{- end }}
             {{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" .) }}
             {{- if $cfg.enabled }}
             - name: AGENTIC_{{ $family | upper }}_RUNTIME_PUSH_URL
@@ -171,8 +164,8 @@ spec:
               value: {{ .Values.agentOrchestrator.github.apiBaseUrl | quote }}
             {{- end }}
             {{- /* No AGENTIC_GITHUB_TOKEN: since SONAR-30903 the orchestrator obtains a short-lived
-                   GitHub App installation token from SonarQube on demand (via AGENTIC_SONARQUBE_URL/
-                   TOKEN), not from a static env var. */}}
+                   GitHub App installation token from SonarQube on demand via AGENTIC_SONARQUBE_URL,
+                   authenticating with the derived agentic signing key rather than a static token. */}}
             {{- with .Values.agentOrchestrator.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
