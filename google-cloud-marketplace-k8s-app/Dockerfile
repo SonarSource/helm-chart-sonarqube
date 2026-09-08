@@ -13,10 +13,9 @@ ENV TESTER_TIMEOUT 1200
 # renovate: datasource=github-releases depName=kubectl-marketplace-deployer packageName=kubernetes/kubernetes extractVersion=^v(?<version>.*)$
 ARG KUBECTL_VERSION=v1.37.0
 ARG KUBECTL_CHECKSUM_NO_RENOVATE="6129359f4e1f3848a5572ccb0b26cf28b8ca08cef38c95a765b2f64a2c961a2f"
+ADD --checksum=sha256:${KUBECTL_CHECKSUM_NO_RENOVATE} https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl /tmp/kubectl
 RUN OLD_KUBECTL_DIR="$(readlink -f /opt/kubectl/default)" \
         && KUBECTL_MINOR="$(echo "${KUBECTL_VERSION#v}" | cut -d. -f1,2)" \
-        && curl --proto "=https" --fail -fsSL -o /tmp/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
-        && echo "${KUBECTL_CHECKSUM_NO_RENOVATE}  /tmp/kubectl" | sha256sum -c \
         && chmod 755 /tmp/kubectl \
         && rm -rf "$OLD_KUBECTL_DIR" \
         && mkdir -p "/opt/kubectl/${KUBECTL_MINOR}" \
@@ -32,9 +31,8 @@ RUN OLD_KUBECTL_DIR="$(readlink -f /opt/kubectl/default)" \
 # renovate: datasource=github-releases depName=helm-marketplace-deployer packageName=helm/helm
 ARG HELM_VERSION=v3.22.0-rc.1
 ARG HELM_CHECKSUM_NO_RENOVATE="c64ef32b65487bb238f1a56990ca6ec3c68d0536f21d71679d14d239ae4caed0"
-RUN curl --proto "=https" --fail -fsSL -o /tmp/helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" \
-        && echo "${HELM_CHECKSUM_NO_RENOVATE}  /tmp/helm.tar.gz" | sha256sum -c \
-        && tar -xzf /tmp/helm.tar.gz -C /tmp \
+ADD --checksum=sha256:${HELM_CHECKSUM_NO_RENOVATE} https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz /tmp/helm.tar.gz
+RUN tar -xzf /tmp/helm.tar.gz -C /tmp \
         && install -m 755 /tmp/linux-amd64/helm /usr/local/bin/helm \
         && rm -rf /tmp/helm.tar.gz /tmp/linux-amd64 \
         && helm version
