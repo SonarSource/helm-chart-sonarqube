@@ -1139,6 +1139,9 @@ Usage: {{- with (include "sonarqube.agent.scheduling" (dict "ctx" $ "component" 
 {{- define "sonarqube.agent.scheduling.render" -}}
 {{- $ctx := .ctx -}}
 {{- $component := .component -}}
+{{- with $ctx.Values.priorityClassName }}
+priorityClassName: {{ . }}
+{{- end }}
 {{- with default $ctx.Values.nodeSelector $component.nodeSelector }}
 nodeSelector:
 {{ toYaml . | indent 2 }}
@@ -1149,6 +1152,10 @@ tolerations:
 {{- end }}
 {{- with default $ctx.Values.affinity $component.affinity }}
 affinity:
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- with $component.topologySpreadConstraints }}
+topologySpreadConstraints:
 {{ toYaml . | indent 2 }}
 {{- end }}
 {{- end -}}

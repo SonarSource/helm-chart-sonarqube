@@ -1,0 +1,88 @@
+# Exercises scheduling configuration (nodeSelector, affinity, tolerations, and the chart-wide
+# priorityClassName) for the Agentic Harness pods: Vortex, the Hunter Agent and the Remediation
+# Agent runtimes, and the Agent Orchestrator.
+community:
+  enabled: true
+
+jdbcOverwrite:
+  enabled: true
+
+priorityClassName: high-priority
+
+agenticSigningSecret:
+  existingSecret: agentic-instance-secret
+
+vortex:
+  enabled: true
+  image:
+    repository: example.com/vortex
+    tag: "1.0.0"
+  storage:
+    bucket: agent-artifacts
+    region: eu-west-1
+  nodeSelector:
+    disktype: ssd
+  tolerations:
+    - key: "agentic"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: env
+                operator: In
+                values:
+                  - agentic
+
+agentOrchestrator:
+  enabled: true
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "1.0.0"
+
+hunterAgent:
+  enabled: true
+  image:
+    repository: example.com/hunter-agent
+    tag: "1.0.0"
+  nodeSelector:
+    disktype: ssd
+  tolerations:
+    - key: "agentic"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: env
+                operator: In
+                values:
+                  - agentic
+
+remediationAgent:
+  enabled: true
+  image:
+    repository: example.com/remediation-agent
+    tag: "1.0.0"
+  nodeSelector:
+    disktype: ssd
+  tolerations:
+    - key: "agentic"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: env
+                operator: In
+                values:
+                  - agentic

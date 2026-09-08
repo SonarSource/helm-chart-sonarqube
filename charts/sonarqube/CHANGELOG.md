@@ -21,6 +21,7 @@ All changes to this chart will be documented in this file.
 * **Breaking**: Built-in JVM metric names now use OpenMetrics naming, for example `jvm_memory_bytes_used` is now `jvm_memory_used_bytes`; metrics generated from `config.rules` are unaffected
 * **Breaking**: The default exporter scrape path is now `/metrics` instead of `/`; update external scrapers or set `prometheusExporter.metricsPath: /` for exporters serving metrics at the root
 * Add `mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` to control scheduling for the MCP pod independently of the main SonarQube pod. The chart-wide `priorityClassName` now also applies to the MCP pod
+* Apply the chart-wide `priorityClassName` to Vortex, the Agent Orchestrator, and the Hunter/Remediation Agent runtimes, for consistency with their existing `nodeSelector`/`affinity`/`tolerations` support
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
