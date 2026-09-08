@@ -10,8 +10,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 )
 
-const esMajorAnnotation = "sonarqube.datacenter/elasticsearch-major"
-
 func dceEsMajorBaseValues() map[string]string {
 	return map[string]string{
 		"monitoringPasscode":         "test-passcode",
@@ -38,26 +36,19 @@ func renderDCESearchWithValues(t *testing.T, setValues map[string]string) (appsv
 	return rendered, nil
 }
 
-func TestSearchEsMajorAnnotationFromImageTag(t *testing.T) {
-	cases := []struct {
-		tag  string
-		want string
-	}{
-		{"2026.1.5-datacenter-search", "8"},
-		{"2026.3.1-datacenter-search", "8"},
-		{"2026.4.0-datacenter-search", "9"},
-		{"2026.5.0-datacenter-search", "9"},
-		{"2025.1.0-datacenter-search", "8"},
-		{"9.9.0-datacenter-search", ""},
-		{"custom-build", ""},
-	}
-	for _, tc := range cases {
-		t.Run(tc.tag, func(t *testing.T) {
+func TestSearchStsHasNoEsMajorAnnotation(t *testing.T) {
+	for _, tag := range []string{
+		"2026.1.5-datacenter-search",
+		"2026.4.0-datacenter-search",
+		"9.9.0-datacenter-search",
+		"custom-build",
+	} {
+		t.Run(tag, func(t *testing.T) {
 			sts, err := renderDCESearchWithValues(t, map[string]string{
-				"searchNodes.image.tag": tc.tag,
+				"searchNodes.image.tag": tag,
 			})
 			require.NoError(t, err)
-			assert.Equal(t, tc.want, sts.Annotations[esMajorAnnotation])
+			assert.Empty(t, sts.Annotations["sonarqube.datacenter/elasticsearch-major"])
 		})
 	}
 }

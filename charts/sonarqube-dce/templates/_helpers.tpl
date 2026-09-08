@@ -1389,10 +1389,7 @@ Fail helm upgrade across an Elasticsearch major while search pods are still runn
 {{- $sts := lookup "apps/v1" "StatefulSet" .Release.Namespace $stsName -}}
 {{- if $sts -}}
 {{- $currentMajor := "" -}}
-{{- with $sts.metadata.annotations -}}
-{{- $currentMajor = index . "sonarqube.datacenter/elasticsearch-major" | default "" | toString -}}
-{{- end -}}
-{{- if and (not $currentMajor) $sts.spec $sts.spec.template $sts.spec.template.spec $sts.spec.template.spec.containers -}}
+{{- if and $sts.spec $sts.spec.template $sts.spec.template.spec $sts.spec.template.spec.containers -}}
 {{- $searchContainerName := printf "%s-search" .Chart.Name -}}
 {{- range $sts.spec.template.spec.containers -}}
 {{- if eq (.name | toString) $searchContainerName -}}
