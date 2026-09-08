@@ -284,10 +284,18 @@ applicationNodes:
 
   prometheusExporter:
     enabled: false
-    # jmx_prometheus_javaagent version to download from Maven Central
-    version: "0.17.2"
+    # jmx_prometheus_javaagent version. 1.1.0 and later are downloaded from GitHub
+    # Releases, earlier versions from Maven Central.
+    version: "1.6.0"
     # Alternative full download URL for the jmx_prometheus_javaagent.jar (overrides prometheusExporter.version)
     # downloadURL: ""
+    # Optional checksum of the jar, verified right after download. Uncomment to turn
+    # verification on - the value below is the checksum for the version above, so keep
+    # the two in sync (or comment it out again) whenever you change version or set your
+    # own downloadURL.
+    # sha256: "a95983fd96e865d2bcdf911cc500e7c82808c27ab9fd226bf96732b6c3d8c46e"
+    # Set to / when using an exporter or configuration that serves metrics at the root path.
+    metricsPath: /metrics
     # if you need to ignore TLS certificates for whatever reason enable the following flag
     noCheckCertificate: false
 

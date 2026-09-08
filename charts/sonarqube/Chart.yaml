@@ -63,6 +63,12 @@ annotations:
       description: "Add an optional KEDA operator subchart dependency (keda.enabled), so KEDA can be installed as part of this release instead of requiring a separate cluster-wide install before enabling hunterAgent/remediationAgent.autoscaling"
     - kind: added
       description: "Add hunterAgent/remediationAgent.storage (target + optional prefix) and a validation.yaml check on its extraVolumeMounts, so each agent runtime can be scoped to only its own subtree of a shared FILESYSTEM/NFS agentOrchestrator.storage.filesystem.baseDir via a per-runtime subPath mount"
+    - kind: changed
+      description: "Upgrade the bundled JMX Prometheus Exporter to 1.6.0; versions 1.1.0 and later use GitHub Releases, while earlier versions use Maven Central"
+    - kind: added
+      description: "Expose prometheusExporter.metricsPath at /metrics by default and add optional prometheusExporter.sha256 verification"
+    - kind: changed
+      description: "Breaking: built-in JVM metric names now use OpenMetrics naming; metrics generated from config.rules are unaffected"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-community
