@@ -1424,6 +1424,13 @@ agentKeyDerivation:
   # Fails the hook Job (and the release) if derive-keys.sh / the Secret writes don't complete
   # within this window, rather than hanging the install/upgrade indefinitely.
   activeDeadlineSeconds: 300
+# Optional KEDA (https://keda.sh) operator, installed as a subchart of this release when enabled.
+# Leave disabled (default) if KEDA already runs cluster-wide, which is the common case since a
+# cluster only needs one KEDA install - see agentKeda.assumeInstalled instead for that path. Any
+# other key under this block is passed straight through to the upstream keda chart's own values.
+keda:
+  enabled: false
+
 # Cluster-capability guard for the KEDA-based agent runtime ScaledObjects (hunterAgent/
 # remediationAgent.autoscaling above).
 agentKeda:

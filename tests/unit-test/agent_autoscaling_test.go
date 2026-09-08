@@ -266,6 +266,7 @@ func TestAgentRuntimeAutoscalingRequiresKedaCRDOrOverride(t *testing.T) {
 			base["hunterAgent.enabled"] = "true"
 			base["hunterAgent.image.repository"] = "example.com/hunter-agent"
 			base["hunterAgent.autoscaling.enabled"] = "true"
+			base["agenticSigningSecret.existingSecret"] = "test-agentic-instance-secret"
 			opts := &helm.Options{Logger: logger.Discard, SetValues: base}
 
 			t.Run("no KEDA CRD, no override: fails", func(t *testing.T) {
@@ -282,86 +283,66 @@ func TestAgentRuntimeAutoscalingRequiresKedaCRDOrOverride(t *testing.T) {
 	}
 }
 
-func TestAgentAutoscalingMinReplicasFloor(t *testing.T) {
+// assertAgentAutoscalingRangeRejected renders each chart/family with autoscalingValues layered onto
+// an otherwise-valid enable of that component, and asserts the render fails containing
+// "<component>.autoscaling.<errSuffix>" - shared by the min-floor and max-below-min checks below,
+// which only differ in which fields are invalid and what the error names.
+func assertAgentAutoscalingRangeRejected(t *testing.T, autoscalingValues map[string]string, errSuffix string) {
+	t.Helper()
+	prefixed := func(prefix string) map[string]string {
+		values := make(map[string]string, len(autoscalingValues))
+		for k, v := range autoscalingValues {
+			values[prefix+".autoscaling."+k] = v
+		}
+		return values
+	}
+
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			t.Run("orchestrator", func(t *testing.T) {
-				_, err := renderWithValidation(t, chart, map[string]string{
-					"agentOrchestrator.enabled":                 "true",
-					"agentOrchestrator.image.repository":        "example.com/agent-orchestrator",
-					"agentOrchestrator.autoscaling.enabled":     "true",
-					"agentOrchestrator.autoscaling.minReplicas": "1",
-				})
+				values := prefixed("agentOrchestrator")
+				values["agentOrchestrator.enabled"] = "true"
+				values["agentOrchestrator.image.repository"] = "example.com/agent-orchestrator"
+				_, err := renderWithValidation(t, chart, values)
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), "agentOrchestrator.autoscaling.minReplicas must be >= 2")
+				assert.Contains(t, err.Error(), "agentOrchestrator.autoscaling."+errSuffix)
 			})
 
 			for _, family := range []string{"hunter", "remediation"} {
 				t.Run(family, func(t *testing.T) {
-					_, err := renderWithValidation(t, chart, map[string]string{
-						"agentOrchestrator.enabled":              "true",
-						"agentOrchestrator.image.repository":     "example.com/agent-orchestrator",
-						family + "Agent.enabled":                 "true",
-						family + "Agent.image.repository":        "example.com/" + family + "-agent",
-						family + "Agent.autoscaling.enabled":     "true",
-						family + "Agent.autoscaling.minReplicas": "1",
-						"agentKeda.assumeInstalled":              "true",
-						"vortex.enabled":                         "true",
-						"vortex.image.repository":                "example.com/vortex",
-						"vortex.image.tag":                       "1",
-						"vortex.sonarqubeToken.token":            "squ_example",
-						"vortex.storage.bucket":                  "vortex-artifacts",
-						"vortex.storage.region":                  "eu-west-1",
-					})
+					values := prefixed(family + "Agent")
+					values["agentOrchestrator.enabled"] = "true"
+					values["agentOrchestrator.image.repository"] = "example.com/agent-orchestrator"
+					values[family+"Agent.enabled"] = "true"
+					values[family+"Agent.image.repository"] = "example.com/" + family + "-agent"
+					values["agentKeda.assumeInstalled"] = "true"
+					values["vortex.enabled"] = "true"
+					values["vortex.image.repository"] = "example.com/vortex"
+					values["vortex.image.tag"] = "1"
+					values["vortex.sonarqubeToken.token"] = "squ_example"
+					values["vortex.storage.bucket"] = "vortex-artifacts"
+					values["vortex.storage.region"] = "eu-west-1"
+					_, err := renderWithValidation(t, chart, values)
 					require.Error(t, err)
-					assert.Contains(t, err.Error(), family+"Agent.autoscaling.minReplicas must be >= 2")
+					assert.Contains(t, err.Error(), family+"Agent.autoscaling."+errSuffix)
 				})
 			}
 		})
 	}
 }
 
+func TestAgentAutoscalingMinReplicasFloor(t *testing.T) {
+	assertAgentAutoscalingRangeRejected(t,
+		map[string]string{"enabled": "true", "minReplicas": "1"},
+		"minReplicas must be >= 2")
+}
+
 // maxReplicas must not be below minReplicas - a template-time check giving an actionable error
 // instead of an opaque HPA/ScaledObject rejection at apply time.
 func TestAgentAutoscalingMaxReplicasBelowMinReplicas(t *testing.T) {
-	for _, chart := range agentCharts {
-		t.Run(chart.name, func(t *testing.T) {
-			t.Run("orchestrator", func(t *testing.T) {
-				_, err := renderWithValidation(t, chart, map[string]string{
-					"agentOrchestrator.enabled":                 "true",
-					"agentOrchestrator.image.repository":        "example.com/agent-orchestrator",
-					"agentOrchestrator.autoscaling.enabled":     "true",
-					"agentOrchestrator.autoscaling.minReplicas": "4",
-					"agentOrchestrator.autoscaling.maxReplicas": "3",
-				})
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), "agentOrchestrator.autoscaling.maxReplicas must be >= minReplicas")
-			})
-
-			for _, family := range []string{"hunter", "remediation"} {
-				t.Run(family, func(t *testing.T) {
-					_, err := renderWithValidation(t, chart, map[string]string{
-						"agentOrchestrator.enabled":              "true",
-						"agentOrchestrator.image.repository":     "example.com/agent-orchestrator",
-						family + "Agent.enabled":                 "true",
-						family + "Agent.image.repository":        "example.com/" + family + "-agent",
-						family + "Agent.autoscaling.enabled":     "true",
-						family + "Agent.autoscaling.minReplicas": "4",
-						family + "Agent.autoscaling.maxReplicas": "3",
-						"agentKeda.assumeInstalled":              "true",
-						"vortex.enabled":                         "true",
-						"vortex.image.repository":                "example.com/vortex",
-						"vortex.image.tag":                       "1",
-						"vortex.sonarqubeToken.token":            "squ_example",
-						"vortex.storage.bucket":                  "vortex-artifacts",
-						"vortex.storage.region":                  "eu-west-1",
-					})
-					require.Error(t, err)
-					assert.Contains(t, err.Error(), family+"Agent.autoscaling.maxReplicas must be >= minReplicas")
-				})
-			}
-		})
-	}
+	assertAgentAutoscalingRangeRejected(t,
+		map[string]string{"enabled": "true", "minReplicas": "4", "maxReplicas": "3"},
+		"maxReplicas must be >= minReplicas")
 }
 
 // Validation must be gated on the component's own enabled flag too, matching the render guards -

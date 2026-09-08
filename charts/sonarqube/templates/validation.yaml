@@ -92,6 +92,8 @@ It is used to validate the values.yaml file before the installation starts.
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.autoscaling.maxReplicas must be >= minReplicas." -}}
 {{- end -}}
 {{- $kedaOverride := .Values.agentKeda.assumeInstalled -}}
+{{/* keda.enabled only queues this release's own KEDA subchart install in the same apply pass, so it
+     is not proof the CRDs already exist - only a real API-server check (or assumeInstalled) is. */}}
 {{- $kedaAvailable := $.Capabilities.APIVersions.Has "keda.sh/v1alpha1" -}}
 {{- if not (kindIs "invalid" $kedaOverride) -}}
   {{- $kedaAvailable = $kedaOverride -}}
