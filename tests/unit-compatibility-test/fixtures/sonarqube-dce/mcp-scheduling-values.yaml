@@ -462,7 +462,7 @@ spec:
               - key: env
                 operator: In
                 values:
-                - mcp
+                - global
       topologySpreadConstraints:
         - labelSelector:
             matchLabels:
@@ -650,6 +650,21 @@ spec:
             - mountPath: /tmp
               name: tmp-dir
       priorityClassName: high-priority
+      nodeSelector:
+        global: "true"
+      tolerations:
+        - effect: NoSchedule
+          key: global
+          operator: Exists
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: env
+                operator: In
+                values:
+                - global
       serviceAccountName: default
       volumes:
       
@@ -892,6 +907,21 @@ spec:
             - mountPath: /tmp
               name: tmp-dir
       priorityClassName: high-priority
+      nodeSelector:
+        global: "true"
+      tolerations:
+        - effect: NoSchedule
+          key: global
+          operator: Exists
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: env
+                operator: In
+                values:
+                - global
       serviceAccountName: default
       volumes:
       
