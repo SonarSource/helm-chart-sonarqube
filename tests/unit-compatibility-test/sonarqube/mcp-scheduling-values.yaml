@@ -1,0 +1,22 @@
+edition: enterprise
+
+priorityClassName: high-priority
+
+mcp:
+  enabled: true
+  nodeSelector:
+    disktype: ssd
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: env
+                operator: In
+                values:
+                  - mcp
+  tolerations:
+    - key: "mcp"
+      operator: "Equal"
+      value: "true"
+      effect: "NoSchedule"

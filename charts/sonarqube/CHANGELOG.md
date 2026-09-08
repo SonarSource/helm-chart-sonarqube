@@ -27,7 +27,7 @@ All changes to this chart will be documented in this file.
 * Update MCP image to `sonarsource/sonarqube-mcp:1.27.0.4335`
 * Fix `caCerts.configMap` only mounting a single certificate; omitting `configMap.key`/`path` now mounts and imports every key in the ConfigMap. Setting `configMap.path` without `configMap.key` now fails fast with a clear error
 * Add `istio.enabled` to put every chart-owned workload (the SonarQube pod, Agent Orchestrator, MCP, Vortex, Agent Egress Proxy, and each agent runtime when `gvisor.enabled` is `false`) under STRICT mTLS with an explicit `sidecar.istio.io/inject` annotation and label on each pod - including the `change-admin-password` hook Job and the `helm test` pod, which now join the mesh instead of opting out - and `istio.meshSidecar.enabled` (plus the generic `agentRuntimeSandbox.enabled`/`runtimeClassName`, for sandboxes other than gVisor such as Kata Containers) to give sandboxed agent runtimes a real mTLS identity: a hand-authored `istio-proxy` sidecar plus a chart-owned `Sidecar` resource, with no `istio-init` and no elevated pod capabilities; requires Kubernetes `>= 1.29` (the `istio-proxy` container is a native sidecar), checked at render time
-
+* Add `mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` to control scheduling for the MCP pod independently of the main SonarQube pod. The chart-wide `priorityClassName` now also applies to the MCP pod
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
 * Upgrade SonarQube Server to 2026.4.0
