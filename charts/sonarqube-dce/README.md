@@ -1020,7 +1020,7 @@ If the keystore uses a self-signed certificate, SonarQube's JVM will reject the 
 
 **Scheduling:**
 
-`mcp.nodeSelector`, `mcp.affinity`, `mcp.tolerations` and `mcp.topologySpreadConstraints` control scheduling for the MCP pod independently of the application and search nodes. The chart-wide `priorityClassName` value is applied to the MCP pod automatically; there is no separate `mcp.priorityClassName`.
+`mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` set scheduling for the MCP pod; each wins over the chart's global `.Values.nodeSelector`/`.affinity`/`.tolerations` when set, and falls back to it otherwise — same convention as `vortex`/`agentOrchestrator`/`hunterAgent`/`remediationAgent`. `mcp.topologySpreadConstraints` is MCP-specific with no chart-wide equivalent to fall back to. The chart-wide `priorityClassName` value is applied to the MCP pod automatically; there is no separate `mcp.priorityClassName`.
 
 ### Agents
 

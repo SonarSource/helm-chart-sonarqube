@@ -118,15 +118,15 @@ spec:
       {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName }}
       {{- end }}
-      {{- with .Values.mcp.nodeSelector }}
+      {{- with default .Values.nodeSelector .Values.mcp.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}
       {{- end }}
-      {{- with .Values.mcp.tolerations }}
+      {{- with default .Values.tolerations .Values.mcp.tolerations }}
       tolerations:
 {{ toYaml . | indent 8 }}
       {{- end }}
-      {{- with .Values.mcp.affinity }}
+      {{- with default .Values.affinity .Values.mcp.affinity }}
       affinity:
 {{ toYaml . | indent 8 }}
       {{- end }}

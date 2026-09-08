@@ -1,20 +1,29 @@
+# Also proves mcp.nodeSelector/tolerations win over the chart-wide values when set, and that
+# mcp.affinity (left unset here) falls back to the chart-wide .Values.affinity.
 edition: enterprise
 
 priorityClassName: high-priority
+
+nodeSelector:
+  global: "true"
+tolerations:
+  - key: "global"
+    operator: "Exists"
+    effect: "NoSchedule"
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: env
+              operator: In
+              values:
+                - global
 
 mcp:
   enabled: true
   nodeSelector:
     disktype: ssd
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: env
-                operator: In
-                values:
-                  - mcp
   tolerations:
     - key: "mcp"
       operator: "Equal"
