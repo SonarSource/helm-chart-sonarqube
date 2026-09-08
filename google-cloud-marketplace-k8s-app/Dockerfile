@@ -14,13 +14,14 @@ ENV TESTER_TIMEOUT 1200
 ARG KUBECTL_VERSION=v1.37.0
 ARG KUBECTL_CHECKSUM_NO_RENOVATE="6129359f4e1f3848a5572ccb0b26cf28b8ca08cef38c95a765b2f64a2c961a2f"
 RUN OLD_KUBECTL_DIR="$(readlink -f /opt/kubectl/default)" \
+        && KUBECTL_MINOR="$(echo "${KUBECTL_VERSION#v}" | cut -d. -f1,2)" \
         && curl --proto "=https" --fail -fsSL -o /tmp/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
         && echo "${KUBECTL_CHECKSUM_NO_RENOVATE}  /tmp/kubectl" | sha256sum -c \
         && chmod 755 /tmp/kubectl \
         && rm -rf "$OLD_KUBECTL_DIR" \
-        && mkdir -p "/opt/kubectl/${KUBECTL_VERSION#v}" \
-        && mv /tmp/kubectl "/opt/kubectl/${KUBECTL_VERSION#v}/kubectl" \
-        && ln -sfn "/opt/kubectl/${KUBECTL_VERSION#v}" /opt/kubectl/default \
+        && mkdir -p "/opt/kubectl/${KUBECTL_MINOR}" \
+        && mv /tmp/kubectl "/opt/kubectl/${KUBECTL_MINOR}/kubectl" \
+        && ln -sfn "/opt/kubectl/${KUBECTL_MINOR}" /opt/kubectl/default \
         && /opt/kubectl/default/kubectl version --client
 
 # Helm's latest stable release (v3.21.4/v4.2.4) is still built with go1.26.5. Only the

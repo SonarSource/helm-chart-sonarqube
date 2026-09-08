@@ -28,3 +28,7 @@ tar -xf ${MPDEV_VERSION}.tar.gz
 mv marketplace-k8s-app-tools-${MPDEV_VERSION}/scripts/dev ${BASE_FOLDER}/mpdev
 chmod +x ${BASE_FOLDER}/mpdev
 ls -la ${BASE_FOLDER}/mpdev
+
+if [[ -n "${GITHUB_ENV:-}" ]]; then
+  echo "MARKETPLACE_TOOLS_TAG=${MPDEV_VERSION}" >> "${GITHUB_ENV}"
+fi
