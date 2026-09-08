@@ -957,6 +957,10 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `mcp.env`                               | Additional environment variables for the MCP container                                                   | `[]`                                                                   |
 | `mcp.resources`                         | CPU/memory resource requests and limits for the MCP container                                            | `{}`                                                                   |
 | `mcp.annotations`                       | Annotations for the MCP pod                                                                              | `{}`                                                                   |
+| `mcp.nodeSelector`                      | Node selector for the MCP pod                                                                            | `{}`                                                                   |
+| `mcp.affinity`                          | Affinity rules for the MCP pod                                                                            | `{}`                                                                   |
+| `mcp.tolerations`                       | Tolerations for the MCP pod                                                                              | `[]`                                                                   |
+| `mcp.topologySpreadConstraints`         | Topology spread constraints for the MCP pod                                                              | `[]`                                                                   |
 
 ### MCP (Model Context Protocol) Server
 
@@ -1013,6 +1017,10 @@ If the keystore uses a self-signed certificate, SonarQube's JVM will reject the 
      enabled: true
      secret: mcp-ca-cert
    ```
+
+**Scheduling:**
+
+`mcp.nodeSelector`, `mcp.affinity`, `mcp.tolerations` and `mcp.topologySpreadConstraints` control scheduling for the MCP pod independently of the application and search nodes. The chart-wide `priorityClassName` value is applied to the MCP pod automatically; there is no separate `mcp.priorityClassName`.
 
 ### Agents
 

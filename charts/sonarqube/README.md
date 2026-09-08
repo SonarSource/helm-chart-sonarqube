@@ -528,6 +528,10 @@ If the keystore uses a self-signed certificate, SonarQube's JVM will reject the 
      secret: mcp-ca-cert
    ```
 
+**Scheduling:**
+
+`mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` control scheduling for the MCP pod independently of the main SonarQube pod. The chart-wide `priorityClassName` value is applied to the MCP pod automatically; there is no separate `mcp.priorityClassName`.
+
 ### Extra Config
 
 For environments where another tool, such as terraform or ansible, is used to provision infrastructure or passwords then setting databases addresses and credentials via helm becomes less than ideal. Ditto for environments where this config may be visible.
@@ -890,6 +894,9 @@ and set `persistence.hostPath.path` and `persistence.hostPath.type`.
 | `mcp.env`                              | Additional environment variables for the MCP container                                                   | `[]`                                                                   |
 | `mcp.resources`                        | CPU/memory resource requests and limits for the MCP container                                            | `{}`                                                                   |
 | `mcp.annotations`                      | Annotations for the MCP pod                                                                              | `{}`                                                                   |
+| `mcp.nodeSelector`                     | Node selector for the MCP pod                                                                            | `{}`                                                                   |
+| `mcp.affinity`                         | Affinity rules for the MCP pod                                                                            | `{}`                                                                   |
+| `mcp.tolerations`                      | Tolerations for the MCP pod                                                                              | `[]`                                                                   |
 
 ### Agents
 

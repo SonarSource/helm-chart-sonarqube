@@ -22,6 +22,7 @@ All changes to this chart will be documented in this file.
 * GitHub-based default downloads require access to `github.com` and `release-assets.githubusercontent.com`
 * **Breaking**: Built-in JVM metric names now use OpenMetrics naming, for example `jvm_memory_bytes_used` is now `jvm_memory_used_bytes`; metrics generated from `config.rules` are unaffected
 * **Breaking**: The default exporter scrape path is now `/metrics` instead of `/`; update external scrapers or set `applicationNodes.prometheusExporter.metricsPath: /` for exporters serving metrics at the root
+* Add `mcp.nodeSelector`, `mcp.affinity`, `mcp.tolerations` and `mcp.topologySpreadConstraints` to control scheduling for the MCP pod independently of the application and search nodes. The chart-wide `priorityClassName` now also applies to the MCP pod
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
