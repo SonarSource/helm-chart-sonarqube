@@ -1440,6 +1440,15 @@ spec:
               value: ""
             - name: AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
               value: /etc/agentic/keys/agentic-shared
+          resources:
+            limits:
+              cpu: "2"
+              ephemeral-storage: 2Gi
+              memory: 8Gi
+            requests:
+              cpu: "1"
+              ephemeral-storage: 2Gi
+              memory: 6Gi
           startupProbe:
             httpGet:
               path: /health
