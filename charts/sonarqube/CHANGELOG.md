@@ -15,6 +15,11 @@ All changes to this chart will be documented in this file.
 * Ship default resource requests and limits for the Hunter Agent (`hunterAgent.resources`) and Vortex (`vortex.resources`), so neither lands in the BestEffort QoS class; `ephemeral-storage` is pinned (request == limit) for both, memory is also pinned for the Hunter Agent, while Vortex memory (6Gi-8Gi) and CPU stay burstable
 * Point `agentOrchestrator`'s readiness/liveness probes, and `hunterAgent`/`remediationAgent`'s liveness probes, at the dedicated `/readyz`/`/livez` endpoints instead of the aggregate `/health`, and add `agentOrchestrator.terminationGracePeriodSeconds` (default `2580`)
 * Add `<hunterAgent|remediationAgent>.storage` (target + optional `prefix`) so each agent runtime can be scoped to its own subtree of a shared FILESYSTEM/NFS `agentOrchestrator.storage.filesystem.baseDir`: mount the shared volume per runtime at its own `subPath` (via the existing `extraVolumes`/`extraVolumeMounts`), at the same absolute path the orchestrator writes to; `validation.yaml` now checks that mount exists when a runtime's `storage.filesystem.baseDir` is set. Object storage (`type: S3`) remains the recommended production backend
+* Upgrade the bundled JMX Prometheus Exporter to 1.6.0 ([upstream release notes](https://github.com/prometheus/jmx_exporter/releases/tag/1.6.0)); versions 1.1.0 and later download from GitHub Releases, while earlier versions use Maven Central
+* Add the configurable exporter `prometheusExporter.metricsPath`, defaulting to `/metrics`, and optional `prometheusExporter.sha256` verification
+* GitHub-based default downloads require access to `github.com` and `release-assets.githubusercontent.com`
+* **Breaking**: Built-in JVM metric names now use OpenMetrics naming, for example `jvm_memory_bytes_used` is now `jvm_memory_used_bytes`; metrics generated from `config.rules` are unaffected
+* **Breaking**: The default exporter scrape path is now `/metrics` instead of `/`; update external scrapers or set `prometheusExporter.metricsPath: /` for exporters serving metrics at the root
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0

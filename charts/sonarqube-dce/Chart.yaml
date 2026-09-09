@@ -60,6 +60,16 @@ annotations:
       description: "Add hunterAgent/remediationAgent.storage (target + optional prefix) and a validation.yaml check on its extraVolumeMounts, so each agent runtime can be scoped to only its own subtree of a shared FILESYSTEM/NFS agentOrchestrator.storage.filesystem.baseDir via a per-runtime subPath mount"
     - kind: changed
       description: "Fail DCE upgrades across an Elasticsearch major while search pods are still running; scale searchNodes.replicaCount to 0 first"
+    - kind: changed
+      description: "Upgrade the bundled JMX Prometheus Exporter to 1.6.0; versions 1.1.0 and later use GitHub Releases, while earlier versions use Maven Central"
+    - kind: added
+      description: "Expose applicationNodes.prometheusExporter.metricsPath at /metrics by default and add optional applicationNodes.prometheusExporter.sha256 verification"
+    - kind: changed
+      description: "Breaking: built-in JVM metric names now use OpenMetrics naming; metrics generated from config.rules are unaffected"
+    - kind: changed
+      description: "Breaking: the bundled JMX Prometheus Exporter metrics endpoint is now /metrics instead of /; update external scrapers accordingly"
+    - kind: changed
+      description: "Default JMX Prometheus Exporter downloads use GitHub Releases and require network access to github.com and release-assets.githubusercontent.com"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/
