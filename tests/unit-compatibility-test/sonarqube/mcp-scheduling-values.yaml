@@ -29,3 +29,11 @@ mcp:
       operator: "Equal"
       value: "true"
       effect: "NoSchedule"
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          app: sonarqube-mcp
+          release: mcp-scheduling-values.yaml

@@ -530,9 +530,7 @@ If the keystore uses a self-signed certificate, SonarQube's JVM will reject the 
 
 **Scheduling:**
 
-`mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` set scheduling for the MCP pod; each wins over the chart's global `.Values.nodeSelector`/`.affinity`/`.tolerations` when set, and falls back to it otherwise — same convention as `vortex`/`agentOrchestrator`/`hunterAgent`/`remediationAgent`. The chart-wide `priorityClassName` value is applied to the MCP pod automatically; there is no separate `mcp.priorityClassName`.
-
-MCP has a single replica in this chart, so there is no `mcp.topologySpreadConstraints` here — see `charts/sonarqube-dce` for the multi-replica equivalent, where spreading MCP across zones/nodes is meaningful.
+`mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` set scheduling for the MCP pod; each wins over the chart's global `.Values.nodeSelector`/`.affinity`/`.tolerations` when set, and falls back to it otherwise — same convention as `vortex`/`agentOrchestrator`/`hunterAgent`/`remediationAgent`. `mcp.topologySpreadConstraints` is MCP-specific with no chart-wide equivalent to fall back to. The chart-wide `priorityClassName` value is applied to the MCP pod automatically; there is no separate `mcp.priorityClassName`.
 
 ### Extra Config
 
@@ -899,6 +897,7 @@ and set `persistence.hostPath.path` and `persistence.hostPath.type`.
 | `mcp.nodeSelector`                     | Node selector for the MCP pod                                                                            | `{}`                                                                   |
 | `mcp.affinity`                         | Affinity rules for the MCP pod                                                                            | `{}`                                                                   |
 | `mcp.tolerations`                      | Tolerations for the MCP pod                                                                              | `[]`                                                                   |
+| `mcp.topologySpreadConstraints`        | Topology spread constraints for the MCP pod                                                             | `[]`                                                                   |
 
 ### Agents
 
@@ -1016,6 +1015,7 @@ The Agent Orchestrator reads and writes SonarQube's own database, so `agentOrche
 | `vortex.nodeSelector`                   | Node labels for the Vortex pod                                                                           | `{}`                                                                   |
 | `vortex.affinity`                       | Affinity for the Vortex pod                                                                              | `{}`                                                                   |
 | `vortex.tolerations`                    | Tolerations for the Vortex pod                                                                           | `[]`                                                                   |
+| `vortex.topologySpreadConstraints`      | Topology spread constraints for the Vortex pod                                                          | `[]`                                                                   |
 | `vortex.annotations`                    | Annotations for the Vortex pod                                                                          | `{}`                                                                   |
 | `agentOrchestrator.enabled`                                           | Deploy the Agent Orchestrator. Requires `jdbcOverwrite.enabled=true` — it shares SonarQube's database                                    | `false`                                                                        |
 | `hunterAgent.enabled`                                            | Deploy the Hunter Agent (requires `agentOrchestrator.enabled=true`)                                                                           | `false`                                                                        |
@@ -1060,6 +1060,7 @@ The Agent Orchestrator reads and writes SonarQube's own database, so `agentOrche
 | `agentOrchestrator.nodeSelector`                                      | Orchestrator nodeSelector                                                                                                                 | `{}`                                                                           |
 | `agentOrchestrator.tolerations`                                       | Orchestrator tolerations                                                                                                                  | `[]`                                                                           |
 | `agentOrchestrator.affinity`                                          | Orchestrator affinity                                                                                                                     | `{}`                                                                           |
+| `agentOrchestrator.topologySpreadConstraints`                         | Orchestrator topology spread constraints                                                                                                  | `[]`                                                                           |
 | `agentOrchestrator.resources`                                         | Orchestrator container resources (cpu / memory / ephemeral-storage)                                                                       | requests `250m` / `512Mi` / `512Mi`, limits `1` / `1Gi` / `2Gi`                |
 | `agentOrchestrator.securityContext`                                   | Orchestrator pod security context                                                                                                        | `{}`                                                                           |
 | `agentOrchestrator.containerSecurityContext`                          | Orchestrator container security context, incl. `readOnlyRootFilesystem`                                                                  | [Restricted podSecurityStandard](#kubernetes---pod-security-standards)        |
@@ -1101,6 +1102,7 @@ The Agent Orchestrator reads and writes SonarQube's own database, so `agentOrche
 | `<hunterAgent\|remediationAgent>.nodeSelector`                   | This runtime's nodeSelector                                                                                                                | `{}`                                                                           |
 | `<hunterAgent\|remediationAgent>.tolerations`                    | This runtime's tolerations                                                                                                                 | `[]`                                                                           |
 | `<hunterAgent\|remediationAgent>.affinity`                       | This runtime's affinity                                                                                                                    | `{}`                                                                           |
+| `<hunterAgent\|remediationAgent>.topologySpreadConstraints`      | This runtime's topology spread constraints                                                                                                | `[]`                                                                           |
 | `<hunterAgent\|remediationAgent>.resources`                      | Agent container resources (both runtimes ship sized defaults — see below)                                                                 | see below                                                                      |
 | `<hunterAgent\|remediationAgent>.securityContext`                | Agent pod security context                                                                                                               | `{}`                                                                           |
 | `<hunterAgent\|remediationAgent>.containerSecurityContext`       | Agent container security context. No `readOnlyRootFilesystem`: the agent images need their home directory writable | [Restricted podSecurityStandard](#kubernetes---pod-security-standards)        |

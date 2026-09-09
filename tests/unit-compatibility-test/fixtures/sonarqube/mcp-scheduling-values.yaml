@@ -278,6 +278,14 @@ spec:
                 operator: In
                 values:
                 - global
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app: sonarqube-mcp
+              release: mcp-scheduling-values.yaml
+          maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
       volumes:
         - name: mcp-data
           persistentVolumeClaim:

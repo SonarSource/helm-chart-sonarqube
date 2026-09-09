@@ -773,6 +773,10 @@ mcp:
   # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
   tolerations: []
 
+  # Topology spread constraints for the MCP pod.
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+  topologySpreadConstraints: []
+
 # Vortex analysis: an analysis service that SonarQube calls on demand to analyse individual
 # files. When enabled, the chart points the SonarQube application nodes at it via the
 # sonar.vortex.analysis.url property.
@@ -872,6 +876,9 @@ vortex:
   affinity: {}
   # Wins over the top-level .Values.tolerations when set.
   tolerations: []
+  # Topology spread constraints for the Vortex pod.
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+  topologySpreadConstraints: []
 
   # Set annotations for the Vortex pod.
   annotations: {}
@@ -898,6 +905,9 @@ agentOrchestrator:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Topology spread constraints for the orchestrator pod.
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+  topologySpreadConstraints: []
   # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
   revisionHistoryLimit: ""
   # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
@@ -1071,6 +1081,9 @@ hunterAgent:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Topology spread constraints for this runtime's pod.
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+  topologySpreadConstraints: []
   # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
   revisionHistoryLimit: ""
   # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
@@ -1206,6 +1219,9 @@ remediationAgent:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Topology spread constraints for this runtime's pod.
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+  topologySpreadConstraints: []
   # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
   revisionHistoryLimit: ""
   # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
