@@ -1009,9 +1009,10 @@ agentOrchestrator:
       scaleDown:
         stabilizationWindowSeconds: 300
   # Must stay comfortably above the orchestrator image's own
-  # spring.lifecycle.timeout-per-shutdown-phase: 21m (1260s) - the drain is additive across the
-  # two same-phase db-schedulers (5m + 15m), not max() - or Kubernetes SIGKILLs it mid-drain.
-  terminationGracePeriodSeconds: 1320
+  # spring.lifecycle.timeout-per-shutdown-phase: 21m (1260s), which Spring applies *per* phase: the
+  # server.shutdown: graceful web drain and the two additive same-phase db-schedulers (5m + 15m)
+  # are separate phases, so budget both - or Kubernetes SIGKILLs it mid-drain.
+  terminationGracePeriodSeconds: 2580
 
 # Hunter Agent runtime that detects issues. Requires agentOrchestrator.enabled - see validation.yaml.
 # Process-count limits aren't set here - use your node's kubelet configuration (podPidsLimit).

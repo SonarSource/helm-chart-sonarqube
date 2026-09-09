@@ -231,7 +231,7 @@ func TestAgentOrchestratorProbes(t *testing.T) {
 
 			podSpec := deployment.Spec.Template.Spec
 			require.NotNil(t, podSpec.TerminationGracePeriodSeconds)
-			assert.EqualValues(t, 1320, *podSpec.TerminationGracePeriodSeconds)
+			assert.EqualValues(t, 2580, *podSpec.TerminationGracePeriodSeconds)
 		})
 	}
 }
