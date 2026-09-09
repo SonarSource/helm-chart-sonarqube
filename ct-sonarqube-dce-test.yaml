@@ -3,4 +3,10 @@ charts:
  -  charts/sonarqube-dce
 chart-repos:
   - bitnami-pre2022=https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
-helm-extra-args: --timeout 600s --debug
+  - keda=https://kedacore.github.io/charts
+# No --debug: helm 4 logs to stderr, which fills ct's io.MultiReader pipe buffer and deadlocks
+# cmd.Wait() before --timeout can fire (helm/chart-testing#471, #557, #854).
+# keda.enabled=true is a set-arg (not helm-extra-args): ct also appends helm-extra-args to
+# `helm test`, which has no --set flag, and applies helm-extra-set-args to install/upgrade only.
+helm-extra-args: --timeout 600s
+helm-extra-set-args: --set keda.enabled=true
