@@ -106,8 +106,10 @@ It is used to validate the values.yaml file before the installation starts.
 {{- end -}}
 
 {{/* Autoscaling validation: minReplicas floor of 2 (no scale-to-zero), maxReplicas >= minReplicas,
-     and KEDA CRDs present for any runtime family - gated on the component's own enabled flag too,
-     matching the render guards in agent-orchestrator-hpa.yaml/agent-runtime-scaledobject.yaml. */}}
+     and KEDA CRDs present for any runtime family or Vortex - gated on the component's own enabled
+     flag too, matching the render guards in
+     agent-orchestrator-hpa.yaml/agent-runtime-scaledobject.yaml/vortex-scaledobject.yaml. $kedaAvailable
+     below is computed once here and reused by the Vortex block further down. */}}
 {{- $agentOrchestratorAutoscaling := and .Values.agentOrchestrator.enabled .Values.agentOrchestrator.autoscaling.enabled -}}
 {{- if and $agentOrchestratorAutoscaling (lt (int .Values.agentOrchestrator.autoscaling.minReplicas) 2) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.autoscaling.minReplicas must be >= 2." -}}
@@ -164,6 +166,36 @@ It is used to validate the values.yaml file before the installation starts.
   {{- end -}}
   {{- if and (not $storage.existingSecret) (or $storage.accessKey $storage.secretKey) (not (and $storage.accessKey $storage.secretKey)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortex.enabled is true but only one of vortex.storage.accessKey / vortex.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
+  {{- end -}}
+  {{- $vortexAutoscaling := .Values.vortex.autoscaling -}}
+  {{- if $vortexAutoscaling.enabled -}}
+    {{- if lt (int $vortexAutoscaling.minReplicas) 2 -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.minReplicas must be >= 2 (scale-to-zero and single-replica autoscaling are not supported for Vortex)." -}}
+    {{- end -}}
+    {{- if gt (int $vortexAutoscaling.minReplicas) (int $vortexAutoscaling.maxReplicas) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.maxReplicas must be >= minReplicas." -}}
+    {{- end -}}
+    {{- if not $kedaAvailable -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.enabled is true but the KEDA CRDs (keda.sh/v1alpha1) were not detected. Install KEDA (https://keda.sh) first, or set agentKeda.assumeInstalled=true once it is, or disable autoscaling." -}}
+    {{- end -}}
+    {{- /* Polling slower than the window loses peaks between polls - the metric would silently
+           under-report. Only checked when windowSeconds is set; blank leaves the image's own
+           default, which this chart can't compare against. */}}
+    {{- if and $vortexAutoscaling.windowSeconds (gt (int $vortexAutoscaling.pollingInterval) (int $vortexAutoscaling.windowSeconds)) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.pollingInterval must be <= vortex.autoscaling.windowSeconds, or peaks between polls are lost." -}}
+    {{- end -}}
+    {{- if lt (int $vortexAutoscaling.targetConcurrentRequests) 1 -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.targetConcurrentRequests must be >= 1." -}}
+    {{- end -}}
+    {{- if not (hasPrefix "/" $vortexAutoscaling.metricPath) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.metricPath must start with \"/\"." -}}
+    {{- end -}}
+    {{- /* Recreate takes every Vortex replica down at once on each rollout - fine for a single
+           pod, actively wrong once the autoscaler is expected to keep the fleet up. Fail rather
+           than silently overriding an explicit values.yaml setting. */}}
+    {{- if eq .Values.vortex.strategy.type "Recreate" -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.enabled is true but vortex.strategy.type is \"Recreate\", which would take down every Vortex replica on every rollout. Set vortex.strategy.type: RollingUpdate to enable autoscaling." -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 

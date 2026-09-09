@@ -23,6 +23,7 @@ All changes to this chart will be documented in this file.
 * GitHub-based default downloads require access to `github.com` and `release-assets.githubusercontent.com`
 * **Breaking**: Built-in JVM metric names now use OpenMetrics naming, for example `jvm_memory_bytes_used` is now `jvm_memory_used_bytes`; metrics generated from `config.rules` are unaffected
 * **Breaking**: The default exporter scrape path is now `/metrics` instead of `/`; update external scrapers or set `applicationNodes.prometheusExporter.metricsPath: /` for exporters serving metrics at the root
+* Add autoscaling for Vortex (`vortex.autoscaling`, a KEDA `ScaledObject` reading Vortex's own unauthenticated `GET /metrics/max-concurrent-requests` endpoint, aggregated across replicas via KEDA's `aggregateFromKubeServiceEndpoints`; requires KEDA `>= 2.20.0`, with a single-replica fallback via `vortex.autoscaling.aggregateAcrossReplicas`), plus an unconditional `vortex.terminationGracePeriodSeconds`
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0

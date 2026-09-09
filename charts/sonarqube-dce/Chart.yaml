@@ -72,6 +72,7 @@ annotations:
       description: "Breaking: the bundled JMX Prometheus Exporter metrics endpoint is now /metrics instead of /; update external scrapers accordingly"
     - kind: changed
       description: "Default JMX Prometheus Exporter downloads use GitHub Releases and require network access to github.com and release-assets.githubusercontent.com"
+      description: "Add autoscaling for Vortex (vortex.autoscaling, a KEDA ScaledObject reading Vortex's own unauthenticated GET /metrics/max-concurrent-requests endpoint, aggregated across replicas via KEDA's aggregateFromKubeServiceEndpoints; requires KEDA >= 2.20.0, with a single-replica fallback via vortex.autoscaling.aggregateAcrossReplicas), plus an unconditional vortex.terminationGracePeriodSeconds"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/

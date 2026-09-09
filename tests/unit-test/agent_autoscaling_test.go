@@ -17,7 +17,12 @@ type scaledObjectScaleTargetRef struct {
 }
 
 type scaledObjectHorizontalPodAutoscalerConfig struct {
-	Name string `json:"name"`
+	Name     string `json:"name"`
+	Behavior struct {
+		ScaleDown struct {
+			StabilizationWindowSeconds int64 `json:"stabilizationWindowSeconds"`
+		} `json:"scaleDown"`
+	} `json:"behavior"`
 }
 
 type scaledObjectAdvanced struct {
@@ -25,7 +30,8 @@ type scaledObjectAdvanced struct {
 }
 
 // scaledObject captures only the fields these tests assert on - there is no k8s.io/api type for a
-// KEDA CRD, and the full KEDA client types are not worth adding as a dependency for this.
+// KEDA CRD, and the full KEDA client types are not worth adding as a dependency for this. Shared
+// with vortex_autoscaling_test.go.
 type scaledObject struct {
 	Metadata struct {
 		Name   string            `json:"name"`
@@ -36,10 +42,11 @@ type scaledObject struct {
 		MinReplicaCount int64                      `json:"minReplicaCount"`
 		MaxReplicaCount int64                      `json:"maxReplicaCount"`
 		PollingInterval int64                      `json:"pollingInterval"`
-		Advanced        scaledObjectAdvanced       `json:"advanced"`
+		Advanced        scaledObjectAdvanced `json:"advanced"`
 		Triggers        []struct {
-			Type     string            `json:"type"`
-			Metadata map[string]string `json:"metadata"`
+			Type              string            `json:"type"`
+			Metadata          map[string]string `json:"metadata"`
+			AuthenticationRef interface{}       `json:"authenticationRef"`
 		} `json:"triggers"`
 	} `json:"spec"`
 }

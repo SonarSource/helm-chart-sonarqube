@@ -1,0 +1,44 @@
+{{- if and .Values.vortex.enabled .Values.vortex.autoscaling.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "sonarqube.vortex.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vortex
+spec:
+  scaleTargetRef:
+    name: {{ include "sonarqube.vortex.fullname" . }}
+  minReplicaCount: {{ .Values.vortex.autoscaling.minReplicas }}
+  maxReplicaCount: {{ .Values.vortex.autoscaling.maxReplicas }}
+  pollingInterval: {{ .Values.vortex.autoscaling.pollingInterval }}
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          # Cloud's own scale-in cooldown, and the guard against KEDA's partial-endpoint-failure
+          # under-report: a replica whose poll fails is silently dropped from the sum rather than
+          # surfaced as an error, so a handful of failed polls must not trigger a fast scale-down.
+          stabilizationWindowSeconds: {{ .Values.vortex.autoscaling.scaleDownStabilizationSeconds }}
+  triggers:
+    {{- /* Reads Vortex's own unauthenticated GET <metricPath> (peak concurrent requests over a
+           sliding window). Unlike the agent runtimes' shared orchestrator queue, Vortex has no
+           shared metric - each replica only knows its own peak - so the value has to be aggregated
+           across replicas by KEDA itself. No authenticationRef: the endpoint is unauthenticated by
+           design. */}}
+    - type: metrics-api
+      metadata:
+        {{- /* FQDN, not sonarqube.vortex.url's short name: KEDA parses this host as
+               <service>.<namespace> to find the Service's EndpointSlices, and rejects a bare short
+               name outright. The port must be the *pod* port, not just any port on the Service -
+               here they're always the same number (.Values.vortex.port), so this is always safe. */}}
+        url: "http://{{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.vortex.fullname" .) "ctx" .) }}:{{ .Values.vortex.port }}{{ .Values.vortex.autoscaling.metricPath }}"
+        valueLocation: "value"
+        targetValue: "{{ .Values.vortex.autoscaling.targetConcurrentRequests }}"
+        {{- if .Values.vortex.autoscaling.aggregateAcrossReplicas }}
+        {{- /* sum, not the aggregationType default of average: metricType defaults to
+               AverageValue, so the HPA computes ceil(metric / targetValue) - an averaged metric
+               would cap the whole fleet at ceil(mean/target) regardless of replica count. */}}
+        aggregateFromKubeServiceEndpoints: "true"
+        aggregationType: "sum"
+        {{- end }}
+{{- end }}
