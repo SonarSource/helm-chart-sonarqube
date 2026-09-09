@@ -788,8 +788,9 @@ vortex:
     # Custom S3-compatible endpoint (e.g. MinIO). Leave blank for real AWS S3.
     endpoint: ""
     filesystem:
-      # Path to the shared directory when type is FILESYSTEM or NFS. Must match
-      # agentOrchestrator.storage.filesystem.baseDir - see the comment there.
+      # Path to Vortex's own directory when type is FILESYSTEM or NFS - a separate store from
+      # agentOrchestrator.storage.filesystem.baseDir below, not required to match it: Vortex
+      # reads analysis context SonarQube Server writes, not agentic job artifacts.
       baseDir: ""
     # Credentials for that endpoint. Leave accessKey/secretKey/existingSecret all blank for
     # credential-less access: the AWS SDK then falls back to its default credential chain (the
@@ -958,7 +959,7 @@ agentOrchestrator:
   # after that runtime ("hunter", "remediation"). Each runtime then mounts ONLY that
   # subdirectory, at subPath "<runtime>" and at the SAME absolute path (<baseDir>/<runtime>) - see
   # hunterAgent.extraVolumeMounts / remediationAgent.extraVolumeMounts - so it physically cannot
-  # see the other runtime's files. Vortex keeps its own, separate store (vortex.storage below) and
+  # see the other runtime's files. Vortex keeps its own, separate store (vortex.storage above) and
   # mounts it readOnly, since it only reads.
   #
   # Use ONE shared securityContext.fsGroup across agentOrchestrator/hunterAgent/remediationAgent,
@@ -971,9 +972,10 @@ agentOrchestrator:
   # FILESYSTEM/NFS suits installs that cannot run one.
   storage:
     # S3 (default), FILESYSTEM or NFS. FILESYSTEM/NFS hand runtimes a direct file:// path instead
-    # of a presigned URL, so they only work when agentOrchestrator, hunterAgent, remediationAgent
-    # and vortex all mount the exact same directory - see each component's extraVolumes/
-    # extraVolumeMounts and filesystem.baseDir below.
+    # of a presigned URL, so hunterAgent/remediationAgent must each mount their own subPath of
+    # this same volume - see the per-component access model above and each component's
+    # extraVolumes/extraVolumeMounts and filesystem.baseDir below. Vortex is not part of this
+    # volume - it keeps its own, separate store (vortex.storage above).
     type: S3
     # Custom S3 endpoint (e.g. MinIO). Leave blank for real AWS S3 so the SDK uses its regional
     # endpoint. pathStyle should be true for MinIO, false for AWS S3 (virtual-hosted style).
@@ -1124,13 +1126,16 @@ hunterAgent:
   # This runtime's own subtree of the shared agent-jobs store - reuses the standard storage block
   # (see agentOrchestrator.storage above) plus an optional prefix. Not yet consumed by any
   # container env: EA-926 adds the orchestrator's per-runtime routing. filesystem.baseDir, when
-  # set, is checked against extraVolumeMounts below - see validation.yaml.
+  # set, is checked against extraVolumeMounts below - see validation.yaml. Every field stays
+  # blank/unset here (not just "") so it defers to agentOrchestrator.storage - pathStyle is
+  # deliberately omitted, not defaulted, since a live true/false could not be told apart from an
+  # explicit override once EA-926 merges this block over the orchestrator's.
   storage:
     type: ""
     bucket: ""
     region: ""
     endpoint: ""
-    pathStyle: true
+    # pathStyle: true   # unset defers to agentOrchestrator.storage.pathStyle
     filesystem:
       baseDir: ""
     prefix: ""
@@ -1257,13 +1262,16 @@ remediationAgent:
   # This runtime's own subtree of the shared agent-jobs store - reuses the standard storage block
   # (see agentOrchestrator.storage above) plus an optional prefix. Not yet consumed by any
   # container env: EA-926 adds the orchestrator's per-runtime routing. filesystem.baseDir, when
-  # set, is checked against extraVolumeMounts below - see validation.yaml.
+  # set, is checked against extraVolumeMounts below - see validation.yaml. Every field stays
+  # blank/unset here (not just "") so it defers to agentOrchestrator.storage - pathStyle is
+  # deliberately omitted, not defaulted, since a live true/false could not be told apart from an
+  # explicit override once EA-926 merges this block over the orchestrator's.
   storage:
     type: ""
     bucket: ""
     region: ""
     endpoint: ""
-    pathStyle: true
+    # pathStyle: true   # unset defers to agentOrchestrator.storage.pathStyle
     filesystem:
       baseDir: ""
     prefix: ""
