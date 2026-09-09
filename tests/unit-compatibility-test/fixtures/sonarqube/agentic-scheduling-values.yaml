@@ -975,6 +975,7 @@ spec:
         release: agentic-scheduling-values.yaml
         sonarqube.agent/component: orchestrator
     spec:
+      terminationGracePeriodSeconds: 2580
       automountServiceAccountToken: false
       initContainers:
         - name: wait-for-sonarqube
@@ -1072,13 +1073,13 @@ spec:
               readOnly: true
           readinessProbe:
             httpGet:
-              path: /health
+              path: /readyz
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /health
+              path: /livez
               port: http
             initialDelaySeconds: 10
             periodSeconds: 30
@@ -1132,7 +1133,7 @@ spec:
         sonarqube.agent/component: runtime
         sonarqube.agent/family: hunter
     spec:
-      terminationGracePeriodSeconds: 14430
+      terminationGracePeriodSeconds: 44430
       runtimeClassName: gvisor
       automountServiceAccountToken: false
       containers:
@@ -1172,6 +1173,15 @@ spec:
               value: ""
             - name: no_proxy
               value: ""
+          resources:
+            limits:
+              cpu: "2"
+              ephemeral-storage: 15Gi
+              memory: 8Gi
+            requests:
+              cpu: "1"
+              ephemeral-storage: 15Gi
+              memory: 8Gi
           readinessProbe:
             httpGet:
               path: /readyz
@@ -1180,7 +1190,7 @@ spec:
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /health
+              path: /livez
               port: http
             initialDelaySeconds: 10
             periodSeconds: 30
@@ -1311,7 +1321,7 @@ spec:
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /health
+              path: /livez
               port: http
             initialDelaySeconds: 10
             periodSeconds: 30
@@ -1418,6 +1428,15 @@ spec:
               value: ""
             - name: AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
               value: /etc/agentic/keys/agentic-shared
+          resources:
+            limits:
+              cpu: "2"
+              ephemeral-storage: 2Gi
+              memory: 8Gi
+            requests:
+              cpu: "1"
+              ephemeral-storage: 2Gi
+              memory: 6Gi
           startupProbe:
             httpGet:
               path: /health
