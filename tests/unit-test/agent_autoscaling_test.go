@@ -16,6 +16,14 @@ type scaledObjectScaleTargetRef struct {
 	Name string `json:"name"`
 }
 
+type scaledObjectHorizontalPodAutoscalerConfig struct {
+	Name string `json:"name"`
+}
+
+type scaledObjectAdvanced struct {
+	HorizontalPodAutoscalerConfig scaledObjectHorizontalPodAutoscalerConfig `json:"horizontalPodAutoscalerConfig"`
+}
+
 // scaledObject captures only the fields these tests assert on - there is no k8s.io/api type for a
 // KEDA CRD, and the full KEDA client types are not worth adding as a dependency for this.
 type scaledObject struct {
@@ -28,12 +36,8 @@ type scaledObject struct {
 		MinReplicaCount int64                      `json:"minReplicaCount"`
 		MaxReplicaCount int64                      `json:"maxReplicaCount"`
 		PollingInterval int64                      `json:"pollingInterval"`
-		Advanced        struct {
-			HorizontalPodAutoscalerConfig struct {
-				Name string `json:"name"`
-			} `json:"horizontalPodAutoscalerConfig"`
-		} `json:"advanced"`
-		Triggers []struct {
+		Advanced        scaledObjectAdvanced       `json:"advanced"`
+		Triggers        []struct {
 			Type     string            `json:"type"`
 			Metadata map[string]string `json:"metadata"`
 		} `json:"triggers"`
