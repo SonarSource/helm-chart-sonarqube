@@ -9,3 +9,9 @@ When the pre-requisites are fulfilled, just execute the bash script `./.github/s
 ```bash
 ./.github/scripts/run_dynamic_compatibility_tests.sh
 ```
+
+To run the DCE Elasticsearch major-upgrade test (installs the 2026.1 chart, then upgrades to the local chart):
+
+```bash
+SONARQUBE_ES_MAJOR_E2E=1 go test -v -timeout=90m -count=1 ./sonarqube-dce -run TestDCEEsMajorUpgrade
+```
