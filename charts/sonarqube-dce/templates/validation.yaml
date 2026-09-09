@@ -81,11 +81,13 @@
      flag, matching the guards above. */}}
 {{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" $) -}}
   {{- if $cfg.enabled -}}
-    {{- with $cfg.storage.filesystem.baseDir -}}
-      {{- $baseDir := . -}}
+    {{- $storageCfg := $cfg.storage | default dict -}}
+    {{- $fsCfg := $storageCfg.filesystem | default dict -}}
+    {{- with $fsCfg.baseDir -}}
+      {{- $baseDir := trimSuffix "/" . -}}
       {{- $mounted := false -}}
       {{- range $cfg.extraVolumeMounts -}}
-        {{- if eq .mountPath $baseDir -}}
+        {{- if eq (trimSuffix "/" .mountPath) $baseDir -}}
           {{- $mounted = true -}}
         {{- end -}}
       {{- end -}}

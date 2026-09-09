@@ -76,6 +76,26 @@ func TestRuntimeStorageFilesystemBaseDirRequiresMatchingMount(t *testing.T) {
 						_, err := renderWithValidation(t, chart, values)
 						require.NoError(t, err)
 					})
+
+					// A user overriding the whole storage block to null must not panic with a nil
+					// pointer - it should behave exactly like the unset default (inert).
+					t.Run("storage explicitly nulled stays inert", func(t *testing.T) {
+						values := runtimeStorageBase(family)
+						values[family+"Agent.storage"] = "null"
+						_, err := renderWithValidation(t, chart, values)
+						require.NoError(t, err)
+					})
+
+					// A trailing slash on either side must not defeat an otherwise-matching mount.
+					t.Run("a trailing slash on baseDir still matches a mount without one", func(t *testing.T) {
+						values := runtimeStorageBase(family)
+						values[family+"Agent.storage.filesystem.baseDir"] = baseDir + "/"
+						values[family+"Agent.extraVolumeMounts[0].name"] = "agentic-storage"
+						values[family+"Agent.extraVolumeMounts[0].mountPath"] = baseDir
+						values[family+"Agent.extraVolumeMounts[0].subPath"] = family
+						_, err := renderWithValidation(t, chart, values)
+						require.NoError(t, err)
+					})
 				})
 			}
 		})
