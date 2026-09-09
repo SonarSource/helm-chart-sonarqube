@@ -14,6 +14,7 @@ All changes to this chart will be documented in this file.
 * Add autoscaling for the Agent Orchestrator (`agentOrchestrator.autoscaling`, a plain CPU/Memory `HorizontalPodAutoscaler`) and each agent runtime family (`<hunterAgent|remediationAgent>.autoscaling`, a KEDA `ScaledObject`; requires KEDA installed in-cluster, or `agentKeda.assumeInstalled` set explicitly), with `terminationGracePeriodSeconds` hardening so an in-flight job survives any scale-down, not just an autoscaler-driven one, and an `autoscaling.manageReplicas` opt-out for GitOps tooling (Argo CD, Flux) that applies `helm template` output directly
 * Add an optional KEDA operator subchart dependency (`keda.enabled`), so KEDA can be installed as part of this release instead of requiring a separate cluster-wide install before enabling `<hunterAgent|remediationAgent>.autoscaling`
 * Ship default resource requests and limits for the Hunter Agent (`hunterAgent.resources`) and Vortex (`vortex.resources`), so neither lands in the BestEffort QoS class; memory and `ephemeral-storage` are pinned (request == limit) while CPU stays burstable
+* Point `agentOrchestrator`'s readiness/liveness probes, and `hunterAgent`/`remediationAgent`'s liveness probes, at the dedicated `/readyz`/`/livez` endpoints instead of the aggregate `/health`, and add `agentOrchestrator.terminationGracePeriodSeconds` (default `2580`)
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0

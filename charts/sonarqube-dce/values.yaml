@@ -1019,15 +1019,17 @@ agentOrchestrator:
       ephemeral-storage: 2Gi
   securityContext: {}
 
+  # Liveness must never gate on db/storage - the orchestrator's root /health aggregates both,
+  # and separately turns 503 for the whole SIGTERM drain once server.shutdown: graceful is on.
   probes:
     readiness:
       enabled: true
-      path: /health
+      path: /readyz
       initialDelaySeconds: 5
       periodSeconds: 10
     liveness:
       enabled: true
-      path: /health
+      path: /livez
       initialDelaySeconds: 10
       periodSeconds: 30
 
@@ -1137,6 +1139,11 @@ agentOrchestrator:
     behavior:
       scaleDown:
         stabilizationWindowSeconds: 300
+  # Must stay comfortably above the orchestrator image's own
+  # spring.lifecycle.timeout-per-shutdown-phase: 21m (1260s), which Spring applies *per* phase: the
+  # server.shutdown: graceful web drain and the two additive same-phase db-schedulers (5m + 15m)
+  # are separate phases, so budget both - or Kubernetes SIGKILLs it mid-drain.
+  terminationGracePeriodSeconds: 2580
 
 # Hunter Agent runtime that detects issues. Requires agentOrchestrator.enabled - see validation.yaml.
 # Process-count limits aren't set here - use your node's kubelet configuration (podPidsLimit).
@@ -1179,6 +1186,7 @@ hunterAgent:
       memory: 8Gi
       ephemeral-storage: 15Gi
   securityContext: {}
+  # Liveness must never gate on db/storage - see agentOrchestrator.probes above.
   probes:
     readiness:
       enabled: true
@@ -1187,7 +1195,7 @@ hunterAgent:
       periodSeconds: 10
     liveness:
       enabled: true
-      path: /health
+      path: /livez
       initialDelaySeconds: 10
       periodSeconds: 30
   # No readOnlyRootFilesystem: the image needs its home directory writable.
@@ -1246,10 +1254,11 @@ hunterAgent:
     manageReplicas: true
     pollingInterval: 15
     scaleDownStabilizationSeconds: 600
-  # Hunter jobs run up to ~3h; must stay comfortably above hunter-agent-runtime's own fixed
-  # `uvicorn --timeout-graceful-shutdown 14400`s (its Dockerfile), or Kubernetes SIGKILLs the pod
-  # before that bounded wait finishes. Don't set SHUTDOWN_GRACE_SECONDS - the image sizes it itself.
-  terminationGracePeriodSeconds: 14430
+  # Hunter jobs run up to ~12h; must stay comfortably above hunter-agent-runtime's own fixed
+  # `uvicorn --timeout-graceful-shutdown 44400`s (its Dockerfile), or Kubernetes SIGKILLs the pod
+  # before that bounded wait finishes. Don't set SHUTDOWN_GRACE_SECONDS or LIVENESS_JOB_MAX_SECONDS
+  # - the image sizes both itself.
+  terminationGracePeriodSeconds: 44430
 
 # Remediation Agent runtime that remediates issues. Requires agentOrchestrator.enabled AND
 # vortex.enabled - see validation.yaml.
@@ -1286,6 +1295,7 @@ remediationAgent:
       memory: 8Gi
       ephemeral-storage: 50Gi
   securityContext: {}
+  # Liveness must never gate on db/storage - see agentOrchestrator.probes above.
   probes:
     readiness:
       enabled: true
@@ -1294,7 +1304,7 @@ remediationAgent:
       periodSeconds: 10
     liveness:
       enabled: true
-      path: /health
+      path: /livez
       initialDelaySeconds: 10
       periodSeconds: 30
   # No readOnlyRootFilesystem: the image needs its home directory writable.

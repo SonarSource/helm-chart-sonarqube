@@ -1333,6 +1333,7 @@ spec:
         release: remediation-agent-values.yaml
         sonarqube.agent/component: orchestrator
     spec:
+      terminationGracePeriodSeconds: 2580
       automountServiceAccountToken: true
       initContainers:
         - name: wait-for-sonarqube
@@ -1426,13 +1427,13 @@ spec:
               readOnly: true
           readinessProbe:
             httpGet:
-              path: /health
+              path: /readyz
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /health
+              path: /livez
               port: http
             initialDelaySeconds: 10
             periodSeconds: 30
@@ -1539,7 +1540,7 @@ spec:
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /health
+              path: /livez
               port: http
             initialDelaySeconds: 10
             periodSeconds: 30

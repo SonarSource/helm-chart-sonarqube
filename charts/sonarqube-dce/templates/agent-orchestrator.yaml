@@ -42,6 +42,9 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      {{- /* Protects an in-flight graceful drain (server.shutdown: graceful) from the k8s default
+             30s SIGKILLing it almost immediately - same rationale as agent-runtime.yaml. */}}
+      terminationGracePeriodSeconds: {{ .Values.agentOrchestrator.terminationGracePeriodSeconds }}
       automountServiceAccountToken: {{ include "sonarqube.agent.automountServiceAccountToken" (dict "ctx" . "serviceAccount" .Values.agentOrchestrator.serviceAccount) }}
       {{- /* The wait-for-sonarqube init container below pulls the SonarQube image, so it needs the
              application nodes' pull secrets too - the orchestrator's own only cover its own image. */}}
