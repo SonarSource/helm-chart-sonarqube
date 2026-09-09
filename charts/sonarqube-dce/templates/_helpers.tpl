@@ -1356,3 +1356,70 @@ periodSeconds: {{ . }}
 timeoutSeconds: {{ . }}
 {{- end }}
 {{- end -}}
+
+{{/*
+Elasticsearch major (8 or 9) inferred from a search image tag.
+Returns "" for tags this chart doesn't support upgrading from/to (custom tags, or the pre-calendar
+versioning scheme), so the upgrade guard below is intentionally skipped for those.
+*/}}
+{{- define "sonarqube.search.esMajorFromTag" -}}
+{{- $tag := . | toString -}}
+{{- $ver := regexFind "^[0-9]+\\.[0-9]+" $tag -}}
+{{- if $ver -}}
+{{- $year := int (split "." $ver)._0 -}}
+{{- $minor := int (split "." $ver)._1 -}}
+{{- if ge $year 2025 -}}
+{{- if or (gt $year 2026) (and (eq $year 2026) (ge $minor 4)) -}}
+9
+{{- else -}}
+8
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "sonarqube.search.esMajor" -}}
+{{- include "sonarqube.search.esMajorFromTag" (tpl (.Values.searchNodes.image.tag | toString) .) -}}
+{{- end -}}
+
+{{/*
+Fail helm upgrade across an Elasticsearch major while search pods are still running.
+*/}}
+{{- define "sonarqube.search.assertEsMajorUpgrade" -}}
+{{- if and .Release.IsUpgrade (not .Values.searchNodes.skipEsMajorUpgradeCheck) -}}
+{{- $stsName := printf "%s-search" (include "sonarqube.fullname" .) -}}
+{{- $sts := lookup "apps/v1" "StatefulSet" .Release.Namespace $stsName -}}
+{{- if $sts -}}
+{{- $currentMajor := "" -}}
+{{- if and $sts.spec $sts.spec.template $sts.spec.template.spec $sts.spec.template.spec.containers -}}
+{{- $searchContainerName := printf "%s-search" .Chart.Name -}}
+{{- range $sts.spec.template.spec.containers -}}
+{{- if eq (.name | toString) $searchContainerName -}}
+{{- $currentMajor = include "sonarqube.search.esMajorFromTag" (regexFind "[^:]+$" (.image | toString)) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $targetMajor := include "sonarqube.search.esMajor" . -}}
+{{- /* $currentMajor/$targetMajor are "" for unsupported tags; skip the guard rather than guess. */ -}}
+{{- if and $currentMajor $targetMajor (ne $currentMajor $targetMajor) -}}
+{{- $replicas := 0 -}}
+{{- if $sts.spec.replicas -}}
+{{- $replicas = int $sts.spec.replicas -}}
+{{- end -}}
+{{- $searchPods := 0 -}}
+{{- $podList := lookup "v1" "Pod" .Release.Namespace "" -}}
+{{- if and $podList $podList.items -}}
+{{- range $podList.items -}}
+{{- $labels := .metadata.labels | default dict -}}
+{{- if and (eq (index $labels "sonarqube.datacenter/type" | toString) "search") (eq (index $labels "release" | toString) $.Release.Name) -}}
+{{- $searchPods = add $searchPods 1 -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if or (gt $replicas 0) (gt $searchPods 0) -}}
+{{- fail "\n ** Elasticsearch major upgrade is not a rolling update. ** \n Scale searchNodes.replicaCount to 0 with your current chart and wait until search pods are gone, then upgrade. Do not change the image tag in the same command." -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}

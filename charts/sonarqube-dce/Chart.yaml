@@ -58,6 +58,8 @@ annotations:
       description: "Add an optional KEDA operator subchart dependency (keda.enabled), so KEDA can be installed as part of this release instead of requiring a separate cluster-wide install before enabling hunterAgent/remediationAgent.autoscaling"
     - kind: added
       description: "Add hunterAgent/remediationAgent.storage (target + optional prefix) and a validation.yaml check on its extraVolumeMounts, so each agent runtime can be scoped to only its own subtree of a shared FILESYSTEM/NFS agentOrchestrator.storage.filesystem.baseDir via a per-runtime subPath mount"
+    - kind: changed
+      description: "Fail DCE upgrades across an Elasticsearch major while search pods are still running; scale searchNodes.replicaCount to 0 first"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/
