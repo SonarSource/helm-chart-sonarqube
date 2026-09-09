@@ -789,8 +789,7 @@ vortex:
     endpoint: ""
     filesystem:
       # Path to Vortex's own directory when type is FILESYSTEM or NFS - a separate store from
-      # agentOrchestrator.storage.filesystem.baseDir below, not required to match it: Vortex
-      # reads analysis context SonarQube Server writes, not agentic job artifacts.
+      # agentOrchestrator.storage.filesystem.baseDir below, not required to match it.
       baseDir: ""
     # Credentials for that endpoint. Leave accessKey/secretKey/existingSecret all blank for
     # credential-less access: the AWS SDK then falls back to its default credential chain (the
@@ -837,9 +836,7 @@ vortex:
       ephemeral-storage: 2Gi
 
   # Extra volumes/mounts for the Vortex container/pod - e.g. the FILESYSTEM/NFS mount for
-  # storage.filesystem.baseDir above. Mount it readOnly: Vortex only reads analysis context,
-  # never writes it (SonarQube Server writes) - see the per-component access model on
-  # agentOrchestrator.storage.
+  # storage.filesystem.baseDir above. Mount it readOnly: Vortex only reads, never writes.
   extraVolumes: []
   # - name: vortex-storage
   #   persistentVolumeClaim:
@@ -953,29 +950,20 @@ agentOrchestrator:
 
   # Object storage for the shared job folder -> AGENTIC_STORAGE_*/SONAR_AGENTIC_ORCHESTRATOR_STORAGE_* env.
   #
-  # Per-component access model for FILESYSTEM/NFS (S3 needs none of this: isolation is per-object,
-  # via presigned URLs). One shared volume; the orchestrator (this component) mounts it at its
-  # root (filesystem.baseDir below) and writes each runtime's jobs under a subdirectory named
-  # after that runtime ("hunter", "remediation"). Each runtime then mounts ONLY that
-  # subdirectory, at subPath "<runtime>" and at the SAME absolute path (<baseDir>/<runtime>) - see
-  # hunterAgent.extraVolumeMounts / remediationAgent.extraVolumeMounts - so it physically cannot
-  # see the other runtime's files. Vortex keeps its own, separate store (vortex.storage above) and
-  # mounts it readOnly, since it only reads.
+  # FILESYSTEM/NFS access model (S3 needs none of this - isolation is per-object via presigned
+  # URLs): one shared volume. The orchestrator mounts it at its root (filesystem.baseDir below)
+  # and writes each runtime's jobs under a subdirectory named after that runtime. Each runtime
+  # mounts ONLY its own subdirectory, at subPath "<runtime>" and the same absolute path
+  # (<baseDir>/<runtime>), so it cannot see the other's files. Vortex keeps its own, separate
+  # store (vortex.storage above), mounted readOnly.
   #
-  # Use ONE shared securityContext.fsGroup across agentOrchestrator/hunterAgent/remediationAgent,
-  # not a distinct one per component: distinct fsGroups on one shared RWX volume conflict, since
-  # each pod's kubelet recursively chowns the whole volume on mount. On NFS, also check the export
-  # does not root_squash/all_squash that fsGroup's gid, or writes from a non-root runtime UID may
-  # be remapped and rejected.
+  # Use ONE shared securityContext.fsGroup across agentOrchestrator/hunterAgent/remediationAgent -
+  # distinct fsGroups on one shared RWX volume conflict. On NFS, check the export doesn't
+  # root_squash/all_squash that gid.
   #
-  # Object storage (type: S3, the default) remains the recommended production backend;
-  # FILESYSTEM/NFS suits installs that cannot run one.
+  # Object storage (type: S3, the default) remains the recommended production backend.
   storage:
-    # S3 (default), FILESYSTEM or NFS. FILESYSTEM/NFS hand runtimes a direct file:// path instead
-    # of a presigned URL, so hunterAgent/remediationAgent must each mount their own subPath of
-    # this same volume - see the per-component access model above and each component's
-    # extraVolumes/extraVolumeMounts and filesystem.baseDir below. Vortex is not part of this
-    # volume - it keeps its own, separate store (vortex.storage above).
+    # S3 (default), FILESYSTEM or NFS - see the access model above.
     type: S3
     # Custom S3 endpoint (e.g. MinIO). Leave blank for real AWS S3 so the SDK uses its regional
     # endpoint. pathStyle should be true for MinIO, false for AWS S3 (virtual-hosted style).
@@ -1125,11 +1113,8 @@ hunterAgent:
   scriptPath: /home/agent/app/.venv/bin/detection-agent
   # This runtime's own subtree of the shared agent-jobs store - reuses the standard storage block
   # (see agentOrchestrator.storage above) plus an optional prefix. Not yet consumed by any
-  # container env: EA-926 adds the orchestrator's per-runtime routing. filesystem.baseDir, when
-  # set, is checked against extraVolumeMounts below - see validation.yaml. Every field stays
-  # blank/unset here (not just "") so it defers to agentOrchestrator.storage - pathStyle is
-  # deliberately omitted, not defaulted, since a live true/false could not be told apart from an
-  # explicit override once EA-926 merges this block over the orchestrator's.
+  # container env. Every field stays blank/unset (not just "") so it defers to
+  # agentOrchestrator.storage; pathStyle is omitted rather than defaulted for the same reason.
   storage:
     type: ""
     bucket: ""
@@ -1154,8 +1139,7 @@ hunterAgent:
   # that TLS-inspects egress to the LLM endpoint (the JVM/language runtime's own trust store is
   # separate from the OS's, so a system-level fix alone isn't enough; mount the cert here and
   # have the image import it at startup, same idea as this chart's own caCerts feature). Also
-  # where this runtime mounts its own subtree of a FILESYSTEM/NFS agent-jobs share - see the
-  # per-component access model on agentOrchestrator.storage above.
+  # where this runtime mounts its own FILESYSTEM/NFS subtree - see agentOrchestrator.storage above.
   extraVolumes: []
   # - name: custom-ca
   #   secret:
@@ -1261,11 +1245,8 @@ remediationAgent:
   remediationScriptPath: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
   # This runtime's own subtree of the shared agent-jobs store - reuses the standard storage block
   # (see agentOrchestrator.storage above) plus an optional prefix. Not yet consumed by any
-  # container env: EA-926 adds the orchestrator's per-runtime routing. filesystem.baseDir, when
-  # set, is checked against extraVolumeMounts below - see validation.yaml. Every field stays
-  # blank/unset here (not just "") so it defers to agentOrchestrator.storage - pathStyle is
-  # deliberately omitted, not defaulted, since a live true/false could not be told apart from an
-  # explicit override once EA-926 merges this block over the orchestrator's.
+  # container env. Every field stays blank/unset (not just "") so it defers to
+  # agentOrchestrator.storage; pathStyle is omitted rather than defaulted for the same reason.
   storage:
     type: ""
     bucket: ""
@@ -1279,9 +1260,8 @@ remediationAgent:
     secretKey: ""
     existingSecret: ""
   env: []
-  # Extra volumes/mounts for this runtime's container/pod. Also where it mounts its own subtree
-  # of a FILESYSTEM/NFS agent-jobs share - see the per-component access model on
-  # agentOrchestrator.storage above.
+  # Extra volumes/mounts for this runtime's container/pod, incl. its own FILESYSTEM/NFS subtree -
+  # see agentOrchestrator.storage above.
   extraVolumes: []
   # - name: agentic-storage
   #   persistentVolumeClaim:

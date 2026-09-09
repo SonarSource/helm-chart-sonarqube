@@ -81,11 +81,9 @@ It is used to validate the values.yaml file before the installation starts.
   {{- end -}}
 {{- end -}}
 
-{{/* Validation for the per-runtime storage subPath mount (SONAR-32022): when a runtime's own
-     storage.filesystem.baseDir is set, its extraVolumeMounts must contain a matching mountPath -
-     otherwise the file:// handoff from the orchestrator silently resolves to nothing on that
-     runtime, since Kubernetes gives it no mount at that path. Gated on the runtime's own enabled
-     flag, matching the guards above. */}}
+{{/* When a runtime's storage.filesystem.baseDir is set, its extraVolumeMounts must contain a
+     matching mountPath, or the orchestrator's file:// handoff resolves to nothing on that
+     runtime. */}}
 {{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" $) -}}
   {{- if $cfg.enabled -}}
     {{- $storageCfg := $cfg.storage | default dict -}}

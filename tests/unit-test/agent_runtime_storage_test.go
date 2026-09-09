@@ -31,9 +31,8 @@ func runtimeStorageBase(family string) map[string]string {
 }
 
 // A runtime's storage.filesystem.baseDir, when set, must be mounted by that same runtime's
-// extraVolumeMounts - otherwise the orchestrator's file:// handoff resolves to nothing on this
-// runtime, since Kubernetes gives it no mount at that path (SONAR-32022). Left unset (the
-// default), the check does not run at all: today's flat, unscoped layout keeps working.
+// extraVolumeMounts, or the orchestrator's file:// handoff resolves to nothing on this runtime.
+// Left unset, the check doesn't run at all.
 func TestRuntimeStorageFilesystemBaseDirRequiresMatchingMount(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -77,8 +76,7 @@ func TestRuntimeStorageFilesystemBaseDirRequiresMatchingMount(t *testing.T) {
 						require.NoError(t, err)
 					})
 
-					// A user overriding the whole storage block to null must not panic with a nil
-					// pointer - it should behave exactly like the unset default (inert).
+					// A nulled storage block must not panic with a nil pointer.
 					t.Run("storage explicitly nulled stays inert", func(t *testing.T) {
 						values := runtimeStorageBase(family)
 						values[family+"Agent.storage"] = "null"
