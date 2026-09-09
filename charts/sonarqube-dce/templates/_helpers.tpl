@@ -1359,6 +1359,8 @@ timeoutSeconds: {{ . }}
 
 {{/*
 Elasticsearch major (8 or 9) inferred from a search image tag.
+Returns "" for tags this chart doesn't support upgrading from/to (custom tags, or the pre-calendar
+versioning scheme), so the upgrade guard below is intentionally skipped for those.
 */}}
 {{- define "sonarqube.search.esMajorFromTag" -}}
 {{- $tag := . | toString -}}
@@ -1398,6 +1400,7 @@ Fail helm upgrade across an Elasticsearch major while search pods are still runn
 {{- end -}}
 {{- end -}}
 {{- $targetMajor := include "sonarqube.search.esMajor" . -}}
+{{- /* $currentMajor/$targetMajor are "" for unsupported tags; skip the guard rather than guess. */ -}}
 {{- if and $currentMajor $targetMajor (ne $currentMajor $targetMajor) -}}
 {{- $replicas := 0 -}}
 {{- if $sts.spec.replicas -}}
