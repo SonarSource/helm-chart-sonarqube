@@ -14,7 +14,10 @@ metadata:
     sonarqube.agent/family: {{ $family }}
     app.kubernetes.io/component: agent-runtime-{{ $family }}
 spec:
+  {{- /* Same guard as agent-orchestrator.yaml, for the KEDA ScaledObject instead of the HPA. */}}
+  {{- if or (not $cfg.autoscaling.enabled) (and $.Release.IsInstall $cfg.autoscaling.manageReplicas) }}
   replicas: {{ $cfg.replicaCount }}
+  {{- end }}
   {{- with $cfg.revisionHistoryLimit }}
   revisionHistoryLimit: {{ . }}
   {{- end }}
@@ -37,6 +40,9 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      {{- /* Protects an in-flight job from an ordinary scale-down (manual, rollout, node drain, or
+             KEDA-driven) dropping it mid-run - independent of whether autoscaling is enabled. */}}
+      terminationGracePeriodSeconds: {{ $cfg.terminationGracePeriodSeconds }}
       {{- /* Run the (untrusted) runtimes under the gVisor RuntimeClass when enabled. The
              RuntimeClass' own scheduling.nodeSelector pins these pods to runsc-ready nodes. */}}
       {{- if eq (include "sonarqube.gvisor.enabled" $) "true" }}
