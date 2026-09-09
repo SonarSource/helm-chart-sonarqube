@@ -1,23 +1,15 @@
 package sonarqubedce
 
 import (
-	"path/filepath"
-	"runtime"
 	"testing"
 
 	utils "github.com/helm-chart-sonarqube/tests/dynamic-compatibility-test"
 	"github.com/helm-chart-sonarqube/tests/dynamic-compatibility-test/dependencies"
 )
 
-func sonarqubeDCEChartPath() string {
-	_, testFile, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(testFile), "..", "..", "..", "charts", "sonarqube-dce")
-}
-
 func TestPrometheusExporter(t *testing.T) {
 	utils.RunPrometheusExporterTest(t, utils.PrometheusExporterTestSpec{
 		ChartName:         "sonarqube-dce",
-		ChartPath:         sonarqubeDCEChartPath(),
 		PodSelector:       "app=sonarqube-dce,release=sonarqube-dce,sonarqube.datacenter/type=app",
 		ContainerName:     "sonarqube-dce",
 		RequireExternalDB: true,

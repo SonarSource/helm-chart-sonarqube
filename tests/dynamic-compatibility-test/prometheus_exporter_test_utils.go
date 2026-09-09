@@ -18,7 +18,6 @@ const PrometheusExporterSHA256 = "a95983fd96e865d2bcdf911cc500e7c82808c27ab9fd22
 
 type PrometheusExporterTestSpec struct {
 	ChartName         string
-	ChartPath         string
 	Values            map[string]string
 	PodSelector       string
 	ContainerName     string
@@ -44,7 +43,7 @@ func RunPrometheusExporterTest(t *testing.T, spec PrometheusExporterTestSpec) {
 			"install": {"--wait", "--timeout", "15m"},
 		},
 	}
-	helm.Install(t, helmOptions, spec.ChartPath, spec.ChartName)
+	helm.Install(t, helmOptions, chartPath(spec.ChartName), spec.ChartName)
 
 	WaitForChartReady(t, kubectlOptions, spec.ChartName)
 	CheckSonarQubeUpAndRunning(t, kubectlOptions, spec.ChartName)
