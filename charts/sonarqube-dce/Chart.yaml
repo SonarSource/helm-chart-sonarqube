@@ -56,6 +56,8 @@ annotations:
       description: "Add autoscaling for the Agent Orchestrator (agentOrchestrator.autoscaling, a plain CPU/Memory HorizontalPodAutoscaler) and each agent runtime family (hunterAgent/remediationAgent.autoscaling, a KEDA ScaledObject; requires KEDA installed in-cluster, or agentKeda.assumeInstalled set explicitly), with terminationGracePeriodSeconds hardening so an in-flight job survives any scale-down, not just an autoscaler-driven one, and an autoscaling.manageReplicas opt-out for GitOps tooling (Argo CD, Flux) that applies helm template output directly"
     - kind: added
       description: "Add an optional KEDA operator subchart dependency (keda.enabled), so KEDA can be installed as part of this release instead of requiring a separate cluster-wide install before enabling hunterAgent/remediationAgent.autoscaling"
+    - kind: added
+      description: "Add hunterAgent/remediationAgent.storage (target + optional prefix) and a validation.yaml check on its extraVolumeMounts, so each agent runtime can be scoped to only its own subtree of a shared FILESYSTEM/NFS agentOrchestrator.storage.filesystem.baseDir via a per-runtime subPath mount"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/

@@ -25,6 +25,8 @@ func TestAgentValuesSchemaRejectsWrongTypes(t *testing.T) {
 	}{
 		{name: "agentOrchestrator.replicaCount", set: map[string]string{"agentOrchestrator.replicaCount": "notanumber"}},
 		{name: "hunterAgent.enabled", set: map[string]string{"hunterAgent.enabled": "notabool"}},
+		{name: "hunterAgent.storage.pathStyle", set: map[string]string{"hunterAgent.storage.pathStyle": "notabool"}},
+		{name: "remediationAgent.storage.pathStyle", set: map[string]string{"remediationAgent.storage.pathStyle": "notabool"}},
 		{name: "gvisor.installer.image.digest", set: map[string]string{"gvisor.installer.image.digest": "true"}},
 		{name: "agentEgressProxy.replicaCount", set: map[string]string{"agentEgressProxy.replicaCount": "notanumber"}, requiresEgressProxy: true},
 		{name: "agentKeyDerivation.enabled", set: map[string]string{"agentKeyDerivation.enabled": "notabool"}, requiresAgenticKeys: true},

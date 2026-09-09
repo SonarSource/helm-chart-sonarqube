@@ -74,6 +74,30 @@
   {{- end -}}
 {{- end -}}
 
+{{/* When a runtime's storage.filesystem.baseDir is set, its extraVolumeMounts must contain a
+     matching mountPath, or the orchestrator's file:// handoff resolves to nothing on that
+     runtime. */}}
+{{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" $) -}}
+  {{- if $cfg.enabled -}}
+    {{- $storageCfg := $cfg.storage | default dict -}}
+    {{- $fsCfg := $storageCfg.filesystem | default dict -}}
+    {{- with $fsCfg.baseDir -}}
+      {{- $rawBaseDir := . -}}
+      {{- $baseDir := regexReplaceAll "/+$" . "" | default "/" -}}
+      {{- $mounted := false -}}
+      {{- range $cfg.extraVolumeMounts -}}
+        {{- $mountPath := regexReplaceAll "/+$" (default "" .mountPath | toString) "" | default "/" -}}
+        {{- if or (eq $mountPath $baseDir) (hasPrefix (printf "%s/" $mountPath) $baseDir) -}}
+          {{- $mounted = true -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if not $mounted -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n %sAgent.storage.filesystem.baseDir is set to %q but no %sAgent.extraVolumeMounts entry has a matching mountPath, at that path or an ancestor of it." $family $rawBaseDir $family) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
 {{/* Autoscaling validation: minReplicas floor of 2 (no scale-to-zero), maxReplicas >= minReplicas,
      and KEDA CRDs present for any runtime family - gated on the component's own enabled flag too,
      matching the render guards in agent-orchestrator-hpa.yaml/agent-runtime-scaledobject.yaml. */}}
