@@ -36,3 +36,6 @@ WARNING: This chart no longer bundles the ingress-nginx controller. Setting ngin
          Run gateway-api-migration-scripts/nginx-to-istio-migration.sh to migrate to Gateway API using Istio (the controller our script sets up), or set httproute.enabled and bring your own Gateway API controller of choice, or set ingress.enabled and bring your own self-managed ingress controller.
          Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube#ingress-usage for more information.
 {{- end }}
+{{ if or (hasKey (.Values.livenessProbe | default dict) "exec") (hasKey (.Values.livenessProbe | default dict) "httpGet") (hasKey (.Values.livenessProbe | default dict) "tcpSocket") (hasKey (.Values.livenessProbe | default dict) "grpc") (hasKey (.Values.readinessProbe | default dict) "exec") (hasKey (.Values.readinessProbe | default dict) "httpGet") (hasKey (.Values.readinessProbe | default dict) "tcpSocket") (hasKey (.Values.readinessProbe | default dict) "grpc") }}
+WARNING: livenessProbe/readinessProbe handler values are deprecated and no longer have any effect. The chart manages these probes with exec; use overrideCommand to customize their commands.
+{{- end }}

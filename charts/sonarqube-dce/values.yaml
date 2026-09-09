@@ -232,19 +232,6 @@ applicationNodes:
   #   readOnlyRootFilesystem: true
 
   readinessProbe:
-    exec:
-      command:
-      - sh
-      - -c
-      - |
-        #!/bin/bash
-        # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
-        # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
-        {{- include "sonarqube.probeHostScript" . | nindent 16 }}
-        if curl --noproxy "*" -s http://${host}:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
-          exit 0
-        fi
-        exit 1
     initialDelaySeconds: 0
     periodSeconds: 30
     failureThreshold: 8
@@ -254,14 +241,11 @@ applicationNodes:
     # A trailing "/" must be included
     # deprecated please use sonarWebContext at the value top level
     # sonarWebContext: /
+    # overrideCommand:
+    #   - sh
+    #   - -c
+    #   - echo "custom readiness check"
   livenessProbe:
-    exec:
-      command:
-      - sh
-      - -c
-      - |
-        {{- include "sonarqube.probeHostScript" . | nindent 16 }}
-        curl --noproxy "*" -fsS -o /dev/null --max-time {{ .Values.ApplicationNodes.livenessProbe.timeoutSeconds }} -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
     initialDelaySeconds: 0
     periodSeconds: 30
     failureThreshold: 6
@@ -271,6 +255,10 @@ applicationNodes:
     # A trailing "/" must be included
     # deprecated please use sonarWebContext at the value top level
     # sonarWebContext: /
+    # overrideCommand:
+    #   - sh
+    #   - -c
+    #   - echo "custom liveness check"
   startupProbe:
     initialDelaySeconds: 45
     periodSeconds: 10
