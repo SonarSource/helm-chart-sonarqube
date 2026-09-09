@@ -251,25 +251,33 @@ func TestAgentRuntimeRemediationSonarQubeEndpoints(t *testing.T) {
 	}
 }
 
-// Only remediation ships sized resource defaults; hunter's sizing is out of scope for this
-// ticket (SONAR-31656) - tracked separately.
+// Both runtimes ship sized resource defaults, so neither lands in the BestEffort QoS class.
+// Memory and ephemeral-storage are pinned on hunter (request == limit) because neither is
+// compressible; CPU stays burstable so 25 replicas can still be scheduled.
 func TestAgentRuntimeResources(t *testing.T) {
+	cases := []struct {
+		family                                      string
+		cpuRequest, memoryRequest, ephemeralRequest string
+		cpuLimit, memoryLimit, ephemeralLimit       string
+	}{
+		{"hunter", "1", "8Gi", "15Gi", "2", "8Gi", "15Gi"},
+		{"remediation", "1", "2Gi", "10Gi", "4", "8Gi", "50Gi"},
+	}
+
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			t.Run("hunter", func(t *testing.T) {
-				deployment := renderAgentRuntime(t, chart, "hunter", nil)
-				assert.Empty(t, deployment.Spec.Template.Spec.Containers[0].Resources.Requests)
-				assert.Empty(t, deployment.Spec.Template.Spec.Containers[0].Resources.Limits)
-			})
+			for _, c := range cases {
+				t.Run(c.family, func(t *testing.T) {
+					container := renderAgentRuntime(t, chart, c.family, nil).Spec.Template.Spec.Containers[0]
 
-			t.Run("remediation", func(t *testing.T) {
-				deployment := renderAgentRuntime(t, chart, "remediation", nil)
-				container := deployment.Spec.Template.Spec.Containers[0]
-				assert.Equal(t, "1", container.Resources.Requests.Cpu().String())
-				assert.Equal(t, "2Gi", container.Resources.Requests.Memory().String())
-				assert.Equal(t, "4", container.Resources.Limits.Cpu().String())
-				assert.Equal(t, "8Gi", container.Resources.Limits.Memory().String())
-			})
+					assert.Equal(t, c.cpuRequest, container.Resources.Requests.Cpu().String())
+					assert.Equal(t, c.memoryRequest, container.Resources.Requests.Memory().String())
+					assert.Equal(t, c.ephemeralRequest, container.Resources.Requests.StorageEphemeral().String())
+					assert.Equal(t, c.cpuLimit, container.Resources.Limits.Cpu().String())
+					assert.Equal(t, c.memoryLimit, container.Resources.Limits.Memory().String())
+					assert.Equal(t, c.ephemeralLimit, container.Resources.Limits.StorageEphemeral().String())
+				})
+			}
 		})
 	}
 }

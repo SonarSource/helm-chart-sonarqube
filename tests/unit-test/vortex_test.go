@@ -640,3 +640,21 @@ func TestVortexFollowsServicePorts(t *testing.T) {
 		})
 	}
 }
+
+// Vortex ships sized resource defaults, so it does not land in the BestEffort QoS class.
+// ephemeral-storage is pinned (request == limit) because it is not compressible; memory has a
+// 6Gi-to-8Gi range and CPU stays burstable.
+func TestVortexResources(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			container := vortexDeployment(t, chart, "vortex-enabled.yaml").Spec.Template.Spec.Containers[0]
+
+			assert.Equal(t, "1", container.Resources.Requests.Cpu().String())
+			assert.Equal(t, "6Gi", container.Resources.Requests.Memory().String())
+			assert.Equal(t, "2Gi", container.Resources.Requests.StorageEphemeral().String())
+			assert.Equal(t, "2", container.Resources.Limits.Cpu().String())
+			assert.Equal(t, "8Gi", container.Resources.Limits.Memory().String())
+			assert.Equal(t, "2Gi", container.Resources.Limits.StorageEphemeral().String())
+		})
+	}
+}

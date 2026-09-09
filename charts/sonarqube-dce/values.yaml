@@ -954,7 +954,18 @@ vortex:
   # - name: MY_VAR
   #   value: my-value
 
-  resources: {}
+  # Defaults sized for Vortex, which indexes repositories into the vector store. Memory ranges
+  # from 6Gi to 8Gi; ephemeral-storage is pinned since it is not compressible. CPU bursts,
+  # since average use is a fraction of a core. Override for your workload.
+  resources:
+    requests:
+      cpu: "1"
+      memory: 6Gi
+      ephemeral-storage: 2Gi
+    limits:
+      cpu: "2"
+      memory: 8Gi
+      ephemeral-storage: 2Gi
 
   extraVolumes: []
   extraVolumeMounts: []
@@ -1153,7 +1164,20 @@ hunterAgent:
   # Extra labels/annotations for this runtime's pod.
   podLabels: {}
   annotations: {}
-  resources: {}
+  # Defaults sized for the SonarQube Hunter agent, which checks out and scans repositories.
+  # Memory and ephemeral-storage are pinned (request == limit) because neither is compressible:
+  # measured peak use is 6.89Gi of memory and 13.2Gi of disk, so 8Gi/15Gi is a floor. CPU bursts
+  # instead, since average use is a fraction of a core. Very large repositories may need 4 CPU
+  # and 20Gi of memory. Override for your workload.
+  resources:
+    requests:
+      cpu: "1"
+      memory: 8Gi
+      ephemeral-storage: 15Gi
+    limits:
+      cpu: "2"
+      memory: 8Gi
+      ephemeral-storage: 15Gi
   securityContext: {}
   probes:
     readiness:
