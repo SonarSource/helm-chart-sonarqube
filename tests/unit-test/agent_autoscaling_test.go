@@ -28,7 +28,12 @@ type scaledObject struct {
 		MinReplicaCount int64                      `json:"minReplicaCount"`
 		MaxReplicaCount int64                      `json:"maxReplicaCount"`
 		PollingInterval int64                      `json:"pollingInterval"`
-		Triggers        []struct {
+		Advanced        struct {
+			HorizontalPodAutoscalerConfig struct {
+				Name string `json:"name"`
+			} `json:"horizontalPodAutoscalerConfig"`
+		} `json:"advanced"`
+		Triggers []struct {
 			Type     string            `json:"type"`
 			Metadata map[string]string `json:"metadata"`
 		} `json:"triggers"`
@@ -238,6 +243,7 @@ func TestAgentRuntimeScaledObjectRendersWhenEnabled(t *testing.T) {
 					expectedName := chart.fullnamePrefix() + "-agent-runtime-" + family
 					assert.Equal(t, expectedName, so.Metadata.Name)
 					assert.Equal(t, expectedName, so.Spec.ScaleTargetRef.Name)
+					assert.Equal(t, expectedName, so.Spec.Advanced.HorizontalPodAutoscalerConfig.Name)
 					assert.EqualValues(t, 4, so.Spec.MinReplicaCount)
 					assert.EqualValues(t, 9, so.Spec.MaxReplicaCount)
 					assert.EqualValues(t, 20, so.Spec.PollingInterval)
@@ -249,6 +255,32 @@ func TestAgentRuntimeScaledObjectRendersWhenEnabled(t *testing.T) {
 					assert.Equal(t, family+".unfinished", trigger.Metadata["valueLocation"])
 				})
 			}
+		})
+	}
+}
+
+// KEDA defaults the underlying HPA's name to "keda-hpa-<scaledobject name>" - that 9-char prefix
+// can push the *HPA's* name past the 63-char Kubernetes name limit even when the ScaledObject's
+// own (already-truncated-to-63) name fits, and KEDA's admission webhook rejects the ScaledObject
+// outright when that happens. horizontalPodAutoscalerConfig.name must be pinned to the
+// ScaledObject's own name so no extra prefix is ever added.
+func TestAgentRuntimeScaledObjectHPANameStaysWithinLimit(t *testing.T) {
+	const longRelease = "next-prod-linas"
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			so, err := renderAgentRuntimeScaledObject(t, agentChart{
+				name:      chart.name,
+				path:      chart.path,
+				release:   longRelease,
+				valuesDir: chart.valuesDir,
+			}, "remediation", map[string]string{
+				"remediationAgent.autoscaling.enabled": "true",
+				"agentKeda.assumeInstalled":            "true",
+			})
+			require.NoError(t, err)
+
+			assert.LessOrEqual(t, len(so.Spec.Advanced.HorizontalPodAutoscalerConfig.Name), 63)
+			assert.Equal(t, so.Metadata.Name, so.Spec.Advanced.HorizontalPodAutoscalerConfig.Name)
 		})
 	}
 }
