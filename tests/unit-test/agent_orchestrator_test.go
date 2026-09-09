@@ -208,21 +208,58 @@ func TestAgentOrchestratorSchedulingWinsOverGlobal(t *testing.T) {
 	}
 }
 
-// Both probes default on, against the health endpoint the orchestrator's own source exposes.
+// Both probes default on, against the dedicated /readyz and /livez endpoints - never the
+// aggregate /health, whose db/storage checks would falsely gate liveness too.
 func TestAgentOrchestratorProbes(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			container := renderAgentOrchestrator(t, chart, nil).Spec.Template.Spec.Containers[0]
+			deployment := renderAgentOrchestrator(t, chart, nil)
+			container := deployment.Spec.Template.Spec.Containers[0]
 
-			for name, probe := range map[string]*corev1.Probe{
-				"readiness": container.ReadinessProbe,
-				"liveness":  container.LivenessProbe,
+			for name, tc := range map[string]struct {
+				probe *corev1.Probe
+				path  string
+			}{
+				"readiness": {container.ReadinessProbe, "/readyz"},
+				"liveness":  {container.LivenessProbe, "/livez"},
 			} {
-				require.NotNil(t, probe, "%s probe must be set", name)
-				require.NotNil(t, probe.HTTPGet, "%s probe must be an HTTP GET", name)
-				assert.Equal(t, "/health", probe.HTTPGet.Path)
-				assert.Equal(t, "http", probe.HTTPGet.Port.StrVal)
+				require.NotNil(t, tc.probe, "%s probe must be set", name)
+				require.NotNil(t, tc.probe.HTTPGet, "%s probe must be an HTTP GET", name)
+				assert.Equal(t, tc.path, tc.probe.HTTPGet.Path)
+				assert.Equal(t, "http", tc.probe.HTTPGet.Port.StrVal)
 			}
+
+			podSpec := deployment.Spec.Template.Spec
+			require.NotNil(t, podSpec.TerminationGracePeriodSeconds)
+			assert.EqualValues(t, 2580, *podSpec.TerminationGracePeriodSeconds)
+		})
+	}
+}
+
+// Probes are user-configurable like any other agent setting: a custom path/timeoutSeconds/
+// failureThreshold on readiness reaches the manifest, and enabled: false drops the liveness
+// probe block entirely rather than rendering it with empty fields.
+func TestAgentOrchestratorProbesCustomized(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			opts := &helm.Options{
+				Logger:      logger.Discard,
+				ValuesFiles: []string{chart.valuesDir + "/agent-probes-custom.yaml"},
+			}
+			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-orchestrator.yaml"})
+			require.NoError(t, err)
+
+			var deployment appsv1.Deployment
+			helm.UnmarshalK8SYaml(t, output, &deployment)
+			container := deployment.Spec.Template.Spec.Containers[0]
+
+			require.NotNil(t, container.ReadinessProbe)
+			require.NotNil(t, container.ReadinessProbe.HTTPGet)
+			assert.Equal(t, "/custom-readyz", container.ReadinessProbe.HTTPGet.Path)
+			assert.EqualValues(t, 3, container.ReadinessProbe.TimeoutSeconds)
+			assert.EqualValues(t, 6, container.ReadinessProbe.FailureThreshold)
+
+			assert.Nil(t, container.LivenessProbe, "liveness.enabled: false must drop the probe entirely")
 		})
 	}
 }
