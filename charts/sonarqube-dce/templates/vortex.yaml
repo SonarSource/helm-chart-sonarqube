@@ -92,10 +92,13 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
             {{- /* Sets the sliding window the new GET <metricPath> endpoint reports its peak
-                   concurrency over - only when overridden, so an unset value leaves the image's
-                   own default in place. Emitted before $vortex.env so an explicit user entry of
-                   the same name still wins, matching every other auto-generated var here. */}}
-            {{- if $vortex.autoscaling.windowSeconds }}
+                   concurrency over. Only relevant once the ScaledObject actually polls that
+                   endpoint, so it's emitted with autoscaling only - windowSeconds defaults to a
+                   non-empty 30, so gating on it alone would pin every Vortex pod to this env var
+                   even when autoscaling.enabled is false. Emitted before $vortex.env so an
+                   explicit user entry of the same name still wins, matching every other
+                   auto-generated var here. */}}
+            {{- if and $vortex.autoscaling.enabled $vortex.autoscaling.windowSeconds }}
             - name: METRICS_CONCURRENT_REQUESTS_WINDOW_SECONDS
               value: {{ $vortex.autoscaling.windowSeconds | quote }}
             {{- end }}

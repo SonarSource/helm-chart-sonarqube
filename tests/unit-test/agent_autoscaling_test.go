@@ -16,39 +16,51 @@ type scaledObjectScaleTargetRef struct {
 	Name string `json:"name"`
 }
 
-type scaledObjectHorizontalPodAutoscalerConfig struct {
-	Name     string `json:"name"`
-	Behavior struct {
-		ScaleDown struct {
-			StabilizationWindowSeconds int64 `json:"stabilizationWindowSeconds"`
-		} `json:"scaleDown"`
-	} `json:"behavior"`
-}
-
-type scaledObjectAdvanced struct {
-	HorizontalPodAutoscalerConfig scaledObjectHorizontalPodAutoscalerConfig `json:"horizontalPodAutoscalerConfig"`
-}
-
 // scaledObject captures only the fields these tests assert on - there is no k8s.io/api type for a
 // KEDA CRD, and the full KEDA client types are not worth adding as a dependency for this. Shared
 // with vortex_autoscaling_test.go.
 type scaledObject struct {
-	Metadata struct {
-		Name   string            `json:"name"`
-		Labels map[string]string `json:"labels"`
-	} `json:"metadata"`
-	Spec struct {
-		ScaleTargetRef  scaledObjectScaleTargetRef `json:"scaleTargetRef"`
-		MinReplicaCount int64                      `json:"minReplicaCount"`
-		MaxReplicaCount int64                      `json:"maxReplicaCount"`
-		PollingInterval int64                      `json:"pollingInterval"`
-		Advanced        scaledObjectAdvanced `json:"advanced"`
-		Triggers        []struct {
-			Type              string            `json:"type"`
-			Metadata          map[string]string `json:"metadata"`
-			AuthenticationRef interface{}       `json:"authenticationRef"`
-		} `json:"triggers"`
-	} `json:"spec"`
+	Metadata scaledObjectMetadata `json:"metadata"`
+	Spec     scaledObjectSpec     `json:"spec"`
+}
+
+type scaledObjectMetadata struct {
+	Name   string            `json:"name"`
+	Labels map[string]string `json:"labels"`
+}
+
+type scaledObjectSpec struct {
+	ScaleTargetRef  scaledObjectScaleTargetRef `json:"scaleTargetRef"`
+	MinReplicaCount int64                      `json:"minReplicaCount"`
+	MaxReplicaCount int64                      `json:"maxReplicaCount"`
+	PollingInterval int64                      `json:"pollingInterval"`
+	Advanced        scaledObjectAdvanced       `json:"advanced"`
+	Triggers        []scaledObjectTrigger      `json:"triggers"`
+}
+
+type scaledObjectAdvanced struct {
+	HorizontalPodAutoscalerConfig scaledObjectHPAConfig `json:"horizontalPodAutoscalerConfig"`
+}
+
+// Name is the HPA's own overridden object name (SONAR-32220 pins this to stay within the 63-char
+// object-name limit); Behavior is Vortex's scale-down stabilization window (SONAR-32198).
+type scaledObjectHPAConfig struct {
+	Name     string               `json:"name"`
+	Behavior scaledObjectBehavior `json:"behavior"`
+}
+
+type scaledObjectBehavior struct {
+	ScaleDown scaledObjectScaleDown `json:"scaleDown"`
+}
+
+type scaledObjectScaleDown struct {
+	StabilizationWindowSeconds int64 `json:"stabilizationWindowSeconds"`
+}
+
+type scaledObjectTrigger struct {
+	Type              string            `json:"type"`
+	Metadata          map[string]string `json:"metadata"`
+	AuthenticationRef interface{}       `json:"authenticationRef"`
 }
 
 func renderAgentOrchestratorHPA(t *testing.T, chart agentChart, setValues map[string]string) (string, error) {
@@ -129,6 +141,63 @@ func renderAgentRuntimeScaledObject(t *testing.T, chart agentChart, family strin
 	return scaledObject{}, nil
 }
 
+// assertReplicasOmittedOnUpgrade renders a Deployment via render on a fresh install and again on
+// upgrade with the same values, and asserts replicas is set on install but omitted on upgrade -
+// the pattern shared by the orchestrator, each agent runtime family, and Vortex once their
+// respective autoscaler owns spec.replicas. Used by both this file and
+// vortex_autoscaling_test.go.
+func assertReplicasOmittedOnUpgrade(t *testing.T, render func(extraArgs ...string) (appsv1.Deployment, error)) {
+	t.Helper()
+	install, err := render()
+	require.NoError(t, err)
+	require.NotNil(t, install.Spec.Replicas, "replicas should render on a fresh install")
+
+	upgrade, err := render("--is-upgrade")
+	require.NoError(t, err)
+	assert.Nil(t, upgrade.Spec.Replicas, "replicas should be omitted on upgrade once the autoscaler owns it")
+}
+
+// assertReplicasOmittedWhenManageReplicasFalse is the GitOps-escape-hatch counterpart to
+// assertReplicasOmittedOnUpgrade: Release.IsInstall is always true under `helm template` (Argo CD,
+// Flux, --dry-run=client), so without manageReplicas=false those consumers would always hit the
+// "fresh install" branch above and keep resetting replicas on every sync. Used by both this file
+// and vortex_autoscaling_test.go.
+func assertReplicasOmittedWhenManageReplicasFalse(t *testing.T, render func() (appsv1.Deployment, error)) {
+	t.Helper()
+	install, err := render()
+	require.NoError(t, err)
+	assert.Nil(t, install.Spec.Replicas, "replicas should be omitted even on install when manageReplicas=false")
+}
+
+// assertReplicasRenderedWhenAutoscalingDisabled checks that manageReplicas only gates the
+// autoscaling-enabled branch, not replicas rendering whenever a shared values layer sets it false
+// regardless of autoscaling.enabled. Used by both this file and vortex_autoscaling_test.go.
+func assertReplicasRenderedWhenAutoscalingDisabled(t *testing.T, render func() (appsv1.Deployment, error)) {
+	t.Helper()
+	deployment, err := render()
+	require.NoError(t, err)
+	require.NotNil(t, deployment.Spec.Replicas, "replicas must still render when autoscaling is disabled, regardless of manageReplicas")
+}
+
+// assertAutoscalingRequiresKedaCRDOrOverride exercises the KEDA CRD guard in validation.yaml,
+// shared by every autoscaled component: enabling autoscaling without the KEDA CRDs present (and
+// no explicit agentKeda.assumeInstalled override) fails; --api-versions simulates the CRD being
+// registered on a real cluster (Capabilities.APIVersions is otherwise empty under `helm
+// template`). Used by both this file and vortex_autoscaling_test.go.
+func assertAutoscalingRequiresKedaCRDOrOverride(t *testing.T, opts *helm.Options, chart agentChart, template string, errSubstring string) {
+	t.Helper()
+	t.Run("no KEDA CRD, no override: fails", func(t *testing.T) {
+		_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{template})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), errSubstring)
+	})
+
+	t.Run("KEDA CRD present via --api-versions: succeeds", func(t *testing.T) {
+		_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{template}, "--api-versions=keda.sh/v1alpha1")
+		require.NoError(t, err)
+	})
+}
+
 // Helm's `--show-only` errors ("could not find template ... in chart") rather than returning empty
 // when the named template renders zero documents, so "not rendered" must be asserted against a full
 // chart render instead of a --show-only'd one.
@@ -178,14 +247,9 @@ func TestAgentOrchestratorReplicasOmittedOnUpgradeWhenAutoscalingEnabled(t *test
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			setValues := map[string]string{"agentOrchestrator.autoscaling.enabled": "true"}
-
-			install, err := renderAgentOrchestratorDeployment(t, chart, setValues)
-			require.NoError(t, err)
-			require.NotNil(t, install.Spec.Replicas, "replicas should render on a fresh install")
-
-			upgrade, err := renderAgentOrchestratorDeployment(t, chart, setValues, "--is-upgrade")
-			require.NoError(t, err)
-			assert.Nil(t, upgrade.Spec.Replicas, "replicas should be omitted on upgrade once the HPA owns it")
+			assertReplicasOmittedOnUpgrade(t, func(extraArgs ...string) (appsv1.Deployment, error) {
+				return renderAgentOrchestratorDeployment(t, chart, setValues, extraArgs...)
+			})
 		})
 	}
 }
@@ -200,10 +264,9 @@ func TestAgentOrchestratorReplicasSuppressedByManageReplicasFalse(t *testing.T) 
 				"agentOrchestrator.autoscaling.enabled":        "true",
 				"agentOrchestrator.autoscaling.manageReplicas": "false",
 			}
-
-			install, err := renderAgentOrchestratorDeployment(t, chart, setValues)
-			require.NoError(t, err)
-			assert.Nil(t, install.Spec.Replicas, "replicas should be omitted even on install when manageReplicas=false")
+			assertReplicasOmittedWhenManageReplicasFalse(t, func() (appsv1.Deployment, error) {
+				return renderAgentOrchestratorDeployment(t, chart, setValues)
+			})
 		})
 	}
 }
@@ -213,12 +276,12 @@ func TestAgentOrchestratorReplicasSuppressedByManageReplicasFalse(t *testing.T) 
 func TestAgentOrchestratorReplicasRenderedWhenAutoscalingDisabledEvenIfManageReplicasFalse(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			deployment, err := renderAgentOrchestratorDeployment(t, chart, map[string]string{
-				"agentOrchestrator.autoscaling.enabled":        "false",
-				"agentOrchestrator.autoscaling.manageReplicas": "false",
+			assertReplicasRenderedWhenAutoscalingDisabled(t, func() (appsv1.Deployment, error) {
+				return renderAgentOrchestratorDeployment(t, chart, map[string]string{
+					"agentOrchestrator.autoscaling.enabled":        "false",
+					"agentOrchestrator.autoscaling.manageReplicas": "false",
+				})
 			})
-			require.NoError(t, err)
-			require.NotNil(t, deployment.Spec.Replicas, "replicas must still render when autoscaling is disabled, regardless of manageReplicas")
 		})
 	}
 }
@@ -311,17 +374,8 @@ func TestAgentRuntimeAutoscalingRequiresKedaCRDOrOverride(t *testing.T) {
 			base["hunterAgent.autoscaling.enabled"] = "true"
 			base["agenticSigningSecret.existingSecret"] = "test-agentic-instance-secret"
 			opts := &helm.Options{Logger: logger.Discard, SetValues: base}
-
-			t.Run("no KEDA CRD, no override: fails", func(t *testing.T) {
-				_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-orchestrator.yaml"})
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), "hunterAgent.autoscaling.enabled is true but the KEDA CRDs")
-			})
-
-			t.Run("KEDA CRD present via --api-versions: succeeds", func(t *testing.T) {
-				_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-orchestrator.yaml"}, "--api-versions=keda.sh/v1alpha1")
-				require.NoError(t, err)
-			})
+			assertAutoscalingRequiresKedaCRDOrOverride(t, opts, chart, "templates/agent-orchestrator.yaml",
+				"hunterAgent.autoscaling.enabled is true but the KEDA CRDs")
 		})
 	}
 }
@@ -464,14 +518,9 @@ func TestAgentRuntimeReplicasOmittedOnUpgradeWhenAutoscalingEnabled(t *testing.T
 				"hunterAgent.autoscaling.enabled": "true",
 				"agentKeda.assumeInstalled":       "true",
 			}
-
-			install, err := renderAgentRuntimeDeploymentFamily(t, chart, "hunter", setValues)
-			require.NoError(t, err)
-			require.NotNil(t, install.Spec.Replicas, "replicas should render on a fresh install")
-
-			upgrade, err := renderAgentRuntimeDeploymentFamily(t, chart, "hunter", setValues, "--is-upgrade")
-			require.NoError(t, err)
-			assert.Nil(t, upgrade.Spec.Replicas, "replicas should be omitted on upgrade once the ScaledObject owns it")
+			assertReplicasOmittedOnUpgrade(t, func(extraArgs ...string) (appsv1.Deployment, error) {
+				return renderAgentRuntimeDeploymentFamily(t, chart, "hunter", setValues, extraArgs...)
+			})
 
 			// The other family, with autoscaling untouched, is unaffected either way.
 			remediationInstall, err := renderAgentRuntimeDeploymentFamily(t, chart, "remediation", setValues)
@@ -495,10 +544,9 @@ func TestAgentRuntimeReplicasSuppressedByManageReplicasFalse(t *testing.T) {
 				"hunterAgent.autoscaling.manageReplicas": "false",
 				"agentKeda.assumeInstalled":              "true",
 			}
-
-			install, err := renderAgentRuntimeDeploymentFamily(t, chart, "hunter", setValues)
-			require.NoError(t, err)
-			assert.Nil(t, install.Spec.Replicas, "replicas should be omitted even on install when manageReplicas=false")
+			assertReplicasOmittedWhenManageReplicasFalse(t, func() (appsv1.Deployment, error) {
+				return renderAgentRuntimeDeploymentFamily(t, chart, "hunter", setValues)
+			})
 
 			// The other family, with autoscaling untouched, is unaffected.
 			remediationInstall, err := renderAgentRuntimeDeploymentFamily(t, chart, "remediation", setValues)
@@ -515,12 +563,12 @@ func TestAgentRuntimeReplicasRenderedWhenAutoscalingDisabledEvenIfManageReplicas
 		t.Run(chart.name, func(t *testing.T) {
 			for _, family := range []string{"hunter", "remediation"} {
 				t.Run(family, func(t *testing.T) {
-					deployment, err := renderAgentRuntimeDeploymentFamily(t, chart, family, map[string]string{
-						family + "Agent.autoscaling.enabled":        "false",
-						family + "Agent.autoscaling.manageReplicas": "false",
+					assertReplicasRenderedWhenAutoscalingDisabled(t, func() (appsv1.Deployment, error) {
+						return renderAgentRuntimeDeploymentFamily(t, chart, family, map[string]string{
+							family + "Agent.autoscaling.enabled":        "false",
+							family + "Agent.autoscaling.manageReplicas": "false",
+						})
 					})
-					require.NoError(t, err)
-					require.NotNil(t, deployment.Spec.Replicas, "replicas must still render when autoscaling is disabled, regardless of manageReplicas")
 				})
 			}
 		})

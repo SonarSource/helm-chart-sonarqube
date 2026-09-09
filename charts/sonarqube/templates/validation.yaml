@@ -169,8 +169,15 @@ It is used to validate the values.yaml file before the installation starts.
   {{- end -}}
   {{- $vortexAutoscaling := .Values.vortex.autoscaling -}}
   {{- if $vortexAutoscaling.enabled -}}
-    {{- if lt (int $vortexAutoscaling.minReplicas) 2 -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.minReplicas must be >= 2 (scale-to-zero and single-replica autoscaling are not supported for Vortex)." -}}
+    {{- /* Without cross-replica aggregation, KEDA samples a single random pod through the
+           Service, so the sum-vs-target arithmetic is only valid for exactly one replica - the
+           normal >= 2 floor would make that fallback impossible to configure at all. */}}
+    {{- $vortexMinReplicaFloor := 2 -}}
+    {{- if not $vortexAutoscaling.aggregateAcrossReplicas -}}
+      {{- $vortexMinReplicaFloor = 1 -}}
+    {{- end -}}
+    {{- if lt (int $vortexAutoscaling.minReplicas) $vortexMinReplicaFloor -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.minReplicas must be >= 2 (scale-to-zero and single-replica autoscaling are not supported for Vortex), or >= 1 with vortex.autoscaling.aggregateAcrossReplicas=false." -}}
     {{- end -}}
     {{- if gt (int $vortexAutoscaling.minReplicas) (int $vortexAutoscaling.maxReplicas) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.maxReplicas must be >= minReplicas." -}}
@@ -192,8 +199,11 @@ It is used to validate the values.yaml file before the installation starts.
     {{- end -}}
     {{- /* Recreate takes every Vortex replica down at once on each rollout - fine for a single
            pod, actively wrong once the autoscaler is expected to keep the fleet up. Fail rather
-           than silently overriding an explicit values.yaml setting. */}}
-    {{- if eq .Values.vortex.strategy.type "Recreate" -}}
+           than silently overriding an explicit values.yaml setting. dig reads .type nil-safely -
+           vortex.yaml's own {{- with $vortex.strategy }} tolerates vortex.strategy: null (falling
+           back to Kubernetes' own RollingUpdate default), and a plain .type read would panic on
+           that nil instead of evaluating to a readable message. */}}
+    {{- if eq (dig "type" "" (default dict .Values.vortex.strategy)) "Recreate" -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.enabled is true but vortex.strategy.type is \"Recreate\", which would take down every Vortex replica on every rollout. Set vortex.strategy.type: RollingUpdate to enable autoscaling." -}}
     {{- end -}}
   {{- end -}}

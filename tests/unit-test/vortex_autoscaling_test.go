@@ -96,7 +96,8 @@ func TestVortexScaledObjectNotRenderedWhenAutoscalingDisabled(t *testing.T) {
 		t.Run(chart.name, func(t *testing.T) {
 			opts := &helm.Options{
 				Logger:      logger.Discard,
-				ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
+				ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
+				SetValues:   map[string]string{"vortex.autoscaling.enabled": "false"},
 			}
 			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{})
 			require.NoError(t, err)
@@ -227,13 +228,9 @@ func TestVortexScaledObjectAggregationOptOut(t *testing.T) {
 func TestVortexReplicasOmittedOnUpgradeWhenAutoscalingEnabled(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			install, err := renderVortexDeploymentWithValues(t, chart, nil)
-			require.NoError(t, err)
-			require.NotNil(t, install.Spec.Replicas, "replicas should render on a fresh install")
-
-			upgrade, err := renderVortexDeploymentWithValues(t, chart, nil, "--is-upgrade")
-			require.NoError(t, err)
-			assert.Nil(t, upgrade.Spec.Replicas, "replicas should be omitted on upgrade once the ScaledObject owns it")
+			assertReplicasOmittedOnUpgrade(t, func(extraArgs ...string) (appsv1.Deployment, error) {
+				return renderVortexDeploymentWithValues(t, chart, nil, extraArgs...)
+			})
 		})
 	}
 }
@@ -244,11 +241,11 @@ func TestVortexReplicasOmittedOnUpgradeWhenAutoscalingEnabled(t *testing.T) {
 func TestVortexReplicasSuppressedByManageReplicasFalse(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			install, err := renderVortexDeploymentWithValues(t, chart, map[string]string{
-				"vortex.autoscaling.manageReplicas": "false",
+			assertReplicasOmittedWhenManageReplicasFalse(t, func() (appsv1.Deployment, error) {
+				return renderVortexDeploymentWithValues(t, chart, map[string]string{
+					"vortex.autoscaling.manageReplicas": "false",
+				})
 			})
-			require.NoError(t, err)
-			assert.Nil(t, install.Spec.Replicas, "replicas should be omitted even on install when manageReplicas=false")
 		})
 	}
 }
@@ -258,23 +255,12 @@ func TestVortexReplicasSuppressedByManageReplicasFalse(t *testing.T) {
 func TestVortexReplicasRenderedWhenAutoscalingDisabledEvenIfManageReplicasFalse(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			deployment, err := renderVortex(t, chart, "vortex-enabled.yaml", "templates/vortex.yaml")
-			require.NoError(t, err)
-			assert.NotEmpty(t, deployment, "vortex-enabled.yaml has autoscaling disabled by default")
-
-			opts := &helm.Options{
-				Logger:      logger.Discard,
-				ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
-				SetValues: map[string]string{
+			assertReplicasRenderedWhenAutoscalingDisabled(t, func() (appsv1.Deployment, error) {
+				return renderVortexDeploymentWithValues(t, chart, map[string]string{
 					"vortex.autoscaling.enabled":        "false",
 					"vortex.autoscaling.manageReplicas": "false",
-				},
-			}
-			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
-			require.NoError(t, err)
-			var d appsv1.Deployment
-			helm.UnmarshalK8SYaml(t, output, &d)
-			require.NotNil(t, d.Spec.Replicas, "replicas must still render when autoscaling is disabled, regardless of manageReplicas")
+				})
+			})
 		})
 	}
 }
@@ -285,18 +271,27 @@ func TestVortexReplicasRenderedWhenAutoscalingDisabledEvenIfManageReplicasFalse(
 func TestVortexMetricsWindowEnvVar(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			t.Run("set from autoscaling.windowSeconds", func(t *testing.T) {
-				deployment := vortexDeployment(t, chart, "vortex-enabled.yaml")
+			t.Run("present when autoscaling enabled", func(t *testing.T) {
+				deployment := vortexDeployment(t, chart, "vortex-autoscaling.yaml")
 				env := vortexContainerEnv(deployment.Spec.Template.Spec.Containers[0])
 				window, ok := env["METRICS_CONCURRENT_REQUESTS_WINDOW_SECONDS"]
-				require.True(t, ok, "windowSeconds defaults to 30, so the env var must always be set")
+				require.True(t, ok, "windowSeconds defaults to 30, so the env var must be set once autoscaling is on")
 				assert.Equal(t, "30", window.Value)
+			})
+
+			// The var is gated on autoscaling.enabled, not just windowSeconds: the latter
+			// defaults to a non-empty 30, so gating on it alone would pin every Vortex pod to
+			// this env var even on an install that never opts into autoscaling.
+			t.Run("absent when autoscaling disabled", func(t *testing.T) {
+				deployment := vortexDeployment(t, chart, "vortex-enabled.yaml")
+				_, ok := vortexContainerEnv(deployment.Spec.Template.Spec.Containers[0])["METRICS_CONCURRENT_REQUESTS_WINDOW_SECONDS"]
+				assert.False(t, ok, "vortex-enabled.yaml has autoscaling disabled by default")
 			})
 
 			t.Run("absent when blank", func(t *testing.T) {
 				opts := &helm.Options{
 					Logger:      logger.Discard,
-					ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
+					ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
 					SetValues:   map[string]string{"vortex.autoscaling.windowSeconds": ""},
 				}
 				output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
@@ -310,14 +305,14 @@ func TestVortexMetricsWindowEnvVar(t *testing.T) {
 			t.Run("overridable via vortex.env", func(t *testing.T) {
 				opts := &helm.Options{
 					Logger:      logger.Discard,
-					ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
+					ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
 					SetValues: map[string]string{
-						"vortex.env[1].name": "METRICS_CONCURRENT_REQUESTS_WINDOW_SECONDS",
+						"vortex.env[0].name": "METRICS_CONCURRENT_REQUESTS_WINDOW_SECONDS",
 					},
 					// SetStrValues, not SetValues: an unquoted 45 renders as a YAML number, which
 					// EnvVar.Value (a string) fails to unmarshal.
 					SetStrValues: map[string]string{
-						"vortex.env[1].value": "45",
+						"vortex.env[0].value": "45",
 					},
 				}
 				output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
@@ -360,7 +355,7 @@ func TestVortexTerminationGraceUnconditional(t *testing.T) {
 	}
 }
 
-// vortexAutoscalingValidationCase renders templates/vortex.yaml (which always renders when
+// assertVortexAutoscalingRejected renders templates/vortex.yaml (which always renders when
 // vortex.enabled=true, regardless of whether these specific checks pass) with the given SetValues
 // layered onto vortex-autoscaling.yaml, and asserts the render fails containing errSubstring.
 func assertVortexAutoscalingRejected(t *testing.T, setValues map[string]string, errSubstring string) {
@@ -391,6 +386,31 @@ func TestVortexAutoscalingMaxReplicasBelowMinReplicas(t *testing.T) {
 		"vortex.autoscaling.maxReplicas must be >= minReplicas")
 }
 
+// Without cross-replica aggregation, KEDA samples a single random pod through the Service, so
+// the sum-vs-target arithmetic is only valid for exactly one replica - the normal >= 2 floor would
+// otherwise make that documented fallback impossible to configure at all.
+func TestVortexAutoscalingMinReplicasFloorRelaxedWhenAggregationDisabled(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			opts := &helm.Options{
+				Logger:      logger.Discard,
+				ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
+				SetValues: map[string]string{
+					"vortex.autoscaling.aggregateAcrossReplicas": "false",
+					"vortex.autoscaling.minReplicas":             "1",
+				},
+			}
+			_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
+			require.NoError(t, err)
+		})
+	}
+
+	// The default (aggregateAcrossReplicas: true) still enforces the >= 2 floor.
+	assertVortexAutoscalingRejected(t,
+		map[string]string{"vortex.autoscaling.minReplicas": "1"},
+		"vortex.autoscaling.minReplicas must be >= 2")
+}
+
 // The KEDA CRD guard: enabling autoscaling without the KEDA CRDs present (and no explicit
 // agentKeda.assumeInstalled override) fails; --api-versions simulates the CRD being registered on
 // a real cluster (Capabilities.APIVersions is otherwise empty under `helm template`). The fixture
@@ -405,17 +425,8 @@ func TestVortexAutoscalingRequiresKedaCRDOrOverride(t *testing.T) {
 				ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
 				SetValues:   map[string]string{"agentKeda.assumeInstalled": "null"},
 			}
-
-			t.Run("no KEDA CRD, no override: fails", func(t *testing.T) {
-				_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), "vortex.autoscaling.enabled is true but the KEDA CRDs")
-			})
-
-			t.Run("KEDA CRD present via --api-versions: succeeds", func(t *testing.T) {
-				_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"}, "--api-versions=keda.sh/v1alpha1")
-				require.NoError(t, err)
-			})
+			assertAutoscalingRequiresKedaCRDOrOverride(t, opts, chart, "templates/vortex.yaml",
+				"vortex.autoscaling.enabled is true but the KEDA CRDs")
 		})
 	}
 }
@@ -466,6 +477,23 @@ func TestVortexRecreateStrategyAllowedWhenAutoscalingDisabled(t *testing.T) {
 		t.Run(chart.name, func(t *testing.T) {
 			deployment := vortexDeployment(t, chart, "vortex-enabled.yaml")
 			assert.Equal(t, appsv1.RecreateDeploymentStrategyType, deployment.Spec.Strategy.Type)
+		})
+	}
+}
+
+// vortex.yaml itself tolerates an absent strategy ({{- with $vortex.strategy }}, falling back to
+// Kubernetes' own RollingUpdate default), so vortex.strategy: null is a supported input. The
+// Recreate check must read strategy.type nil-safely rather than panicking on that nil.
+func TestVortexAutoscalingAllowsNilStrategy(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			opts := &helm.Options{
+				Logger:      logger.Discard,
+				ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
+				SetValues:   map[string]string{"vortex.strategy": "null"},
+			}
+			_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
+			require.NoError(t, err)
 		})
 	}
 }
