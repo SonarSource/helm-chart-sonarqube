@@ -88,6 +88,9 @@ jobs:
     runs-on: sonar-xs-public
     needs: [chart-fixture-test, chart-schema-test, static-compatibility-test]
     name: SonarQube OpenShift Tests
+    concurrency:
+      group: openshift-test-${{ matrix.verifying_chart }}
+      cancel-in-progress: false
     permissions:
       id-token: write
       contents: read
