@@ -94,6 +94,54 @@ func TestRuntimeStorageFilesystemBaseDirRequiresMatchingMount(t *testing.T) {
 						_, err := renderWithValidation(t, chart, values)
 						require.NoError(t, err)
 					})
+
+					// Multiple trailing slashes must normalize the same as one, and the failure
+					// message must echo the operator's original value, not the normalized one.
+					t.Run("multiple trailing slashes on baseDir still match a mount without one", func(t *testing.T) {
+						values := runtimeStorageBase(family)
+						values[family+"Agent.storage.filesystem.baseDir"] = baseDir + "//"
+						values[family+"Agent.extraVolumeMounts[0].name"] = "agentic-storage"
+						values[family+"Agent.extraVolumeMounts[0].mountPath"] = baseDir
+						values[family+"Agent.extraVolumeMounts[0].subPath"] = family
+						_, err := renderWithValidation(t, chart, values)
+						require.NoError(t, err)
+					})
+
+					// A mount entry with no mountPath key (e.g. a typo) must fall through to the
+					// validation message, not crash on a nil value.
+					t.Run("a mount without a mountPath key fails cleanly, not with a crash", func(t *testing.T) {
+						values := runtimeStorageBase(family)
+						values[family+"Agent.storage.filesystem.baseDir"] = baseDir
+						values[family+"Agent.extraVolumeMounts[0].name"] = "agentic-storage"
+						values[family+"Agent.extraVolumeMounts[0].subPath"] = family
+						_, err := renderWithValidation(t, chart, values)
+						require.Error(t, err)
+						assert.Contains(t, err.Error(), "no "+family+"Agent.extraVolumeMounts entry has a matching mountPath")
+						assert.NotContains(t, err.Error(), "wrong type for value")
+					})
+
+					// A mount at an ancestor of baseDir (the whole volume, no subPath) genuinely
+					// gives the runtime a working path at baseDir, so it must satisfy the check too.
+					t.Run("a mount at an ancestor of baseDir satisfies the check", func(t *testing.T) {
+						values := runtimeStorageBase(family)
+						values[family+"Agent.storage.filesystem.baseDir"] = baseDir
+						values[family+"Agent.extraVolumeMounts[0].name"] = "agentic-storage"
+						values[family+"Agent.extraVolumeMounts[0].mountPath"] = "/agentic-storage"
+						_, err := renderWithValidation(t, chart, values)
+						require.NoError(t, err)
+					})
+
+					// A mount below baseDir (a subdirectory of it) does not give the runtime a
+					// path at baseDir itself, so it must still fail.
+					t.Run("a mount below baseDir still fails", func(t *testing.T) {
+						values := runtimeStorageBase(family)
+						values[family+"Agent.storage.filesystem.baseDir"] = baseDir
+						values[family+"Agent.extraVolumeMounts[0].name"] = "agentic-storage"
+						values[family+"Agent.extraVolumeMounts[0].mountPath"] = baseDir + "/extra"
+						_, err := renderWithValidation(t, chart, values)
+						require.Error(t, err)
+						assert.Contains(t, err.Error(), "no "+family+"Agent.extraVolumeMounts entry has a matching mountPath")
+					})
 				})
 			}
 		})

@@ -89,15 +89,17 @@ It is used to validate the values.yaml file before the installation starts.
     {{- $storageCfg := $cfg.storage | default dict -}}
     {{- $fsCfg := $storageCfg.filesystem | default dict -}}
     {{- with $fsCfg.baseDir -}}
-      {{- $baseDir := trimSuffix "/" . -}}
+      {{- $rawBaseDir := . -}}
+      {{- $baseDir := regexReplaceAll "/+$" . "" | default "/" -}}
       {{- $mounted := false -}}
       {{- range $cfg.extraVolumeMounts -}}
-        {{- if eq (trimSuffix "/" .mountPath) $baseDir -}}
+        {{- $mountPath := regexReplaceAll "/+$" (default "" .mountPath | toString) "" | default "/" -}}
+        {{- if or (eq $mountPath $baseDir) (hasPrefix (printf "%s/" $mountPath) $baseDir) -}}
           {{- $mounted = true -}}
         {{- end -}}
       {{- end -}}
       {{- if not $mounted -}}
-{{- fail (printf "\n ** The values.yaml file is not valid. ** \n %sAgent.storage.filesystem.baseDir is set to %q but no %sAgent.extraVolumeMounts entry has a matching mountPath. Mount the shared volume at that path so this runtime can reach its own subtree." $family $baseDir $family) -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n %sAgent.storage.filesystem.baseDir is set to %q but no %sAgent.extraVolumeMounts entry has a matching mountPath, at that path or an ancestor of it." $family $rawBaseDir $family) -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}
