@@ -44,7 +44,7 @@ spec:
   {{- if .Values.prometheusExporter.enabled }}
   {{- if .Values.prometheusExporter.ceBeanPort }}
   - port: monitoring-ce
-    path: /
+    path: {{ .Values.prometheusExporter.metricsPath }}
     scheme: http
     {{- if .Values.prometheusMonitoring.podMonitor.interval }}
     interval: {{ .Values.prometheusMonitoring.podMonitor.interval }}
@@ -55,7 +55,7 @@ spec:
   {{- end }}
   {{- if .Values.prometheusExporter.webBeanPort }}
   - port: monitoring-web
-    path: /
+    path: {{ .Values.prometheusExporter.metricsPath }}
     scheme: http
     {{- if .Values.prometheusMonitoring.podMonitor.interval }}
     interval: {{ .Values.prometheusMonitoring.podMonitor.interval }}
