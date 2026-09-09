@@ -212,6 +212,8 @@ Set prometheusExporter.downloadURL
 {{- define "prometheusExporter.downloadURL" -}}
 {{- if .Values.prometheusExporter.downloadURL -}}
 {{ printf "%s" .Values.prometheusExporter.downloadURL }}
+{{- else if and (regexMatch "^[0-9]+[.][0-9]+[.][0-9]+$" .Values.prometheusExporter.version) (semverCompare ">=1.1.0" .Values.prometheusExporter.version) -}}
+{{ printf "https://github.com/prometheus/jmx_exporter/releases/download/%s/jmx_prometheus_javaagent-%s.jar" .Values.prometheusExporter.version .Values.prometheusExporter.version }}
 {{- else -}}
 {{ printf "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/%s/jmx_prometheus_javaagent-%s.jar" .Values.prometheusExporter.version .Values.prometheusExporter.version }}
 {{- end -}}
