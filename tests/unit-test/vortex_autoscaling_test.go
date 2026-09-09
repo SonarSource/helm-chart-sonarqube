@@ -265,9 +265,10 @@ func TestVortexReplicasRenderedWhenAutoscalingDisabledEvenIfManageReplicasFalse(
 	}
 }
 
-// The sliding window Vortex reports its peak concurrency over is only set when overridden, so an
-// unset value leaves the image's own default (30s) in place, and a user-supplied vortex.env entry
-// of the same name still wins - matching every other auto-generated env var on this Deployment.
+// The sliding window Vortex reports its peak concurrency over is wired only when autoscaling is
+// enabled (windowSeconds defaults to a non-empty 30, so gating on it alone would pin every Vortex
+// pod to this env var); a blank windowSeconds leaves the image's own default, and a user-supplied
+// vortex.env entry of the same name still wins - matching every other auto-generated env var here.
 func TestVortexMetricsWindowEnvVar(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {

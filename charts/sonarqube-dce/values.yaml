@@ -911,8 +911,9 @@ vortex:
   # GET /metrics/max-concurrent-requests. Requires the KEDA CRDs in-cluster - see agentKeda below.
   autoscaling:
     enabled: false
-    # Validated >= 2 (see validation.yaml): this fleet never scales to zero, so there is no 0<->1
-    # transition to reason about. Note this raises a default replicaCount: 1 install to 3 pods.
+    # Validated >= 2 (see validation.yaml), or >= 1 with aggregateAcrossReplicas: false below:
+    # this fleet never scales to zero, so there is no 0<->1 transition to reason about. Note this
+    # raises a default replicaCount: 1 install to 3 pods.
     minReplicas: 3
     maxReplicas: 20
     # Set false to always omit spec.replicas once autoscaling is on (GitOps). See agentOrchestrator/
