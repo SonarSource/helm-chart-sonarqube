@@ -149,15 +149,16 @@ func TestAgentRuntimeSchedulingWinsOverGlobal(t *testing.T) {
 	}
 }
 
-// Both runtimes' probes default on; hunter's readiness endpoint differs from its liveness one.
+// Both runtimes' probes default on, against the dedicated /readyz and /livez endpoints - never
+// the aggregate /health.
 func TestAgentRuntimeProbes(t *testing.T) {
 	cases := []struct {
 		family        string
 		readinessPath string
 		livenessPath  string
 	}{
-		{"hunter", "/readyz", "/health"},
-		{"remediation", "/readyz", "/health"},
+		{"hunter", "/readyz", "/livez"},
+		{"remediation", "/readyz", "/livez"},
 	}
 
 	for _, chart := range agentCharts {

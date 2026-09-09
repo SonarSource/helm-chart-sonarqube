@@ -1,0 +1,24 @@
+community:
+  enabled: true
+monitoringPasscode: test-passcode
+jdbcOverwrite:
+  enabled: true
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+agentOrchestrator:
+  enabled: true
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "42"
+  storage:
+    bucket: agent-jobs
+  probes:
+    readiness:
+      path: /custom-readyz
+      timeoutSeconds: 3
+      failureThreshold: 6
+    liveness:
+      enabled: false
+agenticSigningSecret:
+  existingSecret: test-agentic-instance-secret

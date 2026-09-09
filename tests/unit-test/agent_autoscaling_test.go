@@ -381,8 +381,8 @@ func TestAgentAutoscalingValidationSkippedWhenComponentDisabled(t *testing.T) {
 
 // terminationGracePeriodSeconds is unconditional hardening (protects any scale-down, not just an
 // autoscaler-driven one) and must exceed each image's own fixed `uvicorn --timeout-graceful-
-// shutdown` (14400s hunter, 3600s remediation) - never set SHUTDOWN_GRACE_SECONDS from the chart,
-// the image already sizes it against that ceiling.
+// shutdown` (44400s hunter, 3600s remediation) - never set SHUTDOWN_GRACE_SECONDS or
+// LIVENESS_JOB_MAX_SECONDS from the chart, the image already sizes both against that ceiling.
 func TestAgentRuntimeTerminationGraceUnconditional(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -390,7 +390,7 @@ func TestAgentRuntimeTerminationGraceUnconditional(t *testing.T) {
 				family       string
 				graceSeconds int64
 			}{
-				{"hunter", 14430},
+				{"hunter", 44430},
 				{"remediation", 3630},
 			} {
 				t.Run(tc.family, func(t *testing.T) {
@@ -405,6 +405,8 @@ func TestAgentRuntimeTerminationGraceUnconditional(t *testing.T) {
 					for _, env := range podSpec.Containers[0].Env {
 						assert.NotEqual(t, "SHUTDOWN_GRACE_SECONDS", env.Name,
 							"chart must not override SHUTDOWN_GRACE_SECONDS - the image sizes it against its own fixed uvicorn timeout")
+						assert.NotEqual(t, "LIVENESS_JOB_MAX_SECONDS", env.Name,
+							"chart must not override LIVENESS_JOB_MAX_SECONDS - the image sizes it against its own fixed uvicorn timeout")
 					}
 				})
 			}
