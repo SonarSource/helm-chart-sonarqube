@@ -967,8 +967,18 @@ vortex:
       memory: 8Gi
       ephemeral-storage: 2Gi
 
+  # Extra volumes/mounts for the Vortex container/pod - e.g. the FILESYSTEM/NFS mount for
+  # storage.filesystem.baseDir above. Mount it readOnly: Vortex only reads analysis context,
+  # never writes it (SonarQube Server writes) - see the per-component access model on
+  # agentOrchestrator.storage.
   extraVolumes: []
+  # - name: vortex-storage
+  #   persistentVolumeClaim:
+  #     claimName: vortex-storage
   extraVolumeMounts: []
+  # - name: vortex-storage
+  #   mountPath: /vortex-storage
+  #   readOnly: true
 
   # Wins over the top-level .Values.nodeSelector when set.
   nodeSelector: {}
@@ -1072,6 +1082,24 @@ agentOrchestrator:
     passwordSecretKey: ""   # default: the jdbcOverwrite-derived password key
 
   # Object storage for the shared job folder -> AGENTIC_STORAGE_*/SONAR_AGENTIC_ORCHESTRATOR_STORAGE_* env.
+  #
+  # Per-component access model for FILESYSTEM/NFS (S3 needs none of this: isolation is per-object,
+  # via presigned URLs). One shared volume; the orchestrator (this component) mounts it at its
+  # root (filesystem.baseDir below) and writes each runtime's jobs under a subdirectory named
+  # after that runtime ("hunter", "remediation"). Each runtime then mounts ONLY that
+  # subdirectory, at subPath "<runtime>" and at the SAME absolute path (<baseDir>/<runtime>) - see
+  # hunterAgent.extraVolumeMounts / remediationAgent.extraVolumeMounts - so it physically cannot
+  # see the other runtime's files. Vortex keeps its own, separate store (vortex.storage below) and
+  # mounts it readOnly, since it only reads.
+  #
+  # Use ONE shared securityContext.fsGroup across agentOrchestrator/hunterAgent/remediationAgent,
+  # not a distinct one per component: distinct fsGroups on one shared RWX volume conflict, since
+  # each pod's kubelet recursively chowns the whole volume on mount. On NFS, also check the export
+  # does not root_squash/all_squash that fsGroup's gid, or writes from a non-root runtime UID may
+  # be remapped and rejected.
+  #
+  # Object storage (type: S3, the default) remains the recommended production backend;
+  # FILESYSTEM/NFS suits installs that cannot run one.
   storage:
     # S3 (default), FILESYSTEM or NFS. FILESYSTEM/NFS hand runtimes a direct file:// path instead
     # of a presigned URL, so they only work when agentOrchestrator, hunterAgent, remediationAgent
@@ -1224,6 +1252,22 @@ hunterAgent:
   # relocates it; set to "" to omit the env var entirely. Unlike remediation, the hunter
   # runtime never calls SonarQube Server for rule-info/analysis, so no such endpoints are wired.
   scriptPath: /home/agent/app/.venv/bin/detection-agent
+  # This runtime's own subtree of the shared agent-jobs store - reuses the standard storage block
+  # (see agentOrchestrator.storage above) plus an optional prefix. Not yet consumed by any
+  # container env: EA-926 adds the orchestrator's per-runtime routing. filesystem.baseDir, when
+  # set, is checked against extraVolumeMounts below - see validation.yaml.
+  storage:
+    type: ""
+    bucket: ""
+    region: ""
+    endpoint: ""
+    pathStyle: true
+    filesystem:
+      baseDir: ""
+    prefix: ""
+    accessKey: ""
+    secretKey: ""
+    existingSecret: ""
   # Extra env vars for the runtime container. The chart only sets `port` on the Service /
   # containerPort - it does not assume a listen-port convention for arbitrary runtime images
   # (Spring Boot images read SERVER_PORT; others may hardcode their port or use something
@@ -1236,14 +1280,22 @@ hunterAgent:
   # that TLS-inspects egress to the LLM endpoint (the JVM/language runtime's own trust store is
   # separate from the OS's, so a system-level fix alone isn't enough; mount the cert here and
   # have the image import it at startup, same idea as charts/sonarqube-dce's caCerts feature).
+  # Also where this runtime mounts its own subtree of a FILESYSTEM/NFS agent-jobs share - see the
+  # per-component access model on agentOrchestrator.storage above.
   extraVolumes: []
   # - name: custom-ca
   #   secret:
   #     secretName: my-runtime-custom-ca
+  # - name: agentic-storage
+  #   persistentVolumeClaim:
+  #     claimName: agentic-storage
   extraVolumeMounts: []
   # - name: custom-ca
   #   mountPath: /custom-ca
   #   readOnly: true
+  # - name: agentic-storage
+  #   mountPath: /agentic-storage/hunter   # same path agentOrchestrator writes hunter jobs to
+  #   subPath: hunter
   # KEDA ScaledObject reading the Agent Orchestrator's GET /metrics/queue. Requires KEDA
   # installed in-cluster - see agentKeda.assumeInstalled below. minReplicas is validated >= 2:
   # this family never scales to zero.
@@ -1333,9 +1385,34 @@ remediationAgent:
   # (REMEDIATION_RULE_INFO_ENDPOINT and REMEDIATION_ANALYSIS_ENDPOINT are also auto-wired,
   # derived from the SonarQube Server URL - not the orchestrator.)
   remediationScriptPath: /home/agent/app/.venv/lib/python3.13/site-packages/remediation_agent/main.py
+  # This runtime's own subtree of the shared agent-jobs store - reuses the standard storage block
+  # (see agentOrchestrator.storage above) plus an optional prefix. Not yet consumed by any
+  # container env: EA-926 adds the orchestrator's per-runtime routing. filesystem.baseDir, when
+  # set, is checked against extraVolumeMounts below - see validation.yaml.
+  storage:
+    type: ""
+    bucket: ""
+    region: ""
+    endpoint: ""
+    pathStyle: true
+    filesystem:
+      baseDir: ""
+    prefix: ""
+    accessKey: ""
+    secretKey: ""
+    existingSecret: ""
   env: []
+  # Extra volumes/mounts for this runtime's container/pod. Also where it mounts its own subtree
+  # of a FILESYSTEM/NFS agent-jobs share - see the per-component access model on
+  # agentOrchestrator.storage above.
   extraVolumes: []
+  # - name: agentic-storage
+  #   persistentVolumeClaim:
+  #     claimName: agentic-storage
   extraVolumeMounts: []
+  # - name: agentic-storage
+  #   mountPath: /agentic-storage/remediation   # same path agentOrchestrator writes remediation jobs to
+  #   subPath: remediation
   # KEDA ScaledObject reading the Agent Orchestrator's GET /metrics/queue - same shape as
   # hunterAgent.autoscaling above.
   autoscaling:

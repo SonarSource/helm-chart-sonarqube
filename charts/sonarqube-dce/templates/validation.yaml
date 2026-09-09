@@ -74,6 +74,28 @@
   {{- end -}}
 {{- end -}}
 
+{{/* Validation for the per-runtime storage subPath mount (SONAR-32022): when a runtime's own
+     storage.filesystem.baseDir is set, its extraVolumeMounts must contain a matching mountPath -
+     otherwise the file:// handoff from the orchestrator silently resolves to nothing on that
+     runtime, since Kubernetes gives it no mount at that path. Gated on the runtime's own enabled
+     flag, matching the guards above. */}}
+{{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" $) -}}
+  {{- if $cfg.enabled -}}
+    {{- with $cfg.storage.filesystem.baseDir -}}
+      {{- $baseDir := . -}}
+      {{- $mounted := false -}}
+      {{- range $cfg.extraVolumeMounts -}}
+        {{- if eq .mountPath $baseDir -}}
+          {{- $mounted = true -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if not $mounted -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n %sAgent.storage.filesystem.baseDir is set to %q but no %sAgent.extraVolumeMounts entry has a matching mountPath. Mount the shared volume at that path so this runtime can reach its own subtree." $family $baseDir $family) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
 {{/* Autoscaling validation: minReplicas floor of 2 (no scale-to-zero), maxReplicas >= minReplicas,
      and KEDA CRDs present for any runtime family - gated on the component's own enabled flag too,
      matching the render guards in agent-orchestrator-hpa.yaml/agent-runtime-scaledobject.yaml. */}}

@@ -14,6 +14,7 @@ All changes to this chart will be documented in this file.
 * Add an optional KEDA operator subchart dependency (`keda.enabled`), so KEDA can be installed as part of this release instead of requiring a separate cluster-wide install before enabling `<hunterAgent|remediationAgent>.autoscaling`
 * Ship default resource requests and limits for the Hunter Agent (`hunterAgent.resources`) and Vortex (`vortex.resources`), so neither lands in the BestEffort QoS class; memory and `ephemeral-storage` are pinned (request == limit) while CPU stays burstable
 * Point `agentOrchestrator`'s readiness/liveness probes, and `hunterAgent`/`remediationAgent`'s liveness probes, at the dedicated `/readyz`/`/livez` endpoints instead of the aggregate `/health`, and add `agentOrchestrator.terminationGracePeriodSeconds` (default `2580`)
+* Add `<hunterAgent|remediationAgent>.storage` (target + optional `prefix`) so each agent runtime can be scoped to its own subtree of a shared FILESYSTEM/NFS `agentOrchestrator.storage.filesystem.baseDir`: mount the shared volume per runtime at its own `subPath` (via the existing `extraVolumes`/`extraVolumeMounts`), at the same absolute path the orchestrator writes to; `validation.yaml` now checks that mount exists when a runtime's `storage.filesystem.baseDir` is set. Object storage (`type: S3`) remains the recommended production backend
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
