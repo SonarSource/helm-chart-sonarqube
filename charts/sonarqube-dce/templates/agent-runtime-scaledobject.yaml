@@ -21,6 +21,10 @@ spec:
   pollingInterval: {{ $cfg.autoscaling.pollingInterval }}
   advanced:
     horizontalPodAutoscalerConfig:
+      {{- /* KEDA otherwise derives the HPA name as "keda-hpa-<scaledobject name>", whose 9-char
+             prefix can push it past the 63-char name limit even though the ScaledObject name
+             itself fits. Reuse the (already-truncated) ScaledObject name directly instead. */}}
+      name: {{ include "sonarqube.agentRuntime.fullname" (dict "ctx" $ "family" $family) }}
       behavior:
         scaleDown:
           stabilizationWindowSeconds: {{ $cfg.autoscaling.scaleDownStabilizationSeconds }}
