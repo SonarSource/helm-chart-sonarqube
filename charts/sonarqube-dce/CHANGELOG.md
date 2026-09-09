@@ -21,6 +21,7 @@ All changes to this chart will be documented in this file.
 * Add the configurable exporter `applicationNodes.prometheusExporter.metricsPath`, defaulting to `/metrics`, and optional `applicationNodes.prometheusExporter.sha256` verification
 * GitHub-based default downloads require access to `github.com` and `release-assets.githubusercontent.com`
 * **Breaking**: Built-in JVM metric names now use OpenMetrics naming, for example `jvm_memory_bytes_used` is now `jvm_memory_used_bytes`; metrics generated from `config.rules` are unaffected
+* **Breaking**: The default exporter scrape path is now `/metrics` instead of `/`; update external scrapers or set `applicationNodes.prometheusExporter.metricsPath: /` for exporters serving metrics at the root
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
