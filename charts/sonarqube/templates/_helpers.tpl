@@ -482,7 +482,7 @@ Usage: {{ include "sonarqube.vortex.fullname" . }}
 URL the application nodes use to reach Vortex (the sonar.vortex.analysis.url property).
 */}}
 {{- define "sonarqube.vortex.url" -}}
-{{- printf "http://%s:%d" (include "sonarqube.vortex.fullname" .) (int .Values.vortex.port) -}}
+{{- printf "http://%s:%d" (include "sonarqube.vortex.fullname" .) (int .Values.vortexAnalysis.port) -}}
 {{- end -}}
 
 {{/*
@@ -490,10 +490,10 @@ Name of the ServiceAccount for the Vortex pod. Same create / pinned-name / "defa
 fallback logic as sonarqube.serviceAccountName, but independent of it.
 */}}
 {{- define "sonarqube.vortex.serviceAccountName" -}}
-{{- if .Values.vortex.serviceAccount.create -}}
-    {{ default (include "sonarqube.vortex.fullname" .) .Values.vortex.serviceAccount.name }}
+{{- if .Values.vortexAnalysis.serviceAccount.create -}}
+    {{ default (include "sonarqube.vortex.fullname" .) .Values.vortexAnalysis.serviceAccount.name }}
 {{- else -}}
-    {{ default "default" .Values.vortex.serviceAccount.name }}
+    {{ default "default" .Values.vortexAnalysis.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
 
@@ -701,14 +701,14 @@ true
 
 {{/*
 Whether any agentic component that needs derived signing/verification keys is enabled: hunterAgent,
-remediationAgent, or vortex. Broader than sonarqube.agentEgressProxy.required (which excludes
+remediationAgent, or vortexAnalysis. Broader than sonarqube.agentEgressProxy.required (which excludes
 vortex - vortex doesn't route through the egress proxy) - gates the key-derivation hook Job, its
 RBAC/ServiceAccount, the fail-closed agenticSigningSecret validation, and the "agentic-shared" key
 mount everywhere it's needed.
 Usage: {{- if include "sonarqube.agentic.enabled" . }}
 */}}
 {{- define "sonarqube.agentic.enabled" -}}
-{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled .Values.vortex.enabled -}}
+{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled .Values.vortexAnalysis.enabled -}}
 true
 {{- end -}}
 {{- end -}}
@@ -767,7 +767,7 @@ Returns a YAML list; "[]" when the consumer needs none.
 {{- else if eq .consumer "sqs" -}}
 {{- if $any }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
 {{- else if eq .consumer "vortex" -}}
-{{- if and $any $v.vortex.enabled }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
+{{- if and $any $v.vortexAnalysis.enabled }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
 {{- end -}}
 {{- toYaml $labels -}}
 {{- end -}}
@@ -956,7 +956,7 @@ true
 The image the hook Job runs. What it actually needs is *an* image carrying /derive-keys.sh, which
 today is the Agent Orchestrator image (baked in there so air-gapped installs don't need a second
 pull, per EA-791/ADR-10) - hence the fallback to agentOrchestrator.image. It is a separate value
-rather than a hard reference to agentOrchestrator.image because vortex.enabled alone still needs
+rather than a hard reference to agentOrchestrator.image because vortexAnalysis.enabled alone still needs
 derived keys while not otherwise deploying, or even pulling, the orchestrator: such an install sets
 agentKeyDerivation.image.* and keeps agentOrchestrator untouched.
 Returns the image block as a dict, so callers can read .repository/.tag/.pullPolicy/.pullSecrets.
@@ -1216,7 +1216,7 @@ for consumers like hunter-agent-unified-app that read them via Spring instead.
 {{- $_ := set $props "sonar.hunteragent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
 {{- $_ := set $props "sonar.remediationagent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
 {{- end -}}
-{{- if .Values.vortex.enabled -}}
+{{- if .Values.vortexAnalysis.enabled -}}
 {{- $_ := set $props "sonar.vortex.analysis.url" (include "sonarqube.vortex.url" .) -}}
 {{- end -}}
 {{- if eq (include "sonarqube.agentic.enabled" .) "true" -}}

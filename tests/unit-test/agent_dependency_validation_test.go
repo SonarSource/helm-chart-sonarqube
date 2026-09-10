@@ -68,7 +68,7 @@ func TestRemediationAgentRequiresOrchestrator(t *testing.T) {
 	}
 }
 
-// remediationAgent.enabled=true also requires vortex.enabled=true, checked independently of
+// remediationAgent.enabled=true also requires vortexAnalysis.enabled=true, checked independently of
 // the orchestrator dependency above (SONAR-31689).
 func TestRemediationAgentRequiresVortex(t *testing.T) {
 	for _, chart := range agentCharts {
@@ -79,7 +79,7 @@ func TestRemediationAgentRequiresVortex(t *testing.T) {
 				"remediationAgent.enabled":           "true",
 			})
 			require.Error(t, err)
-			assert.Contains(t, err.Error(), "remediationAgent.enabled is true but vortex.enabled is not true")
+			assert.Contains(t, err.Error(), "remediationAgent.enabled is true but vortexAnalysis.enabled is not true")
 		})
 	}
 }

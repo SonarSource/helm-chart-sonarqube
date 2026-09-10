@@ -53,7 +53,7 @@ annotations:
     - kind: added
       description: "Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via agentOrchestrator.enabled, hunterAgent.enabled and remediationAgent.enabled"
     - kind: added
-      description: "Add agentOrchestrator.env/extraVolumes/extraVolumeMounts, and a FILESYSTEM/NFS backend for the shared agentic job storage via agentOrchestrator.storage.type and vortex.storage.filesystem.baseDir"
+      description: "Add agentOrchestrator.env/extraVolumes/extraVolumeMounts, and a FILESYSTEM/NFS backend for the shared agentic job storage via agentOrchestrator.storage.type and vortexAnalysis.storage.filesystem.baseDir"
     - kind: added
       description: "Add autoscaling for the Agent Orchestrator (agentOrchestrator.autoscaling, a plain CPU/Memory HorizontalPodAutoscaler) and each agent runtime family (hunterAgent/remediationAgent.autoscaling, a KEDA ScaledObject; requires KEDA installed in-cluster, or agentKeda.assumeInstalled set explicitly), with terminationGracePeriodSeconds hardening so an in-flight job survives any scale-down, not just an autoscaler-driven one, and an autoscaling.manageReplicas opt-out for GitOps tooling (Argo CD, Flux) that applies helm template output directly"
     - kind: added
@@ -73,7 +73,7 @@ annotations:
     - kind: changed
       description: "Default JMX Prometheus Exporter downloads use GitHub Releases and require network access to github.com and release-assets.githubusercontent.com"
     - kind: added
-      description: "Add autoscaling for Vortex (vortex.autoscaling, a KEDA ScaledObject reading Vortex's own unauthenticated GET /metrics/max-concurrent-requests endpoint, aggregated across replicas via KEDA's aggregateFromKubeServiceEndpoints; requires KEDA >= 2.20.0, with a single-replica fallback via vortex.autoscaling.aggregateAcrossReplicas), plus an unconditional vortex.terminationGracePeriodSeconds"
+      description: "Add autoscaling for Vortex (vortexAnalysis.autoscaling, a KEDA ScaledObject reading Vortex's own unauthenticated GET /metrics/max-concurrent-requests endpoint, aggregated across replicas via KEDA's aggregateFromKubeServiceEndpoints; requires KEDA >= 2.20.0, with a single-replica fallback via vortexAnalysis.autoscaling.aggregateAcrossReplicas), plus an unconditional vortexAnalysis.terminationGracePeriodSeconds"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/
