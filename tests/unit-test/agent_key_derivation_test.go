@@ -1009,3 +1009,26 @@ func TestAgentKeyDerivationHonoursPodOverrides(t *testing.T) {
 		})
 	}
 }
+
+// The hook Job's own scheduling settings take precedence over the chart's global ones, same as
+// every other agentic workload.
+func TestAgentKeyDerivationSchedulingWinsOverGlobal(t *testing.T) {
+	for _, chart := range agenticKeyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			job := keyDerivationJob(t, chart, "agent-runtimes-global-scheduling.yaml", nil)
+			podSpec := job.Spec.Template.Spec
+
+			assert.Equal(t, map[string]string{"keyDerivation": "true"}, podSpec.NodeSelector)
+
+			require.Len(t, podSpec.Tolerations, 1)
+			assert.Equal(t, "keyDerivation", podSpec.Tolerations[0].Key)
+
+			require.NotNil(t, podSpec.Affinity)
+			require.NotNil(t, podSpec.Affinity.NodeAffinity)
+			terms := podSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			require.Len(t, terms, 1)
+			require.Len(t, terms[0].MatchExpressions, 1)
+			assert.Equal(t, "keyDerivation", terms[0].MatchExpressions[0].Key)
+		})
+	}
+}

@@ -75,3 +75,18 @@ vortex:
     region: eu-west-1
 agenticSigningSecret:
   existingSecret: test-agentic-instance-secret
+agentKeyDerivation:
+  nodeSelector:
+    keyDerivation: "true"
+  tolerations:
+    - key: keyDerivation
+      operator: Exists
+      effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: keyDerivation
+                operator: In
+                values: ["true"]
