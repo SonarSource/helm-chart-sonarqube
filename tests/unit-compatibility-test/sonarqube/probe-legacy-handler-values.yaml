@@ -1,0 +1,13 @@
+edition: enterprise
+
+readinessProbe:
+  httpGet:
+    path: /custom/status
+    port: http
+
+livenessProbe:
+  exec:
+    command:
+      - sh
+      - -c
+      - echo legacy
