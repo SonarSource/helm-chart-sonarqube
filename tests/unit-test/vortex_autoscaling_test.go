@@ -19,8 +19,8 @@ import (
 func renderVortexScaledObject(t *testing.T, chart agentChart, setValues map[string]string) (scaledObject, error) {
 	t.Helper()
 	base := map[string]string{
-		"vortex.autoscaling.enabled": "true",
-		"vortex.strategy.type":       "RollingUpdate",
+		"vortexAnalysis.autoscaling.enabled": "true",
+		"vortexAnalysis.strategy.type":       "RollingUpdate",
 		"agentKeda.assumeInstalled":  "true",
 	}
 	for k, v := range setValues {
@@ -56,7 +56,7 @@ func TestVortexScaledObjectNotRenderedWhenVortexDisabled(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			assertTemplateNotRendered(t, chart, "vortex-disabled.yaml", map[string]string{
-				"vortex.autoscaling.enabled": "true",
+				"vortexAnalysis.autoscaling.enabled": "true",
 				"agentKeda.assumeInstalled":  "true",
 			}, "vortex-scaledobject.yaml")
 		})
@@ -67,7 +67,7 @@ func TestVortexScaledObjectNotRenderedWhenAutoscalingDisabled(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			assertTemplateNotRendered(t, chart, "vortex-autoscaling.yaml",
-				map[string]string{"vortex.autoscaling.enabled": "false"}, "vortex-scaledobject.yaml")
+				map[string]string{"vortexAnalysis.autoscaling.enabled": "false"}, "vortex-scaledobject.yaml")
 		})
 	}
 }
@@ -76,11 +76,11 @@ func TestVortexScaledObjectRendersWhenEnabled(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			so, err := renderVortexScaledObject(t, chart, map[string]string{
-				"vortex.autoscaling.minReplicas":                   "3",
-				"vortex.autoscaling.maxReplicas":                   "7",
-				"vortex.autoscaling.pollingInterval":               "20",
-				"vortex.autoscaling.scaleDownStabilizationSeconds": "1200",
-				"vortex.autoscaling.targetConcurrentRequests":      "12",
+				"vortexAnalysis.autoscaling.minReplicas":                   "3",
+				"vortexAnalysis.autoscaling.maxReplicas":                   "7",
+				"vortexAnalysis.autoscaling.pollingInterval":               "20",
+				"vortexAnalysis.autoscaling.scaleDownStabilizationSeconds": "1200",
+				"vortexAnalysis.autoscaling.targetConcurrentRequests":      "12",
 			})
 			require.NoError(t, err)
 
@@ -158,12 +158,12 @@ func TestVortexScaledObjectTriggerURLIsFQDN(t *testing.T) {
 
 // The port in the URL is matched against the pod's target port, not just any port on the Service -
 // a mismatch makes KEDA silently fall back to inferring the port from the scheme (80 for http)
-// instead of erroring. vortex.port drives both the Service port and the containerPort, so a custom
+// instead of erroring. vortexAnalysis.port drives both the Service port and the containerPort, so a custom
 // value must still produce a URL KEDA can resolve to the right pod port.
 func TestVortexScaledObjectTriggerURLTracksCustomPort(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			so, err := renderVortexScaledObject(t, chart, map[string]string{"vortex.port": "9090"})
+			so, err := renderVortexScaledObject(t, chart, map[string]string{"vortexAnalysis.port": "9090"})
 			require.NoError(t, err)
 
 			require.Len(t, so.Spec.Triggers, 1)
@@ -179,7 +179,7 @@ func TestVortexScaledObjectTriggerURLTracksCustomPort(t *testing.T) {
 func TestVortexScaledObjectTriggerURLTracksCustomMetricPath(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			so, err := renderVortexScaledObject(t, chart, map[string]string{"vortex.autoscaling.metricPath": "/metrics-api"})
+			so, err := renderVortexScaledObject(t, chart, map[string]string{"vortexAnalysis.autoscaling.metricPath": "/metrics-api"})
 			require.NoError(t, err)
 
 			require.Len(t, so.Spec.Triggers, 1)
@@ -214,8 +214,8 @@ func TestVortexScaledObjectAggregationOptOut(t *testing.T) {
 			// minReplicas must be pinned to 1 alongside the opt-out: validation now requires
 			// exactly 1 (not just the default minReplicas: 3) whenever aggregation is disabled.
 			so, err := renderVortexScaledObject(t, chart, map[string]string{
-				"vortex.autoscaling.aggregateAcrossReplicas": "false",
-				"vortex.autoscaling.minReplicas":             "1",
+				"vortexAnalysis.autoscaling.aggregateAcrossReplicas": "false",
+				"vortexAnalysis.autoscaling.minReplicas":             "1",
 			})
 			require.NoError(t, err)
 
@@ -250,7 +250,7 @@ func TestVortexReplicasSuppressedByManageReplicasFalse(t *testing.T) {
 		t.Run(chart.name, func(t *testing.T) {
 			assertReplicasOmittedWhenManageReplicasFalse(t, func() (appsv1.Deployment, error) {
 				return renderVortexDeploymentWithValues(t, chart, map[string]string{
-					"vortex.autoscaling.manageReplicas": "false",
+					"vortexAnalysis.autoscaling.manageReplicas": "false",
 				})
 			})
 		})
@@ -264,8 +264,8 @@ func TestVortexReplicasRenderedWhenAutoscalingDisabledEvenIfManageReplicasFalse(
 		t.Run(chart.name, func(t *testing.T) {
 			assertReplicasRenderedWhenAutoscalingDisabled(t, func() (appsv1.Deployment, error) {
 				return renderVortexDeploymentWithValues(t, chart, map[string]string{
-					"vortex.autoscaling.enabled":        "false",
-					"vortex.autoscaling.manageReplicas": "false",
+					"vortexAnalysis.autoscaling.enabled":        "false",
+					"vortexAnalysis.autoscaling.manageReplicas": "false",
 				})
 			})
 		})
@@ -275,7 +275,7 @@ func TestVortexReplicasRenderedWhenAutoscalingDisabledEvenIfManageReplicasFalse(
 // The sliding window Vortex reports its peak concurrency over is wired only when autoscaling is
 // enabled (windowSeconds defaults to a non-empty 30, so gating on it alone would pin every Vortex
 // pod to this env var); a blank windowSeconds leaves the image's own default, and a user-supplied
-// vortex.env entry of the same name still wins - matching every other auto-generated env var here.
+// vortexAnalysis.env entry of the same name still wins - matching every other auto-generated env var here.
 func TestVortexMetricsWindowEnvVar(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -300,7 +300,7 @@ func TestVortexMetricsWindowEnvVar(t *testing.T) {
 				opts := &helm.Options{
 					Logger:      logger.Discard,
 					ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
-					SetValues:   map[string]string{"vortex.autoscaling.windowSeconds": ""},
+					SetValues:   map[string]string{"vortexAnalysis.autoscaling.windowSeconds": ""},
 				}
 				output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
 				require.NoError(t, err)
@@ -310,17 +310,17 @@ func TestVortexMetricsWindowEnvVar(t *testing.T) {
 				assert.False(t, ok)
 			})
 
-			t.Run("overridable via vortex.env", func(t *testing.T) {
+			t.Run("overridable via vortexAnalysis.env", func(t *testing.T) {
 				opts := &helm.Options{
 					Logger:      logger.Discard,
 					ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
 					SetValues: map[string]string{
-						"vortex.env[0].name": "METRICS_CONCURRENT_REQUESTS_WINDOW_SECONDS",
+						"vortexAnalysis.env[0].name": "METRICS_CONCURRENT_REQUESTS_WINDOW_SECONDS",
 					},
 					// SetStrValues, not SetValues: an unquoted 45 renders as a YAML number, which
 					// EnvVar.Value (a string) fails to unmarshal.
 					SetStrValues: map[string]string{
-						"vortex.env[0].value": "45",
+						"vortexAnalysis.env[0].value": "45",
 					},
 				}
 				output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
@@ -351,7 +351,7 @@ func TestVortexTerminationGraceUnconditional(t *testing.T) {
 			opts := &helm.Options{
 				Logger:      logger.Discard,
 				ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
-				SetValues:   map[string]string{"vortex.terminationGracePeriodSeconds": "120"},
+				SetValues:   map[string]string{"vortexAnalysis.terminationGracePeriodSeconds": "120"},
 			}
 			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
 			require.NoError(t, err)
@@ -364,7 +364,7 @@ func TestVortexTerminationGraceUnconditional(t *testing.T) {
 }
 
 // assertVortexAutoscalingRejected renders templates/vortex.yaml (which always renders when
-// vortex.enabled=true, regardless of whether these specific checks pass) with the given SetValues
+// vortexAnalysis.enabled=true, regardless of whether these specific checks pass) with the given SetValues
 // layered onto vortex-autoscaling.yaml, and asserts the render fails containing errSubstring.
 func assertVortexAutoscalingRejected(t *testing.T, setValues map[string]string, errSubstring string) {
 	t.Helper()
@@ -384,14 +384,14 @@ func assertVortexAutoscalingRejected(t *testing.T, setValues map[string]string, 
 
 func TestVortexAutoscalingMinReplicasFloor(t *testing.T) {
 	assertVortexAutoscalingRejected(t,
-		map[string]string{"vortex.autoscaling.minReplicas": "1"},
-		"vortex.autoscaling.minReplicas must be >= 2")
+		map[string]string{"vortexAnalysis.autoscaling.minReplicas": "1"},
+		"vortexAnalysis.autoscaling.minReplicas must be >= 2")
 }
 
 func TestVortexAutoscalingMaxReplicasBelowMinReplicas(t *testing.T) {
 	assertVortexAutoscalingRejected(t,
-		map[string]string{"vortex.autoscaling.minReplicas": "4", "vortex.autoscaling.maxReplicas": "3"},
-		"vortex.autoscaling.maxReplicas must be >= minReplicas")
+		map[string]string{"vortexAnalysis.autoscaling.minReplicas": "4", "vortexAnalysis.autoscaling.maxReplicas": "3"},
+		"vortexAnalysis.autoscaling.maxReplicas must be >= minReplicas")
 }
 
 // Without cross-replica aggregation, KEDA samples a single random pod through the Service, so
@@ -404,8 +404,8 @@ func TestVortexAutoscalingMinReplicasFloorRelaxedWhenAggregationDisabled(t *test
 				Logger:      logger.Discard,
 				ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
 				SetValues: map[string]string{
-					"vortex.autoscaling.aggregateAcrossReplicas": "false",
-					"vortex.autoscaling.minReplicas":             "1",
+					"vortexAnalysis.autoscaling.aggregateAcrossReplicas": "false",
+					"vortexAnalysis.autoscaling.minReplicas":             "1",
 				},
 			}
 			_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
@@ -415,8 +415,8 @@ func TestVortexAutoscalingMinReplicasFloorRelaxedWhenAggregationDisabled(t *test
 
 	// The default (aggregateAcrossReplicas: true) still enforces the >= 2 floor.
 	assertVortexAutoscalingRejected(t,
-		map[string]string{"vortex.autoscaling.minReplicas": "1"},
-		"vortex.autoscaling.minReplicas must be >= 2")
+		map[string]string{"vortexAnalysis.autoscaling.minReplicas": "1"},
+		"vortexAnalysis.autoscaling.minReplicas must be >= 2")
 }
 
 // Unlike the >= 2 floor above, aggregateAcrossReplicas=false must be an equality, not just a
@@ -424,8 +424,8 @@ func TestVortexAutoscalingMinReplicasFloorRelaxedWhenAggregationDisabled(t *test
 // there is exactly one replica - a minReplicas above 1 would silently scale off that one sample.
 func TestVortexAutoscalingMinReplicasMustBeExactlyOneWhenAggregationDisabled(t *testing.T) {
 	assertVortexAutoscalingRejected(t,
-		map[string]string{"vortex.autoscaling.aggregateAcrossReplicas": "false", "vortex.autoscaling.minReplicas": "3"},
-		"vortex.autoscaling.aggregateAcrossReplicas is false, which requires vortex.autoscaling.minReplicas to be exactly 1")
+		map[string]string{"vortexAnalysis.autoscaling.aggregateAcrossReplicas": "false", "vortexAnalysis.autoscaling.minReplicas": "3"},
+		"vortexAnalysis.autoscaling.aggregateAcrossReplicas is false, which requires vortexAnalysis.autoscaling.minReplicas to be exactly 1")
 }
 
 // The KEDA CRD guard: enabling autoscaling without the KEDA CRDs present (and no explicit
@@ -443,15 +443,15 @@ func TestVortexAutoscalingRequiresKedaCRDOrOverride(t *testing.T) {
 				SetValues:   map[string]string{"agentKeda.assumeInstalled": "null"},
 			}
 			assertAutoscalingRequiresKedaCRDOrOverride(t, opts, chart, "templates/vortex.yaml",
-				"vortex.autoscaling.enabled is true but the KEDA CRDs")
+				"vortexAnalysis.autoscaling.enabled is true but the KEDA CRDs")
 		})
 	}
 }
 
 func TestVortexAutoscalingPollingIntervalMustNotExceedWindow(t *testing.T) {
 	assertVortexAutoscalingRejected(t,
-		map[string]string{"vortex.autoscaling.pollingInterval": "60", "vortex.autoscaling.windowSeconds": "30"},
-		"vortex.autoscaling.pollingInterval must be <= vortex.autoscaling.windowSeconds")
+		map[string]string{"vortexAnalysis.autoscaling.pollingInterval": "60", "vortexAnalysis.autoscaling.windowSeconds": "30"},
+		"vortexAnalysis.autoscaling.pollingInterval must be <= vortexAnalysis.autoscaling.windowSeconds")
 }
 
 // windowSeconds blank means "leave the image's own default", which this chart can't compare
@@ -463,8 +463,8 @@ func TestVortexAutoscalingPollingIntervalCheckSkippedWhenWindowBlank(t *testing.
 				Logger:      logger.Discard,
 				ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
 				SetValues: map[string]string{
-					"vortex.autoscaling.pollingInterval": "9999",
-					"vortex.autoscaling.windowSeconds":   "",
+					"vortexAnalysis.autoscaling.pollingInterval": "9999",
+					"vortexAnalysis.autoscaling.windowSeconds":   "",
 				},
 			}
 			_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
@@ -475,16 +475,16 @@ func TestVortexAutoscalingPollingIntervalCheckSkippedWhenWindowBlank(t *testing.
 
 func TestVortexAutoscalingMetricPathMustBeAbsolute(t *testing.T) {
 	assertVortexAutoscalingRejected(t,
-		map[string]string{"vortex.autoscaling.metricPath": "relative-path"},
-		`vortex.autoscaling.metricPath must start with "/"`)
+		map[string]string{"vortexAnalysis.autoscaling.metricPath": "relative-path"},
+		`vortexAnalysis.autoscaling.metricPath must start with "/"`)
 }
 
 // Recreate with N replicas takes the whole Vortex fleet down on every rollout, which is actively
 // at odds with autoscaling - fail rather than silently switching the operator's strategy for them.
 func TestVortexAutoscalingRejectsRecreateStrategy(t *testing.T) {
 	assertVortexAutoscalingRejected(t,
-		map[string]string{"vortex.strategy.type": "Recreate"},
-		`vortex.strategy.type is "Recreate"`)
+		map[string]string{"vortexAnalysis.strategy.type": "Recreate"},
+		`vortexAnalysis.strategy.type is "Recreate"`)
 }
 
 // Recreate stays the shipped default, so it must keep rendering fine whenever autoscaling itself
@@ -499,7 +499,7 @@ func TestVortexRecreateStrategyAllowedWhenAutoscalingDisabled(t *testing.T) {
 }
 
 // vortex.yaml itself tolerates an absent strategy ({{- with $vortex.strategy }}, falling back to
-// Kubernetes' own RollingUpdate default), so vortex.strategy: null is a supported input. The
+// Kubernetes' own RollingUpdate default), so vortexAnalysis.strategy: null is a supported input. The
 // Recreate check must read strategy.type nil-safely rather than panicking on that nil.
 func TestVortexAutoscalingAllowsNilStrategy(t *testing.T) {
 	for _, chart := range agentCharts {
@@ -507,7 +507,7 @@ func TestVortexAutoscalingAllowsNilStrategy(t *testing.T) {
 			opts := &helm.Options{
 				Logger:      logger.Discard,
 				ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
-				SetValues:   map[string]string{"vortex.strategy": "null"},
+				SetValues:   map[string]string{"vortexAnalysis.strategy": "null"},
 			}
 			_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
 			require.NoError(t, err)
@@ -523,7 +523,7 @@ func TestVortexScaledObjectIdenticalAcrossCharts(t *testing.T) {
 		opts := &helm.Options{
 			Logger:      logger.Discard,
 			ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
-			SetValues:   map[string]string{"vortex.autoscaling.minReplicas": "2"},
+			SetValues:   map[string]string{"vortexAnalysis.autoscaling.minReplicas": "2"},
 		}
 		output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex-scaledobject.yaml"})
 		require.NoError(t, err)

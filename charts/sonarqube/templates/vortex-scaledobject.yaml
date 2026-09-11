@@ -1,4 +1,4 @@
-{{- if and .Values.vortex.enabled .Values.vortex.autoscaling.enabled }}
+{{- if and .Values.vortexAnalysis.enabled .Values.vortexAnalysis.autoscaling.enabled }}
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
@@ -8,9 +8,9 @@ metadata:
 spec:
   scaleTargetRef:
     name: {{ include "sonarqube.vortex.fullname" . }}
-  minReplicaCount: {{ .Values.vortex.autoscaling.minReplicas }}
-  maxReplicaCount: {{ .Values.vortex.autoscaling.maxReplicas }}
-  pollingInterval: {{ .Values.vortex.autoscaling.pollingInterval }}
+  minReplicaCount: {{ .Values.vortexAnalysis.autoscaling.minReplicas }}
+  maxReplicaCount: {{ .Values.vortexAnalysis.autoscaling.maxReplicas }}
+  pollingInterval: {{ .Values.vortexAnalysis.autoscaling.pollingInterval }}
   {{- /* A total scrape failure (unlike the partial-failure case aggregateFromKubeServiceEndpoints
          absorbs) otherwise leaves the HPA with no metric and no signal anything is wrong. Holds
          what is already running (raised only to the minReplicas floor if lower), not maxReplicas:
@@ -21,7 +21,7 @@ spec:
   fallback:
     failureThreshold: 3
     behavior: currentReplicasIfHigher
-    replicas: {{ .Values.vortex.autoscaling.minReplicas }}
+    replicas: {{ .Values.vortexAnalysis.autoscaling.minReplicas }}
   advanced:
     horizontalPodAutoscalerConfig:
       {{- /* KEDA otherwise derives the HPA name as "keda-hpa-<scaledobject name>", whose 9-char
@@ -33,7 +33,7 @@ spec:
           {{- /* Cloud's own scale-in cooldown, and the guard against KEDA's partial-endpoint-failure
                  under-report: a replica whose poll fails is silently dropped from the sum rather than
                  surfaced as an error, so a handful of failed polls must not trigger a fast scale-down. */}}
-          stabilizationWindowSeconds: {{ .Values.vortex.autoscaling.scaleDownStabilizationSeconds }}
+          stabilizationWindowSeconds: {{ .Values.vortexAnalysis.autoscaling.scaleDownStabilizationSeconds }}
   triggers:
     {{- /* Reads Vortex's own unauthenticated GET <metricPath> (peak concurrent requests over a
            sliding window). Unlike the agent runtimes' shared orchestrator queue, Vortex has no
@@ -49,11 +49,11 @@ spec:
         {{- /* FQDN, not sonarqube.vortex.url's short name: KEDA parses this host as
                <service>.<namespace> to find the Service's EndpointSlices, and rejects a bare short
                name outright. The port must be the *pod* port, not just any port on the Service -
-               here they're always the same number (.Values.vortex.port), so this is always safe. */}}
-        url: "http://{{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.vortex.fullname" .) "ctx" .) }}:{{ .Values.vortex.port }}{{ .Values.vortex.autoscaling.metricPath }}"
+               here they're always the same number (.Values.vortexAnalysis.port), so this is always safe. */}}
+        url: "http://{{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.vortex.fullname" .) "ctx" .) }}:{{ .Values.vortexAnalysis.port }}{{ .Values.vortexAnalysis.autoscaling.metricPath }}"
         valueLocation: "value"
-        targetValue: "{{ .Values.vortex.autoscaling.targetConcurrentRequests }}"
-        {{- if .Values.vortex.autoscaling.aggregateAcrossReplicas }}
+        targetValue: "{{ .Values.vortexAnalysis.autoscaling.targetConcurrentRequests }}"
+        {{- if .Values.vortexAnalysis.autoscaling.aggregateAcrossReplicas }}
         {{- /* sum, not the aggregationType default of average: metricType is pinned to
                AverageValue above, so the HPA computes ceil(metric / targetValue) - an averaged
                metric would cap the whole fleet at ceil(mean/target) regardless of replica count. */}}

@@ -754,7 +754,7 @@ mcp:
 # Vortex analysis: an analysis service that SonarQube calls on demand to analyse individual
 # files. When enabled, the chart points the SonarQube application nodes at it via the
 # sonar.vortex.analysis.url property.
-vortex:
+vortexAnalysis:
   enabled: false
 
   image:
@@ -830,7 +830,7 @@ vortex:
       baseDir: ""
     # Credentials for that endpoint. Leave accessKey/secretKey/existingSecret all blank for
     # credential-less access: the AWS SDK then falls back to its default credential chain (the
-    # pod's own IAM identity - node instance role, or IRSA via vortex.serviceAccount).
+    # pod's own IAM identity - node instance role, or IRSA via vortexAnalysis.serviceAccount).
     accessKey: ""
     secretKey: ""
     # Existing secret providing SONAR_AGENTIC_STORAGE_ACCESS_KEY / SONAR_AGENTIC_STORAGE_SECRET_KEY
@@ -992,7 +992,7 @@ agentOrchestrator:
   # and writes each runtime's jobs under a subdirectory named after that runtime. Each runtime
   # mounts ONLY its own subdirectory, at subPath "<runtime>" and the same absolute path
   # (<baseDir>/<runtime>), so it cannot see the other's files. Vortex keeps its own, separate
-  # store (vortex.storage above), mounted readOnly.
+  # store (vortexAnalysis.storage above), mounted readOnly.
   #
   # Use ONE shared securityContext.fsGroup across agentOrchestrator/hunterAgent/remediationAgent -
   # distinct fsGroups on one shared RWX volume conflict. On NFS, check the export doesn't
@@ -1208,7 +1208,7 @@ hunterAgent:
   terminationGracePeriodSeconds: 44430
 
 # Remediation Agent runtime that remediates issues. Requires agentOrchestrator.enabled AND
-# vortex.enabled - see validation.yaml.
+# vortexAnalysis.enabled - see validation.yaml.
 remediationAgent:
   enabled: false  # enable once the remediation runtime image is available
   image:
@@ -1500,7 +1500,7 @@ gvisor:
 # Hook Job that runs derive-keys.sh (baked into the Agent Orchestrator image) and materializes
 # the per-consumer signing/verification key Secrets consumed by the Agent Orchestrator, Hunter
 # Agent, Remediation Agent, Vortex, and SQS. Renders only when agenticSigningSecret is set AND at
-# least one of hunterAgent.enabled / remediationAgent.enabled / vortex.enabled is true - see
+# least one of hunterAgent.enabled / remediationAgent.enabled / vortexAnalysis.enabled is true - see
 # validation.yaml, which hard-fails the chart if a component is enabled without
 # agenticSigningSecret.
 agentKeyDerivation:
@@ -1510,7 +1510,7 @@ agentKeyDerivation:
   enabled: true
   # The Job runs derive-keys.sh, which ships inside the Agent Orchestrator image - so this
   # defaults to agentOrchestrator.image and normally needs nothing set here. Set it only when the
-  # orchestrator isn't part of the install but derived keys still are (vortex.enabled on its own),
+  # orchestrator isn't part of the install but derived keys still are (vortexAnalysis.enabled on its own),
   # so the release doesn't have to pull an orchestrator it never deploys.
   image:
     repository: ""
@@ -1568,7 +1568,7 @@ keda:
   enabled: false
 
 # Cluster-capability guard for the KEDA-based ScaledObjects (hunterAgent/remediationAgent/
-# vortex.autoscaling above).
+# vortexAnalysis.autoscaling above).
 agentKeda:
   # null auto-detects KEDA CRDs via .Capabilities.APIVersions - always EMPTY under `helm
   # template`/`--dry-run=client`, so set this explicitly there to avoid a spurious pass/fail.

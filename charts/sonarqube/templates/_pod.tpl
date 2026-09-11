@@ -1,5 +1,5 @@
 {{- define "sonarqube.pod" -}}
-{{- $hasMergedProps := or .Values.sonarProperties .Values.agentOrchestrator.enabled .Values.vortex.enabled (eq (include "sonarqube.agentic.enabled" .) "true") -}}
+{{- $hasMergedProps := or .Values.sonarProperties .Values.agentOrchestrator.enabled .Values.vortexAnalysis.enabled (eq (include "sonarqube.agentic.enabled" .) "true") -}}
 metadata:
   annotations:
     checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
@@ -308,7 +308,7 @@ spec:
           value: {{ .Values.mcp.healthCheckInterval | quote }}
         {{- end }}
         {{- end }}
-        {{- if .Values.vortex.enabled }}
+        {{- if .Values.vortexAnalysis.enabled }}
         - name: SONAR_VORTEX_ANALYSIS_URL
           value: {{ include "sonarqube.vortex.url" . | quote }}
         {{- end }}
