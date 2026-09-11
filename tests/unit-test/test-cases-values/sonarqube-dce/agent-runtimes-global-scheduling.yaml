@@ -90,3 +90,10 @@ agentKeyDerivation:
               - key: keyDerivation
                 operator: In
                 values: ["true"]
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          sonarqube.agent/component: key-derivation
