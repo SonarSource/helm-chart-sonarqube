@@ -28,25 +28,72 @@ spec:
     matchLabels: {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 6 }}
   template:
     metadata:
-      {{- with $cfg.annotations }}
+      {{- $sandboxed := eq (include "sonarqube.agentRuntime.sandboxed" $) "true" }}
+      {{- $meshEnabled := eq (include "sonarqube.agentRuntime.meshSidecar.enabled" $) "true" }}
+      {{- if or $cfg.annotations $sandboxed $.Values.istio.enabled }}
       annotations:
+        {{- with $cfg.annotations }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if $sandboxed }}
+        {{- /* Istio's iptables-based istio-init container needs NET_ADMIN/raw sockets, which a
+               sandboxing RuntimeClass (gVisor, Kata, ...) may not grant - its sidecar would
+               permanently CrashLoopBackOff. Opt these pods out of injection rather than mesh
+               membership. */}}
+        sidecar.istio.io/inject: "false"
+        {{- else if $.Values.istio.enabled }}
+        {{- /* Explicit, not left to a namespace-wide istio-injection=enabled label: this family's
+               PeerAuthentication (peerauthentication.yaml) is STRICT, which rejects any plaintext
+               connection - without a sidecar to actually terminate mTLS, the pod doesn't merely go
+               unenforced, it stops accepting the plaintext traffic that's now all it can receive. */}}
+        sidecar.istio.io/inject: "true"
+        {{- end }}
+        {{- if $meshEnabled }}
+        {{- /* Standard sidecar injection stamps these itself, which is how Prometheus's own
+               Kubernetes-SD scrape config finds a pod's proxy metrics. Nothing injects this
+               hand-authored one, so without this the pod is invisible to Prometheus (and anything
+               built on it, e.g. Kiali's mTLS/traffic graph) despite genuinely enforcing mTLS. */}}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "15020"
+        prometheus.io/path: "/stats/prometheus"
+        {{- end }}
       {{- end }}
       labels:
         {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 8 }}
         sonarqube.agent/component: runtime
         sonarqube.agent/family: {{ $family }}
+        {{- if $meshEnabled }}
+        {{- /* Without this, a caller's own sidecar treats this pod as non-mesh and sends
+               plaintext, never attempting mTLS - silently, since every other signal (probes,
+               Sidecar resource) still looks healthy. Normally stamped by the injector; here
+               there is no injector, so the chart stamps it itself. */}}
+        security.istio.io/tlsMode: istio
+        {{- end }}
         {{- with $cfg.podLabels }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- /* Same directive as the annotations block above, duplicated as a label - not
+               redundant. The sidecar-injector webhook's objectSelector is a LabelSelector; it
+               can only pre-filter admission requests on labels, never annotations. An
+               annotation-only "false" here would be invisible to the webhook if a namespace-wide
+               istio-injection=enabled label is ever added, and these pods would then get a
+               standard sidecar injected on top of - or instead of - the hand-authored one,
+               reintroducing the istio-init/NET_ADMIN CrashLoopBackOff this exists to prevent.
+               Keep in sync with the annotations block above. */}}
+        {{- if $sandboxed }}
+        sidecar.istio.io/inject: "false"
+        {{- else if $.Values.istio.enabled }}
+        sidecar.istio.io/inject: "true"
         {{- end }}
     spec:
       {{- /* Protects an in-flight job from an ordinary scale-down (manual, rollout, node drain, or
              KEDA-driven) dropping it mid-run - independent of whether autoscaling is enabled. */}}
       terminationGracePeriodSeconds: {{ $cfg.terminationGracePeriodSeconds }}
-      {{- /* Run the (untrusted) runtimes under the gVisor RuntimeClass when enabled. The
-             RuntimeClass' own scheduling.nodeSelector pins these pods to runsc-ready nodes. */}}
-      {{- if eq (include "sonarqube.gvisor.enabled" $) "true" }}
-      runtimeClassName: {{ $.Values.gvisor.runtimeClassName }}
+      {{- /* Run the (untrusted) runtimes under a sandboxing RuntimeClass when one applies -
+             gVisor's own scheduling.nodeSelector pins its pods to runsc-ready nodes; a generic
+             agentRuntimeSandbox.runtimeClassName relies on the caller's own node targeting. */}}
+      {{- if $sandboxed }}
+      runtimeClassName: {{ include "sonarqube.agentRuntime.runtimeClassName" $ }}
       {{- end }}
       automountServiceAccountToken: {{ include "sonarqube.agent.automountServiceAccountToken" (dict "ctx" $ "serviceAccount" $cfg.serviceAccount) }}
       {{- $pullSecrets := include "sonarqube.agent.imagePullSecrets" (list $cfg.image) }}
@@ -55,6 +102,10 @@ spec:
       {{- end }}
       {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" $ "securityContext" $cfg.securityContext))) }}
       securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if $meshEnabled }}
+      initContainers:
+        {{- include "sonarqube.agentRuntime.meshSidecar.container" (dict "ctx" $ "family" $family) | nindent 8 }}
       {{- end }}
       containers:
         - name: agent-runtime
@@ -118,11 +169,11 @@ spec:
           {{- with $cfg.resources }}
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with (include "sonarqube.agent.probe" (dict "probe" $cfg.probes.readiness)) }}
+          {{- with (include "sonarqube.agent.probe" (dict "probe" $cfg.probes.readiness "rewritePath" (ternary "/app-health/agent-runtime/readyz" "" $meshEnabled))) }}
           readinessProbe:
 {{ . | indent 12 }}
           {{- end }}
-          {{- with (include "sonarqube.agent.probe" (dict "probe" $cfg.probes.liveness)) }}
+          {{- with (include "sonarqube.agent.probe" (dict "probe" $cfg.probes.liveness "rewritePath" (ternary "/app-health/agent-runtime/livez" "" $meshEnabled))) }}
           livenessProbe:
 {{ . | indent 12 }}
           {{- end }}
@@ -141,10 +192,13 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "sonarqube.agentRuntime.serviceAccountName" (dict "ctx" $ "family" $family) }}
       {{- $keyVolume := include "sonarqube.agentic.keyVolume" (dict "ctx" $ "consumer" $family) }}
-      {{- if or $keyVolume $cfg.extraVolumes }}
+      {{- if or $keyVolume $cfg.extraVolumes $meshEnabled }}
       volumes:
         {{- with $keyVolume }}
         {{- . | trim | nindent 8 }}
+        {{- end }}
+        {{- if $meshEnabled }}
+        {{- include "sonarqube.agentRuntime.meshSidecar.volumes" $ | nindent 8 }}
         {{- end }}
         {{- with $cfg.extraVolumes }}
         {{- toYaml . | nindent 8 }}

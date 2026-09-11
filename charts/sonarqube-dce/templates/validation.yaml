@@ -267,5 +267,13 @@
   {{- end -}}
 {{- end -}}
 
+{{/* Validation for agentRuntimeSandbox.* - the generic, non-gVisor alternative. Same "inert
+     unless a runtime is enabled" precedent as the gVisor block above. */}}
+{{- if and .Values.agentRuntimeSandbox.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
+  {{- if not .Values.agentRuntimeSandbox.runtimeClassName -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentRuntimeSandbox.enabled=true requires a non-empty agentRuntimeSandbox.runtimeClassName." -}}
+  {{- end -}}
+{{- end -}}
+
 {{- include "sonarqube.search.assertEsMajorUpgrade" . -}}
 

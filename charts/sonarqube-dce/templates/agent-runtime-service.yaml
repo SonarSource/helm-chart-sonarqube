@@ -19,7 +19,10 @@ spec:
   type: ClusterIP
   ports:
     - port: {{ $cfg.port }}
-      targetPort: http
+      {{- /* The mesh sidecar's own Envoy terminates inbound mTLS on meshPort and forwards to this
+             port over loopback (agent-runtime-sidecar.yaml) - the Service must point there, not at
+             the app's own un-intercepted port, or callers land on plaintext with no proxy at all. */}}
+      targetPort: {{ if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" $) "true" }}{{ $.Values.istio.meshSidecar.meshPort }}{{ else }}http{{ end }}
       protocol: TCP
       name: http
   selector: {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 4 }}

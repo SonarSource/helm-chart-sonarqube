@@ -1,0 +1,131 @@
+{{- if .Values.istio.enabled }}
+{{- /* STRICT per-workload (not a namespace-wide default) so other releases sharing the namespace
+       aren't affected. Unlike charts/sonarqube's single monolith, Application and Search nodes are
+       separate Deployments/StatefulSets here, so each gets its own PeerAuthentication block. */}}
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.fullname" . }}-app
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}
+      release: {{ .Release.Name }}
+  mtls:
+    mode: STRICT
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.fullname" . }}-search
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-search
+      release: {{ .Release.Name }}
+  mtls:
+    mode: STRICT
+  {{- /* Port 9002 (es-port, sonarqube-search.yaml/service.yaml) is ES's own inter-node transport,
+         not client-facing traffic - client queries land on 9001 and stay STRICT above. Excluded
+         here because STRICT on this port makes the search StatefulSet's own rolling update
+         self-deadlock: Kubernetes updates one ordinal at a time and won't advance until the
+         updated pod is Ready, but that pod's transport connections to not-yet-updated peers (no
+         sidecar) get rejected by its own STRICT enforcement, and vice versa - it can never become
+         Ready. PERMISSIVE here breaks that: a meshed pod's outbound to a bare peer still
+         auto-detects and uses plaintext, and its inbound now accepts that peer's plaintext instead
+         of rejecting it, so the rollout can actually converge. Confirmed live (2026-09-11, AKS):
+         mixed-state search pods stuck failing "handshake failed because connection reset" on 9002
+         indefinitely under STRICT; the StatefulSet could not roll past the first updated ordinal. */}}
+  portLevelMtls:
+    9002:
+      mode: PERMISSIVE
+{{- if .Values.agentOrchestrator.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.agentOrchestrator.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 6 }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- if .Values.mcp.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.mcp.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-mcp
+      release: {{ .Release.Name }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- if .Values.vortex.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.vortex.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-vortex
+      release: {{ .Release.Name }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- /* One per runtime family that actually gets a sidecar - the hand-authored mesh sidecar, or
+       standard injection when the runtime isn't sandboxed. Skipped only when the sandbox excludes
+       the runtime from injection entirely (agent-runtime.yaml), since then it has no mTLS
+       identity to enforce. */}}
+{{- $meshSidecarEnabled := eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" }}
+{{- if or $meshSidecarEnabled (ne (include "sonarqube.agentRuntime.sandboxed" .) "true") }}
+{{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" $) }}
+{{- if $cfg.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.agentRuntime.fullname" (dict "ctx" $ "family" $family) }}
+  labels: {{- include "sonarqube.labels" $ | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 6 }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if include "sonarqube.agentEgressProxy.required" . }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.agentEgressProxy.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 6 }}
+  mtls:
+    mode: STRICT
+  {{- if and (eq (include "sonarqube.agentRuntime.sandboxed" .) "true") (not $meshSidecarEnabled) }}
+  {{- /* PERMISSIVE only while the sandbox excludes the runtime from injection (no client cert
+         possible). Gated on sandboxing itself, not just meshSidecarEnabled, which is also false
+         when the runtime isn't sandboxed - it then gets standard injection and needs no
+         exception. */}}
+  portLevelMtls:
+    {{ .Values.agentEgressProxy.port | quote }}:
+      mode: PERMISSIVE
+  {{- end }}
+{{- end }}
+{{- end }}
