@@ -39,6 +39,9 @@ spec:
 {{- with .Values.ApplicationNodes.podLabels }}
 {{ toYaml . | indent 8 }}
 {{- end }}
+{{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+{{ . | indent 8 }}
+{{- end }}
       annotations:
         checksum/plugins: {{ include (print $.Template.BasePath "/install-plugins.yaml") . | sha256sum }}
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
@@ -52,6 +55,9 @@ spec:
 {{- end }}
 {{- with .Values.ApplicationNodes.annotations }}
 {{ toYaml . | indent 8 }}
+{{- end }}
+{{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+{{ . | indent 8 }}
 {{- end }}
     spec:
       automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}

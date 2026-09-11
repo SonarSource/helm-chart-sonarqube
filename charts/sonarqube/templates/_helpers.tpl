@@ -515,6 +515,33 @@ Usage: {{ include "sonarqube.gvisor.enabled" . }}
 {{- end -}}
 
 {{/*
+Whether the agent runtimes are on a RuntimeClass that can't run istio-init (no NET_ADMIN) -
+gvisor.enabled=true, or the generic agentRuntimeSandbox.enabled=true for any other sandbox (e.g.
+Kata). Inert unless a runtime is actually enabled, same precedent as sonarqube.gvisor.enabled.
+Usage: {{ include "sonarqube.agentRuntime.sandboxed" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.sandboxed" -}}
+{{- $anyRuntime := or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+{{- if and $anyRuntime (or .Values.gvisor.enabled .Values.agentRuntimeSandbox.enabled) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+RuntimeClass to schedule agent runtime pods onto: gvisor.runtimeClassName when gVisor is active,
+else the generic agentRuntimeSandbox.runtimeClassName. Only meaningful when
+sonarqube.agentRuntime.sandboxed is "true".
+Usage: {{ include "sonarqube.agentRuntime.runtimeClassName" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.runtimeClassName" -}}
+{{- if eq (include "sonarqube.gvisor.enabled" .) "true" -}}
+{{ .Values.gvisor.runtimeClassName }}
+{{- else -}}
+{{ .Values.agentRuntimeSandbox.runtimeClassName }}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Return the target Kubernetes version
 */}}
 {{- define "common.capabilities.kubeVersion" -}}
@@ -651,6 +678,215 @@ Parameters (dict): ctx (required, the root context '.'), family (required, the r
 {{- end -}}
 
 {{/*
+Whether the hand-authored mesh sidecar is active (istio.enabled + the runtime being sandboxed +
+the opt-in flag) - every meshSidecar/Sidecar/PeerAuthentication/NetworkPolicy template gates on
+this one define. Also fails closed if meshPort collides with an enabled runtime's own port.
+Emits "true" or "".
+*/}}
+{{- define "sonarqube.agentRuntime.meshSidecar.enabled" -}}
+{{- if and .Values.istio.enabled (eq (include "sonarqube.agentRuntime.sandboxed" .) "true") .Values.istio.meshSidecar.enabled -}}
+{{- /* The hand-authored istio-proxy is a native sidecar (initContainers entry with
+       restartPolicy: Always) - that container type needs the SidecarContainers feature, on by
+       default only from Kubernetes 1.29 (alpha/gated in 1.28, absent before). A pre-1.29 cluster
+       admits the Deployment but pods never progress past Init - fail closed here instead. */}}
+{{- if semverCompare "<1.29-0" .Capabilities.KubeVersion.Version -}}
+{{- fail "istio.meshSidecar.enabled requires Kubernetes >= 1.29 (native sidecar containers: initContainers with restartPolicy: Always)" -}}
+{{- end -}}
+{{- $mesh := int .Values.istio.meshSidecar.meshPort -}}
+{{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" .) -}}
+{{- if and $cfg.enabled (eq (int $cfg.port) $mesh) -}}
+{{- fail (printf "istio.meshSidecar.meshPort (%d) must differ from the %s runtime port" $mesh $family) -}}
+{{- end -}}
+{{- end -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+ISTIO_KUBE_APP_PROBERS JSON: one entry per enabled probe, keyed by the rewritten path pilot-agent
+exposes on :15020, pointing at the app's real port (see sonarqube.agent.probe's rewritePath).
+Parameters (dict): ctx, family (runtime family name)
+*/}}
+{{- define "sonarqube.agentRuntime.meshSidecar.appProbers" -}}
+{{- $cfg := get (fromYaml (include "sonarqube.agentRuntimes" .ctx)) .family -}}
+{{- $probers := dict -}}
+{{- if $cfg.probes.readiness.enabled -}}
+{{- $probers = set $probers "/app-health/agent-runtime/readyz" (dict "httpGet" (dict "path" $cfg.probes.readiness.path "port" (int $cfg.port) "scheme" "HTTP") "timeoutSeconds" (int ($cfg.probes.readiness.timeoutSeconds | default 1))) -}}
+{{- end -}}
+{{- if $cfg.probes.liveness.enabled -}}
+{{- $probers = set $probers "/app-health/agent-runtime/livez" (dict "httpGet" (dict "path" $cfg.probes.liveness.path "port" (int $cfg.port) "scheme" "HTTP") "timeoutSeconds" (int ($cfg.probes.liveness.timeoutSeconds | default 1))) -}}
+{{- end -}}
+{{- toJson $probers -}}
+{{- end -}}
+
+{{/*
+Hand-authored istio-proxy init container for one sandboxed runtime family - what the Istio
+injector would produce minus istio-init, with ISTIO_META_INTERCEPTION_MODE=NONE (the sandboxing
+RuntimeClass can't do iptables). Parameters (dict): ctx, family (runtime family name)
+*/}}
+{{- define "sonarqube.agentRuntime.meshSidecar.container" -}}
+{{- $ctx := .ctx -}}
+{{- $family := .family -}}
+{{- $sidecar := $ctx.Values.istio.meshSidecar -}}
+{{- $probers := include "sonarqube.agentRuntime.meshSidecar.appProbers" (dict "ctx" $ctx "family" $family) -}}
+- name: istio-proxy
+  image: "{{ $sidecar.proxyImage.repository }}:{{ $sidecar.proxyImage.tag }}"
+  restartPolicy: Always
+  args:
+    - proxy
+    - sidecar
+    - --domain
+    - $(POD_NAMESPACE).svc.cluster.local
+    - --proxyLogLevel=warning
+    - --proxyComponentLogLevel=misc:error
+    - --log_output_level=default:info
+  securityContext:
+    runAsUser: 1337
+    runAsGroup: 1337
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    privileged: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: ["ALL"]
+  {{- /* Bare k8s probe defaults (30s to first success) are too tight - cert issuance and XDS
+         bootstrap under gVisor's syscall interception can take longer. Verified on a live gVisor
+         cluster: startupProbe allows up to 600s, readinessProbe stays generous to avoid flapping. */}}
+  startupProbe:
+    httpGet:
+      path: /healthz/ready
+      port: 15021
+    periodSeconds: 1
+    timeoutSeconds: 3
+    failureThreshold: 600
+  readinessProbe:
+    httpGet:
+      path: /healthz/ready
+      port: 15021
+    periodSeconds: 15
+    timeoutSeconds: 3
+    failureThreshold: 4
+  resources: {{- toYaml $sidecar.resources | nindent 4 }}
+  env:
+    - name: PILOT_CERT_PROVIDER
+      value: istiod
+    - name: CA_ADDR
+      value: "istiod.{{ $ctx.Values.istio.namespace }}.svc:15012"
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: INSTANCE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
+    - name: SERVICE_ACCOUNT
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.serviceAccountName
+    - name: HOST_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: ISTIO_META_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    {{- /* discoveryAddress must be set explicitly - pilot-agent otherwise falls back to Istio's
+           hardcoded istiod.istio-system.svc:15012 default, silently ignoring istio.namespace
+           (CA_ADDR above is a separate config path and does not influence this one). */}}
+    - name: PROXY_CONFIG
+      value: |
+        {"discoveryAddress":"istiod.{{ $ctx.Values.istio.namespace }}.svc:15012"}
+    {{- /* ISTIO_META_POD_PORTS must stay empty - the Sidecar resource (agent-runtime-sidecar.yaml)
+           owns inbound, not this env var. */}}
+    - name: ISTIO_META_POD_PORTS
+      value: |-
+        [
+        ]
+    - name: ISTIO_META_APP_CONTAINERS
+      value: agent-runtime
+    - name: ISTIO_META_CLUSTER_ID
+      value: Kubernetes
+    - name: ISTIO_META_INTERCEPTION_MODE
+      value: NONE
+    - name: ISTIO_META_WORKLOAD_NAME
+      value: {{ include "sonarqube.agentRuntime.fullname" (dict "ctx" $ctx "family" $family) }}
+    - name: ISTIO_META_MESH_ID
+      value: cluster.local
+    - name: TRUST_DOMAIN
+      value: cluster.local
+    {{- if ne $probers "{}" }}
+    - name: ISTIO_KUBE_APP_PROBERS
+      value: {{ $probers | quote }}
+    {{- end }}
+  volumeMounts:
+    - name: workload-socket
+      mountPath: /var/run/secrets/workload-spiffe-uds
+    - name: credential-socket
+      mountPath: /var/run/secrets/credential-uds
+    - name: workload-certs
+      mountPath: /var/run/secrets/workload-spiffe-credentials
+    - name: istiod-ca-cert
+      mountPath: /var/run/secrets/istio
+    - name: istio-ca-crl
+      mountPath: /var/run/secrets/istio/crl
+    - name: istio-data
+      mountPath: /var/lib/istio/data
+    - name: istio-envoy
+      mountPath: /etc/istio/proxy
+    - name: istio-token
+      mountPath: /var/run/secrets/tokens
+    - name: istio-podinfo
+      mountPath: /etc/istio/pod
+{{- end -}}
+
+{{/*
+The nine volumes the istio-proxy init container above mounts from. Same shapes the Istio injector
+itself would produce.
+*/}}
+{{- define "sonarqube.agentRuntime.meshSidecar.volumes" -}}
+- name: workload-socket
+  emptyDir: {}
+- name: credential-socket
+  emptyDir: {}
+- name: workload-certs
+  emptyDir: {}
+- name: istio-envoy
+  emptyDir:
+    medium: Memory
+- name: istio-data
+  emptyDir: {}
+- name: istio-podinfo
+  downwardAPI:
+    items:
+      - path: labels
+        fieldRef:
+          fieldPath: metadata.labels
+      - path: annotations
+        fieldRef:
+          fieldPath: metadata.annotations
+- name: istio-token
+  projected:
+    sources:
+      - serviceAccountToken:
+          audience: istio-ca
+          expirationSeconds: 43200
+          path: istio-token
+- name: istiod-ca-cert
+  configMap:
+    name: istio-ca-root-cert
+- name: istio-ca-crl
+  configMap:
+    name: istio-ca-crl
+    optional: true
+{{- end -}}
+
+{{/*
 Create the fully qualified name for the Agent Egress Proxy.
 */}}
 {{- define "sonarqube.agentEgressProxy.fullname" -}}
@@ -681,9 +917,18 @@ Same create / pinned-name / fallback logic as the orchestrator helper above.
 In-cluster URL the agent runtimes reach the Agent Egress Proxy through. Plain http:// even for
 HTTPS_PROXY - the runtime talks plain HTTP to Squid itself, which then CONNECT-tunnels the actual
 HTTPS session (no TLS interception between the runtime and the proxy).
+
+When the hand-authored mesh sidecar is enabled, the runtime's own Envoy owns the egress hop instead - the
+app dials its own sidecar over loopback, and the Sidecar resource's egress listener
+(agent-runtime-sidecar.yaml) forwards it mTLS-wrapped to the real Service. The port is identical in
+both branches; an egress listener's port must match the destination Service's port.
 */}}
 {{- define "sonarqube.agentEgressProxy.url" -}}
+{{- if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" -}}
+{{- printf "http://127.0.0.1:%d" (int .Values.agentEgressProxy.port) -}}
+{{- else -}}
 {{- printf "http://%s:%d" (include "sonarqube.agentEgressProxy.fullname" .) (int .Values.agentEgressProxy.port) -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
@@ -1039,6 +1284,43 @@ Usage: {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
 {{- end -}}
 
 {{/*
+Egress rule letting a sidecar reach istiod's control plane (port 15012). Callers must gate this
+behind .Values.istio.enabled themselves. Unindented - pipe through indent/nindent for `egress:`.
+*/}}
+{{- define "sonarqube.agent.istiodEgressRule" -}}
+- to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: {{ .Values.istio.namespace }}
+      podSelector:
+        matchLabels:
+          app: istiod
+  ports:
+    - port: 15012
+      protocol: TCP
+{{- end -}}
+
+{{/*
+Requests Istio sidecar injection explicitly for a STRICT-mTLS workload, rather than relying on a
+namespace-wide istio-injection=enabled label the chart can't see - without a sidecar, STRICT mode
+rejects the plaintext traffic that's all the pod can then receive. No-op alongside namespace-wide
+auto-injection. Emits nothing when istio.enabled is false.
+
+Callers MUST render this under both `labels:` and `annotations:` on the pod template - not just
+annotations. `sidecar.istio.io/inject` is conventionally documented as an annotation, but the
+sidecar-injector MutatingWebhookConfiguration's own `objectSelector` (a LabelSelector, per the
+Kubernetes API - webhooks can only pre-filter admission requests on an object's labels, never its
+annotations) matches this same key as a LABEL for the "opt in from an unlabeled namespace" webhook
+rule (object.sidecar-injector.istio.io). Annotation-only was verified live to silently never
+invoke the webhook at all (zero istiod log activity) - not a rejection, just never considered.
+*/}}
+{{- define "sonarqube.istio.sidecarInjectAnnotation" -}}
+{{- if .Values.istio.enabled -}}
+sidecar.istio.io/inject: "true"
+{{- end -}}
+{{- end -}}
+
+{{/*
 Parse the host:port endpoint out of jdbcOverwrite.jdbcUrl (jdbc:postgresql://host:port/db[?params]),
 for the Agent Orchestrator's CORE_DB_READ_WRITE_ENDPOINT env, since it reuses SonarQube's own DB.
 */}}
@@ -1155,17 +1437,15 @@ affinity:
 
 {{/*
 Render one HTTP probe (readiness or liveness) from a probes.<kind> block.
-Parameters (dict): probe (required, the probes.<kind> values block)
-Usage: {{- with (include "sonarqube.agent.probe" (dict "probe" .Values.agentOrchestrator.probes.readiness)) }}
-          readinessProbe:
-{{ . | indent 12 }}
-          {{- end }}
+Parameters (dict): probe (the probes.<kind> values block), rewritePath (optional) - for the
+hand-authored mesh sidecar, targets pilot-agent's :15020 with this path instead of the app port
+directly.
 */}}
 {{- define "sonarqube.agent.probe" -}}
 {{- if .probe.enabled -}}
 httpGet:
-  path: {{ .probe.path }}
-  port: http
+  path: {{ .rewritePath | default .probe.path }}
+  port: {{ if .rewritePath }}15020{{ else }}http{{ end }}
 {{- with .probe.initialDelaySeconds }}
 initialDelaySeconds: {{ . }}
 {{- end }}
@@ -1196,7 +1476,7 @@ Usage: {{- with (include "sonarqube.agent.egressProxy.probe" .Values.agentEgress
 */}}
 {{- define "sonarqube.agent.egressProxy.probe" -}}
 tcpSocket:
-  port: http-proxy
+  port: tcp-proxy
 {{- with .periodSeconds }}
 periodSeconds: {{ . }}
 {{- end }}

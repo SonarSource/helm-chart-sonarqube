@@ -858,9 +858,9 @@ spec:
   type: ClusterIP
   ports:
     - port: 3128
-      targetPort: http-proxy
+      targetPort: tcp-proxy
       protocol: TCP
-      name: http-proxy
+      name: tcp-proxy
   selector:
     app: sonarqube-agent-egress-proxy
     release: remediation-agent-values.yaml
@@ -1069,7 +1069,7 @@ spec:
               type: RuntimeDefault
           command: ["squid", "-N", "-f", "/etc/squid/squid.conf"]
           ports:
-            - name: http-proxy
+            - name: tcp-proxy
               containerPort: 3128
               protocol: TCP
           resources:
@@ -1083,12 +1083,12 @@ spec:
               memory: 64Mi
           readinessProbe:
             tcpSocket:
-              port: http-proxy
+              port: tcp-proxy
             periodSeconds: 10
             timeoutSeconds: 5
           livenessProbe:
             tcpSocket:
-              port: http-proxy
+              port: tcp-proxy
             periodSeconds: 10
             timeoutSeconds: 5
           volumeMounts:
@@ -1289,11 +1289,14 @@ spec:
       release: remediation-agent-values.yaml
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
         app: sonarqube-agent-runtime-remediation
         release: remediation-agent-values.yaml
         sonarqube.agent/component: runtime
         sonarqube.agent/family: remediation
+        sidecar.istio.io/inject: "false"
     spec:
       terminationGracePeriodSeconds: 3630
       runtimeClassName: gvisor

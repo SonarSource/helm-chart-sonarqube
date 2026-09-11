@@ -34,3 +34,8 @@ WARNING: This chart no longer bundles the ingress-nginx controller. Setting ngin
          Run gateway-api-migration-scripts/nginx-to-istio-migration.sh to migrate to Gateway API using Istio (the controller our script sets up), or set httproute.enabled and bring your own Gateway API controller of choice, or set ingress.enabled and bring your own self-managed ingress controller.
          Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#ingress-usage for more information.
 {{- end }}
+{{ if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" }}
+WARNING: istio.meshSidecar.enabled is set. The sandboxed agent runtimes have no istio-init, so nothing redirects their own app port (hunterAgent.port/remediationAgent.port) - it stays directly
+         dialable on the pod IP, bypassing the mesh and its mTLS entirely. This is fenced by the runtime NetworkPolicy (<family>.networkPolicy.enabled), which requires your cluster's CNI to
+         actually enforce NetworkPolicy. If it doesn't (e.g. aws-node --enable-network-policy=false), that port is reachable unauthenticated on the pod network regardless of this flag.
+{{- end }}

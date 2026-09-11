@@ -33,11 +33,17 @@ spec:
         {{- with .Values.agentEgressProxy.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
       labels:
         {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 8 }}
         sonarqube.agent/component: egress-proxy
         {{- with .Values.agentEgressProxy.podLabels }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+        {{- . | nindent 8 }}
         {{- end }}
     spec:
       automountServiceAccountToken: {{ include "sonarqube.agent.automountServiceAccountToken" (dict "ctx" . "serviceAccount" .Values.agentEgressProxy.serviceAccount) }}
@@ -61,7 +67,12 @@ spec:
           {{- end }}
           command: ["squid", "-N", "-f", "/etc/squid/squid.conf"]
           ports:
-            - name: http-proxy
+            {{- /* Named tcp-proxy, not http-proxy: Istio's sidecar infers L7 protocol from the
+                   port name, and an "http"-prefixed name makes it apply HTTP Connection Manager
+                   processing to this port - which doesn't know how to pass through Squid's
+                   CONNECT-tunneled HTTPS traffic and rejects it with a 404. A "tcp"-prefixed name
+                   keeps Istio treating this port as opaque TCP passthrough. */}}
+            - name: tcp-proxy
               containerPort: {{ .Values.agentEgressProxy.port }}
               protocol: TCP
           {{- with .Values.agentEgressProxy.env }}

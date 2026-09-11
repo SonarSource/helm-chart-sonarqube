@@ -39,3 +39,8 @@ WARNING: This chart no longer bundles the ingress-nginx controller. Setting ngin
 {{ if or (hasKey (.Values.livenessProbe | default dict) "exec") (hasKey (.Values.livenessProbe | default dict) "httpGet") (hasKey (.Values.livenessProbe | default dict) "tcpSocket") (hasKey (.Values.livenessProbe | default dict) "grpc") (hasKey (.Values.readinessProbe | default dict) "exec") (hasKey (.Values.readinessProbe | default dict) "httpGet") (hasKey (.Values.readinessProbe | default dict) "tcpSocket") (hasKey (.Values.readinessProbe | default dict) "grpc") }}
 WARNING: livenessProbe/readinessProbe handler values are deprecated and no longer have any effect. The chart manages these probes with exec; use overrideCommand to customize their commands.
 {{- end }}
+{{ if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" }}
+WARNING: istio.meshSidecar.enabled is set. The sandboxed agent runtimes have no istio-init, so nothing redirects their own app port (hunterAgent.port/remediationAgent.port) - it stays directly
+         dialable on the pod IP, bypassing the mesh and its mTLS entirely. This is fenced by the runtime NetworkPolicy (<family>.networkPolicy.enabled), which requires your cluster's CNI to
+         actually enforce NetworkPolicy. If it doesn't (e.g. aws-node --enable-network-policy=false), that port is reachable unauthenticated on the pod network regardless of this flag.
+{{- end }}

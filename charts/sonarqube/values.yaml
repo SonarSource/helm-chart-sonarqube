@@ -133,6 +133,40 @@ networkPolicy:
   # expects https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#networkpolicyspec-v1-networking-k8s-io
   # additionalNetworkPolicies:
 
+# Set enabled to true to put every chart-owned workload under STRICT mTLS (peerauthentication.yaml)
+# with sidecar.istio.io/inject: "true" on each pod - not left to a namespace-wide auto-injection
+# label the chart can't see. Also required for the agent NetworkPolicies' explicit egress
+# allow-lists to reach istiod's control plane (else the pod's sidecar stays NotReady forever).
+# Has no effect on any NetworkPolicy left at its default enabled: false.
+istio:
+  enabled: false
+  # Namespace istiod runs in.
+  namespace: "istio-system"
+  # mTLS for sandboxed runtimes: istio-init needs NET_ADMIN, which a sandboxing RuntimeClass
+  # (gVisor, Kata, ...) may not grant, so the chart hand-authors the istio-proxy container itself
+  # and programs it via a chart-owned Sidecar resource instead of iptables interception. Requires
+  # istio.enabled AND the runtime being sandboxed (gvisor.enabled=true, or
+  # agentRuntimeSandbox.enabled=true for any other sandboxed RuntimeClass), and Kubernetes >= 1.29
+  # (native sidecar) - both checked at render time. Validated against Istio 1.30.4 only - bump
+  # proxyImage.tag deliberately and re-verify on a live cluster (see README).
+  meshSidecar:
+    enabled: false
+    # Port the pod's own Envoy binds for inbound mesh traffic; the runtime Service's targetPort
+    # moves here when enabled, forwarding to the app's own hunterAgent.port/remediationAgent.port
+    # over loopback. Must differ from both runtime ports and stay outside Istio's reserved
+    # 15000-15100 range - both failures are silent at render time (see values.schema.json).
+    meshPort: 18080
+    proxyImage:
+      repository: registry.istio.io/release/proxyv2
+      tag: "1.30.4"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: "2"
+        memory: 1Gi
+
 # will be used as default for ingress/httproute path and probes path, will be injected in .Values.env as SONAR_WEB_CONTEXT
 # if .Values.env.SONAR_WEB_CONTEXT is set, this value will be ignored
 sonarWebContext: ""
@@ -1496,6 +1530,16 @@ gvisor:
     tolerations:                    # run everywhere incl. tainted/control-plane nodes
       - operator: Exists
     annotations: {}
+
+# Generic alternative to gvisor.enabled for excluding hunterAgent/remediationAgent pods from
+# standard Istio injection and scheduling them onto a caller-supplied sandboxing RuntimeClass -
+# e.g. Kata Containers under AKS's Pod Sandboxing feature, which also can't grant istio-init the
+# NET_ADMIN capability it needs. gvisor.enabled=true implies this automatically; don't set both.
+agentRuntimeSandbox:
+  enabled: false
+  # RuntimeClass to schedule hunterAgent/remediationAgent pods onto, e.g. kata-mshv-vm-isolation
+  # on AKS. Ignored when gvisor.enabled is true (gvisor.runtimeClassName wins).
+  runtimeClassName: ""
 
 # Hook Job that runs derive-keys.sh (baked into the Agent Orchestrator image) and materializes
 # the per-consumer signing/verification key Secrets consumed by the Agent Orchestrator, Hunter

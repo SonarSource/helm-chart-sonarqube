@@ -13,12 +13,21 @@ spec:
       release: {{ .Release.Name }}
   template:
     metadata:
-      {{- with .Values.mcp.annotations }}
-      annotations: {{- toYaml . | nindent 8 }}
+      {{- if or .Values.mcp.annotations .Values.istio.enabled }}
+      annotations:
+        {{- with .Values.mcp.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
       {{- end }}
       labels:
         app: {{ include "sonarqube.name" . }}-mcp
         release: {{ .Release.Name }}
+        {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
     spec:
       {{- with (fromYaml (include "sonarqube.mcp.securityContext" .)) }}
       securityContext: {{- toYaml . | nindent 8 }}

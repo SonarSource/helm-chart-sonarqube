@@ -1,0 +1,103 @@
+{{- if .Values.istio.enabled }}
+{{- /* The mesh's own PERMISSIVE default lets any plaintext caller reach these pods, which defeats
+       the point of being in the mesh at all - so require mTLS explicitly for every workload this
+       chart owns, scoped per-workload rather than as a namespace-wide default so other release(s)
+       sharing the namespace (postgresql, gvisor-installer, ...) aren't affected. */}}
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.selectorLabels" . | nindent 6 }}
+  mtls:
+    mode: STRICT
+{{- if .Values.agentOrchestrator.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.agentOrchestrator.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 6 }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- if .Values.mcp.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.mcp.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-mcp
+      release: {{ .Release.Name }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- if .Values.vortex.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.vortex.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-vortex
+      release: {{ .Release.Name }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- /* One per runtime family that actually gets a sidecar - the hand-authored mesh sidecar, or
+       standard injection when the runtime isn't sandboxed. Skipped only when the sandbox excludes
+       the runtime from injection entirely (agent-runtime.yaml), since then it has no mTLS
+       identity to enforce. */}}
+{{- $meshSidecarEnabled := eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" }}
+{{- if or $meshSidecarEnabled (ne (include "sonarqube.agentRuntime.sandboxed" .) "true") }}
+{{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" $) }}
+{{- if $cfg.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.agentRuntime.fullname" (dict "ctx" $ "family" $family) }}
+  labels: {{- include "sonarqube.labels" $ | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 6 }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if include "sonarqube.agentEgressProxy.required" . }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.agentEgressProxy.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 6 }}
+  mtls:
+    mode: STRICT
+  {{- if and (eq (include "sonarqube.agentRuntime.sandboxed" .) "true") (not $meshSidecarEnabled) }}
+  {{- /* PERMISSIVE only while the sandbox excludes the runtime from injection (no client cert
+         possible). Gated on sandboxing itself, not just meshSidecarEnabled, which is also false
+         when the runtime isn't sandboxed - it then gets standard injection and needs no
+         exception. */}}
+  portLevelMtls:
+    {{ .Values.agentEgressProxy.port | quote }}:
+      mode: PERMISSIVE
+  {{- end }}
+{{- end }}
+{{- end }}
