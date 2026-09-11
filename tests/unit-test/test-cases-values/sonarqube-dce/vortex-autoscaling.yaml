@@ -1,0 +1,60 @@
+monitoringPasscode: test-passcode
+applicationNodes:
+  jwtSecret: test-jwt-secret
+  image:
+    pullSecret: app-node-secret
+    pullSecrets:
+      - name: app-node-secret-list
+jdbcOverwrite:
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+networkPolicy:
+  enabled: true
+# Vortex enabled with autoscaling on top of the vortex-enabled.yaml fixture: RollingUpdate is
+# required by validation.yaml once autoscaling.enabled is true (Recreate would take the whole
+# fleet down on every rollout), and agentKeda.assumeInstalled short-circuits the KEDA CRD probe,
+# which is always empty under `helm template`. This is a standalone copy, not an actual multi-file
+# layering, so it must be kept field-for-field in sync with vortex-enabled.yaml's own vortex block.
+vortex:
+  enabled: true
+  image:
+    repository: example.com/vortex
+    tag: "7593"
+    pullSecret: vortex-secret
+    pullSecrets:
+      - name: vortex-secret-list
+  storage:
+    bucket: agent-artifacts
+    region: eu-west-1
+  env:
+    - name: MY_VAR
+      value: my-value
+  nodeSelector:
+    vortex: "true"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: vortex
+                operator: In
+                values: ["true"]
+  tolerations:
+    - key: vortex
+      operator: Exists
+      effect: NoSchedule
+  strategy:
+    type: RollingUpdate
+  autoscaling:
+    enabled: true
+agentKeda:
+  assumeInstalled: true
+agenticSigningSecret:
+  existingSecret: test-agentic-instance-secret
+# Vortex needs derived signing keys but no orchestrator, so the key-derivation hook Job gets
+# its image here rather than from agentOrchestrator.image.
+agentKeyDerivation:
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "42"

@@ -770,9 +770,48 @@ vortex:
   replicaCount: 1
 
   # Update strategy for the Vortex Deployment. Recreate avoids running two pods at once
-  # during an upgrade.
+  # during an upgrade. Must be RollingUpdate when autoscaling.enabled=true - see validation.yaml -
+  # since Recreate with N replicas takes the whole fleet down on every rollout.
   strategy:
     type: Recreate
+
+  # Peak-concurrency autoscaling via KEDA, reading Vortex's own unauthenticated
+  # GET /metrics/max-concurrent-requests. Requires the KEDA CRDs in-cluster - see agentKeda below.
+  autoscaling:
+    enabled: false
+    # Validated >= 2 (see validation.yaml), or exactly 1 with aggregateAcrossReplicas: false below:
+    # this fleet never scales to zero, so there is no 0<->1 transition to reason about. Note this
+    # raises a default replicaCount: 1 install to 3 pods.
+    minReplicas: 3
+    maxReplicas: 20
+    # Set false to always omit spec.replicas once autoscaling is on (GitOps). See agentOrchestrator/
+    # hunterAgent/remediationAgent.autoscaling.manageReplicas for the same convention.
+    manageReplicas: true
+    # How often KEDA polls. Must be <= windowSeconds, or peaks between polls are lost.
+    pollingInterval: 15
+    # Cloud's own ConcurrentRequestCount scale-in cooldown is 15min; scale-out is left at the HPA's
+    # fast default. Deliberately long: KEDA's cross-replica aggregation silently drops any replica
+    # whose poll fails from the sum instead of erroring, so a handful of failed polls under-reports
+    # the true peak and could otherwise trigger a spurious scale-down.
+    scaleDownStabilizationSeconds: 900
+    # Max concurrent requests one replica should carry before the fleet scales out. The
+    # ScaledObject pins metricType: AverageValue, so desiredReplicas = ceil(fleetTotalPeak / this).
+    targetConcurrentRequests: 2
+    # true (requires KEDA >= 2.20.0) has KEDA query every replica behind the Service directly and
+    # sum the results - a real cross-pod total. false queries one random replica through the
+    # Service instead (KEDA's own "random pick" limitation) - only correct with minReplicas: 1, and
+    # the fallback for a pre-existing cluster-wide KEDA older than 2.20.0, a version this chart has
+    # no way to detect (agentKeda.assumeInstalled only confirms the CRDs, not the operator version).
+    aggregateAcrossReplicas: true
+    # Sliding window Vortex reports its peak concurrency over
+    # (METRICS_CONCURRENT_REQUESTS_WINDOW_SECONDS on the Vortex container). Must stay >=
+    # pollingInterval above.
+    windowSeconds: 30
+    # Path of the metric endpoint on the Vortex container.
+    metricPath: /metrics/max-concurrent-requests
+
+  # In-flight analyses survive a scale-down, rollout or node drain, not just an autoscaler-driven one.
+  terminationGracePeriodSeconds: 180
 
   # S3-compatible object storage for Vortex analysis context restoration. Must point at the same
   # bucket SonarQube Server writes context to (sonar.agentic.storage.*).
@@ -1528,8 +1567,8 @@ agentKeyDerivation:
 keda:
   enabled: false
 
-# Cluster-capability guard for the KEDA-based agent runtime ScaledObjects (hunterAgent/
-# remediationAgent.autoscaling above).
+# Cluster-capability guard for the KEDA-based ScaledObjects (hunterAgent/remediationAgent/
+# vortex.autoscaling above).
 agentKeda:
   # null auto-detects KEDA CRDs via .Capabilities.APIVersions - always EMPTY under `helm
   # template`/`--dry-run=client`, so set this explicitly there to avoid a spurious pass/fail.

@@ -7,7 +7,12 @@ metadata:
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
     app.kubernetes.io/component: vortex
 spec:
+  {{- /* Same guard as the agent runtimes/orchestrator: once the ScaledObject owns this Deployment,
+         only render replicas on the very first install (or always, per manageReplicas), so a
+         `helm upgrade` doesn't reset the autoscaler's current value. */}}
+  {{- if or (not $vortex.autoscaling.enabled) (and .Release.IsInstall $vortex.autoscaling.manageReplicas) }}
   replicas: {{ $vortex.replicaCount }}
+  {{- end }}
   {{- with $vortex.strategy }}
   strategy: {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -26,6 +31,10 @@ spec:
         app: {{ include "sonarqube.name" . }}-vortex
         release: {{ .Release.Name }}
     spec:
+      {{- /* Protects an in-flight analysis from an ordinary scale-down (manual, rollout, node
+             drain, or KEDA-driven) dropping it mid-run - independent of whether autoscaling is
+             enabled. */}}
+      terminationGracePeriodSeconds: {{ $vortex.terminationGracePeriodSeconds }}
       serviceAccountName: {{ include "sonarqube.vortex.serviceAccountName" . }}
       automountServiceAccountToken: {{ include "sonarqube.agent.automountServiceAccountToken" (dict "ctx" . "serviceAccount" $vortex.serviceAccount) }}
       {{- $pullSecrets := include "sonarqube.agent.imagePullSecrets" (list $vortex.image) }}
@@ -81,6 +90,17 @@ spec:
                    sonarqube.agentic.keyPathEnv. */}}
             {{- with (include "sonarqube.agentic.keyPathEnv" (dict "ctx" . "consumer" "vortex") | fromYamlArray) }}
             {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- /* Sets the sliding window the new GET <metricPath> endpoint reports its peak
+                   concurrency over. Only relevant once the ScaledObject actually polls that
+                   endpoint, so it's emitted with autoscaling only - windowSeconds defaults to a
+                   non-empty 30, so gating on it alone would pin every Vortex pod to this env var
+                   even when autoscaling.enabled is false. Emitted before $vortex.env so an
+                   explicit user entry of the same name still wins, matching every other
+                   auto-generated var here. */}}
+            {{- if and $vortex.autoscaling.enabled $vortex.autoscaling.windowSeconds }}
+            - name: METRICS_CONCURRENT_REQUESTS_WINDOW_SECONDS
+              value: {{ $vortex.autoscaling.windowSeconds | quote }}
             {{- end }}
             {{- with $vortex.env }}
             {{- toYaml . | nindent 12 }}
