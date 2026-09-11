@@ -439,3 +439,11 @@ Create the fully qualified name for the MCP service.
 {{- $accountDeprecation := (include "deepMerge" (dict "map1" $map1 "map2" $map2)) -}}
 {{- $accountDeprecation }}
 {{- end -}}
+
+{{/*
+Compute a ConfigMap or Secret checksum from its data only, for the checksum/* pod annotations.
+Hashing the whole manifest includes the chart labels, which change on every chart version bump.
+*/}}
+{{- define "sonarqube.configMapOrSecretContentHash" -}}
+{{ pick (include (print .ctx.Template.BasePath .name) .ctx | fromYaml) "data" "stringData" | toYaml | sha256sum }}
+{{- end -}}

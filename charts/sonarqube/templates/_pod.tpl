@@ -1,18 +1,18 @@
 {{- define "sonarqube.pod" -}}
 metadata:
   annotations:
-    checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+    checksum/config: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/config.yaml") }}
     {{- if and .Values.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
-    checksum/init-fs: {{ include (print $.Template.BasePath "/init-fs.yaml") . | sha256sum }}
+    checksum/init-fs: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/init-fs.yaml") }}
     {{- end }}
     {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
-    checksum/init-sysctl: {{ include (print $.Template.BasePath "/init-sysctl.yaml") . | sha256sum }}
+    checksum/init-sysctl: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/init-sysctl.yaml") }}
     {{- end }}
-    checksum/plugins: {{ include (print $.Template.BasePath "/install-plugins.yaml") . | sha256sum }}
-    checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    checksum/plugins: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/install-plugins.yaml") }}
+    checksum/secret: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/secret.yaml") }}
     {{- if .Values.prometheusExporter.enabled }}
-    checksum/prometheus-config: {{ include (print $.Template.BasePath "/prometheus-config.yaml") . | sha256sum }}
-    checksum/prometheus-ce-config: {{ include (print $.Template.BasePath "/prometheus-ce-config.yaml") . | sha256sum }}
+    checksum/prometheus-config: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/prometheus-config.yaml") }}
+    checksum/prometheus-ce-config: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/prometheus-ce-config.yaml") }}
     {{- end }}
     {{- with .Values.annotations }}
     {{- toYaml . | nindent 4 }}
