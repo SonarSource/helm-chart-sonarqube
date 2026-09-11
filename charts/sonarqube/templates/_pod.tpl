@@ -355,9 +355,39 @@ spec:
             name: {{ . }}
         {{- end }}
       livenessProbe:
-        {{- tpl (omit .Values.livenessProbe "sonarWebContext" | toYaml) . | nindent 8 }}
+        exec:
+          command:
+          {{- with .Values.livenessProbe.overrideCommand }}
+          {{- tpl (toYaml .) $ | nindent 10 }}
+          {{- else }}
+          - sh
+          - -c
+          - |
+            curl --noproxy "*" -fsS -o /dev/null --max-time {{ .Values.livenessProbe.timeoutSeconds }} -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:{{ .Values.service.internalPort }}{{ .Values.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
+          {{- end }}
+        {{- with (omit .Values.livenessProbe "exec" "httpGet" "tcpSocket" "grpc" "sonarWebContext" "overrideCommand") }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
       readinessProbe:
-        {{- tpl (omit .Values.readinessProbe "sonarWebContext" | toYaml) . | nindent 8 }}
+        exec:
+          command:
+          {{- with .Values.readinessProbe.overrideCommand }}
+          {{- tpl (toYaml .) $ | nindent 10 }}
+          {{- else }}
+          - sh
+          - -c
+          - |
+            #!/bin/bash
+            # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+            # status about migration are added to prevent the node to be kill while SonarQube is upgrading the database.
+            if curl --noproxy "*" -s http://localhost:{{ .Values.service.internalPort }}{{ .Values.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+              exit 0
+            fi
+            exit 1
+          {{- end }}
+        {{- with (omit .Values.readinessProbe "exec" "httpGet" "tcpSocket" "grpc" "sonarWebContext" "overrideCommand") }}
+        {{- tpl (toYaml .) $ | nindent 8 }}
+        {{- end }}
       startupProbe:
         httpGet:
           scheme: HTTP
