@@ -1029,6 +1029,9 @@ func TestAgentKeyDerivationSchedulingWinsOverGlobal(t *testing.T) {
 			require.Len(t, terms, 1)
 			require.Len(t, terms[0].MatchExpressions, 1)
 			assert.Equal(t, "keyDerivation", terms[0].MatchExpressions[0].Key)
+
+			require.Len(t, podSpec.TopologySpreadConstraints, 1)
+			assert.Equal(t, "topology.kubernetes.io/zone", podSpec.TopologySpreadConstraints[0].TopologyKey)
 		})
 	}
 }
