@@ -115,6 +115,21 @@ spec:
               mountPath: /mcp-tls
               readOnly: true
             {{- end }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with default .Values.nodeSelector .Values.mcp.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with default .Values.tolerations .Values.mcp.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with default .Values.affinity .Values.mcp.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mcp.topologySpreadConstraints }}
+      topologySpreadConstraints: {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         - name: mcp-data
           {{- if .Values.mcp.persistence.enabled }}

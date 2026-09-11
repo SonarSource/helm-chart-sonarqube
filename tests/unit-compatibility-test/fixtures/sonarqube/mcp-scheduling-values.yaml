@@ -1,0 +1,522 @@
+---
+# Source: sonarqube/templates/secret.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mcp-scheduling-values.yaml-sonarqube-monitoring-passcode
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: mcp-scheduling-values.yaml
+    heritage: Helm
+type: Opaque
+data:
+  SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+---
+# Source: sonarqube/templates/secret.yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mcp-scheduling-values.yaml-sonarqube-http-proxies
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: mcp-scheduling-values.yaml
+    heritage: Helm
+type: Opaque
+stringData:
+  PLUGINS-HTTP-PROXY: ""
+  PLUGINS-HTTPS-PROXY: ""
+  PLUGINS-NO-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTP-PROXY: ""
+  PROMETHEUS-EXPORTER-HTTPS-PROXY: ""
+  PROMETHEUS-EXPORTER-NO-PROXY: ""
+---
+# Source: sonarqube/templates/config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcp-scheduling-values.yaml-sonarqube-config
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: mcp-scheduling-values.yaml
+    heritage: Helm
+data:
+  sonar.properties: |
+---
+# Source: sonarqube/templates/init-sysctl.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcp-scheduling-values.yaml-sonarqube-init-sysctl
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: mcp-scheduling-values.yaml
+    heritage: Helm
+data:
+  init_sysctl.sh: |-
+    set -o errexit
+    set -o xtrace
+    vmMaxMapCount=524288
+    if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
+      sysctl -w vm.max_map_count=$vmMaxMapCount
+      if [[ "$(sysctl -n vm.max_map_count)" -lt $vmMaxMapCount ]]; then
+        echo "Failed to set initSysctl.vmMaxMapCount"; exit 1
+      fi
+    fi
+    fsFileMax=131072
+    if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
+      sysctl -w fs.file-max=$fsFileMax
+      if [[ "$(sysctl -n fs.file-max)" -lt $fsFileMax ]]; then
+        echo "Failed to set initSysctl.fsFileMax"; exit 1
+      fi
+    fi
+    nofile=131072
+    if [[ "$(ulimit -n)" != "unlimited" ]]; then
+      if [[ "$(ulimit -n)" -lt $nofile ]]; then
+        ulimit -n $nofile
+        if [[ "$(ulimit -n)" -lt $nofile ]]; then
+          echo "Failed to set initSysctl.nofile"; exit 1
+        fi
+      fi
+    fi
+    nproc=8192
+    if [[ "$(ulimit -u)" != "unlimited" ]]; then
+      if [[ "$(ulimit -u)" -lt $nproc ]]; then
+        ulimit -u $nproc
+        if [[ "$(ulimit -u)" -lt $nproc ]]; then
+          echo "Failed to set initSysctl.nproc"; exit 1
+        fi
+      fi
+    fi
+---
+# Source: sonarqube/templates/install-plugins.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcp-scheduling-values.yaml-sonarqube-install-plugins
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: mcp-scheduling-values.yaml
+    heritage: Helm
+data:
+  install_plugins.sh: |-
+---
+# Source: sonarqube/templates/mcp-pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mcp-scheduling-values.yaml-sonarqube-mcp
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: mcp-scheduling-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: mcp
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "1Gi"
+---
+# Source: sonarqube/templates/mcp-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-scheduling-values.yaml-sonarqube-mcp
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: mcp-scheduling-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: mcp
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: sonarqube-mcp
+    release: mcp-scheduling-values.yaml
+---
+# Source: sonarqube/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-scheduling-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: mcp-scheduling-values.yaml
+    heritage: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: sonarqube
+    release: mcp-scheduling-values.yaml
+---
+# Source: sonarqube/templates/mcp.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-scheduling-values.yaml-sonarqube-mcp
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: mcp-scheduling-values.yaml
+    heritage: Helm
+    app.kubernetes.io/component: mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarqube-mcp
+      release: mcp-scheduling-values.yaml
+  template:
+    metadata:
+      labels:
+        app: sonarqube-mcp
+        release: mcp-scheduling-values.yaml
+    spec:
+      securityContext:
+        fsGroup: 0
+      initContainers:
+        - name: wait-for-sonarqube
+          image: sonarqube:2026.4.0-enterprise
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          command:
+            - sh
+            - -c
+            - |
+              until curl -sf "http://mcp-scheduling-values.yaml-sonarqube:9000/api/system/status" | grep -q '"status":"UP"'; do
+                echo "Waiting for SonarQube to be UP..."; sleep 10;
+              done
+      containers:
+        - name: mcp
+          image: sonarsource/sonarqube-mcp:1.22.0.3040
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: STORAGE_PATH
+              value: /data
+            # HOME is set so SonarLint (SLCORE) resolves its user home under the
+            # writable /data volume instead of "/", which is not writable for the
+            # non-root MCP user. Overridable via mcp.env below.
+            - name: HOME
+              value: /data
+            - name: SONARQUBE_URL
+              value: http://mcp-scheduling-values.yaml-sonarqube:9000
+            - name: SONARQUBE_HTTP_HOST
+              value: "0.0.0.0"
+            - name: SONARQUBE_HTTP_PORT
+              value: "8080"
+            - name: SONARQUBE_TRANSPORT
+              value: http
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 6
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: mcp-data
+              mountPath: /data
+      priorityClassName: high-priority
+      nodeSelector:
+        disktype: ssd
+      tolerations:
+        - effect: NoSchedule
+          key: mcp
+          operator: Equal
+          value: "true"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: env
+                operator: In
+                values:
+                - global
+      topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app: sonarqube-mcp
+              release: mcp-scheduling-values.yaml
+          maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+      volumes:
+        - name: mcp-data
+          persistentVolumeClaim:
+            claimName: mcp-scheduling-values.yaml-sonarqube-mcp
+---
+# Source: sonarqube/templates/sonarqube-sts.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mcp-scheduling-values.yaml-sonarqube
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: mcp-scheduling-values.yaml
+    heritage: Helm
+    app.kubernetes.io/name: mcp-scheduling-values.yaml
+    app.kubernetes.io/instance: mcp-scheduling-values.yaml
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: sonarqube
+    app.kubernetes.io/component: mcp-scheduling-values.yaml-sonarqube
+    app.kubernetes.io/version: "2026.4.0-enterprise"
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  serviceName: mcp-scheduling-values.yaml-sonarqube
+  selector:
+    matchLabels:
+      app: sonarqube
+      release: mcp-scheduling-values.yaml
+  template:
+    metadata:
+      annotations:
+        checksum/config: d51f4da0475d973d94eefe2cad6a2c099a5d44af0ddebf102d2b4a1caaaca6fe
+        checksum/init-sysctl: 9572d8e9e53f4c3e9cc74ce284e2cff3e772c4cf13e7f40589a439f46d6e2446
+        checksum/plugins: 252ad15848653292e8622cc7ae942e029cc7f69864abc412e42c5cd8e5b6ec19
+        checksum/secret: 20f96090e70389532a1c46d493a6a16c3c0d45b14ab7f45b4aa8c3fd261c0dc9
+      labels:
+        app: sonarqube
+        release: mcp-scheduling-values.yaml
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 0
+      initContainers:
+        - name: init-sysctl
+          image: sonarqube:2026.4.0-enterprise
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+          command: ["/bin/bash", "-e", "/tmp/scripts/init_sysctl.sh"]
+          volumeMounts:
+            - name: init-sysctl
+              mountPath: /tmp/scripts/
+          env:
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+      containers:
+        - name: sonarqube
+          image: sonarqube:2026.4.0-enterprise
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 800m
+              ephemeral-storage: 512000M
+              memory: 6144M
+            requests:
+              cpu: 400m
+              ephemeral-storage: 1536M
+              memory: 2048M
+          env:
+            - name: SONAR_HELM_CHART_VERSION
+              value: 2026.5.0
+            - name: SONAR_WEB_SYSTEMPASSCODE
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-scheduling-values.yaml-sonarqube-monitoring-passcode
+                  key: SONAR_WEB_SYSTEMPASSCODE
+            - name: SONAR_MCP_ENABLED
+              value: "true"
+            - name: SONAR_MCP_SERVERURL
+              value: "http://mcp-scheduling-values.yaml-sonarqube-mcp:8080"
+            - name: SONAR_WEB_CONTEXT
+              value: /
+            - name: SONAR_WEB_JAVAOPTS
+              value: ""
+            - name: SONAR_CE_JAVAOPTS
+              value: ""
+          envFrom:
+          livenessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                curl --noproxy "*" -fsS -o /dev/null --max-time 1 -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/api/system/liveness"
+            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 1
+          readinessProbe:
+            exec:
+              command:
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+                # status about migration are added to prevent the node to be kill while SonarQube is upgrading the database.
+                if curl --noproxy "*" -s http://localhost:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                  exit 0
+                fi
+                exit 1
+            failureThreshold: 6
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 1
+          startupProbe:
+            httpGet:
+              scheme: HTTP
+              path: /api/system/status
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 24
+            timeoutSeconds: 1
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /opt/sonarqube/data
+              name: sonarqube
+              subPath: data
+            - mountPath: /opt/sonarqube/temp
+              name: sonarqube
+              subPath: temp
+            - mountPath: /opt/sonarqube/logs
+              name: sonarqube
+              subPath: logs
+            - mountPath: /tmp
+              name: tmp-dir
+            - mountPath: /opt/sonarqube/extensions
+              name: sonarqube
+              subPath: extensions
+      priorityClassName: high-priority
+      nodeSelector:
+        global: "true"
+      tolerations:
+        - effect: NoSchedule
+          key: global
+          operator: Exists
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: env
+                operator: In
+                values:
+                - global
+      serviceAccountName: default
+      volumes:
+        
+        - name: init-sysctl
+          configMap:
+            name: mcp-scheduling-values.yaml-sonarqube-init-sysctl
+            items:
+              - key: init_sysctl.sh
+                path: init_sysctl.sh
+        - name: sonarqube
+          emptyDir:
+            {}
+        - name : tmp-dir
+          emptyDir:
+            {}
+---
+# Source: sonarqube/templates/tests/sonarqube-test.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "mcp-scheduling-values.yaml-ui-test"
+  annotations:
+    "helm.sh/hook": test-success
+    # Disable Istio sidecar injection for this test pod
+    "sidecar.istio.io/inject": "false"
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.0
+    release: mcp-scheduling-values.yaml
+    heritage: Helm
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: mcp-scheduling-values.yaml-ui-test
+      image: "sonarqube:2026.4.0-enterprise"
+      imagePullPolicy: IfNotPresent
+      command: ['curl']
+      args: [
+        '--retry-connrefused',
+        '--retry',
+        '12',
+        '--retry-delay',
+        '1',
+        '--max-time',
+        '5',
+        '-s',
+        'mcp-scheduling-values.yaml-sonarqube:9000/api/system/status'
+        ]
+      resources:
+        limits:
+          cpu: 500m
+          ephemeral-storage: 1000M
+          memory: 200M
+        requests:
+          cpu: 500m
+          ephemeral-storage: 100M
+          memory: 200M
+  restartPolicy: Never
