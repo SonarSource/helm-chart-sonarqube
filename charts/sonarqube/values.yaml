@@ -1529,6 +1529,9 @@ agentKeyDerivation:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Topology spread constraints for the hook Job's pod.
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+  topologySpreadConstraints: []
   # The Job does a handful of HKDF derivations and a few API writes, then exits - it is sized for
   # that, not for a long-lived workload. Requests are kept small so the hook schedules on a busy
   # cluster (a pending hook blocks the whole install), and limits are still generous enough that a
