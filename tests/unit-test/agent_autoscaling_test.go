@@ -431,12 +431,12 @@ func assertAgentAutoscalingRangeRejected(t *testing.T, autoscalingValues map[str
 					values[family+"Agent.enabled"] = "true"
 					values[family+"Agent.image.repository"] = "example.com/" + family + "-agent"
 					values["agentKeda.assumeInstalled"] = "true"
-					values["vortex.enabled"] = "true"
-					values["vortex.image.repository"] = "example.com/vortex"
-					values["vortex.image.tag"] = "1"
-					values["vortex.sonarqubeToken.token"] = "squ_example"
-					values["vortex.storage.bucket"] = "vortex-artifacts"
-					values["vortex.storage.region"] = "eu-west-1"
+					values["vortexAnalysis.enabled"] = "true"
+					values["vortexAnalysis.image.repository"] = "example.com/vortex"
+					values["vortexAnalysis.image.tag"] = "1"
+					values["vortexAnalysis.sonarqubeToken.token"] = "squ_example"
+					values["vortexAnalysis.storage.bucket"] = "vortex-artifacts"
+					values["vortexAnalysis.storage.region"] = "eu-west-1"
 					_, err := renderWithValidation(t, chart, values)
 					require.Error(t, err)
 					assert.Contains(t, err.Error(), family+"Agent.autoscaling."+errSuffix)
