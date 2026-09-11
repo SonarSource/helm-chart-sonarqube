@@ -62,6 +62,9 @@ spec:
 {{- with .Values.searchNodes.podLabels }}
 {{ toYaml . | indent 8 }}
 {{- end }}
+{{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+{{ . | indent 8 }}
+{{- end }}
       annotations:
         {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
         checksum/init-sysctl: {{ include (print $.Template.BasePath "/init-sysctl.yaml") . | sha256sum }}
@@ -76,6 +79,9 @@ spec:
 {{- end }}
 {{- with .Values.searchNodes.annotations }}
 {{ toYaml . | indent 8 }}
+{{- end }}
+{{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+{{ . | indent 8 }}
 {{- end }}
     spec:
       automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
