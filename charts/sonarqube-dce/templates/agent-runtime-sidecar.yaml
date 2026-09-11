@@ -1,0 +1,46 @@
+{{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" .) }}
+{{- if and $cfg.enabled (eq (include "sonarqube.agentRuntime.meshSidecar.enabled" $) "true") }}
+---
+apiVersion: networking.istio.io/v1
+kind: Sidecar
+metadata:
+  name: {{ include "sonarqube.agentRuntime.fullname" (dict "ctx" $ "family" $family) }}
+  labels:
+    app: {{ template "sonarqube.name" $ }}
+    chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    release: {{ $.Release.Name }}
+    heritage: {{ $.Release.Service }}
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: {{ $family }}
+    app.kubernetes.io/component: agent-runtime-{{ $family }}
+spec:
+  {{- /* Istio's WorkloadSelector uses "labels", not the Kubernetes-selector-style "matchLabels" -
+         verified against the installed Sidecar CRD; the wrong key is accepted by `helm template`
+         (no schema to check against) but rejected by the real API server. */}}
+  workloadSelector:
+    labels: {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 6 }}
+  ingress:
+    - port:
+        number: {{ $.Values.istio.meshSidecar.meshPort }}
+        protocol: HTTP
+        name: mesh-http
+      {{- /* Left at the default bind, this listener is not reachable off-pod. */}}
+      bind: 0.0.0.0
+      captureMode: NONE
+      defaultEndpoint: 127.0.0.1:{{ $cfg.port }}
+  {{- /* Scoped to the egress proxy ONLY. In NONE mode Envoy otherwise binds a 127.0.0.1:<port>
+         loopback listener for every service port in its egress import scope - including this
+         chart's own runtime port (8090) - so an unscoped egress steals the app's own port. */}}
+  egress:
+    - port:
+        {{- /* This is the destination Service's port, not an arbitrary local one - a mismatch
+               renders no listener and no cluster, silently. */}}
+        number: {{ $.Values.agentEgressProxy.port }}
+        protocol: TCP
+        name: tcp-egress
+      bind: 127.0.0.1
+      captureMode: NONE
+      hosts:
+        - "./{{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.agentEgressProxy.fullname" $) "ctx" $) }}"
+{{- end }}
+{{- end }}

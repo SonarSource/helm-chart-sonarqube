@@ -22,10 +22,6 @@ func TestAgentValuesSchemaRejectsWrongTypes(t *testing.T) {
 		// requiresAgenticKeys restricts this case to charts that derive agentic signing keys,
 		// for the same reason.
 		requiresAgenticKeys bool
-		// sonarqubeOnly restricts this case to the sonarqube chart - istio.gvisorSidecar has no
-		// equivalent block on sonarqube-dce at all, so an unknown key there is silently ignored
-		// by the schema (no additionalProperties: false), not rejected.
-		sonarqubeOnly bool
 	}{
 		{name: "agentOrchestrator.replicaCount", set: map[string]string{"agentOrchestrator.replicaCount": "notanumber"}},
 		{name: "hunterAgent.enabled", set: map[string]string{"hunterAgent.enabled": "notabool"}},
@@ -35,10 +31,12 @@ func TestAgentValuesSchemaRejectsWrongTypes(t *testing.T) {
 		{name: "agentEgressProxy.replicaCount", set: map[string]string{"agentEgressProxy.replicaCount": "notanumber"}, requiresEgressProxy: true},
 		{name: "agentKeyDerivation.enabled", set: map[string]string{"agentKeyDerivation.enabled": "notabool"}, requiresAgenticKeys: true},
 		{name: "agenticSigningSecret.existingSecret", set: map[string]string{"agenticSigningSecret.existingSecret": "true"}, requiresAgenticKeys: true},
-		{name: "istio.gvisorSidecar.meshPort below minimum", set: map[string]string{"istio.gvisorSidecar.meshPort": "80"}, sonarqubeOnly: true},
-		{name: "istio.gvisorSidecar.meshPort above maximum", set: map[string]string{"istio.gvisorSidecar.meshPort": "70000"}, sonarqubeOnly: true},
-		{name: "istio.gvisorSidecar.meshPort inside Istio's reserved range", set: map[string]string{"istio.gvisorSidecar.meshPort": "15050"}, sonarqubeOnly: true},
-		{name: "istio.gvisorSidecar.enabled", set: map[string]string{"istio.gvisorSidecar.enabled": "notabool"}, sonarqubeOnly: true},
+		{name: "istio.meshSidecar.meshPort below minimum", set: map[string]string{"istio.meshSidecar.meshPort": "80"}},
+		{name: "istio.meshSidecar.meshPort above maximum", set: map[string]string{"istio.meshSidecar.meshPort": "70000"}},
+		{name: "istio.meshSidecar.meshPort inside Istio's reserved range", set: map[string]string{"istio.meshSidecar.meshPort": "15050"}},
+		{name: "istio.meshSidecar.enabled", set: map[string]string{"istio.meshSidecar.enabled": "notabool"}},
+		{name: "agentRuntimeSandbox.enabled", set: map[string]string{"agentRuntimeSandbox.enabled": "notabool"}},
+		{name: "agentRuntimeSandbox.runtimeClassName", set: map[string]string{"agentRuntimeSandbox.runtimeClassName": "true"}},
 	}
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -47,9 +45,6 @@ func TestAgentValuesSchemaRejectsWrongTypes(t *testing.T) {
 					continue
 				}
 				if tc.requiresAgenticKeys && !chart.hasAgenticKeys {
-					continue
-				}
-				if tc.sonarqubeOnly && chart.name != "sonarqube" {
 					continue
 				}
 				t.Run(tc.name, func(t *testing.T) {

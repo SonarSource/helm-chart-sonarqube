@@ -1,0 +1,30 @@
+monitoringPasscode: test-passcode
+applicationNodes:
+  jwtSecret: test-jwt-secret
+jdbcOverwrite:
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+agentOrchestrator:
+  enabled: true
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "42"
+  storage:
+    bucket: agent-jobs
+hunterAgent:
+  enabled: true
+  image:
+    repository: example.com/hunter-agent
+    tag: "1"
+agenticSigningSecret:
+  existingSecret: test-agentic-instance-secret
+gvisor:
+  enabled: true
+istio:
+  enabled: true
+  # Deliberately equal to hunterAgent.port (default 8090) - must fail closed at render time
+  # (sonarqube.agentRuntime.meshSidecar.enabled), not render a silently broken listener.
+  meshSidecar:
+    enabled: true
+    meshPort: 8090
