@@ -73,20 +73,27 @@ func renderAgentOrchestratorHPA(t *testing.T, chart agentChart, setValues map[st
 	return helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-orchestrator-hpa.yaml"})
 }
 
-func renderAgentOrchestratorDeployment(t *testing.T, chart agentChart, setValues map[string]string, extraArgs ...string) (appsv1.Deployment, error) {
+// renderDeployment renders template with valuesFile layered under chart.valuesDir and unmarshals
+// the resulting Deployment - shared by every *-enabled.yaml-backed Deployment render in this file
+// and vortex_autoscaling_test.go, which otherwise differ only in which fixture/template they target.
+func renderDeployment(t *testing.T, chart agentChart, valuesFile, template string, setValues map[string]string, extraArgs ...string) (appsv1.Deployment, error) {
 	t.Helper()
 	opts := &helm.Options{
 		Logger:      logger.Discard,
-		ValuesFiles: []string{chart.valuesDir + "/agent-orchestrator-enabled.yaml"},
+		ValuesFiles: []string{chart.valuesDir + "/" + valuesFile},
 		SetValues:   setValues,
 	}
-	output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-orchestrator.yaml"}, extraArgs...)
+	output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{template}, extraArgs...)
 	if err != nil {
 		return appsv1.Deployment{}, err
 	}
 	var deployment appsv1.Deployment
 	helm.UnmarshalK8SYaml(t, output, &deployment)
 	return deployment, nil
+}
+
+func renderAgentOrchestratorDeployment(t *testing.T, chart agentChart, setValues map[string]string, extraArgs ...string) (appsv1.Deployment, error) {
+	return renderDeployment(t, chart, "agent-orchestrator-enabled.yaml", "templates/agent-orchestrator.yaml", setValues, extraArgs...)
 }
 
 // Both hunter and remediation are enabled in the agent-runtimes-enabled.yaml fixture, so the
@@ -198,19 +205,28 @@ func assertAutoscalingRequiresKedaCRDOrOverride(t *testing.T, opts *helm.Options
 	})
 }
 
-// Helm's `--show-only` errors ("could not find template ... in chart") rather than returning empty
-// when the named template renders zero documents, so "not rendered" must be asserted against a full
-// chart render instead of a --show-only'd one.
+// assertTemplateNotRendered renders the full chart with valuesFile and setValues and asserts
+// template is absent from the output. Helm's `--show-only` errors ("could not find template ...
+// in chart") rather than returning empty when the named template renders zero documents, so "not
+// rendered" must be asserted against a full chart render instead of a --show-only'd one. Shared by
+// every "not rendered by default/when disabled" case across the orchestrator HPA, each agent
+// runtime ScaledObject, and the Vortex ScaledObject in vortex_autoscaling_test.go.
+func assertTemplateNotRendered(t *testing.T, chart agentChart, valuesFile string, setValues map[string]string, template string) {
+	t.Helper()
+	opts := &helm.Options{
+		Logger:      logger.Discard,
+		ValuesFiles: []string{chart.valuesDir + "/" + valuesFile},
+		SetValues:   setValues,
+	}
+	output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{})
+	require.NoError(t, err)
+	assert.NotContains(t, output, template)
+}
+
 func TestAgentOrchestratorHPANotRenderedByDefault(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			opts := &helm.Options{
-				Logger:      logger.Discard,
-				ValuesFiles: []string{chart.valuesDir + "/agent-orchestrator-enabled.yaml"},
-			}
-			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{})
-			require.NoError(t, err)
-			assert.NotContains(t, output, "agent-orchestrator-hpa.yaml")
+			assertTemplateNotRendered(t, chart, "agent-orchestrator-enabled.yaml", nil, "agent-orchestrator-hpa.yaml")
 		})
 	}
 }
@@ -289,13 +305,7 @@ func TestAgentOrchestratorReplicasRenderedWhenAutoscalingDisabledEvenIfManageRep
 func TestAgentRuntimeScaledObjectNotRenderedByDefault(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			opts := &helm.Options{
-				Logger:      logger.Discard,
-				ValuesFiles: []string{chart.valuesDir + "/agent-runtimes-enabled.yaml"},
-			}
-			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{})
-			require.NoError(t, err)
-			assert.NotContains(t, output, "agent-runtime-scaledobject.yaml")
+			assertTemplateNotRendered(t, chart, "agent-runtimes-enabled.yaml", nil, "agent-runtime-scaledobject.yaml")
 		})
 	}
 }

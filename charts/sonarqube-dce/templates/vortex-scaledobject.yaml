@@ -13,6 +13,10 @@ spec:
   pollingInterval: {{ .Values.vortex.autoscaling.pollingInterval }}
   advanced:
     horizontalPodAutoscalerConfig:
+      {{- /* KEDA otherwise derives the HPA name as "keda-hpa-<scaledobject name>", whose 9-char
+             prefix can push it past the 63-char name limit even though the ScaledObject name
+             itself fits. Reuse the (already-truncated) ScaledObject name directly instead. */}}
+      name: {{ include "sonarqube.vortex.fullname" . }}
       behavior:
         scaleDown:
           # Cloud's own scale-in cooldown, and the guard against KEDA's partial-endpoint-failure

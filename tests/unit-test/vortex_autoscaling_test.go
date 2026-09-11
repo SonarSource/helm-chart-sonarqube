@@ -41,34 +41,13 @@ func renderVortexScaledObject(t *testing.T, chart agentChart, setValues map[stri
 }
 
 func renderVortexDeploymentWithValues(t *testing.T, chart agentChart, setValues map[string]string, extraArgs ...string) (appsv1.Deployment, error) {
-	t.Helper()
-	opts := &helm.Options{
-		Logger:      logger.Discard,
-		ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
-		SetValues:   setValues,
-	}
-	output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"}, extraArgs...)
-	if err != nil {
-		return appsv1.Deployment{}, err
-	}
-	var deployment appsv1.Deployment
-	helm.UnmarshalK8SYaml(t, output, &deployment)
-	return deployment, nil
+	return renderDeployment(t, chart, "vortex-autoscaling.yaml", "templates/vortex.yaml", setValues, extraArgs...)
 }
 
-// Helm's `--show-only` errors on a template that renders zero documents rather than returning
-// empty, so "not rendered" must be asserted against a full chart render - same pattern as the
-// agent runtime ScaledObject tests.
 func TestVortexScaledObjectNotRenderedByDefault(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			opts := &helm.Options{
-				Logger:      logger.Discard,
-				ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
-			}
-			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{})
-			require.NoError(t, err)
-			assert.NotContains(t, output, "vortex-scaledobject.yaml")
+			assertTemplateNotRendered(t, chart, "vortex-enabled.yaml", nil, "vortex-scaledobject.yaml")
 		})
 	}
 }
@@ -76,17 +55,10 @@ func TestVortexScaledObjectNotRenderedByDefault(t *testing.T) {
 func TestVortexScaledObjectNotRenderedWhenVortexDisabled(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			opts := &helm.Options{
-				Logger:      logger.Discard,
-				ValuesFiles: []string{chart.valuesDir + "/vortex-disabled.yaml"},
-				SetValues: map[string]string{
-					"vortex.autoscaling.enabled": "true",
-					"agentKeda.assumeInstalled":  "true",
-				},
-			}
-			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{})
-			require.NoError(t, err)
-			assert.NotContains(t, output, "vortex-scaledobject.yaml")
+			assertTemplateNotRendered(t, chart, "vortex-disabled.yaml", map[string]string{
+				"vortex.autoscaling.enabled": "true",
+				"agentKeda.assumeInstalled":  "true",
+			}, "vortex-scaledobject.yaml")
 		})
 	}
 }
@@ -94,14 +66,8 @@ func TestVortexScaledObjectNotRenderedWhenVortexDisabled(t *testing.T) {
 func TestVortexScaledObjectNotRenderedWhenAutoscalingDisabled(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			opts := &helm.Options{
-				Logger:      logger.Discard,
-				ValuesFiles: []string{chart.valuesDir + "/vortex-autoscaling.yaml"},
-				SetValues:   map[string]string{"vortex.autoscaling.enabled": "false"},
-			}
-			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{})
-			require.NoError(t, err)
-			assert.NotContains(t, output, "vortex-scaledobject.yaml")
+			assertTemplateNotRendered(t, chart, "vortex-autoscaling.yaml",
+				map[string]string{"vortex.autoscaling.enabled": "false"}, "vortex-scaledobject.yaml")
 		})
 	}
 }
@@ -121,6 +87,7 @@ func TestVortexScaledObjectRendersWhenEnabled(t *testing.T) {
 			expectedName := chart.fullnamePrefix() + vortexFullnameSuffix
 			assert.Equal(t, expectedName, so.Metadata.Name)
 			assert.Equal(t, expectedName, so.Spec.ScaleTargetRef.Name)
+			assert.Equal(t, expectedName, so.Spec.Advanced.HorizontalPodAutoscalerConfig.Name)
 			assert.EqualValues(t, 3, so.Spec.MinReplicaCount)
 			assert.EqualValues(t, 7, so.Spec.MaxReplicaCount)
 			assert.EqualValues(t, 20, so.Spec.PollingInterval)
@@ -133,6 +100,30 @@ func TestVortexScaledObjectRendersWhenEnabled(t *testing.T) {
 			assert.Equal(t, "12", trigger.Metadata["targetValue"])
 			// Unauthenticated by design, matching the agent runtimes' own orchestrator trigger.
 			assert.Nil(t, trigger.AuthenticationRef)
+		})
+	}
+}
+
+// KEDA defaults the underlying HPA's name to "keda-hpa-<scaledobject name>" - that 9-char prefix
+// can push the *HPA's* name past the 63-char Kubernetes name limit even when the ScaledObject's
+// own (already-truncated-to-63) name fits, and KEDA's admission webhook rejects the ScaledObject
+// outright when that happens. horizontalPodAutoscalerConfig.name must be pinned to the
+// ScaledObject's own name so no extra prefix is ever added - mirrors
+// TestAgentRuntimeScaledObjectHPANameStaysWithinLimit.
+func TestVortexScaledObjectHPANameStaysWithinLimit(t *testing.T) {
+	const longRelease = "a-very-long-release-name-for-hpa-boundary-test"
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			so, err := renderVortexScaledObject(t, agentChart{
+				name:      chart.name,
+				path:      chart.path,
+				release:   longRelease,
+				valuesDir: chart.valuesDir,
+			}, nil)
+			require.NoError(t, err)
+
+			assert.LessOrEqual(t, len(so.Spec.Advanced.HorizontalPodAutoscalerConfig.Name), 63)
+			assert.Equal(t, so.Metadata.Name, so.Spec.Advanced.HorizontalPodAutoscalerConfig.Name)
 		})
 	}
 }
