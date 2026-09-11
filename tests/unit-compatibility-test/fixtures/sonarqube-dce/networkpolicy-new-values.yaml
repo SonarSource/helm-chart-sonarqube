@@ -574,7 +574,7 @@ spec:
               command:
               - sh
               - -c
-              - |-
+              - |
                 host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
                 host="${host:-localhost}"
                 case "${host}" in *:*) host="[${host}]" ;; esac
@@ -588,7 +588,7 @@ spec:
               command:
               - sh
               - -c
-              - |-
+              - |
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
