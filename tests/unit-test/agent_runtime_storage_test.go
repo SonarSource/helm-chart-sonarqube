@@ -21,11 +21,11 @@ func runtimeStorageBase(family string) map[string]string {
 		family + "Agent.image.tag":            "1",
 	}
 	if family == "remediation" {
-		values["vortex.enabled"] = "true"
-		values["vortex.image.repository"] = "example.com/vortex"
-		values["vortex.image.tag"] = "1"
-		values["vortex.storage.bucket"] = "vortex-artifacts"
-		values["vortex.storage.region"] = "eu-west-1"
+		values["vortexAnalysis.enabled"] = "true"
+		values["vortexAnalysis.image.repository"] = "example.com/vortex"
+		values["vortexAnalysis.image.tag"] = "1"
+		values["vortexAnalysis.storage.bucket"] = "vortex-artifacts"
+		values["vortexAnalysis.storage.region"] = "eu-west-1"
 	}
 	return values
 }
