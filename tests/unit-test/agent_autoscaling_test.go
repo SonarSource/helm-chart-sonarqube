@@ -34,8 +34,15 @@ type scaledObjectSpec struct {
 	MinReplicaCount int64                      `json:"minReplicaCount"`
 	MaxReplicaCount int64                      `json:"maxReplicaCount"`
 	PollingInterval int64                      `json:"pollingInterval"`
+	Fallback        *scaledObjectFallback      `json:"fallback"`
 	Advanced        scaledObjectAdvanced       `json:"advanced"`
 	Triggers        []scaledObjectTrigger      `json:"triggers"`
+}
+
+type scaledObjectFallback struct {
+	FailureThreshold int64  `json:"failureThreshold"`
+	Behavior         string `json:"behavior"`
+	Replicas         int64  `json:"replicas"`
 }
 
 type scaledObjectAdvanced struct {
@@ -59,6 +66,7 @@ type scaledObjectScaleDown struct {
 
 type scaledObjectTrigger struct {
 	Type              string            `json:"type"`
+	MetricType        string            `json:"metricType"`
 	Metadata          map[string]string `json:"metadata"`
 	AuthenticationRef interface{}       `json:"authenticationRef"`
 }

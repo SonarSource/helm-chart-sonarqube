@@ -93,9 +93,20 @@ func TestVortexScaledObjectRendersWhenEnabled(t *testing.T) {
 			assert.EqualValues(t, 20, so.Spec.PollingInterval)
 			assert.EqualValues(t, 1200, so.Spec.Advanced.HorizontalPodAutoscalerConfig.Behavior.ScaleDown.StabilizationWindowSeconds)
 
+			// A total scrape failure must hold the current count (floored at minReplicaCount),
+			// not jump to the ceiling - currentReplicasIfHigher never scales down because of it.
+			require.NotNil(t, so.Spec.Fallback)
+			assert.EqualValues(t, 3, so.Spec.Fallback.FailureThreshold)
+			assert.Equal(t, "currentReplicasIfHigher", so.Spec.Fallback.Behavior)
+			assert.Equal(t, so.Spec.MinReplicaCount, so.Spec.Fallback.Replicas)
+
 			require.Len(t, so.Spec.Triggers, 1)
 			trigger := so.Spec.Triggers[0]
 			assert.Equal(t, "metrics-api", trigger.Type)
+			// Pinned explicitly rather than left to the metrics-api scaler's own default - the
+			// sum-vs-target arithmetic in TestVortexScaledObjectAggregatesAcrossReplicasByDefault
+			// rests entirely on it.
+			assert.Equal(t, "AverageValue", trigger.MetricType)
 			assert.Equal(t, "value", trigger.Metadata["valueLocation"])
 			assert.Equal(t, "12", trigger.Metadata["targetValue"])
 			// Unauthenticated by design, matching the agent runtimes' own orchestrator trigger.
@@ -200,7 +211,12 @@ func TestVortexScaledObjectAggregatesAcrossReplicasByDefault(t *testing.T) {
 func TestVortexScaledObjectAggregationOptOut(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			so, err := renderVortexScaledObject(t, chart, map[string]string{"vortex.autoscaling.aggregateAcrossReplicas": "false"})
+			// minReplicas must be pinned to 1 alongside the opt-out: validation now requires
+			// exactly 1 (not just the default minReplicas: 3) whenever aggregation is disabled.
+			so, err := renderVortexScaledObject(t, chart, map[string]string{
+				"vortex.autoscaling.aggregateAcrossReplicas": "false",
+				"vortex.autoscaling.minReplicas":             "1",
+			})
 			require.NoError(t, err)
 
 			require.Len(t, so.Spec.Triggers, 1)
@@ -401,6 +417,15 @@ func TestVortexAutoscalingMinReplicasFloorRelaxedWhenAggregationDisabled(t *test
 	assertVortexAutoscalingRejected(t,
 		map[string]string{"vortex.autoscaling.minReplicas": "1"},
 		"vortex.autoscaling.minReplicas must be >= 2")
+}
+
+// Unlike the >= 2 floor above, aggregateAcrossReplicas=false must be an equality, not just a
+// relaxed floor: KEDA's single-random-replica probe is only an accurate fleet-wide estimate when
+// there is exactly one replica - a minReplicas above 1 would silently scale off that one sample.
+func TestVortexAutoscalingMinReplicasMustBeExactlyOneWhenAggregationDisabled(t *testing.T) {
+	assertVortexAutoscalingRejected(t,
+		map[string]string{"vortex.autoscaling.aggregateAcrossReplicas": "false", "vortex.autoscaling.minReplicas": "3"},
+		"vortex.autoscaling.aggregateAcrossReplicas is false, which requires vortex.autoscaling.minReplicas to be exactly 1")
 }
 
 // The KEDA CRD guard: enabling autoscaling without the KEDA CRDs present (and no explicit

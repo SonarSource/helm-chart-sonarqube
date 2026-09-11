@@ -310,7 +310,10 @@
                             "type": "boolean"
                         },
                         "windowSeconds": {
-                            "type": ["integer", "string"]
+                            "anyOf": [
+                                { "type": "integer", "minimum": 1 },
+                                { "type": "string", "pattern": "^$|^[1-9][0-9]*$" }
+                            ]
                         },
                         "metricPath": {
                             "type": "string"

@@ -911,7 +911,7 @@ vortex:
   # GET /metrics/max-concurrent-requests. Requires the KEDA CRDs in-cluster - see agentKeda below.
   autoscaling:
     enabled: false
-    # Validated >= 2 (see validation.yaml), or >= 1 with aggregateAcrossReplicas: false below:
+    # Validated >= 2 (see validation.yaml), or exactly 1 with aggregateAcrossReplicas: false below:
     # this fleet never scales to zero, so there is no 0<->1 transition to reason about. Note this
     # raises a default replicaCount: 1 install to 3 pods.
     minReplicas: 3
@@ -926,8 +926,8 @@ vortex:
     # whose poll fails from the sum instead of erroring, so a handful of failed polls under-reports
     # the true peak and could otherwise trigger a spurious scale-down.
     scaleDownStabilizationSeconds: 900
-    # Max concurrent requests one replica should carry before the fleet scales out. KEDA's
-    # metricType defaults to AverageValue, so desiredReplicas = ceil(fleetTotalPeak / this).
+    # Max concurrent requests one replica should carry before the fleet scales out. The
+    # ScaledObject pins metricType: AverageValue, so desiredReplicas = ceil(fleetTotalPeak / this).
     targetConcurrentRequests: 2
     # true (requires KEDA >= 2.20.0) has KEDA query every replica behind the Service directly and
     # sum the results - a real cross-pod total. false queries one random replica through the

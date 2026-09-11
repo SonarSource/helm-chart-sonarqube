@@ -4,7 +4,7 @@ All changes to this chart will be documented in this file.
 ## [2026.5.0]
 * Upgrade Chart's version to 2026.5.0
 * Fail DCE upgrades across an Elasticsearch major while search pods are still running; scale `searchNodes.replicaCount` to 0 first
-* **Breaking**: Liveness and readiness probe handlers are now managed by the chart. Legacy `exec`, `httpGet`, `tcpSocket` and `grpc` values are ignored; use `overrideCommand` for an explicit custom command.
+* **Breaking**: Application node liveness and readiness probe handlers are now managed by the chart. Legacy `applicationNodes.livenessProbe`/`applicationNodes.readinessProbe` `exec`, `httpGet`, `tcpSocket` and `grpc` values are ignored; use `applicationNodes.<probe>.overrideCommand` for an explicit custom command.
 * Set a default MCP pod `securityContext` (`fsGroup: 0`), a default `HOME=/data`, and an optional `mcp.initContainers` hook so the non-root MCP server can write to `/data`
 * **Breaking**: Remove the deprecated `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart dependency. `ingress.enabled` remains supported for use with a self-managed ingress controller; `httproute.enabled` (Gateway API) is also available
 * Add `gateway-api-migration-scripts/nginx-to-istio-migration.sh` to help migrate from the bundled ingress-nginx controller to Gateway API

@@ -169,15 +169,17 @@ It is used to validate the values.yaml file before the installation starts.
   {{- end -}}
   {{- $vortexAutoscaling := .Values.vortex.autoscaling -}}
   {{- if $vortexAutoscaling.enabled -}}
-    {{- /* Without cross-replica aggregation, KEDA samples a single random pod through the
-           Service, so the sum-vs-target arithmetic is only valid for exactly one replica - the
-           normal >= 2 floor would make that fallback impossible to configure at all. */}}
-    {{- $vortexMinReplicaFloor := 2 -}}
-    {{- if not $vortexAutoscaling.aggregateAcrossReplicas -}}
-      {{- $vortexMinReplicaFloor = 1 -}}
-    {{- end -}}
-    {{- if lt (int $vortexAutoscaling.minReplicas) $vortexMinReplicaFloor -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.minReplicas must be >= 2 (scale-to-zero and single-replica autoscaling are not supported for Vortex), or >= 1 with vortex.autoscaling.aggregateAcrossReplicas=false." -}}
+    {{- if $vortexAutoscaling.aggregateAcrossReplicas -}}
+      {{- if lt (int $vortexAutoscaling.minReplicas) 2 -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.minReplicas must be >= 2 (scale-to-zero and single-replica autoscaling are not supported for Vortex)." -}}
+      {{- end -}}
+    {{- else -}}
+      {{- /* Without cross-replica aggregation, KEDA samples one random replica's peak against the
+             fleet-wide target - only an accurate estimate when there is exactly one replica, so
+             unlike the floor above this must be an equality, not just a relaxed >= 1 floor. */}}
+      {{- if ne (int $vortexAutoscaling.minReplicas) 1 -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.aggregateAcrossReplicas is false, which requires vortex.autoscaling.minReplicas to be exactly 1: the single-replica probe this falls back to is only an accurate estimate for the whole fleet when there is exactly one replica." -}}
+      {{- end -}}
     {{- end -}}
     {{- if gt (int $vortexAutoscaling.minReplicas) (int $vortexAutoscaling.maxReplicas) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortex.autoscaling.maxReplicas must be >= minReplicas." -}}
