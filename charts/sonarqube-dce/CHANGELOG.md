@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2026.5.1]
+* Hash only the ConfigMap and Secret data in the `checksum/*` pod annotations, so that a chart version bump on its own no longer restarts the pods
+
 ## [2026.5.0]
 * Upgrade Chart's version to 2026.5.0
 * **Breaking**: Remove the deprecated `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart dependency. `ingress.enabled` remains supported for use with a self-managed ingress controller; `httproute.enabled` (Gateway API) is also available

@@ -64,13 +64,13 @@ spec:
 {{- end }}
       annotations:
         {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
-        checksum/init-sysctl: {{ include (print $.Template.BasePath "/init-sysctl.yaml") . | sha256sum }}
+        checksum/init-sysctl: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/init-sysctl.yaml") }}
         {{- end }}
         {{- if and .Values.searchNodes.persistence.enabled .Values.initFs.enabled (not .Values.OpenShift.enabled) }}
-        checksum/init-fs: {{ include (print $.Template.BasePath "/init-fs.yaml") . | sha256sum }}
+        checksum/init-fs: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/init-fs.yaml") }}
         {{- end }}
-        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
-        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        checksum/config: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/config.yaml") }}
+        checksum/secret: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/secret.yaml") }}
 {{- with .Values.annotations }}
 {{ toYaml . | indent 8 }}
 {{- end }}

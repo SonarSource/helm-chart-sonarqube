@@ -40,12 +40,12 @@ spec:
 {{ toYaml . | indent 8 }}
 {{- end }}
       annotations:
-        checksum/plugins: {{ include (print $.Template.BasePath "/install-plugins.yaml") . | sha256sum }}
-        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
-        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        checksum/plugins: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/install-plugins.yaml") }}
+        checksum/config: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/config.yaml") }}
+        checksum/secret: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/secret.yaml") }}
 {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
-        checksum/prometheus-config: {{ include (print $.Template.BasePath "/prometheus-config.yaml") . | sha256sum }}
-        checksum/prometheus-ce-config: {{ include (print $.Template.BasePath "/prometheus-ce-config.yaml") . | sha256sum }}
+        checksum/prometheus-config: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/prometheus-config.yaml") }}
+        checksum/prometheus-ce-config: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/prometheus-ce-config.yaml") }}
 {{- end }}
 {{- with .Values.annotations }}
 {{ toYaml . | indent 8 }}
