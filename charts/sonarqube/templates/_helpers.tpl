@@ -1039,6 +1039,41 @@ Usage: {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
 {{- end -}}
 
 {{/*
+Ingress or egress rule allowing Istio ambient's ztunnel-to-ztunnel HBONE tunnel: cross-node
+ambient traffic is always carried over TCP port 15008, whatever the real destination port is, so
+a NetworkPolicy written only for the app port silently blocks every such hop once the release
+namespace is ambient-enrolled (istio.io/dataplane-mode: ambient). Deliberately unscoped by
+podSelector/ipBlock: ztunnel, not the original pod, is the actual peer on this port, so the
+identity boundary is Istio's own STRICT PeerAuthentication (templates/peerauthentication.yaml),
+not this NetworkPolicy - here it's only the coarse safety net the upstream Istio ambient docs
+call for.
+Usage: {{ include "sonarqube.istio.ambient.hboneRule" $ | indent 4 }} under ingress: or egress:
+*/}}
+{{- define "sonarqube.istio.ambient.hboneRule" -}}
+- ports:
+    - port: 15008
+      protocol: TCP
+{{- end -}}
+
+{{/*
+Ingress rule letting the kubelet's own httpGet/tcpSocket probes reach a real container port
+directly. Istio ambient tags kubelet probe traffic with a well-known link-local source address
+and ztunnel passes it straight through untunneled (so STRICT PeerAuthentication doesn't break
+probes) - but a NetworkPolicy that selects the pod still evaluates that traffic like any other
+ingress and drops it unless explicitly allowed here.
+Parameter: the real container port the probe targets.
+Usage: {{ include "sonarqube.istio.ambient.kubeletProbeIngressRule" $cfg.port | indent 4 }}
+*/}}
+{{- define "sonarqube.istio.ambient.kubeletProbeIngressRule" -}}
+- from:
+    - ipBlock:
+        cidr: 169.254.7.127/32
+  ports:
+    - port: {{ . }}
+      protocol: TCP
+{{- end -}}
+
+{{/*
 Parse the host:port endpoint out of jdbcOverwrite.jdbcUrl (jdbc:postgresql://host:port/db[?params]),
 for the Agent Orchestrator's CORE_DB_READ_WRITE_ENDPOINT env, since it reuses SonarQube's own DB.
 */}}

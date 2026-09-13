@@ -26,6 +26,10 @@ spec:
       ports:
         - port: {{ $cfg.port }}
           protocol: TCP
+    {{- if $.Values.istio.enabled }}
+{{ include "sonarqube.istio.ambient.hboneRule" $ | indent 4 }}
+{{ include "sonarqube.istio.ambient.kubeletProbeIngressRule" $cfg.port | indent 4 }}
+    {{- end }}
   egress:
 {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
     {{- /* All other runtime egress - including reaching the orchestrator and reading/writing job
@@ -38,5 +42,8 @@ spec:
       ports:
         - port: {{ $.Values.agentEgressProxy.port }}
           protocol: TCP
+    {{- if $.Values.istio.enabled }}
+{{ include "sonarqube.istio.ambient.hboneRule" $ | indent 4 }}
+    {{- end }}
 {{- end }}
 {{- end }}
