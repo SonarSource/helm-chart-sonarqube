@@ -14,8 +14,8 @@ spec:
   type: ClusterIP
   ports:
     - port: {{ .Values.agentEgressProxy.port }}
-      targetPort: http-proxy
+      targetPort: tcp-proxy
       protocol: TCP
-      name: http-proxy
+      name: tcp-proxy
   selector: {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 4 }}
 {{- end }}

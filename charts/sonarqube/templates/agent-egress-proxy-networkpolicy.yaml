@@ -25,6 +25,9 @@ spec:
           protocol: TCP
   egress:
 {{ include "sonarqube.agent.dnsEgressRule" . | indent 4 }}
+    {{- if .Values.istio.enabled }}
+{{ include "sonarqube.agent.istiodEgressRule" . | indent 4 }}
+    {{- end }}
     {{- /* Backs the hardcoded sonarqube_host allow rule in agent-egress-proxy-configmap.yaml,
            which must stay reachable unconditionally - so this rule is not gated behind
            networkPolicy.egressPorts, unlike the allowedDomains rule below. */}}

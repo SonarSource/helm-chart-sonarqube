@@ -1039,6 +1039,26 @@ Usage: {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
 {{- end -}}
 
 {{/*
+The egress rule letting a pod's own injected Istio sidecar reach istiod's control plane (xDS, port
+15012). Callers must gate inclusion behind .Values.istio.enabled themselves - unlike
+sonarqube.agent.dnsEgressRule this isn't unconditional, since most deployments don't run Istio.
+Output is unindented; callers should pipe through `indent`/`nindent` to place it under `egress:`.
+Usage: {{ include "sonarqube.agent.istiodEgressRule" $ | indent 4 }}
+*/}}
+{{- define "sonarqube.agent.istiodEgressRule" -}}
+- to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: {{ .Values.istio.namespace }}
+      podSelector:
+        matchLabels:
+          app: istiod
+  ports:
+    - port: 15012
+      protocol: TCP
+{{- end -}}
+
+{{/*
 Parse the host:port endpoint out of jdbcOverwrite.jdbcUrl (jdbc:postgresql://host:port/db[?params]),
 for the Agent Orchestrator's CORE_DB_READ_WRITE_ENDPOINT env, since it reuses SonarQube's own DB.
 */}}
@@ -1196,7 +1216,7 @@ Usage: {{- with (include "sonarqube.agent.egressProxy.probe" .Values.agentEgress
 */}}
 {{- define "sonarqube.agent.egressProxy.probe" -}}
 tcpSocket:
-  port: http-proxy
+  port: tcp-proxy
 {{- with .periodSeconds }}
 periodSeconds: {{ . }}
 {{- end }}
