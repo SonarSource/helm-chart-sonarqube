@@ -99,3 +99,40 @@ func TestJvmOptsMergesWithSonarPropertiesJavaOpts(t *testing.T) {
 		})
 	}
 }
+
+// A jvmOpts/jvmCeOpts explicitly nulled in the user's values file (rather than merely left at the
+// chart's default "") is not replaced by the chart default - Helm leaves it nil. Concatenating a
+// nil into the printf must not leak the Go "%!s(<nil>)" placeholder into the env var.
+func TestNilJvmOptsDoesNotLeakIntoSonarPropertiesJavaOpts(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			container := jvmOptsAppContainer(t, chart, "jvm-opts-baseline.yaml", map[string]string{
+				jvmOptsValueKey(chart, "jvmOpts"):                  "null",
+				jvmOptsValueKey(chart, "jvmCeOpts"):                "null",
+				sonarPropertyValueKey(chart, "sonar.web.javaOpts"): "-Dsome.other=true",
+				sonarPropertyValueKey(chart, "sonar.ce.javaOpts"):  "-Dce.other=true",
+			}).Containers[0]
+
+			assert.Equal(t, "-Dsome.other=true", findEnvByName(container, "SONAR_WEB_JAVAOPTS").Value)
+			assert.Equal(t, "-Dce.other=true", findEnvByName(container, "SONAR_CE_JAVAOPTS").Value)
+		})
+	}
+}
+
+// Same as above, mirrored: a nulled sonar.web.javaOpts/sonar.ce.javaOpts must not leak "%!s(<nil>)"
+// into the env var either, while jvmOpts/jvmCeOpts still applies.
+func TestNilSonarPropertiesJavaOptsDoesNotLeakIntoJvmOpts(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			container := jvmOptsAppContainer(t, chart, "jvm-opts-baseline.yaml", map[string]string{
+				jvmOptsValueKey(chart, "jvmOpts"):                  "-Xmx2g",
+				jvmOptsValueKey(chart, "jvmCeOpts"):                "-Xmx1g",
+				sonarPropertyValueKey(chart, "sonar.web.javaOpts"): "null",
+				sonarPropertyValueKey(chart, "sonar.ce.javaOpts"):  "null",
+			}).Containers[0]
+
+			assert.Equal(t, "-Xmx2g", findEnvByName(container, "SONAR_WEB_JAVAOPTS").Value)
+			assert.Equal(t, "-Xmx1g", findEnvByName(container, "SONAR_CE_JAVAOPTS").Value)
+		})
+	}
+}
