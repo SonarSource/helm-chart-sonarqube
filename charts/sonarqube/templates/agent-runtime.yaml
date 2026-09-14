@@ -28,9 +28,18 @@ spec:
     matchLabels: {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 6 }}
   template:
     metadata:
-      {{- with $cfg.annotations }}
+      {{- $gvisorEnabled := eq (include "sonarqube.gvisor.enabled" $) "true" }}
+      {{- if or $cfg.annotations $gvisorEnabled }}
       annotations:
+        {{- with $cfg.annotations }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if $gvisorEnabled }}
+        {{- /* Istio's iptables-based istio-init container needs NET_ADMIN/raw sockets, which
+               gVisor's runsc runtime does not support - its sidecar would permanently
+               CrashLoopBackOff. Opt these pods out of injection rather than mesh membership. */}}
+        sidecar.istio.io/inject: "false"
+        {{- end }}
       {{- end }}
       labels:
         {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 8 }}

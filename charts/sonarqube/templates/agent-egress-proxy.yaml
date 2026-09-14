@@ -61,7 +61,12 @@ spec:
           {{- end }}
           command: ["squid", "-N", "-f", "/etc/squid/squid.conf"]
           ports:
-            - name: http-proxy
+            {{- /* Named tcp-proxy, not http-proxy: Istio's sidecar infers L7 protocol from the
+                   port name, and an "http"-prefixed name makes it apply HTTP Connection Manager
+                   processing to this port - which doesn't know how to pass through Squid's
+                   CONNECT-tunneled HTTPS traffic and rejects it with a 404. A "tcp"-prefixed name
+                   keeps Istio treating this port as opaque TCP passthrough. */}}
+            - name: tcp-proxy
               containerPort: {{ .Values.agentEgressProxy.port }}
               protocol: TCP
           {{- with .Values.agentEgressProxy.env }}

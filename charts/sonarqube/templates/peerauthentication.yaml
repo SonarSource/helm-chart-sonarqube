@@ -1,0 +1,78 @@
+{{- if .Values.istio.enabled }}
+{{- /* The mesh's own PERMISSIVE default lets any plaintext caller reach these pods, which defeats
+       the point of being in the mesh at all - so require mTLS explicitly for every workload this
+       chart owns, scoped per-workload rather than as a namespace-wide default so other release(s)
+       sharing the namespace (postgresql, gvisor-installer, ...) aren't affected. */}}
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.selectorLabels" . | nindent 6 }}
+  mtls:
+    mode: STRICT
+{{- if .Values.agentOrchestrator.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.agentOrchestrator.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 6 }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- if .Values.mcp.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.mcp.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-mcp
+      release: {{ .Release.Name }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- if .Values.vortex.enabled }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.vortex.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-vortex
+      release: {{ .Release.Name }}
+  mtls:
+    mode: STRICT
+{{- end }}
+{{- if include "sonarqube.agentEgressProxy.required" . }}
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: {{ include "sonarqube.agentEgressProxy.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 6 }}
+  mtls:
+    mode: STRICT
+  {{- /* hunter/remediation run under gVisor and are therefore excluded from sidecar injection
+         entirely (see agent-runtime.yaml) - they can never present a client cert, so their only
+         ingress point into the mesh has to stay reachable in plaintext on its own port. */}}
+  portLevelMtls:
+    {{ .Values.agentEgressProxy.port | quote }}:
+      mode: PERMISSIVE
+{{- end }}
+{{- end }}
