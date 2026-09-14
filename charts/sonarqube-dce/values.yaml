@@ -450,6 +450,16 @@ OpenShift:
   enabled: false
   # (Deprecated) this parameter should not be needed anymore, we support Openshift SCCv2 by default when Openshift.enabled=true
   createSCC: false
+  # RuntimeClass for the (untrusted) agent runtimes when OpenShift.enabled is true. gVisor is not
+  # usable on OpenShift - CRI-O ships no runsc handler, and the chart's installer needs containerd
+  # plus privileged/hostPID that no default SCC allows - so the gvisor.* settings are ignored there
+  # and this is the only runtime control. Defaults to "kata", the RuntimeClass the OpenShift
+  # sandboxed containers operator creates for a default KataConfig. The chart never creates it.
+  # Set "kata-remote" for peer pods (AWS/Azure/vSphere, KataConfig with enablePeerPods: true), or
+  # any RuntimeClass you provisioned yourself. Set "" to run the agent runtimes under the cluster's
+  # default runtime with no extra isolation. If the name does not exist in the cluster the runtime
+  # pods are rejected at admission ("RuntimeClass not found") and never start.
+  agentRuntimeClassName: kata
   route:
     enabled: false
     host: "sonarqube.your-org.com"
@@ -1537,12 +1547,12 @@ agentEgressProxy:
 # sandboxing").
 gvisor:
   enabled: true
-  # gVisor is not usable on OpenShift as shipped: the installer below needs containerd plus
-  # privileged/hostPID, which no default SCC allows, and CRI-O provides no runsc handler. So
-  # when OpenShift.enabled is true the whole feature is skipped — no RuntimeClass, no installer,
-  # no runtimeClassName on the agent runtimes — unless you opt in here after provisioning runsc on
-  # your nodes yourself. Opting in also requires installer.enabled: false.
-  openShiftOptIn: false
+  # gVisor is not usable on OpenShift: the installer below needs containerd plus privileged/hostPID,
+  # which no default SCC allows, and CRI-O provides no runsc handler. So when OpenShift.enabled is
+  # true everything under gvisor.* is ignored — no RuntimeClass, no installer, no runtimeClassName
+  # from here — and the agent runtimes are sandboxed with Kata instead, through
+  # OpenShift.agentRuntimeClassName. Point that at "gvisor" if you provisioned runsc out of band and
+  # created the RuntimeClass yourself.
   # Name of the RuntimeClass created + referenced by runtimes. RuntimeClass is cluster-scoped:
   # any two installs sharing this value will collide (the second install fails, RuntimeClass owned
   # by the first release) — give each a distinct runtimeClassName. That covers multiple

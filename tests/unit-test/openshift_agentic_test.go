@@ -11,7 +11,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	nodev1 "k8s.io/api/node/v1"
 )
 
 // SONAR-31373: flipping OpenShift.enabled must be enough to install the agentic pack, so the
@@ -139,7 +138,8 @@ func TestDnsEgressRuleOffOpenShift(t *testing.T) {
 // gvisor.enabled and gvisor.installer.enabled both default to true, but on OpenShift the feature
 // cannot work: the installer needs containerd plus privileged/hostPID (no SCC grants that) and
 // CRI-O has no runsc handler. Rendering it anyway produced a RuntimeClass the runtimes could never
-// be scheduled with, while Helm still reported success - so the whole feature stays off.
+// be scheduled with, while Helm still reported success - so gvisor.* is skipped wholesale and the
+// runtimes are sandboxed with Kata (OpenShift.agentRuntimeClassName) instead.
 func TestOpenShiftGvisorOffByDefault(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -152,59 +152,43 @@ func TestOpenShiftGvisorOffByDefault(t *testing.T) {
 			assert.Empty(t, strings.TrimSpace(output), "no RuntimeClass and no installer DaemonSet")
 
 			for _, deployment := range openShiftAgentRuntimes(t, chart, nil) {
-				assert.Nil(t, deployment.Spec.Template.Spec.RuntimeClassName,
-					"%s must not reference a RuntimeClass that is never created", deployment.Name)
-			}
-		})
-	}
-}
-
-// Opting in (having provisioned runsc out of band) brings the RuntimeClass and the runtime wiring
-// back, but never the installer.
-func TestOpenShiftGvisorOptIn(t *testing.T) {
-	optIn := map[string]string{
-		"gvisor.openShiftOptIn":    "true",
-		"gvisor.installer.enabled": "false",
-	}
-	for _, chart := range agentCharts {
-		t.Run(chart.name, func(t *testing.T) {
-			output, err := renderOpenShift(t, chart, optIn, "templates/gvisor.yaml")
-			require.NoError(t, err)
-
-			kinds := map[string]int{}
-			for _, doc := range splitGvisorDocs(output) {
-				kinds[gvisorDocKind(doc)]++
-			}
-			assert.Equal(t, 1, kinds["RuntimeClass"])
-			assert.Zero(t, kinds["DaemonSet"], "the installer cannot run on OpenShift")
-
-			var runtimeClass nodev1.RuntimeClass
-			for _, doc := range splitGvisorDocs(output) {
-				if gvisorDocKind(doc) == "RuntimeClass" {
-					helm.UnmarshalK8SYaml(t, doc, &runtimeClass)
-				}
-			}
-			assert.Equal(t, "gvisor", runtimeClass.Name)
-
-			for _, deployment := range openShiftAgentRuntimes(t, chart, optIn) {
 				require.NotNil(t, deployment.Spec.Template.Spec.RuntimeClassName, deployment.Name)
-				assert.Equal(t, "gvisor", *deployment.Spec.Template.Spec.RuntimeClassName)
+				assert.Equal(t, "kata", *deployment.Spec.Template.Spec.RuntimeClassName,
+					"%s must default to the Kata RuntimeClass on OpenShift", deployment.Name)
 			}
 		})
 	}
 }
 
-// Opting in while leaving the installer on would render a DaemonSet every node rejects, with Helm
-// reporting success - so the combination is refused up front instead.
-func TestOpenShiftGvisorOptInRejectsInstaller(t *testing.T) {
+// The Kata RuntimeClass name is a cluster fact the chart cannot know - peer-pod clusters call it
+// kata-remote - so it has to be overridable, and overriding it must not start creating one.
+func TestOpenShiftAgentRuntimeClassOverride(t *testing.T) {
+	override := map[string]string{"OpenShift.agentRuntimeClassName": "kata-remote"}
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			_, err := renderOpenShift(t, chart, map[string]string{
-				"gvisor.openShiftOptIn":    "true",
-				"gvisor.installer.enabled": "true",
-			}, "templates/gvisor.yaml")
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), "gvisor.openShiftOptIn=true requires gvisor.installer.enabled=false")
+			output, err := renderOpenShift(t, chart, override, "templates/gvisor.yaml")
+			require.Error(t, err, "the chart never creates the RuntimeClass on OpenShift")
+			assert.Empty(t, strings.TrimSpace(output))
+
+			for _, deployment := range openShiftAgentRuntimes(t, chart, override) {
+				require.NotNil(t, deployment.Spec.Template.Spec.RuntimeClassName, deployment.Name)
+				assert.Equal(t, "kata-remote", *deployment.Spec.Template.Spec.RuntimeClassName, deployment.Name)
+			}
+		})
+	}
+}
+
+// Emptying the name is the documented opt-out for clusters without the sandboxed containers
+// operator: no runtimeClassName at all, so the runtimes are admitted under the default runtime
+// rather than rejected for referencing a RuntimeClass that does not exist.
+func TestOpenShiftAgentRuntimeClassOptOut(t *testing.T) {
+	optOut := map[string]string{"OpenShift.agentRuntimeClassName": ""}
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, deployment := range openShiftAgentRuntimes(t, chart, optOut) {
+				assert.Nil(t, deployment.Spec.Template.Spec.RuntimeClassName,
+					"%s must carry no runtimeClassName when the name is emptied", deployment.Name)
+			}
 		})
 	}
 }

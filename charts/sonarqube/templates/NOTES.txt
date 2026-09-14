@@ -39,9 +39,20 @@ WARNING: This chart no longer bundles the ingress-nginx controller. Setting ngin
 {{ if or (hasKey (.Values.livenessProbe | default dict) "exec") (hasKey (.Values.livenessProbe | default dict) "httpGet") (hasKey (.Values.livenessProbe | default dict) "tcpSocket") (hasKey (.Values.livenessProbe | default dict) "grpc") (hasKey (.Values.readinessProbe | default dict) "exec") (hasKey (.Values.readinessProbe | default dict) "httpGet") (hasKey (.Values.readinessProbe | default dict) "tcpSocket") (hasKey (.Values.readinessProbe | default dict) "grpc") }}
 WARNING: livenessProbe/readinessProbe handler values are deprecated and no longer have any effect. The chart manages these probes with exec; use overrideCommand to customize their commands.
 {{- end }}
-{{ if and .Values.OpenShift.enabled .Values.gvisor.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) (not .Values.gvisor.openShiftOptIn) }}
-WARNING: gVisor sandboxing is disabled because this is an OpenShift install. The agent runtimes will
-         run under the cluster's default runtime, without gVisor's extra isolation.
-         gVisor cannot be installed by this chart on OpenShift: the installer DaemonSet needs containerd plus privileged/hostPID, which no default SCC allows, and CRI-O ships no runsc handler.
-         To use it anyway, provision runsc on your nodes yourself, then set gvisor.openShiftOptIn=true, gvisor.installer.enabled=false, and point gvisor.handler/gvisor.nodeSelector at your setup.
+{{ if and .Values.OpenShift.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) }}
+{{- if .Values.OpenShift.agentRuntimeClassName }}
+NOTE: The agent runtimes are sandboxed with the RuntimeClass {{ .Values.OpenShift.agentRuntimeClassName | quote }} (OpenShift.agentRuntimeClassName).
+      This chart does not create it: it comes from the OpenShift sandboxed containers operator, which
+      you install separately (a default KataConfig gives you "kata"; set enablePeerPods for peer pods
+      on AWS/Azure/vSphere and use "kata-remote" here instead).
+      Until that RuntimeClass exists the runtime pods are rejected at admission with
+      'RuntimeClass "{{ .Values.OpenShift.agentRuntimeClassName }}" not found' and never start - check with
+        kubectl get runtimeclass {{ .Values.OpenShift.agentRuntimeClassName }}
+      gVisor is not usable on OpenShift, so every gvisor.* setting is ignored in this install.
+{{- else }}
+WARNING: OpenShift.agentRuntimeClassName is empty, so the agent runtimes run under the cluster's
+         default runtime with no sandbox around the LLM-driven workloads.
+         Set it to "kata" (or "kata-remote" for peer pods) and install the OpenShift sandboxed
+         containers operator to isolate them.
+{{- end }}
 {{- end }}

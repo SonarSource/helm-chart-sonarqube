@@ -84,15 +84,28 @@ Usage: {{ include "sonarqube.gvisor.fullname" . }}
 {{/*
 Effective gvisor.enabled: requires at least one of hunterAgent.enabled / remediationAgent.enabled
 too, so gVisor only ever renders when there's a runtime to sandbox.
-On OpenShift the whole feature is skipped unless gvisor.openShiftOptIn is set: the installer needs
-containerd plus privileged/hostPID (no default SCC allows that) and CRI-O ships no runsc handler, so leaving
-it on would emit a RuntimeClass the runtimes can never be scheduled with.
+Never on OpenShift: the installer needs containerd plus privileged/hostPID (no default SCC allows
+that) and CRI-O ships no runsc handler, so leaving it on would emit a RuntimeClass the runtimes can
+never be scheduled with. OpenShift.agentRuntimeClassName sandboxes them with Kata instead.
 Usage: {{ include "sonarqube.gvisor.enabled" . }}
 */}}
 {{- define "sonarqube.gvisor.enabled" -}}
-{{- $onOpenShift := .Values.OpenShift.enabled -}}
-{{- $allowed := or (not $onOpenShift) .Values.gvisor.openShiftOptIn -}}
-{{- and .Values.gvisor.enabled $allowed (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
+{{- and .Values.gvisor.enabled (not .Values.OpenShift.enabled) (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
+{{- end -}}
+
+{{/*
+RuntimeClass for the agent runtime pods: OpenShift.agentRuntimeClassName on OpenShift ("kata" by
+default - created by the sandboxed containers operator, never by this chart), gVisor's elsewhere
+when that feature is on. Empty output means no runtimeClassName at all, i.e. the cluster's default
+runtime with no sandbox under it.
+Usage: {{ include "sonarqube.agentRuntime.runtimeClassName" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.runtimeClassName" -}}
+{{- if .Values.OpenShift.enabled -}}
+{{- .Values.OpenShift.agentRuntimeClassName | default "" -}}
+{{- else if eq (include "sonarqube.gvisor.enabled" .) "true" -}}
+{{- .Values.gvisor.runtimeClassName -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "accountDeprecation" -}}

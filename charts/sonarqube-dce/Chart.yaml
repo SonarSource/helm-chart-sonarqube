@@ -72,8 +72,8 @@ annotations:
       description: "Breaking: the bundled JMX Prometheus Exporter metrics endpoint is now /metrics instead of /; update external scrapers accordingly"
     - kind: changed
       description: "Default JMX Prometheus Exporter downloads use GitHub Releases and require network access to github.com and release-assets.githubusercontent.com"
-    - kind: fixed
-      description: "Skip gVisor (runsc) sandboxing automatically when OpenShift.enabled is true - the installer needs containerd plus privileged/hostPID, which no default OpenShift SCC allows, and CRI-O ships no runsc handler - with an explicit gvisor.openShiftOptIn escape hatch for nodes where runsc was provisioned out of band"
+    - kind: added
+      description: "Sandbox the agent runtimes with Kata Containers instead of gVisor when OpenShift.enabled is true, via the new OpenShift.agentRuntimeClassName (default kata, the RuntimeClass the OpenShift sandboxed containers operator creates for a default KataConfig; kata-remote for peer pods). gVisor cannot work on OpenShift - the installer needs containerd plus privileged/hostPID, which no default SCC allows, and CRI-O ships no runsc handler - so every gvisor.* setting is ignored there. The chart never creates the RuntimeClass; set the value to another one you provisioned yourself, or to an empty string for no sandbox"
     - kind: fixed
       description: "Target the OpenShift DNS service (openshift-dns namespace, port 5353 UDP and TCP) in the NetworkPolicy DNS egress rules when OpenShift.enabled is true, instead of k8s-app: kube-dns on port 53, which never matched on OpenShift"
   artifacthub.io/links: |
