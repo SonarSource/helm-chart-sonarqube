@@ -27,7 +27,7 @@ spec:
         - port: {{ $cfg.port }}
           protocol: TCP
   egress:
-{{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
+{{ include "sonarqube.dnsEgressRule" $ | indent 4 }}
     {{- /* All other runtime egress - including reaching the orchestrator and reading/writing job
            artifacts against object storage via presigned URLs - transits the Agent Egress Proxy.
            There is no direct-to-orchestrator or direct-to-storage rule here: the proxy's own

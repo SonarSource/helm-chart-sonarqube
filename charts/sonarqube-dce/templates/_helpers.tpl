@@ -84,10 +84,15 @@ Usage: {{ include "sonarqube.gvisor.fullname" . }}
 {{/*
 Effective gvisor.enabled: requires at least one of hunterAgent.enabled / remediationAgent.enabled
 too, so gVisor only ever renders when there's a runtime to sandbox.
+On OpenShift the whole feature is skipped unless gvisor.openShiftOptIn is set: the installer needs
+containerd plus privileged/hostPID (no default SCC allows that) and CRI-O ships no runsc handler, so leaving
+it on would emit a RuntimeClass the runtimes can never be scheduled with.
 Usage: {{ include "sonarqube.gvisor.enabled" . }}
 */}}
 {{- define "sonarqube.gvisor.enabled" -}}
-{{- and .Values.gvisor.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
+{{- $onOpenShift := .Values.OpenShift.enabled -}}
+{{- $allowed := or (not $onOpenShift) .Values.gvisor.openShiftOptIn -}}
+{{- and .Values.gvisor.enabled $allowed (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
 {{- end -}}
 
 {{- define "accountDeprecation" -}}
@@ -1175,11 +1180,26 @@ release: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
-The DNS-to-kube-dns egress rule shared by every agent NetworkPolicy (runtime and proxy alike).
+The DNS egress rule shared by every NetworkPolicy this chart renders (SonarQube itself, the agent
+runtimes and the egress proxy alike).
+OpenShift needs its own form: its CoreDNS pods live in the openshift-dns namespace and carry no
+k8s-app label, and OVN-Kubernetes matches egress ACLs after DNAT, so the rule has to allow the
+container port 5353 rather than the Service port 53.
 Output is unindented; callers should pipe through `indent`/`nindent` to place it under `egress:`.
-Usage: {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
+Usage: {{ include "sonarqube.dnsEgressRule" $ | indent 4 }}
 */}}
-{{- define "sonarqube.agent.dnsEgressRule" -}}
+{{- define "sonarqube.dnsEgressRule" -}}
+{{- if .Values.OpenShift.enabled -}}
+- to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-dns
+  ports:
+    - port: 5353
+      protocol: UDP
+    - port: 5353
+      protocol: TCP
+{{- else -}}
 - to:
     - namespaceSelector: {}
       podSelector:
@@ -1190,6 +1210,7 @@ Usage: {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
       protocol: UDP
     - port: 53
       protocol: TCP
+{{- end -}}
 {{- end -}}
 
 {{/*

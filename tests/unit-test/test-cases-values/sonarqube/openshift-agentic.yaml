@@ -1,0 +1,43 @@
+# The full agentic pack on OpenShift, with every NetworkPolicy turned on and gVisor left at its
+# values.yaml defaults (enabled, installer enabled) - i.e. what a user gets from flipping
+# OpenShift.enabled and nothing else. Tests override OpenShift.enabled / gvisor.* from here.
+OpenShift:
+  enabled: true
+community:
+  enabled: true
+monitoringPasscode: test-passcode
+jdbcOverwrite:
+  enabled: true
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+networkPolicy:
+  enabled: true
+agentOrchestrator:
+  enabled: true
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "42"
+  storage:
+    bucket: agent-jobs
+hunterAgent:
+  enabled: true
+  networkPolicy:
+    enabled: true
+remediationAgent:
+  enabled: true
+  networkPolicy:
+    enabled: true
+vortex:
+  enabled: true
+  image:
+    repository: example.com/vortex
+    tag: "1"
+  storage:
+    bucket: vortex-artifacts
+    region: eu-west-1
+agentEgressProxy:
+  networkPolicy:
+    enabled: true
+agenticSigningSecret:
+  existingSecret: test-agentic-instance-secret

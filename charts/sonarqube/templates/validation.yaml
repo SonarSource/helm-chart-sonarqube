@@ -209,7 +209,15 @@ It is used to validate the values.yaml file before the installation starts.
 {{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.enabled=true requires a non-empty gvisor.runtimeClassName." -}}
   {{- end -}}
   {{- if not $gvisor.handler -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.enabled=true requires a non-empty gvisor.handler (the containerd runtime handler)." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.enabled=true requires a non-empty gvisor.handler (the CRI runtime handler)." -}}
+  {{- end -}}
+  {{/* Reaching here with OpenShift.enabled means gvisor.openShiftOptIn was set, i.e. the user
+       claims runsc is already on their nodes. The installer cannot be what put it there: it
+       writes containerd's config and needs privileged+hostPID, which no default SCC allows. Leaving it
+       enabled would render a DaemonSet that every node rejects while Helm still reports success,
+       so refuse the combination outright instead. */}}
+  {{- if and .Values.OpenShift.enabled $gvisor.installer.enabled -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.openShiftOptIn=true requires gvisor.installer.enabled=false. The installer needs containerd plus privileged/hostPID, which no default OpenShift SCC allows - provision runsc on your nodes yourself (for example with the sandboxed-containers operator) and point gvisor.handler/gvisor.nodeSelector at it." -}}
   {{- end -}}
   {{- if and $gvisor.installer.enabled (not $gvisor.installer.image.repository) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.installer.enabled=true requires a non-empty gvisor.installer.image.repository." -}}

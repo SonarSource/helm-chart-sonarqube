@@ -1537,19 +1537,28 @@ agentEgressProxy:
 # sandboxing").
 gvisor:
   enabled: true
+  # gVisor is not usable on OpenShift as shipped: the installer below needs containerd plus
+  # privileged/hostPID, which no default SCC allows, and CRI-O provides no runsc handler. So
+  # when OpenShift.enabled is true the whole feature is skipped — no RuntimeClass, no installer,
+  # no runtimeClassName on the agent runtimes — unless you opt in here after provisioning runsc on
+  # your nodes yourself. Opting in also requires installer.enabled: false.
+  openShiftOptIn: false
   # Name of the RuntimeClass created + referenced by runtimes. RuntimeClass is cluster-scoped:
   # any two installs sharing this value will collide (the second install fails, RuntimeClass owned
   # by the first release) — give each a distinct runtimeClassName. That covers multiple
   # releases/namespaces of this chart, and this chart installed alongside sonarqube, which ships
   # the same feature.
   runtimeClassName: gvisor
-  handler: runsc                    # containerd runtime handler
+  handler: runsc                    # CRI runtime handler (containerd or CRI-O)
   # RuntimeClass.scheduling.nodeSelector, and (when installer.enabled) the label the installer
   # applies once runsc is ready. Use `null`, not `{}`, to disable node pinning — Helm merges maps.
   nodeSelector:
     gvisor.enabled: "true"
   installer:
-    enabled: true                   # deploy the privileged installer DaemonSet (needs gvisor.enabled)
+    # Deploy the privileged installer DaemonSet (needs gvisor.enabled). Supports containerd on
+    # self-managed nodes only: it writes containerdConfigPath and restarts containerd, so it does
+    # not work on CRI-O (OpenShift) or on managed nodes with an immutable OS.
+    enabled: true
     image:
       repository: debian
       tag: stable-slim

@@ -23,6 +23,8 @@ All changes to this chart will be documented in this file.
 * GitHub-based default downloads require access to `github.com` and `release-assets.githubusercontent.com`
 * **Breaking**: Built-in JVM metric names now use OpenMetrics naming, for example `jvm_memory_bytes_used` is now `jvm_memory_used_bytes`; metrics generated from `config.rules` are unaffected
 * **Breaking**: The default exporter scrape path is now `/metrics` instead of `/`; update external scrapers or set `applicationNodes.prometheusExporter.metricsPath: /` for exporters serving metrics at the root
+* Skip gVisor (runsc) sandboxing automatically when `OpenShift.enabled` is `true`: the installer DaemonSet needs containerd plus privileged/hostPID, which no default OpenShift SCC allows, and CRI-O ships no `runsc` handler, so a default install emitted a RuntimeClass and a `runtimeClassName` that could never be satisfied. Set `gvisor.openShiftOptIn: true` (with `gvisor.installer.enabled: false`) to re-enable it on nodes where `runsc` has been provisioned out of band
+* Target OpenShift's DNS service in the NetworkPolicy DNS egress rules when `OpenShift.enabled` is `true` — namespace `openshift-dns` on port 5353 UDP and TCP, since OVN-Kubernetes matches egress ACLs post-DNAT — instead of `k8s-app: kube-dns` on port 53, which never matched. The agentic and non-agentic policies now share one helper, and the non-agentic rules additionally gain TCP alongside UDP
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
