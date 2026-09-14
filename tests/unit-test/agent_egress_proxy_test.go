@@ -499,6 +499,9 @@ func TestAgentEgressProxyNetworkPolicy(t *testing.T) {
 			t.Run("SonarQube pod egress rule is unconditional, not gated behind networkPolicy.egressPorts", func(t *testing.T) {
 				testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t, chart)
 			})
+			t.Run("istio.enabled adds the sidecar's probe/scrape ports on ingress", func(t *testing.T) {
+				testAgentEgressProxyNetworkPolicyIstioSidecarPorts(t, chart)
+			})
 		})
 	}
 }
@@ -580,6 +583,28 @@ func testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t *testing.T, c
 	require.NotNil(t, sonarqube)
 	require.Len(t, sonarqube.Ports, 1)
 	assert.EqualValues(t, 9001, sonarqube.Ports[0].Port.IntVal, "tracks service.internalPort, not networkPolicy.egressPorts or service.externalPort")
+}
+
+// The proxy is always injected when istio.enabled (never excluded by gVisor, unlike the
+// runtimes) - its own NetworkPolicy must always admit the sidecar's status ports on ingress.
+func testAgentEgressProxyNetworkPolicyIstioSidecarPorts(t *testing.T, chart agentChart) {
+	setValues := map[string]string{
+		"hunterAgent.enabled":                    "true",
+		"hunterAgent.image.repository":           "example.com/hunter-agent",
+		"hunterAgent.image.tag":                  "1",
+		"agentEgressProxy.networkPolicy.enabled": "true",
+		"istio.enabled":                          "true",
+	}
+	output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
+	require.NoError(t, err)
+
+	var policy networkingv1.NetworkPolicy
+	helm.UnmarshalK8SYaml(t, output, &policy)
+
+	ingressPorts := networkPolicyIngressPorts(policy.Spec.Ingress)
+	assert.Contains(t, ingressPorts, int32(15020))
+	assert.Contains(t, ingressPorts, int32(15021))
+	assert.Contains(t, ingressPorts, int32(15090))
 }
 
 // Regression test: HTTP_PROXY/HTTPS_PROXY/NO_PROXY (and lowercase variants) must not be

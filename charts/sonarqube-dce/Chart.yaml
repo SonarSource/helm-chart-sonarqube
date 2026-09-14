@@ -43,6 +43,8 @@ annotations:
     - kind: changed
       description: "Breaking: Application node liveness and readiness probe handlers are now managed by the chart; legacy applicationNodes.livenessProbe/applicationNodes.readinessProbe exec, httpGet, tcpSocket and grpc values are ignored. Use applicationNodes.<probe>.overrideCommand for an explicit custom command"
     - kind: added
+      description: "Add istio.enabled to put every chart-owned workload (Application nodes, Search nodes, Agent Orchestrator, MCP, Vortex, Agent Egress Proxy, and each agent runtime when gvisor.enabled is false) under STRICT mTLS with an explicit sidecar.istio.io/inject annotation and label on each pod - including the change-admin-password hook Job and the helm test pod, which now join the mesh instead of opting out - and istio.meshSidecar.enabled (plus the generic agentRuntimeSandbox.enabled/runtimeClassName, for sandboxes other than gVisor such as Kata Containers) to give sandboxed agent runtimes a real mTLS identity: a hand-authored istio-proxy sidecar plus a chart-owned Sidecar resource, with no istio-init and no elevated pod capabilities; requires Kubernetes >= 1.29 (the istio-proxy container is a native sidecar), checked at render time"
+    - kind: added
       description: "Set a default MCP pod securityContext (fsGroup: 0), a default HOME=/data, and an optional mcp.initContainers hook so the non-root MCP server can write to /data"
     - kind: changed
       description: "Upgrade Chart's version to 2026.5.0"
