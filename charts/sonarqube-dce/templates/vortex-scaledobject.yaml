@@ -16,12 +16,18 @@ spec:
          what is already running (raised only to the minReplicas floor if lower), not maxReplicas:
          an ordinary misconfiguration (a bad metricPath, every replica unready) is enough to hit
          failureThreshold, and jumping to the ceiling would schedule maxReplicas pods of a broken
-         service and hold them there for scaleDownStabilizationSeconds after it recovers. On KEDA
-         < 2.17 `behavior` is pruned by the CRD and this degrades to a static minReplicas. */}}
+         service and hold them there for scaleDownStabilizationSeconds after it recovers. Gated on
+         aggregateAcrossReplicas (KEDA >= 2.20, guaranteed by validation.yaml to be paired with
+         minReplicas >= 2): on the opt-out path KEDA may predate 2.17, where `behavior` is pruned
+         by the CRD and this degrades to a static replicas: 1 (minReplicas is pinned to 1 there),
+         actively forcing the fleet down instead of freezing it. Omitting fallback entirely there
+         lets KEDA's own default (freeze on error) apply instead. */}}
+  {{- if .Values.vortexAnalysis.autoscaling.aggregateAcrossReplicas }}
   fallback:
     failureThreshold: 3
     behavior: currentReplicasIfHigher
     replicas: {{ .Values.vortexAnalysis.autoscaling.minReplicas }}
+  {{- end }}
   advanced:
     horizontalPodAutoscalerConfig:
       {{- /* KEDA otherwise derives the HPA name as "keda-hpa-<scaledobject name>", whose 9-char
