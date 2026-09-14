@@ -207,7 +207,10 @@ func TestVortexScaledObjectAggregatesAcrossReplicasByDefault(t *testing.T) {
 
 // aggregateAcrossReplicas=false is the escape hatch for a pre-existing cluster-wide KEDA older
 // than 2.20.0 (a version this chart has no way to detect) - both keys must then be omitted rather
-// than sent with a value the scaler might reject or ignore.
+// than sent with a value the scaler might reject or ignore. spec.fallback must be omitted too:
+// KEDA versions predating 2.20 may also predate 2.17, where fallback.behavior is silently pruned
+// by the CRD and the fallback degrades to a static replicas: 1 - actively forcing the fleet down
+// on a scrape failure instead of freezing it, which is the opposite of what fallback is for.
 func TestVortexScaledObjectAggregationOptOut(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -225,6 +228,8 @@ func TestVortexScaledObjectAggregationOptOut(t *testing.T) {
 			_, hasType := trigger.Metadata["aggregationType"]
 			assert.False(t, hasAggregate, "aggregateFromKubeServiceEndpoints must be omitted, not sent as \"false\"")
 			assert.False(t, hasType)
+
+			assert.Nil(t, so.Spec.Fallback, "fallback must be omitted on the opt-out path, not rendered with a behavior a pre-2.17 KEDA would silently prune")
 		})
 	}
 }
