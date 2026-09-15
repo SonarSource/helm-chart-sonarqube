@@ -43,10 +43,11 @@ spec:
       {{- /* Protects an in-flight job from an ordinary scale-down (manual, rollout, node drain, or
              KEDA-driven) dropping it mid-run - independent of whether autoscaling is enabled. */}}
       terminationGracePeriodSeconds: {{ $cfg.terminationGracePeriodSeconds }}
-      {{- /* Run the (untrusted) runtimes under the gVisor RuntimeClass when enabled. The
-             RuntimeClass' own scheduling.nodeSelector pins these pods to runsc-ready nodes. */}}
-      {{- if eq (include "sonarqube.gvisor.enabled" $) "true" }}
-      runtimeClassName: {{ $.Values.gvisor.runtimeClassName }}
+      {{- /* Sandbox the (untrusted) runtimes: Kata on OpenShift (OpenShift.agentRuntimeClassName),
+             gVisor elsewhere, whose RuntimeClass pins these pods to runsc-ready nodes through its
+             own scheduling.nodeSelector. */}}
+      {{- with (include "sonarqube.agentRuntime.runtimeClassName" $) }}
+      runtimeClassName: {{ . }}
       {{- end }}
       automountServiceAccountToken: {{ include "sonarqube.agent.automountServiceAccountToken" (dict "ctx" $ "serviceAccount" $cfg.serviceAccount) }}
       {{- $pullSecrets := include "sonarqube.agent.imagePullSecrets" (list $cfg.image) }}
