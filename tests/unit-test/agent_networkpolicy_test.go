@@ -70,15 +70,17 @@ func TestCoreNetworkPolicyOrchestratorIngressPort(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.chart.name, func(t *testing.T) {
 			setValues := map[string]string{
-				"monitoringPasscode":                 "test-passcode",
-				"jdbcOverwrite.jdbcUrl":              "jdbc:postgresql://test-host:5432/testdb",
-				"jdbcOverwrite.jdbcUsername":         "test-user",
-				"jdbcOverwrite.jdbcPassword":         "test-password",
-				"networkPolicy.enabled":              "true",
-				"agentOrchestrator.enabled":          "true",
-				"agentOrchestrator.image.repository": "example.com/agent-orchestrator",
-				"agentOrchestrator.storage.bucket":   "agent-jobs",
-				"service.internalPort":               "9999",
+				"monitoringPasscode":                  "test-passcode",
+				"jdbcOverwrite.jdbcUrl":               "jdbc:postgresql://test-host:5432/testdb",
+				"jdbcOverwrite.jdbcUsername":          "test-user",
+				"jdbcOverwrite.jdbcPassword":          "test-password",
+				"networkPolicy.enabled":               "true",
+				"agentOrchestrator.enabled":           "true",
+				"agentOrchestrator.image.repository":  "example.com/agent-orchestrator",
+				"agentOrchestrator.storage.bucket":    "agent-jobs",
+				"service.internalPort":                "9999",
+				"hunterAgent.enabled":                 "true",
+				"agenticSigningSecret.existingSecret": "test-agentic-instance-secret",
 			}
 			for k, v := range c.extraSetValues {
 				setValues[k] = v

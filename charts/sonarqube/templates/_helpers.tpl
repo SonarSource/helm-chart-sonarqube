@@ -740,14 +740,31 @@ ContainerCreating).
 Least privilege: each pod only ever holds the keys for the hops it actually participates in.
 
   orchestrator -> orchestrator-to-hunter (hunter), orchestrator-to-remediation (remediation),
-                  agentic-shared (SQS <-> orchestrator)
-  hunter       -> orchestrator-to-hunter
-  remediation  -> orchestrator-to-remediation, remediation-to-sqs
+                  agentic-shared (SQS <-> orchestrator), hunter-to-orchestrator and
+                  remediation-to-orchestrator (verifying runtime locator renewals),
+                  orchestrator-job-capability (its own, never shared)
+  hunter       -> orchestrator-to-hunter, hunter-to-orchestrator
+  remediation  -> orchestrator-to-remediation, remediation-to-sqs, remediation-to-orchestrator
   sqs          -> agentic-shared
   vortex       -> agentic-shared (Vortex -> SQS)
 
 Note SQS does *not* mount remediation-to-sqs even though it verifies that hop: it has the
 instance secret itself (sonarqube.agentic.sqsSecretFile) and re-derives the key in-process.
+
+Two deliberate asymmetries with the rest of this table (EA-968):
+
+Both inbound verification keys are unconditional on the orchestrator - not gated on
+hunterAgent.enabled / remediationAgent.enabled the way orchestrator-to-hunter and
+orchestrator-to-remediation are. Once AGENTIC_INBOUND_VERIFICATION_KEY_PATH is set (which
+sonarqube.agentic.keyPathEnv does whenever agentic-shared is mounted), the orchestrator's
+InboundSignatureConfiguration requires *both* runtime verification key paths and throws on startup
+if either is blank. Gating them per family would therefore CrashLoop any single-family install.
+
+orchestrator-job-capability is the one label with a single holder. It is the HMAC key behind the
+per-job X-Sonar-Job-Capability token the orchestrator issues and verifies entirely on its own; a
+runtime only ever echoes back the opaque token it was dispatched with. Mounting it into a runtime
+would let that runtime mint capabilities for any job, so it must never appear under any other
+consumer here.
 
 Parameters (dict): ctx (required, the root context '.'), consumer (required).
 Returns a YAML list; "[]" when the consumer needs none.
@@ -759,11 +776,13 @@ Returns a YAML list; "[]" when the consumer needs none.
 {{- if eq .consumer "orchestrator" -}}
 {{- if $v.hunterAgent.enabled }}{{- $labels = append $labels "orchestrator-to-hunter" }}{{- end }}
 {{- if $v.remediationAgent.enabled }}{{- $labels = append $labels "orchestrator-to-remediation" }}{{- end }}
-{{- if and $any $v.agentOrchestrator.enabled }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
+{{- if and $any $v.agentOrchestrator.enabled }}{{- $labels = concat $labels (list "agentic-shared" "hunter-to-orchestrator" "remediation-to-orchestrator" "orchestrator-job-capability") }}{{- end }}
 {{- else if eq .consumer "hunter" -}}
 {{- if $v.hunterAgent.enabled }}{{- $labels = append $labels "orchestrator-to-hunter" }}{{- end }}
+{{- if and $v.hunterAgent.enabled $v.agentOrchestrator.enabled }}{{- $labels = append $labels "hunter-to-orchestrator" }}{{- end }}
 {{- else if eq .consumer "remediation" -}}
 {{- if $v.remediationAgent.enabled }}{{- $labels = concat $labels (list "orchestrator-to-remediation" "remediation-to-sqs") }}{{- end }}
+{{- if and $v.remediationAgent.enabled $v.agentOrchestrator.enabled }}{{- $labels = append $labels "remediation-to-orchestrator" }}{{- end }}
 {{- else if eq .consumer "sqs" -}}
 {{- if $any }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
 {{- else if eq .consumer "vortex" -}}
@@ -816,22 +835,41 @@ Parameters (dict): ctx, consumer.
 {{- end -}}
 
 {{/*
-Env vars pointing each consumer at the individual key *files* it mounts. The contract is one
-variable per key path, and the same key is named differently on either side of a hop - it is the
-consumer's role in the hop that picks the name, not the key:
+Env vars pointing each consumer at the individual key *files* it mounts. The same key is named
+differently on either side of a hop - it is the consumer's role in the hop that picks the name, not
+the key:
 
   orchestrator  orchestrator-to-hunter       -> AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH
                 orchestrator-to-remediation  -> AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH
                 agentic-shared               -> AGENTIC_SONARQUBE_SIGNING_KEY_PATH
+                                                AGENTIC_INBOUND_VERIFICATION_KEY_PATH
+                hunter-to-orchestrator       -> AGENTIC_INBOUND_HUNTER_VERIFICATION_KEY_PATH
+                remediation-to-orchestrator  -> AGENTIC_INBOUND_REMEDIATION_VERIFICATION_KEY_PATH
+                orchestrator-job-capability  -> AGENTIC_JOB_CAPABILITY_SIGNING_KEY_PATH
   hunter        orchestrator-to-hunter       -> AGENTIC_VERIFY_KEY_PATH
+                hunter-to-orchestrator       -> AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
   remediation   orchestrator-to-remediation  -> AGENTIC_VERIFY_KEY_PATH
                 remediation-to-sqs           -> REMEDIATION_AGENTIC_SIGNING_KEY_PATH
+                remediation-to-orchestrator  -> AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
   vortex        agentic-shared               -> AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
+
+One label can map to several variables - the dict value is a space-separated list. agentic-shared
+on the orchestrator is the only such case: the same file is both what it signs outbound calls to
+SonarQube with (AGENTIC_SONARQUBE_SIGNING_KEY_PATH) and what it verifies SonarQube's inbound calls
+against (AGENTIC_INBOUND_VERIFICATION_KEY_PATH). The second one is not cosmetic - it is the switch
+that registers the orchestrator's SecurityFilterChain at all. Leave it unset and, since EA-968 made
+@EnableMethodSecurity unconditional, no request can ever be granted the AGENTIC_KEY_agentic-shared
+authority its handlers demand, so every SonarQube-facing endpoint answers 403 (EA-968).
 
 AGENTIC_VERIFY_KEY_PATH is reused across the two runtimes without colliding: each pod mounts
 exactly one verification key. Because the name is the same on both, it is paired with
 AGENTIC_VERIFY_KEY_ID, whose value is the label itself (orchestrator-to-hunter or
 orchestrator-to-remediation) - that is what tells the runtime which hop the key belongs to.
+
+AGENT_ORCHESTRATOR_SIGNING_KEY_PATH is likewise the same name on both runtimes, but must NOT get
+the same treatment: each runtime image hardcodes its own OrchestratorSigningKeyId in main.py
+(HUNTER_TO_ORCHESTRATOR / REMEDIATION_TO_ORCHESTRATOR), so there is no companion ID variable to
+set and adding one to $idNames below would emit a variable nothing reads.
 
 SQS deliberately has no entry here even though it mounts agentic-shared too (see keyLabels): what
 the JVM reads to sign its own outbound calls to the orchestrator is the
@@ -850,10 +888,22 @@ actually projected into the pod. Returns a YAML list of env entries; "[]" when t
 Parameters (dict): ctx, consumer.
 */}}
 {{- define "sonarqube.agentic.keyPathEnv" -}}
+{{- /* label -> one or more variable names, space-separated. */}}
 {{- $names := dict
-  "orchestrator" (dict "orchestrator-to-hunter" "AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH" "orchestrator-to-remediation" "AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH" "agentic-shared" "AGENTIC_SONARQUBE_SIGNING_KEY_PATH")
-  "hunter" (dict "orchestrator-to-hunter" "AGENTIC_VERIFY_KEY_PATH")
-  "remediation" (dict "orchestrator-to-remediation" "AGENTIC_VERIFY_KEY_PATH" "remediation-to-sqs" "REMEDIATION_AGENTIC_SIGNING_KEY_PATH")
+  "orchestrator" (dict
+    "orchestrator-to-hunter" "AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH"
+    "orchestrator-to-remediation" "AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH"
+    "agentic-shared" "AGENTIC_SONARQUBE_SIGNING_KEY_PATH AGENTIC_INBOUND_VERIFICATION_KEY_PATH"
+    "hunter-to-orchestrator" "AGENTIC_INBOUND_HUNTER_VERIFICATION_KEY_PATH"
+    "remediation-to-orchestrator" "AGENTIC_INBOUND_REMEDIATION_VERIFICATION_KEY_PATH"
+    "orchestrator-job-capability" "AGENTIC_JOB_CAPABILITY_SIGNING_KEY_PATH")
+  "hunter" (dict
+    "orchestrator-to-hunter" "AGENTIC_VERIFY_KEY_PATH"
+    "hunter-to-orchestrator" "AGENT_ORCHESTRATOR_SIGNING_KEY_PATH")
+  "remediation" (dict
+    "orchestrator-to-remediation" "AGENTIC_VERIFY_KEY_PATH"
+    "remediation-to-sqs" "REMEDIATION_AGENTIC_SIGNING_KEY_PATH"
+    "remediation-to-orchestrator" "AGENT_ORCHESTRATOR_SIGNING_KEY_PATH")
   "vortex" (dict "agentic-shared" "AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH")
 -}}
 {{- /* Path variables that need a companion variable naming *which* key the file holds, keyed by
@@ -864,10 +914,13 @@ Parameters (dict): ctx, consumer.
 {{- $dir := include "sonarqube.agentic.consumerKeyDir" . -}}
 {{- $env := list -}}
 {{- range $label := (fromYamlArray (include "sonarqube.agentic.keyLabels" .)) -}}
-{{- with (get $forConsumer $label) -}}
-{{- $env = append $env (dict "name" . "value" (printf "%s/%s" $dir $label)) -}}
-{{- with (get $idNames .) -}}
+{{- /* splitList on "" yields a single empty element, hence the guard rather than `with`. */}}
+{{- range $name := (splitList " " (get $forConsumer $label | default "")) -}}
+{{- if $name -}}
+{{- $env = append $env (dict "name" $name "value" (printf "%s/%s" $dir $label)) -}}
+{{- with (get $idNames $name) -}}
 {{- $env = append $env (dict "name" . "value" $label) -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

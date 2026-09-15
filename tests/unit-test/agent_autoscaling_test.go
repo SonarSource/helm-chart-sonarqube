@@ -418,6 +418,8 @@ func assertAgentAutoscalingRangeRejected(t *testing.T, autoscalingValues map[str
 				values := prefixed("agentOrchestrator")
 				values["agentOrchestrator.enabled"] = "true"
 				values["agentOrchestrator.image.repository"] = "example.com/agent-orchestrator"
+				values["hunterAgent.enabled"] = "true"
+				values["agenticSigningSecret.existingSecret"] = "test-agentic-instance-secret"
 				_, err := renderWithValidation(t, chart, values)
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "agentOrchestrator.autoscaling."+errSuffix)
@@ -480,13 +482,27 @@ func TestAgentAutoscalingValidationSkippedWhenComponentDisabled(t *testing.T) {
 
 			for _, family := range []string{"hunter", "remediation"} {
 				t.Run(family+" disabled", func(t *testing.T) {
-					_, err := renderWithValidation(t, chart, map[string]string{
+					// The orchestrator needs some agent runtime to dispatch jobs to, so enable
+					// the other family to satisfy that dependency while family stays disabled.
+					values := map[string]string{
 						"agentOrchestrator.enabled":              "true",
 						"agentOrchestrator.image.repository":     "example.com/agent-orchestrator",
+						"agenticSigningSecret.existingSecret":    "test-agentic-instance-secret",
 						family + "Agent.enabled":                 "false",
 						family + "Agent.autoscaling.enabled":     "true",
 						family + "Agent.autoscaling.minReplicas": "1",
-					})
+					}
+					if family == "hunter" {
+						values["remediationAgent.enabled"] = "true"
+						values["vortexAnalysis.enabled"] = "true"
+						values["vortexAnalysis.image.repository"] = "example.com/vortex-analysis"
+						values["vortexAnalysis.image.tag"] = "42"
+						values["vortexAnalysis.storage.type"] = "FILESYSTEM"
+						values["vortexAnalysis.storage.filesystem.baseDir"] = "/agentic-storage"
+					} else {
+						values["hunterAgent.enabled"] = "true"
+					}
+					_, err := renderWithValidation(t, chart, values)
 					require.NoError(t, err)
 				})
 			}
