@@ -306,12 +306,13 @@ func TestVortexRollsOnStorageCredentialChange(t *testing.T) {
 	}
 }
 
-// Recreate rather than the default RollingUpdate, so an upgrade never runs two pods at once.
-func TestVortexUsesRecreateStrategy(t *testing.T) {
+// RollingUpdate, same as the other agentic Deployments (orchestrator, hunter, remediation), so an
+// upgrade doesn't take the whole fleet down at once.
+func TestVortexUsesRollingUpdateStrategy(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			deployment := vortexDeployment(t, chart, "vortex-enabled.yaml")
-			assert.Equal(t, appsv1.RecreateDeploymentStrategyType, deployment.Spec.Strategy.Type)
+			assert.Equal(t, appsv1.RollingUpdateDeploymentStrategyType, deployment.Spec.Strategy.Type)
 		})
 	}
 }

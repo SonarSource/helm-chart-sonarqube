@@ -769,11 +769,11 @@ vortexAnalysis:
 
   replicaCount: 1
 
-  # Update strategy for the Vortex Deployment. Recreate avoids running two pods at once
-  # during an upgrade. Must be RollingUpdate when autoscaling.enabled=true - see validation.yaml -
-  # since Recreate with N replicas takes the whole fleet down on every rollout.
+  # Update strategy for the Vortex Deployment. Must be RollingUpdate when
+  # autoscaling.enabled=true - see validation.yaml - since Recreate with N replicas takes the
+  # whole fleet down on every rollout.
   strategy:
-    type: Recreate
+    type: RollingUpdate
 
   # Peak-concurrency autoscaling via KEDA, reading Vortex's own unauthenticated
   # GET /metrics/max-concurrent-requests. Requires the KEDA CRDs in-cluster - see agentKeda below.
@@ -917,8 +917,9 @@ agentOrchestrator:
   affinity: {}
   # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
   revisionHistoryLimit: ""
-  # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
-  strategy: {}
+  # Deployment update strategy. Defaults to RollingUpdate.
+  strategy:
+    type: RollingUpdate
   # Extra labels/annotations for the orchestrator pod.
   podLabels: {}
   annotations: {}
@@ -1090,8 +1091,9 @@ hunterAgent:
   affinity: {}
   # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
   revisionHistoryLimit: ""
-  # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
-  strategy: {}
+  # Deployment update strategy. Defaults to RollingUpdate.
+  strategy:
+    type: RollingUpdate
   # Extra labels/annotations for this runtime's pod.
   podLabels: {}
   annotations: {}
@@ -1225,8 +1227,9 @@ remediationAgent:
   affinity: {}
   # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
   revisionHistoryLimit: ""
-  # Deployment update strategy. Blank uses the Kubernetes default (RollingUpdate).
-  strategy: {}
+  # Deployment update strategy. Defaults to RollingUpdate.
+  strategy:
+    type: RollingUpdate
   # Extra labels/annotations for this runtime's pod.
   podLabels: {}
   annotations: {}

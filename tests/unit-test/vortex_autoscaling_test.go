@@ -492,12 +492,22 @@ func TestVortexAutoscalingRejectsRecreateStrategy(t *testing.T) {
 		`vortexAnalysis.strategy.type is "Recreate"`)
 }
 
-// Recreate stays the shipped default, so it must keep rendering fine whenever autoscaling itself
-// is off - the check above must only fire when both conditions hold together.
+// Recreate is no longer the shipped default, but it must still render fine as an explicit
+// override whenever autoscaling itself is off - the rejection above must only fire when both
+// conditions hold together.
 func TestVortexRecreateStrategyAllowedWhenAutoscalingDisabled(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			deployment := vortexDeployment(t, chart, "vortex-enabled.yaml")
+			opts := &helm.Options{
+				Logger:      logger.Discard,
+				ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
+				SetValues:   map[string]string{"vortexAnalysis.strategy.type": "Recreate"},
+			}
+			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
+			require.NoError(t, err)
+
+			var deployment appsv1.Deployment
+			helm.UnmarshalK8SYaml(t, output, &deployment)
 			assert.Equal(t, appsv1.RecreateDeploymentStrategyType, deployment.Spec.Strategy.Type)
 		})
 	}
