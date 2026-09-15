@@ -88,6 +88,18 @@ spec:
           {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_RULE_INFO_ENDPOINT" "value" (printf "%s/api/rules/show" (include "sonarqube.agent.sonarqube.url" $))) }}
           {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_ANALYSIS_ENDPOINT" "value" (printf "%s/api/v2/a3s/private/analyses" (include "sonarqube.agent.sonarqube.url" $))) }}
           {{- end }}
+          {{- /* Where the runtime renews an expired artifact locator mid-job (EA-968). The runtime
+                 treats a blank value as "renewal disabled" and keeps the dispatch-time locators,
+                 so this is only set when there is an orchestrator to call; setting it without the
+                 signing key below makes the runtime refuse to start rather than send unsigned
+                 renewals. Fully qualified, which the egress proxy requires - Squid's resolver
+                 ignores /etc/resolv.conf's search list. Reaching it also needs the proxy's
+                 matching allow rule (agent-egress-proxy-configmap.yaml) and egress rule
+                 (agent-egress-proxy-networkpolicy.yaml): HTTP_PROXY below is forced to Squid with
+                 no NO_PROXY bypass, so without those the renewal POST is denied at the proxy. */}}
+          {{- if $.Values.agentOrchestrator.enabled }}
+          {{- $autoEnv = append $autoEnv (dict "name" "AGENT_ORCHESTRATOR_URL" "value" (include "sonarqube.agentOrchestrator.url" $)) }}
+          {{- end }}
           {{- /* One variable per HKDF-derived key file mounted below - a runtime only ever holds
                  the key for its own hop with the orchestrator (plus, for remediation, its hop to
                  SQS). See sonarqube.agentic.keyPathEnv. */}}

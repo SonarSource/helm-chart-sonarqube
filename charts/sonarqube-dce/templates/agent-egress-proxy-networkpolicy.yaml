@@ -39,6 +39,21 @@ spec:
       ports:
         - port: {{ .Values.service.internalPort }}
           protocol: TCP
+    {{- if .Values.agentOrchestrator.enabled }}
+    {{- /* Same, for the hardcoded agent_orchestrator_host allow rule: this is the path a runtime's
+           artifact-locator renewal takes (EA-968), and it is equally unconditional, so it gets its
+           own rule rather than an entry in networkPolicy.egressPorts - that list applies to the
+           0.0.0.0/0 rule below, so putting the orchestrator's port there would open it to the
+           whole internet in order to reach one in-cluster Service. The egressPorts guidance in the
+           Squid ConfigMap's comments is for *user*-added destinations via extraSquidConf; the
+           chart's own hardcoded ones are wired here instead. */}}
+    - to:
+        - podSelector:
+            matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 14 }}
+      ports:
+        - port: {{ .Values.agentOrchestrator.port }}
+          protocol: TCP
+    {{- end }}
     {{- /* NetworkPolicy is L3/L4-only and cannot match a destination FQDN, so this rule stays
            broad by necessity - the actual per-domain restriction is enforced entirely inside
            Squid via allowedDomains (dstdomain ACL), not here. `except` carves back out the
