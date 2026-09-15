@@ -461,10 +461,12 @@ OpenShift:
   # name does not exist in the cluster, instead of succeeding while every runtime pod is rejected at
   # admission ("RuntimeClass not found") and both Deployments sit at 0 available.
   agentRuntimeClassName: kata
-  # Skip the check that agentRuntimeClassName exists. Only needed when the installing credentials
-  # cannot read cluster-scoped RuntimeClasses, or when something else creates it alongside this
-  # release. The check already skips itself when it cannot reach the cluster at all (helm template,
-  # client-side --dry-run) and when agentRuntimeClassName is empty.
+  # Skip the check that agentRuntimeClassName exists. Needed when the installing credentials cannot
+  # read cluster-scoped RuntimeClasses - the lookup then aborts the install with the API server's own
+  # 'runtimeclasses.node.k8s.io "kata" is forbidden' message rather than a chart message, since a
+  # template can catch an empty lookup but not a failed one - or when something else creates the
+  # RuntimeClass alongside this release. The check already skips itself when it cannot reach the
+  # cluster at all (helm template, client-side --dry-run) and when agentRuntimeClassName is empty.
   skipAgentRuntimeClassCheck: false
   route:
     enabled: false

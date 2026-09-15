@@ -22,6 +22,9 @@ const AGENT_RUNTIME_CLASS_E2E = "SONARQUBE_RUNTIME_CLASS_E2E"
 // sonarqube.openshift.assertAgentRuntimeClass.
 const agentRuntimeClassFail = "does not exist in this cluster"
 
+// The values key every subtest below overrides.
+const agentRuntimeClassNameKey = "OpenShift.agentRuntimeClassName"
+
 // AgentRuntimeClassSpec describes one chart's take on the OpenShift agent RuntimeClass check.
 type AgentRuntimeClassSpec struct {
 	ChartName string
@@ -62,7 +65,7 @@ func RunAgentRuntimeClassCheckTest(t *testing.T, spec AgentRuntimeClassSpec) {
 
 	t.Run("missing RuntimeClass fails the install", func(t *testing.T) {
 		err := dryRunServer(t, spec, kubectlOptions, map[string]string{
-			"OpenShift.agentRuntimeClassName": missingName,
+			agentRuntimeClassNameKey: missingName,
 		})
 		require.Error(t, err, "the install must not succeed with a RuntimeClass that does not exist")
 		assert.Contains(t, err.Error(), agentRuntimeClassFail)
@@ -84,21 +87,21 @@ handler: %s
 		defer k8s.KubectlDeleteFromString(t, kubectlOptions, manifest)
 
 		err := dryRunServer(t, spec, kubectlOptions, map[string]string{
-			"OpenShift.agentRuntimeClassName": existingName,
+			agentRuntimeClassNameKey: existingName,
 		})
 		assert.NoError(t, err)
 	})
 
 	t.Run("opting out of sandboxing passes", func(t *testing.T) {
 		err := dryRunServer(t, spec, kubectlOptions, map[string]string{
-			"OpenShift.agentRuntimeClassName": "",
+			agentRuntimeClassNameKey: "",
 		})
 		assert.NoError(t, err, "an empty name is the documented opt-out, not a missing RuntimeClass")
 	})
 
 	t.Run("skipAgentRuntimeClassCheck bypasses the check", func(t *testing.T) {
 		err := dryRunServer(t, spec, kubectlOptions, map[string]string{
-			"OpenShift.agentRuntimeClassName":      missingName,
+			agentRuntimeClassNameKey:               missingName,
 			"OpenShift.skipAgentRuntimeClassCheck": "true",
 		})
 		assert.NoError(t, err)
@@ -106,8 +109,8 @@ handler: %s
 
 	t.Run("the check is scoped to OpenShift", func(t *testing.T) {
 		err := dryRunServer(t, spec, kubectlOptions, map[string]string{
-			"OpenShift.enabled":               "false",
-			"OpenShift.agentRuntimeClassName": missingName,
+			"OpenShift.enabled":      "false",
+			agentRuntimeClassNameKey: missingName,
 		})
 		assert.NoError(t, err, "off OpenShift the name is never applied to a pod")
 	})
@@ -151,6 +154,12 @@ func waitForDefaultServiceAccount(t *testing.T, kubectlOptions *k8s.KubectlOptio
 
 // AgentRuntimeClassValues is the shared half of both charts' values: OpenShift on, the agent
 // runtimes on (what the check is gated on), and the agentic pack's mandatory settings.
+//
+// hunterAgent alone, deliberately: the check is gated on `or hunterAgent.enabled
+// remediationAgent.enabled`, so one runtime family is enough to reach it, while remediationAgent
+// additionally requires vortexAnalysis.enabled (validation.yaml, and that rule runs *before* the
+// check) - so enabling it here means configuring a whole second subsystem only to render it and
+// throw it away.
 func AgentRuntimeClassValues() map[string]string {
 	return map[string]string{
 		"OpenShift.enabled":                   "true",
@@ -160,7 +169,6 @@ func AgentRuntimeClassValues() map[string]string {
 		"agentOrchestrator.image.tag":         "42",
 		"agentOrchestrator.storage.bucket":    "agent-jobs",
 		"hunterAgent.enabled":                 "true",
-		"remediationAgent.enabled":            "true",
 		"agenticSigningSecret.existingSecret": "test-agentic-instance-secret",
 	}
 }
