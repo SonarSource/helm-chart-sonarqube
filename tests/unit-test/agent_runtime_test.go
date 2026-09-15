@@ -324,20 +324,24 @@ func TestAgentRuntimeNeverMountsInstanceSecretOrCapabilityKey(t *testing.T) {
 			for _, family := range []string{"hunter", "remediation"} {
 				t.Run(family, func(t *testing.T) {
 					podSpec := renderAgentRuntime(t, chart, family, nil).Spec.Template.Spec
-
-					for _, volume := range podSpec.Volumes {
-						if volume.Secret == nil {
-							continue
-						}
-						assert.NotEqual(t, "test-agentic-instance-secret", volume.Secret.SecretName,
-							"volume %q mounts the instance secret every derived key comes from", volume.Name)
-						for _, item := range volume.Secret.Items {
-							assert.NotEqual(t, "orchestrator-job-capability", item.Key,
-								"volume %q projects the orchestrator's job-capability key", volume.Name)
-						}
-					}
+					assertNoInstanceSecretOrCapabilityKeyMounted(t, podSpec)
 				})
 			}
 		})
+	}
+}
+
+func assertNoInstanceSecretOrCapabilityKeyMounted(t *testing.T, podSpec corev1.PodSpec) {
+	t.Helper()
+	for _, volume := range podSpec.Volumes {
+		if volume.Secret == nil {
+			continue
+		}
+		assert.NotEqual(t, "test-agentic-instance-secret", volume.Secret.SecretName,
+			"volume %q mounts the instance secret every derived key comes from", volume.Name)
+		for _, item := range volume.Secret.Items {
+			assert.NotEqual(t, "orchestrator-job-capability", item.Key,
+				"volume %q projects the orchestrator's job-capability key", volume.Name)
+		}
 	}
 }
