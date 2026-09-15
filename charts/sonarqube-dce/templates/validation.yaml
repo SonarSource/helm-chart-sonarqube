@@ -225,3 +225,7 @@
 
 {{- include "sonarqube.search.assertEsMajorUpgrade" . -}}
 
+
+{{/* The Kata RuntimeClass the agent runtimes are sandboxed with on OpenShift has to already exist;
+     see the helper for why this can only be checked against a live cluster. */}}
+{{- include "sonarqube.openshift.assertAgentRuntimeClass" . -}}

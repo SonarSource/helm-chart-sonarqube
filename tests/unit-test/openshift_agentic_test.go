@@ -168,6 +168,9 @@ func TestOpenShiftAgentRuntimeClassOverride(t *testing.T) {
 		t.Run(chart.name, func(t *testing.T) {
 			output, err := renderOpenShift(t, chart, override, "templates/gvisor.yaml")
 			require.Error(t, err, "the chart never creates the RuntimeClass on OpenShift")
+			// Same reason as TestOpenShiftGvisorOffByDefault: without this a validation
+			// failure would also be Error + empty output and pass for "renders nothing".
+			assert.Contains(t, err.Error(), "could not find template")
 			assert.Empty(t, strings.TrimSpace(output))
 
 			for _, deployment := range openShiftAgentRuntimes(t, chart, override) {
@@ -284,4 +287,49 @@ func assertNoExplicitUser(t *testing.T, name string, securityContext *corev1.Sec
 	require.NotNil(t, securityContext, name)
 	assert.Nil(t, securityContext.RunAsUser, name)
 	assert.Nil(t, securityContext.RunAsGroup, name)
+}
+
+// The missing-RuntimeClass guard has to stay inert wherever it cannot reach a cluster: `lookup`
+// returns nothing during `helm template` and client-side `--dry-run`, which is indistinguishable
+// from "the RuntimeClass is absent". Every case below would be a hard failure against a live
+// cluster without the named class; offline they must all render. The real failure is covered by
+// tests/dynamic-compatibility-test (it needs --dry-run=server for `lookup` to be live).
+func TestOpenShiftAgentRuntimeClassCheckSkippedWithoutCluster(t *testing.T) {
+	cases := []struct {
+		name string
+		set  map[string]string
+	}{
+		{"default kata", nil},
+		{"another runtime", map[string]string{"OpenShift.agentRuntimeClassName": "kata-remote"}},
+		{"name that cannot exist", map[string]string{"OpenShift.agentRuntimeClassName": "no-such-runtimeclass"}},
+		{"check bypassed", map[string]string{"OpenShift.skipAgentRuntimeClassCheck": "true"}},
+		{"sandboxing opted out", map[string]string{"OpenShift.agentRuntimeClassName": ""}},
+	}
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *testing.T) {
+					// The guard lives in validation.yaml, which Helm renders whatever the
+					// --show-only target is, so any template proves it did not fire.
+					_, err := renderOpenShift(t, chart, tc.set, "templates/agent-runtime.yaml")
+					require.NoError(t, err)
+				})
+			}
+		})
+	}
+}
+
+// skipAgentRuntimeClassCheck must gate the existence check and nothing else - the runtimes still
+// get sandboxed with the same RuntimeClass, so bypassing the check cannot quietly unsandbox them.
+func TestOpenShiftSkipAgentRuntimeClassCheckChangesNoManifest(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			checked, err := renderOpenShift(t, chart, nil, "templates/agent-runtime.yaml")
+			require.NoError(t, err)
+			bypassed, err := renderOpenShift(t, chart,
+				map[string]string{"OpenShift.skipAgentRuntimeClassCheck": "true"}, "templates/agent-runtime.yaml")
+			require.NoError(t, err)
+			assert.Equal(t, checked, bypassed)
+		})
+	}
 }

@@ -34,10 +34,16 @@ OpenShift:
   # and this is the only runtime control. Defaults to "kata", the RuntimeClass the OpenShift
   # sandboxed containers operator creates for a default KataConfig. The chart never creates it.
   # Set "kata-remote" for peer pods (AWS/Azure/vSphere, KataConfig with enablePeerPods: true), or
-  # any RuntimeClass you provisioned yourself. Set "" to run the agent runtimes under the cluster's
-  # default runtime with no extra isolation. If the name does not exist in the cluster the runtime
-  # pods are rejected at admission ("RuntimeClass not found") and never start.
+  # any RuntimeClass you provisioned yourself. Sandboxing is opt-out: set "" to run the agent
+  # runtimes under the cluster's default runtime with no extra isolation. The install fails when the
+  # name does not exist in the cluster, instead of succeeding while every runtime pod is rejected at
+  # admission ("RuntimeClass not found") and both Deployments sit at 0 available.
   agentRuntimeClassName: kata
+  # Skip the check that agentRuntimeClassName exists. Only needed when the installing credentials
+  # cannot read cluster-scoped RuntimeClasses, or when something else creates it alongside this
+  # release. The check already skips itself when it cannot reach the cluster at all (helm template,
+  # client-side --dry-run) and when agentRuntimeClassName is empty.
+  skipAgentRuntimeClassCheck: false
   route:
     enabled: false
     host: "sonarqube.your-org.com"

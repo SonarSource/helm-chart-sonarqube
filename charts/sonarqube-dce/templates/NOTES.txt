@@ -40,8 +40,10 @@ NOTE: The agent runtimes are sandboxed with the RuntimeClass {{ .Values.OpenShif
       This chart does not create it: it comes from the OpenShift sandboxed containers operator, which
       you install separately (a default KataConfig gives you "kata"; set enablePeerPods for peer pods
       on AWS/Azure/vSphere and use "kata-remote" here instead).
-      Until that RuntimeClass exists the runtime pods are rejected at admission with
-      'RuntimeClass "{{ .Values.OpenShift.agentRuntimeClassName }}" not found' and never start - check with
+      The install fails when that RuntimeClass is missing, rather than succeeding while every runtime
+      pod is rejected at admission with 'RuntimeClass "{{ .Values.OpenShift.agentRuntimeClassName }}" not found'.
+      That check needs a live cluster, so helm template, client-side --dry-run and
+      OpenShift.skipAgentRuntimeClassCheck all skip it - in those cases confirm it yourself with
         kubectl get runtimeclass {{ .Values.OpenShift.agentRuntimeClassName }}
       gVisor is not usable on OpenShift, so every gvisor.* setting is ignored in this install.
 {{- else }}

@@ -533,6 +533,39 @@ Usage: {{ include "sonarqube.agentRuntime.runtimeClassName" . }}
 {{- end -}}
 
 {{/*
+Fail the release when OpenShift.agentRuntimeClassName names a RuntimeClass the cluster does not
+have. Sandboxing the agent runtimes is opt-out, not opt-in, so the name is set by default - but the
+chart never creates the RuntimeClass (it comes from the OpenShift sandboxed containers operator).
+Without this check Helm reports success while the API server rejects every agent runtime pod with
+'RuntimeClass "kata" not found', leaving both Deployments at 0 available indefinitely. Clearing
+OpenShift.agentRuntimeClassName is the documented opt-out and also skips this check, since there is
+then no RuntimeClass to find.
+
+'lookup' returns nothing whenever there is no live API connection - 'helm template', and
+client-side '--dry-run' - which is indistinguishable from "the RuntimeClass is absent". So the
+check only runs once a positive control proves lookup is live: the release namespace's 'default'
+ServiceAccount, which every existing namespace has. When even that comes back empty (offline
+rendering, or --create-namespace before the namespace exists) the guard is skipped rather than
+guessing, the same way sonarqube.search.assertEsMajorUpgrade treats an empty lookup.
+Usage: {{ include "sonarqube.openshift.assertAgentRuntimeClass" . }}
+*/}}
+{{- define "sonarqube.openshift.assertAgentRuntimeClass" -}}
+{{- $rcName := .Values.OpenShift.agentRuntimeClassName | default "" | toString -}}
+{{- if and .Values.OpenShift.enabled $rcName (not .Values.OpenShift.skipAgentRuntimeClassCheck) -}}
+{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+{{- /* Nested ifs, not one 'and': the positive control must be evaluated before the RuntimeClass
+       lookup, and template 'and' evaluating its arguments eagerly is a Go version detail. */ -}}
+{{- if lookup "v1" "ServiceAccount" .Release.Namespace "default" -}}
+{{- /* RuntimeClass is cluster-scoped, hence the empty namespace. */ -}}
+{{- if not (lookup "node.k8s.io/v1" "RuntimeClass" "" $rcName) -}}
+{{- fail (printf "\n ** The RuntimeClass %q does not exist in this cluster. ** \n OpenShift.agentRuntimeClassName=%q sandboxes the agent runtimes, but this chart never creates that RuntimeClass - it comes from the OpenShift sandboxed containers operator (\"kata\" for a default KataConfig, \"kata-remote\" for peer pods). Install the operator and check with 'kubectl get runtimeclass %s', or set OpenShift.agentRuntimeClassName=\"\" to run the agent runtimes unsandboxed under the cluster's default runtime. Set OpenShift.skipAgentRuntimeClassCheck=true to bypass this check, for example when the installing credentials cannot read cluster-scoped RuntimeClasses." $rcName $rcName $rcName) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Return the target Kubernetes version
 */}}
 {{- define "common.capabilities.kubeVersion" -}}
