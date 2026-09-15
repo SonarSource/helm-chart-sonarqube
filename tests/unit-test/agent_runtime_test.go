@@ -282,3 +282,66 @@ func TestAgentRuntimeResources(t *testing.T) {
 		})
 	}
 }
+
+// AGENT_ORCHESTRATOR_URL is what switches artifact-locator renewal on inside the runtime (EA-968):
+// agent_runtime/config.py reads a blank value as "renewal disabled" and keeps using the locators it
+// was dispatched with, so a job whose presigned URLs expire mid-run fails its upload instead of
+// asking for fresh ones. It has to be fully qualified for the same reason the SonarQube endpoints
+// above do - the request goes out through Squid, whose resolver ignores /etc/resolv.conf's search
+// list - and it has to be the same host the egress proxy's hardcoded allow rule and the proxy's own
+// NetworkPolicy egress rule name, which is why all three are built from the same helper.
+func TestAgentRuntimeOrchestratorRenewalURL(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, family := range []string{"hunter", "remediation"} {
+				t.Run(family, func(t *testing.T) {
+					container := renderAgentRuntime(t, chart, family, nil).Spec.Template.Spec.Containers[0]
+
+					env := findEnvByName(container, "AGENT_ORCHESTRATOR_URL")
+					require.NotNil(t, env, "renewal would be silently disabled")
+					assert.Equal(t, chart.orchestratorURL(), env.Value)
+
+					// orchestrator_wiring.py refuses to start when the URL is set without a signing
+					// key, rather than sending unsigned renewals - so these two travel together.
+					key := findEnvByName(container, "AGENT_ORCHESTRATOR_SIGNING_KEY_PATH")
+					require.NotNil(t, key, "the runtime would refuse to start")
+					assert.Equal(t, "/etc/agentic/keys/"+family+"-to-orchestrator", key.Value)
+				})
+			}
+		})
+	}
+}
+
+// Least privilege on the two things a runtime must never be able to read: the raw instance secret
+// every derived key comes from, and the orchestrator's job-capability key - either one lets a
+// compromised runtime mint a capability token for a job that isn't its own. Both are excluded by
+// construction (the per-consumer Secret split in sonarqube.agentic.keyLabels), but nothing else
+// asserts it from the runtime's side, and a plausible-looking "just mount the whole keys Secret"
+// simplification would not fail any other test.
+func TestAgentRuntimeNeverMountsInstanceSecretOrCapabilityKey(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, family := range []string{"hunter", "remediation"} {
+				t.Run(family, func(t *testing.T) {
+					podSpec := renderAgentRuntime(t, chart, family, nil).Spec.Template.Spec
+					assertNoInstanceSecretOrCapabilityKeyMounted(t, podSpec)
+				})
+			}
+		})
+	}
+}
+
+func assertNoInstanceSecretOrCapabilityKeyMounted(t *testing.T, podSpec corev1.PodSpec) {
+	t.Helper()
+	for _, volume := range podSpec.Volumes {
+		if volume.Secret == nil {
+			continue
+		}
+		assert.NotEqual(t, "test-agentic-instance-secret", volume.Secret.SecretName,
+			"volume %q mounts the instance secret every derived key comes from", volume.Name)
+		for _, item := range volume.Secret.Items {
+			assert.NotEqual(t, "orchestrator-job-capability", item.Key,
+				"volume %q projects the orchestrator's job-capability key", volume.Name)
+		}
+	}
+}

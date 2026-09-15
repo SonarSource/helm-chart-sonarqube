@@ -299,9 +299,15 @@ func TestAgentKeyDerivationDistributesKeysPerHop(t *testing.T) {
 					name:    "every component enabled",
 					fixture: "agent-runtimes-enabled.yaml",
 					want: map[string][]string{
-						"orchestrator": {"orchestrator-to-hunter", "orchestrator-to-remediation", "agentic-shared"},
-						"hunter":       {"orchestrator-to-hunter"},
-						"remediation":  {"orchestrator-to-remediation", "remediation-to-sqs"},
+						"orchestrator": {"orchestrator-to-hunter", "orchestrator-to-remediation", "agentic-shared",
+							// The inbound half of artifact-locator renewal (EA-968): the
+							// orchestrator verifies each runtime's renewal request with that
+							// runtime's own key, and signs the per-job capability token with a key
+							// no other consumer may hold - see the "orchestrator only" assertion
+							// in TestAgenticKeysNeverCrossHops.
+							"hunter-to-orchestrator", "remediation-to-orchestrator", "orchestrator-job-capability"},
+						"hunter":      {"orchestrator-to-hunter", "hunter-to-orchestrator"},
+						"remediation": {"orchestrator-to-remediation", "remediation-to-sqs", "remediation-to-orchestrator"},
 						// SQS verifies the remediation-to-sqs hop but does not mount its key: it
 						// holds the instance secret and re-derives that one in-process.
 						"sqs":    {"agentic-shared"},
@@ -314,9 +320,15 @@ func TestAgentKeyDerivationDistributesKeysPerHop(t *testing.T) {
 					name:    "hunter only",
 					fixture: "gvisor-hunter-only.yaml",
 					want: map[string][]string{
-						"orchestrator": {"orchestrator-to-hunter", "agentic-shared"},
-						"hunter":       {"orchestrator-to-hunter"},
-						"sqs":          {"agentic-shared"},
+						// remediation-to-orchestrator is here despite there being no remediation
+						// runtime, and that is deliberate: the orchestrator's inbound verification
+						// config reads both runtimes' keys unconditionally at startup and fails to
+						// boot if either path is blank. Gating this label on remediationAgent.enabled
+						// would CrashLoop every single-family install.
+						"orchestrator": {"orchestrator-to-hunter", "agentic-shared",
+							"hunter-to-orchestrator", "remediation-to-orchestrator", "orchestrator-job-capability"},
+						"hunter": {"orchestrator-to-hunter", "hunter-to-orchestrator"},
+						"sqs":    {"agentic-shared"},
 					},
 				},
 				{
@@ -659,11 +671,12 @@ func TestAgenticKeysMountedPerConsumer(t *testing.T) {
 				labels      []string
 			}{
 				{consumer: "orchestrator", template: "templates/agent-orchestrator.yaml", mountPath: "/etc/agentic/keys",
-					labels: []string{"orchestrator-to-hunter", "orchestrator-to-remediation", "agentic-shared"}},
+					labels: []string{"orchestrator-to-hunter", "orchestrator-to-remediation", "agentic-shared",
+						"hunter-to-orchestrator", "remediation-to-orchestrator", "orchestrator-job-capability"}},
 				{consumer: "hunter", template: "templates/agent-runtime.yaml", familyLabel: "hunter", mountPath: "/etc/agentic/keys",
-					labels: []string{"orchestrator-to-hunter"}},
+					labels: []string{"orchestrator-to-hunter", "hunter-to-orchestrator"}},
 				{consumer: "remediation", template: "templates/agent-runtime.yaml", familyLabel: "remediation", mountPath: "/etc/agentic/keys",
-					labels: []string{"orchestrator-to-remediation", "remediation-to-sqs"}},
+					labels: []string{"orchestrator-to-remediation", "remediation-to-sqs", "remediation-to-orchestrator"}},
 				{consumer: "vortex", template: "templates/vortex.yaml", mountPath: "/etc/agentic/keys",
 					labels: []string{"agentic-shared"}},
 				{consumer: "sqs", template: chart.appTemplate, mountPath: "/opt/sonarqube/agentic-keys",
@@ -849,15 +862,33 @@ func agenticKeyEnvCases(appTemplate string) []agenticKeyEnvCase {
 			"AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH":      "orchestrator-to-hunter",
 			"AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH": "orchestrator-to-remediation",
 			"AGENTIC_SONARQUBE_SIGNING_KEY_PATH":           "agentic-shared",
+			// agentic-shared twice over, and the only label in the chart that maps to more than
+			// one variable: the same key signs outbound calls to SonarQube and verifies inbound
+			// ones from it. The inbound variable is load-bearing beyond its own hop - it is what
+			// registers the orchestrator's SecurityFilterChain at all, so without it every
+			// SonarQube-facing endpoint answers 403 rather than merely skipping verification.
+			"AGENTIC_INBOUND_VERIFICATION_KEY_PATH": "agentic-shared",
+			// Inbound artifact-locator renewal (EA-968): one verification key per runtime family,
+			// both read unconditionally at startup, plus the signing key for the per-job
+			// capability token the orchestrator issues and later verifies itself.
+			"AGENTIC_INBOUND_HUNTER_VERIFICATION_KEY_PATH":      "hunter-to-orchestrator",
+			"AGENTIC_INBOUND_REMEDIATION_VERIFICATION_KEY_PATH": "remediation-to-orchestrator",
+			"AGENTIC_JOB_CAPABILITY_SIGNING_KEY_PATH":           "orchestrator-job-capability",
 		}},
 		{name: "hunter", template: "templates/agent-runtime.yaml", familyLabel: "hunter", want: map[string]string{
-			"AGENTIC_VERIFY_KEY_PATH": "orchestrator-to-hunter",
+			"AGENTIC_VERIFY_KEY_PATH":             "orchestrator-to-hunter",
+			"AGENT_ORCHESTRATOR_SIGNING_KEY_PATH": "hunter-to-orchestrator",
 		}, wantIDs: map[string]string{
+			// Only AGENTIC_VERIFY_KEY_PATH gets a companion ID var. AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
+			// deliberately has none even though both runtimes spell it the same way: each runtime's
+			// main.py hardcodes its own OrchestratorSigningKeyId, so an ID var here would be a
+			// second, divergeable source of truth for something the image already knows.
 			"AGENTIC_VERIFY_KEY_ID": "orchestrator-to-hunter",
 		}},
 		{name: "remediation", template: "templates/agent-runtime.yaml", familyLabel: "remediation", want: map[string]string{
 			"AGENTIC_VERIFY_KEY_PATH":              "orchestrator-to-remediation",
 			"REMEDIATION_AGENTIC_SIGNING_KEY_PATH": "remediation-to-sqs",
+			"AGENT_ORCHESTRATOR_SIGNING_KEY_PATH":  "remediation-to-orchestrator",
 		}, wantIDs: map[string]string{
 			"AGENTIC_VERIFY_KEY_ID": "orchestrator-to-remediation",
 		}},
@@ -940,6 +971,14 @@ func TestAgenticKeysNeverCrossHops(t *testing.T) {
 		"orchestrator-to-remediation": {"orchestrator", "remediation"},
 		"remediation-to-sqs":          {"remediation"},
 		"agentic-shared":              {"orchestrator", "sqs", "vortex"},
+		// The reverse hops, added for artifact-locator renewal (EA-968).
+		"hunter-to-orchestrator":      {"orchestrator", "hunter"},
+		"remediation-to-orchestrator": {"orchestrator", "remediation"},
+		// The one label with a single endpoint: the orchestrator both mints and verifies the
+		// per-job capability token, so nothing else ever needs the key - and a runtime holding it
+		// could mint its own capability for any job and defeat the whole mechanism. This entry is
+		// the assertion that matters most in this table.
+		"orchestrator-job-capability": {"orchestrator"},
 	}
 	for _, chart := range agenticKeyCharts {
 		t.Run(chart.name, func(t *testing.T) {
