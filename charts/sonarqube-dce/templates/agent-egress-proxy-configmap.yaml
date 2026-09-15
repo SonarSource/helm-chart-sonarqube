@@ -45,6 +45,12 @@ data:
     acl Safe_ports port 443
     # SonarQube's own port, so the hardcoded allow rule below can ever match.
     acl Safe_ports port {{ .Values.service.externalPort }}
+    {{- if .Values.agentOrchestrator.enabled }}
+    # Likewise the orchestrator's, for the artifact-locator renewal rule below. Without this entry
+    # `deny !Safe_ports` rejects the renewal POST before any allow rule is reached, since the
+    # orchestrator's port is neither 80, 443, nor SonarQube's.
+    acl Safe_ports port {{ .Values.agentOrchestrator.port }}
+    {{- end }}
     # To reach an endpoint on another port, append to these ACLs from extraSquidConf - Squid
     # resolves http_access rules to the named ACL object, so entries added there still apply to
     # the `deny !Safe_ports` rule below despite being spliced in after it. Whatever port you add
@@ -79,9 +85,28 @@ data:
     acl sonarqube_host dstdomain {{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.fullname" .) "ctx" .) }}
     acl sonarqube_agentic_endpoints urlpath_regex ^[^?]*/rules/show(\?|$) ^[^?]*/a3s/private/analyses(/|\?|$)
 
+    {{- if .Values.agentOrchestrator.enabled }}
+    # Same treatment for the orchestrator's artifact-locator renewal endpoint (EA-968): a runtime
+    # whose dispatch-time presigned URLs expire mid-job re-requests them here, so this has to be
+    # reachable no matter what allowedDomains contains, and is likewise hardcoded rather than
+    # sourced from Values. Cleartext HTTP on the orchestrator's own port - not a CONNECT tunnel -
+    # so `deny CONNECT !SSL_ports` never applies to it, but `deny !Safe_ports` does, hence the
+    # Safe_ports entry above. The `^[^?]*` prefix tolerance and the `(\?|$)` tail are for the same
+    # reasons as the SonarQube rule: the request carries a query string, and the path must not be
+    # pinned to one API prefix. Gated on agentOrchestrator.enabled so the allowlist never names a
+    # destination the release doesn't deploy - validation.yaml refuses a runtime without an
+    # orchestrator, so in practice this proxy only ever renders with it on, but the gate keeps that
+    # an invariant of this file rather than an assumption borrowed from another one.
+    acl agent_orchestrator_host dstdomain {{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.agentOrchestrator.fullname" .) "ctx" .) }}
+    acl agent_orchestrator_endpoints urlpath_regex ^[^?]*/artifact-locators(\?|$)
+    {{- end }}
+
     http_access deny !Safe_ports
     http_access deny CONNECT !SSL_ports
     http_access allow sonarqube_host sonarqube_agentic_endpoints
+    {{- if .Values.agentOrchestrator.enabled }}
+    http_access allow agent_orchestrator_host agent_orchestrator_endpoints
+    {{- end }}
     {{- if .Values.agentEgressProxy.allowedDomains }}
     http_access allow allowed_domains
     {{- end }}

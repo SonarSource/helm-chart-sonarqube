@@ -64,6 +64,11 @@ It is used to validate the values.yaml file before the installation starts.
   {{- if and (not .Values.agentOrchestrator.coreDb.name) (not (include "sonarqube.agent.jdbc.dbname" .)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB name could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.name is not set." -}}
   {{- end -}}
+  {{- /* The orchestrator only exists to dispatch jobs to an agent runtime - with neither hunterAgent
+         nor remediationAgent enabled, it has nothing to talk to. */}}
+  {{- if not (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but neither hunterAgent.enabled nor remediationAgent.enabled is true. The orchestrator has no agent runtime to dispatch jobs to." -}}
+  {{- end -}}
 {{- end -}}
 
 {{/* Validation for hunterAgent/remediationAgent dependencies, when enabled */}}

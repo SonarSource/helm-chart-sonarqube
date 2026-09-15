@@ -413,27 +413,72 @@ func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 	}
 }
 
-// The remediation runtime now calls SonarQube Server directly for rule-info and
-// analysis-creation instead of proxying through the Agent Orchestrator, so the egress proxy must
-// no longer carry any orchestrator-specific allow rule.
-func TestAgentEgressProxyNeverAllowsOrchestrator(t *testing.T) {
+// Artifact-locator renewal (EA-968) is the one orchestrator call a runtime makes, and it makes it
+// through the proxy like everything else: HTTP_PROXY is forced to Squid with NO_PROXY empty, so
+// without an allow rule the renewal POST lands on `http_access deny all` and a job whose presigned
+// URLs expired mid-run fails its upload. Hardcoded rather than sourced from allowedDomains, on the
+// same reasoning as the SonarQube rule - an operator tightening allowedDomains must not be able to
+// break renewal by omission.
+//
+// There is no "orchestrator disabled" counterpart to this test because that state is unreachable
+// here: the proxy only renders when a runtime family is enabled, and validation.yaml fails a
+// runtime family without agentOrchestrator.enabled. The template still gates the block, so the
+// allowlist can never name a destination the release doesn't deploy if that ever changes.
+func TestAgentEgressProxyAllowsOrchestratorArtifactLocatorRenewal(t *testing.T) {
 	for _, chart := range egressProxyCharts {
 		t.Run(chart.name, func(t *testing.T) {
+			chart := chart
 			setValues := map[string]string{
 				"remediationAgent.enabled":          "true",
 				"remediationAgent.image.repository": "example.com/remediation-agent",
 				"remediationAgent.image.tag":        "1",
+				// Left empty on purpose: renewal must not depend on allowedDomains.
 			}
-			output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
-			require.NoError(t, err)
 
-			var cm corev1.ConfigMap
-			helm.UnmarshalK8SYaml(t, output, &cm)
-			conf := cm.Data["squid.conf"]
+			t.Run("present regardless of allowedDomains", func(t *testing.T) {
+				conf := renderAgentEgressProxySquidConf(t, chart, setValues)
 
-			assert.NotContains(t, conf, "orchestrator_host")
-			assert.NotContains(t, conf, "orchestrator_agentic_endpoints")
-			assert.NotContains(t, conf, "acl Safe_ports port 8080", "the orchestrator's port has no reason to be reachable through the proxy anymore")
+				// Fully qualified for the same reason sonarqube_host is - Squid's resolver ignores
+				// /etc/resolv.conf's search list - and it must be the exact host the runtime's
+				// AGENT_ORCHESTRATOR_URL names, or the dstdomain ACL never matches.
+				assert.Contains(t, conf, "acl agent_orchestrator_host dstdomain "+chart.fullnamePrefix()+"-agent-orchestrator.default.svc.cluster.local")
+				assert.Contains(t, conf, "acl agent_orchestrator_endpoints urlpath_regex ^[^?]*/artifact-locators(\\?|$)")
+				// Both ACLs on one rule: the host alone would make the whole orchestrator API
+				// reachable from a runtime, which is the opposite of what this rule is for.
+				assert.Contains(t, conf, "http_access allow agent_orchestrator_host agent_orchestrator_endpoints")
+				// Load-bearing: `http_access deny !Safe_ports` is evaluated before every allow
+				// rule, and the orchestrator's port is neither 80, 443 nor SonarQube's.
+				assert.Contains(t, conf, "acl Safe_ports port 8080", "the renewal POST is denied before any allow rule without this")
+			})
+
+			// The allow rule is only as good as its regex: assert on ACL behaviour, not on the
+			// rendered literal, for the same reasons as the SonarQube endpoints ACL.
+			t.Run("regex is scoped to the renewal endpoint", func(t *testing.T) {
+				matches := urlpathRegexMatcher(t, renderAgentEgressProxySquidConf(t, chart, setValues), "agent_orchestrator_endpoints")
+
+				for _, tc := range []agenticEndpointCase{
+					{"/artifact-locators", true, "the bare renewal path"},
+					{"/artifact-locators?jobId=abc", true, "the real call carries a query string"},
+					{"/api/v2/artifact-locators?jobId=abc", true, "prefix-agnostic, so an API-version change needs no chart change"},
+					{"/anything?x=/artifact-locators", false, "a query string must not smuggle the path past the scoping"},
+					{"/artifact-locators-debug", false, "an unrelated path that merely shares a prefix"},
+					{"/jobs/abc", false, "the rest of the orchestrator API stays unreachable from a runtime"},
+				} {
+					assert.Equal(t, tc.allow, matches(tc.path), "%s: %s", tc.path, tc.why)
+				}
+			})
+
+			// A non-default agentOrchestrator.port has to reach both the Safe_ports entry and the
+			// NetworkPolicy rule; drift between them fails closed but only at runtime.
+			t.Run("Safe_ports tracks agentOrchestrator.port", func(t *testing.T) {
+				withPort := map[string]string{"agentOrchestrator.port": "8181"}
+				for k, v := range setValues {
+					withPort[k] = v
+				}
+				conf := renderAgentEgressProxySquidConf(t, chart, withPort)
+				assert.Contains(t, conf, "acl Safe_ports port 8181")
+				assert.NotContains(t, conf, "acl Safe_ports port 8080")
+			})
 		})
 	}
 }
@@ -538,9 +583,10 @@ func testAgentEgressProxyNetworkPolicyEnabled(t *testing.T, chart agentChart) {
 	assert.NotContains(t, ingress.From[0].PodSelector.MatchLabels, "sonarqube.agent/family",
 		"must select both families, not just one")
 
-	require.Len(t, policy.Spec.Egress, 3, "DNS, the SonarQube pod rule, plus the broad 0.0.0.0/0 rule")
+	require.Len(t, policy.Spec.Egress, 4, "DNS, the SonarQube pod rule, the orchestrator pod rule, plus the broad 0.0.0.0/0 rule")
 	broad := findEgressRuleTo(policy.Spec.Egress, isBroadIPBlockRule)
 	sonarqube := findEgressRuleTo(policy.Spec.Egress, isSonarQubePodRule(chart))
+	orchestrator := findEgressRuleTo(policy.Spec.Egress, isOrchestratorPodRule(chart))
 
 	require.NotNil(t, broad, "expected a broad ipBlock egress rule")
 	assert.Equal(t, "0.0.0.0/0", broad.To[0].IPBlock.CIDR)
@@ -553,8 +599,16 @@ func testAgentEgressProxyNetworkPolicyEnabled(t *testing.T, chart agentChart) {
 	require.Len(t, sonarqube.Ports, 1)
 	assert.EqualValues(t, 9000, sonarqube.Ports[0].Port.IntVal)
 
-	assert.Nil(t, findEgressRuleTo(policy.Spec.Egress, isOrchestratorPodRule(chart)),
-		"the orchestrator egress rule must no longer exist - remediation now calls SonarQube Server directly")
+	// Backs the hardcoded agent_orchestrator_host allow rule, which is the path a runtime's
+	// artifact-locator renewal takes (EA-968). Its own rule rather than an entry in
+	// networkPolicy.egressPorts: that list applies to the broad rule above, so putting the
+	// orchestrator's port there would open it to the whole internet to reach one in-cluster
+	// Service.
+	require.NotNil(t, orchestrator, "expected a rule allowing egress to the orchestrator pod - "+
+		"this backs the hardcoded agent_orchestrator_host allow rule in agent-egress-proxy-configmap.yaml")
+	require.Len(t, orchestrator.Ports, 1)
+	assert.EqualValues(t, 8080, orchestrator.Ports[0].Port.IntVal)
+	assert.NotContains(t, ports, int32(8080), "the orchestrator's port must not be reachable on the broad 0.0.0.0/0 rule")
 }
 
 func testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t *testing.T, chart agentChart) {
@@ -569,6 +623,7 @@ func testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t *testing.T, c
 		"agentEgressProxy.networkPolicy.egressPorts[0]": "8080",
 		"service.internalPort":                          "9001",
 		"service.externalPort":                          "9002",
+		"agentOrchestrator.port":                        "8181",
 	}
 	output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
 	require.NoError(t, err)
@@ -580,6 +635,14 @@ func testAgentEgressProxyNetworkPolicySonarQubePortUnconditional(t *testing.T, c
 	require.NotNil(t, sonarqube)
 	require.Len(t, sonarqube.Ports, 1)
 	assert.EqualValues(t, 9001, sonarqube.Ports[0].Port.IntVal, "tracks service.internalPort, not networkPolicy.egressPorts or service.externalPort")
+
+	// Same for the orchestrator rule: its port comes from agentOrchestrator.port, which must be
+	// the same value the Squid ConfigMap puts in Safe_ports - a mismatch drops the renewal POST at
+	// the NetworkPolicy, before Squid ever logs it.
+	orchestrator := findEgressRuleTo(policy.Spec.Egress, isOrchestratorPodRule(chart))
+	require.NotNil(t, orchestrator)
+	require.Len(t, orchestrator.Ports, 1)
+	assert.EqualValues(t, 8181, orchestrator.Ports[0].Port.IntVal, "tracks agentOrchestrator.port")
 }
 
 // Regression test: HTTP_PROXY/HTTPS_PROXY/NO_PROXY (and lowercase variants) must not be

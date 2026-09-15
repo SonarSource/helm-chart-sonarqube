@@ -85,12 +85,16 @@ func TestRemediationAgentRequiresVortex(t *testing.T) {
 }
 
 // orchestratorCoreDbBase covers everything agentOrchestrator.enabled needs besides the CORE DB
-// settings under test, so only the derivation logic can fail.
+// settings under test, so only the derivation logic can fail. hunterAgent.enabled satisfies the
+// orchestrator's own requirement of having an agent runtime to dispatch jobs to, which in turn
+// requires agenticSigningSecret.existingSecret to be set.
 func orchestratorCoreDbBase() map[string]string {
 	return map[string]string{
-		"agentOrchestrator.enabled":          "true",
-		"agentOrchestrator.image.repository": "example.com/agent-orchestrator",
-		"agentOrchestrator.storage.bucket":   "agent-jobs",
+		"agentOrchestrator.enabled":           "true",
+		"agentOrchestrator.image.repository":  "example.com/agent-orchestrator",
+		"agentOrchestrator.storage.bucket":    "agent-jobs",
+		"hunterAgent.enabled":                 "true",
+		"agenticSigningSecret.existingSecret": "test-agentic-instance-secret",
 	}
 }
 
@@ -207,6 +211,8 @@ func TestAgentOrchestratorRequiresJdbcOverwrite(t *testing.T) {
 		values["agentOrchestrator.enabled"] = "true"
 		values["agentOrchestrator.image.repository"] = "example.com/agent-orchestrator"
 		values["agentOrchestrator.storage.bucket"] = "agent-jobs"
+		values["hunterAgent.enabled"] = "true"
+		values["agenticSigningSecret.existingSecret"] = "test-agentic-instance-secret"
 		return values
 	}
 
