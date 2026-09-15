@@ -1164,6 +1164,8 @@ metadata:
     app.kubernetes.io/component: agent-orchestrator
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: sonarqube-agent-orchestrator
@@ -1323,6 +1325,8 @@ metadata:
     app.kubernetes.io/component: agent-runtime-remediation
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: sonarqube-agent-runtime-remediation
@@ -1437,7 +1441,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate
+    type: RollingUpdate
   selector:
     matchLabels:
       app: sonarqube-vortex
