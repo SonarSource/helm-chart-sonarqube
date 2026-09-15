@@ -23,6 +23,7 @@ All changes to this chart will be documented in this file.
 * **Breaking**: The default exporter scrape path is now `/metrics` instead of `/`; update external scrapers or set `prometheusExporter.metricsPath: /` for exporters serving metrics at the root
 * Add autoscaling for Vortex (`vortexAnalysis.autoscaling`, a KEDA `ScaledObject` reading Vortex's own unauthenticated `GET /metrics/max-concurrent-requests` endpoint, aggregated across replicas via KEDA's `aggregateFromKubeServiceEndpoints`; requires KEDA `>= 2.20.0`, with a single-replica fallback via `vortexAnalysis.autoscaling.aggregateAcrossReplicas`), plus an unconditional `vortexAnalysis.terminationGracePeriodSeconds`
 * Fix the Vortex `ScaledObject`'s `spec.fallback` being emitted even with `vortexAnalysis.autoscaling.aggregateAcrossReplicas: false`, whose `behavior` field a KEDA older than 2.17 silently prunes, degrading fallback to forcibly scaling the fleet down to `minReplicas` (pinned to 1 on that path) on a scrape failure instead of freezing it
+* Update MCP image to `sonarsource/sonarqube-mcp:1.27.0.4335`
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
