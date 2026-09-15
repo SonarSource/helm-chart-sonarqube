@@ -31,7 +31,7 @@ var egressProxyCharts = func() []agentChart {
 // enable a runtime family - community/monitoringPasscode, jdbcOverwrite, a valid
 // agentOrchestrator, and a valid vortex (all pre-existing dependencies unrelated to this ticket:
 // hunterAgent/remediationAgent both require agentOrchestrator.enabled, and remediationAgent
-// additionally requires vortex.enabled) - so callers only need to set what's relevant to what
+// additionally requires vortexAnalysis.enabled) - so callers only need to set what's relevant to what
 // they're testing, typically just which runtime family(ies) to enable.
 func renderAgentEgressProxyTemplates(t *testing.T, chart agentChart, setValues map[string]string, templates []string) (string, error) {
 	t.Helper()
@@ -47,12 +47,12 @@ func renderAgentEgressProxyTemplates(t *testing.T, chart agentChart, setValues m
 		"agentOrchestrator.image.repository": "example.com/agent-orchestrator",
 		"agentOrchestrator.image.tag":        "42",
 		"agentOrchestrator.storage.bucket":   "agent-jobs",
-		"vortex.enabled":                     "true",
-		"vortex.image.repository":            "example.com/vortex",
-		"vortex.image.tag":                   "1",
-		"vortex.storage.type":                "s3",
-		"vortex.storage.bucket":              "vortex-artifacts",
-		"vortex.storage.region":              "eu-west-1",
+		"vortexAnalysis.enabled":             "true",
+		"vortexAnalysis.image.repository":    "example.com/vortex",
+		"vortexAnalysis.image.tag":           "1",
+		"vortexAnalysis.storage.type":        "s3",
+		"vortexAnalysis.storage.bucket":      "vortex-artifacts",
+		"vortexAnalysis.storage.region":      "eu-west-1",
 		// Enabling any runtime family also enables agentic signing, which validation.yaml fails
 		// closed on without an instance secret to derive the per-hop keys from.
 		"agenticSigningSecret.existingSecret": "test-agentic-instance-secret",

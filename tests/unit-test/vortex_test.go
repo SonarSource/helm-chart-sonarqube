@@ -66,7 +66,7 @@ func vortexContainerEnv(container corev1.Container) map[string]corev1.EnvVar {
 	return env
 }
 
-// Off by default, so an existing install picks up nothing new until vortex.enabled is set.
+// Off by default, so an existing install picks up nothing new until vortexAnalysis.enabled is set.
 func TestVortexDisabledByDefault(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -76,7 +76,7 @@ func TestVortexDisabledByDefault(t *testing.T) {
 				"templates/vortex-secret.yaml",
 			} {
 				output, err := renderVortex(t, chart, "vortex-disabled.yaml", tpl)
-				require.Error(t, err, "%s must render nothing when vortex.enabled is false", tpl)
+				require.Error(t, err, "%s must render nothing when vortexAnalysis.enabled is false", tpl)
 				assert.Empty(t, strings.TrimSpace(output))
 			}
 		})
@@ -275,7 +275,7 @@ func TestVortexServiceAccount(t *testing.T) {
 			assert.Equal(t, "arn:aws:iam::123456789012:role/vortex", sa.Annotations["eks.amazonaws.com/role-arn"])
 
 			_, err = renderVortex(t, chart, "vortex-enabled.yaml", "templates/vortex-serviceaccount.yaml")
-			require.Error(t, err, "no ServiceAccount may render when vortex.serviceAccount.create is false")
+			require.Error(t, err, "no ServiceAccount may render when vortexAnalysis.serviceAccount.create is false")
 		})
 	}
 }
@@ -294,7 +294,7 @@ func TestVortexRollsOnStorageCredentialChange(t *testing.T) {
 			opts := &helm.Options{
 				Logger:      logger.Discard,
 				ValuesFiles: []string{chart.valuesDir + "/vortex-storage-credentials.yaml"},
-				SetValues:   map[string]string{"vortex.storage.secretKey": "rotated-secret"},
+				SetValues:   map[string]string{"vortexAnalysis.storage.secretKey": "rotated-secret"},
 			}
 			output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
 			require.NoError(t, err)
@@ -428,7 +428,7 @@ func TestVortexRequiresImageRepository(t *testing.T) {
 		t.Run(chart.name, func(t *testing.T) {
 			_, err := renderVortex(t, chart, "vortex-no-image.yaml", "templates/vortex.yaml")
 			require.Error(t, err)
-			assert.Contains(t, err.Error(), "vortex.image.repository is not set")
+			assert.Contains(t, err.Error(), "vortexAnalysis.image.repository is not set")
 		})
 	}
 }
@@ -441,13 +441,13 @@ func TestVortexRequiresTagAndStorage(t *testing.T) {
 		unset    map[string]string
 		expected string
 	}{
-		"image tag":      {map[string]string{"vortex.image.tag": ""}, "vortex.image.tag is not set"},
-		"storage type":   {map[string]string{"vortex.storage.type": ""}, "vortex.storage.type is not set"},
-		"storage bucket": {map[string]string{"vortex.storage.bucket": ""}, "vortex.storage.bucket is not set"},
-		"storage region": {map[string]string{"vortex.storage.region": ""}, "vortex.storage.region is not set"},
+		"image tag":      {map[string]string{"vortexAnalysis.image.tag": ""}, "vortexAnalysis.image.tag is not set"},
+		"storage type":   {map[string]string{"vortexAnalysis.storage.type": ""}, "vortexAnalysis.storage.type is not set"},
+		"storage bucket": {map[string]string{"vortexAnalysis.storage.bucket": ""}, "vortexAnalysis.storage.bucket is not set"},
+		"storage region": {map[string]string{"vortexAnalysis.storage.region": ""}, "vortexAnalysis.storage.region is not set"},
 		"storage partial credentials": {
-			map[string]string{"vortex.storage.accessKey": "only-access-key"},
-			"only one of vortex.storage.accessKey / vortex.storage.secretKey is set",
+			map[string]string{"vortexAnalysis.storage.accessKey": "only-access-key"},
+			"only one of vortexAnalysis.storage.accessKey / vortexAnalysis.storage.secretKey is set",
 		},
 	}
 
@@ -469,7 +469,7 @@ func TestVortexRequiresTagAndStorage(t *testing.T) {
 	}
 }
 
-// vortex.storage.bucket/region are required for the default S3 type (see TestVortexRequiresTagAndStorage
+// vortexAnalysis.storage.bucket/region are required for the default S3 type (see TestVortexRequiresTagAndStorage
 // above), but meaningless - and so not required - for a file-based backend that hands the runtime
 // a direct file:// path instead (SONAR-31980).
 func TestVortexStorageBucketRegionNotRequiredWhenFileBased(t *testing.T) {
@@ -481,10 +481,10 @@ func TestVortexStorageBucketRegionNotRequiredWhenFileBased(t *testing.T) {
 						Logger:      logger.Discard,
 						ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
 						SetValues: map[string]string{
-							"vortex.storage.bucket":             "",
-							"vortex.storage.region":             "",
-							"vortex.storage.type":               storageType,
-							"vortex.storage.filesystem.baseDir": "/agentic-storage",
+							"vortexAnalysis.storage.bucket":             "",
+							"vortexAnalysis.storage.region":             "",
+							"vortexAnalysis.storage.type":               storageType,
+							"vortexAnalysis.storage.filesystem.baseDir": "/agentic-storage",
 						},
 					}
 					_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
@@ -499,14 +499,14 @@ func TestVortexStorageBucketRegionNotRequiredWhenFileBased(t *testing.T) {
 						Logger:      logger.Discard,
 						ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
 						SetValues: map[string]string{
-							"vortex.storage.bucket": "",
-							"vortex.storage.region": "",
-							"vortex.storage.type":   storageType,
+							"vortexAnalysis.storage.bucket": "",
+							"vortexAnalysis.storage.region": "",
+							"vortexAnalysis.storage.type":   storageType,
 						},
 					}
 					_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex.yaml"})
 					require.Error(t, err)
-					assert.Contains(t, err.Error(), "vortex.storage.filesystem.baseDir is not set")
+					assert.Contains(t, err.Error(), "vortexAnalysis.storage.filesystem.baseDir is not set")
 				})
 			}
 		})

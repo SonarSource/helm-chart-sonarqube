@@ -7,7 +7,11 @@ image:
     - name: app-node-secret-list
 networkPolicy:
   enabled: true
-# Vortex enabled, with no agentOrchestrator/hunterAgent/remediationAgent configured.
+# Vortex enabled with autoscaling on top of the vortex-enabled.yaml fixture: RollingUpdate is
+# required by validation.yaml once autoscaling.enabled is true (Recreate would take the whole
+# fleet down on every rollout), and agentKeda.assumeInstalled short-circuits the KEDA CRD probe,
+# which is always empty under `helm template`. This is a standalone copy, not an actual multi-file
+# layering, so it must be kept field-for-field in sync with vortex-enabled.yaml's own vortexAnalysis block.
 vortexAnalysis:
   enabled: true
   image:
@@ -36,6 +40,12 @@ vortexAnalysis:
     - key: vortex
       operator: Exists
       effect: NoSchedule
+  strategy:
+    type: RollingUpdate
+  autoscaling:
+    enabled: true
+agentKeda:
+  assumeInstalled: true
 agenticSigningSecret:
   existingSecret: test-agentic-instance-secret
 # Vortex needs derived signing keys but no orchestrator, so the key-derivation hook Job gets

@@ -902,7 +902,7 @@ mcp:
 # Vortex analysis: an analysis service that SonarQube calls on demand to analyse individual
 # files. When enabled, the chart points the SonarQube application nodes at it via the
 # sonar.vortex.analysis.url property.
-vortex:
+vortexAnalysis:
   enabled: false
 
   image:
@@ -918,9 +918,48 @@ vortex:
   replicaCount: 1
 
   # Update strategy for the Vortex Deployment. Recreate avoids running two pods at once
-  # during an upgrade.
+  # during an upgrade. Must be RollingUpdate when autoscaling.enabled=true - see validation.yaml -
+  # since Recreate with N replicas takes the whole fleet down on every rollout.
   strategy:
     type: Recreate
+
+  # Peak-concurrency autoscaling via KEDA, reading Vortex's own unauthenticated
+  # GET /metrics/max-concurrent-requests. Requires the KEDA CRDs in-cluster - see agentKeda below.
+  autoscaling:
+    enabled: false
+    # Validated >= 2 (see validation.yaml), or exactly 1 with aggregateAcrossReplicas: false below:
+    # this fleet never scales to zero, so there is no 0<->1 transition to reason about. Note this
+    # raises a default replicaCount: 1 install to 3 pods.
+    minReplicas: 3
+    maxReplicas: 20
+    # Set false to always omit spec.replicas once autoscaling is on (GitOps). See agentOrchestrator/
+    # hunterAgent/remediationAgent.autoscaling.manageReplicas for the same convention.
+    manageReplicas: true
+    # How often KEDA polls. Must be <= windowSeconds, or peaks between polls are lost.
+    pollingInterval: 15
+    # Cloud's own ConcurrentRequestCount scale-in cooldown is 15min; scale-out is left at the HPA's
+    # fast default. Deliberately long: KEDA's cross-replica aggregation silently drops any replica
+    # whose poll fails from the sum instead of erroring, so a handful of failed polls under-reports
+    # the true peak and could otherwise trigger a spurious scale-down.
+    scaleDownStabilizationSeconds: 900
+    # Max concurrent requests one replica should carry before the fleet scales out. The
+    # ScaledObject pins metricType: AverageValue, so desiredReplicas = ceil(fleetTotalPeak / this).
+    targetConcurrentRequests: 2
+    # true (requires KEDA >= 2.20.0) has KEDA query every replica behind the Service directly and
+    # sum the results - a real cross-pod total. false queries one random replica through the
+    # Service instead (KEDA's own "random pick" limitation) - only correct with minReplicas: 1, and
+    # the fallback for a pre-existing cluster-wide KEDA older than 2.20.0, a version this chart has
+    # no way to detect (agentKeda.assumeInstalled only confirms the CRDs, not the operator version).
+    aggregateAcrossReplicas: true
+    # Sliding window Vortex reports its peak concurrency over
+    # (METRICS_CONCURRENT_REQUESTS_WINDOW_SECONDS on the Vortex container). Must stay >=
+    # pollingInterval above.
+    windowSeconds: 30
+    # Path of the metric endpoint on the Vortex container.
+    metricPath: /metrics/max-concurrent-requests
+
+  # In-flight analyses survive a scale-down, rollout or node drain, not just an autoscaler-driven one.
+  terminationGracePeriodSeconds: 180
 
   # S3-compatible object storage for Vortex analysis context restoration. Must point at the same
   # bucket SonarQube Server writes context to (sonar.agentic.storage.*).
@@ -939,7 +978,7 @@ vortex:
       baseDir: ""
     # Credentials for that endpoint. Leave accessKey/secretKey/existingSecret all blank for
     # credential-less access: the AWS SDK then falls back to its default credential chain (the
-    # pod's own IAM identity - node instance role, or IRSA via vortex.serviceAccount).
+    # pod's own IAM identity - node instance role, or IRSA via vortexAnalysis.serviceAccount).
     accessKey: ""
     secretKey: ""
     # Existing secret providing SONAR_AGENTIC_STORAGE_ACCESS_KEY / SONAR_AGENTIC_STORAGE_SECRET_KEY
@@ -1100,7 +1139,7 @@ agentOrchestrator:
   # and writes each runtime's jobs under a subdirectory named after that runtime. Each runtime
   # mounts ONLY its own subdirectory, at subPath "<runtime>" and the same absolute path
   # (<baseDir>/<runtime>), so it cannot see the other's files. Vortex keeps its own, separate
-  # store (vortex.storage above), mounted readOnly.
+  # store (vortexAnalysis.storage above), mounted readOnly.
   #
   # Use ONE shared securityContext.fsGroup across agentOrchestrator/hunterAgent/remediationAgent -
   # distinct fsGroups on one shared RWX volume conflict. On NFS, check the export doesn't
@@ -1316,7 +1355,7 @@ hunterAgent:
   terminationGracePeriodSeconds: 44430
 
 # Remediation Agent runtime that remediates issues. Requires agentOrchestrator.enabled AND
-# vortex.enabled - see validation.yaml.
+# vortexAnalysis.enabled - see validation.yaml.
 remediationAgent:
   enabled: false  # enable once the remediation runtime image is available
   image:
@@ -1656,7 +1695,7 @@ terminationGracePeriodSeconds: 60
 # Hook Job that runs derive-keys.sh (baked into the Agent Orchestrator image) and materializes
 # the per-consumer signing/verification key Secrets consumed by the Agent Orchestrator, Hunter
 # Agent, Remediation Agent, Vortex, and SQS. Renders only when agenticSigningSecret is set AND at
-# least one of hunterAgent.enabled / remediationAgent.enabled / vortex.enabled is true - see
+# least one of hunterAgent.enabled / remediationAgent.enabled / vortexAnalysis.enabled is true - see
 # validation.yaml, which hard-fails the chart if a component is enabled without
 # agenticSigningSecret.
 agentKeyDerivation:
@@ -1666,7 +1705,7 @@ agentKeyDerivation:
   enabled: true
   # The Job runs derive-keys.sh, which ships inside the Agent Orchestrator image - so this
   # defaults to agentOrchestrator.image and normally needs nothing set here. Set it only when the
-  # orchestrator isn't part of the install but derived keys still are (vortex.enabled on its own),
+  # orchestrator isn't part of the install but derived keys still are (vortexAnalysis.enabled on its own),
   # so the release doesn't have to pull an orchestrator it never deploys.
   image:
     repository: ""
@@ -1723,8 +1762,8 @@ agentKeyDerivation:
 keda:
   enabled: false
 
-# Cluster-capability guard for the KEDA-based agent runtime ScaledObjects (hunterAgent/
-# remediationAgent.autoscaling above).
+# Cluster-capability guard for the KEDA-based ScaledObjects (hunterAgent/remediationAgent/
+# vortexAnalysis.autoscaling above).
 agentKeda:
   # null auto-detects KEDA CRDs via .Capabilities.APIVersions - always EMPTY under `helm
   # template`/`--dry-run=client`, so set this explicitly there to avoid a spurious pass/fail.

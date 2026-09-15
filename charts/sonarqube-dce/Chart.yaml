@@ -41,7 +41,7 @@ maintainers:
 annotations:
   artifacthub.io/changes: |
     - kind: changed
-      description: "Breaking: Liveness and readiness probe handlers are now managed by the chart; legacy exec, httpGet, tcpSocket and grpc values are ignored. Use overrideCommand for an explicit custom command"
+      description: "Breaking: Application node liveness and readiness probe handlers are now managed by the chart; legacy applicationNodes.livenessProbe/applicationNodes.readinessProbe exec, httpGet, tcpSocket and grpc values are ignored. Use applicationNodes.<probe>.overrideCommand for an explicit custom command"
     - kind: added
       description: "Set a default MCP pod securityContext (fsGroup: 0), a default HOME=/data, and an optional mcp.initContainers hook so the non-root MCP server can write to /data"
     - kind: changed
@@ -53,7 +53,7 @@ annotations:
     - kind: added
       description: "Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via agentOrchestrator.enabled, hunterAgent.enabled and remediationAgent.enabled"
     - kind: added
-      description: "Add agentOrchestrator.env/extraVolumes/extraVolumeMounts, and a FILESYSTEM/NFS backend for the shared agentic job storage via agentOrchestrator.storage.type and vortex.storage.filesystem.baseDir"
+      description: "Add agentOrchestrator.env/extraVolumes/extraVolumeMounts, and a FILESYSTEM/NFS backend for the shared agentic job storage via agentOrchestrator.storage.type and vortexAnalysis.storage.filesystem.baseDir"
     - kind: added
       description: "Add autoscaling for the Agent Orchestrator (agentOrchestrator.autoscaling, a plain CPU/Memory HorizontalPodAutoscaler) and each agent runtime family (hunterAgent/remediationAgent.autoscaling, a KEDA ScaledObject; requires KEDA installed in-cluster, or agentKeda.assumeInstalled set explicitly), with terminationGracePeriodSeconds hardening so an in-flight job survives any scale-down, not just an autoscaler-driven one, and an autoscaling.manageReplicas opt-out for GitOps tooling (Argo CD, Flux) that applies helm template output directly"
     - kind: added
@@ -76,6 +76,10 @@ annotations:
       description: "Sandbox the agent runtimes with Kata Containers instead of gVisor when OpenShift.enabled is true, via the new OpenShift.agentRuntimeClassName (default kata, the RuntimeClass the OpenShift sandboxed containers operator creates for a default KataConfig; kata-remote for peer pods). gVisor cannot work on OpenShift - the installer needs containerd plus privileged/hostPID, which no default SCC allows, and CRI-O ships no runsc handler - so every gvisor.* setting is ignored there. The chart never creates the RuntimeClass; set the value to another one you provisioned yourself, or to an empty string for no sandbox"
     - kind: fixed
       description: "Target the OpenShift DNS service (openshift-dns namespace, port 5353 UDP and TCP) in the NetworkPolicy DNS egress rules when OpenShift.enabled is true, instead of k8s-app: kube-dns on port 53, which never matched on OpenShift"
+    - kind: added
+      description: "Add autoscaling for Vortex (vortexAnalysis.autoscaling, a KEDA ScaledObject reading Vortex's own unauthenticated GET /metrics/max-concurrent-requests endpoint, aggregated across replicas via KEDA's aggregateFromKubeServiceEndpoints; requires KEDA >= 2.20.0, with a single-replica fallback via vortexAnalysis.autoscaling.aggregateAcrossReplicas), plus an unconditional vortexAnalysis.terminationGracePeriodSeconds"
+    - kind: fixed
+      description: "Fix the Vortex ScaledObject's spec.fallback being emitted even with vortexAnalysis.autoscaling.aggregateAcrossReplicas: false, whose behavior field a KEDA older than 2.17 silently prunes, degrading fallback to forcibly scaling the fleet down to minReplicas (pinned to 1 on that path) on a scrape failure instead of freezing it"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/
