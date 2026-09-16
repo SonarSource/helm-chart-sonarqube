@@ -388,12 +388,12 @@ Please find here the default SonarQube Xmx parameters to setup the memory reques
 | Edition                             | Sum of Xmx |
 | ----------------------------------- | ---------- |
 | datacenter edition searchNodes      | 2G         |
-| datacenter edition applicationNodes | 3G         |
+| datacenter edition applicationNodes | 6G         |
 
 To comply with the 80% rule mentioned above, we set the following default values:
 
 * searchNodes.resources.memory.request/limit=3072M
-* applicationNodes.resources.memory.request/limit=4096M
+* applicationNodes.resources.memory.request/limit=8192M
 
 Please feel free to adjust those values to your needs. However, given that memory is a “non-compressible” resource, we advise you to set the memory requests and limits to the **same**, making memory a guaranteed resource. This is needed especially for production use cases.
 
@@ -720,10 +720,10 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.startupProbe.failureThreshold`                 | StartupProbe threshold for marking as failed                                                                                                                                                                   | `32`                                                                   |
 | `applicationNodes.startupProbe.timeoutSeconds`                   | StartupProbe timeout delay                                                                                                                                                                                     | `1`                                                                    |
 | `applicationNodes.startupProbe.sonarWebContext`                  | (DEPRECATED) SonarQube web context for startupProbe, please use sonarWebContext at the value top level instead                                                                                                 | `/`                                                                    |
-| `applicationNodes.resources.requests.memory`                     | memory request for app Nodes                                                                                                                                                                                   | `4096M`                                                                |
+| `applicationNodes.resources.requests.memory`                     | memory request for app Nodes                                                                                                                                                                                   | `8192M`                                                                |
 | `applicationNodes.resources.requests.cpu`                        | CPU request for app Nodes                                                                                                                                                                                      | `400m`                                                                 |
 | `applicationNodes.resources.requests.ephemeral-storage`          | storage request for app Nodes                                                                                                                                                                                  | `1536M`                                                                |
-| `applicationNodes.resources.limits.memory`                       | memory limit for app Nodes. should not be under 4G                                                                                                                                                             | `4096M`                                                                |
+| `applicationNodes.resources.limits.memory`                       | memory limit for app Nodes. should not be under 6G                                                                                                                                                             | `8192M`                                                                |
 | `applicationNodes.resources.limits.cpu`                          | CPU limit for app Nodes                                                                                                                                                                                        | `800m`                                                                 |
 | `applicationNodes.resources.limits.ephemeral-storage`            | storage limit for app Nodes                                                                                                                                                                                    | `512000M`                                                              |
 | `applicationNodes.prometheusExporter.enabled`                    | Use the Prometheus JMX exporter                                                                                                                                                                                | `false`                                                                |

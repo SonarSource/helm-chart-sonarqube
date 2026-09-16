@@ -167,11 +167,11 @@ Please find here the default SonarQube Xmx parameters to setup the memory reques
 
 | SonarQube Offering | Sum of Xmx |
 | ------------------ | ---------- |
-| community build    | 1536M      |
-| developer edition  | 1536M      |
-| enterprise edition | 5G         |
+| community build    | 3072M      |
+| developer edition  | 3072M      |
+| enterprise edition | 8G         |
 
-The default request and limit for this chart are set to 2048M and 6144M, to comply with the 3 editions and the 80% rule mentioned above.
+The default request and limit for this chart are set to 4096M and 10240M, to comply with the 3 editions and the 80% rule mentioned above.
 
 Please feel free to adjust those values to your needs. However, given that memory is a “non-compressible” resource, we advise you to set the memory requests and limits to the **same**, making memory a guaranteed resource. This is needed especially for production use cases.
 
@@ -780,10 +780,10 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                              | Description               | Default |
 | -------------------------------------- | ------------------------- | ------- |
-| `resources.requests.memory`            | SonarQube memory request  | `2048M` |
+| `resources.requests.memory`            | SonarQube memory request  | `4096M` |
 | `resources.requests.cpu`               | SonarQube CPU request     | `400m`  |
 | `resources.requests.ephemeral-storage` | SonarQube storage request | `1536M` |
-| `resources.limits.memory`              | SonarQube memory limit    | `6144M` |
+| `resources.limits.memory`              | SonarQube memory limit    | `10240M` |
 | `resources.limits.cpu`                 | SonarQube CPU limit       | `800m`  |
 | `resources.limits.ephemeral-storage`   | SonarQube storage limit   | `500Gi` |
 
