@@ -296,6 +296,7 @@ spec:
     - port: 9002
       targetPort: es-port
       protocol: TCP
+      appProtocol: tcp
       name: es
   selector:
     app: sonarqube-dce-search
@@ -323,6 +324,7 @@ spec:
     - port: 9002
       targetPort: es-port
       protocol: TCP
+      appProtocol: tcp
       name: es
   selector:
     app: sonarqube-dce-search
@@ -913,7 +915,7 @@ spec:
             runAsUser: 1000
             seccompProfile:
               type: RuntimeDefault
-        command: ["sh", "-c", 'until curl -sSi --connect-timeout 100 sonar-web-context-deprecated-values.yaml-sonarqube-dce:9000/sonarqube-account/api/system/status | grep -w UP; do sleep 10; done; curl -sSi --connect-timeout 100 -u admin:"$CURRENT_ADMIN_PASSWORD" -X POST "sonar-web-context-deprecated-values.yaml-sonarqube-dce:9000/sonarqube-account/api/users/change_password?login=admin" --data-urlencode "previousPassword=$CURRENT_ADMIN_PASSWORD" --data-urlencode "password=$ADMIN_PASSWORD"']
+        command: ["sh", "-c", 'until curl -sSi --connect-timeout 100 sonar-web-context-deprecated-values.yaml-sonarqube-dce:9000/sonarqube-account/api/system/status | grep -w UP; do sleep 10; done; curl -sSi --connect-timeout 100 -u admin:"$CURRENT_ADMIN_PASSWORD" -X POST "sonar-web-context-deprecated-values.yaml-sonarqube-dce:9000/sonarqube-account/api/users/change_password?login=admin" --data-urlencode "previousPassword=$CURRENT_ADMIN_PASSWORD" --data-urlencode "password=$ADMIN_PASSWORD"; rc=$?; exit $rc']
         env:
         - name: ADMIN_PASSWORD
           valueFrom:
