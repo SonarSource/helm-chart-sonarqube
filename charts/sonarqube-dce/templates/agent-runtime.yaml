@@ -68,7 +68,8 @@ spec:
               containerPort: {{ $cfg.port }}
               protocol: TCP
           {{- /* Auto-wire each family's mode-switch env var so users don't hand-set it. The hunter
-                 runtime reads SCRIPT_PATH (detection mode); the remediation runtime reads
+                 runtime reads SCRIPT_PATH (detection mode) plus PLAYBOOK_KEY/PLAYBOOK_VERSION
+                 (which detection playbook and version to load); the remediation runtime reads
                  REMEDIATION_SCRIPT_PATH plus REMEDIATION_RULE_INFO_ENDPOINT and
                  REMEDIATION_ANALYSIS_ENDPOINT, which point directly at SonarQube Server, not the
                  orchestrator (hunter never calls these endpoints, so it gets no such vars).
@@ -79,6 +80,12 @@ spec:
           {{- if eq $family "hunter" }}
           {{- with $cfg.scriptPath }}
           {{- $autoEnv = append $autoEnv (dict "name" "SCRIPT_PATH" "value" .) }}
+          {{- end }}
+          {{- with $cfg.playbookKey }}
+          {{- $autoEnv = append $autoEnv (dict "name" "PLAYBOOK_KEY" "value" .) }}
+          {{- end }}
+          {{- with $cfg.playbookVersion }}
+          {{- $autoEnv = append $autoEnv (dict "name" "PLAYBOOK_VERSION" "value" .) }}
           {{- end }}
           {{- end }}
           {{- if eq $family "remediation" }}

@@ -252,6 +252,38 @@ func TestAgentRuntimeRemediationSonarQubeEndpoints(t *testing.T) {
 	}
 }
 
+// The hunter runtime defaults to the appsec/stable detection playbook, matching next-infra's
+// production override, so that override becomes unnecessary once these ship. "" is the escape
+// hatch to omit either var entirely, same convention as scriptPath -> SCRIPT_PATH.
+func TestAgentRuntimeHunterPlaybookEnv(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("defaults", func(t *testing.T) {
+				container := renderAgentRuntime(t, chart, "hunter", nil).Spec.Template.Spec.Containers[0]
+
+				key := findEnvByName(container, "PLAYBOOK_KEY")
+				require.NotNil(t, key)
+				assert.Equal(t, "appsec", key.Value)
+
+				version := findEnvByName(container, "PLAYBOOK_VERSION")
+				require.NotNil(t, version)
+				assert.Equal(t, "stable", version.Value)
+			})
+
+			t.Run("empty string omits the env var", func(t *testing.T) {
+				setValues := map[string]string{
+					"hunterAgent.playbookKey":     "",
+					"hunterAgent.playbookVersion": "",
+				}
+				container := renderAgentRuntime(t, chart, "hunter", setValues).Spec.Template.Spec.Containers[0]
+
+				assert.Nil(t, findEnvByName(container, "PLAYBOOK_KEY"))
+				assert.Nil(t, findEnvByName(container, "PLAYBOOK_VERSION"))
+			})
+		})
+	}
+}
+
 // Both runtimes ship sized resource defaults, so neither lands in the BestEffort QoS class.
 // Memory and ephemeral-storage are pinned on hunter (request == limit) because neither is
 // compressible; CPU stays burstable so 25 replicas can still be scheduled.
