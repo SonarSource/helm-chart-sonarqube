@@ -1,6 +1,10 @@
 monitoringPasscode: test-passcode
 applicationNodes:
   jwtSecret: test-jwt-secret
+  # Required whenever istio.enabled=true (templates/validation.yaml): Hazelcast allocates the
+  # web/CE channels dynamically unless pinned, and Istio only manages ports declared up front.
+  webPort: 4023
+  cePort: 4024
 jdbcOverwrite:
   jdbcUrl: jdbc:postgresql://test-host:5432/testdb
   jdbcUsername: test-user

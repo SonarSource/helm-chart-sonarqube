@@ -531,6 +531,8 @@ applicationNodes:
 
 This ensures that Istio can properly route traffic, apply security policies, and provide telemetry for all inter-node communication within the SonarQube cluster.
 
+Both ports are **required** whenever `istio.enabled=true`, and the chart enforces this at render time: leaving either unset fails `helm install`/`helm upgrade` with a message naming the missing value, rather than installing a release whose Hazelcast cluster only half-forms.
+
 ## Secure the communication within the cluster
 
 In order to secure the communication between Application and Search nodes, you need to set both `nodeEncryption.enabled` and `searchNodes.searchAuthentication.enabled` to `true`.
@@ -776,8 +778,8 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.tolerations`                                   | List of node taints to tolerate for applicationNodes, global tolerations take precedence                                                                                                                       | `[]`                                                                   |
 | `applicationNodes.topologySpreadConstraints`                     | Topology spread constraints to apply to the application pods                                                                                                                                                    | `[]`                                                                   |
 | `applicationNodes.port`                                   | The Hazelcast port for communication with each application member of the cluster.                                                                                                                       | `9003`                                                                   |
-| `applicationNodes.webPort`                                   | The Hazelcast port for communication with the WebServer process. If not specified, a dynamic port will be chosen.                                                                                                                    | ``                                                                   |
-| `applicationNodes.cePort`                                   | The Hazelcast port for communication with the ComputeEngine process. If not specified, a dynamic port will be chosen                                                                                                                     | ``                                                                   |
+| `applicationNodes.webPort`                                   | The Hazelcast port for communication with the WebServer process. If not specified, a dynamic port will be chosen. **Required when `istio.enabled=true`** - see "Working with Istio"                                                  | ``                                                                   |
+| `applicationNodes.cePort`                                   | The Hazelcast port for communication with the ComputeEngine process. If not specified, a dynamic port will be chosen. **Required when `istio.enabled=true`** - see "Working with Istio"                                               | ``                                                                   |
 
 ### Generic Configuration
 

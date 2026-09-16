@@ -658,6 +658,12 @@ func testAgentEgressProxyNetworkPolicyIstioSidecarPorts(t *testing.T, chart agen
 		"agentEgressProxy.networkPolicy.enabled": "true",
 		"istio.enabled":                          "true",
 	}
+	if chart.name == "sonarqube-dce" {
+		// istio.enabled requires the Hazelcast web/CE channels to be pinned (validation.yaml);
+		// unrelated to this policy, but the render fails without them.
+		setValues["applicationNodes.webPort"] = "4023"
+		setValues["applicationNodes.cePort"] = "4024"
+	}
 	output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
 	require.NoError(t, err)
 

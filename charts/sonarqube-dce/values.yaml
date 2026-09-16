@@ -436,8 +436,11 @@ applicationNodes:
   # The port used by the application nodes to communicate with each other. (If unset, it will be assigned to 9003)
   # port: 9003
   # The port used by the web process to communicate with other application nodes (If unset, it will be dynamically allocated)
+  # Required when istio.enabled=true - Istio only manages ports declared up front, so a dynamically
+  # allocated one stays outside the mesh. Enforced at render time (templates/validation.yaml).
   # webPort: 4023
   # The port used by the compute engine process to communicate with other application nodes (If unset, it will be dynamically allocated)
+  # Required when istio.enabled=true, for the same reason as webPort above.
   # cePort: 4024
 
 
