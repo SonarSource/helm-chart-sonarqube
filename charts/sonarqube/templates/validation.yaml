@@ -258,7 +258,7 @@ It is used to validate the values.yaml file before the installation starts.
 {{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.enabled=true requires a non-empty gvisor.runtimeClassName." -}}
   {{- end -}}
   {{- if not $gvisor.handler -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.enabled=true requires a non-empty gvisor.handler (the containerd runtime handler)." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.enabled=true requires a non-empty gvisor.handler (the CRI runtime handler)." -}}
   {{- end -}}
   {{- if and $gvisor.installer.enabled (not $gvisor.installer.image.repository) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.installer.enabled=true requires a non-empty gvisor.installer.image.repository." -}}
@@ -278,3 +278,7 @@ It is used to validate the values.yaml file before the installation starts.
     {{- end -}}
   {{- end -}}
 {{- end -}}
+
+{{/* The Kata RuntimeClass the agent runtimes are sandboxed with on OpenShift has to already exist;
+     see the helper for why this can only be checked against a live cluster. */}}
+{{- include "sonarqube.openshift.assertAgentRuntimeClass" . -}}

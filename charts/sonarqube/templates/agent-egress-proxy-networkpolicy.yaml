@@ -24,7 +24,7 @@ spec:
         - port: {{ .Values.agentEgressProxy.port }}
           protocol: TCP
   egress:
-{{ include "sonarqube.agent.dnsEgressRule" . | indent 4 }}
+{{ include "sonarqube.dnsEgressRule" . | indent 4 }}
     {{- /* Backs the hardcoded sonarqube_host allow rule in agent-egress-proxy-configmap.yaml,
            which must stay reachable unconditionally - so this rule is not gated behind
            networkPolicy.egressPorts, unlike the allowedDomains rule below. */}}

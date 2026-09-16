@@ -28,6 +28,7 @@ func TestAgentValuesSchemaRejectsWrongTypes(t *testing.T) {
 		{name: "hunterAgent.storage.pathStyle", set: map[string]string{"hunterAgent.storage.pathStyle": "notabool"}},
 		{name: "remediationAgent.storage.pathStyle", set: map[string]string{"remediationAgent.storage.pathStyle": "notabool"}},
 		{name: "gvisor.installer.image.digest", set: map[string]string{"gvisor.installer.image.digest": "true"}},
+		{name: "OpenShift.skipAgentRuntimeClassCheck", set: map[string]string{"OpenShift.skipAgentRuntimeClassCheck": "notabool"}},
 		{name: "agentEgressProxy.replicaCount", set: map[string]string{"agentEgressProxy.replicaCount": "notanumber"}, requiresEgressProxy: true},
 		{name: "agentKeyDerivation.enabled", set: map[string]string{"agentKeyDerivation.enabled": "notabool"}, requiresAgenticKeys: true},
 		{name: "agenticSigningSecret.existingSecret", set: map[string]string{"agenticSigningSecret.existingSecret": "true"}, requiresAgenticKeys: true},

@@ -28,6 +28,24 @@ OpenShift:
   enabled: false
   # (Deprecated) this parameter should not be needed anymore, we support Openshift SCCv2 by default when Openshift.enabled=true
   createSCC: false
+  # RuntimeClass for the (untrusted) agent runtimes when OpenShift.enabled is true. gVisor is not
+  # usable on OpenShift - CRI-O ships no runsc handler, and the chart's installer needs containerd
+  # plus privileged/hostPID that no default SCC allows - so the gvisor.* settings are ignored there
+  # and this is the only runtime control. Defaults to "kata", the RuntimeClass the OpenShift
+  # sandboxed containers operator creates for a default KataConfig. The chart never creates it.
+  # Set "kata-remote" for peer pods (AWS/Azure/vSphere, KataConfig with enablePeerPods: true), or
+  # any RuntimeClass you provisioned yourself. Sandboxing is opt-out: set "" to run the agent
+  # runtimes under the cluster's default runtime with no extra isolation. The install fails when the
+  # name does not exist in the cluster, instead of succeeding while every runtime pod is rejected at
+  # admission ("RuntimeClass not found") and both Deployments sit at 0 available.
+  agentRuntimeClassName: kata
+  # Skip the check that agentRuntimeClassName exists. Needed when the installing credentials cannot
+  # read cluster-scoped RuntimeClasses - the lookup then aborts the install with the API server's own
+  # 'runtimeclasses.node.k8s.io "kata" is forbidden' message rather than a chart message, since a
+  # template can catch an empty lookup but not a failed one - or when something else creates the
+  # RuntimeClass alongside this release. The check already skips itself when it cannot reach the
+  # cluster at all (helm template, client-side --dry-run) and when agentRuntimeClassName is empty.
+  skipAgentRuntimeClassCheck: false
   route:
     enabled: false
     host: "sonarqube.your-org.com"
@@ -1457,19 +1475,28 @@ agentEgressProxy:
 # sandboxing").
 gvisor:
   enabled: true
+  # gVisor is not usable on OpenShift: the installer below needs containerd plus privileged/hostPID,
+  # which no default SCC allows, and CRI-O provides no runsc handler. So when OpenShift.enabled is
+  # true everything under gvisor.* is ignored — no RuntimeClass, no installer, no runtimeClassName
+  # from here — and the agent runtimes are sandboxed with Kata instead, through
+  # OpenShift.agentRuntimeClassName. Point that at "gvisor" if you provisioned runsc out of band and
+  # created the RuntimeClass yourself.
   # Name of the RuntimeClass created + referenced by runtimes. RuntimeClass is cluster-scoped:
   # any two installs sharing this value will collide (the second install fails, RuntimeClass owned
   # by the first release) — give each a distinct runtimeClassName. That covers multiple
   # releases/namespaces of this chart, and this chart installed alongside sonarqube-dce, which
   # ships the same feature.
   runtimeClassName: gvisor
-  handler: runsc                    # containerd runtime handler
+  handler: runsc                    # CRI runtime handler (containerd or CRI-O)
   # RuntimeClass.scheduling.nodeSelector, and (when installer.enabled) the label the installer
   # applies once runsc is ready. Use `null`, not `{}`, to disable node pinning — Helm merges maps.
   nodeSelector:
     gvisor.enabled: "true"
   installer:
-    enabled: true                   # deploy the privileged installer DaemonSet (needs gvisor.enabled)
+    # Deploy the privileged installer DaemonSet (needs gvisor.enabled). Supports containerd on
+    # self-managed nodes only: it writes containerdConfigPath and restarts containerd, so it does
+    # not work on CRI-O (OpenShift) or on managed nodes with an immutable OS.
+    enabled: true
     image:
       repository: debian
       tag: stable-slim

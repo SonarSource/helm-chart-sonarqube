@@ -34,3 +34,22 @@ WARNING: This chart no longer bundles the ingress-nginx controller. Setting ngin
          Run gateway-api-migration-scripts/nginx-to-istio-migration.sh to migrate to Gateway API using Istio (the controller our script sets up), or set httproute.enabled and bring your own Gateway API controller of choice, or set ingress.enabled and bring your own self-managed ingress controller.
          Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#ingress-usage for more information.
 {{- end }}
+{{ if and .Values.OpenShift.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) }}
+{{- if .Values.OpenShift.agentRuntimeClassName }}
+NOTE: The agent runtimes are sandboxed with the RuntimeClass {{ .Values.OpenShift.agentRuntimeClassName | quote }} (OpenShift.agentRuntimeClassName).
+      This chart does not create it: it comes from the OpenShift sandboxed containers operator, which
+      you install separately (a default KataConfig gives you "kata"; set enablePeerPods for peer pods
+      on AWS/Azure/vSphere and use "kata-remote" here instead).
+      The install fails when that RuntimeClass is missing, rather than succeeding while every runtime
+      pod is rejected at admission with 'RuntimeClass "{{ .Values.OpenShift.agentRuntimeClassName }}" not found'.
+      That check needs a live cluster, so helm template, client-side --dry-run and
+      OpenShift.skipAgentRuntimeClassCheck all skip it - in those cases confirm it yourself with
+        kubectl get runtimeclass {{ .Values.OpenShift.agentRuntimeClassName }}
+      gVisor is not usable on OpenShift, so every gvisor.* setting is ignored in this install.
+{{- else }}
+WARNING: OpenShift.agentRuntimeClassName is empty, so the agent runtimes run under the cluster's
+         default runtime with no sandbox around the LLM-driven workloads.
+         Set it to "kata" (or "kata-remote" for peer pods) and install the OpenShift sandboxed
+         containers operator to isolate them.
+{{- end }}
+{{- end }}
