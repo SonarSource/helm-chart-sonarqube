@@ -1282,6 +1282,10 @@ hunterAgent:
   # relocates it; set to "" to omit the env var entirely. Unlike remediation, the hunter
   # runtime never calls SonarQube Server for rule-info/analysis, so no such endpoints are wired.
   scriptPath: /home/agent/app/.venv/bin/detection-agent
+  # Detection playbook to load, exposed as PLAYBOOK_KEY. Set to "" to omit the env var entirely.
+  playbookKey: appsec
+  # Version of the above playbook to load, exposed as PLAYBOOK_VERSION. Set to "" to omit the env var entirely.
+  playbookVersion: stable
   # This runtime's own subtree of the shared agent-jobs store - reuses the standard storage block
   # (see agentOrchestrator.storage above) plus an optional prefix. Not yet consumed by any
   # container env. Every field stays blank/unset (not just "") so it defers to
