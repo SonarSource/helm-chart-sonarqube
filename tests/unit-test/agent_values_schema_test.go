@@ -31,6 +31,12 @@ func TestAgentValuesSchemaRejectsWrongTypes(t *testing.T) {
 		{name: "agentEgressProxy.replicaCount", set: map[string]string{"agentEgressProxy.replicaCount": "notanumber"}, requiresEgressProxy: true},
 		{name: "agentKeyDerivation.enabled", set: map[string]string{"agentKeyDerivation.enabled": "notabool"}, requiresAgenticKeys: true},
 		{name: "agenticSigningSecret.existingSecret", set: map[string]string{"agenticSigningSecret.existingSecret": "true"}, requiresAgenticKeys: true},
+		{name: "istio.meshSidecar.meshPort below minimum", set: map[string]string{"istio.meshSidecar.meshPort": "80"}},
+		{name: "istio.meshSidecar.meshPort above maximum", set: map[string]string{"istio.meshSidecar.meshPort": "70000"}},
+		{name: "istio.meshSidecar.meshPort inside Istio's reserved range", set: map[string]string{"istio.meshSidecar.meshPort": "15050"}},
+		{name: "istio.meshSidecar.enabled", set: map[string]string{"istio.meshSidecar.enabled": "notabool"}},
+		{name: "agentRuntimeSandbox.enabled", set: map[string]string{"agentRuntimeSandbox.enabled": "notabool"}},
+		{name: "agentRuntimeSandbox.runtimeClassName", set: map[string]string{"agentRuntimeSandbox.runtimeClassName": "true"}},
 	}
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {

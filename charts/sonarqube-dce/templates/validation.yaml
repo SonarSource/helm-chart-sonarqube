@@ -272,5 +272,37 @@
   {{- end -}}
 {{- end -}}
 
+{{/* Validation for agentRuntimeSandbox.* - the generic, non-gVisor alternative. Same "inert
+     unless a runtime is enabled" precedent as the gVisor block above. */}}
+{{- if and .Values.agentRuntimeSandbox.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
+  {{- if not .Values.agentRuntimeSandbox.runtimeClassName -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentRuntimeSandbox.enabled=true requires a non-empty agentRuntimeSandbox.runtimeClassName." -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* Validation for istio.enabled - the Hazelcast web/CE channels have to be pinned.
+     Left unset, Hazelcast picks both ports at runtime, so service.yaml and
+     sonarqube-application.yaml skip their port entries altogether (each is guarded by an
+     `if .Values.ApplicationNodes.webPort` / `.cePort`) and Istio never learns the ports exist.
+     Enforced here rather than left to the README because the symptom surfaces long after a
+     successful-looking install - a half-formed Hazelcast cluster - with nothing pointing back
+     at a missing value.
+     Read through the applicationNodes helper instead of .Values.ApplicationNodes directly: the
+     deprecated capitalised key is merged in there, and this template has no guarantee that a
+     sibling's `set .Values "ApplicationNodes"` shim rendered first. */}}
+{{- if .Values.istio.enabled -}}
+  {{- $appNodes := fromYaml (include "applicationNodes" .) -}}
+  {{- $missing := list -}}
+  {{- if not $appNodes.webPort -}}
+    {{- $missing = append $missing "applicationNodes.webPort" -}}
+  {{- end -}}
+  {{- if not $appNodes.cePort -}}
+    {{- $missing = append $missing "applicationNodes.cePort" -}}
+  {{- end -}}
+  {{- if $missing -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n istio.enabled is true but the Hazelcast web/CE ports are not pinned (missing: %s). Istio only manages ports that are declared up front, and Hazelcast allocates these two dynamically when unset - so the Web and Compute Engine cluster channels are left off the application Service and container ports, and out of the mesh with them. Pin both to fixed, free ports (for example applicationNodes.webPort: 4023 and applicationNodes.cePort: 4024). See \"Working with Istio\" in the chart README." (join ", " $missing)) -}}
+  {{- end -}}
+{{- end -}}
+
 {{- include "sonarqube.search.assertEsMajorUpgrade" . -}}
 

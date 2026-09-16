@@ -18,10 +18,16 @@ metadata:
     {{- with .Values.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
+    {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+    {{- . | nindent 4 }}
+    {{- end }}
   labels:
     {{- include "sonarqube.selectorLabels" . | nindent 4 }}
     {{- with .Values.podLabels }}
     {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+    {{- . | nindent 4 }}
     {{- end }}
 spec:
   automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
