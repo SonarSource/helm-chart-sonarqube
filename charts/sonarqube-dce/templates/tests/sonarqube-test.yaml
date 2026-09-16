@@ -19,6 +19,9 @@ metadata:
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+    {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+    {{- . | nindent 4 }}
+    {{- end }}
 spec:
   automountServiceAccountToken: false
   {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret }}

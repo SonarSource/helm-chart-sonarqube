@@ -13,6 +13,9 @@ metadata:
     "sidecar.istio.io/inject": "false"
     {{- end }}
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+    {{- . | nindent 4 }}
+    {{- end }}
 spec:
   automountServiceAccountToken: false
   {{- if or .Values.image.pullSecrets .Values.image.pullSecret }}
