@@ -134,6 +134,30 @@ func TestVortexScaledObjectAcceptsFractionalTargetConcurrentRequests(t *testing.
 	}
 }
 
+// The string branch has to be pattern-constrained, not just typed: Go's strconv.ParseFloat (what
+// sprig's float64 uses under the hood) happily parses "NaN"/"Inf" into real non-numeric floats,
+// and lt NaN 1.0 / lt +Inf 1.0 are both false - so validation.yaml's >= 1 guard would silently let
+// them through, and the chart would render a nonsense targetValue on the KEDA trigger. Catching
+// this at the schema, before validation.yaml ever runs, is what actually prevents that.
+func TestVortexScaledObjectRejectsNonNumericTargetConcurrentRequests(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			// "1,5" (a plausible European decimal typo) is deliberately not exercised here:
+			// helm --set treats a bare comma as a key=value separator and fails to parse the
+			// flag itself before the value ever reaches this chart's schema.
+			for _, bad := range []string{"NaN", "Inf", "abc"} {
+				t.Run(bad, func(t *testing.T) {
+					_, err := renderVortexScaledObject(t, chart, map[string]string{
+						"vortexAnalysis.autoscaling.targetConcurrentRequests": bad,
+					})
+					require.Error(t, err)
+					assert.Contains(t, err.Error(), "don't meet the specifications")
+				})
+			}
+		})
+	}
+}
+
 // KEDA defaults the underlying HPA's name to "keda-hpa-<scaledobject name>" - that 9-char prefix
 // can push the *HPA's* name past the 63-char Kubernetes name limit even when the ScaledObject's
 // own (already-truncated-to-63) name fits, and KEDA's admission webhook rejects the ScaledObject
