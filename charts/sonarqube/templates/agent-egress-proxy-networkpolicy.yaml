@@ -17,12 +17,26 @@ spec:
     - Ingress
     - Egress
   ingress:
+    {{- if .Values.hunterAgent.enabled }}
     - from:
         - podSelector:
-            matchLabels: {{- include "sonarqube.agentRuntime.commonSelectorLabels" . | nindent 14 }}
+            matchLabels: {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" . "family" "hunter") | nindent 14 }}
       ports:
         - port: {{ .Values.agentEgressProxy.port }}
           protocol: TCP
+    {{- end }}
+    {{- if .Values.remediationAgent.enabled }}
+    {{- /* Remediation-only listener - see agentEgressProxy.remediationPort and the
+           remediation_listener ACL in agent-egress-proxy-configmap.yaml. Hunter is never granted
+           this port, so it can't reach SonarQube through this proxy even if Squid's ACLs were
+           misconfigured. */}}
+    - from:
+        - podSelector:
+            matchLabels: {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" . "family" "remediation") | nindent 14 }}
+      ports:
+        - port: {{ .Values.agentEgressProxy.remediationPort }}
+          protocol: TCP
+    {{- end }}
     {{- if .Values.istio.enabled }}
     {{- /* kubelet probes (15020/15021) and Prometheus scrape (15090) - no `from`: this pod is
            always injected when istio.enabled, unlike the runtimes, which gVisor can exclude. */}}

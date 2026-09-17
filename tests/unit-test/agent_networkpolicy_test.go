@@ -352,7 +352,13 @@ func assertRuntimeResolverCase(t *testing.T, chart agentChart, family string, c 
 	proxyRule := egressRuleToApp(policy.Spec.Egress, chart.release+"-agent-egress-proxy")
 	require.NotNil(t, proxyRule, "expected an egress rule reaching the Agent Egress Proxy")
 	require.Len(t, proxyRule.Ports, 1)
-	assert.Equal(t, int32(3128), proxyRule.Ports[0].Port.IntVal)
+	// Family-scoped: remediation dials the proxy's second listener (remediationPort), the only
+	// one whose Squid ACL admits SonarQube's own agentic endpoints; every other family dials port.
+	wantPort := int32(3128)
+	if family == "remediation" {
+		wantPort = 3129
+	}
+	assert.Equal(t, wantPort, proxyRule.Ports[0].Port.IntVal)
 }
 
 // assertMeshSidecarResolver covers the second way a runtime ends up resolving istiod by name: the

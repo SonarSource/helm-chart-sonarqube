@@ -1242,7 +1242,7 @@ hunterAgent:
     annotations: {}
   # Restrict traffic to and from this runtime.
   networkPolicy:
-    enabled: false
+    enabled: true
   # Path to the detection-agent entrypoint inside the image; the chart exposes it as
   # SCRIPT_PATH, which switches the runtime into hunter/detection mode (symmetric with
   # remediation's remediationScriptPath -> REMEDIATION_SCRIPT_PATH). Override if the image
@@ -1382,7 +1382,7 @@ remediationAgent:
     annotations: {}
   # Restrict traffic to and from this runtime.
   networkPolicy:
-    enabled: false
+    enabled: true
   # Path to the remediation-agent entrypoint inside the image; the chart exposes it as
   # REMEDIATION_SCRIPT_PATH, which switches the runtime into remediation mode. Override if the
   # image relocates it (e.g. a Python version bump); set to "" to omit the env var entirely.
@@ -1460,6 +1460,11 @@ agentEgressProxy:
   # an agent container needs no DNS resolution at all. Changing this port therefore stays a
   # one-place change, but note that a runtime resolves the address once at pod start.
   port: 3128
+  # Second listening port on the same Squid process, used exclusively by the Remediation runtime -
+  # it's the only family allowed to reach SonarQube's own agentic endpoints (see
+  # agent-egress-proxy-configmap.yaml's sonarqube_agentic_endpoints rule). Hunter only ever dials
+  # agentEgressProxy.port above, which never carries that allow rule.
+  remediationPort: 3129
   # D7: default 2 so a single pod eviction/restart/drain doesn't cut off every runtime's egress.
   # Override to 1 for local/dev/kind if the single point of failure is acceptable there - also set
   # podDisruptionBudget: null then, or minAvailable: 1 will block every node drain.
@@ -1545,7 +1550,7 @@ agentEgressProxy:
   # every runtime. `squid -k parse -f squid.conf` against the pinned image before rolling out.
   extraSquidConf: ""
   networkPolicy:
-    enabled: false
+    enabled: true
     egressPorts: [80, 443]
     # Destinations subtracted from the broad 0.0.0.0/0 egress rule. NetworkPolicy cannot match
     # FQDNs, so that rule has to stay wide and Squid's allowedDomains does the real filtering;
