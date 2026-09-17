@@ -121,8 +121,6 @@ data:
     http_access deny CONNECT !SSL_ports
     {{- if .Values.remediationAgent.enabled }}
     http_access allow sonarqube_host sonarqube_agentic_endpoints remediation_listener
-    {{- else }}
-    http_access allow sonarqube_host sonarqube_agentic_endpoints
     {{- end }}
     {{- if .Values.agentOrchestrator.enabled }}
     http_access allow agent_orchestrator_host agent_orchestrator_endpoints
