@@ -115,6 +115,25 @@ func TestVortexScaledObjectRendersWhenEnabled(t *testing.T) {
 	}
 }
 
+// targetConcurrentRequests accepts a fraction (e.g. 1.5) to fine-tune the scale-out threshold in
+// smaller steps than a whole request - KEDA's metrics-api scaler itself parses targetValue as a
+// float. SetValues renders through helm --set, which keeps a value like "1.5" as a string (its
+// own type inference only recognises integers); the schema must accept that string form too, or
+// this is the one input path that actually matters to a customer that stays broken.
+func TestVortexScaledObjectAcceptsFractionalTargetConcurrentRequests(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			so, err := renderVortexScaledObject(t, chart, map[string]string{
+				"vortexAnalysis.autoscaling.targetConcurrentRequests": "1.5",
+			})
+			require.NoError(t, err)
+
+			require.Len(t, so.Spec.Triggers, 1)
+			assert.Equal(t, "1.5", so.Spec.Triggers[0].Metadata["targetValue"])
+		})
+	}
+}
+
 // KEDA defaults the underlying HPA's name to "keda-hpa-<scaledobject name>" - that 9-char prefix
 // can push the *HPA's* name past the 63-char Kubernetes name limit even when the ScaledObject's
 // own (already-truncated-to-63) name fits, and KEDA's admission webhook rejects the ScaledObject
@@ -451,6 +470,16 @@ func TestVortexAutoscalingRequiresKedaCRDOrOverride(t *testing.T) {
 				"vortexAnalysis.autoscaling.enabled is true but the KEDA CRDs")
 		})
 	}
+}
+
+// A sub-1 value must still be rejected once it's a string (helm --set's own type inference, or
+// the schema's own ["number", "string"] union above), not just once it's a number - the >= 1
+// floor is enforced by validation.yaml's float64 cast, not the schema's numeric "minimum" keyword,
+// which JSON Schema does not apply to a string-typed instance.
+func TestVortexAutoscalingTargetConcurrentRequestsBelowOneRejected(t *testing.T) {
+	assertVortexAutoscalingRejected(t,
+		map[string]string{"vortexAnalysis.autoscaling.targetConcurrentRequests": "0.5"},
+		"vortexAnalysis.autoscaling.targetConcurrentRequests must be >= 1")
 }
 
 func TestVortexAutoscalingPollingIntervalMustNotExceedWindow(t *testing.T) {
