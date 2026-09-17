@@ -172,7 +172,7 @@ spec:
                  Both cases are set since not every HTTP client in these images honours only one
                  casing. NO_PROXY/no_proxy are forced to "" (not omitted) so no value can carve
                  out a bypass. */}}
-          {{- $proxyURL := include "sonarqube.agentEgressProxy.url" $ }}
+          {{- $proxyURL := include "sonarqube.agentEgressProxy.url" (dict "ctx" $ "family" $family) }}
           {{- $finalEnv := concat $mergedEnv (list
               (dict "name" "HTTP_PROXY" "value" $proxyURL)
               (dict "name" "http_proxy" "value" $proxyURL)
