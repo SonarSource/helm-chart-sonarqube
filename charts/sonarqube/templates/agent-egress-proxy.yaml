@@ -33,8 +33,17 @@ spec:
         {{- with .Values.agentEgressProxy.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
-        {{- . | nindent 8 }}
+        {{- /* Always stamped - "false" as well as "true" - not left to a namespace-wide
+               istio-injection=enabled label the chart can't see. With istio.enabled off, this
+               pod's own NetworkPolicy (agent-egress-proxy-networkpolicy.yaml) grants no istiod
+               egress, which is only sound if the pod definitively has no Envoy: a stray sidecar
+               from a namespace-wide label would stay NotReady forever, taking this Deployment's
+               availability down with it - and every agent runtime's egress depends on reaching
+               it. */}}
+        {{- if $.Values.istio.enabled }}
+        sidecar.istio.io/inject: "true"
+        {{- else }}
+        sidecar.istio.io/inject: "false"
         {{- end }}
       labels:
         {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 8 }}
@@ -42,8 +51,14 @@ spec:
         {{- with .Values.agentEgressProxy.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
-        {{- . | nindent 8 }}
+        {{- /* Same directive as the annotations block above, duplicated as a label - not
+               redundant. The sidecar-injector webhook's objectSelector is a LabelSelector; it
+               can only pre-filter admission requests on labels, never annotations. Keep in sync
+               with the annotations block above. */}}
+        {{- if $.Values.istio.enabled }}
+        sidecar.istio.io/inject: "true"
+        {{- else }}
+        sidecar.istio.io/inject: "false"
         {{- end }}
     spec:
       automountServiceAccountToken: {{ include "sonarqube.agent.automountServiceAccountToken" (dict "ctx" . "serviceAccount" .Values.agentEgressProxy.serviceAccount) }}

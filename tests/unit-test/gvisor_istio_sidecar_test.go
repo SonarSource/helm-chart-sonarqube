@@ -491,8 +491,8 @@ func TestGvisorIstioSidecarNetworkPolicyRuntimeWithoutGvisor(t *testing.T) {
 }
 
 // istio.meshSidecar.enabled=false must restore today's behaviour exactly: no init container, no
-// Sidecar, the named Service port, the Service-DNS HTTP_PROXY, and the egress proxy's PERMISSIVE
-// exception.
+// Sidecar, the named Service port, the service-link HTTP_PROXY rather than the loopback one, and
+// the egress proxy's PERMISSIVE exception.
 func TestGvisorIstioSidecarOffPath(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -506,7 +506,10 @@ func TestGvisorIstioSidecarOffPath(t *testing.T) {
 			for _, e := range container.Env {
 				env[e.Name] = e.Value
 			}
-			assert.Contains(t, env["HTTP_PROXY"], "agent-egress-proxy")
+			// Non-mesh branch: the proxy is reached by the ClusterIP kubelet injects as a
+			// service-link variable - not by DNS name (a runtime resolves nothing on this path)
+			// and not over loopback (that is the mesh-sidecar branch).
+			assert.Equal(t, chart.agentProxyURL(), env["HTTP_PROXY"])
 			assert.NotEqual(t, "http://127.0.0.1:3128", env["HTTP_PROXY"])
 
 			require.NotNil(t, container.ReadinessProbe.HTTPGet)

@@ -104,6 +104,86 @@ true
 {{- end -}}
 
 {{/*
+Whether agent runtime pods actually end up with an Envoy: at least one runtime enabled, plus
+istio.enabled, plus either standard injection (not sandboxed) or the hand-authored mesh sidecar.
+Under a sandbox with the mesh sidecar off the pods are stamped sidecar.istio.io/inject: "false"
+and get none, so they need neither the istiod egress rule nor the sidecar probe ports. Requiring a
+runtime to actually be enabled keeps this "" when istio.enabled=true but hunterAgent/remediationAgent
+are both off, so callers with no runtime-enabled gate of their own (NOTES.txt) don't warn about a
+kube-dns rule that no pod exists to carry. Emits "true" or "".
+Usage: {{ include "sonarqube.agentRuntime.hasEnvoy" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.hasEnvoy" -}}
+{{- $anyRuntime := or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+{{- $sandboxed := eq (include "sonarqube.agentRuntime.sandboxed" .) "true" -}}
+{{- $mesh := eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" -}}
+{{- if and $anyRuntime .Values.istio.enabled (or (not $sandboxed) $mesh) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+The istiod Service name to resolve, honoring a revisioned control plane. A canary/revisioned
+istiod (the istio.io/rev namespace label, or an explicit --revision on istioctl) is addressed as
+istiod-<revision>, not the bare istiod Service - and that is the name a sidecar's own
+discoveryAddress actually uses (see CA_ADDR/PROXY_CONFIG in
+sonarqube.agentRuntime.meshSidecar.container), so istio.revision must drive every place this
+chart pins that address: the ClusterIP lookup (sonarqube.agentRuntime.istiodClusterIP), the
+hand-authored mesh sidecar's own config, and the hostAliases entry in agent-runtime.yaml. Emits
+"istiod" or "istiod-<revision>".
+Usage: {{ include "sonarqube.istio.istiodServiceName" . }}
+*/}}
+{{- define "sonarqube.istio.istiodServiceName" -}}
+{{- if .Values.istio.revision -}}
+{{- printf "istiod-%s" .Values.istio.revision -}}
+{{- else -}}
+istiod
+{{- end -}}
+{{- end -}}
+
+{{/*
+The address to pin istiod's Service name (sonarqube.istio.istiodServiceName) to in agent runtime
+pods, resolving istio.istiodClusterIP's three settings: an explicit address is returned verbatim,
+"auto" reads that Service in istio.namespace, and "" opts out. Emits the address, or "" when there
+is none - which includes "auto" under `helm template`, where lookup cannot reach a cluster and
+returns an empty dict rather than failing, and "auto" against a live cluster where the identity
+running helm lacks `get`/`list` on Services in istio.namespace: unlike a true NotFound, that RBAC
+error is not swallowed by Helm's lookup and aborts the whole render instead of yielding here - see
+the istio.istiodClusterIP comment in values.yaml. A headless Service is treated as no address,
+since "None" is not one.
+Usage: {{ include "sonarqube.agentRuntime.istiodClusterIP" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.istiodClusterIP" -}}
+{{- $configured := .Values.istio.istiodClusterIP | default "" -}}
+{{- if ne $configured "auto" -}}
+{{- $configured -}}
+{{- else -}}
+{{- $svc := lookup "v1" "Service" .Values.istio.namespace (include "sonarqube.istio.istiodServiceName" .) -}}
+{{- $ip := "" -}}
+{{- if $svc -}}
+{{- $ip = ($svc.spec | default dict).clusterIP | default "" -}}
+{{- end -}}
+{{- if ne $ip "None" -}}
+{{- $ip -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Whether an Envoy-carrying runtime can drop its kube-dns egress rule, because the one name it needs
+(istiod.<istio.namespace>.svc) is pinned into /etc/hosts via hostAliases. See the
+istio.istiodClusterIP comment in values.yaml for why that single name is the whole requirement.
+Only ever "true" alongside sonarqube.agentRuntime.hasEnvoy - with no Envoy there is no name to
+resolve and hence no rule to drop. Emits "true" or "".
+Usage: {{ include "sonarqube.agentRuntime.resolverlessMesh" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.resolverlessMesh" -}}
+{{- if and (eq (include "sonarqube.agentRuntime.hasEnvoy" .) "true") (include "sonarqube.agentRuntime.istiodClusterIP" .) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
 RuntimeClass to schedule agent runtime pods onto: gvisor.runtimeClassName when gVisor is active,
 else the generic agentRuntimeSandbox.runtimeClassName. Only meaningful when
 sonarqube.agentRuntime.sandboxed is "true".
@@ -885,6 +965,7 @@ RuntimeClass can't do iptables). Parameters (dict): ctx, family (runtime family 
 {{- $family := .family -}}
 {{- $sidecar := $ctx.Values.istio.meshSidecar -}}
 {{- $probers := include "sonarqube.agentRuntime.meshSidecar.appProbers" (dict "ctx" $ctx "family" $family) -}}
+{{- $istiodSvc := include "sonarqube.istio.istiodServiceName" $ctx -}}
 - name: istio-proxy
   image: "{{ $sidecar.proxyImage.repository }}:{{ $sidecar.proxyImage.tag }}"
   restartPolicy: Always
@@ -927,7 +1008,7 @@ RuntimeClass can't do iptables). Parameters (dict): ctx, family (runtime family 
     - name: PILOT_CERT_PROVIDER
       value: istiod
     - name: CA_ADDR
-      value: "istiod.{{ $ctx.Values.istio.namespace }}.svc:15012"
+      value: "{{ $istiodSvc }}.{{ $ctx.Values.istio.namespace }}.svc:15012"
     - name: POD_NAME
       valueFrom:
         fieldRef:
@@ -957,7 +1038,7 @@ RuntimeClass can't do iptables). Parameters (dict): ctx, family (runtime family 
            (CA_ADDR above is a separate config path and does not influence this one). */}}
     - name: PROXY_CONFIG
       value: |
-        {"discoveryAddress":"istiod.{{ $ctx.Values.istio.namespace }}.svc:15012"}
+        {"discoveryAddress":"{{ $istiodSvc }}.{{ $ctx.Values.istio.namespace }}.svc:15012"}
     {{- /* ISTIO_META_POD_PORTS must stay empty - the Sidecar resource (agent-runtime-sidecar.yaml)
            owns inbound, not this env var. */}}
     - name: ISTIO_META_POD_PORTS
@@ -1078,13 +1159,41 @@ When the hand-authored mesh sidecar is enabled, the runtime's own Envoy owns the
 app dials its own sidecar over loopback, and the Sidecar resource's egress listener
 (agent-runtime-sidecar.yaml) forwards it mTLS-wrapped to the real Service. The port is identical in
 both branches; an egress listener's port must match the destination Service's port.
+
+Neither branch emits the proxy's DNS name, and that is the point: a runtime must not need a
+resolver at all. kubelet publishes every same-namespace Service's ClusterIP as
+<SERVICE_NAME>_SERVICE_HOST (enableServiceLinks defaults to true and this chart never turns it
+off) and expands $(VAR) references in a container's env values against those variables, so the
+proxy's address arrives as a literal IP at container start. That is what lets
+agent-networkpolicy.yaml omit kube-dns egress for un-injected runtimes entirely: resolving this
+one name was the only reason an agent container ever needed a recursive resolver, and a recursive
+resolver is a covert egress channel for a workload that runs prompt-injectable content
+(SONAR-32023). The trade-off is that the IP is resolved once, at pod start - deleting and
+recreating the Service assigns a new ClusterIP and needs a runtime rollout. `helm upgrade`
+preserves a Service's ClusterIP, so upgrades are unaffected.
 */}}
 {{- define "sonarqube.agentEgressProxy.url" -}}
 {{- if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" -}}
 {{- printf "http://127.0.0.1:%d" (int .Values.agentEgressProxy.port) -}}
 {{- else -}}
-{{- printf "http://%s:%d" (include "sonarqube.agentEgressProxy.fullname" .) (int .Values.agentEgressProxy.port) -}}
+{{- printf "http://$(%s):%d" (include "sonarqube.agentEgressProxy.serviceHostVar" .) (int .Values.agentEgressProxy.port) -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+The kubelet-published service-link env var name that sonarqube.agentEgressProxy.url expands
+$(...) against - <SERVICE_NAME>_SERVICE_HOST, uppercased with dashes as underscores. Kubelet
+resolves $(VAR) references against a flat per-container map built by scanning that container's
+own env array in order; once any entry in it - anywhere, regardless of position - declares this
+exact name, that key is set for the rest of the scan and no later entry (even one appended after
+it) can "reach back" past it to the real service-link value. A user-provided hunterAgent.env /
+remediationAgent.env entry with this literal name would therefore override the proxy's address
+before HTTP_PROXY ever expands it, and no ordering trick in agent-runtime.yaml can undo that -
+only rejecting the name up front (see the fail guard in agent-runtime.yaml) can.
+Usage: {{ include "sonarqube.agentEgressProxy.serviceHostVar" . }}
+*/}}
+{{- define "sonarqube.agentEgressProxy.serviceHostVar" -}}
+{{- printf "%s_SERVICE_HOST" (include "sonarqube.agentEgressProxy.fullname" . | upper | replace "-" "_") -}}
 {{- end -}}
 
 {{/*
@@ -1475,7 +1584,10 @@ release: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
-The DNS-to-kube-dns egress rule shared by every agent NetworkPolicy (runtime and proxy alike).
+The DNS-to-kube-dns egress rule. Callers gate it themselves: the Agent Egress Proxy needs it
+unconditionally (it resolves the destinations allowedDomains permits), whereas a runtime needs it
+only when it both gets an Envoy and has no istio.istiodClusterIP to pin istiod's address with -
+see agent-networkpolicy.yaml and sonarqube.agentRuntime.resolverlessMesh.
 Output is unindented; callers should pipe through `indent`/`nindent` to place it under `egress:`.
 Usage: {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
 */}}
