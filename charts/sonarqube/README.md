@@ -381,9 +381,9 @@ If you want to make your application publicly visible with Routes, you can set `
 
 ### Defunct (zombie) processes from probes
 
-The default `readinessProbe` and `livenessProbe` are `exec` probes that fork short-lived processes inside the container on every invocation (the `readinessProbe` runs `curl` piped into `grep`, the `livenessProbe` runs `curl`). On some OpenShift / kubelet versions, when a probe exceeds its `timeoutSeconds` (default `1`) the kubelet kills the probe's parent shell before its child processes finish. Those children are then reparented to PID 1 (the SonarQube JVM, which does not reap them) and remain as defunct (`<defunct>` / zombie) processes. Because the probe runs throughout the pod's lifecycle, these can slowly accumulate and, in extreme cases, approach the pod's thread/process limit.
+The default `readinessProbe` and `livenessProbe` are `exec` probes that fork short-lived processes inside the container on every invocation (the `readinessProbe` runs `curl` piped into `grep`, the `livenessProbe` runs `curl`). On some OpenShift / kubelet versions, when a probe exceeds its `timeoutSeconds` (default `5`) the kubelet kills the probe's parent shell before its child processes finish. Those children are then reparented to PID 1 (the SonarQube JVM, which does not reap them) and remain as defunct (`<defunct>` / zombie) processes. Because the probe runs throughout the pod's lifecycle, these can slowly accumulate and, in extreme cases, approach the pod's thread/process limit.
 
-If you observe a growing number of defunct processes on the application pods, increase the probe timeout to give the command enough time to complete before the kubelet kills it, for example:
+If you observe a growing number of defunct processes on the application pods, increase the probe timeout further to give the command enough time to complete before the kubelet kills it, for example:
 
 ```yaml
 readinessProbe:
@@ -392,7 +392,7 @@ livenessProbe:
   timeoutSeconds: 10
 ```
 
-A value comfortably above `1` second prevents the probe command from being killed mid-execution and stops the accumulation of defunct processes.
+A value comfortably above the default prevents the probe command from being killed mid-execution and stops the accumulation of defunct processes.
 
 ### Use custom `cacerts`
 
@@ -680,14 +680,14 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `readinessProbe.initialDelaySeconds` | ReadinessProbe initial delay for SonarQube checking                                                              | `60`                                                           |
 | `readinessProbe.periodSeconds`       | ReadinessProbe period between checking SonarQube                                                                 | `30`                                                           |
 | `readinessProbe.failureThreshold`    | ReadinessProbe threshold for marking as failed                                                                   | `6`                                                            |
-| `readinessProbe.timeoutSeconds`      | ReadinessProbe timeout delay                                                                                     | `1`                                                            |
+| `readinessProbe.timeoutSeconds`      | ReadinessProbe timeout delay                                                                                     | `5`                                                            |
 | `readinessProbe.sonarWebContext`     | (DEPRECATED) SonarQube web context for readinessProbe, please use sonarWebContext at the value top level instead | `/`                                                            |
 | `livenessProbe`                      | LivenessProbe for SonarQube. Handler is chart-managed; legacy `exec`, `httpGet`, `tcpSocket`, and `grpc` values are ignored. Use `livenessProbe.overrideCommand` to customize it | `exec: curl api/system/liveness`                              |
 | `livenessProbe.overrideCommand`      | Optional command to use instead of the chart-managed liveness probe command (rendered with `tpl`, so Helm template expressions are supported)  | `None`                                                         |
 | `livenessProbe.initialDelaySeconds`  | LivenessProbe initial delay for SonarQube checking                                                               | `60`                                                           |
 | `livenessProbe.periodSeconds`        | LivenessProbe period between checking SonarQube                                                                  | `30`                                                           |
 | `livenessProbe.failureThreshold`     | LivenessProbe threshold for marking as failed                                                                    | `6`                                                            |
-| `livenessProbe.timeoutSeconds`       | LivenessProbe timeout delay                                                                                      | `1`                                                            |
+| `livenessProbe.timeoutSeconds`       | LivenessProbe timeout delay                                                                                      | `5`                                                            |
 | `livenessProbe.sonarWebContext`      | (DEPRECATED) SonarQube web context for LivenessProbe, please use sonarWebContext at the value top level instead  | `/`                                                            |
 | `startupProbe`                       | StartupProbe for SonarQube                                                                                       | `httpGet: api/system/status`                                   |
 | `startupProbe.initialDelaySeconds`   | StartupProbe initial delay for SonarQube checking                                                                | `30`                                                           |
