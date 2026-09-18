@@ -125,6 +125,10 @@ data:
     acl Safe_ports port 443
     # SonarQube's own port, so the hardcoded allow rule below can ever match.
     acl Safe_ports port 9000
+    # Likewise the orchestrator's, for the artifact-locator renewal rule below. Without this entry
+    # `deny !Safe_ports` rejects the renewal POST before any allow rule is reached, since the
+    # orchestrator's port is neither 80, 443, nor SonarQube's.
+    acl Safe_ports port 8080
     # To reach an endpoint on another port, append to these ACLs from extraSquidConf - Squid
     # resolves http_access rules to the named ACL object, so entries added there still apply to
     # the `deny !Safe_ports` rule below despite being spliced in after it. Whatever port you add
@@ -155,10 +159,24 @@ data:
     # still denied rather than reopening the whole API surface.
     acl sonarqube_host dstdomain agentic-scheduling-values.yaml-sonarqube.default.svc.cluster.local
     acl sonarqube_agentic_endpoints urlpath_regex ^[^?]*/rules/show(\?|$) ^[^?]*/a3s/private/analyses(/|\?|$)
+    # Same treatment for the orchestrator's artifact-locator renewal endpoint (EA-968): a runtime
+    # whose dispatch-time presigned URLs expire mid-job re-requests them here, so this has to be
+    # reachable no matter what allowedDomains contains, and is likewise hardcoded rather than
+    # sourced from Values. Cleartext HTTP on the orchestrator's own port - not a CONNECT tunnel -
+    # so `deny CONNECT !SSL_ports` never applies to it, but `deny !Safe_ports` does, hence the
+    # Safe_ports entry above. The `^[^?]*` prefix tolerance and the `(\?|$)` tail are for the same
+    # reasons as the SonarQube rule: the request carries a query string, and the path must not be
+    # pinned to one API prefix. Gated on agentOrchestrator.enabled so the allowlist never names a
+    # destination the release doesn't deploy - validation.yaml refuses a runtime without an
+    # orchestrator, so in practice this proxy only ever renders with it on, but the gate keeps that
+    # an invariant of this file rather than an assumption borrowed from another one.
+    acl agent_orchestrator_host dstdomain agentic-scheduling-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local
+    acl agent_orchestrator_endpoints urlpath_regex ^[^?]*/artifact-locators(\?|$)
 
     http_access deny !Safe_ports
     http_access deny CONNECT !SSL_ports
     http_access allow sonarqube_host sonarqube_agentic_endpoints
+    http_access allow agent_orchestrator_host agent_orchestrator_endpoints
     http_access deny all
 ---
 # Source: sonarqube/templates/config.yaml
@@ -868,7 +886,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 3a96543f1cb47b53f60b44c2ae4e53fe1c42db6495c81685d67e31a31af4da97
+        checksum/config: 5312643b0ce7e50dc93de97a7e1126f193ccf6bcae06a717356538739c3cde1e
       labels:
         app: sonarqube-agent-egress-proxy
         release: agentic-scheduling-values.yaml
@@ -962,6 +980,8 @@ metadata:
     app.kubernetes.io/component: agent-orchestrator
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: sonarqube-agent-orchestrator
@@ -1027,6 +1047,14 @@ spec:
               value: /etc/agentic/keys/orchestrator-to-remediation
             - name: AGENTIC_SONARQUBE_SIGNING_KEY_PATH
               value: /etc/agentic/keys/agentic-shared
+            - name: AGENTIC_INBOUND_VERIFICATION_KEY_PATH
+              value: /etc/agentic/keys/agentic-shared
+            - name: AGENTIC_INBOUND_HUNTER_VERIFICATION_KEY_PATH
+              value: /etc/agentic/keys/hunter-to-orchestrator
+            - name: AGENTIC_INBOUND_REMEDIATION_VERIFICATION_KEY_PATH
+              value: /etc/agentic/keys/remediation-to-orchestrator
+            - name: AGENTIC_JOB_CAPABILITY_SIGNING_KEY_PATH
+              value: /etc/agentic/keys/orchestrator-job-capability
             - name: CORE_DB_READ_WRITE_ENDPOINT
               value: "myPostgres"
             - name: CORE_DB_NAME
@@ -1105,6 +1133,12 @@ spec:
               path: orchestrator-to-remediation
             - key: agentic-shared
               path: agentic-shared
+            - key: hunter-to-orchestrator
+              path: hunter-to-orchestrator
+            - key: remediation-to-orchestrator
+              path: remediation-to-orchestrator
+            - key: orchestrator-job-capability
+              path: orchestrator-job-capability
 ---
 # Source: sonarqube/templates/agent-runtime.yaml
 apiVersion: apps/v1
@@ -1121,6 +1155,8 @@ metadata:
     app.kubernetes.io/component: agent-runtime-hunter
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: sonarqube-agent-runtime-hunter
@@ -1157,10 +1193,18 @@ spec:
           env:
             - name: SCRIPT_PATH
               value: /home/agent/app/.venv/bin/detection-agent
+            - name: PLAYBOOK_KEY
+              value: appsec
+            - name: PLAYBOOK_VERSION
+              value: stable
+            - name: AGENT_ORCHESTRATOR_URL
+              value: http://agentic-scheduling-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
             - name: AGENTIC_VERIFY_KEY_PATH
               value: /etc/agentic/keys/orchestrator-to-hunter
             - name: AGENTIC_VERIFY_KEY_ID
               value: orchestrator-to-hunter
+            - name: AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
+              value: /etc/agentic/keys/hunter-to-orchestrator
             - name: HTTP_PROXY
               value: http://agentic-scheduling-values.yaml-sonarqube-agent-egress-proxy:3128
             - name: http_proxy
@@ -1230,6 +1274,8 @@ spec:
             items:
             - key: orchestrator-to-hunter
               path: orchestrator-to-hunter
+            - key: hunter-to-orchestrator
+              path: hunter-to-orchestrator
 ---
 # Source: sonarqube/templates/agent-runtime.yaml
 apiVersion: apps/v1
@@ -1246,6 +1292,8 @@ metadata:
     app.kubernetes.io/component: agent-runtime-remediation
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: sonarqube-agent-runtime-remediation
@@ -1286,12 +1334,16 @@ spec:
               value: http://agentic-scheduling-values.yaml-sonarqube.default.svc.cluster.local:9000/api/rules/show
             - name: REMEDIATION_ANALYSIS_ENDPOINT
               value: http://agentic-scheduling-values.yaml-sonarqube.default.svc.cluster.local:9000/api/v2/a3s/private/analyses
+            - name: AGENT_ORCHESTRATOR_URL
+              value: http://agentic-scheduling-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
             - name: AGENTIC_VERIFY_KEY_PATH
               value: /etc/agentic/keys/orchestrator-to-remediation
             - name: AGENTIC_VERIFY_KEY_ID
               value: orchestrator-to-remediation
             - name: REMEDIATION_AGENTIC_SIGNING_KEY_PATH
               value: /etc/agentic/keys/remediation-to-sqs
+            - name: AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
+              value: /etc/agentic/keys/remediation-to-orchestrator
             - name: HTTP_PROXY
               value: http://agentic-scheduling-values.yaml-sonarqube-agent-egress-proxy:3128
             - name: http_proxy
@@ -1363,6 +1415,8 @@ spec:
               path: orchestrator-to-remediation
             - key: remediation-to-sqs
               path: remediation-to-sqs
+            - key: remediation-to-orchestrator
+              path: remediation-to-orchestrator
 ---
 # Source: sonarqube/templates/vortex.yaml
 apiVersion: apps/v1
@@ -1378,7 +1432,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate
+    type: RollingUpdate
   selector:
     matchLabels:
       app: sonarqube-vortex
@@ -1391,6 +1445,7 @@ spec:
         app: sonarqube-vortex
         release: agentic-scheduling-values.yaml
     spec:
+      terminationGracePeriodSeconds: 180
       serviceAccountName: default
       automountServiceAccountToken: false
       containers:
@@ -1404,7 +1459,7 @@ spec:
               - ALL
             runAsGroup: 0
             runAsNonRoot: true
-            runAsUser: 1000
+            runAsUser: 900
             seccompProfile:
               type: RuntimeDefault
           ports:
@@ -1966,6 +2021,9 @@ spec:
                 --label orchestrator-to-hunter="$KEYS/orchestrator-to-hunter" \
                 --label orchestrator-to-remediation="$KEYS/orchestrator-to-remediation" \
                 --label agentic-shared="$KEYS/agentic-shared" \
+                --label hunter-to-orchestrator="$KEYS/hunter-to-orchestrator" \
+                --label remediation-to-orchestrator="$KEYS/remediation-to-orchestrator" \
+                --label orchestrator-job-capability="$KEYS/orchestrator-job-capability" \
                 --label remediation-to-sqs="$KEYS/remediation-to-sqs" \
                 --mode 0444
 
@@ -2024,9 +2082,9 @@ spec:
                     ;;
                 esac
               }
-              write_secret agentic-scheduling-values.yaml-sonar-agentic-keys-orchestrator orchestrator-to-hunter orchestrator-to-remediation agentic-shared
-              write_secret agentic-scheduling-values.yaml-sonar-agentic-keys-hunter orchestrator-to-hunter
-              write_secret agentic-scheduling-values.yaml-sonar-agentic-keys-remediation orchestrator-to-remediation remediation-to-sqs
+              write_secret agentic-scheduling-values.yaml-sonar-agentic-keys-orchestrator orchestrator-to-hunter orchestrator-to-remediation agentic-shared hunter-to-orchestrator remediation-to-orchestrator orchestrator-job-capability
+              write_secret agentic-scheduling-values.yaml-sonar-agentic-keys-hunter orchestrator-to-hunter hunter-to-orchestrator
+              write_secret agentic-scheduling-values.yaml-sonar-agentic-keys-remediation orchestrator-to-remediation remediation-to-sqs remediation-to-orchestrator
               write_secret agentic-scheduling-values.yaml-sonar-agentic-keys-sqs agentic-shared
               write_secret agentic-scheduling-values.yaml-sonar-agentic-keys-vortex agentic-shared
           volumeMounts:
