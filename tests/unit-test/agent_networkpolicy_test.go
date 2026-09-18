@@ -259,8 +259,24 @@ func TestAgentRuntimeNetworkPolicyResolverOnlyWhenInjected(t *testing.T) {
 			wantKubeDNS: false,
 		},
 		{
+			// The shipped default for istiodClusterIP is "auto", which resolves by reading the
+			// istiod Service - so it yields nothing here, where `helm template` has no cluster
+			// to read. That fallback is deliberate (an unresolvable hostAliases entry would be
+			// worse than a resolver) and NOTES.txt warns about it.
 			name:        "istio, standard injection: Envoy needs a resolver for istiod",
 			setValues:   map[string]string{"istio.enabled": "true", "gvisor.enabled": "false"},
+			wantEgress:  3,
+			wantKubeDNS: true,
+		},
+		{
+			// Same rendering as above, but asked for rather than fallen back to: "" is how an
+			// operator keeps the resolver on purpose, so it must not read as "unset".
+			name: "istio, standard injection, istiodClusterIP opted out: resolver stays",
+			setValues: map[string]string{
+				"istio.enabled":         "true",
+				"gvisor.enabled":        "false",
+				"istio.istiodClusterIP": "",
+			},
 			wantEgress:  3,
 			wantKubeDNS: true,
 		},

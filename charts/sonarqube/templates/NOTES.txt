@@ -39,6 +39,12 @@ WARNING: This chart no longer bundles the ingress-nginx controller. Setting ngin
 {{ if or (hasKey (.Values.livenessProbe | default dict) "exec") (hasKey (.Values.livenessProbe | default dict) "httpGet") (hasKey (.Values.livenessProbe | default dict) "tcpSocket") (hasKey (.Values.livenessProbe | default dict) "grpc") (hasKey (.Values.readinessProbe | default dict) "exec") (hasKey (.Values.readinessProbe | default dict) "httpGet") (hasKey (.Values.readinessProbe | default dict) "tcpSocket") (hasKey (.Values.readinessProbe | default dict) "grpc") }}
 WARNING: livenessProbe/readinessProbe handler values are deprecated and no longer have any effect. The chart manages these probes with exec; use overrideCommand to customize their commands.
 {{- end }}
+{{ if and (eq (include "sonarqube.agentRuntime.hasEnvoy" .) "true") (eq (.Values.istio.istiodClusterIP | default "") "auto") (not (include "sonarqube.agentRuntime.istiodClusterIP" .)) }}
+WARNING: istio.istiodClusterIP is "auto" but the istiod Service in {{ .Values.istio.namespace }} could not be read, so the agent runtimes keep their kube-dns egress rule. DNS on a runtime pod is
+         equally a capability of the untrusted agent container sharing it, and a recursive resolver is a data channel out of the cluster that the Agent Egress Proxy's allowedDomains ACL cannot
+         see. "auto" needs a live cluster, so it is always empty under `helm template` - if you render manifests before applying them (ArgoCD and friends), set istio.istiodClusterIP to the
+         address instead: kubectl -n {{ .Values.istio.namespace }} get svc istiod -o jsonpath='{.spec.clusterIP}'
+{{- end }}
 {{ if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" }}
 WARNING: istio.meshSidecar.enabled is set. The sandboxed agent runtimes have no istio-init, so nothing redirects their own app port (hunterAgent.port/remediationAgent.port) - it stays directly
          dialable on the pod IP, bypassing the mesh and its mTLS entirely. This is fenced by the runtime NetworkPolicy (<family>.networkPolicy.enabled), which requires your cluster's CNI to

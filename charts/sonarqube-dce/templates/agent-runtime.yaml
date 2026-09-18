@@ -107,7 +107,7 @@ spec:
              discoveryAddress differently. Keeping the *hostname* (rather than putting the IP in
              discoveryAddress) is what lets istiod's TLS SAN still validate. */}}
       hostAliases:
-        - ip: {{ $.Values.istio.istiodClusterIP | quote }}
+        - ip: {{ include "sonarqube.agentRuntime.istiodClusterIP" $ | quote }}
           hostnames:
             - "istiod.{{ $.Values.istio.namespace }}.svc"
             - "istiod.{{ $.Values.istio.namespace }}.svc.cluster.local"

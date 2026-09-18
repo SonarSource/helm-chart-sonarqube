@@ -545,15 +545,40 @@ true
 {{- end -}}
 
 {{/*
-Whether an Envoy-carrying runtime can drop its kube-dns egress rule, because istio.istiodClusterIP
-pins the one name it needs (istiod.<istio.namespace>.svc) into /etc/hosts via hostAliases. See the
+The address to pin istiod.<istio.namespace>.svc to in agent runtime pods, resolving
+istio.istiodClusterIP's three settings: an explicit address is returned verbatim, "auto" reads the
+istiod Service in istio.namespace, and "" opts out. Emits the address, or "" when there is none -
+which includes "auto" under `helm template`, where lookup cannot reach a cluster and returns an
+empty dict rather than failing. A headless Service is treated as no address, since "None" is not
+one. See the istio.istiodClusterIP comment in values.yaml.
+Usage: {{ include "sonarqube.agentRuntime.istiodClusterIP" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.istiodClusterIP" -}}
+{{- $configured := .Values.istio.istiodClusterIP | default "" -}}
+{{- if ne $configured "auto" -}}
+{{- $configured -}}
+{{- else -}}
+{{- $svc := lookup "v1" "Service" .Values.istio.namespace "istiod" -}}
+{{- $ip := "" -}}
+{{- if $svc -}}
+{{- $ip = ($svc.spec | default dict).clusterIP | default "" -}}
+{{- end -}}
+{{- if ne $ip "None" -}}
+{{- $ip -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Whether an Envoy-carrying runtime can drop its kube-dns egress rule, because the one name it needs
+(istiod.<istio.namespace>.svc) is pinned into /etc/hosts via hostAliases. See the
 istio.istiodClusterIP comment in values.yaml for why that single name is the whole requirement.
 Only ever "true" alongside sonarqube.agentRuntime.hasEnvoy - with no Envoy there is no name to
 resolve and hence no rule to drop. Emits "true" or "".
 Usage: {{ include "sonarqube.agentRuntime.resolverlessMesh" . }}
 */}}
 {{- define "sonarqube.agentRuntime.resolverlessMesh" -}}
-{{- if and (eq (include "sonarqube.agentRuntime.hasEnvoy" .) "true") .Values.istio.istiodClusterIP -}}
+{{- if and (eq (include "sonarqube.agentRuntime.hasEnvoy" .) "true") (include "sonarqube.agentRuntime.istiodClusterIP" .) -}}
 true
 {{- end -}}
 {{- end -}}

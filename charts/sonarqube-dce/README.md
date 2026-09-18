@@ -1088,13 +1088,18 @@ Four independently toggled features: Vortex (`vortexAnalysis.enabled`), the shar
 
 With `istio.enabled=false` the runtimes already resolve nothing: they reach the proxy by the ClusterIP kubelet publishes as a service-link variable, so their entire egress list is the proxy's pods. The paths that get an Envoy (standard injection, or `istio.meshSidecar.enabled`) need exactly one name, `istiod.<istio.namespace>.svc` - and it is **pilot-agent**, not Envoy, that resolves it: Envoy's `xds-grpc` cluster is `STATIC` over a Unix socket. pilot-agent is Go, so `/etc/hosts` satisfies it.
 
-Setting `istio.istiodClusterIP` to the `istiod` Service's ClusterIP puts that one mapping in the pod's `/etc/hosts` via `hostAliases` and drops the kube-dns rule from the runtime's `NetworkPolicy`, leaving istiod on `15012` and the egress proxy as its whole egress list. Because the *hostname* is preserved (rather than an IP going into `discoveryAddress`), istiod's TLS SAN still validates.
+`istio.istiodClusterIP` puts that one mapping in the pod's `/etc/hosts` via `hostAliases` and drops the kube-dns rule from the runtime's `NetworkPolicy`, leaving istiod on `15012` and the egress proxy as its whole egress list. Because the *hostname* is preserved (rather than an IP going into `discoveryAddress`), istiod's TLS SAN still validates. It takes three kinds of setting:
+
+- **`"auto"` (the default)** reads the `istiod` Service in `istio.namespace` at install time, so there is normally nothing to supply.
+- **An address** is used verbatim, and is the only setting that survives `helm template`.
+- **`""`** opts out, leaving the Istio paths exactly as they were.
 
 ```bash
+# only needed to pin the address by hand
 kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'
 ```
 
-- **Opt-in.** Left empty, the Istio paths keep the kube-dns rule and nothing changes. Only consulted when a runtime actually gets an Envoy.
+- **`"auto"` needs a live cluster, and fails open without one.** It reads the Service through Helm's `lookup`, which returns nothing under `helm template` - so if you render manifests and apply them separately (ArgoCD and friends), or run helm as an identity that cannot `get services` in `istio.namespace`, the runtimes keep their kube-dns rule. The install warns when that happens; pin the address explicitly to close it.
 - **The value is a ClusterIP, not a name.** A hostname in `hostAliases` is rejected by the API server, so `values.schema.json` catches it at render time instead.
 - **A stale value fails closed.** The sidecar simply never reaches ready; it does not silently fall back to DNS. The `istiod` Service's ClusterIP is stable for the life of the Service, but it changes if that Service is deleted and recreated (a mesh reinstall), so treat this as a value to re-check when the control plane is rebuilt.
 - **Not a hot toggle.** Changing it restarts the agent runtime pods.
@@ -1227,7 +1232,7 @@ kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'
 | `agentRuntimeSandbox.runtimeClassName`                           | RuntimeClass to schedule the agent runtime pods onto; ignored when `gvisor.enabled=true`                                               | `""`                                                                           |
 | `istio.enabled`                                                  | Put chart-owned workloads under STRICT mTLS, and let their sidecars reach istiod's control plane through the agent NetworkPolicies      | `false`                                                                        |
 | `istio.namespace`                                                | Namespace istiod runs in                                                                                                                | `istio-system`                                                                |
-| `istio.istiodClusterIP`                                          | ClusterIP of the `istiod` Service; set it to pin that one name into agent runtime pods via `hostAliases` and drop kube-dns egress from their `NetworkPolicy`   | `""`                            |
+| `istio.istiodClusterIP`                                          | ClusterIP of the `istiod` Service, pinned into agent runtime pods via `hostAliases` so kube-dns egress can be dropped from their `NetworkPolicy`. `"auto"` reads the Service, an address is used as given, `""` opts out | `"auto"`                        |
 | `istio.meshSidecar.enabled`                                      | Give the sandboxed agent runtimes a real mTLS identity via a hand-authored `istio-proxy` sidecar + `Sidecar` resource (requires `istio.enabled=true` and the runtime being sandboxed) | `false`                                             |
 | `istio.meshSidecar.meshPort`                                     | Port the runtime pod's own Envoy binds for inbound mesh traffic; must differ from `hunterAgent.port`/`remediationAgent.port` and stay outside `15000`-`15100` | `18080`                                                       |
 | `istio.meshSidecar.proxyImage.repository`                        | `istio-proxy` image repository                                                                                                          | `registry.istio.io/release/proxyv2`                                           |
