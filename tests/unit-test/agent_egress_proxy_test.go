@@ -35,6 +35,13 @@ var egressProxyCharts = func() []agentChart {
 // they're testing, typically just which runtime family(ies) to enable.
 func renderAgentEgressProxyTemplates(t *testing.T, chart agentChart, setValues map[string]string, templates []string) (string, error) {
 	t.Helper()
+	return renderAgentEgressProxyTemplatesAs(t, chart, chart.release, setValues, templates)
+}
+
+// renderAgentEgressProxyTemplatesAs is renderAgentEgressProxyTemplates with the release name under
+// the caller's control, for the tests that are about how a release name shapes rendered names.
+func renderAgentEgressProxyTemplatesAs(t *testing.T, chart agentChart, release string, setValues map[string]string, templates []string) (string, error) {
+	t.Helper()
 	merged := map[string]string{
 		"community.enabled":                  "true",
 		"monitoringPasscode":                 "test-passcode",
@@ -64,7 +71,7 @@ func renderAgentEgressProxyTemplates(t *testing.T, chart agentChart, setValues m
 		Logger:    logger.Discard,
 		SetValues: merged,
 	}
-	return helm.RenderTemplateE(t, opts, chart.path, chart.release, templates)
+	return helm.RenderTemplateE(t, opts, chart.path, release, templates)
 }
 
 var egressProxyTemplates = []string{
@@ -714,9 +721,77 @@ func TestAgentEgressProxyEnvVarsNotOverridable(t *testing.T) {
 				lastValueByName[e.Name] = e.Value
 			}
 
-			expectedProxyURL := "http://" + chart.fullnamePrefix() + "-agent-egress-proxy:3128"
-			assert.Equal(t, expectedProxyURL, lastValueByName["HTTP_PROXY"], "attacker-supplied env must not win")
+			assert.Equal(t, chart.agentProxyURL(), lastValueByName["HTTP_PROXY"], "attacker-supplied env must not win")
 			assert.Equal(t, "", lastValueByName["NO_PROXY"], "NO_PROXY must stay forced empty")
+		})
+	}
+}
+
+// The service-link variable a runtime expands is derived in-template from the proxy's Service
+// name, and the two must never drift: a wrong variable name expands to nothing, leaving
+// HTTP_PROXY pointing at a port on no host, and since the runtime has no resolver and no other
+// egress rule the failure is total rather than degraded. Release names are where drift would
+// show up - `sonarqube.agentEgressProxy.fullname` truncates to 63 characters, and a release name
+// may contain dashes or start with a digit - so this renders the Service and the runtime
+// together for each shape and compares one against the other rather than against a literal.
+func TestAgentEgressProxyServiceLinkVariableTracksServiceName(t *testing.T) {
+	releases := []struct {
+		name    string
+		release string
+	}{
+		{"dashes", "sq-test-release"},
+		{"leading digit", "1sq"},
+		// 53 characters is Helm's own ceiling on a release name, and it is already long
+		// enough that appending the chart name and "-agent-egress-proxy" overruns 63.
+		{"long enough to truncate the 63-char fullname", "sq-" + strings.Repeat("a", 50)},
+	}
+
+	for _, chart := range egressProxyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, r := range releases {
+				t.Run(r.name, func(t *testing.T) {
+					setValues := map[string]string{
+						"hunterAgent.enabled":               "true",
+						"hunterAgent.image.repository":      "example.com/hunter-agent",
+						"hunterAgent.image.tag":             "1",
+						"remediationAgent.enabled":          "true",
+						"remediationAgent.image.repository": "example.com/remediation-agent",
+						"remediationAgent.image.tag":        "1",
+					}
+
+					svcOut, err := renderAgentEgressProxyTemplatesAs(t, chart, r.release, setValues,
+						[]string{"templates/agent-egress-proxy-service.yaml"})
+					require.NoError(t, err)
+					var service corev1.Service
+					helm.UnmarshalK8SYaml(t, svcOut, &service)
+					require.NotEmpty(t, service.Name)
+					require.LessOrEqual(t, len(service.Name), 63)
+
+					want := "http://$(" + strings.ToUpper(strings.ReplaceAll(service.Name, "-", "_")) + "_SERVICE_HOST):3128"
+
+					runtimeOut, err := renderAgentEgressProxyTemplatesAs(t, chart, r.release, setValues,
+						[]string{"templates/agent-runtime.yaml"})
+					require.NoError(t, err)
+
+					var sawRuntime bool
+					for _, doc := range strings.Split(runtimeOut, "\n---") {
+						if !strings.Contains(doc, "kind: Deployment") {
+							continue
+						}
+						var deployment appsv1.Deployment
+						helm.UnmarshalK8SYaml(t, doc, &deployment)
+						sawRuntime = true
+						env := map[string]string{}
+						for _, e := range deployment.Spec.Template.Spec.Containers[0].Env {
+							env[e.Name] = e.Value
+						}
+						for _, key := range []string{"HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy"} {
+							assert.Equal(t, want, env[key], "%s on %s", key, deployment.Name)
+						}
+					}
+					require.True(t, sawRuntime, "expected at least one runtime Deployment")
+				})
+			}
 		})
 	}
 }

@@ -530,6 +530,60 @@ true
 {{- end -}}
 
 {{/*
+Whether agent runtime pods actually end up with an Envoy: istio.enabled plus either standard
+injection (not sandboxed) or the hand-authored mesh sidecar. Under a sandbox with the mesh sidecar
+off the pods are stamped sidecar.istio.io/inject: "false" and get none, so they need neither the
+istiod egress rule nor the sidecar probe ports. Emits "true" or "".
+Usage: {{ include "sonarqube.agentRuntime.hasEnvoy" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.hasEnvoy" -}}
+{{- $sandboxed := eq (include "sonarqube.agentRuntime.sandboxed" .) "true" -}}
+{{- $mesh := eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" -}}
+{{- if and .Values.istio.enabled (or (not $sandboxed) $mesh) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+The address to pin istiod.<istio.namespace>.svc to in agent runtime pods, resolving
+istio.istiodClusterIP's three settings: an explicit address is returned verbatim, "auto" reads the
+istiod Service in istio.namespace, and "" opts out. Emits the address, or "" when there is none -
+which includes "auto" under `helm template`, where lookup cannot reach a cluster and returns an
+empty dict rather than failing. A headless Service is treated as no address, since "None" is not
+one. See the istio.istiodClusterIP comment in values.yaml.
+Usage: {{ include "sonarqube.agentRuntime.istiodClusterIP" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.istiodClusterIP" -}}
+{{- $configured := .Values.istio.istiodClusterIP | default "" -}}
+{{- if ne $configured "auto" -}}
+{{- $configured -}}
+{{- else -}}
+{{- $svc := lookup "v1" "Service" .Values.istio.namespace "istiod" -}}
+{{- $ip := "" -}}
+{{- if $svc -}}
+{{- $ip = ($svc.spec | default dict).clusterIP | default "" -}}
+{{- end -}}
+{{- if ne $ip "None" -}}
+{{- $ip -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Whether an Envoy-carrying runtime can drop its kube-dns egress rule, because the one name it needs
+(istiod.<istio.namespace>.svc) is pinned into /etc/hosts via hostAliases. See the
+istio.istiodClusterIP comment in values.yaml for why that single name is the whole requirement.
+Only ever "true" alongside sonarqube.agentRuntime.hasEnvoy - with no Envoy there is no name to
+resolve and hence no rule to drop. Emits "true" or "".
+Usage: {{ include "sonarqube.agentRuntime.resolverlessMesh" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.resolverlessMesh" -}}
+{{- if and (eq (include "sonarqube.agentRuntime.hasEnvoy" .) "true") (include "sonarqube.agentRuntime.istiodClusterIP" .) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
 RuntimeClass to schedule agent runtime pods onto: gvisor.runtimeClassName when gVisor is active,
 else the generic agentRuntimeSandbox.runtimeClassName. Only meaningful when
 sonarqube.agentRuntime.sandboxed is "true".
@@ -924,12 +978,24 @@ When the hand-authored mesh sidecar is enabled, the runtime's own Envoy owns the
 app dials its own sidecar over loopback, and the Sidecar resource's egress listener
 (agent-runtime-sidecar.yaml) forwards it mTLS-wrapped to the real Service. The port is identical in
 both branches; an egress listener's port must match the destination Service's port.
+
+Neither branch emits the proxy's DNS name, and that is the point: a runtime must not need a
+resolver at all. kubelet publishes every same-namespace Service's ClusterIP as
+<SERVICE_NAME>_SERVICE_HOST (enableServiceLinks defaults to true and this chart never turns it
+off) and expands $(VAR) references in a container's env values against those variables, so the
+proxy's address arrives as a literal IP at container start. That is what lets
+agent-networkpolicy.yaml omit kube-dns egress for un-injected runtimes entirely: resolving this
+one name was the only reason an agent container ever needed a recursive resolver, and a recursive
+resolver is a covert egress channel for a workload that runs prompt-injectable content
+(SONAR-32023). The trade-off is that the IP is resolved once, at pod start - deleting and
+recreating the Service assigns a new ClusterIP and needs a runtime rollout. `helm upgrade`
+preserves a Service's ClusterIP, so upgrades are unaffected.
 */}}
 {{- define "sonarqube.agentEgressProxy.url" -}}
 {{- if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" -}}
 {{- printf "http://127.0.0.1:%d" (int .Values.agentEgressProxy.port) -}}
 {{- else -}}
-{{- printf "http://%s:%d" (include "sonarqube.agentEgressProxy.fullname" .) (int .Values.agentEgressProxy.port) -}}
+{{- printf "http://$(%s_SERVICE_HOST):%d" (include "sonarqube.agentEgressProxy.fullname" . | upper | replace "-" "_") (int .Values.agentEgressProxy.port) -}}
 {{- end -}}
 {{- end -}}
 
@@ -1321,7 +1387,10 @@ release: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
-The DNS-to-kube-dns egress rule shared by every agent NetworkPolicy (runtime and proxy alike).
+The DNS-to-kube-dns egress rule. Callers gate it themselves: the Agent Egress Proxy needs it
+unconditionally (it resolves the destinations allowedDomains permits), whereas a runtime needs it
+only when it both gets an Envoy and has no istio.istiodClusterIP to pin istiod's address with -
+see agent-networkpolicy.yaml and sonarqube.agentRuntime.resolverlessMesh.
 Output is unindented; callers should pipe through `indent`/`nindent` to place it under `egress:`.
 Usage: {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
 */}}

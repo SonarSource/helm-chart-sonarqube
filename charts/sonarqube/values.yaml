@@ -142,6 +142,35 @@ istio:
   enabled: false
   # Namespace istiod runs in.
   namespace: "istio-system"
+  # How agent runtime pods reach istiod without a resolver, which is what lets the chart take
+  # kube-dns egress away from them entirely. Three settings:
+  #   "auto" (default) - the chart reads the istiod Service in istio.namespace itself. That needs
+  #                      a live cluster, so it yields nothing under `helm template` - and hence
+  #                      under ArgoCD and any other render-then-apply tooling - in which case the
+  #                      kube-dns rule stays and NOTES.txt says so rather than failing.
+  #   an IP address    - used verbatim; the only setting that survives `helm template`, so pin it
+  #                      if you render manifests ahead of applying them. Get it with
+  #                      `kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'`.
+  #   ""               - opt out: runtimes with an Envoy keep their kube-dns egress rule.
+  #
+  # Why it exists: NetworkPolicy selects pods, not containers, so any rule on a runtime's policy
+  # is also a capability of the untrusted agent container sharing that pod - and reaching a
+  # recursive resolver is a bidirectional data channel out of the cluster (payload in the query
+  # name, response in a TXT record) that neither the Agent Egress Proxy's allowedDomains ACL nor
+  # any L3/L4 rule can see. Envoy does not intercept it either: Istio's iptables rules are
+  # TCP-only unless DNS capture is explicitly enabled.
+  #
+  # A runtime that gets an Envoy needs exactly one name, istiod.<istio.namespace>.svc, and it is
+  # pilot-agent - not Envoy - that resolves it (Envoy's xds-grpc cluster is STATIC over a Unix
+  # socket). pilot-agent is Go, so /etc/hosts satisfies it. Setting this puts that one mapping in
+  # the pod's /etc/hosts via hostAliases and drops the port-53 rule from the runtime's
+  # NetworkPolicy. The hostname is preserved, so istiod's TLS SAN still validates.
+  #
+  # A wrong or stale address fails closed - the sidecar never reaches ready - rather than
+  # silently falling back to DNS. Only consulted when a runtime actually gets an Envoy; ignored
+  # otherwise. "auto" reads a Service with the credentials running helm, so an identity that
+  # cannot get services in istio.namespace sees the same outcome as `helm template`.
+  istiodClusterIP: "auto"
   # mTLS for sandboxed runtimes: istio-init needs NET_ADMIN, which a sandboxing RuntimeClass
   # (gVisor, Kata, ...) may not grant, so the chart hand-authors the istio-proxy container itself
   # and programs it via a chart-owned Sidecar resource instead of iptables interception. Requires
@@ -1416,6 +1445,10 @@ agentEgressProxy:
     pullPolicy: IfNotPresent
     pullSecret: ""
     pullSecrets: []
+  # Runtimes reach the proxy by ClusterIP, not by Service name: the address is injected by kubelet
+  # as a service-link env var and expanded into HTTP_PROXY (see sonarqube.agentEgressProxy.url), so
+  # an agent container needs no DNS resolution at all. Changing this port therefore stays a
+  # one-place change, but note that a runtime resolves the address once at pod start.
   port: 3128
   # D7: default 2 so a single pod eviction/restart/drain doesn't cut off every runtime's egress.
   # Override to 1 for local/dev/kind if the single point of failure is acceptable there - also set
