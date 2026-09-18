@@ -1416,6 +1416,10 @@ agentEgressProxy:
     pullPolicy: IfNotPresent
     pullSecret: ""
     pullSecrets: []
+  # Runtimes reach the proxy by ClusterIP, not by Service name: the address is injected by kubelet
+  # as a service-link env var and expanded into HTTP_PROXY (see sonarqube.agentEgressProxy.url), so
+  # an agent container needs no DNS resolution at all. Changing this port therefore stays a
+  # one-place change, but note that a runtime resolves the address once at pod start.
   port: 3128
   # D7: default 2 so a single pod eviction/restart/drain doesn't cut off every runtime's egress.
   # Override to 1 for local/dev/kind if the single point of failure is acceptable there - also set

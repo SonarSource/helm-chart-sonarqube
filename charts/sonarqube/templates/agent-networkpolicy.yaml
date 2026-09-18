@@ -53,12 +53,23 @@ spec:
           protocol: TCP
     {{- end }}
   egress:
-{{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
-    {{- /* Needs istiod whenever this family actually gets a sidecar: standard injection (not
-           sandboxed), or the hand-authored mesh sidecar. Under a sandbox with the mesh sidecar
-           off, it's excluded from injection entirely (see agent-runtime.yaml) and so never needs
-           to reach istiod. */}}
+    {{- /* DNS and istiod, both needed only when this family actually gets a sidecar: standard
+           injection (not sandboxed), or the hand-authored mesh sidecar. Under a sandbox with the
+           mesh sidecar off it's excluded from injection entirely (see agent-runtime.yaml) and so
+           needs neither.
+
+           DNS is deliberately absent otherwise, and that absence is load-bearing. An un-injected
+           runtime resolves nothing at all: it reaches the Agent Egress Proxy by ClusterIP, which
+           kubelet hands the pod as a service-link env var (see sonarqube.agentEgressProxy.url),
+           so there is no name left to look up. Since NetworkPolicy selects pods and not
+           containers, every rule here is also a capability granted to the untrusted agent
+           container - and a recursive resolver is a bidirectional covert egress channel that no
+           L3/L4 rule downstream can contain. An injected runtime is the one case that still needs
+           kube-dns, because its Envoy resolves istiod's discoveryAddress by name through
+           resolv.conf; closing that residual needs a restricted resolver (SONAR-32023), not the
+           removal of a rule here. */}}
     {{- if and $.Values.istio.enabled (or (ne (include "sonarqube.agentRuntime.sandboxed" $) "true") $meshEnabled) }}
+{{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
 {{ include "sonarqube.agent.istiodEgressRule" $ | indent 4 }}
     {{- end }}
     {{- /* All other runtime egress - including reaching the orchestrator and reading/writing job

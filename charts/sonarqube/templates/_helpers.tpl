@@ -924,12 +924,24 @@ When the hand-authored mesh sidecar is enabled, the runtime's own Envoy owns the
 app dials its own sidecar over loopback, and the Sidecar resource's egress listener
 (agent-runtime-sidecar.yaml) forwards it mTLS-wrapped to the real Service. The port is identical in
 both branches; an egress listener's port must match the destination Service's port.
+
+Neither branch emits the proxy's DNS name, and that is the point: a runtime must not need a
+resolver at all. kubelet publishes every same-namespace Service's ClusterIP as
+<SERVICE_NAME>_SERVICE_HOST (enableServiceLinks defaults to true and this chart never turns it
+off) and expands $(VAR) references in a container's env values against those variables, so the
+proxy's address arrives as a literal IP at container start. That is what lets
+agent-networkpolicy.yaml omit kube-dns egress for un-injected runtimes entirely: resolving this
+one name was the only reason an agent container ever needed a recursive resolver, and a recursive
+resolver is a covert egress channel for a workload that runs prompt-injectable content
+(SONAR-32023). The trade-off is that the IP is resolved once, at pod start - deleting and
+recreating the Service assigns a new ClusterIP and needs a runtime rollout. `helm upgrade`
+preserves a Service's ClusterIP, so upgrades are unaffected.
 */}}
 {{- define "sonarqube.agentEgressProxy.url" -}}
 {{- if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" -}}
 {{- printf "http://127.0.0.1:%d" (int .Values.agentEgressProxy.port) -}}
 {{- else -}}
-{{- printf "http://%s:%d" (include "sonarqube.agentEgressProxy.fullname" .) (int .Values.agentEgressProxy.port) -}}
+{{- printf "http://$(%s_SERVICE_HOST):%d" (include "sonarqube.agentEgressProxy.fullname" . | upper | replace "-" "_") (int .Values.agentEgressProxy.port) -}}
 {{- end -}}
 {{- end -}}
 
@@ -1321,7 +1333,9 @@ release: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
-The DNS-to-kube-dns egress rule shared by every agent NetworkPolicy (runtime and proxy alike).
+The DNS-to-kube-dns egress rule. Callers gate it themselves: the Agent Egress Proxy needs it
+unconditionally (it resolves the destinations allowedDomains permits), whereas a runtime needs it
+only when it actually gets an Envoy, which resolves istiod by name - see agent-networkpolicy.yaml.
 Output is unindented; callers should pipe through `indent`/`nindent` to place it under `egress:`.
 Usage: {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
 */}}

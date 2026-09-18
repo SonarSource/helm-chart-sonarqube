@@ -98,16 +98,6 @@ spec:
           protocol: TCP
   egress:
     - to:
-        - namespaceSelector: {}
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
-      ports:
-        - port: 53
-          protocol: UDP
-        - port: 53
-          protocol: TCP
-    - to:
         - podSelector:
             matchLabels:
               app: sonarqube-agent-egress-proxy
@@ -1378,13 +1368,13 @@ spec:
             - name: AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
               value: /etc/agentic/keys/remediation-to-orchestrator
             - name: HTTP_PROXY
-              value: http://remediation-agent-values.yaml-sonarqube-agent-egress-proxy:3128
+              value: http://$(REMEDIATION_AGENT_VALUES.YAML_SONARQUBE_AGENT_EGRESS_PROXY_SERVICE_HOST):3128
             - name: http_proxy
-              value: http://remediation-agent-values.yaml-sonarqube-agent-egress-proxy:3128
+              value: http://$(REMEDIATION_AGENT_VALUES.YAML_SONARQUBE_AGENT_EGRESS_PROXY_SERVICE_HOST):3128
             - name: HTTPS_PROXY
-              value: http://remediation-agent-values.yaml-sonarqube-agent-egress-proxy:3128
+              value: http://$(REMEDIATION_AGENT_VALUES.YAML_SONARQUBE_AGENT_EGRESS_PROXY_SERVICE_HOST):3128
             - name: https_proxy
-              value: http://remediation-agent-values.yaml-sonarqube-agent-egress-proxy:3128
+              value: http://$(REMEDIATION_AGENT_VALUES.YAML_SONARQUBE_AGENT_EGRESS_PROXY_SERVICE_HOST):3128
             - name: NO_PROXY
               value: ""
             - name: no_proxy
