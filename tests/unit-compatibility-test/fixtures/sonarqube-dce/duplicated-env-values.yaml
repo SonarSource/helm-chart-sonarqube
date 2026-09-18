@@ -433,11 +433,11 @@ spec:
                 host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
                 host="${host:-localhost}"
                 case "${host}" in *:*) host="[${host}]" ;; esac
-                curl --noproxy "*" -fsS -o /dev/null --max-time 1 -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/some/context/api/system/liveness"
-            failureThreshold: 6
+                curl --noproxy "*" -fsS -o /dev/null --max-time 5 -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/some/context/api/system/liveness"
+            failureThreshold: 8
             initialDelaySeconds: 0
             periodSeconds: 30
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           readinessProbe:
             exec:
               command:
@@ -457,7 +457,7 @@ spec:
             failureThreshold: 8
             initialDelaySeconds: 0
             periodSeconds: 30
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           startupProbe:
             httpGet:
               scheme: HTTP
@@ -665,7 +665,7 @@ spec:
             initialDelaySeconds: 0
             periodSeconds: 30
             failureThreshold: 6
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           readinessProbe:
             exec:
               command:
@@ -684,7 +684,7 @@ spec:
             initialDelaySeconds: 0
             periodSeconds: 30
             failureThreshold: 6
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           startupProbe:
             exec:
              command:
@@ -703,7 +703,7 @@ spec:
             initialDelaySeconds: 20
             periodSeconds: 10
             failureThreshold: 24
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
