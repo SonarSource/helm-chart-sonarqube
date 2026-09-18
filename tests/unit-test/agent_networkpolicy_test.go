@@ -241,10 +241,10 @@ func egressPeerShapes(rules []networkingv1.NetworkPolicyEgressRule) (hasIPBlock 
 // the ClusterIP kubelet injects as a service-link variable (see agentChart.agentProxyURL), so
 // there is no name left to look up.
 //
-// A runtime that does get an Envoy is the one exception, and stays one: its sidecar resolves
-// istiod's discoveryAddress by name through resolv.conf, so kube-dns egress comes back on exactly
-// those paths. Closing that residual needs a restricted resolver (SONAR-32023), not the removal
-// of a rule here.
+// A runtime that does get an Envoy is the one exception, and needs exactly one name -
+// istiod.<istio.namespace>.svc - so kube-dns egress comes back on exactly those paths. Setting
+// istio.istiodClusterIP pins that one name through hostAliases and takes it away again; see
+// TestAgentRuntimeResolverlessMesh.
 func TestAgentRuntimeNetworkPolicyResolverOnlyWhenInjected(t *testing.T) {
 	cases := []struct {
 		name        string
@@ -267,6 +267,26 @@ func TestAgentRuntimeNetworkPolicyResolverOnlyWhenInjected(t *testing.T) {
 		{
 			name:        "istio but sandboxed with no mesh sidecar: no Envoy, so still no resolver",
 			setValues:   map[string]string{"istio.enabled": "true", "gvisor.enabled": "true"},
+			wantEgress:  1,
+			wantKubeDNS: false,
+		},
+		{
+			name: "istio, standard injection, istiodClusterIP set: hostAliases replaces the resolver",
+			setValues: map[string]string{
+				"istio.enabled":         "true",
+				"gvisor.enabled":        "false",
+				"istio.istiodClusterIP": "10.96.0.42",
+			},
+			wantEgress:  2,
+			wantKubeDNS: false,
+		},
+		{
+			name: "istiodClusterIP set but no Envoy: nothing to pin, and still no resolver",
+			setValues: map[string]string{
+				"istio.enabled":         "true",
+				"gvisor.enabled":        "true",
+				"istio.istiodClusterIP": "10.96.0.42",
+			},
 			wantEgress:  1,
 			wantKubeDNS: false,
 		},
@@ -319,6 +339,14 @@ func TestAgentRuntimeNetworkPolicyResolverOnlyWhenInjected(t *testing.T) {
 					policy := gvisorIstioNetworkPolicy(t, chart, "gvisor-istio-sidecar.yaml", family, nil)
 					_, hasKubeDNS, _ := egressPeerShapes(policy.Spec.Egress)
 					assert.True(t, hasKubeDNS, "a sandboxed runtime running Envoy still resolves istiod by name")
+				})
+
+				// ... unless istiodClusterIP pins the one name that Envoy's pilot-agent looks up.
+				t.Run(family+": mesh sidecar with istiodClusterIP: no resolver", func(t *testing.T) {
+					policy := gvisorIstioNetworkPolicy(t, chart, "gvisor-istio-sidecar.yaml", family,
+						map[string]string{"istio.istiodClusterIP": "10.96.0.42"})
+					_, hasKubeDNS, _ := egressPeerShapes(policy.Spec.Egress)
+					assert.False(t, hasKubeDNS, "hostAliases makes the mesh sidecar's resolver rule unnecessary")
 				})
 			}
 		})

@@ -95,6 +95,23 @@ spec:
       {{- /* Protects an in-flight job from an ordinary scale-down (manual, rollout, node drain, or
              KEDA-driven) dropping it mid-run - independent of whether autoscaling is enabled. */}}
       terminationGracePeriodSeconds: {{ $cfg.terminationGracePeriodSeconds }}
+      {{- if eq (include "sonarqube.agentRuntime.resolverlessMesh" $) "true" }}
+      {{- /* The one name an Envoy-carrying runtime needs, pinned into /etc/hosts so the pod can
+             be denied kube-dns egress outright (see agent-networkpolicy.yaml) - DNS on a shared
+             pod is a capability of the untrusted agent container too, and a recursive resolver is
+             a covert channel the egress proxy's ACL cannot see.
+
+             This works because it is pilot-agent - Go, and so /etc/hosts-aware - that dials
+             istiod, not Envoy: Envoy's xds-grpc cluster is STATIC over a Unix socket. Both the
+             short and cluster-local forms are listed because the two injection paths spell the
+             discoveryAddress differently. Keeping the *hostname* (rather than putting the IP in
+             discoveryAddress) is what lets istiod's TLS SAN still validate. */}}
+      hostAliases:
+        - ip: {{ $.Values.istio.istiodClusterIP | quote }}
+          hostnames:
+            - "istiod.{{ $.Values.istio.namespace }}.svc"
+            - "istiod.{{ $.Values.istio.namespace }}.svc.cluster.local"
+      {{- end }}
       {{- /* Run the (untrusted) runtimes under a sandboxing RuntimeClass when one applies -
              gVisor's own scheduling.nodeSelector pins its pods to runsc-ready nodes; a generic
              agentRuntimeSandbox.runtimeClassName relies on the caller's own node targeting. */}}

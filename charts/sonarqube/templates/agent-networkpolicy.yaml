@@ -20,6 +20,7 @@ spec:
     - Ingress
     - Egress
   {{- $meshEnabled := eq (include "sonarqube.agentRuntime.meshSidecar.enabled" $) "true" }}
+  {{- $hasEnvoy := eq (include "sonarqube.agentRuntime.hasEnvoy" $) "true" }}
   ingress:
     {{- if $meshEnabled }}
     {{- /* The hand-authored mesh sidecar owns inbound: orchestrator->meshPort, mTLS-terminated by
@@ -40,7 +41,7 @@ spec:
         - port: {{ $cfg.port }}
           protocol: TCP
     {{- end }}
-    {{- if and $.Values.istio.enabled (or (ne (include "sonarqube.agentRuntime.sandboxed" $) "true") $meshEnabled) }}
+    {{- if $hasEnvoy }}
     {{- /* kubelet probes (15020/15021) and Prometheus scrape (15090) - no `from`: these are
            node-local/infra callers a podSelector can't express. Needed for any injected
            sidecar, hand-authored (mesh) or standard. */}}
@@ -53,29 +54,35 @@ spec:
           protocol: TCP
     {{- end }}
   egress:
-    {{- /* DNS and istiod, both needed only when this family actually gets a sidecar: standard
-           injection (not sandboxed), or the hand-authored mesh sidecar. Under a sandbox with the
-           mesh sidecar off it's excluded from injection entirely (see agent-runtime.yaml) and so
-           needs neither.
+    {{- /* istiod, needed only when this family actually gets a sidecar: standard injection (not
+           sandboxed), or the hand-authored mesh sidecar. Under a sandbox with the mesh sidecar off
+           the pods are stamped sidecar.istio.io/inject: "false" and get no Envoy, so they need no
+           control-plane egress at all.
 
-           DNS is deliberately absent otherwise, and that absence is load-bearing. An un-injected
-           runtime resolves nothing at all: it reaches the Agent Egress Proxy by ClusterIP, which
-           kubelet hands the pod as a service-link env var (see sonarqube.agentEgressProxy.url),
-           so there is no name left to look up. Since NetworkPolicy selects pods and not
-           containers, every rule here is also a capability granted to the untrusted agent
-           container - and a recursive resolver is a bidirectional covert egress channel that no
-           L3/L4 rule downstream can contain. An injected runtime is the one case that still needs
-           kube-dns, because its Envoy resolves istiod's discoveryAddress by name through
-           resolv.conf; closing that residual needs a restricted resolver (SONAR-32023), not the
-           removal of a rule here.
+           DNS is deliberately absent wherever it can be, and that absence is load-bearing. Since
+           NetworkPolicy selects pods and not containers, every rule here is also a capability
+           granted to the untrusted agent container sharing the pod - and reaching a recursive
+           resolver is a bidirectional covert egress channel (payload in the query name, answer in
+           a TXT record) that neither the Agent Egress Proxy's allowedDomains ACL nor any L3/L4
+           rule downstream can see. Envoy does not mediate it either: Istio's iptables rules are
+           TCP-only unless DNS capture is explicitly turned on.
+
+           An un-injected runtime resolves nothing at all: it reaches the Agent Egress Proxy by
+           ClusterIP, which kubelet hands the pod as a service-link env var (see
+           sonarqube.agentEgressProxy.url), so there is no name left to look up. An injected
+           runtime needs exactly one name, istiod.<istio.namespace>.svc - and that one is resolved
+           by pilot-agent, not Envoy, so istio.istiodClusterIP can supply it through hostAliases
+           and this rule drops out too (see sonarqube.agentRuntime.resolverlessMesh).
 
            That an un-injected runtime really has no Envoy is not an assumption about the cluster:
            agent-runtime.yaml stamps sidecar.istio.io/inject: "false" - as a label, which is what
            the injector webhook's objectSelector filters on - whenever istio.enabled is off, so a
            namespace-wide istio-injection=enabled label cannot quietly hand the pod a sidecar that
            this policy would then leave unable to reach istiod. */}}
-    {{- if and $.Values.istio.enabled (or (ne (include "sonarqube.agentRuntime.sandboxed" $) "true") $meshEnabled) }}
+    {{- if $hasEnvoy }}
+    {{- if ne (include "sonarqube.agentRuntime.resolverlessMesh" $) "true" }}
 {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
+    {{- end }}
 {{ include "sonarqube.agent.istiodEgressRule" $ | indent 4 }}
     {{- end }}
     {{- /* All other runtime egress - including reaching the orchestrator and reading/writing job

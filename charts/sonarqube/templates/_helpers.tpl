@@ -530,6 +530,35 @@ true
 {{- end -}}
 
 {{/*
+Whether agent runtime pods actually end up with an Envoy: istio.enabled plus either standard
+injection (not sandboxed) or the hand-authored mesh sidecar. Under a sandbox with the mesh sidecar
+off the pods are stamped sidecar.istio.io/inject: "false" and get none, so they need neither the
+istiod egress rule nor the sidecar probe ports. Emits "true" or "".
+Usage: {{ include "sonarqube.agentRuntime.hasEnvoy" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.hasEnvoy" -}}
+{{- $sandboxed := eq (include "sonarqube.agentRuntime.sandboxed" .) "true" -}}
+{{- $mesh := eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" -}}
+{{- if and .Values.istio.enabled (or (not $sandboxed) $mesh) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Whether an Envoy-carrying runtime can drop its kube-dns egress rule, because istio.istiodClusterIP
+pins the one name it needs (istiod.<istio.namespace>.svc) into /etc/hosts via hostAliases. See the
+istio.istiodClusterIP comment in values.yaml for why that single name is the whole requirement.
+Only ever "true" alongside sonarqube.agentRuntime.hasEnvoy - with no Envoy there is no name to
+resolve and hence no rule to drop. Emits "true" or "".
+Usage: {{ include "sonarqube.agentRuntime.resolverlessMesh" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.resolverlessMesh" -}}
+{{- if and (eq (include "sonarqube.agentRuntime.hasEnvoy" .) "true") .Values.istio.istiodClusterIP -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
 RuntimeClass to schedule agent runtime pods onto: gvisor.runtimeClassName when gVisor is active,
 else the generic agentRuntimeSandbox.runtimeClassName. Only meaningful when
 sonarqube.agentRuntime.sandboxed is "true".
@@ -1335,7 +1364,8 @@ release: {{ .Release.Name }}
 {{/*
 The DNS-to-kube-dns egress rule. Callers gate it themselves: the Agent Egress Proxy needs it
 unconditionally (it resolves the destinations allowedDomains permits), whereas a runtime needs it
-only when it actually gets an Envoy, which resolves istiod by name - see agent-networkpolicy.yaml.
+only when it both gets an Envoy and has no istio.istiodClusterIP to pin istiod's address with -
+see agent-networkpolicy.yaml and sonarqube.agentRuntime.resolverlessMesh.
 Output is unindented; callers should pipe through `indent`/`nindent` to place it under `egress:`.
 Usage: {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
 */}}
