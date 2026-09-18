@@ -222,9 +222,9 @@ Determine JDBC password if internal secret is used
 Set sonarqube.jvmOpts
 */}}
 {{- define "sonarqube.jvmOpts" -}}
-{{- $tempJvm := .Values.ApplicationNodes.jvmOpts -}}
+{{- $tempJvm := .Values.ApplicationNodes.jvmOpts | default "" -}}
 {{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.web.javaOpts")}}
-{{- $tempJvm = (get .Values.ApplicationNodes.sonarProperties "sonar.web.javaOpts") -}}
+{{- $tempJvm = trim (printf "%s %s" $tempJvm (get .Values.ApplicationNodes.sonarProperties "sonar.web.javaOpts" | default "")) -}}
 {{- else if .Values.ApplicationNodes.env -}}
 {{- range $index, $val := .Values.ApplicationNodes.env -}}
 {{- if eq $val.name "SONAR_WEB_JAVAOPTS" -}}
@@ -247,9 +247,9 @@ Set sonarqube.jvmOpts
 Set sonarqube.jvmCEOpts
 */}}
 {{- define "sonarqube.jvmCEOpts" -}}
-{{- $tempJvm := .Values.ApplicationNodes.jvmCeOpts -}}
+{{- $tempJvm := .Values.ApplicationNodes.jvmCeOpts | default "" -}}
 {{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.ce.javaOpts")}}
-{{- $tempJvm = (get .Values.ApplicationNodes.sonarProperties "sonar.ce.javaOpts") -}}
+{{- $tempJvm = trim (printf "%s %s" $tempJvm (get .Values.ApplicationNodes.sonarProperties "sonar.ce.javaOpts" | default "")) -}}
 {{- else if .Values.ApplicationNodes.env -}}
 {{- range $index, $val := .Values.ApplicationNodes.env -}}
 {{- if eq $val.name "SONAR_CE_JAVAOPTS" -}}
