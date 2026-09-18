@@ -191,7 +191,7 @@
     {{- if and $vortexAutoscaling.windowSeconds (gt (int $vortexAutoscaling.pollingInterval) (int $vortexAutoscaling.windowSeconds)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.autoscaling.pollingInterval must be <= vortexAnalysis.autoscaling.windowSeconds, or peaks between polls are lost." -}}
     {{- end -}}
-    {{- if lt (int $vortexAutoscaling.targetConcurrentRequests) 1 -}}
+    {{- if lt (float64 $vortexAutoscaling.targetConcurrentRequests) 1.0 -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.autoscaling.targetConcurrentRequests must be >= 1." -}}
     {{- end -}}
     {{- if not (hasPrefix "/" $vortexAutoscaling.metricPath) -}}
