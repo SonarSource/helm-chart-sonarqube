@@ -924,12 +924,18 @@ When the hand-authored mesh sidecar is enabled, the runtime's own Envoy owns the
 app dials its own sidecar over loopback, and the Sidecar resource's egress listener
 (agent-runtime-sidecar.yaml) forwards it mTLS-wrapped to the real Service. The port is identical in
 both branches; an egress listener's port must match the destination Service's port.
+
+Family-scoped: Remediation dials agentEgressProxy.remediationPort, the only listener whose Squid
+ACL admits SonarQube's own agentic endpoints (agent-egress-proxy-configmap.yaml); every other
+family dials agentEgressProxy.port, which never carries that allow rule.
+Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name).
 */}}
 {{- define "sonarqube.agentEgressProxy.url" -}}
-{{- if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" -}}
-{{- printf "http://127.0.0.1:%d" (int .Values.agentEgressProxy.port) -}}
+{{- $port := ternary (int .ctx.Values.agentEgressProxy.remediationPort) (int .ctx.Values.agentEgressProxy.port) (eq .family "remediation") -}}
+{{- if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .ctx) "true" -}}
+{{- printf "http://127.0.0.1:%d" $port -}}
 {{- else -}}
-{{- printf "http://%s:%d" (include "sonarqube.agentEgressProxy.fullname" .) (int .Values.agentEgressProxy.port) -}}
+{{- printf "http://%s:%d" (include "sonarqube.agentEgressProxy.fullname" .ctx) $port -}}
 {{- end -}}
 {{- end -}}
 
@@ -1308,16 +1314,6 @@ podAntiAffinity:
         labelSelector:
           matchLabels:
 {{ include "sonarqube.agentEgressProxy.selectorLabels" . | indent 12 }}
-{{- end -}}
-
-{{/*
-Selector labels common to both agent runtime families (family-agnostic), so a single selector can
-match every runtime pod regardless of family - used by the Agent Egress Proxy's own NetworkPolicy
-ingress rule.
-*/}}
-{{- define "sonarqube.agentRuntime.commonSelectorLabels" -}}
-sonarqube.agent/component: runtime
-release: {{ .Release.Name }}
 {{- end -}}
 
 {{/*

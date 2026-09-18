@@ -304,7 +304,11 @@ func assertGvisorIstioSidecarContainer(t *testing.T, chart agentChart, family st
 	for _, e := range container.Env {
 		appEnv[e.Name] = e.Value
 	}
-	assert.Equal(t, "http://127.0.0.1:3128", appEnv["HTTP_PROXY"])
+	expectedProxyPort := "3128"
+	if family == "remediation" {
+		expectedProxyPort = "3129"
+	}
+	assert.Equal(t, "http://127.0.0.1:"+expectedProxyPort, appEnv["HTTP_PROXY"])
 
 	require.NotNil(t, container.ReadinessProbe)
 	require.NotNil(t, container.ReadinessProbe.HTTPGet)
@@ -361,7 +365,11 @@ func TestGvisorIstioSidecarResource(t *testing.T) {
 
 					require.Len(t, sidecar.Spec.Egress, 1)
 					egress := sidecar.Spec.Egress[0]
-					assert.Equal(t, int32(3128), egress.Port.Number)
+					expectedProxyPort := int32(3128)
+					if family == "remediation" {
+						expectedProxyPort = 3129
+					}
+					assert.Equal(t, expectedProxyPort, egress.Port.Number)
 					assert.Equal(t, "127.0.0.1", egress.Bind)
 					assert.Equal(t, "NONE", egress.CaptureMode)
 					require.Len(t, egress.Hosts, 1)

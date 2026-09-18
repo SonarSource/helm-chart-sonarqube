@@ -1,4 +1,71 @@
 ---
+# Source: sonarqube-dce/templates/agent-egress-proxy-networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: remediation-agent-values.yaml-sonarqube-dce-agent-egress-proxy
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.0
+    release: remediation-agent-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: egress-proxy
+    app.kubernetes.io/component: agent-egress-proxy
+spec:
+  podSelector:
+    matchLabels:
+      app: sonarqube-dce-agent-egress-proxy
+      release: remediation-agent-values.yaml
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce-agent-runtime-remediation
+              release: remediation-agent-values.yaml
+      ports:
+        - port: 3129
+          protocol: TCP
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce
+              sonarqube.datacenter/type: app
+      ports:
+        - port: 9000
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce-agent-orchestrator
+              release: remediation-agent-values.yaml
+      ports:
+        - port: 8080
+          protocol: TCP
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.0.0/16
+      ports:
+        - port: 80
+          protocol: TCP
+        - port: 443
+          protocol: TCP
+---
 # Source: sonarqube-dce/templates/agent-networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -46,7 +113,7 @@ spec:
               app: sonarqube-dce-agent-egress-proxy
               release: remediation-agent-values.yaml
       ports:
-        - port: 3128
+        - port: 3129
           protocol: TCP
 ---
 # Source: sonarqube-dce/templates/networkpolicy.yaml
@@ -368,6 +435,11 @@ metadata:
 data:
   squid.conf: |-
     http_port 3128
+    # Second listener, dedicated to the Remediation runtime - see the remediation_listener ACL and
+    # the sonarqube_host allow rule below. Every other ACL in this file (Safe_ports, CONNECT,
+    # allowed_domains, agent_orchestrator_*) is not scoped by listening port, so it already applies
+    # here unchanged; only the SonarQube rule is restricted to this port.
+    http_port 3129
 
     # Pass-through forward proxy, not a cache - nothing is stored or re-served.
     cache deny all
@@ -392,13 +464,17 @@ data:
 
     # No request_body_max_size: without TLS interception a CONNECT tunnel is opaque to Squid, so
     # any such cap would miss every HTTPS body (all LLM prompts and uploads) and apply only to
-    # cleartext - which here means SonarQube's own always-reachable endpoints. A limit there would
-    # be a silent ceiling on a path the chart guarantees, so body size is left to SonarQube.
+    # cleartext - which here means SonarQube's own Remediation-only endpoints, when reachable at
+    # all. A limit there would be a silent ceiling on a path the chart guarantees, so body size is
+    # left to SonarQube.
 
     acl SSL_ports port 443
     acl Safe_ports port 80
     acl Safe_ports port 443
-    # SonarQube's own port, so the hardcoded allow rule below can ever match.
+    # SonarQube's own port, so the hardcoded allow rule below can ever match. Gated on
+    # remediationAgent.enabled along with sonarqube_host/sonarqube_agentic_endpoints below - Hunter
+    # never dials remediation_listener, so naming SonarQube's port here in a Hunter-only build
+    # would be dead config for a destination the release never allows.
     acl Safe_ports port 9000
     # Likewise the orchestrator's, for the artifact-locator renewal rule below. Without this entry
     # `deny !Safe_ports` rejects the renewal POST before any allow rule is reached, since the
@@ -415,12 +491,15 @@ data:
     # matches the CONNECT request's target hostname, not a decrypted SNI/certificate.
     # Rendered only when non-empty: a valueless `acl ... dstdomain` makes Squid log
     # "WARNING: empty ACL" on every start, and the allow rule referencing it can never match.
-
-    # SonarQube's own rule-lookup and analysis-creation endpoints must always be reachable, no
-    # matter what allowedDomains contains - hardcoded here (not sourced from Values) so it can't
-    # be edited away. The path match is anchored to the SonarQube service itself via
-    # sonarqube_host. Fully qualified (not the bare short name) since Squid's DNS resolver doesn't
-    # honour /etc/resolv.conf's search list.
+    # SonarQube's own rule-lookup and analysis-creation endpoints must always be reachable to
+    # whichever family is allowed to call them, no matter what allowedDomains contains -
+    # hardcoded here (not sourced from Values) so it can't be edited away. Only the Remediation
+    # runtime calls these; Hunter must not reach SonarQube at all, which is why the allow rule
+    # below is scoped to remediation_listener rather than matching on any listening port, and why
+    # this whole ACL group renders only when remediationAgent.enabled - a Hunter-only build has no
+    # path to SonarQube through this proxy at all. The path match is anchored to the SonarQube
+    # service itself via sonarqube_host. Fully qualified (not the bare short name) since Squid's
+    # DNS resolver doesn't honour /etc/resolv.conf's search list.
     # urlpath_regex matches the path *and* query string, so both endpoints must tolerate a
     # trailing "?..." - real calls to rules/show carry a "?key=..." query parameter.
     # The leading `^[^?]*` keeps these rules prefix-agnostic, which is load-bearing twice over.
@@ -434,6 +513,12 @@ data:
     # still denied rather than reopening the whole API surface.
     acl sonarqube_host dstdomain remediation-agent-values.yaml-sonarqube-dce.default.svc.cluster.local
     acl sonarqube_agentic_endpoints urlpath_regex ^[^?]*/rules/show(\?|$) ^[^?]*/a3s/private/analyses(/|\?|$)
+    # Restricts the sonarqube_host allow rule below to the Remediation-only listener - Hunter,
+    # which only ever dials agentEgressProxy.port, can never match this ACL and so can never reach
+    # SonarQube through this proxy, no matter what allowedDomains or extraSquidConf contains.
+    # `localport` is the current Squid 3.2+ name for this ACL type (`myport` is a deprecated alias
+    # that still works but warns on startup).
+    acl remediation_listener localport 3129
     # Same treatment for the orchestrator's artifact-locator renewal endpoint (EA-968): a runtime
     # whose dispatch-time presigned URLs expire mid-job re-requests them here, so this has to be
     # reachable no matter what allowedDomains contains, and is likewise hardcoded rather than
@@ -450,7 +535,7 @@ data:
 
     http_access deny !Safe_ports
     http_access deny CONNECT !SSL_ports
-    http_access allow sonarqube_host sonarqube_agentic_endpoints
+    http_access allow sonarqube_host sonarqube_agentic_endpoints remediation_listener
     http_access allow agent_orchestrator_host agent_orchestrator_endpoints
     http_access deny all
 ---
@@ -980,6 +1065,10 @@ spec:
       targetPort: http-proxy
       protocol: TCP
       name: http-proxy
+    - port: 3129
+      targetPort: http-proxy-rem
+      protocol: TCP
+      name: http-proxy-rem
   selector:
     app: sonarqube-dce-agent-egress-proxy
     release: remediation-agent-values.yaml
@@ -1247,7 +1336,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 2f68e579d2986d26dcd141c871c389df55035448aee9b63ba2ea345d127b8f54
+        checksum/config: 27966fa395bea4b5d68d2f2c6d973f32281acea66b0c772a202d556823558c1c
       labels:
         app: sonarqube-dce-agent-egress-proxy
         release: remediation-agent-values.yaml
@@ -1273,6 +1362,9 @@ spec:
           ports:
             - name: http-proxy
               containerPort: 3128
+              protocol: TCP
+            - name: http-proxy-rem
+              containerPort: 3129
               protocol: TCP
           resources:
             limits:
@@ -1554,13 +1646,13 @@ spec:
             - name: AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
               value: /etc/agentic/keys/remediation-to-orchestrator
             - name: HTTP_PROXY
-              value: http://remediation-agent-values.yaml-sonarqube-dce-agent-egress-proxy:3128
+              value: http://remediation-agent-values.yaml-sonarqube-dce-agent-egress-proxy:3129
             - name: http_proxy
-              value: http://remediation-agent-values.yaml-sonarqube-dce-agent-egress-proxy:3128
+              value: http://remediation-agent-values.yaml-sonarqube-dce-agent-egress-proxy:3129
             - name: HTTPS_PROXY
-              value: http://remediation-agent-values.yaml-sonarqube-dce-agent-egress-proxy:3128
+              value: http://remediation-agent-values.yaml-sonarqube-dce-agent-egress-proxy:3129
             - name: https_proxy
-              value: http://remediation-agent-values.yaml-sonarqube-dce-agent-egress-proxy:3128
+              value: http://remediation-agent-values.yaml-sonarqube-dce-agent-egress-proxy:3129
             - name: NO_PROXY
               value: ""
             - name: no_proxy
