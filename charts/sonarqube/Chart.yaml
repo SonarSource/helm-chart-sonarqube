@@ -93,6 +93,8 @@ annotations:
       description: "Add mcp.nodeSelector, mcp.affinity and mcp.tolerations for the MCP pod (falling back to the chart's global values when unset), plus mcp.topologySpreadConstraints"
     - kind: added
       description: "Add vortex.topologySpreadConstraints, agentOrchestrator.topologySpreadConstraints and <hunterAgent|remediationAgent>.topologySpreadConstraints, and apply the chart-wide priorityClassName to Vortex, the Agent Orchestrator, and the Hunter/Remediation Agent runtimes"
+    - kind: fixed
+      description: "Fix jvmOpts/jvmCeOpts being silently dropped instead of merged when sonar.web.javaOpts/sonar.ce.javaOpts is also set in sonarProperties"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-community
