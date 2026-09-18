@@ -315,9 +315,9 @@ func assertAgenticEndpointRegexMatches(t *testing.T, chart agentChart, webContex
 	t.Helper()
 
 	setValues := map[string]string{
-		"hunterAgent.enabled":          "true",
-		"hunterAgent.image.repository": "example.com/hunter-agent",
-		"hunterAgent.image.tag":        "1",
+		"remediationAgent.enabled":          "true",
+		"remediationAgent.image.repository": "example.com/remediation-agent",
+		"remediationAgent.image.tag":        "1",
 	}
 	if webContext != "" {
 		setValues["sonarWebContext"] = webContext
@@ -370,7 +370,7 @@ func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 				// /etc/resolv.conf's search list, so a bare Service name can never resolve for it.
 				assert.Contains(t, conf, "acl sonarqube_host dstdomain "+chart.fullnamePrefix()+".default.svc.cluster.local")
 				assert.Contains(t, conf, "acl sonarqube_agentic_endpoints urlpath_regex ^[^?]*/rules/show(\\?|$) ^[^?]*/a3s/private/analyses(/|\\?|$)")
-				assert.Contains(t, conf, "acl remediation_listener myport 3129")
+				assert.Contains(t, conf, "acl remediation_listener localport 3129")
 				assert.Contains(t, conf, "http_access allow sonarqube_host sonarqube_agentic_endpoints remediation_listener")
 				assert.Contains(t, conf, "acl Safe_ports port 9000", "SonarQube's default externalPort must be reachable too")
 			})
@@ -410,10 +410,10 @@ func TestAgentEgressProxyAlwaysAllowsSonarQubeAgenticEndpoints(t *testing.T) {
 
 			t.Run("dstdomain tracks the fullname prefix and service.externalPort overrides", func(t *testing.T) {
 				setValues := map[string]string{
-					"hunterAgent.enabled":          "true",
-					"hunterAgent.image.repository": "example.com/hunter-agent",
-					"hunterAgent.image.tag":        "1",
-					"service.externalPort":         "9001",
+					"remediationAgent.enabled":          "true",
+					"remediationAgent.image.repository": "example.com/remediation-agent",
+					"remediationAgent.image.tag":        "1",
+					"service.externalPort":              "9001",
 				}
 				output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
 				require.NoError(t, err)
@@ -562,14 +562,14 @@ func isOrchestratorPodRule(chart agentChart) func(networkingv1.NetworkPolicyEgre
 	}
 }
 
-// The proxy's own NetworkPolicy is opt-in (agentEgressProxy.networkPolicy.enabled), independent
-// of D8's auto-activation of the Deployment/Service/ConfigMap.
+// The proxy's own NetworkPolicy defaults to enabled (SONAR-32432: egress must be structurally
+// enforced, not opt-in), independent of D8's auto-activation of the Deployment/Service/ConfigMap.
 func TestAgentEgressProxyNetworkPolicy(t *testing.T) {
 	for _, chart := range egressProxyCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			chart := chart
-			t.Run("disabled by default even when the proxy is active", func(t *testing.T) {
-				testAgentEgressProxyNetworkPolicyDisabledByDefault(t, chart)
+			t.Run("enabled by default when the proxy is active", func(t *testing.T) {
+				testAgentEgressProxyNetworkPolicyEnabledByDefault(t, chart)
 			})
 			t.Run("enabled splits ingress per runtime family and allows 0.0.0.0/0 on egress", func(t *testing.T) {
 				testAgentEgressProxyNetworkPolicyEnabled(t, chart)
@@ -584,15 +584,22 @@ func TestAgentEgressProxyNetworkPolicy(t *testing.T) {
 	}
 }
 
-func testAgentEgressProxyNetworkPolicyDisabledByDefault(t *testing.T, chart agentChart) {
+func testAgentEgressProxyNetworkPolicyEnabledByDefault(t *testing.T, chart agentChart) {
 	setValues := map[string]string{
 		"hunterAgent.enabled":          "true",
 		"hunterAgent.image.repository": "example.com/hunter-agent",
 		"hunterAgent.image.tag":        "1",
 	}
 	output, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-networkpolicy.yaml"})
-	require.Error(t, err)
-	assert.Empty(t, strings.TrimSpace(output))
+	require.NoError(t, err)
+
+	var policy networkingv1.NetworkPolicy
+	helm.UnmarshalK8SYaml(t, output, &policy)
+
+	hunterIngress := findIngressRuleFrom(policy.Spec.Ingress, isRuntimeFamilyPodRule(chart, "hunter"))
+	require.NotNil(t, hunterIngress, "expected an ingress rule selecting Hunter's own pods")
+	require.Len(t, hunterIngress.Ports, 1)
+	assert.EqualValues(t, 3128, hunterIngress.Ports[0].Port.IntVal)
 }
 
 func testAgentEgressProxyNetworkPolicyEnabled(t *testing.T, chart agentChart) {

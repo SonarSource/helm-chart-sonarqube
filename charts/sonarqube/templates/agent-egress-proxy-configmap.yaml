@@ -44,14 +44,20 @@ data:
 
     # No request_body_max_size: without TLS interception a CONNECT tunnel is opaque to Squid, so
     # any such cap would miss every HTTPS body (all LLM prompts and uploads) and apply only to
-    # cleartext - which here means SonarQube's own always-reachable endpoints. A limit there would
-    # be a silent ceiling on a path the chart guarantees, so body size is left to SonarQube.
+    # cleartext - which here means SonarQube's own Remediation-only endpoints, when reachable at
+    # all. A limit there would be a silent ceiling on a path the chart guarantees, so body size is
+    # left to SonarQube.
 
     acl SSL_ports port 443
     acl Safe_ports port 80
     acl Safe_ports port 443
-    # SonarQube's own port, so the hardcoded allow rule below can ever match.
+    {{- if .Values.remediationAgent.enabled }}
+    # SonarQube's own port, so the hardcoded allow rule below can ever match. Gated on
+    # remediationAgent.enabled along with sonarqube_host/sonarqube_agentic_endpoints below - Hunter
+    # never dials remediation_listener, so naming SonarQube's port here in a Hunter-only build
+    # would be dead config for a destination the release never allows.
     acl Safe_ports port {{ .Values.service.externalPort }}
+    {{- end }}
     {{- if .Values.agentOrchestrator.enabled }}
     # Likewise the orchestrator's, for the artifact-locator renewal rule below. Without this entry
     # `deny !Safe_ports` rejects the renewal POST before any allow rule is reached, since the
@@ -73,14 +79,16 @@ data:
     acl allowed_domains dstdomain {{ join " " . }}
     {{- end }}
 
+    {{- if .Values.remediationAgent.enabled }}
     # SonarQube's own rule-lookup and analysis-creation endpoints must always be reachable to
     # whichever family is allowed to call them, no matter what allowedDomains contains -
     # hardcoded here (not sourced from Values) so it can't be edited away. Only the Remediation
     # runtime calls these; Hunter must not reach SonarQube at all, which is why the allow rule
-    # below is scoped to remediation_listener rather than matching on any listening port. The
-    # path match is anchored to the SonarQube service itself via sonarqube_host. Fully qualified
-    # (not the bare short name) since Squid's DNS resolver doesn't
-    # honour /etc/resolv.conf's search list.
+    # below is scoped to remediation_listener rather than matching on any listening port, and why
+    # this whole ACL group renders only when remediationAgent.enabled - a Hunter-only build has no
+    # path to SonarQube through this proxy at all. The path match is anchored to the SonarQube
+    # service itself via sonarqube_host. Fully qualified (not the bare short name) since Squid's
+    # DNS resolver doesn't honour /etc/resolv.conf's search list.
     # urlpath_regex matches the path *and* query string, so both endpoints must tolerate a
     # trailing "?..." - real calls to rules/show carry a "?key=..." query parameter.
     # The leading `^[^?]*` keeps these rules prefix-agnostic, which is load-bearing twice over.
@@ -94,11 +102,12 @@ data:
     # still denied rather than reopening the whole API surface.
     acl sonarqube_host dstdomain {{ include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.fullname" .) "ctx" .) }}
     acl sonarqube_agentic_endpoints urlpath_regex ^[^?]*/rules/show(\?|$) ^[^?]*/a3s/private/analyses(/|\?|$)
-    {{- if .Values.remediationAgent.enabled }}
     # Restricts the sonarqube_host allow rule below to the Remediation-only listener - Hunter,
     # which only ever dials agentEgressProxy.port, can never match this ACL and so can never reach
     # SonarQube through this proxy, no matter what allowedDomains or extraSquidConf contains.
-    acl remediation_listener myport {{ .Values.agentEgressProxy.remediationPort }}
+    # `localport` is the current Squid 3.2+ name for this ACL type (`myport` is a deprecated alias
+    # that still works but warns on startup).
+    acl remediation_listener localport {{ .Values.agentEgressProxy.remediationPort }}
     {{- end }}
 
     {{- if .Values.agentOrchestrator.enabled }}

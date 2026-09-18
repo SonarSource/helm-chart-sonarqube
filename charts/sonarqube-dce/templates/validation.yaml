@@ -77,6 +77,13 @@
   {{- if not .Values.vortexAnalysis.enabled -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but vortexAnalysis.enabled is not true." -}}
   {{- end -}}
+  {{- /* agentEgressProxy.remediationPort only opens a second http_port directive in
+         agent-egress-proxy-configmap.yaml's squid.conf when remediationAgent.enabled - both
+         listeners live in the same Squid container, so an equal port is a duplicate bind Squid
+         refuses to start with. */ -}}
+  {{- if eq (int .Values.agentEgressProxy.port) (int .Values.agentEgressProxy.remediationPort) -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n agentEgressProxy.remediationPort (%d) must differ from agentEgressProxy.port - both are http_port directives in the same Squid container." (int .Values.agentEgressProxy.remediationPort)) -}}
+  {{- end -}}
 {{- end -}}
 
 {{/* When a runtime's storage.filesystem.baseDir is set, its extraVolumeMounts must contain a
