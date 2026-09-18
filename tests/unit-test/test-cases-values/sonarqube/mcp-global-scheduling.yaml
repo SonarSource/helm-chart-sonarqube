@@ -1,0 +1,34 @@
+community:
+  enabled: true
+monitoringPasscode: test-passcode
+# Global scheduling settings alongside MCP's own, which take precedence over them.
+nodeSelector:
+  global: "true"
+tolerations:
+  - key: global
+    operator: Exists
+    effect: NoSchedule
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: global
+              operator: In
+              values: ["true"]
+mcp:
+  enabled: true
+  nodeSelector:
+    mcp: "true"
+  tolerations:
+    - key: mcp
+      operator: Exists
+      effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: mcp
+                operator: In
+                values: ["true"]
