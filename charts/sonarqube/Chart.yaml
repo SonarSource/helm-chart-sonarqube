@@ -85,6 +85,8 @@ annotations:
       description: "Add vortex.topologySpreadConstraints, agentOrchestrator.topologySpreadConstraints and <hunterAgent|remediationAgent>.topologySpreadConstraints, and apply the chart-wide priorityClassName to Vortex, the Agent Orchestrator, and the Hunter/Remediation Agent runtimes"
     - kind: fixed
       description: "Fix jvmOpts/jvmCeOpts being silently dropped instead of merged when sonar.web.javaOpts/sonar.ce.javaOpts is also set in sonarProperties"
+    - kind: changed
+      description: "Raise the default timeoutSeconds to 5 on the readinessProbe/livenessProbe, so the forked sh/curl exec probe is not killed by the kubelet under CPU contention"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-community

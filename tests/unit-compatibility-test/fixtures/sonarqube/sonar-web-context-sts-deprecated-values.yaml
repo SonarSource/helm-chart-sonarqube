@@ -237,11 +237,11 @@ spec:
               - sh
               - -c
               - |
-                curl --noproxy "*" -fsS -o /dev/null --max-time 1 -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/sonarqube-liveness/api/system/liveness"
+                curl --noproxy "*" -fsS -o /dev/null --max-time 5 -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/sonarqube-liveness/api/system/liveness"
             failureThreshold: 6
             initialDelaySeconds: 60
             periodSeconds: 30
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           readinessProbe:
             exec:
               command:
@@ -258,7 +258,7 @@ spec:
             failureThreshold: 6
             initialDelaySeconds: 60
             periodSeconds: 30
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           startupProbe:
             httpGet:
               scheme: HTTP

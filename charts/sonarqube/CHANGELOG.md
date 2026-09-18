@@ -25,6 +25,7 @@ All changes to this chart will be documented in this file.
 * Add `mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` for the MCP pod; each wins over the chart's global `nodeSelector`/`affinity`/`tolerations` when set, and falls back to it otherwise. Also add `mcp.topologySpreadConstraints` (MCP-specific, no chart-wide equivalent). The chart-wide `priorityClassName` now also applies to the MCP pod
 * Add `vortex.topologySpreadConstraints`, `agentOrchestrator.topologySpreadConstraints` and `<hunterAgent|remediationAgent>.topologySpreadConstraints`, and apply the chart-wide `priorityClassName` to Vortex, the Agent Orchestrator, and the Hunter/Remediation Agent runtimes, for consistency with their existing `nodeSelector`/`affinity`/`tolerations` support
 * Fix `jvmOpts`/`jvmCeOpts` being silently dropped instead of merged when `sonar.web.javaOpts`/`sonar.ce.javaOpts` is also set in `sonarProperties`
+* Raise the default `timeoutSeconds` to `5` on the `readinessProbe`/`livenessProbe`, so the forked `sh`/`curl` exec probe is not killed by the kubelet under CPU contention
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
