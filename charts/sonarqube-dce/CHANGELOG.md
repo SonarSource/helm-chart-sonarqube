@@ -27,7 +27,7 @@ All changes to this chart will be documented in this file.
 * Add `mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` for the MCP pod; each wins over the chart's global `nodeSelector`/`affinity`/`tolerations` when set, and falls back to it otherwise. Also add `mcp.topologySpreadConstraints` (MCP-specific, no chart-wide equivalent). The chart-wide `priorityClassName` now also applies to the MCP pod
 * Add `vortex.topologySpreadConstraints`, `agentOrchestrator.topologySpreadConstraints` and `<hunterAgent|remediationAgent>.topologySpreadConstraints`, and apply the chart-wide `priorityClassName` to Vortex, the Agent Orchestrator, and the Hunter/Remediation Agent runtimes, for consistency with their existing `nodeSelector`/`affinity`/`tolerations` support
 * Fix `applicationNodes.jvmOpts`/`jvmCeOpts` being silently dropped instead of merged when `sonar.web.javaOpts`/`sonar.ce.javaOpts` is also set in `applicationNodes.sonarProperties`
-* Raise the default `timeoutSeconds` to `5` on the `searchNodes` and `applicationNodes` readiness/liveness/startup probes, so the forked `sh`/`curl` exec probe is not killed by the kubelet under CPU contention, and raise `applicationNodes.livenessProbe.failureThreshold` to `8` (restart window 240s, matching readiness)
+* Raise the default `timeoutSeconds` to `5` on the `searchNodes` readiness/liveness/startup probes and the `applicationNodes` readiness/liveness probes, so the forked `sh`/`curl` exec probe is not killed by the kubelet under CPU contention, and raise `applicationNodes.livenessProbe.failureThreshold` to `8` (restart window 180s->240s, matching readiness)
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
