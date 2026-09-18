@@ -1615,10 +1615,12 @@ component's own securityContext block)
 {{- end -}}
 
 {{/*
-Render nodeSelector/tolerations/affinity for an agent workload: the component's own value wins
-when set (whole field, not merged), else the chart's global one.
+Render priorityClassName/nodeSelector/tolerations/affinity/topologySpreadConstraints for an agent
+workload: the component's own nodeSelector/tolerations/affinity wins when set (whole field, not
+merged), else the chart's global one; priorityClassName always comes from the chart-wide
+.Values.priorityClassName, and topologySpreadConstraints only from the component.
 Parameters (dict): ctx (required, the root context '.'), component (required, the component's own
-values block, providing nodeSelector/tolerations/affinity)
+values block, providing nodeSelector/tolerations/affinity/topologySpreadConstraints)
 Usage: {{- with (include "sonarqube.agent.scheduling" (dict "ctx" $ "component" .Values.agentOrchestrator)) }}
 {{ . | indent 6 }}
       {{- end }}
@@ -1630,6 +1632,9 @@ Usage: {{- with (include "sonarqube.agent.scheduling" (dict "ctx" $ "component" 
 {{- define "sonarqube.agent.scheduling.render" -}}
 {{- $ctx := .ctx -}}
 {{- $component := .component -}}
+{{- with $ctx.Values.priorityClassName }}
+priorityClassName: {{ . }}
+{{- end }}
 {{- with default $ctx.Values.nodeSelector $component.nodeSelector }}
 nodeSelector:
 {{ toYaml . | indent 2 }}
@@ -1640,6 +1645,10 @@ tolerations:
 {{- end }}
 {{- with default $ctx.Values.affinity $component.affinity }}
 affinity:
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- with $component.topologySpreadConstraints }}
+topologySpreadConstraints:
 {{ toYaml . | indent 2 }}
 {{- end }}
 {{- end -}}
