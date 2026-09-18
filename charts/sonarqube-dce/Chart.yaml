@@ -79,19 +79,13 @@ annotations:
     - kind: changed
       description: "Default JMX Prometheus Exporter downloads use GitHub Releases and require network access to github.com and release-assets.githubusercontent.com"
     - kind: added
-      description: "Add autoscaling for Vortex (vortexAnalysis.autoscaling, a KEDA ScaledObject reading Vortex's own unauthenticated GET /metrics/max-concurrent-requests endpoint, aggregated across replicas via KEDA's aggregateFromKubeServiceEndpoints; requires KEDA >= 2.20.0, with a single-replica fallback via vortexAnalysis.autoscaling.aggregateAcrossReplicas), plus an unconditional vortexAnalysis.terminationGracePeriodSeconds"
-    - kind: fixed
-      description: "Fix the Vortex ScaledObject's spec.fallback being emitted even with vortexAnalysis.autoscaling.aggregateAcrossReplicas: false, whose behavior field a KEDA older than 2.17 silently prunes, degrading fallback to forcibly scaling the fleet down to minReplicas (pinned to 1 on that path) on a scrape failure instead of freezing it"
-    - kind: changed
-      description: "Update MCP image to sonarsource/sonarqube-mcp:1.27.0.4335"
-    - kind: added
       description: "Add mcp.nodeSelector, mcp.affinity and mcp.tolerations for the MCP pod (falling back to the chart's global values when unset), plus mcp.topologySpreadConstraints"
     - kind: added
       description: "Add vortex.topologySpreadConstraints, agentOrchestrator.topologySpreadConstraints and <hunterAgent|remediationAgent>.topologySpreadConstraints, and apply the chart-wide priorityClassName to Vortex, the Agent Orchestrator, and the Hunter/Remediation Agent runtimes"
     - kind: fixed
       description: "Fix applicationNodes.jvmOpts/jvmCeOpts being silently dropped instead of merged when sonar.web.javaOpts/sonar.ce.javaOpts is also set in applicationNodes.sonarProperties"
     - kind: changed
-      description: "Raise the default timeoutSeconds to 5 on the searchNodes and applicationNodes readiness/liveness probes, so the forked sh/curl exec probe is not killed by the kubelet under CPU contention, and raise applicationNodes.livenessProbe.failureThreshold to 8 (restart window 240s, matching readiness)"
+      description: "Raise the default timeoutSeconds to 5 on the searchNodes and applicationNodes readiness/liveness/startup probes, so the forked sh/curl exec probe is not killed by the kubelet under CPU contention, and raise applicationNodes.livenessProbe.failureThreshold to 8 (restart window 240s, matching readiness)"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/
