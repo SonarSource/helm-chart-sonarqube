@@ -1323,11 +1323,14 @@ spec:
       release: agentic-scheduling-values.yaml
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
         app: sonarqube-dce-agent-runtime-hunter
         release: agentic-scheduling-values.yaml
         sonarqube.agent/component: runtime
         sonarqube.agent/family: hunter
+        sidecar.istio.io/inject: "false"
     spec:
       terminationGracePeriodSeconds: 44430
       runtimeClassName: gvisor
@@ -1461,11 +1464,14 @@ spec:
       release: agentic-scheduling-values.yaml
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
         app: sonarqube-dce-agent-runtime-remediation
         release: agentic-scheduling-values.yaml
         sonarqube.agent/component: runtime
         sonarqube.agent/family: remediation
+        sidecar.istio.io/inject: "false"
     spec:
       terminationGracePeriodSeconds: 3630
       runtimeClassName: gvisor

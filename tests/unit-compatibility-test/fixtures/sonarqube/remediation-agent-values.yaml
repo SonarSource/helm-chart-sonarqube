@@ -1323,11 +1323,14 @@ spec:
       release: remediation-agent-values.yaml
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
         app: sonarqube-agent-runtime-remediation
         release: remediation-agent-values.yaml
         sonarqube.agent/component: runtime
         sonarqube.agent/family: remediation
+        sidecar.istio.io/inject: "false"
     spec:
       terminationGracePeriodSeconds: 3630
       runtimeClassName: gvisor

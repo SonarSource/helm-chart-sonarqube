@@ -112,3 +112,31 @@ func TestIstioSidecarInjectAnnotationRuntimeInjectedWithoutGvisor(t *testing.T) 
 		})
 	}
 }
+
+// The agent runtime is the one workload that must say "false" rather than say nothing when
+// istio.enabled is off (contrast TestIstioSidecarInjectAnnotationOffWhenIstioDisabled, where
+// staying silent is right). Its NetworkPolicy grants no DNS and no istiod egress on that path,
+// which is only sound if the pod definitively has no Envoy - and injection is decided by the
+// namespace, not by this chart's values, so a namespace-wide istio-injection=enabled label would
+// otherwise hand the untrusted runtime a sidecar that could never resolve istiod's
+// discoveryAddress. Both forms are required: the injector webhook's objectSelector is a
+// LabelSelector and can only pre-filter on labels, never annotations.
+func TestIstioSidecarInjectRuntimeExcludedWhenIstioDisabled(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			off := map[string]string{"istio.enabled": "false"}
+			for _, gvisor := range []string{"true", "false"} {
+				t.Run("gvisor="+gvisor, func(t *testing.T) {
+					setValues := map[string]string{"istio.enabled": "false", "gvisor.enabled": gvisor}
+					deployment := gvisorIstioRuntimeDeployment(t, chart, "gvisor-istio-sidecar-off.yaml", "hunter", setValues)
+					assert.Equal(t, "false", deployment.Spec.Template.Annotations["sidecar.istio.io/inject"])
+					assert.Equal(t, "false", deployment.Spec.Template.Labels["sidecar.istio.io/inject"])
+				})
+			}
+			// The contrast is the point: a trusted workload keeps no opinion on the same path.
+			meta := renderWorkloadMeta(t, chart, "templates/agent-orchestrator.yaml", off)
+			assert.NotContains(t, meta.Annotations, "sidecar.istio.io/inject")
+			assert.NotContains(t, meta.Labels, "sidecar.istio.io/inject")
+		})
+	}
+}

@@ -30,22 +30,29 @@ spec:
     metadata:
       {{- $sandboxed := eq (include "sonarqube.agentRuntime.sandboxed" $) "true" }}
       {{- $meshEnabled := eq (include "sonarqube.agentRuntime.meshSidecar.enabled" $) "true" }}
-      {{- if or $cfg.annotations $.Values.istio.enabled }}
+      {{- /* Unconditional: the inject directive below is always stamped, so this block is
+             never empty. */}}
       annotations:
         {{- with $cfg.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- if and $sandboxed $.Values.istio.enabled }}
-        {{- /* Istio's iptables-based istio-init container needs NET_ADMIN/raw sockets, which a
-               sandboxing RuntimeClass (gVisor, Kata, ...) may not grant - its sidecar would
-               permanently CrashLoopBackOff. Opt these pods out of injection rather than mesh
-               membership. */}}
-        sidecar.istio.io/inject: "false"
-        {{- else if $.Values.istio.enabled }}
-        {{- /* Explicit, not left to a namespace-wide istio-injection=enabled label: this family's
+        {{- /* Always stamped - "false" as well as "true" - so a runtime's injection state is a
+               property of this chart and never of the namespace it happens to land in. With
+               istio.enabled off, the runtime's NetworkPolicy grants no DNS and no istiod egress
+               (see agent-networkpolicy.yaml), which is only sound if the pod definitively has no
+               Envoy; a namespace-wide istio-injection=enabled label would otherwise give it one,
+               and that Envoy could then never resolve istiod's discoveryAddress. Sandboxed pods
+               are opted out for a second, independent reason: Istio's iptables-based istio-init
+               container needs NET_ADMIN/raw sockets, which a sandboxing RuntimeClass (gVisor,
+               Kata, ...) may not grant, so its sidecar would permanently CrashLoopBackOff.
+               "true" is explicit rather than inherited for a third: this family's
                PeerAuthentication (peerauthentication.yaml) is STRICT, which rejects any plaintext
-               connection - without a sidecar to actually terminate mTLS, the pod doesn't merely go
-               unenforced, it stops accepting the plaintext traffic that's now all it can receive. */}}
+               connection - without a sidecar to actually terminate mTLS the pod doesn't merely go
+               unenforced, it stops accepting the plaintext traffic that's now all it can
+               receive. */}}
+        {{- if or $sandboxed (not $.Values.istio.enabled) }}
+        sidecar.istio.io/inject: "false"
+        {{- else }}
         sidecar.istio.io/inject: "true"
         {{- end }}
         {{- if $meshEnabled }}
@@ -57,7 +64,6 @@ spec:
         prometheus.io/port: "15020"
         prometheus.io/path: "/stats/prometheus"
         {{- end }}
-      {{- end }}
       labels:
         {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" $ "family" $family) | nindent 8 }}
         sonarqube.agent/component: runtime
@@ -80,9 +86,9 @@ spec:
                standard sidecar injected on top of - or instead of - the hand-authored one,
                reintroducing the istio-init/NET_ADMIN CrashLoopBackOff this exists to prevent.
                Keep in sync with the annotations block above. */}}
-        {{- if and $sandboxed $.Values.istio.enabled }}
+        {{- if or $sandboxed (not $.Values.istio.enabled) }}
         sidecar.istio.io/inject: "false"
-        {{- else if $.Values.istio.enabled }}
+        {{- else }}
         sidecar.istio.io/inject: "true"
         {{- end }}
     spec:
