@@ -727,6 +727,44 @@ func TestAgentEgressProxyEnvVarsNotOverridable(t *testing.T) {
 	}
 }
 
+// TestAgentEgressProxyEnvVarsNotOverridable only proves the last-write-wins merge can't be used to
+// smuggle a bypass through a literal HTTP_PROXY/NO_PROXY name. It can't prove anything about the
+// reserved kubelet service-link variable HTTP_PROXY itself expands to ($(<SVC>_SERVICE_HOST)):
+// kubelet's tmpEnv map poisons that key on first sight, so no later entry - regardless of
+// declaration order - can ever override it back once a runtime's own env sets it. Ordering-based
+// defenses are structurally unable to close that, which is why templates/agent-runtime.yaml fails
+// the render outright instead.
+func TestAgentEgressProxyServiceHostVarRejectedInRuntimeEnv(t *testing.T) {
+	for _, chart := range egressProxyCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			svcOut, err := renderAgentEgressProxyTemplates(t, chart, map[string]string{
+				"hunterAgent.enabled":          "true",
+				"hunterAgent.image.repository": "example.com/hunter-agent",
+				"hunterAgent.image.tag":        "1",
+			}, []string{"templates/agent-egress-proxy-service.yaml"})
+			require.NoError(t, err)
+			var service corev1.Service
+			helm.UnmarshalK8SYaml(t, svcOut, &service)
+			require.NotEmpty(t, service.Name)
+
+			reservedVar := strings.ToUpper(strings.ReplaceAll(service.Name, "-", "_")) + "_SERVICE_HOST"
+
+			opts := &helm.Options{
+				Logger:      logger.Discard,
+				ValuesFiles: []string{chart.valuesDir + "/agent-runtimes-enabled.yaml"},
+				SetValues: map[string]string{
+					"hunterAgent.env[0].name":  reservedVar,
+					"hunterAgent.env[0].value": "attacker.example.com:9999",
+				},
+			}
+			_, err = helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-runtime.yaml"})
+			require.Error(t, err, "setting the egress proxy's own kubelet-published service-link variable must fail the render, not silently merge")
+			assert.Contains(t, err.Error(), reservedVar)
+			assert.Contains(t, err.Error(), "kubelet-published address of the Agent Egress Proxy")
+		})
+	}
+}
+
 // The service-link variable a runtime expands is derived in-template from the proxy's Service
 // name, and the two must never drift: a wrong variable name expands to nothing, leaving
 // HTTP_PROXY pointing at a port on no host, and since the runtime has no resolver and no other

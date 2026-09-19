@@ -599,6 +599,12 @@ istio:
   enabled: false
   # Namespace istiod runs in.
   namespace: "istio-system"
+  # Set only for a revisioned (canary-upgrade) control plane, e.g. "1-24-1" for an istiod
+  # installed with `--revision 1-24-1`. Leave "" for a non-revisioned install. Drives every place
+  # this chart pins istiod's address for agent runtime pods: the istiod Service this chart reads
+  # ("auto" below) and hands to /etc/hosts becomes istiod-<revision> instead of the bare istiod
+  # Service, matching the discoveryAddress a revisioned sidecar actually dials.
+  revision: ""
   # How agent runtime pods reach istiod without a resolver, which is what lets the chart take
   # kube-dns egress away from them entirely. Three settings:
   #   "auto" (default) - the chart reads the istiod Service in istio.namespace itself. That needs
@@ -625,8 +631,12 @@ istio:
   #
   # A wrong or stale address fails closed - the sidecar never reaches ready - rather than
   # silently falling back to DNS. Only consulted when a runtime actually gets an Envoy; ignored
-  # otherwise. "auto" reads a Service with the credentials running helm, so an identity that
-  # cannot get services in istio.namespace sees the same outcome as `helm template`.
+  # otherwise. "auto" reads the Service with the credentials running helm, and a true NotFound
+  # (or no live cluster, e.g. `helm template`) sees the same fail-open outcome described above -
+  # but an identity that lacks `get`/`list` on Services in istio.namespace does NOT: Helm's
+  # `lookup` only swallows NotFound, so an RBAC-Forbidden error there aborts the whole
+  # `helm install`/`template` render instead. Grant that RBAC, or pin an explicit address (or
+  # "") instead of "auto", if it can't be granted.
   istiodClusterIP: "auto"
   # mTLS for sandboxed runtimes: istio-init needs NET_ADMIN, which a sandboxing RuntimeClass
   # (gVisor, Kata, ...) may not grant, so the chart hand-authors the istio-proxy container itself
