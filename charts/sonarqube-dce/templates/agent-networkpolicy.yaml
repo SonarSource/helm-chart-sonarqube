@@ -93,7 +93,7 @@ spec:
         - podSelector:
             matchLabels: {{- include "sonarqube.agentEgressProxy.selectorLabels" $ | nindent 14 }}
       ports:
-        - port: {{ $.Values.agentEgressProxy.port }}
+        - port: {{ ternary $.Values.agentEgressProxy.remediationPort $.Values.agentEgressProxy.port (eq $family "remediation") }}
           protocol: TCP
 {{- end }}
 {{- end }}

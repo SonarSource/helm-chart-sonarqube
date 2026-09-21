@@ -91,6 +91,13 @@ spec:
             - name: {{ ternary "tcp-proxy" "http-proxy" .Values.istio.enabled }}
               containerPort: {{ .Values.agentEgressProxy.port }}
               protocol: TCP
+            {{- if .Values.remediationAgent.enabled }}
+            {{- /* Second listener, Remediation-only - see agentEgressProxy.remediationPort in
+                   values.yaml. Keep in sync with agent-egress-proxy-service.yaml's targetPort. */}}
+            - name: {{ ternary "tcp-proxy-rem" "http-proxy-rem" .Values.istio.enabled }}
+              containerPort: {{ .Values.agentEgressProxy.remediationPort }}
+              protocol: TCP
+            {{- end }}
           {{- with .Values.agentEgressProxy.env }}
           env: {{- toYaml . | nindent 12 }}
           {{- end }}
