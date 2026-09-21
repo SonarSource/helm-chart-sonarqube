@@ -32,3 +32,6 @@ istio:
   meshSidecar:
     enabled: true
     meshPort: 8090
+  # A real address so this fixture doesn't also hit the fail-closed "auto with no live
+  # cluster" check (validation.yaml), leaving only the meshPort conflict to fail on.
+  istiodClusterIP: "10.96.0.42"

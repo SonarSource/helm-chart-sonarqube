@@ -46,3 +46,6 @@ istio:
   enabled: true
   meshSidecar:
     enabled: false
+  # A real address so overriding gvisor.enabled=false here (standard injection, so an Envoy
+  # after all) doesn't hit the fail-closed "auto with no live cluster" check (validation.yaml).
+  istiodClusterIP: "10.96.0.42"
