@@ -84,21 +84,76 @@ Usage: {{ include "sonarqube.gvisor.fullname" . }}
 {{/*
 Effective gvisor.enabled: requires at least one of hunterAgent.enabled / remediationAgent.enabled
 too, so gVisor only ever renders when there's a runtime to sandbox.
+Never on OpenShift: the installer needs containerd plus privileged/hostPID (no default SCC allows
+that) and CRI-O ships no runsc handler, so leaving it on would emit a RuntimeClass the runtimes can
+never be scheduled with. OpenShift.agentRuntimeClassName sandboxes them with Kata instead.
 Usage: {{ include "sonarqube.gvisor.enabled" . }}
 */}}
 {{- define "sonarqube.gvisor.enabled" -}}
-{{- and .Values.gvisor.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
+{{- and .Values.gvisor.enabled (not .Values.OpenShift.enabled) (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
 {{- end -}}
 
 {{/*
-Whether the agent runtimes are on a RuntimeClass that can't run istio-init (no NET_ADMIN) -
-gvisor.enabled=true, or the generic agentRuntimeSandbox.enabled=true for any other sandbox (e.g.
-Kata). Inert unless a runtime is actually enabled, same precedent as sonarqube.gvisor.enabled.
+RuntimeClass for the agent runtime pods: OpenShift.agentRuntimeClassName on OpenShift ("kata" by
+default - created by the sandboxed containers operator, never by this chart), gVisor's elsewhere
+when that feature is on, else the generic agentRuntimeSandbox.runtimeClassName for any other
+sandboxed RuntimeClass (e.g. Kata outside OpenShift). Empty output means no runtimeClassName at
+all, i.e. the cluster's default runtime with no sandbox under it.
+Usage: {{ include "sonarqube.agentRuntime.runtimeClassName" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.runtimeClassName" -}}
+{{- if .Values.OpenShift.enabled -}}
+{{- .Values.OpenShift.agentRuntimeClassName | default "" -}}
+{{- else if eq (include "sonarqube.gvisor.enabled" .) "true" -}}
+{{- .Values.gvisor.runtimeClassName -}}
+{{- else if .Values.agentRuntimeSandbox.enabled -}}
+{{- .Values.agentRuntimeSandbox.runtimeClassName -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Fail the release when OpenShift.agentRuntimeClassName names a RuntimeClass the cluster does not
+have. Sandboxing the agent runtimes is opt-out, not opt-in, so the name is set by default - but the
+chart never creates the RuntimeClass (it comes from the OpenShift sandboxed containers operator).
+Without this check Helm reports success while the API server rejects every agent runtime pod with
+'RuntimeClass "kata" not found', leaving both Deployments at 0 available indefinitely. Clearing
+OpenShift.agentRuntimeClassName is the documented opt-out and also skips this check, since there is
+then no RuntimeClass to find.
+
+'lookup' returns nothing whenever there is no live API connection - 'helm template', and
+client-side '--dry-run' - which is indistinguishable from "the RuntimeClass is absent". So the
+check only runs once a positive control proves lookup is live: the release namespace's 'default'
+ServiceAccount, which every existing namespace has. When even that comes back empty (offline
+rendering, or --create-namespace before the namespace exists) the guard is skipped rather than
+guessing, the same way sonarqube.search.assertEsMajorUpgrade treats an empty lookup.
+Usage: {{ include "sonarqube.openshift.assertAgentRuntimeClass" . }}
+*/}}
+{{- define "sonarqube.openshift.assertAgentRuntimeClass" -}}
+{{- $rcName := .Values.OpenShift.agentRuntimeClassName | default "" | toString -}}
+{{- if and .Values.OpenShift.enabled $rcName (not .Values.OpenShift.skipAgentRuntimeClassCheck) -}}
+{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+{{- /* Nested ifs, not one 'and': the positive control must be evaluated before the RuntimeClass
+       lookup, and template 'and' evaluating its arguments eagerly is a Go version detail. */ -}}
+{{- if lookup "v1" "ServiceAccount" .Release.Namespace "default" -}}
+{{- /* RuntimeClass is cluster-scoped, hence the empty namespace. */ -}}
+{{- if not (lookup "node.k8s.io/v1" "RuntimeClass" "" $rcName) -}}
+{{- fail (printf "\n ** The RuntimeClass %q does not exist in this cluster. ** \n OpenShift.agentRuntimeClassName=%q sandboxes the agent runtimes, but this chart never creates that RuntimeClass - it comes from the OpenShift sandboxed containers operator (\"kata\" for a default KataConfig, \"kata-remote\" for peer pods). Install the operator and check with 'kubectl get runtimeclass %s', or set OpenShift.agentRuntimeClassName=\"\" to run the agent runtimes unsandboxed under the cluster's default runtime. Set OpenShift.skipAgentRuntimeClassCheck=true to bypass this check, for example when the installing credentials cannot read cluster-scoped RuntimeClasses." $rcName $rcName $rcName) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Whether the agent runtimes are on a RuntimeClass that can't run istio-init (no NET_ADMIN) - i.e.
+sonarqube.agentRuntime.runtimeClassName resolves to something: Kata on OpenShift, gVisor, or the
+generic agentRuntimeSandbox.runtimeClassName. Inert unless a runtime is actually enabled, same
+precedent as sonarqube.gvisor.enabled.
 Usage: {{ include "sonarqube.agentRuntime.sandboxed" . }}
 */}}
 {{- define "sonarqube.agentRuntime.sandboxed" -}}
 {{- $anyRuntime := or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
-{{- if and $anyRuntime (or .Values.gvisor.enabled .Values.agentRuntimeSandbox.enabled) -}}
+{{- if and $anyRuntime (include "sonarqube.agentRuntime.runtimeClassName" .) -}}
 true
 {{- end -}}
 {{- end -}}
@@ -180,20 +235,6 @@ Usage: {{ include "sonarqube.agentRuntime.resolverlessMesh" . }}
 {{- define "sonarqube.agentRuntime.resolverlessMesh" -}}
 {{- if and (eq (include "sonarqube.agentRuntime.hasEnvoy" .) "true") (include "sonarqube.agentRuntime.istiodClusterIP" .) -}}
 true
-{{- end -}}
-{{- end -}}
-
-{{/*
-RuntimeClass to schedule agent runtime pods onto: gvisor.runtimeClassName when gVisor is active,
-else the generic agentRuntimeSandbox.runtimeClassName. Only meaningful when
-sonarqube.agentRuntime.sandboxed is "true".
-Usage: {{ include "sonarqube.agentRuntime.runtimeClassName" . }}
-*/}}
-{{- define "sonarqube.agentRuntime.runtimeClassName" -}}
-{{- if eq (include "sonarqube.gvisor.enabled" .) "true" -}}
-{{ .Values.gvisor.runtimeClassName }}
-{{- else -}}
-{{ .Values.agentRuntimeSandbox.runtimeClassName }}
 {{- end -}}
 {{- end -}}
 
@@ -1580,14 +1621,26 @@ podAntiAffinity:
 {{- end -}}
 
 {{/*
-The DNS-to-kube-dns egress rule. Callers gate it themselves: the Agent Egress Proxy needs it
-unconditionally (it resolves the destinations allowedDomains permits), whereas a runtime needs it
-only when it both gets an Envoy and has no istio.istiodClusterIP to pin istiod's address with -
-see agent-networkpolicy.yaml and sonarqube.agentRuntime.resolverlessMesh.
+The DNS egress rule shared by every NetworkPolicy this chart renders (SonarQube itself, the agent
+runtimes and the egress proxy alike).
+OpenShift needs its own form: its CoreDNS pods live in the openshift-dns namespace and carry no
+k8s-app label, and OVN-Kubernetes matches egress ACLs after DNAT, so the rule has to allow the
+container port 5353 rather than the Service port 53.
 Output is unindented; callers should pipe through `indent`/`nindent` to place it under `egress:`.
-Usage: {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
+Usage: {{ include "sonarqube.dnsEgressRule" $ | indent 4 }}
 */}}
-{{- define "sonarqube.agent.dnsEgressRule" -}}
+{{- define "sonarqube.dnsEgressRule" -}}
+{{- if .Values.OpenShift.enabled -}}
+- to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-dns
+  ports:
+    - port: 5353
+      protocol: UDP
+    - port: 5353
+      protocol: TCP
+{{- else -}}
 - to:
     - namespaceSelector: {}
       podSelector:
@@ -1598,6 +1651,7 @@ Usage: {{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
       protocol: UDP
     - port: 53
       protocol: TCP
+{{- end -}}
 {{- end -}}
 
 {{/*

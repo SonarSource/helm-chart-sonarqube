@@ -81,7 +81,7 @@ spec:
            this policy would then leave unable to reach istiod. */}}
     {{- if $hasEnvoy }}
     {{- if ne (include "sonarqube.agentRuntime.resolverlessMesh" $) "true" }}
-{{ include "sonarqube.agent.dnsEgressRule" $ | indent 4 }}
+{{ include "sonarqube.dnsEgressRule" $ | indent 4 }}
     {{- end }}
 {{ include "sonarqube.agent.istiodEgressRule" $ | indent 4 }}
     {{- end }}

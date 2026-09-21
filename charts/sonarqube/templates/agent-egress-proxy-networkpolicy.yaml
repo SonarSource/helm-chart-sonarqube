@@ -49,7 +49,7 @@ spec:
           protocol: TCP
     {{- end }}
   egress:
-{{ include "sonarqube.agent.dnsEgressRule" . | indent 4 }}
+{{ include "sonarqube.dnsEgressRule" . | indent 4 }}
     {{- if .Values.istio.enabled }}
 {{ include "sonarqube.agent.istiodEgressRule" . | indent 4 }}
     {{- end }}
