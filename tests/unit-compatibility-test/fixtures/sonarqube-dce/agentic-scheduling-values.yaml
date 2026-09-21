@@ -1047,10 +1047,12 @@ spec:
     metadata:
       annotations:
         checksum/config: 1b173c1570dd5cb89979c1eab74370a7978c69e02332747363b02427d428bfed
+        sidecar.istio.io/inject: "false"
       labels:
         app: sonarqube-dce-agent-egress-proxy
         release: agentic-scheduling-values.yaml
         sonarqube.agent/component: egress-proxy
+        sidecar.istio.io/inject: "false"
     spec:
       automountServiceAccountToken: false
       containers:
@@ -1323,11 +1325,14 @@ spec:
       release: agentic-scheduling-values.yaml
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
         app: sonarqube-dce-agent-runtime-hunter
         release: agentic-scheduling-values.yaml
         sonarqube.agent/component: runtime
         sonarqube.agent/family: hunter
+        sidecar.istio.io/inject: "false"
     spec:
       terminationGracePeriodSeconds: 44430
       runtimeClassName: gvisor
@@ -1366,13 +1371,13 @@ spec:
             - name: AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
               value: /etc/agentic/keys/hunter-to-orchestrator
             - name: HTTP_PROXY
-              value: http://agentic-scheduling-values.yaml-sonarqube-dce-agent-egress-proxy:3128
+              value: http://$(AGENTIC_SCHEDULING_VALUES.YAML_SONARQUBE_DCE_AGENT_EGRESS_PROXY_SERVICE_HOST):3128
             - name: http_proxy
-              value: http://agentic-scheduling-values.yaml-sonarqube-dce-agent-egress-proxy:3128
+              value: http://$(AGENTIC_SCHEDULING_VALUES.YAML_SONARQUBE_DCE_AGENT_EGRESS_PROXY_SERVICE_HOST):3128
             - name: HTTPS_PROXY
-              value: http://agentic-scheduling-values.yaml-sonarqube-dce-agent-egress-proxy:3128
+              value: http://$(AGENTIC_SCHEDULING_VALUES.YAML_SONARQUBE_DCE_AGENT_EGRESS_PROXY_SERVICE_HOST):3128
             - name: https_proxy
-              value: http://agentic-scheduling-values.yaml-sonarqube-dce-agent-egress-proxy:3128
+              value: http://$(AGENTIC_SCHEDULING_VALUES.YAML_SONARQUBE_DCE_AGENT_EGRESS_PROXY_SERVICE_HOST):3128
             - name: NO_PROXY
               value: ""
             - name: no_proxy
@@ -1461,11 +1466,14 @@ spec:
       release: agentic-scheduling-values.yaml
   template:
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
         app: sonarqube-dce-agent-runtime-remediation
         release: agentic-scheduling-values.yaml
         sonarqube.agent/component: runtime
         sonarqube.agent/family: remediation
+        sidecar.istio.io/inject: "false"
     spec:
       terminationGracePeriodSeconds: 3630
       runtimeClassName: gvisor
@@ -1506,13 +1514,13 @@ spec:
             - name: AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
               value: /etc/agentic/keys/remediation-to-orchestrator
             - name: HTTP_PROXY
-              value: http://agentic-scheduling-values.yaml-sonarqube-dce-agent-egress-proxy:3128
+              value: http://$(AGENTIC_SCHEDULING_VALUES.YAML_SONARQUBE_DCE_AGENT_EGRESS_PROXY_SERVICE_HOST):3128
             - name: http_proxy
-              value: http://agentic-scheduling-values.yaml-sonarqube-dce-agent-egress-proxy:3128
+              value: http://$(AGENTIC_SCHEDULING_VALUES.YAML_SONARQUBE_DCE_AGENT_EGRESS_PROXY_SERVICE_HOST):3128
             - name: HTTPS_PROXY
-              value: http://agentic-scheduling-values.yaml-sonarqube-dce-agent-egress-proxy:3128
+              value: http://$(AGENTIC_SCHEDULING_VALUES.YAML_SONARQUBE_DCE_AGENT_EGRESS_PROXY_SERVICE_HOST):3128
             - name: https_proxy
-              value: http://agentic-scheduling-values.yaml-sonarqube-dce-agent-egress-proxy:3128
+              value: http://$(AGENTIC_SCHEDULING_VALUES.YAML_SONARQUBE_DCE_AGENT_EGRESS_PROXY_SERVICE_HOST):3128
             - name: NO_PROXY
               value: ""
             - name: no_proxy
