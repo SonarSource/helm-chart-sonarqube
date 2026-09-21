@@ -18,6 +18,19 @@ SonarQube Server Version: `2026.4.0`
 
 SonarQube Community Build: `26.7.0.124771`. If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
 
+## Helm Chart Versioning
+
+Starting with this release, the chart's `version` is decoupled from `appVersion`. `appVersion`
+continues to track the SonarQube Server version, while the chart `version` follows its own
+format: `<SonarQube major>.<minor>.<patch counter>`, where the patch counter increments
+independently of the SonarQube release and starts at `1000` for each new SonarQube
+`<major>.<minor>` line (e.g. `2026.5.1000`, `2026.5.1001`, ...). This lets chart-only fixes ship
+without waiting for a new SonarQube Server release.
+
+**Exception — MCP server:** the bundled MCP server image (`sonarsource/sonarqube-mcp`) keeps its
+own upstream `1.x.y.z` version line, independent of both the chart version and `appVersion`. This
+LTA ships MCP `1.27.0.4335`; the `1.27.0` line is supported for the duration of this LTA.
+
 ## Kubernetes and Openshift Compatibility
 
 Supported Kubernetes Versions: From `1.32` to `1.35`

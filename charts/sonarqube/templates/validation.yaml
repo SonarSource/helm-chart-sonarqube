@@ -256,6 +256,15 @@ It is used to validate the values.yaml file before the installation starts.
   {{- if and .Values.agentKeyDerivation.enabled .Values.agentKeyDerivation.image.repository (not .Values.agentKeyDerivation.image.tag) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentKeyDerivation.image.repository is set but agentKeyDerivation.image.tag is not. The image fallback is all-or-nothing: once you name a repository, the tag has to come from the same block." -}}
   {{- end -}}
+  {{/* When the hook falls back to agentOrchestrator.image (no agentKeyDerivation.image override)
+       and agentOrchestrator.enabled is not true, nothing else in this install ever checks that
+       image's tag - agentOrchestrator.image.repository can carry a non-empty chart default with
+       no tag, which would otherwise render "repo:" and hang the hook until
+       activeDeadlineSeconds. Only guard the disabled case: an enabled orchestrator's own tag is
+       still that component's business, not the hook's. */}}
+  {{- if and .Values.agentKeyDerivation.enabled (not .Values.agentKeyDerivation.image.repository) (not .Values.agentOrchestrator.enabled) .Values.agentOrchestrator.image.repository (not .Values.agentOrchestrator.image.tag) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n The agentic key-derivation hook Job needs an image carrying derive-keys.sh. It would fall back to agentOrchestrator.image.repository, which is set but has no tag, and agentOrchestrator.enabled is not true so nothing else validates it. Set agentKeyDerivation.image.repository/tag explicitly, or agentOrchestrator.image.tag, or set agentKeyDerivation.enabled=false and provide the <fullname>-agentic-keys-* Secrets yourself." -}}
+  {{- end -}}
   {{/* The hook's Role grants namespace-wide `create` on Secrets (create can't be scoped by
        name) plus `update` restricted to this release's <fullname>-agentic-keys-* Secrets. With
        agentKeyDerivation.serviceAccount.create=false the binding follows the release's top-level

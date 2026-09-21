@@ -1,8 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
-## [2026.5.0]
-* Upgrade Chart's version to 2026.5.0
+## [2026.5.1000]
+* Upgrade Chart's version to 2026.5.1000
+* Decouple the chart's version from `appVersion`: `version` now increments independently as `<SonarQube major>.<minor>.<patch counter>`, with the patch counter starting at `1000` for each new SonarQube minor line; `appVersion` continues to track the SonarQube Server version
 * **Breaking**: Liveness and readiness probe handlers are now managed by the chart. Legacy `exec`, `httpGet`, `tcpSocket` and `grpc` values are ignored; use `overrideCommand` for an explicit custom command.
 * Set a default MCP pod `securityContext` (`fsGroup: 0`), a default `HOME=/data`, and an optional `mcp.initContainers` hook so the non-root MCP server can write to `/data`
 * **Breaking**: Remove the deprecated `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart dependency. `ingress.enabled` remains supported for use with a self-managed ingress controller; `httproute.enabled` (Gateway API) is also available

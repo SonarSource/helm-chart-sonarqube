@@ -21,6 +21,19 @@ Supported Openshift Versions: From `4.17` to `4.20`
 
 **Note:** The Kubernetes version range above applies to non-OpenShift Kubernetes clusters. For OpenShift, the supported range is defined by the OpenShift versions listed here and is validated as a platform, including its embedded Kubernetes version.
 
+## Helm Chart Versioning
+
+Starting with this release, the chart's `version` is decoupled from `appVersion`. `appVersion`
+continues to track the SonarQube Server version, while the chart `version` follows its own
+format: `<SonarQube major>.<minor>.<patch counter>`, where the patch counter increments
+independently of the SonarQube release and starts at `1000` for each new SonarQube
+`<major>.<minor>` line (e.g. `2026.5.1000`, `2026.5.1001`, ...). This lets chart-only fixes ship
+without waiting for a new SonarQube Server release.
+
+**Exception — MCP server:** the bundled MCP server image (`sonarsource/sonarqube-mcp`) keeps its
+own upstream `1.x.y.z` version line, independent of both the chart version and `appVersion`. This
+LTA ships MCP `1.27.0.4335`; the `1.27.0` line is supported for the duration of this LTA.
+
 ## Installing the chart
 
 > **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/dce/introduction/) for further information on how to install and tune the helm chart specifications.
