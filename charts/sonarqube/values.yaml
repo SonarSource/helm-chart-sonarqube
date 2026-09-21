@@ -192,12 +192,14 @@ istio:
   #
   # A wrong or stale address fails closed - the sidecar never reaches ready - rather than
   # silently falling back to DNS. Only consulted when a runtime actually gets an Envoy; ignored
-  # otherwise. "auto" reads the Service with the credentials running helm, and a true NotFound
-  # (or no live cluster, e.g. `helm template`) sees the same fail-open outcome described above -
-  # but an identity that lacks `get`/`list` on Services in istio.namespace does NOT: Helm's
-  # `lookup` only swallows NotFound, so an RBAC-Forbidden error there aborts the whole
-  # `helm install`/`template` render instead. Grant that RBAC, or pin an explicit address (or
-  # "") instead of "auto", if it can't be granted.
+  # otherwise. "auto" reads the Service with the credentials running helm: a true NotFound, no
+  # live cluster (e.g. `helm template`), a wrong istio.namespace/istio.revision, or a headless
+  # Service all fail the render too (see validation.yaml) rather than silently reopening the
+  # port-53 rule - and an identity that lacks `get`/`list` on Services in istio.namespace fails
+  # it a different way, since Helm's `lookup` only swallows NotFound: an RBAC-Forbidden error
+  # there aborts the whole `helm install`/`template` render on its own. Grant that RBAC, fix
+  # istio.namespace/istio.revision, install istiod first, or pin an explicit address (or "" to
+  # knowingly accept DNS egress) instead of "auto", if none of that is possible.
   istiodClusterIP: "auto"
   # mTLS for sandboxed runtimes: istio-init needs NET_ADMIN, which a sandboxing RuntimeClass
   # (gVisor, Kata, ...) may not grant, so the chart hand-authors the istio-proxy container itself

@@ -3,6 +3,7 @@ package tests
 import (
 	"testing"
 
+	"github.com/gruntwork-io/terratest/modules/helm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -93,13 +94,17 @@ func TestAgentRuntimeResolverlessMesh(t *testing.T) {
 				// The default is "auto", which resolves by reading the istiod Service and so
 				// needs a live cluster. These tests render with `helm template`, where lookup
 				// returns an empty dict - the same position ArgoCD and other render-then-apply
-				// tooling is in. The chart must fall back to leaving the kube-dns rule in place
-				// rather than emitting an empty hostAliases IP the API server would reject;
-				// NOTES.txt warns when that happens. Auto actually finding the address is only
-				// observable against a cluster, so it is covered by live verification instead.
-				t.Run(family+": auto yields no hostAliases with no cluster to read", func(t *testing.T) {
-					aliases := runtimeHostAliases(t, chart, "gvisor-istio-sidecar.yaml", family, nil)
-					assert.Empty(t, aliases)
+				// tooling is in. Leaving the kube-dns rule in place instead of failing would
+				// reopen the channel this design exists to close, so the render fails closed
+				// instead (see validation.yaml); auto actually finding the address is only
+				// observable against a cluster, and is covered by live verification instead.
+				t.Run(family+": auto with no cluster to read fails the render", func(t *testing.T) {
+					_, err := helm.RenderTemplateE(t,
+						agentPropertiesOptions(chart, "gvisor-istio-sidecar.yaml",
+							map[string]string{"istio.istiodClusterIP": "auto"}),
+						chart.path, chart.release, []string{"templates/agent-runtime.yaml"})
+					require.Error(t, err)
+					assert.Contains(t, err.Error(), "istiodClusterIP")
 				})
 
 				// "" is the escape hatch for an operator who needs the runtimes to keep DNS, so
@@ -145,7 +150,9 @@ func TestAgentRuntimeIstiodClusterIPRejectsNonAddress(t *testing.T) {
 }
 
 // The sentinel has to stay spelled exactly as values.yaml ships it: a typo would silently read as
-// an address, and an address that is not one fails closed - the sidecar never reaches ready.
+// an address, and an address that is not one fails closed - the sidecar never reaches ready. This
+// fixture stays gVisor-sandboxed with no mesh sidecar, so there is no Envoy for "auto" to matter
+// to; TestAgentRuntimeIstiodClusterIPAutoFailsWithoutLiveCluster covers the path where there is.
 func TestAgentRuntimeIstiodClusterIPAutoIsAccepted(t *testing.T) {
 	for _, chart := range agentCharts {
 		if !chart.hasEgressProxy {
@@ -164,6 +171,36 @@ func TestAgentRuntimeIstiodClusterIPAutoIsAccepted(t *testing.T) {
 			}
 			_, err := renderAgentRuntimeNetworkPolicy(t, chart, setValues)
 			require.NoError(t, err)
+		})
+	}
+}
+
+// The default is "auto", which resolves by reading the istiod Service and so needs a live
+// cluster. This test renders with `helm template`, where lookup returns an empty dict - the same
+// position ArgoCD and other render-then-apply tooling is in. Leaving the kube-dns rule in place
+// instead of failing would reopen the channel this design exists to close, so the render fails
+// closed instead (see validation.yaml); auto actually finding the address is only observable
+// against a cluster, and is covered by live verification instead.
+func TestAgentRuntimeIstiodClusterIPAutoFailsWithoutLiveCluster(t *testing.T) {
+	for _, chart := range agentCharts {
+		if !chart.hasEgressProxy {
+			continue
+		}
+		t.Run(chart.name, func(t *testing.T) {
+			setValues := map[string]string{
+				"istio.enabled":         "true",
+				"gvisor.enabled":        "false",
+				"istio.istiodClusterIP": "auto",
+			}
+			// sonarqube-dce refuses to render under Istio unless the Hazelcast channels are
+			// pinned; irrelevant here, but the gate runs first.
+			if chart.name == "sonarqube-dce" {
+				setValues["applicationNodes.webPort"] = "4023"
+				setValues["applicationNodes.cePort"] = "4024"
+			}
+			_, err := renderAgentRuntimeNetworkPolicy(t, chart, setValues)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "istiodClusterIP")
 		})
 	}
 }
