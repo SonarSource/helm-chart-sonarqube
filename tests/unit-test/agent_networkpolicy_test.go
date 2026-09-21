@@ -248,9 +248,11 @@ func egressPeerShapes(rules []networkingv1.NetworkPolicyEgressRule) (hasIPBlock 
 // there is no name left to look up.
 //
 // A runtime that does get an Envoy is the one exception, and needs exactly one name -
-// istiod.<istio.namespace>.svc - so kube-dns egress comes back on exactly those paths. Setting
-// istio.istiodClusterIP pins that one name through hostAliases and takes it away again; see
-// TestAgentRuntimeResolverlessMesh.
+// istiod.<istio.namespace>.svc - so kube-dns egress comes back on exactly those paths, once an
+// operator has explicitly accepted it via istio.istiodClusterIP: "". Setting it to a real address
+// instead pins that one name through hostAliases and takes the resolver away again; see
+// TestAgentRuntimeResolverlessMesh. Left at the shipped "auto" with no live cluster to resolve it
+// against, the render fails closed rather than falling back to kube-dns - also covered there.
 type runtimeResolverCase struct {
 	name        string
 	setValues   map[string]string
@@ -267,17 +269,10 @@ var runtimeResolverCases = []runtimeResolverCase{
 	},
 	{
 		// The shipped default for istiodClusterIP is "auto", which resolves by reading the
-		// istiod Service - so it yields nothing here, where `helm template` has no cluster
-		// to read. That fallback is deliberate (an unresolvable hostAliases entry would be
-		// worse than a resolver) and NOTES.txt warns about it.
-		name:        "istio, standard injection: Envoy needs a resolver for istiod",
-		setValues:   map[string]string{"istio.enabled": "true", "gvisor.enabled": "false"},
-		wantEgress:  3,
-		wantKubeDNS: true,
-	},
-	{
-		// Same rendering as above, but asked for rather than fallen back to: "" is how an
-		// operator keeps the resolver on purpose, so it must not read as "unset".
+		// istiod Service - unreachable here, where `helm template` has no cluster to read, so
+		// that combination fails the render instead (see
+		// TestAgentRuntimeIstiodClusterIPAutoFailsWithoutLiveCluster); "" is the only way to
+		// keep the resolver on purpose, and must not read as "unset".
 		name: "istio, standard injection, istiodClusterIP opted out: resolver stays",
 		setValues: map[string]string{
 			"istio.enabled":         "true",
@@ -366,8 +361,20 @@ func assertRuntimeResolverCase(t *testing.T, chart agentChart, family string, c 
 // thing that takes the resolver away again.
 func assertMeshSidecarResolver(t *testing.T, chart agentChart, family string) {
 	t.Helper()
-	t.Run(family+": istio with the mesh sidecar: Envoy needs a resolver for istiod", func(t *testing.T) {
-		policy := gvisorIstioNetworkPolicy(t, chart, "gvisor-istio-sidecar.yaml", family, nil)
+	// Left at the shipped "auto" default with no live cluster to resolve it against, the render
+	// fails closed rather than falling back to kube-dns; see
+	// TestAgentRuntimeIstiodClusterIPAutoFailsWithoutLiveCluster.
+	t.Run(family+": istio with the mesh sidecar, auto with no cluster to read: fails the render", func(t *testing.T) {
+		_, err := renderGvisorIstioSidecar(t, chart, "gvisor-istio-sidecar.yaml",
+			[]string{"templates/agent-networkpolicy.yaml"},
+			map[string]string{"istio.istiodClusterIP": "auto"})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "istiodClusterIP")
+	})
+
+	t.Run(family+": istio with the mesh sidecar, istiodClusterIP opted out: resolver stays", func(t *testing.T) {
+		policy := gvisorIstioNetworkPolicy(t, chart, "gvisor-istio-sidecar.yaml", family,
+			map[string]string{"istio.istiodClusterIP": ""})
 		_, hasKubeDNS, _ := egressPeerShapes(policy.Spec.Egress)
 		assert.True(t, hasKubeDNS, "a sandboxed runtime running Envoy still resolves istiod by name")
 	})

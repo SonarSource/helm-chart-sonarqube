@@ -46,3 +46,7 @@ istio:
   enabled: true
   meshSidecar:
     enabled: true
+  # A real address so this fixture, shared by unrelated tests, doesn't hit the fail-closed
+  # "auto with no live cluster" check (validation.yaml); the "auto"/"" behaviours are covered
+  # by tests that override this explicitly.
+  istiodClusterIP: "10.96.0.42"

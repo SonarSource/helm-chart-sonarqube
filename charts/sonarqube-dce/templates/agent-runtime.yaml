@@ -113,9 +113,10 @@ spec:
             - "{{ $istiodSvc }}.{{ $.Values.istio.namespace }}.svc"
             - "{{ $istiodSvc }}.{{ $.Values.istio.namespace }}.svc.cluster.local"
       {{- end }}
-      {{- /* Run the (untrusted) runtimes under a sandboxing RuntimeClass when one applies -
-             gVisor's own scheduling.nodeSelector pins its pods to runsc-ready nodes; a generic
-             agentRuntimeSandbox.runtimeClassName relies on the caller's own node targeting. */}}
+      {{- /* Sandbox the (untrusted) runtimes: Kata on OpenShift (OpenShift.agentRuntimeClassName),
+             gVisor elsewhere, whose RuntimeClass pins these pods to runsc-ready nodes through its
+             own scheduling.nodeSelector; a generic agentRuntimeSandbox.runtimeClassName relies on
+             the caller's own node targeting. */}}
       {{- if $sandboxed }}
       runtimeClassName: {{ include "sonarqube.agentRuntime.runtimeClassName" $ }}
       {{- end }}

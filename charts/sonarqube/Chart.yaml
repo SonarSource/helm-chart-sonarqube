@@ -80,6 +80,10 @@ annotations:
     - kind: changed
       description: "Default JMX Prometheus Exporter downloads use GitHub Releases and require network access to github.com and release-assets.githubusercontent.com"
     - kind: added
+      description: "Sandbox the agent runtimes with Kata Containers instead of gVisor when OpenShift.enabled is true, via the new OpenShift.agentRuntimeClassName (default kata, the RuntimeClass the OpenShift sandboxed containers operator creates for a default KataConfig; kata-remote for peer pods). gVisor cannot work on OpenShift - the installer needs containerd plus privileged/hostPID, which no default SCC allows, and CRI-O ships no runsc handler - so every gvisor.* setting is ignored there. The chart never creates the RuntimeClass; set the value to another one you provisioned yourself, or to an empty string for no sandbox"
+    - kind: fixed
+      description: "Target the OpenShift DNS service (openshift-dns namespace, port 5353 UDP and TCP) in the NetworkPolicy DNS egress rules when OpenShift.enabled is true, instead of k8s-app: kube-dns on port 53, which never matched on OpenShift"
+    - kind: added
       description: "Add autoscaling for Vortex (vortexAnalysis.autoscaling, a KEDA ScaledObject reading Vortex's own unauthenticated GET /metrics/max-concurrent-requests endpoint, aggregated across replicas via KEDA's aggregateFromKubeServiceEndpoints; requires KEDA >= 2.20.0, with a single-replica fallback via vortexAnalysis.autoscaling.aggregateAcrossReplicas), plus an unconditional vortexAnalysis.terminationGracePeriodSeconds"
     - kind: fixed
       description: "Fix the Vortex ScaledObject's spec.fallback being emitted even with vortexAnalysis.autoscaling.aggregateAcrossReplicas: false, whose behavior field a KEDA older than 2.17 silently prunes, degrading fallback to forcibly scaling the fleet down to minReplicas (pinned to 1 on that path) on a scrape failure instead of freezing it"

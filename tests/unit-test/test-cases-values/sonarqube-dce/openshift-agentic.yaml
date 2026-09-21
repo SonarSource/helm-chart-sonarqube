@@ -1,11 +1,17 @@
-community:
+# The full agentic pack on OpenShift, with every NetworkPolicy turned on and gVisor left at its
+# values.yaml defaults (enabled, installer enabled) - i.e. what a user gets from flipping
+# OpenShift.enabled and nothing else. Tests override OpenShift.enabled / gvisor.* from here.
+OpenShift:
   enabled: true
 monitoringPasscode: test-passcode
+applicationNodes:
+  jwtSecret: test-jwt-secret
 jdbcOverwrite:
-  enabled: true
   jdbcUrl: jdbc:postgresql://test-host:5432/testdb
   jdbcUsername: test-user
   jdbcPassword: test-password
+networkPolicy:
+  enabled: true
 agentOrchestrator:
   enabled: true
   image:
@@ -15,16 +21,10 @@ agentOrchestrator:
     bucket: agent-jobs
 hunterAgent:
   enabled: true
-  image:
-    repository: example.com/hunter-agent
-    tag: "1"
   networkPolicy:
     enabled: true
 remediationAgent:
   enabled: true
-  image:
-    repository: example.com/remediation-agent
-    tag: "1"
   networkPolicy:
     enabled: true
 vortexAnalysis:
@@ -35,15 +35,8 @@ vortexAnalysis:
   storage:
     bucket: vortex-artifacts
     region: eu-west-1
+agentEgressProxy:
+  networkPolicy:
+    enabled: true
 agenticSigningSecret:
   existingSecret: test-agentic-instance-secret
-gvisor:
-  enabled: true
-istio:
-  enabled: true
-  meshSidecar:
-    enabled: true
-  # A real address so this fixture, shared by unrelated tests, doesn't hit the fail-closed
-  # "auto with no live cluster" check (validation.yaml); the "auto"/"" behaviours are covered
-  # by tests that override this explicitly.
-  istiodClusterIP: "10.96.0.42"
