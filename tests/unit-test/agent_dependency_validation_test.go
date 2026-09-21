@@ -68,8 +68,8 @@ func TestRemediationAgentRequiresOrchestrator(t *testing.T) {
 	}
 }
 
-// remediationAgent.enabled=true also requires vortexAnalysis.enabled=true, checked independently of
-// the orchestrator dependency above (SONAR-31689).
+// remediationAgent.enabled=true still fails when vortexAnalysis.enabled is explicitly set to
+// false, checked independently of the orchestrator dependency above (SONAR-31689).
 func TestRemediationAgentRequiresVortex(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -77,9 +77,31 @@ func TestRemediationAgentRequiresVortex(t *testing.T) {
 				"agentOrchestrator.enabled":          "true",
 				"agentOrchestrator.image.repository": "example.com/agent-orchestrator",
 				"remediationAgent.enabled":           "true",
+				"vortexAnalysis.enabled":             "false",
 			})
 			require.Error(t, err)
-			assert.Contains(t, err.Error(), "remediationAgent.enabled is true but vortexAnalysis.enabled is not true")
+			assert.Contains(t, err.Error(), "remediationAgent.enabled is true but vortexAnalysis.enabled is explicitly set to false")
+		})
+	}
+}
+
+// remediationAgent.enabled=true defaults vortexAnalysis.enabled to true when left unset, since
+// remediation is not useful without it - so a render with vortex config supplied (but
+// vortexAnalysis.enabled itself left unset) must succeed (SONAR-31689).
+func TestRemediationAgentDefaultsVortexOn(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			_, err := renderWithValidation(t, chart, map[string]string{
+				"agentOrchestrator.enabled":           "true",
+				"agentOrchestrator.image.repository":  "example.com/agent-orchestrator",
+				"remediationAgent.enabled":            "true",
+				"agenticSigningSecret.existingSecret": "agentic-instance-secret",
+				"vortexAnalysis.image.repository":     "example.com/vortex",
+				"vortexAnalysis.image.tag":            "1",
+				"vortexAnalysis.storage.bucket":       "vortex-artifacts",
+				"vortexAnalysis.storage.region":       "eu-west-1",
+			})
+			require.NoError(t, err)
 		})
 	}
 }

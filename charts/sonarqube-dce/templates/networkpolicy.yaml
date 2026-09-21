@@ -47,7 +47,7 @@ spec:
         - port: {{ .Values.service.internalPort }}
           protocol: TCP
 {{- end }}
-{{- if .Values.vortexAnalysis.enabled }}
+{{- if eq (include "sonarqube.vortex.enabled" .) "true" }}
     - from:
         - podSelector:
             matchLabels:
@@ -89,7 +89,7 @@ spec:
         - port: {{ .Values.agentOrchestrator.port }}
           protocol: TCP
     {{- end }}
-    {{- if .Values.vortexAnalysis.enabled }}
+    {{- if eq (include "sonarqube.vortex.enabled" .) "true" }}
     - to:
         - podSelector:
             matchLabels:

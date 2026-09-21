@@ -806,7 +806,7 @@ for consumers like hunter-agent-unified-app that read them via Spring instead.
 {{- $_ := set $props "sonar.hunteragent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
 {{- $_ := set $props "sonar.remediationagent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
 {{- end -}}
-{{- if .Values.vortexAnalysis.enabled -}}
+{{- if eq (include "sonarqube.vortex.enabled" .) "true" -}}
 {{- $_ := set $props "sonar.vortex.analysis.url" (include "sonarqube.vortex.url" .) -}}
 {{- end -}}
 {{- if eq (include "sonarqube.agentic.enabled" .) "true" -}}
@@ -1271,6 +1271,22 @@ true
 {{- end -}}
 
 {{/*
+Effective vortexAnalysis.enabled: an explicit true/false always wins, but when unset it defaults to
+true whenever remediationAgent.enabled is true (remediation is not useful without vortex).
+Usage: {{- if eq (include "sonarqube.vortex.enabled" .) "true" }}
+*/}}
+{{- define "sonarqube.vortex.enabled" -}}
+{{- $override := .Values.vortexAnalysis.enabled -}}
+{{- if not (kindIs "invalid" $override) -}}
+{{- if $override -}}
+true
+{{- end -}}
+{{- else if .Values.remediationAgent.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
 Name of the per-consumer derived signing/verification key Secret produced by the key-derivation
 hook Job.
 Parameters (dict): ctx (required, the root context '.'), consumer (required, one of "orchestrator",
@@ -1343,7 +1359,7 @@ Returns a YAML list; "[]" when the consumer needs none.
 {{- else if eq .consumer "sqs" -}}
 {{- if $any }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
 {{- else if eq .consumer "vortex" -}}
-{{- if and $any $v.vortexAnalysis.enabled }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
+{{- if and $any (eq (include "sonarqube.vortex.enabled" .ctx) "true") }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
 {{- end -}}
 {{- toYaml $labels -}}
 {{- end -}}
