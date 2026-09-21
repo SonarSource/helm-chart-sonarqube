@@ -89,6 +89,7 @@ func TestAgentRuntimeSandboxEgressProxyPermissiveException(t *testing.T) {
 				require.NotNil(t, egressProxyPA)
 				require.NotEmpty(t, egressProxyPA.Spec.PortLevelMtls, "the PERMISSIVE exception must appear once the runtime is sandboxed with no mesh identity")
 				assert.Equal(t, "PERMISSIVE", egressProxyPA.Spec.PortLevelMtls["3128"].Mode)
+				assert.Equal(t, "PERMISSIVE", egressProxyPA.Spec.PortLevelMtls["3129"].Mode, "the fixture enables remediationAgent, so the Remediation-only listener needs the same exception")
 			})
 		})
 	}

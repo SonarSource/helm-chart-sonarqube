@@ -17,5 +17,11 @@ spec:
       targetPort: {{ ternary "tcp-proxy" "http-proxy" .Values.istio.enabled }}
       protocol: TCP
       name: {{ ternary "tcp-proxy" "http-proxy" .Values.istio.enabled }}
+    {{- if .Values.remediationAgent.enabled }}
+    - port: {{ .Values.agentEgressProxy.remediationPort }}
+      targetPort: {{ ternary "tcp-proxy-rem" "http-proxy-rem" .Values.istio.enabled }}
+      protocol: TCP
+      name: {{ ternary "tcp-proxy-rem" "http-proxy-rem" .Values.istio.enabled }}
+    {{- end }}
   selector: {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 4 }}
 {{- end }}
