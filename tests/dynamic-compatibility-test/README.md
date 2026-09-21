@@ -15,3 +15,10 @@ To run the DCE Elasticsearch major-upgrade test (installs the 2026.1 chart, then
 ```bash
 SONARQUBE_ES_MAJOR_E2E=1 go test -v -timeout=90m -count=1 ./sonarqube-dce -run TestDCEEsMajorUpgrade
 ```
+
+To run the OpenShift agent RuntimeClass check (renders with `--dry-run=server`, so it needs a
+reachable cluster but no database, and creates one temporary cluster-scoped `RuntimeClass`):
+
+```bash
+SONARQUBE_RUNTIME_CLASS_E2E=1 go test -v -timeout=15m -count=1 ./... -run TestAgentRuntimeClassCheck
+```

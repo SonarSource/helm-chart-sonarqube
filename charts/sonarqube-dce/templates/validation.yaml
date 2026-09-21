@@ -269,7 +269,7 @@
 {{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.enabled=true requires a non-empty gvisor.runtimeClassName." -}}
   {{- end -}}
   {{- if not $gvisor.handler -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.enabled=true requires a non-empty gvisor.handler (the containerd runtime handler)." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.enabled=true requires a non-empty gvisor.handler (the CRI runtime handler)." -}}
   {{- end -}}
   {{- if and $gvisor.installer.enabled (not $gvisor.installer.image.repository) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n gvisor.installer.enabled=true requires a non-empty gvisor.installer.image.repository." -}}
@@ -324,3 +324,20 @@
 
 {{- include "sonarqube.search.assertEsMajorUpgrade" . -}}
 
+
+{{/* The Kata RuntimeClass the agent runtimes are sandboxed with on OpenShift has to already exist;
+     see the helper for why this can only be checked against a live cluster. */}}
+{{- include "sonarqube.openshift.assertAgentRuntimeClass" . -}}
+
+{{/* Fail closed instead of silently reopening the DNS egress rule when a runtime's Envoy needs
+     istiod's address but the live ClusterIP lookup didn't produce one: no live cluster (e.g.
+     `helm template`), a wrong istio.namespace/istio.revision, istiod not installed yet, or a
+     headless istiod Service. Only checked while istio.istiodClusterIP is still "auto" - an
+     explicit override (a real ClusterIP, or "" to knowingly accept the DNS fallback) is a
+     deliberate choice and is not second-guessed here. See sonarqube.agentRuntime.istiodClusterIP
+     and the DNS comment in agent-networkpolicy.yaml for why this rule's absence is load-bearing. */}}
+{{- if and (eq (include "sonarqube.agentRuntime.hasEnvoy" .) "true") (eq (toString (.Values.istio.istiodClusterIP | default "")) "auto") -}}
+  {{- if ne (include "sonarqube.agentRuntime.resolverlessMesh" .) "true" -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n istio.istiodClusterIP is \"auto\" but the %q Service in namespace %q could not be resolved to a usable ClusterIP at render time - no live cluster, a wrong istio.namespace/istio.revision, istiod not installed yet, or a headless Service. Without it, the agent runtime falls back to a kube-dns/openshift-dns egress rule, reopening the DNS covert channel this design exists to close. Fix istio.namespace/istio.revision, install istiod first, or set istio.istiodClusterIP explicitly (a real ClusterIP, or \"\" to knowingly accept DNS egress) to bypass this check." (include "sonarqube.istio.istiodServiceName" .) .Values.istio.namespace) -}}
+  {{- end -}}
+{{- end -}}
