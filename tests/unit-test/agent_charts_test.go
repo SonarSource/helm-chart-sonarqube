@@ -1,6 +1,10 @@
 package tests
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	"strings"
+
+	corev1 "k8s.io/api/core/v1"
+)
 
 // agentVolumeMountsByName / agentVolumesByName index a pod's mounts and volumes by name, so a test
 // can assert on the one entry it is about without also pinning every unrelated entry another
@@ -50,6 +54,17 @@ type agentChart struct {
 // "sonarqube-sonarqube" - the prefix `sonarqube.fullname` produces for every agentic resource name.
 func (c agentChart) fullnamePrefix() string {
 	return c.release + "-" + c.name
+}
+
+// agentProxyURL is the expected value of a runtime's HTTP_PROXY whenever the hand-authored mesh
+// sidecar is off. Runtimes address the Agent Egress Proxy by the ClusterIP kubelet publishes as a
+// service-link variable (<SERVICE>_SERVICE_HOST), never by its DNS name: resolving that one name
+// was the only reason an agent container ever needed a resolver, and agent-networkpolicy.yaml now
+// omits kube-dns egress entirely on this path. kubelet expands the $(VAR) reference when it builds
+// the container's environment, so the pod sees a literal IP.
+func (c agentChart) agentProxyURL() string {
+	serviceEnvName := strings.ToUpper(strings.ReplaceAll(c.fullnamePrefix()+"-agent-egress-proxy", "-", "_"))
+	return "http://$(" + serviceEnvName + "_SERVICE_HOST):3128"
 }
 
 // orchestratorURL is the expected value of the sonar.*.orchestrator.url properties once the
