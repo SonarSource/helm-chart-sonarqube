@@ -126,6 +126,10 @@ spec:
   portLevelMtls:
     {{ .Values.agentEgressProxy.port | quote }}:
       mode: PERMISSIVE
+    {{- if .Values.remediationAgent.enabled }}
+    {{ .Values.agentEgressProxy.remediationPort | quote }}:
+      mode: PERMISSIVE
+    {{- end }}
   {{- end }}
 {{- end }}
 {{- end }}

@@ -34,8 +34,10 @@ spec:
   egress:
     - port:
         {{- /* This is the destination Service's port, not an arbitrary local one - a mismatch
-               renders no listener and no cluster, silently. */}}
-        number: {{ $.Values.agentEgressProxy.port }}
+               renders no listener and no cluster, silently. Family-scoped like
+               sonarqube.agentEgressProxy.url - Remediation's egress must land on the port whose
+               Squid ACL admits SonarQube, or this listener quietly forwards it to the wrong one. */}}
+        number: {{ ternary $.Values.agentEgressProxy.remediationPort $.Values.agentEgressProxy.port (eq $family "remediation") }}
         protocol: TCP
         name: tcp-egress
       bind: 127.0.0.1
