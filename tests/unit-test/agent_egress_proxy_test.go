@@ -795,48 +795,59 @@ func TestAgentEgressProxyServiceLinkVariableTracksServiceName(t *testing.T) {
 		t.Run(chart.name, func(t *testing.T) {
 			for _, r := range releases {
 				t.Run(r.name, func(t *testing.T) {
-					setValues := map[string]string{
-						"hunterAgent.enabled":               "true",
-						"hunterAgent.image.repository":      "example.com/hunter-agent",
-						"hunterAgent.image.tag":             "1",
-						"remediationAgent.enabled":          "true",
-						"remediationAgent.image.repository": "example.com/remediation-agent",
-						"remediationAgent.image.tag":        "1",
-					}
-
-					svcOut, err := renderAgentEgressProxyTemplatesAs(t, chart, r.release, setValues,
-						[]string{"templates/agent-egress-proxy-service.yaml"})
-					require.NoError(t, err)
-					var service corev1.Service
-					helm.UnmarshalK8SYaml(t, svcOut, &service)
-					require.NotEmpty(t, service.Name)
-					require.LessOrEqual(t, len(service.Name), 63)
-
-					want := "http://$(" + strings.ToUpper(strings.ReplaceAll(service.Name, "-", "_")) + "_SERVICE_HOST):3128"
-
-					runtimeOut, err := renderAgentEgressProxyTemplatesAs(t, chart, r.release, setValues,
-						[]string{"templates/agent-runtime.yaml"})
-					require.NoError(t, err)
-
-					var sawRuntime bool
-					for _, doc := range strings.Split(runtimeOut, "\n---") {
-						if !strings.Contains(doc, "kind: Deployment") {
-							continue
-						}
-						var deployment appsv1.Deployment
-						helm.UnmarshalK8SYaml(t, doc, &deployment)
-						sawRuntime = true
-						env := map[string]string{}
-						for _, e := range deployment.Spec.Template.Spec.Containers[0].Env {
-							env[e.Name] = e.Value
-						}
-						for _, key := range []string{"HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy"} {
-							assert.Equal(t, want, env[key], "%s on %s", key, deployment.Name)
-						}
-					}
-					require.True(t, sawRuntime, "expected at least one runtime Deployment")
+					assertServiceLinkVariableTracksServiceName(t, chart, r.release)
 				})
 			}
 		})
+	}
+}
+
+// assertServiceLinkVariableTracksServiceName renders the proxy's Service and the runtime
+// Deployments for one chart/release combination and checks that HTTP_PROXY et al. point at the
+// service-link variable derived from the Service's actual (possibly truncated) name.
+func assertServiceLinkVariableTracksServiceName(t *testing.T, chart agentChart, release string) {
+	setValues := map[string]string{
+		"hunterAgent.enabled":               "true",
+		"hunterAgent.image.repository":      "example.com/hunter-agent",
+		"hunterAgent.image.tag":             "1",
+		"remediationAgent.enabled":          "true",
+		"remediationAgent.image.repository": "example.com/remediation-agent",
+		"remediationAgent.image.tag":        "1",
+	}
+
+	svcOut, err := renderAgentEgressProxyTemplatesAs(t, chart, release, setValues,
+		[]string{"templates/agent-egress-proxy-service.yaml"})
+	require.NoError(t, err)
+	var service corev1.Service
+	helm.UnmarshalK8SYaml(t, svcOut, &service)
+	require.NotEmpty(t, service.Name)
+	require.LessOrEqual(t, len(service.Name), 63)
+
+	want := "http://$(" + strings.ToUpper(strings.ReplaceAll(service.Name, "-", "_")) + "_SERVICE_HOST):3128"
+
+	runtimeOut, err := renderAgentEgressProxyTemplatesAs(t, chart, release, setValues,
+		[]string{"templates/agent-runtime.yaml"})
+	require.NoError(t, err)
+
+	var sawRuntime bool
+	for _, doc := range strings.Split(runtimeOut, "\n---") {
+		if !strings.Contains(doc, "kind: Deployment") {
+			continue
+		}
+		var deployment appsv1.Deployment
+		helm.UnmarshalK8SYaml(t, doc, &deployment)
+		sawRuntime = true
+		assertRuntimeProxyEnv(t, deployment, want)
+	}
+	require.True(t, sawRuntime, "expected at least one runtime Deployment")
+}
+
+func assertRuntimeProxyEnv(t *testing.T, deployment appsv1.Deployment, want string) {
+	env := map[string]string{}
+	for _, e := range deployment.Spec.Template.Spec.Containers[0].Env {
+		env[e.Name] = e.Value
+	}
+	for _, key := range []string{"HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy"} {
+		assert.Equal(t, want, env[key], "%s on %s", key, deployment.Name)
 	}
 }
