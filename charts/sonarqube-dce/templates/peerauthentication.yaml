@@ -69,7 +69,7 @@ spec:
   mtls:
     mode: STRICT
 {{- end }}
-{{- if .Values.vortexAnalysis.enabled }}
+{{- if eq (include "sonarqube.vortex.enabled" .) "true" }}
 ---
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication

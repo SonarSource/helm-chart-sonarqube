@@ -314,7 +314,7 @@ spec:
           value: {{ .Values.mcp.healthCheckInterval | quote }}
         {{- end }}
         {{- end }}
-        {{- if .Values.vortexAnalysis.enabled }}
+        {{- if eq (include "sonarqube.vortex.enabled" .) "true" }}
         - name: SONAR_VORTEX_ANALYSIS_URL
           value: {{ include "sonarqube.vortex.url" . | quote }}
         {{- end }}
