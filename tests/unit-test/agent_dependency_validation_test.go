@@ -77,6 +77,8 @@ func TestRemediationAgentRequiresVortex(t *testing.T) {
 				"agentOrchestrator.enabled":          "true",
 				"agentOrchestrator.image.repository": "example.com/agent-orchestrator",
 				"remediationAgent.enabled":           "true",
+				"remediationAgent.image.repository":  "example.com/remediation-agent",
+				"remediationAgent.image.tag":         "1",
 				"vortexAnalysis.enabled":             "false",
 			})
 			require.Error(t, err)
@@ -95,6 +97,8 @@ func TestRemediationAgentDefaultsVortexOn(t *testing.T) {
 				"agentOrchestrator.enabled":           "true",
 				"agentOrchestrator.image.repository":  "example.com/agent-orchestrator",
 				"remediationAgent.enabled":            "true",
+				"remediationAgent.image.repository":   "example.com/remediation-agent",
+				"remediationAgent.image.tag":          "1",
 				"agenticSigningSecret.existingSecret": "agentic-instance-secret",
 				"vortexAnalysis.image.repository":     "example.com/vortex",
 				"vortexAnalysis.image.tag":            "1",
@@ -116,6 +120,8 @@ func orchestratorCoreDbBase() map[string]string {
 		"agentOrchestrator.image.repository":  "example.com/agent-orchestrator",
 		"agentOrchestrator.storage.bucket":    "agent-jobs",
 		"hunterAgent.enabled":                 "true",
+		"hunterAgent.image.repository":        "example.com/hunter-agent",
+		"hunterAgent.image.tag":               "1",
 		"agenticSigningSecret.existingSecret": "test-agentic-instance-secret",
 	}
 }
@@ -234,6 +240,8 @@ func TestAgentOrchestratorRequiresJdbcOverwrite(t *testing.T) {
 		values["agentOrchestrator.image.repository"] = "example.com/agent-orchestrator"
 		values["agentOrchestrator.storage.bucket"] = "agent-jobs"
 		values["hunterAgent.enabled"] = "true"
+		values["hunterAgent.image.repository"] = "example.com/hunter-agent"
+		values["hunterAgent.image.tag"] = "1"
 		values["agenticSigningSecret.existingSecret"] = "test-agentic-instance-secret"
 		return values
 	}
