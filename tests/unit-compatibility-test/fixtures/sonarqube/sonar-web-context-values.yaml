@@ -23,7 +23,7 @@ metadata:
   name: sonar-web-context-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.8
+    chart: sonarqube-2025.4.9
     release: sonar-web-context-values.yaml
     heritage: Helm
 type: Opaque
@@ -37,7 +37,7 @@ metadata:
   name: sonar-web-context-values.yaml-sonarqube-admin-password
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.8
+    chart: sonarqube-2025.4.9
     release: sonar-web-context-values.yaml
     heritage: Helm
 type: Opaque
@@ -52,7 +52,7 @@ metadata:
   name: sonar-web-context-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.8
+    chart: sonarqube-2025.4.9
     release: sonar-web-context-values.yaml
     heritage: Helm
 type: Opaque
@@ -71,7 +71,7 @@ metadata:
   name: sonar-web-context-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.8
+    chart: sonarqube-2025.4.9
     release: sonar-web-context-values.yaml
     heritage: Helm
 data:
@@ -84,7 +84,7 @@ metadata:
   name: sonar-web-context-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.8
+    chart: sonarqube-2025.4.9
     release: sonar-web-context-values.yaml
     heritage: Helm
 data:
@@ -131,7 +131,7 @@ metadata:
   name: sonar-web-context-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.8
+    chart: sonarqube-2025.4.9
     release: sonar-web-context-values.yaml
     heritage: Helm
 data:
@@ -144,7 +144,7 @@ metadata:
   name: sonar-web-context-values.yaml-sonarqube-jdbc-config
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.8
+    chart: sonarqube-2025.4.9
     release: sonar-web-context-values.yaml
     heritage: Helm
 data:
@@ -212,7 +212,7 @@ metadata:
   name: sonar-web-context-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.8
+    chart: sonarqube-2025.4.9
     release: sonar-web-context-values.yaml
     heritage: Helm
 spec:
@@ -394,7 +394,7 @@ metadata:
   name: sonar-web-context-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.8
+    chart: sonarqube-2025.4.9
     release: sonar-web-context-values.yaml
     heritage: Helm
     app.kubernetes.io/name: sonar-web-context-values.yaml
@@ -402,7 +402,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: sonar-web-context-values.yaml-sonarqube
-    app.kubernetes.io/version: "2025.4.8-enterprise"
+    app.kubernetes.io/version: "2025.4.9-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -414,10 +414,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 5ccfda732e8f17d187faa05c008e0294d79ee14a96a37ec222c5b934412dcc69
-        checksum/init-sysctl: 2a0ab9fb80a3032bd36c20e0a5181af1f21bdee3f0dac00b5e8ef815dee646f9
-        checksum/plugins: 30d569717b06d9f83b2950282e2471daa600cd2add76a94e2b52d3473b695f0c
-        checksum/secret: 7d805dc73157b0ba0cd825c37b3a3ee620fb3db0ff502993a3d4ff485cf18d2d
+        checksum/config: b7356363b599b9d4f24333d6ea3cc18497d91a2877866430d093baa67d90c3ec
+        checksum/init-sysctl: 8f25f0ec7aa3880d8b7fd864a6dafb3261c37474b0b96fa9906f449377674015
+        checksum/plugins: 7097f32173728af3710b2d982c2e9af9a21543470792225aada8bfa20d69bfb3
+        checksum/secret: 75235b29ed8175d6e80aee52e5e1cdf6ddba5fa8911a94c16598b1199b388656
       labels:
         app: sonarqube
         release: sonar-web-context-values.yaml
@@ -427,7 +427,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: "wait-for-db"
-          image: sonarqube:2025.4.8-enterprise
+          image: sonarqube:2025.4.9-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -443,7 +443,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args: ['set -o pipefail;for i in {1..200};do (echo > /dev/tcp/sonar-web-context-values.yaml-postgresql/5432) && exit 0; sleep 2;done; exit 1']
         - name: init-sysctl
-          image: sonarqube:2025.4.8-enterprise
+          image: sonarqube:2025.4.9-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -462,7 +462,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2025.4.8-enterprise
+          image: sonarqube:2025.4.9-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -479,7 +479,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2025.4.8
+              value: 2025.4.9
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -584,7 +584,7 @@ metadata:
   name: sonar-web-context-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.8
+    chart: sonarqube-2025.4.9
     release: sonar-web-context-values.yaml
     heritage: Helm
 spec:
@@ -611,14 +611,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.8
+    chart: sonarqube-2025.4.9
     release: sonar-web-context-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: sonar-web-context-values.yaml-ui-test
-      image: "sonarqube:2025.4.8-enterprise"
+      image: "sonarqube:2025.4.9-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
@@ -648,7 +648,7 @@ metadata:
   name: sonar-web-context-values.yaml-sonarqube-change-admin-password-hook
   labels:
     app: sonarqube
-    chart: sonarqube-2025.4.8
+    chart: sonarqube-2025.4.9
     release: sonar-web-context-values.yaml
     heritage: Helm
   annotations:
@@ -660,7 +660,7 @@ spec:
       name: sonar-web-context-values.yaml-sonarqube-change-admin-password-hook
       labels:
         app: sonarqube
-        chart: sonarqube-2025.4.8
+        chart: sonarqube-2025.4.9
         release: sonar-web-context-values.yaml
         heritage: Helm
       annotations:
@@ -671,7 +671,7 @@ spec:
       serviceAccountName: default
       containers:
       - name: sonar-web-context-values.yaml-sonarqube-change-default-admin-password
-        image: sonarqube:2025.4.8-enterprise
+        image: sonarqube:2025.4.9-enterprise
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
