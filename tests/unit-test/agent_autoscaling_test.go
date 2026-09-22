@@ -419,6 +419,8 @@ func assertAgentAutoscalingRangeRejected(t *testing.T, autoscalingValues map[str
 				values["agentOrchestrator.enabled"] = "true"
 				values["agentOrchestrator.image.repository"] = "example.com/agent-orchestrator"
 				values["hunterAgent.enabled"] = "true"
+				values["hunterAgent.image.repository"] = "example.com/hunter-agent"
+				values["hunterAgent.image.tag"] = "1"
 				values["agenticSigningSecret.existingSecret"] = "test-agentic-instance-secret"
 				_, err := renderWithValidation(t, chart, values)
 				require.Error(t, err)
@@ -432,6 +434,7 @@ func assertAgentAutoscalingRangeRejected(t *testing.T, autoscalingValues map[str
 					values["agentOrchestrator.image.repository"] = "example.com/agent-orchestrator"
 					values[family+"Agent.enabled"] = "true"
 					values[family+"Agent.image.repository"] = "example.com/" + family + "-agent"
+					values[family+"Agent.image.tag"] = "1"
 					values["agentKeda.assumeInstalled"] = "true"
 					values["vortexAnalysis.enabled"] = "true"
 					values["vortexAnalysis.image.repository"] = "example.com/vortex"
@@ -494,6 +497,8 @@ func TestAgentAutoscalingValidationSkippedWhenComponentDisabled(t *testing.T) {
 					}
 					if family == "hunter" {
 						values["remediationAgent.enabled"] = "true"
+						values["remediationAgent.image.repository"] = "example.com/remediation-agent"
+						values["remediationAgent.image.tag"] = "1"
 						values["vortexAnalysis.enabled"] = "true"
 						values["vortexAnalysis.image.repository"] = "example.com/vortex-analysis"
 						values["vortexAnalysis.image.tag"] = "42"
@@ -501,6 +506,8 @@ func TestAgentAutoscalingValidationSkippedWhenComponentDisabled(t *testing.T) {
 						values["vortexAnalysis.storage.filesystem.baseDir"] = "/agentic-storage"
 					} else {
 						values["hunterAgent.enabled"] = "true"
+						values["hunterAgent.image.repository"] = "example.com/hunter-agent"
+						values["hunterAgent.image.tag"] = "1"
 					}
 					_, err := renderWithValidation(t, chart, values)
 					require.NoError(t, err)

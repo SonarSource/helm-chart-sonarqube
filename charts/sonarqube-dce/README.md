@@ -21,6 +21,22 @@ Supported Openshift Versions: From `4.17` to `4.20`
 
 **Note:** The Kubernetes version range above applies to non-OpenShift Kubernetes clusters. For OpenShift, the supported range is defined by the OpenShift versions listed here and is validated as a platform, including its embedded Kubernetes version.
 
+## Helm Chart Versioning
+
+Starting with this release, the chart's `version` is decoupled from `appVersion`. `appVersion`
+continues to track the SonarQube Server version, while the chart `version` follows its own
+format: `<SonarQube major>.<minor>.<patch counter>`, where the patch counter increments
+independently of the SonarQube release and starts at `1000` for each new SonarQube
+`<major>.<minor>` line (e.g. `2026.5.1000`, `2026.5.1001`, ...). This lets chart-only fixes ship
+without waiting for a new SonarQube Server release.
+
+**MCP server:** the bundled MCP server image (`sonarsource/sonarqube-mcp`) keeps its own upstream
+`1.x.y.z` version line — one build serves every supported SonarQube line, so a per-line prefix
+would describe a build that doesn't exist. It's also published under an additional per-line alias
+tag, `<SonarQube major>.<minor>.<MCP patch counter>`, and the chart always pins that alias tag.
+Until the alias tag exists for this LTA, `mcp.image.tag` still points at the canonical build
+`1.27.0.4335`; it moves to the alias tag at release time.
+
 ## Installing the chart
 
 > **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/dce/introduction/) for further information on how to install and tune the helm chart specifications.
@@ -1195,7 +1211,7 @@ kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'
 | Parameter                                       | Description                                                                                                     | Default                                                                |
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | `vortexAnalysis.enabled`                        | Deploy Vortex and set `sonar.vortex.analysis.url` on the app nodes. When unset, defaults to `true` if `remediationAgent.enabled` is `true` | `null`                                                                 |
-| `vortexAnalysis.image.repository`               | Vortex image repository (required when enabled)                                                         | `""`                                                                   |
+| `vortexAnalysis.image.repository`               | Vortex image repository (required when enabled)                                                         | `"sonarsource/sonar-vortex"`                                           |
 | `vortexAnalysis.image.tag`                      | Vortex image tag (required when enabled)                                                                | `""`                                                                   |
 | `vortexAnalysis.image.pullPolicy`               | Vortex image pull policy                                                                                | `IfNotPresent`                                                         |
 | `vortexAnalysis.image.pullSecret`               | imagePullSecret for the Vortex image                                                                    | `nil`                                                                  |
@@ -1278,7 +1294,7 @@ kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'
 | `<hunterAgent\|remediationAgent>.serviceAccount.name`            | Name of that ServiceAccount; defaults to `<fullname>-agent-runtime-<family>` when `create` is true                                     | `""`                                                                           |
 | `<hunterAgent\|remediationAgent>.serviceAccount.automountToken`  | Automount the ServiceAccount token into the pod; needed for IRSA                                                                          | `false`                                                                        |
 | `<hunterAgent\|remediationAgent>.serviceAccount.annotations`     | Annotations for that ServiceAccount (e.g. an IRSA role ARN)                                                                              | `{}`                                                                           |
-| `agentOrchestrator.image.repository`                                  | Agent Orchestrator image repository (required when enabled)                                                                              | `""`                                                                           |
+| `agentOrchestrator.image.repository`                                  | Agent Orchestrator image repository (required when enabled)                                                                              | `"sonarsource/sonarqube-agent-orchestrator"`                                   |
 | `agentOrchestrator.image.tag`                                         | Agent Orchestrator image tag                                                                                                             | `""`                                                                           |
 | `agentOrchestrator.image.pullPolicy`                                  | Agent Orchestrator image pull policy                                                                                                     | `IfNotPresent`                                                                 |
 | `agentOrchestrator.image.pullSecrets`                                 | imagePullSecrets for the orchestrator image                                                                                              | `nil`                                                                          |
@@ -1321,7 +1337,7 @@ kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'
 | `agentOrchestrator.autoscaling.metrics`                               | Raw `autoscaling/v2` HPA `metrics:` pass-through                                                                                          | CPU `averageUtilization: 75`                                                   |
 | `agentOrchestrator.autoscaling.behavior`                              | Raw `autoscaling/v2` HPA `behavior:` pass-through                                                                                         | `scaleDown.stabilizationWindowSeconds: 300`                                    |
 | `agentOrchestrator.autoscaling.manageReplicas`                        | Set `false` to always omit `replicas` once autoscaling is enabled, even on the first apply — needed for GitOps tooling, see above         | `true`                                                                         |
-| `<hunterAgent\|remediationAgent>.image.repository`               | Agent image repository (required when the agent is enabled)                                                                              | `""`                                                                           |
+| `<hunterAgent\|remediationAgent>.image.repository`               | Agent image repository (required when the agent is enabled)                                                                              | `"sonarsource/sonarqube-hunter-agent"` / `"sonarsource/sonarqube-remediation-agent"` |
 | `<hunterAgent\|remediationAgent>.image.tag`                      | Agent image tag                                                                                                                          | `""`                                                                           |
 | `<hunterAgent\|remediationAgent>.image.pullPolicy`               | Agent image pull policy                                                                                                                  | `IfNotPresent`                                                                 |
 | `<hunterAgent\|remediationAgent>.port`                           | Agent container / Service port                                                                                                           | `8090`                                                                         |

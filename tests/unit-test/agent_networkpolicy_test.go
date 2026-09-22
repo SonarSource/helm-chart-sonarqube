@@ -80,6 +80,8 @@ func TestCoreNetworkPolicyOrchestratorIngressPort(t *testing.T) {
 				"agentOrchestrator.storage.bucket":    "agent-jobs",
 				"service.internalPort":                "9999",
 				"hunterAgent.enabled":                 "true",
+				"hunterAgent.image.repository":        "example.com/hunter-agent",
+				"hunterAgent.image.tag":               "1",
 				"agenticSigningSecret.existingSecret": "test-agentic-instance-secret",
 			}
 			for k, v := range c.extraSetValues {
