@@ -1,4 +1,4 @@
-{{- if .Values.vortexAnalysis.enabled }}
+{{- if eq (include "sonarqube.vortex.enabled" .) "true" }}
 {{- $vortex := .Values.vortexAnalysis }}
 apiVersion: apps/v1
 kind: Deployment
