@@ -81,8 +81,8 @@ It is used to validate the values.yaml file before the installation starts.
   {{- if not .Values.agentOrchestrator.enabled -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but agentOrchestrator.enabled is not true." -}}
   {{- end -}}
-  {{- if not .Values.vortexAnalysis.enabled -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but vortexAnalysis.enabled is not true." -}}
+  {{- if eq .Values.vortexAnalysis.enabled false -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but vortexAnalysis.enabled is explicitly set to false." -}}
   {{- end -}}
   {{- /* agentEgressProxy.remediationPort only opens a second http_port directive in
          agent-egress-proxy-configmap.yaml's squid.conf when remediationAgent.enabled - both
@@ -161,8 +161,8 @@ It is used to validate the values.yaml file before the installation starts.
   {{- end -}}
 {{- end -}}
 
-{{/* Validation for Vortex, when enabled */}}
-{{- if .Values.vortexAnalysis.enabled -}}
+{{/* Validation for Vortex, when enabled (explicitly, or implicitly via remediationAgent.enabled) */}}
+{{- if eq (include "sonarqube.vortex.enabled" .) "true" -}}
   {{- if not .Values.vortexAnalysis.image.repository -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.image.repository is not set." -}}
   {{- end -}}

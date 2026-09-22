@@ -332,7 +332,7 @@ spec:
             {{- end }}
             {{- end }}
             {{- /* Also given a conf/sonar.properties line via mergedSonarProperties (SONAR-31416). */}}
-            {{- if .Values.vortexAnalysis.enabled }}
+            {{- if eq (include "sonarqube.vortex.enabled" .) "true" }}
             - name: SONAR_VORTEX_ANALYSIS_URL
               value: {{ include "sonarqube.vortex.url" . | quote }}
             {{- end }}
