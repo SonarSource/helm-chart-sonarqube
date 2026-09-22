@@ -30,9 +30,9 @@ without waiting for a new SonarQube Server release.
 **MCP server:** the bundled MCP server image (`sonarsource/sonarqube-mcp`) keeps its own upstream
 `1.x.y.z` version line — one build serves every supported SonarQube line, so a per-line prefix
 would describe a build that doesn't exist. It's also published under an additional per-line alias
-tag, `<SonarQube major>.<minor>.<MCP patch counter>`, alongside that canonical tag; the chart
-pins the canonical `1.x.y.z` tag. This LTA ships MCP `1.27.0.4335`; the `1.27.0` line is supported
-for the duration of this LTA.
+tag, `<SonarQube major>.<minor>.<MCP patch counter>`, and the chart always pins that alias tag.
+Until the alias tag exists for this LTA, `mcp.image.tag` still points at the canonical build
+`1.27.0.4335`; it moves to the alias tag at release time.
 
 ## Kubernetes and Openshift Compatibility
 
