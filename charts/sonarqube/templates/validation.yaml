@@ -85,6 +85,9 @@ It is used to validate the values.yaml file before the installation starts.
   {{- if not .Values.agentOrchestrator.enabled -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true but agentOrchestrator.enabled is not true." -}}
   {{- end -}}
+  {{- if not .Values.hunterAgent.image.repository -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true but hunterAgent.image.repository is not set." -}}
+  {{- end -}}
   {{/* Same untouched-default precedent as agentOrchestrator.image above: the chart's own
        repository default ("sonarsource/sonarqube-hunter-agent") has no matching tag default, so
        leaving the image config untouched would silently render an unpullable reference. */}}
@@ -95,6 +98,9 @@ It is used to validate the values.yaml file before the installation starts.
 {{- if .Values.remediationAgent.enabled -}}
   {{- if not .Values.agentOrchestrator.enabled -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but agentOrchestrator.enabled is not true." -}}
+  {{- end -}}
+  {{- if not .Values.remediationAgent.image.repository -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but remediationAgent.image.repository is not set." -}}
   {{- end -}}
   {{- if and (eq .Values.remediationAgent.image.repository "sonarsource/sonarqube-remediation-agent") (not .Values.remediationAgent.image.tag) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true and remediationAgent.image.repository is still the chart's default, which has no matching default tag. Set remediationAgent.image.tag explicitly." -}}
