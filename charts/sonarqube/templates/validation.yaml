@@ -33,6 +33,15 @@ It is used to validate the values.yaml file before the installation starts.
   {{- if not .Values.agentOrchestrator.image.repository -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but agentOrchestrator.image.repository is not set." -}}
   {{- end -}}
+  {{/* Whether an explicitly-configured agentOrchestrator.image needs a tag is that install's own
+       business - plenty of fixtures/private registries key on a mutable tag per repository and
+       that's fine. But the chart's own repository default ("sonarsource/sonarqube-agent-orchestrator")
+       has no matching tag default (no build exists yet), so leaving the image config untouched
+       entirely would silently render "sonarsource/sonarqube-agent-orchestrator:" - an unpullable
+       reference no node can resolve. Only guard that exact untouched-default case. */}}
+  {{- if and (eq .Values.agentOrchestrator.image.repository "sonarsource/sonarqube-agent-orchestrator") (not .Values.agentOrchestrator.image.tag) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true and agentOrchestrator.image.repository is still the chart's default, which has no matching default tag. Set agentOrchestrator.image.tag explicitly." -}}
+  {{- end -}}
   {{- $agentOrchestratorStorage := .Values.agentOrchestrator.storage -}}
   {{- /* bucket is meaningless for a file-based backend (FILESYSTEM, NFS): those hand the runtime a
          direct file:// path instead of a presigned URL, per StorageProvider's own semantics - they
@@ -76,10 +85,25 @@ It is used to validate the values.yaml file before the installation starts.
   {{- if not .Values.agentOrchestrator.enabled -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true but agentOrchestrator.enabled is not true." -}}
   {{- end -}}
+  {{- if not .Values.hunterAgent.image.repository -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true but hunterAgent.image.repository is not set." -}}
+  {{- end -}}
+  {{/* Same untouched-default precedent as agentOrchestrator.image above: the chart's own
+       repository default ("sonarsource/sonarqube-hunter-agent") has no matching tag default, so
+       leaving the image config untouched would silently render an unpullable reference. */}}
+  {{- if and (eq .Values.hunterAgent.image.repository "sonarsource/sonarqube-hunter-agent") (not .Values.hunterAgent.image.tag) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true and hunterAgent.image.repository is still the chart's default, which has no matching default tag. Set hunterAgent.image.tag explicitly." -}}
+  {{- end -}}
 {{- end -}}
 {{- if .Values.remediationAgent.enabled -}}
   {{- if not .Values.agentOrchestrator.enabled -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but agentOrchestrator.enabled is not true." -}}
+  {{- end -}}
+  {{- if not .Values.remediationAgent.image.repository -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but remediationAgent.image.repository is not set." -}}
+  {{- end -}}
+  {{- if and (eq .Values.remediationAgent.image.repository "sonarsource/sonarqube-remediation-agent") (not .Values.remediationAgent.image.tag) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true and remediationAgent.image.repository is still the chart's default, which has no matching default tag. Set remediationAgent.image.tag explicitly." -}}
   {{- end -}}
   {{- if eq .Values.vortexAnalysis.enabled false -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but vortexAnalysis.enabled is explicitly set to false." -}}
@@ -255,6 +279,15 @@ It is used to validate the values.yaml file before the installation starts.
        agentOrchestrator.image needs a tag is that component's business, not the hook's. */}}
   {{- if and .Values.agentKeyDerivation.enabled .Values.agentKeyDerivation.image.repository (not .Values.agentKeyDerivation.image.tag) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentKeyDerivation.image.repository is set but agentKeyDerivation.image.tag is not. The image fallback is all-or-nothing: once you name a repository, the tag has to come from the same block." -}}
+  {{- end -}}
+  {{/* When the hook falls back to agentOrchestrator.image (no agentKeyDerivation.image override)
+       and agentOrchestrator.enabled is not true, nothing else in this install ever checks that
+       image's tag - agentOrchestrator.image.repository can carry a non-empty chart default with
+       no tag, which would otherwise render "repo:" and hang the hook until
+       activeDeadlineSeconds. Only guard the disabled case: an enabled orchestrator's own tag is
+       still that component's business, not the hook's. */}}
+  {{- if and .Values.agentKeyDerivation.enabled (not .Values.agentKeyDerivation.image.repository) (not .Values.agentOrchestrator.enabled) .Values.agentOrchestrator.image.repository (not .Values.agentOrchestrator.image.tag) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n The agentic key-derivation hook Job needs an image carrying derive-keys.sh. It would fall back to agentOrchestrator.image.repository, which is set but has no tag, and agentOrchestrator.enabled is not true so nothing else validates it. Set agentKeyDerivation.image.repository/tag explicitly, or agentOrchestrator.image.tag, or set agentKeyDerivation.enabled=false and provide the <fullname>-agentic-keys-* Secrets yourself." -}}
   {{- end -}}
   {{/* The hook's Role grants namespace-wide `create` on Secrets (create can't be scoped by
        name) plus `update` restricted to this release's <fullname>-agentic-keys-* Secrets. With

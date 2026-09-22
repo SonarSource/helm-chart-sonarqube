@@ -169,6 +169,8 @@ func AgentRuntimeClassValues() map[string]string {
 		"agentOrchestrator.image.tag":         "42",
 		"agentOrchestrator.storage.bucket":    "agent-jobs",
 		"hunterAgent.enabled":                 "true",
+		"hunterAgent.image.repository":        "example.com/hunter-agent",
+		"hunterAgent.image.tag":               "1",
 		"agenticSigningSecret.existingSecret": "test-agentic-instance-secret",
 	}
 }
