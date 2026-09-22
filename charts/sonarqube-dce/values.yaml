@@ -1000,7 +1000,9 @@ mcp:
 # files. When enabled, the chart points the SonarQube application nodes at it via the
 # sonar.vortex.analysis.url property.
 vortexAnalysis:
-  enabled: false
+  # Defaults to true automatically when remediationAgent.enabled is true (remediation is not
+  # useful without it). Set explicitly to true or false to override that default.
+  enabled: null
 
   image:
     repository: "sonarsource/sonar-vortex"
@@ -1466,8 +1468,8 @@ hunterAgent:
   # - the image sizes both itself.
   terminationGracePeriodSeconds: 44430
 
-# Remediation Agent runtime that remediates issues. Requires agentOrchestrator.enabled AND
-# vortexAnalysis.enabled - see validation.yaml.
+# Remediation Agent runtime that remediates issues. Requires agentOrchestrator.enabled - see
+# validation.yaml. Automatically enables vortexAnalysis unless it's explicitly set to false.
 remediationAgent:
   enabled: false  # enable once the remediation runtime image is available
   image:
