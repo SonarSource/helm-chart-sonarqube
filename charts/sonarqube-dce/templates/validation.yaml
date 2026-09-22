@@ -34,6 +34,15 @@
   {{- if not .Values.agentOrchestrator.image.repository -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but agentOrchestrator.image.repository is not set." -}}
   {{- end -}}
+  {{/* Whether an explicitly-configured agentOrchestrator.image needs a tag is that install's own
+       business - plenty of fixtures/private registries key on a mutable tag per repository and
+       that's fine. But the chart's own repository default ("sonarsource/sonarqube-agent-orchestrator")
+       has no matching tag default (no build exists yet), so leaving the image config untouched
+       entirely would silently render "sonarsource/sonarqube-agent-orchestrator:" - an unpullable
+       reference no node can resolve. Only guard that exact untouched-default case. */}}
+  {{- if and (eq .Values.agentOrchestrator.image.repository "sonarsource/sonarqube-agent-orchestrator") (not .Values.agentOrchestrator.image.tag) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true and agentOrchestrator.image.repository is still the chart's default, which has no matching default tag. Set agentOrchestrator.image.tag explicitly." -}}
+  {{- end -}}
   {{- $agentOrchestratorStorage := .Values.agentOrchestrator.storage -}}
   {{- /* bucket is meaningless for a file-based backend (FILESYSTEM, NFS): those hand the runtime a
          direct file:// path instead of a presigned URL, per StorageProvider's own semantics - they
