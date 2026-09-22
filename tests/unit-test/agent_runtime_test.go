@@ -187,7 +187,7 @@ func TestAgentRuntimeContainerSecurityContext(t *testing.T) {
 		runAsUser int64
 	}{
 		{"hunter", 10001},
-		{"remediation", 1000},
+		{"remediation", 10001},
 	}
 
 	for _, chart := range agentCharts {
