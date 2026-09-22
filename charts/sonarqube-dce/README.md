@@ -30,9 +30,12 @@ independently of the SonarQube release and starts at `1000` for each new SonarQu
 `<major>.<minor>` line (e.g. `2026.5.1000`, `2026.5.1001`, ...). This lets chart-only fixes ship
 without waiting for a new SonarQube Server release.
 
-**Exception — MCP server:** the bundled MCP server image (`sonarsource/sonarqube-mcp`) keeps its
-own upstream `1.x.y.z` version line, independent of both the chart version and `appVersion`. This
-LTA ships MCP `1.27.0.4335`; the `1.27.0` line is supported for the duration of this LTA.
+**MCP server:** the bundled MCP server image (`sonarsource/sonarqube-mcp`) keeps its own upstream
+`1.x.y.z` version line — one build serves every supported SonarQube line, so a per-line prefix
+would describe a build that doesn't exist. It's also published under an additional per-line alias
+tag, `<SonarQube major>.<minor>.<MCP patch counter>`, alongside that canonical tag; the chart
+pins the canonical `1.x.y.z` tag. This LTA ships MCP `1.27.0.4335`; the `1.27.0` line is supported
+for the duration of this LTA.
 
 ## Installing the chart
 
