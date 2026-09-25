@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -236,6 +237,52 @@ func TestAgentEgressProxyOmitsAllowedDomainsAclWhenEmpty(t *testing.T) {
 
 			assert.NotContains(t, conf, "allowed_domains")
 		})
+	}
+}
+
+// Squid refuses to start - so every proxy replica crash-loops - when an allowedDomains entry is
+// equal to or under a dotted entry it considers covering it; in the other order it only warns and
+// drops the narrower entry. validation.yaml fails the render on any such overlap regardless of
+// order and case, and leaves non-overlapping lists (including exact duplicates, which Squid
+// accepts) alone. Cases were checked with `squid -k parse` on the pinned image.
+func TestAgentEgressProxyRejectsOverlappingAllowedDomains(t *testing.T) {
+	cases := []struct {
+		name      string
+		domains   []string
+		covered   string
+		coveredBy string
+	}{
+		{name: "bare then dotted", domains: []string{"example.com", ".example.com"}, covered: "example.com", coveredBy: ".example.com"},
+		{name: "dotted then bare", domains: []string{".example.com", "example.com"}, covered: "example.com", coveredBy: ".example.com"},
+		{name: "mixed case", domains: []string{"Example.com", ".example.COM"}, covered: "example.com", coveredBy: ".example.com"},
+		{name: "subdomain then dotted", domains: []string{"api.example.com", ".example.com"}, covered: "api.example.com", coveredBy: ".example.com"},
+		{name: "dotted then subdomain", domains: []string{".example.com", "api.example.com"}, covered: "api.example.com", coveredBy: ".example.com"},
+		{name: "dotted subdomain", domains: []string{".api.example.com", ".example.com"}, covered: ".api.example.com", coveredBy: ".example.com"},
+		{name: "valid: dotted alone", domains: []string{".example.com"}},
+		{name: "valid: bare domain and its subdomain", domains: []string{"example.com", "api.example.com"}},
+		{name: "valid: suffix without a label boundary", domains: []string{"badexample.com", ".example.com"}},
+		{name: "valid: exact duplicate", domains: []string{".example.com", ".example.com"}},
+	}
+	for _, chart := range egressProxyCharts {
+		for _, tc := range cases {
+			t.Run(chart.name+"/"+tc.name, func(t *testing.T) {
+				setValues := map[string]string{
+					"hunterAgent.enabled":          "true",
+					"hunterAgent.image.repository": "example.com/hunter-agent",
+					"hunterAgent.image.tag":        "1",
+				}
+				for i, d := range tc.domains {
+					setValues[fmt.Sprintf("agentEgressProxy.allowedDomains[%d]", i)] = d
+				}
+				_, err := renderAgentEgressProxyTemplates(t, chart, setValues, []string{"templates/agent-egress-proxy-configmap.yaml"})
+				if tc.covered == "" {
+					require.NoError(t, err)
+					return
+				}
+				require.Error(t, err, "overlapping allowedDomains must fail the render, not crash-loop Squid")
+				assert.Contains(t, err.Error(), fmt.Sprintf("'%s' is already covered by '%s'", tc.covered, tc.coveredBy))
+			})
+		}
 	}
 }
 

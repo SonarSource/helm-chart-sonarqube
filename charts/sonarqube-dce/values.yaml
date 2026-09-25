@@ -1678,6 +1678,8 @@ agentEgressProxy:
   # Domains runtimes may reach through the proxy (Squid `dstdomain` ACL). A leading dot means
   # "this domain and all subdomains". HTTPS is CONNECT-tunneled (no TLS interception in v1) -
   # matched against the CONNECT target hostname, not decrypted SNI.
+  # Don't also list a domain a dotted entry already covers (`example.com` or `api.example.com`
+  # alongside `.example.com`): Squid can refuse to start on that, so the render fails instead.
   # Leaving this empty is a valid but near-useless configuration: the runtimes can still reach
   # SonarQube's own agentic endpoints (hardcoded, see squid.conf) but nothing else, so no external
   # LLM provider is callable. Set at least the provider domain the runtimes are pointed at.
