@@ -121,6 +121,27 @@
   {{- end -}}
 {{- end -}}
 
+{{/* agentEgressProxy.allowedDomains is joined into a single `acl ... dstdomain` line, and Squid
+     refuses to start (every proxy replica crash-loops) when an entry is equal to or under a
+     dotted entry it considers covering it - e.g. `example.com` with `.example.com` in either
+     order, or `api.example.com` followed by `.example.com`. With the dotted entry first, Squid
+     only warns and silently drops the narrower one, so this fails on any such overlap regardless
+     of order. Matching is case-insensitive, as in Squid. Exact duplicates are left alone: Squid
+     accepts them. */}}
+{{- if include "sonarqube.agentEgressProxy.required" . -}}
+  {{- $domains := list -}}
+  {{- range (.Values.agentEgressProxy.allowedDomains | default list) -}}
+    {{- $domains = append $domains (lower (toString .)) -}}
+  {{- end -}}
+  {{- range $entry := $domains -}}
+    {{- range $dotted := $domains -}}
+      {{- if and (hasPrefix "." $dotted) (ne $entry $dotted) (or (eq (trimPrefix "." $entry) (trimPrefix "." $dotted)) (hasSuffix $dotted $entry)) -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n agentEgressProxy.allowedDomains: '%s' is already covered by '%s'; listing both can stop Squid from starting. Remove '%s'." $entry $dotted $entry) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
 {{/* When a runtime's storage.filesystem.baseDir is set, its extraVolumeMounts must contain a
      matching mountPath, or the orchestrator's file:// handoff resolves to nothing on that
      runtime. */}}
