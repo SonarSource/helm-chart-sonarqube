@@ -83,7 +83,7 @@ When upgrading from a chart prior to `2026.1.0` (the 2026.1 LTA), you will exper
 
 ### Upgrade process
 
-1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube-server/latest/server-update-and-maintenance/update/roadmap/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
+1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube-server/server-update-and-maintenance/update/roadmap) to familiarize yourself with the general upgrade process (most importantly, back up your database)
 2. Read the chart-specific notes below for every chart version you cross
 3. Upgrade to the chart version that ships the target SonarQube version (`helm repo update`, then `helm upgrade` with `--version`), rather than only changing `applicationNodes.image.tag` and `searchNodes.image.tag` on your current chart. When crossing an Elasticsearch major, follow the [Elasticsearch 8 to 9](#elasticsearch-8-to-9-upgrading-from-20263-or-earlier-to-20264-or-later) procedure instead
 4. Browse to <http://yourSonarQubeServerURL/setup> and follow the setup instructions
@@ -324,7 +324,7 @@ jdbcOverwrite:
 
 ## Prerequisites and suggested settings for production
 
-Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/installation-requirements/overview/).
+Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube-server/server-installation/server-host-requirements).
 
 ### Kubernetes - Pod Security Standards
 
@@ -370,7 +370,7 @@ Because of such constraints, even when running in Docker containers, SonarQube r
 Please carefully read the following and make sure these configurations are set up at the host level:
 
 * [vm.max_map_count](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html#vm-max-map-count)
-* [seccomp filter should be available](https://github.com/SonarSource/docker-sonarqube/issues/614)
+* [seccomp filter should be available](https://www.elastic.co/docs/deploy-manage/deploy/self-managed/bootstrap-checks)
 
 In general, please carefully read the Elasticsearch's [documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/system-config.html) and specifically [here](https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-virtual-memory.html) for tutorial on how to change those parameters.
 
@@ -455,7 +455,7 @@ When the [agentic features](#agentic-features) are enabled, size your nodes for 
 | Agent Egress Proxy (2 replicas) | `50m` / `64Mi` / `64Mi` | `250m` / `128Mi` / `128Mi` |
 | MCP Server | not set | not set |
 
-To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/environment-variables/) and set the environment variables or sonar.properties accordingly.
+To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube-server/server-installation/system-properties/configuration-methods) and set the environment variables or sonar.properties accordingly.
 
 ## Ingress usage
 
@@ -724,7 +724,7 @@ The chart can deploy the SonarQube agentic components next to the SonarQube appl
 
 **Prerequisites:**
 
-* **Database.** The Agent Orchestrator shares SonarQube's database and supports **PostgreSQL** only. SonarQube itself also supports Microsoft SQL Server and Oracle (see the [installation requirements](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/installation-requirements/overview/)), but the agentic features need PostgreSQL. `agentOrchestrator.coreDb.*` defaults to the `jdbcOverwrite` values and can override them individually.
+* **Database.** The Agent Orchestrator shares SonarQube's database and supports **PostgreSQL** only. SonarQube itself also supports Microsoft SQL Server and Oracle (see the [installation requirements](https://docs.sonarsource.com/sonarqube-server/server-installation/server-host-requirements)), but the agentic features need PostgreSQL. `agentOrchestrator.coreDb.*` defaults to the `jdbcOverwrite` values and can override them individually.
 * **Storage.** The agentic features share an object store: the Agent Orchestrator writes the job artifacts to it (`agentOrchestrator.storage`), SonarQube reads the agent job logs from it (`sonar.agentic.storage.*` in `applicationNodes.sonarProperties`), and Vortex restores the analysis context from it (`vortexAnalysis.storage`). The simplest setup points all three at the same bucket. Supported backends:
   * `S3` (default, recommended for production): AWS S3, or any S3-compatible endpoint such as MinIO via `endpoint` and path-style addressing. Credentials come from inline keys, an `existingSecret`, or, when both are blank, the pod's IAM identity (node instance role or IRSA through the component's `serviceAccount.annotations`).
   * `FILESYSTEM` / `NFS`: a shared `ReadWriteMany` volume mounted through `extraVolumes`/`extraVolumeMounts`, with `storage.filesystem.baseDir` set. Use a single `securityContext.fsGroup` across the orchestrator and the agents.
@@ -1032,7 +1032,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.plugins.securityContext`                       | Security context for the container to download plugins                                                                                                                                                         | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `applicationNodes.jvmOpts`                                       | (DEPRECATED) Values to add to `SONAR_WEB_JAVAOPTS`. Please set directly `SONAR_WEB_JAVAOPTS` or `sonar.web.javaOpts`                                                                                           | `""`                                                                   |
 | `applicationNodes.jvmCeOpts`                                     | (DEPRECATED) Values to add to `SONAR_CE_JAVAOPTS`. Please set directly `SONAR_CE_JAVAOPTS` or `sonar.ce.javaOpts`                                                                                              | `""`                                                                   |
-| `applicationNodes.jwtSecret`                                     | A HS256 key encoded with base64 (_This value must be set before installing the chart, see [the documentation](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/)_) | `""`                                                                   |
+| `applicationNodes.jwtSecret`                                     | A HS256 key encoded with base64 (_This value must be set before installing the chart, see [the documentation](#installing-the-chart)_) | `""`                                                                   |
 | `applicationNodes.existingJwtSecret`                             | secret that contains the `jwtSecret`                                                                                                                                                                           | `nil`                                                                  |
 | `applicationNodes.extraContainers`                               | Array of extra containers to run alongside                                                                                                                                                                     | `[]`                                                                   |
 | `applicationNodes.extraInitContainers`                           | Array of extra init containers to run before the application container                                                                                                                                         | `[]`                                                                   |

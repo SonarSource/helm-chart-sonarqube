@@ -92,7 +92,7 @@ To upgrade from the old and unmaintained [sonarqube-lts chart](https://artifacth
 
 ## How to use it
 
-Take some time to read the Deploy on [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/server/introduction/) page.
+Take some time to read the Deploy on [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube-server/server-installation/on-kubernetes-or-openshift/installation-overview) page.
 SonarQube deployment on Kubernetes has been tested with the recommendations and constraints documented there, and deployment has some limitations.
 
 ## Uninstalling the chart
@@ -106,7 +106,7 @@ helm uninstall -n sonarqube <yourReleaseName>
 
 ## Prerequisites and suggested settings for production
 
-Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/installation-requirements/overview/).
+Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube-server/server-installation/server-host-requirements).
 
 ### Kubernetes - Pod Security Standards
 
@@ -152,7 +152,7 @@ Because of such constraints, even when running in Docker containers, SonarQube r
 Please carefully read the following and make sure these configurations are set up at the host level:
 
 * [vm.max_map_count](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html#vm-max-map-count)
-* [seccomp filter should be available](https://github.com/SonarSource/docker-sonarqube/issues/614)
+* [seccomp filter should be available](https://www.elastic.co/docs/deploy-manage/deploy/self-managed/bootstrap-checks)
 
 In general, please carefully read the Elasticsearch's [documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/system-config.html).
 
@@ -196,11 +196,11 @@ When the [agentic features](#agentic-features) are enabled, size your nodes for 
 | Agent Egress Proxy (2 replicas) | `50m` / `64Mi` / `64Mi` | `250m` / `128Mi` / `128Mi` |
 | MCP Server | not set | not set |
 
-To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/environment-variables/) and set the environment variables or sonar.properties accordingly.
+To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube-server/server-installation/system-properties/configuration-methods) and set the environment variables or sonar.properties accordingly.
 
 ## Upgrade
 
-1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube-server/latest/server-update-and-maintenance/update/roadmap/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
+1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube-server/server-update-and-maintenance/update/roadmap) to familiarize yourself with the general upgrade process (most importantly, back up your database)
 2. Read the chart-specific notes below for every chart version you cross
 3. Upgrade to the chart version that ships the target SonarQube version (`helm repo update`, then `helm upgrade` with `--version`), rather than only changing `image.tag` on your current chart
 4. Browse to <http://yourSonarQubeServerURL/setup> and follow the setup instructions
@@ -601,7 +601,7 @@ The chart can deploy the SonarQube agentic components next to SonarQube Server:
 
 **Prerequisites:**
 
-* **Database.** The Agent Orchestrator shares SonarQube's database and supports **PostgreSQL** only. SonarQube itself also supports Microsoft SQL Server and Oracle (see the [installation requirements](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/installation-requirements/overview/)), but the agentic features need PostgreSQL. In this chart, set `jdbcOverwrite.enabled=true`: the embedded H2 database is not reachable from the orchestrator. `agentOrchestrator.coreDb.*` defaults to the `jdbcOverwrite` values and can override them individually.
+* **Database.** The Agent Orchestrator shares SonarQube's database and supports **PostgreSQL** only. SonarQube itself also supports Microsoft SQL Server and Oracle (see the [installation requirements](https://docs.sonarsource.com/sonarqube-server/server-installation/server-host-requirements)), but the agentic features need PostgreSQL. In this chart, set `jdbcOverwrite.enabled=true`: the embedded H2 database is not reachable from the orchestrator. `agentOrchestrator.coreDb.*` defaults to the `jdbcOverwrite` values and can override them individually.
 * **Storage.** The agentic features share an object store: the Agent Orchestrator writes the job artifacts to it (`agentOrchestrator.storage`), SonarQube reads the agent job logs from it (`sonar.agentic.storage.*` in `sonarProperties`), and Vortex restores the analysis context from it (`vortexAnalysis.storage`). The simplest setup points all three at the same bucket. Supported backends:
   * `S3` (default, recommended for production): AWS S3, or any S3-compatible endpoint such as MinIO via `endpoint` and path-style addressing. Credentials come from inline keys, an `existingSecret`, or, when both are blank, the pod's IAM identity (node instance role or IRSA through the component's `serviceAccount.annotations`).
   * `FILESYSTEM` / `NFS`: a shared `ReadWriteMany` volume mounted through `extraVolumes`/`extraVolumeMounts`, with `storage.filesystem.baseDir` set. Use a single `securityContext.fsGroup` across the orchestrator and the agents.
@@ -1347,4 +1347,4 @@ For overriding variables see: [Customizing the chart](https://helm.sh/docs/intro
 
 ## License
 
-SonarQube Community Build is released under the [GNU Lesser General Public License, Version 3.0⁠,](http://www.gnu.org/licenses/lgpl.txt) and packaged with [SSALv1](https://www.sonarsource.com/license/ssal/) analyzers. SonarQube Server Developer and Enterprise are licensed under [SonarQube Server Terms and Conditions](https://www.sonarsource.com/legal/sonarqube/terms-and-conditions/).
+SonarQube Community Build is released under the [GNU Lesser General Public License, Version 3.0⁠,](https://www.gnu.org/licenses/lgpl-3.0.txt) and packaged with [SSALv1](https://www.sonarsource.com/license/ssal/) analyzers. SonarQube Server Developer and Enterprise are licensed under [SonarQube Server Terms and Conditions](https://www.sonarsource.com/legal/sonarqube/terms-and-conditions/).
