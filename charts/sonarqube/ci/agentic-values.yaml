@@ -3,8 +3,8 @@
 # every pod becomes Ready - no LLM, SCM or real object store is involved.
 # Needs the workflow to pre-create, in the release namespace, the external PostgreSQL
 # (setup_external_postgres.sh), the S3 stand-in (setup_s3mock.sh) and the instance secret below.
-# The OpenShift chart-verifier also installs this file, merged under openshift-verifier/values.yaml,
-# which repoints the namespace-qualified endpoints below and turns gVisor off.
+# The OpenShift chart-verifier also installs this file, with openshift-verifier/values.yaml over it,
+# in another namespace: hence the namespace-relative endpoints below (gvisor.* is ignored there).
 #
 # Requests are sized from the idle usage of the same stack on kind (SonarQube ~4.5Gi, Vortex
 # ~1.3Gi, MCP/Orchestrator/s3mock ~350Mi, runtimes ~75Mi) instead of the production defaults
@@ -29,7 +29,7 @@ resources:
 
 jdbcOverwrite:
   enabled: true
-  jdbcUrl: "jdbc:postgresql://external-postgres-postgresql.test.svc.cluster.local:5432/postgres"
+  jdbcUrl: "jdbc:postgresql://external-postgres-postgresql:5432/postgres"
   jdbcUsername: "postgres"
   jdbcSecretName: "external-postgres-postgresql"
   jdbcSecretPasswordKey: "postgres-password"
@@ -40,7 +40,7 @@ agenticSigningSecret:
 agentOrchestrator:
   enabled: true
   storage:
-    endpoint: "http://s3.test.svc.cluster.local:9000"
+    endpoint: "http://s3:9000"
     bucket: agent-jobs
     region: us-east-1
     pathStyle: true
@@ -92,7 +92,7 @@ vortexAnalysis:
       value: "dummy"
   storage:
     type: S3
-    endpoint: "http://s3.test.svc.cluster.local:9000"
+    endpoint: "http://s3:9000"
     bucket: vortex
     region: us-east-1
     pathStyleAccess: true

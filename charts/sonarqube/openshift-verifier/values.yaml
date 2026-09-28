@@ -1,7 +1,7 @@
-# chart-verifier installs the chart once per ci/*-values.yaml, deep-merging this file over each of
-# them. So this file only carries what OpenShift changes; edition, image and resources come from
-# the ci file (ci-values.yaml: Community Build, agentic-values.yaml: Enterprise with the agentic
-# components).
+# chart-verifier installs the chart once per ci/*-values.yaml with this file over each of them, but
+# the merge is shallow: every top-level key set here replaces the ci file's one wholesale. So this
+# file only carries top-level keys the ci files don't set (edition, image, resources and the
+# agentic components come from ci-values.yaml: Community Build, agentic-values.yaml: Enterprise).
 OpenShift:
   enabled: true
   route:
@@ -12,16 +12,3 @@ OpenShift:
   agentRuntimeClassName: ""
 
 monitoringPasscode: "test"
-
-# The agentic-values.yaml endpoints are namespace-qualified for the kind "test" namespace; the
-# verifier installs into "sonarqube". Unused (hence harmless) for ci-values.yaml.
-jdbcOverwrite:
-  jdbcUrl: "jdbc:postgresql://external-postgres-postgresql.sonarqube.svc.cluster.local:5432/postgres"
-
-agentOrchestrator:
-  storage:
-    endpoint: "http://s3.sonarqube.svc.cluster.local:9000"
-
-vortexAnalysis:
-  storage:
-    endpoint: "http://s3.sonarqube.svc.cluster.local:9000"

@@ -93,11 +93,18 @@ jobs:
       contents: read
     strategy:
       matrix:
+        # not-contains-crds: since chart-verifier 1.16.0 the check also scans dependency templates,
+        # so it flags the CRDs of the optional KEDA subchart (keda.enabled, off by default).
         include:
           - verifying_chart: sonarqube-dce
             report_name: sonarqube-dce-openshift-report
+            skipped_checks: images-are-certified,not-contains-crds
           - verifying_chart: sonarqube
             report_name: sonarqube-openshift-report
+            # helm-lint only lints the chart defaults plus openshift-verifier/values.yaml, which can't
+            # pick an edition: that comes from each ci/*-values.yaml (Community Build vs Enterprise).
+            # ct lint covers every ci file in the kind job.
+            skipped_checks: images-are-certified,not-contains-crds,helm-lint
     env:
       OPENSHIFT_VERSION: 4.22.14
       CHART_VERIFIER_VERSION: 1.16.0
@@ -167,11 +174,9 @@ jobs:
             --from-literal=instance-secret="$(openssl rand -hex 32)" \
             --dry-run=client -o yaml | kubectl apply -f -
       - name: Run chart verification
-        # not-contains-crds: since chart-verifier 1.16.0 the check also scans dependency templates,
-        # so it flags the CRDs of the optional KEDA subchart (keda.enabled, off by default).
         run: |
           mkdir -p "$(pwd)/report-${{ matrix.verifying_chart}}"
-          chart-verifier verify -x images-are-certified,not-contains-crds charts/${{ matrix.verifying_chart }} --helm-install-timeout 20m -F charts/${{ matrix.verifying_chart }}/openshift-verifier/values.yaml -n ${{ matrix.verifying_chart }} --openshift-version ${{ env.OPENSHIFT_VERSION }} > "$(pwd)/report-${{ matrix.verifying_chart}}/report.yaml"
+          chart-verifier verify -x ${{ matrix.skipped_checks }} charts/${{ matrix.verifying_chart }} --helm-install-timeout 20m -F charts/${{ matrix.verifying_chart }}/openshift-verifier/values.yaml -n ${{ matrix.verifying_chart }} --openshift-version ${{ env.OPENSHIFT_VERSION }} > "$(pwd)/report-${{ matrix.verifying_chart}}/report.yaml"
       - name: Upload verification report
         if: always() && ! cancelled()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

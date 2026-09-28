@@ -146,7 +146,11 @@ func TestCiValues(t *testing.T) {
 
 // TestCiOpenshiftVerifierValues loads the values used by the OpenShift Verifier at runtime: like
 // chart-verifier, it layers openshift-verifier/values.yaml over each ci/*-values.yaml.
+// chart-verifier's merge is shallow (a top-level key replaces the ci file's one wholesale), so the
+// verifier file must not set a map-valued top-level key that a ci file sets too.
 func TestCiOpenshiftVerifierValues(t *testing.T) {
+	verifierValues, err := chartutil.ReadValuesFile(chartPath + "/openshift-verifier/values.yaml")
+	assert.NoError(t, err)
 	table := []struct {
 		ciValuesFile  string
 		expectedImage string
@@ -156,6 +160,13 @@ func TestCiOpenshiftVerifierValues(t *testing.T) {
 	}
 	for _, tc := range table {
 		t.Run(tc.ciValuesFile, func(t *testing.T) {
+			ciValues, err := chartutil.ReadValuesFile(chartPath + "/ci/" + tc.ciValuesFile)
+			assert.NoError(t, err)
+			for key, value := range verifierValues {
+				_, isMap := value.(map[string]interface{})
+				_, inCiFile := ciValues[key]
+				assert.False(t, isMap && inCiFile, "openshift-verifier/values.yaml would replace %s of %s", key, tc.ciValuesFile)
+			}
 			helmOptions := newSQHelmOptions()
 			helmOptions.ValuesFiles = []string{chartPath + "/ci/" + tc.ciValuesFile, chartPath + "/openshift-verifier/values.yaml"}
 			output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
