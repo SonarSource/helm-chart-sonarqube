@@ -4,12 +4,17 @@ All changes to this chart will be documented in this file.
 ## [2026.5.1000]
 * Upgrade Chart's version to 2026.5.1000
 * Decouple the chart's `version` from `appVersion`: it now follows `<SonarQube major>.<minor>.<patch counter>`, with the counter starting at `1000` per minor line
+* Upgrade SonarQube Server to 2026.5.0
 * Fail DCE upgrades across an Elasticsearch major while search pods are still running; scale `searchNodes.replicaCount` to 0 first
 * **Breaking**: The chart now manages Application node liveness/readiness probe handlers; legacy `exec`/`httpGet`/`tcpSocket`/`grpc` values are ignored, use `overrideCommand` instead
 * Set a default MCP pod `securityContext` (`fsGroup: 0`), `HOME=/data` and an optional `mcp.initContainers` hook so the non-root MCP server can write to `/data`
 * **Breaking**: Remove the deprecated `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart dependency. `ingress.enabled` remains supported for use with a self-managed ingress controller; `httproute.enabled` (Gateway API) is also available
 * Add `gateway-api-migration-scripts/nginx-to-istio-migration.sh` to help migrate from the bundled ingress-nginx controller to Gateway API
 * Update MCP image to `sonarsource/sonarqube-mcp:2026.5.0`
+* Add the Agent Orchestrator image `sonarsource/sonarqube-agent-orchestrator:2026.5.0`
+* Add the Hunter Agent image `sonarsource/sonarqube-hunter-agent:2026.5.0`
+* Add the Remediation Agent image `sonarsource/sonarqube-remediation-agent:2026.5.0`
+* Add the Vortex image `sonarsource/sonar-vortex:2026.5.0`
 * Add optional gVisor (runsc) sandboxing for the agent runtimes
 * Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via `agentOrchestrator.enabled`, `hunterAgent.enabled` and `remediationAgent.enabled`
 * Set the Hunter Agent's `SCRIPT_PATH` (detection mode) from `hunterAgent.scriptPath`
@@ -43,7 +48,6 @@ All changes to this chart will be documented in this file.
 * `vortexAnalysis.enabled` now defaults to `true` when `remediationAgent.enabled` is `true`
 * Raise the Remediation Agent's default `runAsUser`/`runAsGroup` from `1000` to `10001`, fixing incomplete generated PR content
 * Raise the default `applicationNodes.resources` memory request and limit to `8192M` to fit the higher SonarQube Server 2026.5 Web/CE heap defaults
-* Default the Agent Orchestrator, Hunter Agent, Remediation Agent and Vortex image tags to `2026.5.0`
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
