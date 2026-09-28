@@ -65,6 +65,7 @@ If you want to use a more recent SonarQube Community Build, please set the `comm
 
 When upgrading your SonarQube Server to a new Long-Term Active (LTA) release, you should carefully read the official upgrade documentation to determine the correct update path based on your current server version.
 
+<!-- TODO: the 2026.5 LTA-to-LTA notes are not published yet (the URL redirects to "2026.5 LTA is on its way"); check the link once they are live -->
 * For SonarQube Server 2026.5 LTA, refer to the [LTA-to-LTA Upgrade Notes (2026.5)](https://docs.sonarsource.com/sonarqube-server/2026.5/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2026.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2026.1)](https://docs.sonarsource.com/sonarqube-server/2026.1/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.4 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.4)](https://docs.sonarsource.com/sonarqube-server/2025.4/server-update-and-maintenance/lta-to-lta-release-notes).
