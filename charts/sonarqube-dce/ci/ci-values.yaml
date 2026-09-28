@@ -19,6 +19,13 @@ ApplicationNodes:
       - name: pullsecret
   webPort: 4023
   cePort: 4024
+  # Keep the kind test's memory requests independent of the chart defaults, which are sized for
+  # production heaps and don't fit 3 app nodes plus 3 search nodes on the kind nodes.
+  resources:
+    limits:
+      memory: 4096M
+    requests:
+      memory: 4096M
 
 # Connection to external PostgreSQL
 jdbcOverwrite:

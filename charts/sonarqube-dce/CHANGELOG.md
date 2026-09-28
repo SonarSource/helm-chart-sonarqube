@@ -42,6 +42,7 @@ All changes to this chart will be documented in this file.
 * Add `istio.revision` to target a revisioned (canary) Istio control plane's `istiod-<revision>` Service
 * `vortexAnalysis.enabled` now defaults to `true` when `remediationAgent.enabled` is `true`
 * Raise the Remediation Agent's default `runAsUser`/`runAsGroup` from `1000` to `10001`, fixing incomplete generated PR content
+* Raise the default `applicationNodes.resources` memory request and limit to `8192M` to fit the higher SonarQube Server 2026.5 Web/CE heap defaults
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
