@@ -167,9 +167,11 @@ jobs:
             --from-literal=instance-secret="$(openssl rand -hex 32)" \
             --dry-run=client -o yaml | kubectl apply -f -
       - name: Run chart verification
+        # not-contains-crds: since chart-verifier 1.16.0 the check also scans dependency templates,
+        # so it flags the CRDs of the optional KEDA subchart (keda.enabled, off by default).
         run: |
           mkdir -p "$(pwd)/report-${{ matrix.verifying_chart}}"
-          chart-verifier verify -x images-are-certified charts/${{ matrix.verifying_chart }} --helm-install-timeout 20m -F charts/${{ matrix.verifying_chart }}/openshift-verifier/values.yaml -n ${{ matrix.verifying_chart }} --openshift-version ${{ env.OPENSHIFT_VERSION }} > "$(pwd)/report-${{ matrix.verifying_chart}}/report.yaml"
+          chart-verifier verify -x images-are-certified,not-contains-crds charts/${{ matrix.verifying_chart }} --helm-install-timeout 20m -F charts/${{ matrix.verifying_chart }}/openshift-verifier/values.yaml -n ${{ matrix.verifying_chart }} --openshift-version ${{ env.OPENSHIFT_VERSION }} > "$(pwd)/report-${{ matrix.verifying_chart}}/report.yaml"
       - name: Upload verification report
         if: always() && ! cancelled()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
