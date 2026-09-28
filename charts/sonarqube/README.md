@@ -24,8 +24,6 @@ Please note that this chart only supports SonarQube Server Developer and Enterpr
 | Remediation Agent | `sonarsource/sonarqube-remediation-agent` | `2026.5.0` |
 | Vortex | `sonarsource/sonar-vortex` | `2026.5.0` |
 
-If you want to use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
-
 ## Kubernetes and Openshift Compatibility
 
 Supported Kubernetes Versions: From `1.32` to `1.35`
@@ -61,17 +59,20 @@ The SonarQube Community Edition has been replaced by the SonarQube Community Bui
 If you want to install the SonarQube Community Build chart, please set `community.enabled` to `true`.
 
 This chart by default installs the SonarQube Community Build's latest version available at the time of the Helm chart release.
-If you want the use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
+If you want to use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
 
 ## Upgrading to SonarQube Server LTA
 
 When upgrading your SonarQube Server to a new Long-Term Active (LTA) release, you should carefully read the official upgrade documentation to determine the correct update path based on your current server version.
 
-* For SonarQube Server 2025.6 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.6)](https://docs.sonarsource.com/sonarqube-server/server-2026.1-lta/server-update-and-maintenance/lta-to-lta-release-notes).
+* For SonarQube Server 2026.5 LTA, refer to the [LTA-to-LTA Upgrade Notes (2026.5)](https://docs.sonarsource.com/sonarqube-server/2026.5/server-update-and-maintenance/lta-to-lta-release-notes).
+* For SonarQube Server 2026.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2026.1)](https://docs.sonarsource.com/sonarqube-server/2026.1/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.4 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.4)](https://docs.sonarsource.com/sonarqube-server/2025.4/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.1)](https://docs.sonarsource.com/sonarqube-server/2025.1/server-update-and-maintenance/release-notes-and-notices/lta-to-lta-release-upgrade-notes).
 
-When upgrading to the 2025.6 LTA version, you will notice that the deprecated PostgreSQL dependency has been removed. Please check the instructions available in [this section](#upgrade-from-versions-prior-to-202610).
+The 2026.5 LTA chart (`2026.5.1000`) contains breaking changes; see [Upgrade to 2026.5.1000](#upgrade-to-202651000) and, if you use the bundled ingress-nginx controller, [this section](#upgrade-from-versions-prior-to-202651000-ingress-nginx-controller-subchart-removed).
+
+When upgrading from a chart prior to `2026.1.0` (the 2026.1 LTA), note that the deprecated PostgreSQL dependency has been removed. Please check the instructions available in [this section](#upgrade-from-versions-prior-to-202610).
 
 ## Installing previous chart versions
 
@@ -79,7 +80,7 @@ When upgrading to the 2025.6 LTA version, you will notice that the deprecated Po
 
 The version of the chart for the SonarQube 9.9 LTA is being distributed as the `8.x.x` version of this chart.
 
-In order to use it, please set the version constraint `~8`, which is equivalent to `>=8.0.0 && <= 9.0.0`. That version parameter **must** be used in every helm related command including `install`, `upgrade`, `template`, and `diff` (don't treat this as an exhaustive list).
+In order to use it, please set the version constraint `~8`, which is equivalent to `>=8.0.0 <9.0.0`. That version parameter **must** be used in every helm related command including `install`, `upgrade`, `template`, and `diff` (don't treat this as an exhaustive list).
 
 Example:
 
@@ -99,10 +100,8 @@ SonarQube deployment on Kubernetes has been tested with the recommendations and 
 To uninstall/delete the deployment:
 
 ```bash
-$ helm list
-NAME        REVISION    UPDATED                     STATUS      CHART            NAMESPACE
-kindly-newt 1           Mon Oct  2 15:05:44 2017    DEPLOYED    sonarqube-0.1.0  sonarqube
-$ helm delete kindly-newt
+helm list -n sonarqube
+helm uninstall -n sonarqube <yourReleaseName>
 ```
 
 ## Prerequisites and suggested settings for production
@@ -121,6 +120,8 @@ Here is the list of containers that are compatible with the [Pod Security levels
   * SQ application containers
   * SQ init containers.
 
+When the [agentic features](#agentic-features) are enabled with `gvisor.enabled` and `gvisor.installer.enabled` (the default, outside OpenShift), the chart also deploys the `gvisor-installer` DaemonSet in the release namespace, which requires the **privileged** level.
+
 This is achieved by setting this SecurityContext as default on **most** containers:
 
 ```yaml
@@ -132,10 +133,11 @@ seccompProfile:
   type: RuntimeDefault
 capabilities:
   drop: ["ALL"]
-readOnlyRootFilesystem: true
 ```
 
-Based on that, one can run the SQ helm chart in a full restricted namespace, by deactivating the `initSysctl.enabled` and `initFs.enabled` parameters, which require root access.
+The init containers additionally set `readOnlyRootFilesystem: true`; the application container does not by default.
+
+Based on that, one can run the SQ helm chart in a full restricted namespace, by deactivating the `initSysctl.enabled` and `initFs.enabled` parameters, which require root access, and, with the agentic features, `gvisor.installer.enabled` (see [Production use case](#production-use-case)).
 
 Please take a look at [production-use-case](#production-use-case) for more information or directly at the values.yaml file.
 
@@ -143,7 +145,7 @@ Please take a look at [production-use-case](#production-use-case) for more infor
 
 SonarQube runs Elasticsearch under the hood.
 
-Elasticsearch is rolling out (strict) prerequisites that cannot be disabled when running in production context (see [this](https://www.elastic.co/blog/bootstrap_checks_annoying_instead_of_devastating) blog post regarding bootstrap checks, and the [official guide](https://www.elastic.co/guide/en/elasticsearch/reference/5.0/bootstrap-checks.html)).
+Elasticsearch is rolling out (strict) prerequisites that cannot be disabled when running in production context (see [this](https://www.elastic.co/blog/bootstrap_checks_annoying_instead_of_devastating) blog post regarding bootstrap checks, and the [official guide](https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html)).
 
 Because of such constraints, even when running in Docker containers, SonarQube requires some settings at the host/kernel level.
 
@@ -191,18 +193,28 @@ When the [agentic features](#agentic-features) are enabled, size your nodes for 
 | Agent Orchestrator | `250m` / `512Mi` / `512Mi` | `1` / `1Gi` / `2Gi` |
 | Hunter Agent (per replica) | `1` / `8Gi` / `15Gi` | `2` / `8Gi` / `15Gi` |
 | Remediation Agent (per replica) | `1` / `2Gi` / `10Gi` | `4` / `8Gi` / `50Gi` |
-| Agent Egress Proxy (2 replicas) | `50m` / `64Mi` | `250m` / `128Mi` |
+| Agent Egress Proxy (2 replicas) | `50m` / `64Mi` / `64Mi` | `250m` / `128Mi` / `128Mi` |
 | MCP Server | not set | not set |
 
 To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/environment-variables/) and set the environment variables or sonar.properties accordingly.
 
 ## Upgrade
 
-1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/roadmap/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
-2. Change the SonarQube version on `values.yaml`
-3. Redeploy SonarQube with the same helm chart (see [Install instructions](#installing-sonarqube-server))
+1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube-server/latest/server-update-and-maintenance/update/roadmap/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
+2. Read the chart-specific notes below for every chart version you cross
+3. Upgrade to the chart version that ships the target SonarQube version (`helm repo update`, then `helm upgrade` with `--version`), rather than only changing `image.tag` on your current chart
 4. Browse to <http://yourSonarQubeServerURL/setup> and follow the setup instructions
 5. Reanalyze your projects to get fresh data
+
+### Upgrade to 2026.5.1000
+
+Chart `2026.5.1000` (SonarQube Server 2026.5 LTA) contains the following breaking or behavior changes:
+
+* **Probes**: the chart now manages the liveness/readiness probe handlers. Custom `exec`/`httpGet`/`tcpSocket`/`grpc` handlers under `livenessProbe`/`readinessProbe` are ignored; use `overrideCommand` instead. The default `timeoutSeconds` is now `5`.
+* **Prometheus exporter**: the default scrape path is now `/metrics` instead of `/` (set `prometheusExporter.metricsPath: /` to keep the old one), and built-in JVM metrics use OpenMetrics names (see [Export JMX metrics](#export-jmx-metrics)).
+* **Memory defaults**: `resources.requests.memory` and `resources.limits.memory` are now `4096M` and `10240M`, to fit the higher Web/CE heap defaults of SonarQube Server 2026.5. Make sure your nodes can schedule them, or set your own values.
+* **ingress-nginx**: the bundled ingress-nginx controller subchart has been removed (see [below](#upgrade-from-versions-prior-to-202651000-ingress-nginx-controller-subchart-removed)). If you use `ingress.enabled`, set `ingress.ingressClassName` to your controller's class unless your cluster has a default `IngressClass`.
+* **Agent runtimes**: `hunterAgent.serviceAccount.create` and `remediationAgent.serviceAccount.create` now default to `true`, so the runtimes no longer run under the top-level `serviceAccount`.
 
 ### Upgrade from versions prior to 2026.1.0
 
@@ -259,8 +271,8 @@ Please check `postgresql-migration-k8s.sh` as a reference to build your own scri
 ./postgresql-migration-k8s.sh [OPTIONS] <source_service>
 
 # Options:
-# -s source_ns    Source namespace (default: sonarqube-new-dev)
-# -t target_ns    Target namespace (default: sonarqube-new-dev)
+# -s source_ns    Source namespace (default: sonarqube)
+# -t target_ns    Target namespace (default: sonarqube)
 # -u username     PostgreSQL username (default: sonarUser)
 # -p password     PostgreSQL password (default: sonarPass)
 # -d database     Database name (default: sonarDB)
@@ -284,14 +296,15 @@ jdbcOverwrite:
   enabled: true
   jdbcUrl: "jdbc:postgresql://<your-endpoint>:5432/<database>"
   jdbcUsername: "<username>"
-  jdbcPassword: "<password>"
+  jdbcSecretName: "<secret-with-the-password>"
+  jdbcSecretPasswordKey: "<password-key>"
 ```
 
-### Upgrade from versions prior to 2026.5.0 (ingress-nginx controller subchart removed)
+### Upgrade from versions prior to 2026.5.1000 (ingress-nginx controller subchart removed)
 
 > **Note**: If you are not using the `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart, you can skip this section. `ingress.enabled` (the plain `Ingress` resource, for use with your own controller) remains supported and needs no migration.
 
-> **⚠️ Important**: Starting from `2026.5.0`, this chart no longer bundles the deprecated `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart, following the retirement of the ingress-nginx controller. `httproute.enabled` (Gateway API) has been available since before this removal, so you can adopt it on your current chart version, side-by-side with your existing ingress, before upgrading past `2026.5.0`. Alternatively, you can switch to `ingress.enabled` with a self-managed ingress controller.
+> **⚠️ Important**: Starting from `2026.5.1000`, this chart no longer bundles the deprecated `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart, following the retirement of the ingress-nginx controller. `httproute.enabled` (Gateway API) has been available since before this removal, so you can adopt it on your current chart version, side-by-side with your existing ingress, before upgrading to `2026.5.1000`. Alternatively, you can switch to `ingress.enabled` with a self-managed ingress controller.
 
 We provide a migration script to help with this: `nginx-to-istio-migration.sh`, available in the `gateway-api-migration-scripts/` directory of this chart's GitHub repository. **This script is provided for reference and should be reviewed and adapted to your specific environment before use.**
 
@@ -353,16 +366,16 @@ Run these commands yourself once you've reviewed the generated files and are rea
 
 ### Upgrade from the old sonarqube-lts to this chart
 
-Please refer to the Helm upgrade section accessible [here](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade/#upgrade-from-89x-lta-to-99x-lta).
+Please refer to the [SonarQube 9.9 upgrade guide](https://docs.sonarsource.com/sonarqube-server/9.9/setup-and-upgrade/upgrade-the-server/upgrade-guide/). The sonarqube-lts chart only shipped SonarQube 8.9 LTA, which is end-of-life.
 
 ## Ingress usage
 
-> **Note**: The bundled `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart has been removed, following the retirement of the ingress-nginx controller in November 2025. `ingress.enabled` (the plain `Ingress` resource) remains supported, for use with a self-managed ingress controller.
+> **Note**: The bundled `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart has been removed, following the retirement of the ingress-nginx controller (announced in November 2025, effective March 2026). `ingress.enabled` (the plain `Ingress` resource) remains supported, for use with a self-managed ingress controller.
 We recommend migrating to the [Gateway API](https://gateway-api.sigs.k8s.io/guides/) via `httproute.enabled` (see the `httproute.*` values below). If you continue using `ingress.enabled`, please refer to the [Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) for a list of controllers to install yourself.
 
 ### Path
 
-Some cloud may need the path to be `/*` instead of `/.` Try this first if you are having issues getting traffic through the ingress.
+Some clouds may need the path to be `/*` instead of `/`. Try this first if you are having issues getting traffic through the ingress.
 
 ### Default Backend
 
@@ -384,7 +397,7 @@ ingress:
 
 ## Monitoring
 
-This Helm chart offers the possibility to monitor SonarQube with Prometheus. You can find [Information on SonarQube monitoring on Kubernetes](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/set-up-monitoring/introduction/) in the SonarQube documentation.
+This Helm chart offers the possibility to monitor SonarQube with Prometheus. You can find [Information on SonarQube monitoring on Kubernetes](https://docs.sonarsource.com/sonarqube-server/server-installation/on-kubernetes-or-openshift/set-up-monitoring) in the SonarQube documentation.
 
 ### Export JMX metrics
 
@@ -398,7 +411,7 @@ In version 1.6.0, built-in JVM metric names use OpenMetrics naming (for example,
 
 ### PodMonitor
 
-If a Prometheus Operator is deployed in your cluster, you can enable a PodMonitor resource with `prometheusMonitoring.podMonitor.enabled`. It scrapes the Prometheus endpoint `/api/monitoring/metrics` exposed by the SonarQube application.
+If a Prometheus Operator is deployed in your cluster, you can enable a PodMonitor resource with `prometheusMonitoring.podMonitor.enabled`. It scrapes the Prometheus endpoint `/api/monitoring/metrics` exposed by the SonarQube application and, when `prometheusExporter.enabled` is `true`, the exporter ports on `prometheusExporter.metricsPath`.
 
 If running on OpenShift, make sure your account has permissions to create PodMonitor resources under the monitoring.coreos.com/v1 apiVersion.
 
@@ -406,7 +419,7 @@ If running on OpenShift, make sure your account has permissions to create PodMon
 
 The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).
 
-Please note that `Openshift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
+Please note that `OpenShift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
 
 The below command will deploy SonarQube (developer edition) on the Openshift Kubernetes cluster.
 
@@ -474,11 +487,11 @@ Since SonarQube comes bundled with an Elasticsearch instance, some [bootstrap ch
 
 This chart offers the option to use an initContainer in privileged mode to automatically set certain kernel settings on the kube worker. While this can ensure proper functionality of Elasticsearch, modifying the underlying kernel settings on the Kubernetes node can impact other users. It may be best to work with your cluster administrator to either provide specific nodes with the proper kernel settings, or ensure they are set cluster wide.
 
-To enable auto-configuration of the kube worker node, set `elasticsearch.configureNode` to `true`. This is the default behavior, so you do not need to explicitly set this.
+Auto-configuration of the kube worker node is controlled by `initSysctl.enabled`, which is `true` by default (and disabled on OpenShift). The deprecated `elasticsearch.configureNode`, if set to `true`, also enables it.
 
-This will run `sysctl -w vm.max_map_count=262144` on the worker where the sonarqube pod(s) get scheduled. This needs to be set to `262144` but normally defaults to `65530`. Other kernel settings are recommended by the [docker image](https://hub.docker.com/_/sonarqube/#requirements), but the defaults work fine in most cases.
+This will run `sysctl -w vm.max_map_count=524288` (`initSysctl.vmMaxMapCount`) on the worker where the sonarqube pod(s) get scheduled, together with `fs.file-max`, `nofile` and `nproc` (`initSysctl.fsFileMax`, `initSysctl.nofile`, `initSysctl.nproc`). The kernel default for `vm.max_map_count` is usually `65530`, which is too low.
 
-To disable worker node configuration, set `elasticsearch.configureNode` to `false`. Note that if node configuration is not enabled, then you will likely need to also disable the Elasticsearch bootstrap checks. These can be explicitly disabled by setting `elasticsearch.bootstrapChecks` to `false`.
+To disable worker node configuration, set `initSysctl.enabled` to `false`. Note that if node configuration is not enabled, then the nodes must already meet these settings, or you will need to disable the Elasticsearch bootstrap checks by setting `elasticsearch.bootstrapChecks` to `false` (not recommended in production).
 
 ### MCP (Model Context Protocol) Server
 
@@ -574,7 +587,7 @@ If the keystore uses a self-signed certificate, SonarQube's JVM will reject the 
 
 **Scheduling:**
 
-`mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` set scheduling for the MCP pod; each wins over the chart's global `.Values.nodeSelector`/`.affinity`/`.tolerations` when set, and falls back to it otherwise — same convention as `vortex`/`agentOrchestrator`/`hunterAgent`/`remediationAgent`. `mcp.topologySpreadConstraints` is MCP-specific with no chart-wide equivalent to fall back to. The chart-wide `priorityClassName` value is applied to the MCP pod automatically; there is no separate `mcp.priorityClassName`.
+`mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` set scheduling for the MCP pod; each wins over the chart's global `.Values.nodeSelector`/`.affinity`/`.tolerations` when set, and falls back to it otherwise — same convention as `vortexAnalysis`/`agentOrchestrator`/`hunterAgent`/`remediationAgent`. `mcp.topologySpreadConstraints` is MCP-specific with no chart-wide equivalent to fall back to. The chart-wide `priorityClassName` value is applied to the MCP pod automatically; there is no separate `mcp.priorityClassName`.
 
 ### Agentic features
 
@@ -611,6 +624,7 @@ No LLM provider key is needed at install time: the LLM provider is configured in
 
 ```yaml
 edition: enterprise
+monitoringPasscode: "<your-passcode>"   # or monitoringPasscodeSecretName/Key
 sonarProperties:
   sonar.agentic.storage.type: S3
   sonar.agentic.storage.bucket: my-agentic-artifacts
@@ -677,7 +691,7 @@ Autoscaling is off by default:
 * `hunterAgent.autoscaling` / `remediationAgent.autoscaling`: a KEDA `ScaledObject` driven by the orchestrator's job queue.
 * `vortexAnalysis.autoscaling`: a KEDA `ScaledObject` driven by Vortex's concurrent requests. Requires KEDA `>= 2.20`.
 
-`minReplicas` must be at least `2`. The KEDA CRDs are detected at install time; under `helm template` set `agentKeda.assumeInstalled: true`. With GitOps tools that apply rendered manifests (Argo CD, Flux), set `autoscaling.manageReplicas: false` so each sync does not reset the replica count.
+`minReplicas` must be at least `2`, except for Vortex with `vortexAnalysis.autoscaling.aggregateAcrossReplicas: false`, where it must be exactly `1`. The KEDA CRDs are detected at install time; under `helm template` set `agentKeda.assumeInstalled: true`. With GitOps tools that apply rendered manifests (Argo CD, Flux), set `autoscaling.manageReplicas: false` so each sync does not reset the replica count.
 
 To encrypt the traffic between the agentic components, see [Securing communication with TLS](#securing-communication-with-tls).
 
@@ -724,9 +738,11 @@ In such environments, configuration may be read, via environment variables, from
    metadata:
      name: external-sonarqube-opts
    data:
-     SONARQUBE_JDBC_USERNAME: foo
-     SONARQUBE_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
+     SONAR_JDBC_USERNAME: foo
+     SONAR_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
    ```
+
+   Keep `jdbcOverwrite.enabled` set to `false` in that case, as the chart otherwise sets `SONAR_JDBC_URL` and `SONAR_JDBC_USERNAME` itself. Put the password (`SONAR_JDBC_PASSWORD`) in a `Secret`.
 
 2. Set the following in your `values.yaml` (using the key `extraConfig.secrets` to reference `Secret`s)
 
@@ -770,7 +786,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                                 | Description                                                               | Default |
 | ----------------------------------------- | ------------------------------------------------------------------------- | ------- |
 | `networkPolicy.enabled`                   | Create NetworkPolicies                                                    | `false` |
-| `networkPolicy.prometheusNamespace`       | Allow incoming traffic to monitoring ports from this namespace            | `nil`   |
+| `networkPolicy.prometheusNamespace`       | Allow incoming traffic to monitoring ports from this namespace            | `"monitoring"` |
 | `networkPolicy.additionalNetworkPolicys`  | (DEPRECATED) Please use `networkPolicy.additionalNetworkPolicies` instead | `nil`   |
 | `networkPolicy.additionalNetworkPolicies` | User defined NetworkPolicies (useful for external database)               | `nil`   |
 
@@ -900,7 +916,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `initSysctl.resources`              | InitSysctl container resource requests & limits                                                                                       | `{}`                                                                   |
 | `initFs.enabled`                    | Enable file permission change with init container                                                                                     | `true`                                                                 |
 | `initFs.image`                      | InitFS container image                                                                                                                | `"image.repository":"image.tag"`                                       |
-| `initFs.securityContext.privileged` | InitFS container needs to run privileged                                                                                              | `true`                                                                 |
+| `initFs.securityContext.privileged` | InitFS container needs to run privileged                                                                                              | `false`                                                                |
 
 ### Monitoring (Prometheus Exporter)
 

@@ -1,10 +1,10 @@
 # SonarQube
 
-Code better in up to 27 languages. Improve Code Quality and Code Security throughout your workflow. [SonarQube](https://www.sonarsource.com/products/sonarqube/) can detect Bugs, Vulnerabilities, Security Hotspots, and Code Smells plus gives you the guidance to fix them.
+Code better in more than 30 languages. Improve Code Quality and Code Security throughout your workflow. [SonarQube](https://www.sonarsource.com/products/sonarqube/) can detect Bugs, Vulnerabilities, Security Hotspots, and Code Smells plus gives you the guidance to fix them.
 
 ## Introduction
 
-This helm chart bootstraps a SonarQube Data Center Edition cluster with a PostgreSQL database.
+This helm chart bootstraps a SonarQube Data Center Edition cluster. It requires an external database (see [Installing the chart](#installing-the-chart)).
 
 The latest version of the chart installs the latest SonarQube version.
 
@@ -34,7 +34,7 @@ Supported Openshift Versions: From `4.17` to `4.20`
 
 ## Installing the chart
 
-> **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/dce/introduction/) for further information on how to install and tune the helm chart specifications.
+> **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube-server/server-installation/data-center-edition/introduction) for further information on how to install and tune the helm chart specifications.
 
 Prior to installing the chart, please ensure that the `monitoringPasscode` and `applicationNodes.jwtSecret` are properly set. The `applicationNodes.jwtSecret` value needs to be set with a HS256 key encoded with base64. In the following, an example on how to generate this key on a Unix system:
 
@@ -52,14 +52,14 @@ helm repo update
 kubectl create namespace sonarqube-dce
 export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64)
 export MONITORING_PASSCODE="yourPasscode"
-export JDBC_URL="jdbc:postgresql://myPostgres/myDatabase"
+export JDBC_URL="jdbc:postgresql://<your-db-host>:5432/<your-database>" # must be replaced: the chart rejects the placeholder URL
 export JDBC_USERNAME="sonar"
 export JDBC_PASSWORD_SECRET_NAME="jdbc-secret"
 export JDBC_PASSWORD_SECRET_KEY="jdbc-password"
 helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set applicationNodes.jwtSecret=$JWT_SECRET,monitoringPasscode=$MONITORING_PASSCODE,jdbcOverwrite.jdbcUrl=$JDBC_URL,jdbcOverwrite.jdbcUsername=$JDBC_USERNAME,jdbcOverwrite.jdbcSecretName=$JDBC_PASSWORD_SECRET_NAME,jdbcOverwrite.jdbcSecretPasswordKey=$JDBC_PASSWORD_SECRET_KEY
 ```
 
-The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace.
+The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the `sonarqube-dce` namespace.
 If you are interested in deploying SonarQube on Openshift, please check the [dedicated section](#openshift).
 
 The [configuration](#configuration) section lists the parameters that can be configured during installation.
@@ -70,41 +70,55 @@ The default login is admin/admin.
 
 When upgrading your SonarQube Server to a new Long-Term Active (LTA) release, you should carefully read the official upgrade documentation to determine the correct update path based on your current server version.
 
-* For SonarQube Server 2025.6 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.6)](https://docs.sonarsource.com/sonarqube-server/server-2026.1-lta/server-update-and-maintenance/lta-to-lta-release-notes).
+* For SonarQube Server 2026.5 LTA, refer to the [LTA-to-LTA Upgrade Notes (2026.5)](https://docs.sonarsource.com/sonarqube-server/2026.5/server-update-and-maintenance/lta-to-lta-release-notes).
+* For SonarQube Server 2026.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2026.1)](https://docs.sonarsource.com/sonarqube-server/2026.1/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.4 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.4)](https://docs.sonarsource.com/sonarqube-server/2025.4/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.1)](https://docs.sonarsource.com/sonarqube-server/2025.1/server-update-and-maintenance/release-notes-and-notices/lta-to-lta-release-upgrade-notes).
 
-When upgrading to the 2025.6 LTA version, you will experience a few changes.
+When upgrading to the 2026.5 LTA chart (`2026.5.1000`) from the 2026.1 LTA, the search nodes move from Elasticsearch 8 to 9 and need a specific procedure (see [below](#elasticsearch-8-to-9-upgrading-from-20263-or-earlier-to-20264-or-later)). Read also [Upgrade to 2026.5.1000](#upgrade-to-202651000).
+
+When upgrading from a chart prior to `2026.1.0` (the 2026.1 LTA), you will experience a few changes.
 
 * The deprecated PostgreSQL dependency has been removed. You must connect your SonarQube Server instance to an external database (`jdbcOverwrite.enabled` is set to true by default). You must set the following parameters: `jdbcOverwrite.jdbcUrl`, `jdbcOverwrite.jdbcUsername`, `jdbcOverwrite.jdbcSecretName`, and `jdbcOverwrite.jdbcSecretPasswordKey`.
 
 ### Upgrade process
 
-1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/roadmap/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
-2. Change the SonarQube version on `values.yaml`
-3. Redeploy SonarQube with the same helm chart (see [Install instructions](#installing-the-chart))
+1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube-server/latest/server-update-and-maintenance/update/roadmap/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
+2. Read the chart-specific notes below for every chart version you cross
+3. Upgrade to the chart version that ships the target SonarQube version (`helm repo update`, then `helm upgrade` with `--version`), rather than only changing `applicationNodes.image.tag` and `searchNodes.image.tag` on your current chart. When crossing an Elasticsearch major, follow the [Elasticsearch 8 to 9](#elasticsearch-8-to-9-upgrading-from-20263-or-earlier-to-20264-or-later) procedure instead
 4. Browse to <http://yourSonarQubeServerURL/setup> and follow the setup instructions
 5. Reanalyze your projects to get fresh data
 
-### Elasticsearch 8 to 9 (2026.1 LTA to 2026.5 LTA)
+### Elasticsearch 8 to 9 (upgrading from 2026.3 or earlier to 2026.4 or later)
 
-A rolling update of the search StatefulSet cannot cross an Elasticsearch major version. Plan a maintenance window and back up the database first.
+SonarQube Server 2026.4 and later run Elasticsearch 9; 2025.x to 2026.3 (including the 2026.1 LTA) run Elasticsearch 8. A rolling update of the search StatefulSet cannot cross an Elasticsearch major version. Plan a maintenance window and back up the database first.
 
-1. Scale search to 0 with your **current** chart and wait until the search pods are gone:
+1. Scale search to 0 with your **current** chart, without changing the image tag, and wait until the search pods are gone:
 
 ```bash
 helm upgrade -n sonarqube-dce <yourReleaseName> <yourCurrentChart> --reuse-values --set searchNodes.replicaCount=0
 ```
 
-2. Upgrade to the new chart and restore the search replica count. Do not change the image tag in step 1:
+2. Upgrade to the new chart and restore your previous search replica count (default `3`). Use `--reset-then-reuse-values` (Helm `>= 3.14`) or pass your values file with `-f`: `--reuse-values` would keep the previous chart's image tags and skip the new defaults.
 
 ```bash
-helm upgrade -n sonarqube-dce <yourReleaseName> <yourNewChart> --reuse-values --set searchNodes.replicaCount=3
+helm upgrade -n sonarqube-dce <yourReleaseName> <yourNewChart> --reset-then-reuse-values --set searchNodes.replicaCount=3
 ```
 
 3. After search is Ready, browse to `/setup` and follow the instructions. Indexes are rebuilt into `es9`; rolling back in place is not supported.
 
-The upgrade fails while search pods are still running on the previous Elasticsearch major.
+On `helm upgrade`, the chart fails while search pods are still running on the previous Elasticsearch major. The check relies on `lookup`, so it does not run under `helm template` or GitOps tools that render manifests (Argo CD, Flux), nor for custom image tags: in those cases follow the procedure above yourself. Set `searchNodes.skipEsMajorUpgradeCheck: true` only if you need to bypass the check.
+
+### Upgrade to 2026.5.1000
+
+Chart `2026.5.1000` (SonarQube Server 2026.5 LTA) contains the following breaking or behavior changes:
+
+* **Elasticsearch 9**: see [above](#elasticsearch-8-to-9-upgrading-from-20263-or-earlier-to-20264-or-later) when upgrading from SonarQube Server 2026.3 or earlier.
+* **Probes**: the chart now manages the application node liveness/readiness probe handlers. Custom `exec`/`httpGet`/`tcpSocket`/`grpc` handlers are ignored; use `overrideCommand` instead. The default `timeoutSeconds` is now `5` on search and application nodes, and `applicationNodes.livenessProbe.failureThreshold` is now `8`.
+* **Prometheus exporter**: the default scrape path is now `/metrics` instead of `/` (set `applicationNodes.prometheusExporter.metricsPath: /` to keep the old one), and built-in JVM metrics use OpenMetrics names (see [Export JMX metrics](#export-jmx-metrics)).
+* **Memory defaults**: the `applicationNodes.resources` memory request and limit are now `8192M`, to fit the higher Web/CE heap defaults of SonarQube Server 2026.5. Make sure your nodes can schedule them, or set your own values.
+* **ingress-nginx**: the bundled ingress-nginx controller subchart has been removed (see [below](#upgrade-from-versions-prior-to-202651000-ingress-nginx-controller-subchart-removed)). If you use `ingress.enabled`, set `ingress.ingressClassName` to your controller's class unless your cluster has a default `IngressClass`.
+* **Agent runtimes**: `hunterAgent.serviceAccount.create` and `remediationAgent.serviceAccount.create` now default to `true`, so the runtimes no longer run under the top-level `serviceAccount`.
 
 ### Upgrade from versions prior to 2026.1.0
 
@@ -112,7 +126,7 @@ The upgrade fails while search pods are still running on the previous Elasticsea
 
 > **⚠️ Important**: Users upgrading to this chart from versions before 2026.1.0 and relying on the deprecated PostgreSQL dependency **must** follow the below instructions to avoid data loss.
 
-Starting from `2026.1.0`, this chart relies on the embedded H2 database for testing purposes. Therefore, we removed the deprecated PostgreSQL dependency.
+Starting from `2026.1.0`, we removed the deprecated PostgreSQL dependency: this chart always requires an external database.
 
 In order to upgrade to the newest chart from one version prior to this, you need to 
 
@@ -161,8 +175,8 @@ Please check `postgresql-migration-k8s.sh` as a reference to build your own scri
 ./postgresql-migration-k8s.sh [OPTIONS] <source_service>
 
 # Options:
-# -s source_ns    Source namespace (default: sonarqube-new-dev)
-# -t target_ns    Target namespace (default: sonarqube-new-dev)
+# -s source_ns    Source namespace (default: sonarqube)
+# -t target_ns    Target namespace (default: sonarqube)
 # -u username     PostgreSQL username (default: sonarUser)
 # -p password     PostgreSQL password (default: sonarPass)
 # -d database     Database name (default: sonarDB)
@@ -183,17 +197,17 @@ After migration, update your SonarQube configuration:
 
 ```yaml
 jdbcOverwrite:
-  enabled: true
   jdbcUrl: "jdbc:postgresql://<your-endpoint>:5432/<database>"
   jdbcUsername: "<username>"
-  jdbcPassword: "<password>"
+  jdbcSecretName: "<secret-with-the-password>"
+  jdbcSecretPasswordKey: "<password-key>"
 ```
 
-### Upgrade from versions prior to 2026.5.0 (ingress-nginx controller subchart removed)
+### Upgrade from versions prior to 2026.5.1000 (ingress-nginx controller subchart removed)
 
 > **Note**: If you are not using the `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart, you can skip this section. `ingress.enabled` (the plain `Ingress` resource, for use with your own controller) remains supported and needs no migration.
 
-> **⚠️ Important**: Starting from `2026.5.0`, this chart no longer bundles the deprecated `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart, following the retirement of the ingress-nginx controller. `httproute.enabled` (Gateway API) has been available since before this removal, so you can adopt it on your current chart version, side-by-side with your existing ingress, before upgrading past `2026.5.0`. Alternatively, you can switch to `ingress.enabled` with a self-managed ingress controller.
+> **⚠️ Important**: Starting from `2026.5.1000`, this chart no longer bundles the deprecated `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart, following the retirement of the ingress-nginx controller. `httproute.enabled` (Gateway API) has been available since before this removal, so you can adopt it on your current chart version, side-by-side with your existing ingress, before upgrading to `2026.5.1000`. Alternatively, you can switch to `ingress.enabled` with a self-managed ingress controller.
 
 We provide a migration script to help with this: `nginx-to-istio-migration.sh`, available in the `gateway-api-migration-scripts/` directory of this chart's GitHub repository. **This script is provided for reference and should be reviewed and adapted to your specific environment before use.**
 
@@ -254,17 +268,25 @@ helm upgrade sonarqube sonarqube/sonarqube-dce -f gateway-api-migration-sonarqub
 
 Run these commands yourself once you've reviewed the generated files and are ready to switch your release over to Gateway API.
 
+### ApplicationNodes renamed to applicationNodes
+
+Prior to SonarQube Server Datacenter 10.8, we used different naming conventions for `searchNodes` and `ApplicationNodes`: camel case in the former and not in the latter.
+
+Starting from 10.8, `ApplicationNodes` is deprecated in favor of `applicationNodes`. `ApplicationNodes` is still accepted, but it will be removed in a future release, so we advise you to rename it (if you are interested in the technical implementation, please take a look at this [PR](https://github.com/SonarSource/helm-chart-sonarqube/pull/586)).
+
+Please report any encountered bugs to <https://community.sonarsource.com/>.
+
 ### Upgrade from the old sonarqube-lts to this chart
 
-Please refer to the Helm upgrade section accessible [here](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade/#upgrade-from-89x-lta-to-99x-lta).
+The sonarqube-lts chart was never a Data Center Edition chart. To move an 8.9 LTA installation to this chart, please refer to the [SonarQube 9.9 upgrade guide](https://docs.sonarsource.com/sonarqube-server/9.9/setup-and-upgrade/upgrade-the-server/upgrade-guide/); SonarQube 8.9 LTA is end-of-life.
 
 ## Installing previous chart versions
 
 ### Installing the SonarQube 9.9 LTA chart
 
-The version of the chart for the SonarQube 9.9 LTA is being distributed as the `7.x.x` version of this chart.
+The version of the chart for the SonarQube 9.9 LTA, which is end-of-life, is being distributed as the `7.x.x` version of this chart.
 
-In order to use it, please set the version constraint `~7`, which is equivalent to `>=7.0.0 && <= 8.0.0`. That version parameter **must** be used in every helm related command including `install`, `upgrade`, `template`, and `diff` (don't treat this as an exhaustive list).
+In order to use it, please set the version constraint `~7`, which is equivalent to `>=7.0.0 <8.0.0`. That version parameter **must** be used in every helm related command including `install`, `upgrade`, `template`, and `diff` (don't treat this as an exhaustive list).
 
 Example:
 
@@ -274,7 +296,7 @@ helm upgrade --install -n sonarqube-dce --version '~7' sonarqube sonarqube/sonar
 
 ## How to use it
 
-Take some time to read the Deploy [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/dce/introduction/) page.
+Take some time to read the Deploy [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube-server/server-installation/data-center-edition/introduction) page.
 SonarQube deployment on Kubernetes has been tested with the recommendations and constraints documented there, and deployment has some limitations.
 
 ## Uninstalling the chart
@@ -282,15 +304,13 @@ SonarQube deployment on Kubernetes has been tested with the recommendations and 
 To uninstall/delete the deployment:
 
 ```bash
-$ helm list
-NAME        REVISION    UPDATED                     STATUS      CHART            NAMESPACE
-kindly-newt 1           Mon Oct  2 15:05:44 2017    DEPLOYED    sonarqube-0.1.0  sonarqube
-$ helm delete kindly-newt
+helm list -n sonarqube-dce
+helm uninstall -n sonarqube-dce <yourReleaseName>
 ```
 
 ## Setting up an external database for quick testing
 
-In order to perform a quick testing of the chart, you can install a [postgresql chart](https://artifacthub.io/packages/helm/bitnami/postgresql) on your cluster. You can look at [this setup example](.github/scripts/setup_external_postgres.sh) to get install the chart. For more information and settings, please refer to the chart documentation.
+In order to perform a quick testing of the chart, you can install a [postgresql chart](https://artifacthub.io/packages/helm/bitnami/postgresql) on your cluster. You can look at [this setup example](../../.github/scripts/setup_external_postgres.sh) to get install the chart. For more information and settings, please refer to the chart documentation.
 
 After the database is available, please set the values, as in the following example.
 
@@ -317,7 +337,8 @@ Here is the list of containers that are compatible with the [Pod Security levels
 * restricted:
   * SQ application containers
   * SQ init containers.
-  * postgresql containers.
+
+When the [agentic features](#agentic-features) are enabled with `gvisor.enabled` and `gvisor.installer.enabled` (the default, outside OpenShift), the chart also deploys the `gvisor-installer` DaemonSet in the release namespace, which requires the **privileged** level.
 
 This is achieved by setting this SecurityContext as default on **most** containers:
 
@@ -330,10 +351,11 @@ seccompProfile:
   type: RuntimeDefault
 capabilities:
   drop: ["ALL"]
-readOnlyRootFilesystem: true
 ```
 
-Based on that, one can run the SQ helm chart in a full restricted namespace, by deactivating the `initSysctl.enabled` and `initFs.enabled` parameters, which require root access.
+The init containers additionally set `readOnlyRootFilesystem: true`; the application and search containers do not by default.
+
+Based on that, one can run the SQ helm chart in a full restricted namespace, by deactivating the `initSysctl.enabled` and `initFs.enabled` parameters, which require root access, and, with the agentic features, `gvisor.installer.enabled` (see [Production use case](#production-use-case)).
 
 Please take a look at [production-use-case](#production-use-case) for more information or directly at the values.yaml file.
 
@@ -341,7 +363,7 @@ Please take a look at [production-use-case](#production-use-case) for more infor
 
 SonarQube runs Elasticsearch under the hood.
 
-Elasticsearch is rolling out (strict) prerequisites that cannot be disabled when running in production context (see [this](https://www.elastic.co/blog/bootstrap_checks_annoying_instead_of_devastating) blog post regarding bootstrap checks, and the [official guide](https://www.elastic.co/guide/en/elasticsearch/reference/5.0/bootstrap-checks.html)).
+Elasticsearch is rolling out (strict) prerequisites that cannot be disabled when running in production context (see [this](https://www.elastic.co/blog/bootstrap_checks_annoying_instead_of_devastating) blog post regarding bootstrap checks, and the [official guide](https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html)).
 
 Because of such constraints, even when running in Docker containers, SonarQube requires some settings at the host/kernel level.
 
@@ -400,14 +422,6 @@ applicationNodes:
           app: sonarqube-dce
 ```
 
-### ApplicationNodes renamed to applicationNodes
-
-Prior to SonarQube Server Datacenter 10.8, we used a different naming conventions for `searchNodes` and `ApplicationNodes`. Specifically, we used the [Camel Case](https://en.wikipedia.org/wiki/Camel_case) notation in the former and not in the latter. While this can be viewed as a minor difference, we promote [Clean Code](https://www.sonarsource.com/solutions/clean-code/) at Sonar and this is a clear maintanability (and inconsistency) issue.
-
-Starting from 10.8, we advise users to rename your `ApplicationNodes` to `applicationNodes`. While this is a straightforward change for users, ensuring cross-compability between both usage is challenging (if you are interested in the technical implementation, please take a look at this [PR](https://github.com/SonarSource/helm-chart-sonarqube/pull/586)).
-
-Please report any encountered bugs to <https://community.sonarsource.com/>.
-
 #### CPU and memory settings
 
 Monitoring CPU and memory is an important part of software reliability. The SonarQube helm chart comes with default values for CPU and memory requests and limits.
@@ -438,19 +452,19 @@ When the [agentic features](#agentic-features) are enabled, size your nodes for 
 | Agent Orchestrator | `250m` / `512Mi` / `512Mi` | `1` / `1Gi` / `2Gi` |
 | Hunter Agent (per replica) | `1` / `8Gi` / `15Gi` | `2` / `8Gi` / `15Gi` |
 | Remediation Agent (per replica) | `1` / `2Gi` / `10Gi` | `4` / `8Gi` / `50Gi` |
-| Agent Egress Proxy (2 replicas) | `50m` / `64Mi` | `250m` / `128Mi` |
+| Agent Egress Proxy (2 replicas) | `50m` / `64Mi` / `64Mi` | `250m` / `128Mi` / `128Mi` |
 | MCP Server | not set | not set |
 
 To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/environment-variables/) and set the environment variables or sonar.properties accordingly.
 
 ## Ingress usage
 
-> **Note**: The bundled `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart has been removed, following the retirement of the ingress-nginx controller in November 2025. `ingress.enabled` (the plain `Ingress` resource) remains supported, for use with a self-managed ingress controller.
+> **Note**: The bundled `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart has been removed, following the retirement of the ingress-nginx controller (announced in November 2025, effective March 2026). `ingress.enabled` (the plain `Ingress` resource) remains supported, for use with a self-managed ingress controller.
 We recommend migrating to the [Gateway API](https://gateway-api.sigs.k8s.io/guides/) via `httproute.enabled` (see the `httproute.*` values below). If you continue using `ingress.enabled`, please refer to the [Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) for a list of controllers to install yourself.
 
 ### Path
 
-Some cloud may need the path to be `/*` instead of `/.` Try this first if you are having issues getting traffic through the ingress.
+Some clouds may need the path to be `/*` instead of `/`. Try this first if you are having issues getting traffic through the ingress.
 
 ### Default Backend
 
@@ -472,7 +486,7 @@ ingress:
 
 ## Monitoring
 
-This Helm chart offers the possibility to monitor SonarQube with Prometheus. You can find [Information on the SonarQube monitoring on Kubernetes](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/set-up-monitoring/introduction/) in the SonarQube documentation.
+This Helm chart offers the possibility to monitor SonarQube with Prometheus. You can find [Information on SonarQube monitoring on Kubernetes](https://docs.sonarsource.com/sonarqube-server/server-installation/on-kubernetes-or-openshift/set-up-monitoring) in the SonarQube documentation.
 
 ### Export JMX metrics
 
@@ -486,7 +500,7 @@ In version 1.6.0, built-in JVM metric names use OpenMetrics naming (for example,
 
 ### PodMonitor
 
-If a Prometheus Operator is deployed in your cluster, you can enable a PodMonitor resource with `applicationNodes.prometheusMonitoring.podMonitor.enabled`. It scrapes the Prometheus endpoint `/api/monitoring/metrics` exposed by the SonarQube application.
+If a Prometheus Operator is deployed in your cluster, you can enable a PodMonitor resource with `applicationNodes.prometheusMonitoring.podMonitor.enabled`. It scrapes the Prometheus endpoint `/api/monitoring/metrics` exposed by the SonarQube application nodes and, when `applicationNodes.prometheusExporter.enabled` is `true`, the exporter ports on `applicationNodes.prometheusExporter.metricsPath`.
 
 If running on OpenShift, make sure your account has permissions to create PodMonitor resources under the monitoring.coreos.com/v1 apiVersion.
 
@@ -494,7 +508,7 @@ If running on OpenShift, make sure your account has permissions to create PodMon
 
 The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).
 
-Please note that `Openshift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
+Please note that `OpenShift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
 
 The below command will deploy SonarQube on the Openshift Kubernetes cluster.
 
@@ -502,10 +516,10 @@ The below command will deploy SonarQube on the Openshift Kubernetes cluster.
 helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
 helm repo update
 kubectl create namespace sonarqube-dce # If you dont have permissions to create the namespace, skip this step and replace all -n with an existing namespace name.
-# Please take a look at the official documentation https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/
+# Please take a look at the official documentation https://docs.sonarsource.com/sonarqube-server/server-installation/data-center-edition/introduction
 export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64) 
 export MONITORING_PASSCODE="yourPasscode"
-export JDBC_URL="jdbc:postgresql://myPostgres/myDatabase"
+export JDBC_URL="jdbc:postgresql://<your-db-host>:5432/<your-database>" # must be replaced: the chart rejects the placeholder URL
 export JDBC_USERNAME="sonar"
 export JDBC_PASSWORD_SECRET_NAME="jdbc-secret"
 export JDBC_PASSWORD_SECRET_KEY="jdbc-password"
@@ -592,13 +606,15 @@ In environments with air-gapped setup, especially with internal tooling (repos) 
 
 ### Elasticsearch Settings
 
-Since SonarQube needs Elasticsearch, some [bootstrap checks](https://www.elastic.co/guide/en/elasticsearch/reference/master/bootstrap-checks.html) of the host settings are done at start.
+Since SonarQube needs Elasticsearch, some [bootstrap checks](https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html) of the host settings are done at start on the search nodes.
 
-This chart offers the option to use an initContainer in privilaged mode to automatically set certain kernel settings on the kube worker. While this can ensure proper functionality of Elasticsearch, modifying the underlying kernel settings on the Kubernetes node can impact other users. It may be best to work with your cluster administrator to either provide specific nodes with the proper kernel settings, or ensure they are set cluster wide.
+This chart offers the option to use an initContainer in privileged mode to automatically set certain kernel settings on the kube worker. While this can ensure proper functionality of Elasticsearch, modifying the underlying kernel settings on the Kubernetes node can impact other users. It may be best to work with your cluster administrator to either provide specific nodes with the proper kernel settings, or ensure they are set cluster wide.
 
-To enable auto-configuration of the kube worker node, set `elasticsearch.configureNode` to `true`. This is the default behavior, so you do not need to explicitly set this.
+Auto-configuration of the kube worker node is controlled by `initSysctl.enabled`, which is `true` by default (and disabled on OpenShift). The initContainer runs on the search nodes only.
 
-This will run `sysctl -w vm.max_map_count=262144` on the worker where the sonarqube pod(s) get scheduled. This needs to be set to `262144` but normally defaults to `65530`. Other kernel settings are recommended by the [docker image](https://hub.docker.com/_/sonarqube/#requirements), but the defaults work fine in most cases.
+This will run `sysctl -w vm.max_map_count=524288` (`initSysctl.vmMaxMapCount`) on the workers where the search pods get scheduled, together with `fs.file-max`, `nofile` and `nproc` (`initSysctl.fsFileMax`, `initSysctl.nofile`, `initSysctl.nproc`). The kernel default for `vm.max_map_count` is usually `65530`, which is too low.
+
+To disable worker node configuration, set `initSysctl.enabled` to `false`. The nodes running the search pods must then already meet these settings.
 
 ### MCP (Model Context Protocol) Server
 
@@ -694,7 +710,7 @@ If the keystore uses a self-signed certificate, SonarQube's JVM will reject the 
 
 **Scheduling:**
 
-`mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` set scheduling for the MCP pod; each wins over the chart's global `.Values.nodeSelector`/`.affinity`/`.tolerations` when set, and falls back to it otherwise — same convention as `vortex`/`agentOrchestrator`/`hunterAgent`/`remediationAgent`. `mcp.topologySpreadConstraints` is MCP-specific with no chart-wide equivalent to fall back to. The chart-wide `priorityClassName` value is applied to the MCP pod automatically; there is no separate `mcp.priorityClassName`.
+`mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` set scheduling for the MCP pod; each wins over the chart's global `.Values.nodeSelector`/`.affinity`/`.tolerations` when set, and falls back to it otherwise — same convention as `vortexAnalysis`/`agentOrchestrator`/`hunterAgent`/`remediationAgent`. Note that the search and application nodes use the opposite precedence: the chart-wide `nodeSelector` wins over `searchNodes.nodeSelector`/`applicationNodes.nodeSelector`. `mcp.topologySpreadConstraints` is MCP-specific with no chart-wide equivalent to fall back to. The chart-wide `priorityClassName` value is applied to the MCP pod automatically; there is no separate `mcp.priorityClassName`.
 
 ### Agentic features
 
@@ -730,7 +746,9 @@ No LLM provider key is needed at install time: the LLM provider is configured in
 **Minimal configuration example:**
 
 ```yaml
+monitoringPasscode: "<your-passcode>"   # or monitoringPasscodeSecretName/Key
 applicationNodes:
+  jwtSecret: "<your-jwt-secret>"      # or existingJwtSecret
   sonarProperties:
     sonar.agentic.storage.type: S3
     sonar.agentic.storage.bucket: my-agentic-artifacts
@@ -784,7 +802,7 @@ The agent runtimes reach the internet only through the Agent Egress Proxy, which
 * the hostname of `agentOrchestrator.storage` (agents read and write job artifacts directly through presigned URLs), otherwise jobs fail at the first artifact download;
 * any other endpoint your agents must reach.
 
-Prefer exact hostnames: an entry with a leading dot (`.example.com`) also allows every subdomain.
+Prefer exact hostnames: an entry with a leading dot (`.example.com`) also allows every subdomain. Overlapping entries (for example `.example.com` together with `api.example.com`) are rejected.
 
 The proxy allows ports 80 and 443. For another port, add it both to `agentEgressProxy.extraSquidConf` (`Safe_ports`/`SSL_ports`) and to `agentEgressProxy.networkPolicy.egressPorts`.
 
@@ -796,7 +814,7 @@ Autoscaling is off by default:
 * `hunterAgent.autoscaling` / `remediationAgent.autoscaling`: a KEDA `ScaledObject` driven by the orchestrator's job queue.
 * `vortexAnalysis.autoscaling`: a KEDA `ScaledObject` driven by Vortex's concurrent requests. Requires KEDA `>= 2.20`.
 
-`minReplicas` must be at least `2`. The KEDA CRDs are detected at install time; under `helm template` set `agentKeda.assumeInstalled: true`. With GitOps tools that apply rendered manifests (Argo CD, Flux), set `autoscaling.manageReplicas: false` so each sync does not reset the replica count.
+`minReplicas` must be at least `2`, except for Vortex with `vortexAnalysis.autoscaling.aggregateAcrossReplicas: false`, where it must be exactly `1`. The KEDA CRDs are detected at install time; under `helm template` set `agentKeda.assumeInstalled: true`. With GitOps tools that apply rendered manifests (Argo CD, Flux), set `autoscaling.manageReplicas: false` so each sync does not reset the replica count.
 
 To encrypt the traffic between the agentic components, see [Securing communication with TLS](#securing-communication-with-tls).
 
@@ -858,9 +876,11 @@ In such environments, configuration may be read, via environment variables, from
    metadata:
      name: external-sonarqube-opts
    data:
-     SONARQUBE_JDBC_USERNAME: foo
-     SONARQUBE_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
+     SONAR_LOG_LEVEL: INFO
+     SONAR_TELEMETRY_ENABLE: "false"
    ```
+
+   Do not set the `SONAR_JDBC_*` variables this way: the chart always sets them from `jdbcOverwrite`. Keep the database password in a Secret referenced by `jdbcOverwrite.jdbcSecretName`/`jdbcOverwrite.jdbcSecretPasswordKey`.
 
 2. Set the following in your `values.yaml` (using the key `extraConfig.secrets` to reference `Secret`s)
 
@@ -874,7 +894,7 @@ In such environments, configuration may be read, via environment variables, from
 
 The following table lists the configurable parameters of the SonarQube chart and their default values.
 
-> **DEPRECATION NOTICE: ApplicationNodes values should be renamed to applicationNodes.** We deprecated `ApplicationNodes` (with capital **A**); you can still use it for the current version, but it will be removed in the next one. We advise everyone to rename `ApplicationNodes` to `applicationNodes`. More information can be found [in the section above](#applicationnodes-renamed-to-applicationnodes).
+> **DEPRECATION NOTICE: ApplicationNodes values should be renamed to applicationNodes.** We deprecated `ApplicationNodes` (with capital **A**); it is still accepted, but it will be removed in a future release. We advise everyone to rename `ApplicationNodes` to `applicationNodes`. More information can be found [in the section above](#applicationnodes-renamed-to-applicationnodes).
 
 ### Search Nodes Configuration
 
@@ -923,7 +943,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.persistence.annotations`                     | PVC annotations for the Search Nodes                                                       | `{}`                                                                   |
 | `searchNodes.persistence.storageClass`                    | Storage class to be used                                                                   | `""`                                                                   |
 | `searchNodes.persistence.accessMode`                      | Volumes access mode to be set                                                              | `ReadWriteOnce`                                                        |
-| `searchNodes.persistence.size`                            | Size of the PVC                                                                            | `5G`                                                                   |
+| `searchNodes.persistence.size`                            | Size of the PVC                                                                            | `5Gi`                                                                  |
 | `searchNodes.persistence.uid`                             | UID used for init-fs container                                                             | `1000`                                                                 |
 | `searchNodes.persistence.volumes`                         | Set existing volumes                                                                       | `[]`                                                                   |
 | `searchNodes.persistence.guid`                            | GUID used for init-fs container                                                            | `0`                                                                    |
@@ -1056,7 +1076,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                                 | Description                                                               | Default |
 | ----------------------------------------- | ------------------------------------------------------------------------- | ------- |
 | `networkPolicy.enabled`                   | Create NetworkPolicies                                                    | `false` |
-| `networkPolicy.prometheusNamespace`       | Allow incoming traffic to monitoring ports from this namespace            | `nil`   |
+| `networkPolicy.prometheusNamespace`       | Allow incoming traffic to monitoring ports from this namespace            | `"monitoring"` |
 | `networkPolicy.additionalNetworkPolicys`  | (DEPRECATED) Please use `networkPolicy.additionalNetworkPolicies` instead | `nil`   |
 | `networkPolicy.additionalNetworkPolicies` | User defined NetworkPolicies (usefull for external database)              | `nil`   |
 
@@ -1137,7 +1157,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `initSysctl.resources`              | InitSysctl container resource requests & limits                                                                                       | `{}`                                                                   |
 | `initFs.enabled`                    | Enable file permission change with init container                                                                                     | `true`                                                                 |
 | `initFs.image`                      | InitFS container image                                                                                                                | `applicationNodes.image`                                               |
-| `initFs.securityContext.privileged` | InitFS container needs to run privileged                                                                                              | `true`                                                                 |
+| `initFs.securityContext.privileged` | InitFS container needs to run privileged                                                                                              | `false`                                                                |
 
 ### SonarQube Specific
 
@@ -1155,7 +1175,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
 | `jdbcOverwrite.enable`                      | (DEPRECATED) Enable JDBC overwrites for external Databases. (It must be set to true)                          | `true`                                    |
 | `jdbcOverwrite.enabled`                     | (DEPRECATED) Enable JDBC overwrites for external Databases. (It must be set to true)                                                                                  | `true`                                    |
-| `jdbcOverwrite.jdbcUrl`                     | The JDBC url to connect the external DB (e.g., `jdbc:postgresql://myPostgres/myDatabase`)                                                                                                                      | `None` |
+| `jdbcOverwrite.jdbcUrl`                     | The JDBC url to connect the external DB; the placeholder default is rejected and must be replaced                                                                                                             | `jdbc:postgresql://myPostgres/myDatabase` |
 | `jdbcOverwrite.jdbcUsername`                | The DB user that should be used for the JDBC connection                                                                                                       | `None`                                |
 | `jdbcOverwrite.jdbcPassword`                | (DEPRECATED) The DB password that should be used for the JDBC connection, please use `jdbcOverwrite.jdbcSecretName` and `jdbcOverwrite.jdbcSecretPasswordKey` | `None`                                |
 | `jdbcOverwrite.jdbcSecretName`              | Alternatively, use a pre-existing k8s secret containing the DB password                                                                                       | `None`                                     |
