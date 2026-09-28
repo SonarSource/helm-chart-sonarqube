@@ -181,11 +181,11 @@ For this reason, it is recommended to set Xmx to the ~80% of the total amount of
 
 Please find here the default SonarQube Xmx parameters to setup the memory requests and limits accordingly.
 
-| SonarQube Offering | Sum of Xmx |
-| ------------------ | ---------- |
-| community build    | 3072M      |
-| developer edition  | 3072M      |
-| enterprise edition | 8G         |
+| SonarQube Offering | Sum of Xmx               |
+| ------------------ | ------------------------ |
+| community build    | 1536M (3072M from 26.10) |
+| developer edition  | 3072M                    |
+| enterprise edition | 8G                       |
 
 The default request and limit for this chart are set to 4096M and 10240M, to comply with the 3 editions and the 80% rule mentioned above.
 
