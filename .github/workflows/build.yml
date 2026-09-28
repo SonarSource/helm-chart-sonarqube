@@ -156,8 +156,16 @@ jobs:
           ./.github/scripts/build_chart_dependencies.sh charts/${{ matrix.verifying_chart }}
           chart-verifier version
       - name: Setup external PostgreSQL
-        if: matrix.verifying_chart == 'sonarqube-dce'
         run: NAMESPACE="${{ matrix.verifying_chart }}" VALUES_FILE="charts/${{ matrix.verifying_chart }}/openshift-verifier/postgres-values.yaml" ./.github/scripts/setup_external_postgres.sh
+      - name: Setup agentic dependencies
+        if: matrix.verifying_chart == 'sonarqube'
+        # For ci/agentic-values.yaml: the S3 stand-in and the instance secret the agentic key
+        # derivation hook derives the per-hop keys from.
+        run: |
+          NAMESPACE="${{ matrix.verifying_chart }}" ./.github/scripts/setup_s3mock.sh
+          kubectl create secret generic agentic-ci-instance-secret --namespace ${{ matrix.verifying_chart }} \
+            --from-literal=instance-secret="$(openssl rand -hex 32)" \
+            --dry-run=client -o yaml | kubectl apply -f -
       - name: Run chart verification
         run: |
           mkdir -p "$(pwd)/report-${{ matrix.verifying_chart}}"
@@ -181,7 +189,8 @@ jobs:
         include:
           - chart: sonarqube
             config: ct-sonarqube-test.yaml
-            runner: github-ubuntu-latest-s
+            # ci/agentic-values.yaml runs SonarQube Server with every agentic component (~10Gi).
+            runner: github-ubuntu-latest-m
             secrets_id: secrets
           - chart: sonarqube-dce
             config: ct-sonarqube-dce-test.yaml
@@ -222,7 +231,6 @@ jobs:
           kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
           kubectl label namespace test istio-injection=enabled
       - name: Setup External PostgreSQL
-        if: matrix.chart == 'sonarqube-dce'
         run: NAMESPACE=test ./.github/scripts/setup_external_postgres.sh
       - id: secrets
         uses: SonarSource/vault-action-wrapper@v3
@@ -235,6 +243,15 @@ jobs:
           DOCKER_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_PASSWORD }}
         run: kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
+      - name: Setup agentic dependencies
+        if: matrix.chart == 'sonarqube'
+        # For ci/agentic-values.yaml: the S3 stand-in and the instance secret. Unlike the DCE run
+        # below, the images are the public ones, so the key derivation hook runs for real.
+        run: |
+          NAMESPACE=test ./.github/scripts/setup_s3mock.sh
+          kubectl create secret generic agentic-ci-instance-secret --namespace test \
+            --from-literal=instance-secret="$(openssl rand -hex 32)" \
+            --dry-run=client -o yaml | kubectl apply -f -
       - name: Setup agentic signing secrets
         if: matrix.chart == 'sonarqube-dce'
         # The DCE ci-values enable a runtime so gVisor renders, which also turns on the agentic
@@ -268,7 +285,6 @@ jobs:
           ct lint --config ${{ matrix.config }}
           ct install --namespace test --config ${{ matrix.config }} --debug
       - name: Verify gVisor installed on the cluster
-        if: matrix.chart == 'sonarqube-dce'
         run: |
           # Wait until the installer has labeled at least one node with gvisor.enabled=true, or fail after 2 minutes. 
           # The installer DaemonSet runs on all worker nodes (empty tolerations = it does not tolerate the control-plane taint), 

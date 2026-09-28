@@ -1,0 +1,139 @@
+# Second chart-testing scenario (ct installs once per ci/*-values.yaml): SonarQube Server with
+# every agentic component on the public Docker Hub images the chart defaults to. The goal is that
+# every pod becomes Ready - no LLM, SCM or real object store is involved.
+# Needs the workflow to pre-create, in the release namespace, the external PostgreSQL
+# (setup_external_postgres.sh), the S3 stand-in (setup_s3mock.sh) and the instance secret below.
+# The OpenShift chart-verifier also installs this file, merged under openshift-verifier/values.yaml,
+# which repoints the namespace-qualified endpoints below and turns gVisor off.
+#
+# Requests are sized from the idle usage of the same stack on kind (SonarQube ~4.5Gi, Vortex
+# ~1.3Gi, MCP/Orchestrator/s3mock ~350Mi, runtimes ~75Mi) instead of the production defaults
+# (e.g. hunterAgent 8Gi, vortexAnalysis 6Gi), and limits are capped so a leak can't take the
+# runner down with it.
+edition: enterprise
+monitoringPasscode: "test"
+
+image:
+  pullSecrets:
+    - name: pullsecret
+
+resources:
+  limits:
+    cpu: 800m
+    memory: 6144M
+    ephemeral-storage: 512000M
+  requests:
+    cpu: 200m
+    memory: 2048M
+    ephemeral-storage: 1536M
+
+jdbcOverwrite:
+  enabled: true
+  jdbcUrl: "jdbc:postgresql://external-postgres-postgresql.test.svc.cluster.local:5432/postgres"
+  jdbcUsername: "postgres"
+  jdbcSecretName: "external-postgres-postgresql"
+  jdbcSecretPasswordKey: "postgres-password"
+
+agenticSigningSecret:
+  existingSecret: agentic-ci-instance-secret
+
+agentOrchestrator:
+  enabled: true
+  storage:
+    endpoint: "http://s3.test.svc.cluster.local:9000"
+    bucket: agent-jobs
+    region: us-east-1
+    pathStyle: true
+    accessKey: test
+    secretKey: test
+  resources:
+    requests:
+      cpu: 100m
+      memory: 384Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+hunterAgent:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+remediationAgent:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+agentEgressProxy:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+vortexAnalysis:
+  enabled: true
+  env:
+    # The chart never sets this token; Vortex only needs it for real analyses, not to become Ready.
+    - name: VORTEX_ANALYSIS_SONARQUBE_TOKEN
+      value: "dummy"
+  storage:
+    type: S3
+    endpoint: "http://s3.test.svc.cluster.local:9000"
+    bucket: vortex
+    region: us-east-1
+    pathStyleAccess: true
+    accessKey: test
+    secretKey: test
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1536Mi
+    limits:
+      cpu: "1"
+      memory: 3Gi
+
+mcp:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 384Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+# Same setup as the DCE ci-values: the privileged installer runs on the kind worker only (empty
+# tolerations keep it off the control-plane) and outside the mesh. The runtimes then run under
+# runsc, which also keeps them out of the namespace's Istio injection (istio.enabled stays false).
+gvisor:
+  enabled: true
+  installer:
+    enabled: true
+    tolerations: []
+    annotations:
+      sidecar.istio.io/inject: "false"
+
+tests:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 200M
+      ephemeral-storage: 100M
+    limits:
+      cpu: 50m
+      memory: 200M
+      ephemeral-storage: 1000M
