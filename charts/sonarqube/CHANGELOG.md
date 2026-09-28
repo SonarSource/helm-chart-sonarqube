@@ -50,6 +50,7 @@ All changes to this chart will be documented in this file.
 * Raise the default `resources.requests.memory` to `4096M` and `resources.limits.memory` to `10240M` to fit the higher SonarQube Server 2026.5 Web/CE heap defaults
 * Support Kubernetes v1.37
 * Support OpenShift 4.22
+* Raise the Vortex startup probe `failureThreshold` to `90` so Vortex is not restarted while it waits to re-check SonarQube Server connectivity
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
