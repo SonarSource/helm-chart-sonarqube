@@ -207,6 +207,36 @@ spec:
     matchLabels:
       sonarqube.datacenter/type: "app"
 ---
+# Source: sonarqube-dce/templates/agent-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agentic-scheduling-values.yaml-sonarqube-dce-agent-runtime-hunt
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.1000
+    release: agentic-scheduling-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: hunter
+    app.kubernetes.io/component: agent-runtime-hunter
+automountServiceAccountToken: false
+---
+# Source: sonarqube-dce/templates/agent-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agentic-scheduling-values.yaml-sonarqube-dce-agent-runtime-reme
+  labels:
+    app: sonarqube-dce
+    chart: sonarqube-dce-2026.5.1000
+    release: agentic-scheduling-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: remediation
+    app.kubernetes.io/component: agent-runtime-remediation
+automountServiceAccountToken: false
+---
 # Source: sonarqube-dce/templates/gvisor.yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -1612,7 +1642,7 @@ spec:
           maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: DoNotSchedule
-      serviceAccountName: default
+      serviceAccountName: agentic-scheduling-values.yaml-sonarqube-dce-agent-runtime-hunt
       volumes:
         - name: agentic-keys
           secret:
@@ -1755,7 +1785,7 @@ spec:
           maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: DoNotSchedule
-      serviceAccountName: default
+      serviceAccountName: agentic-scheduling-values.yaml-sonarqube-dce-agent-runtime-reme
       volumes:
         - name: agentic-keys
           secret:

@@ -589,10 +589,12 @@ The chart can deploy the SonarQube agentic components next to SonarQube Server:
 **Prerequisites:**
 
 * **Database.** The Agent Orchestrator shares SonarQube's database and supports **PostgreSQL** only. SonarQube itself also supports Microsoft SQL Server and Oracle (see the [installation requirements](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/installation-requirements/overview/)), but the agentic features need PostgreSQL. In this chart, set `jdbcOverwrite.enabled=true`: the embedded H2 database is not reachable from the orchestrator. `agentOrchestrator.coreDb.*` defaults to the `jdbcOverwrite` values and can override them individually.
-* **Storage.** The Agent Orchestrator (`agentOrchestrator.storage.type`) and Vortex (`vortexAnalysis.storage.type`) each need a store:
+* **Storage.** The agentic features share an object store: the Agent Orchestrator writes the job artifacts to it (`agentOrchestrator.storage`), SonarQube reads the agent job logs from it (`sonar.agentic.storage.*` in `sonarProperties`), and Vortex restores the analysis context from it (`vortexAnalysis.storage`). The simplest setup points all three at the same bucket. Supported backends:
   * `S3` (default, recommended for production): AWS S3, or any S3-compatible endpoint such as MinIO via `endpoint` and path-style addressing. Credentials come from inline keys, an `existingSecret`, or, when both are blank, the pod's IAM identity (node instance role or IRSA through the component's `serviceAccount.annotations`).
   * `FILESYSTEM` / `NFS`: a shared `ReadWriteMany` volume mounted through `extraVolumes`/`extraVolumeMounts`, with `storage.filesystem.baseDir` set. Use a single `securityContext.fsGroup` across the orchestrator and the agents.
-  * Vortex additionally supports `AZURE` and `GCS`. Its bucket must match SonarQube's `sonar.agentic.storage.*` settings.
+  * Vortex additionally supports `AZURE` and `GCS`.
+
+  When the pods authenticate with their IAM identity (e.g. IRSA), SonarQube (`serviceAccount`), the Agent Orchestrator and Vortex (`<component>.serviceAccount`) each need their own ServiceAccount (`create: true`) carrying the role annotation. The agent runtimes don't access the store directly (the orchestrator hands them presigned URLs) and get their own ServiceAccount by default, so they never inherit SonarQube's cloud role; keep `<hunterAgent|remediationAgent>.serviceAccount.create` set to `true`.
 * **Signing secret.** The agentic components sign the messages they exchange with keys derived from one instance secret you create:
 
   ```bash
@@ -603,12 +605,16 @@ The chart can deploy the SonarQube agentic components next to SonarQube Server:
 * **A sandboxed container runtime** on the nodes running the agents (see [Sandboxing](#sandboxing)).
 * **KEDA**, only if you want to autoscale the agents or Vortex.
 
-No LLM provider key is needed at install time: the LLM provider is configured in the SonarQube UI once the features are running. Only its hostname has to be allowed through the egress proxy.
+No LLM provider key is needed at install time: the LLM provider is configured in the SonarQube UI once the features are running. Only its hostname has to be allowed through the egress proxy. For the Remediation Agent to open pull requests, bind the project to a GitHub App DevOps Platform integration in SonarQube.
 
 **Minimal configuration example:**
 
 ```yaml
 edition: enterprise
+sonarProperties:
+  sonar.agentic.storage.type: S3
+  sonar.agentic.storage.bucket: my-agentic-artifacts
+  sonar.agentic.storage.region: eu-west-1
 jdbcOverwrite:
   enabled: true
   jdbcUrl: "jdbc:postgresql://postgres.example.com:5432/sonarqube"
@@ -622,21 +628,21 @@ agentOrchestrator:
   storage:
     type: S3
     region: eu-west-1
-    bucket: my-agent-jobs
+    bucket: my-agentic-artifacts
     pathStyle: false
 vortexAnalysis:
   storage:
     type: S3
     region: eu-west-1
-    bucket: my-vortex-context
+    bucket: my-agentic-artifacts
 hunterAgent:
   enabled: true
 remediationAgent:
   enabled: true
 agentEgressProxy:
   allowedDomains:
-    - .anthropic.com                           # your LLM provider
-    - my-agent-jobs.s3.eu-west-1.amazonaws.com # agentOrchestrator.storage
+    - api.anthropic.com                               # your LLM provider
+    - my-agentic-artifacts.s3.eu-west-1.amazonaws.com # agentOrchestrator.storage
 ```
 
 The Vortex pod can take several minutes to become ready on a first start, while it loads its analyzers.
@@ -657,7 +663,9 @@ The agent runtimes reach the internet only through the Agent Egress Proxy, which
 
 * your LLM provider's API hostname;
 * the hostname of `agentOrchestrator.storage` (agents read and write job artifacts directly through presigned URLs), otherwise jobs fail at the first artifact download;
-* any other endpoint your agents must reach, e.g. GitHub Enterprise Server.
+* any other endpoint your agents must reach.
+
+Prefer exact hostnames: an entry with a leading dot (`.example.com`) also allows every subdomain.
 
 The proxy allows ports 80 and 443. For another port, add it both to `agentEgressProxy.extraSquidConf` (`Safe_ports`/`SSL_ports`) and to `agentEgressProxy.networkPolicy.egressPorts`.
 
@@ -1150,7 +1158,7 @@ See [Agentic features](#agentic-features) for how to enable and configure these 
 | `agentOrchestrator.serviceAccount.name`                               | Name of that ServiceAccount; defaults to `<fullname>-agent-orchestrator` when `create` is true                                         | `""`                                                                           |
 | `agentOrchestrator.serviceAccount.automountToken`                     | Automount the ServiceAccount token into the pod; needed for IRSA                                                                          | `false`                                                                        |
 | `agentOrchestrator.serviceAccount.annotations`                        | Annotations for that ServiceAccount (e.g. an IRSA role ARN)                                                                              | `{}`                                                                           |
-| `<hunterAgent\|remediationAgent>.serviceAccount.create`          | Create a dedicated ServiceAccount for this agent's pod, independent of the top-level `serviceAccount`                                    | `false`                                                                        |
+| `<hunterAgent\|remediationAgent>.serviceAccount.create`          | Create a dedicated ServiceAccount for this agent's pod. With `false`, the pod runs under the top-level `serviceAccount` and inherits its token and cloud role                                    | `true`                                                                       |
 | `<hunterAgent\|remediationAgent>.serviceAccount.name`            | Name of that ServiceAccount; defaults to `<fullname>-agent-runtime-<family>` when `create` is true                                     | `""`                                                                           |
 | `<hunterAgent\|remediationAgent>.serviceAccount.automountToken`  | Automount the ServiceAccount token into the pod; needed for IRSA                                                                          | `false`                                                                        |
 | `<hunterAgent\|remediationAgent>.serviceAccount.annotations`     | Annotations for that ServiceAccount (e.g. an IRSA role ARN)                                                                              | `{}`                                                                           |

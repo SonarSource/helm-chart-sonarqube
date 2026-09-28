@@ -173,6 +173,36 @@ spec:
       app: sonarqube-agent-egress-proxy
       release: agentic-scheduling-values.yaml
 ---
+# Source: sonarqube/templates/agent-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agentic-scheduling-values.yaml-sonarqube-agent-runtime-hunter
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.1000
+    release: agentic-scheduling-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: hunter
+    app.kubernetes.io/component: agent-runtime-hunter
+automountServiceAccountToken: false
+---
+# Source: sonarqube/templates/agent-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agentic-scheduling-values.yaml-sonarqube-agent-runtime-remediat
+  labels:
+    app: sonarqube
+    chart: sonarqube-2026.5.1000
+    release: agentic-scheduling-values.yaml
+    heritage: Helm
+    sonarqube.agent/component: runtime
+    sonarqube.agent/family: remediation
+    app.kubernetes.io/component: agent-runtime-remediation
+automountServiceAccountToken: false
+---
 # Source: sonarqube/templates/gvisor.yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -1451,7 +1481,7 @@ spec:
           maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: DoNotSchedule
-      serviceAccountName: default
+      serviceAccountName: agentic-scheduling-values.yaml-sonarqube-agent-runtime-hunter
       volumes:
         - name: agentic-keys
           secret:
@@ -1593,7 +1623,7 @@ spec:
           maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: DoNotSchedule
-      serviceAccountName: default
+      serviceAccountName: agentic-scheduling-values.yaml-sonarqube-agent-runtime-remediat
       volumes:
         - name: agentic-keys
           secret:

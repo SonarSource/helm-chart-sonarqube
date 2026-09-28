@@ -1257,8 +1257,10 @@ hunterAgent:
       drop: ["ALL"]
   # ServiceAccount for this runtime, independent of the top-level serviceAccount. `name` pins the
   # SA name for an external IAM trust policy; defaults to <fullname>-agent-runtime-hunter.
+  # With create: false the runtime runs under the top-level serviceAccount and inherits its token
+  # and any cloud role bound to it (e.g. IRSA), which the runtimes never need.
   serviceAccount:
-    create: false
+    create: true
     name: ""
     automountToken: false
     annotations: {}
@@ -1397,8 +1399,10 @@ remediationAgent:
       drop: ["ALL"]
   # ServiceAccount for this runtime, independent of the top-level serviceAccount. `name` pins the
   # SA name for an external IAM trust policy; defaults to <fullname>-agent-runtime-remediation.
+  # With create: false the runtime runs under the top-level serviceAccount and inherits its token
+  # and any cloud role bound to it (e.g. IRSA), which the runtimes never need.
   serviceAccount:
-    create: false
+    create: true
     name: ""
     automountToken: false
     annotations: {}

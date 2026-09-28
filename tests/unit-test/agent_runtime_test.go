@@ -215,6 +215,43 @@ func TestAgentRuntimeContainerSecurityContext(t *testing.T) {
 	}
 }
 
+// The runtimes run LLM-driven code, so by default they get their own tokenless ServiceAccount
+// instead of the top-level one, which may carry an IRSA/workload-identity role for SonarQube.
+// Opting out with create=false falls back to the top-level ServiceAccount and its automountToken.
+func TestAgentRuntimeServiceAccount(t *testing.T) {
+	topLevelWithRole := map[string]string{
+		"serviceAccount.create":         "true",
+		"serviceAccount.name":           "sonarqube-app",
+		"serviceAccount.automountToken": "true",
+	}
+
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, family := range []string{"hunter", "remediation"} {
+				t.Run(family, func(t *testing.T) {
+					t.Run("dedicated tokenless ServiceAccount by default", func(t *testing.T) {
+						spec := renderAgentRuntime(t, chart, family, topLevelWithRole).Spec.Template.Spec
+						assert.Equal(t, chart.fullnamePrefix()+"-agent-runtime-"+family, spec.ServiceAccountName)
+						require.NotNil(t, spec.AutomountServiceAccountToken)
+						assert.False(t, *spec.AutomountServiceAccountToken)
+					})
+
+					t.Run("create=false falls back to the top-level ServiceAccount", func(t *testing.T) {
+						setValues := map[string]string{family + "Agent.serviceAccount.create": "false"}
+						for k, v := range topLevelWithRole {
+							setValues[k] = v
+						}
+						spec := renderAgentRuntime(t, chart, family, setValues).Spec.Template.Spec
+						assert.Equal(t, "sonarqube-app", spec.ServiceAccountName)
+						require.NotNil(t, spec.AutomountServiceAccountToken)
+						assert.True(t, *spec.AutomountServiceAccountToken)
+					})
+				})
+			}
+		})
+	}
+}
+
 // The remediation runtime calls SonarQube Server directly for rule-info and
 // analysis-creation instead of proxying through the Agent Orchestrator, so both endpoint env
 // vars must be built from sonarqube.agent.sonarqube.url - including honouring sonarWebContext,
