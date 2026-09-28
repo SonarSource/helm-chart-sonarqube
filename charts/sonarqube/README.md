@@ -26,7 +26,7 @@ Please note that this chart only supports SonarQube Server Developer and Enterpr
 
 ## Kubernetes and Openshift Compatibility
 
-Supported Kubernetes Versions: From `1.32` to `1.35`
+Supported Kubernetes Versions: From `1.34` to `1.37`
 
 Supported Openshift Versions: From `4.17` to `4.20`
 

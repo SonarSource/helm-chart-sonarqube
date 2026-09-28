@@ -48,6 +48,7 @@ All changes to this chart will be documented in this file.
 * Raise the Remediation Agent's default `runAsUser`/`runAsGroup` from `1000` to `10001`, fixing incomplete generated PR content
 * Default `hunterAgent.serviceAccount.create` and `remediationAgent.serviceAccount.create` to `true` so the agent runtimes no longer inherit the top-level `serviceAccount` and its cloud role
 * Raise the default `resources.requests.memory` to `4096M` and `resources.limits.memory` to `10240M` to fit the higher SonarQube Server 2026.5 Web/CE heap defaults
+* Support Kubernetes v1.37
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0
