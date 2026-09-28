@@ -468,6 +468,7 @@ func TestAgentKeyDerivationImage(t *testing.T) {
 			t.Run("fails closed with no image anywhere", func(t *testing.T) {
 				_, err := renderKeyDerivation(t, chart, "vortex-enabled.yaml", map[string]string{
 					"agentKeyDerivation.image.repository": "",
+					"agentOrchestrator.image.repository":  "",
 				})
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "derive-keys.sh")
@@ -487,7 +488,9 @@ func TestAgentKeyDerivationImage(t *testing.T) {
 			// The orchestrator fallback is a different case: whether that image carries a tag is
 			// the orchestrator's own concern, and fixtures legitimately leave it unset.
 			t.Run("no tag on the fallback image is not our business", func(t *testing.T) {
-				job := keyDerivationJob(t, chart, "gvisor-hunter-only.yaml", nil)
+				job := keyDerivationJob(t, chart, "gvisor-hunter-only.yaml", map[string]string{
+					"agentOrchestrator.image.tag": "",
+				})
 				assert.Equal(t, "example.com/agent-orchestrator:", job.Spec.Template.Spec.Containers[0].Image)
 			})
 		})

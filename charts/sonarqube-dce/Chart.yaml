@@ -53,7 +53,7 @@ annotations:
     - kind: removed
       description: "Remove the deprecated ingress-nginx.enabled/nginx.enabled bundled ingress-nginx controller subchart dependency; ingress.enabled remains supported for a self-managed controller, or use httproute (Gateway API)"
     - kind: changed
-      description: "Update MCP image to sonarsource/sonarqube-mcp:1.27.0.4335"
+      description: "Update MCP image to sonarsource/sonarqube-mcp:2026.5.0"
     - kind: added
       description: "Add optional gVisor (runsc) sandboxing for the agent runtimes"
     - kind: added
@@ -120,6 +120,8 @@ annotations:
       description: "Raise the Remediation Agent's default runAsUser/runAsGroup from 1000 to 10001, fixing incomplete generated PR content"
     - kind: changed
       description: "Raise the default applicationNodes.resources memory request and limit to 8192M to fit the higher SonarQube Server 2026.5 Web/CE heap defaults"
+    - kind: changed
+      description: "Default the Agent Orchestrator, Hunter Agent, Remediation Agent and Vortex image tags to 2026.5.0"
   artifacthub.io/links: |
     - name: support
       url: https://community.sonarsource.com/
@@ -132,5 +134,13 @@ annotations:
     - name: sonarqube-search
       image: sonarqube:2026.4.0-datacenter-search
     - name: sonarqube-mcp
-      image: sonarsource/sonarqube-mcp:1.27.0.4335
+      image: sonarsource/sonarqube-mcp:2026.5.0
+    - name: sonarqube-agent-orchestrator
+      image: sonarsource/sonarqube-agent-orchestrator:2026.5.0
+    - name: sonarqube-hunter-agent
+      image: sonarsource/sonarqube-hunter-agent:2026.5.0
+    - name: sonarqube-remediation-agent
+      image: sonarsource/sonarqube-remediation-agent:2026.5.0
+    - name: sonar-vortex
+      image: sonarsource/sonar-vortex:2026.5.0
   charts.openshift.io/name: sonarqube-dce
