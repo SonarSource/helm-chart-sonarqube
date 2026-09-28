@@ -99,8 +99,8 @@ jobs:
           - verifying_chart: sonarqube
             report_name: sonarqube-openshift-report
     env:
-      OPENSHIFT_VERSION: 4.20.12
-      CHART_VERIFIER_VERSION: 1.14.0
+      OPENSHIFT_VERSION: 4.22.14
+      CHART_VERIFIER_VERSION: 1.16.0
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -120,7 +120,7 @@ jobs:
       - name: Install chart-verifier
         run: | 
           curl -LO https://github.com/redhat-certification/chart-verifier/releases/download/${{ env.CHART_VERIFIER_VERSION }}/chart-verifier-${{ env.CHART_VERIFIER_VERSION }}.tgz
-          echo "48dc6eb859bcae7722808fa3234440562c17e074dfa698161644f7b372a260e8  chart-verifier-${{ env.CHART_VERIFIER_VERSION }}.tgz" | sha256sum -c
+          echo "5f64557bf8cdc30b147beff777c28cc69bd558b6c9a3b8d8c657f1860322c849  chart-verifier-${{ env.CHART_VERIFIER_VERSION }}.tgz" | sha256sum -c
           tar -xf chart-verifier-${{ env.CHART_VERIFIER_VERSION }}.tgz
           mkdir -p $HOME/bin
           mv chart-verifier $HOME/bin/

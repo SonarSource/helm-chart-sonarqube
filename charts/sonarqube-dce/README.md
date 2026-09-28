@@ -28,7 +28,7 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 Supported Kubernetes Versions: From `1.34` to `1.37`
 
-Supported Openshift Versions: From `4.17` to `4.20`
+Supported Openshift Versions: From `4.19` to `4.22`
 
 **Note:** The Kubernetes version range above applies to non-OpenShift Kubernetes clusters. For OpenShift, the supported range is defined by the OpenShift versions listed here and is validated as a platform, including its embedded Kubernetes version.
 
