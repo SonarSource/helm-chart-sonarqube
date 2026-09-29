@@ -70,8 +70,6 @@ The default login is admin/admin.
 
 When upgrading your SonarQube Server to a new Long-Term Active (LTA) release, you should carefully read the official upgrade documentation to determine the correct update path based on your current server version.
 
-<!-- TODO: the 2026.5 LTA-to-LTA notes are not published yet (the URL redirects to "2026.5 LTA is on its way"); check the link once they are live -->
-* For SonarQube Server 2026.5 LTA, refer to the [LTA-to-LTA Upgrade Notes (2026.5)](https://docs.sonarsource.com/sonarqube-server/2026.5/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2026.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2026.1)](https://docs.sonarsource.com/sonarqube-server/2026.1/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.4 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.4)](https://docs.sonarsource.com/sonarqube-server/2025.4/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.1)](https://docs.sonarsource.com/sonarqube-server/2025.1/server-update-and-maintenance/release-notes-and-notices/lta-to-lta-release-upgrade-notes).
@@ -119,7 +117,6 @@ Chart `2026.5.1000` (SonarQube Server 2026.5 LTA) contains the following breakin
 * **Prometheus exporter**: the default scrape path is now `/metrics` instead of `/` (set `applicationNodes.prometheusExporter.metricsPath: /` to keep the old one), and built-in JVM metrics use OpenMetrics names (see [Export JMX metrics](#export-jmx-metrics)).
 * **Memory defaults**: the `applicationNodes.resources` memory request and limit are now `8192M`, to fit the higher Web/CE heap defaults of SonarQube Server 2026.5. Make sure your nodes can schedule them, or set your own values.
 * **ingress-nginx**: the bundled ingress-nginx controller subchart has been removed (see [below](#upgrade-from-versions-prior-to-202651000-ingress-nginx-controller-subchart-removed)). If you use `ingress.enabled`, set `ingress.ingressClassName` to your controller's class unless your cluster has a default `IngressClass`.
-* **Agent runtimes**: `hunterAgent.serviceAccount.create` and `remediationAgent.serviceAccount.create` now default to `true`, so the runtimes no longer run under the top-level `serviceAccount`.
 
 ### Upgrade from versions prior to 2026.1.0
 
@@ -881,7 +878,7 @@ In such environments, configuration may be read, via environment variables, from
      SONAR_TELEMETRY_ENABLE: "false"
    ```
 
-   Do not set the `SONAR_JDBC_*` variables this way: the chart always sets them from `jdbcOverwrite`. Keep the database password in a Secret referenced by `jdbcOverwrite.jdbcSecretName`/`jdbcOverwrite.jdbcSecretPasswordKey`.
+   Do not set the `SONAR_JDBC_*` variables this way: the chart sets them from `jdbcOverwrite`, and values set here would override its `SONAR_JDBC_URL`/`SONAR_JDBC_USERNAME` for SonarQube only, while the Agent Orchestrator keeps using `jdbcOverwrite`. Keep the database password in a Secret referenced by `jdbcOverwrite.jdbcSecretName`/`jdbcOverwrite.jdbcSecretPasswordKey`.
 
 2. Set the following in your `values.yaml` (using the key `extraConfig.secrets` to reference `Secret`s)
 
@@ -1033,7 +1030,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.plugins.securityContext`                       | Security context for the container to download plugins                                                                                                                                                         | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `applicationNodes.jvmOpts`                                       | (DEPRECATED) Values to add to `SONAR_WEB_JAVAOPTS`. Please set directly `SONAR_WEB_JAVAOPTS` or `sonar.web.javaOpts`                                                                                           | `""`                                                                   |
 | `applicationNodes.jvmCeOpts`                                     | (DEPRECATED) Values to add to `SONAR_CE_JAVAOPTS`. Please set directly `SONAR_CE_JAVAOPTS` or `sonar.ce.javaOpts`                                                                                              | `""`                                                                   |
-| `applicationNodes.jwtSecret`                                     | A HS256 key encoded with base64 (_This value must be set before installing the chart, see [the documentation](#installing-the-chart)<!-- TODO: link the official docs page on the DCE JWT secret once one exists -->_) | `""`                                                                   |
+| `applicationNodes.jwtSecret`                                     | A HS256 key encoded with base64 (_This value must be set before installing the chart, see [the documentation](#installing-the-chart)_) | `""`                                                                   |
 | `applicationNodes.existingJwtSecret`                             | secret that contains the `jwtSecret`                                                                                                                                                                           | `nil`                                                                  |
 | `applicationNodes.extraContainers`                               | Array of extra containers to run alongside                                                                                                                                                                     | `[]`                                                                   |
 | `applicationNodes.extraInitContainers`                           | Array of extra init containers to run before the application container                                                                                                                                         | `[]`                                                                   |

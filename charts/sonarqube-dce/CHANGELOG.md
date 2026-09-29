@@ -16,7 +16,7 @@ All changes to this chart will be documented in this file.
 * Add the Remediation Agent image `sonarsource/sonarqube-remediation-agent:2026.5.0`
 * Add the Vortex image `sonarsource/sonar-vortex:2026.5.0`
 * Add optional gVisor (runsc) sandboxing for the agent runtimes
-* Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via `agentOrchestrator.enabled`, `hunterAgent.enabled` and `remediationAgent.enabled`
+* Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via `agentOrchestrator.enabled`, `hunterAgent.enabled` and `remediationAgent.enabled`; the agent runtimes get their own ServiceAccount by default (`<hunterAgent|remediationAgent>.serviceAccount.create`), not the top-level one
 * Set the Hunter Agent's `SCRIPT_PATH` (detection mode) from `hunterAgent.scriptPath`
 * Default the Hunter Agent's `PLAYBOOK_KEY`/`PLAYBOOK_VERSION` to `appsec`/`stable` via `hunterAgent.playbookKey`/`playbookVersion`
 * Add `agentOrchestrator.env`/`extraVolumes`/`extraVolumeMounts` and a FILESYSTEM/NFS backend for the shared agentic job storage (`agentOrchestrator.storage.type`)
@@ -47,11 +47,8 @@ All changes to this chart will be documented in this file.
 * Add `istio.revision` to target a revisioned (canary) Istio control plane's `istiod-<revision>` Service
 * `vortexAnalysis.enabled` now defaults to `true` when `remediationAgent.enabled` is `true`
 * Raise the Remediation Agent's default `runAsUser`/`runAsGroup` from `1000` to `10001`, fixing incomplete generated PR content
-* Default `hunterAgent.serviceAccount.create` and `remediationAgent.serviceAccount.create` to `true` so the agent runtimes no longer inherit the top-level `serviceAccount` and its cloud role
 * Raise the default `applicationNodes.resources` memory request and limit to `8192M` to fit the higher SonarQube Server 2026.5 Web/CE heap defaults
-* Support Kubernetes v1.37
-* Support OpenShift 4.22
-* Raise the Vortex startup probe `failureThreshold` to `90` so Vortex is not restarted while it waits to re-check SonarQube Server connectivity
+* Supported Kubernetes versions are now 1.34 to 1.37 and OpenShift 4.19 to 4.22
 
 ## [2026.4.0]
 * Upgrade Chart's version to 2026.4.0

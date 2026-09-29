@@ -72,7 +72,7 @@ annotations:
     - kind: added
       description: "Add optional gVisor (runsc) sandboxing for the agent runtimes"
     - kind: added
-      description: "Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via agentOrchestrator.enabled, hunterAgent.enabled and remediationAgent.enabled"
+      description: "Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via agentOrchestrator.enabled, hunterAgent.enabled and remediationAgent.enabled; the agent runtimes get their own ServiceAccount by default (<hunterAgent|remediationAgent>.serviceAccount.create), not the top-level one"
     - kind: added
       description: "Set the Hunter Agent's SCRIPT_PATH (detection mode) from hunterAgent.scriptPath"
     - kind: added
@@ -132,15 +132,9 @@ annotations:
     - kind: fixed
       description: "Raise the Remediation Agent's default runAsUser/runAsGroup from 1000 to 10001, fixing incomplete generated PR content"
     - kind: changed
-      description: "Default hunterAgent/remediationAgent.serviceAccount.create to true so the agent runtimes no longer inherit the top-level ServiceAccount and its cloud role"
-    - kind: changed
       description: "Raise the default resources.requests.memory to 4096M and resources.limits.memory to 10240M to fit the higher SonarQube Server 2026.5 Web/CE heap defaults"
-    - kind: added
-      description: "Support Kubernetes v1.37"
-    - kind: added
-      description: "Support OpenShift 4.22"
-    - kind: fixed
-      description: "Raise the Vortex startup probe failureThreshold to 90 so Vortex is not restarted while it waits to re-check SonarQube Server connectivity"
+    - kind: changed
+      description: "Supported Kubernetes versions are now 1.34 to 1.37 and OpenShift 4.19 to 4.22"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-community

@@ -65,8 +65,6 @@ If you want to use a more recent SonarQube Community Build, please set the `comm
 
 When upgrading your SonarQube Server to a new Long-Term Active (LTA) release, you should carefully read the official upgrade documentation to determine the correct update path based on your current server version.
 
-<!-- TODO: the 2026.5 LTA-to-LTA notes are not published yet (the URL redirects to "2026.5 LTA is on its way"); check the link once they are live -->
-* For SonarQube Server 2026.5 LTA, refer to the [LTA-to-LTA Upgrade Notes (2026.5)](https://docs.sonarsource.com/sonarqube-server/2026.5/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2026.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2026.1)](https://docs.sonarsource.com/sonarqube-server/2026.1/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.4 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.4)](https://docs.sonarsource.com/sonarqube-server/2025.4/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.1)](https://docs.sonarsource.com/sonarqube-server/2025.1/server-update-and-maintenance/release-notes-and-notices/lta-to-lta-release-upgrade-notes).
@@ -215,7 +213,6 @@ Chart `2026.5.1000` (SonarQube Server 2026.5 LTA) contains the following breakin
 * **Prometheus exporter**: the default scrape path is now `/metrics` instead of `/` (set `prometheusExporter.metricsPath: /` to keep the old one), and built-in JVM metrics use OpenMetrics names (see [Export JMX metrics](#export-jmx-metrics)).
 * **Memory defaults**: `resources.requests.memory` and `resources.limits.memory` are now `4096M` and `10240M`, to fit the higher Web/CE heap defaults of SonarQube Server 2026.5. Make sure your nodes can schedule them, or set your own values.
 * **ingress-nginx**: the bundled ingress-nginx controller subchart has been removed (see [below](#upgrade-from-versions-prior-to-202651000-ingress-nginx-controller-subchart-removed)). If you use `ingress.enabled`, set `ingress.ingressClassName` to your controller's class unless your cluster has a default `IngressClass`.
-* **Agent runtimes**: `hunterAgent.serviceAccount.create` and `remediationAgent.serviceAccount.create` now default to `true`, so the runtimes no longer run under the top-level `serviceAccount`.
 
 ### Upgrade from versions prior to 2026.1.0
 
@@ -744,6 +741,8 @@ In such environments, configuration may be read, via environment variables, from
    ```
 
    Keep `jdbcOverwrite.enabled` set to `false` in that case, as the chart otherwise sets `SONAR_JDBC_URL` and `SONAR_JDBC_USERNAME` itself. Put the password (`SONAR_JDBC_PASSWORD`) in a `Secret`.
+
+   This approach doesn't work with the [agentic features](#agentic-features), which require `jdbcOverwrite.enabled: true`: the Agent Orchestrator reads its database from `jdbcOverwrite`, while the `extraConfig` values would override the chart's `SONAR_JDBC_URL`/`SONAR_JDBC_USERNAME` for SonarQube only. Configure the database with `jdbcOverwrite` instead.
 
 2. Set the following in your `values.yaml` (using the key `extraConfig.secrets` to reference `Secret`s)
 
