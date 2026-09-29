@@ -64,13 +64,21 @@ It is used to validate the values.yaml file before the installation starts.
        outright rather than letting agentOrchestrator.coreDb stand in for it. This gate does not
        exist in sonarqube-dce, which is always on an external database. */}}
   {{- if and (not .Values.jdbcOverwrite.enabled) (not .Values.jdbcOverwrite.enable) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but jdbcOverwrite is not enabled. The orchestrator shares SonarQube's database and cannot use the embedded one - set jdbcOverwrite.enabled=true and point it at an external PostgreSQL." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but jdbcOverwrite is not enabled. The orchestrator shares SonarQube's database and cannot use the embedded one - set jdbcOverwrite.enabled=true and point it at an external database." -}}
   {{- end -}}
-  {{- if and (not .Values.agentOrchestrator.coreDb.endpoint) (not (include "sonarqube.agent.jdbc.endpoint" .)) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB endpoint could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.endpoint is not set." -}}
+  {{- /* The orchestrator bundles the PostgreSQL and SQL Server JDBC drivers and loads the Oracle
+         one installed from jdbcOverwrite.oracleJdbcDriver.url. As for SonarQube itself, an Oracle
+         URL without that driver is not rejected here: the orchestrator fails at startup instead. */}}
+  {{- $coreDbUrl := include "sonarqube.agent.jdbc.url" . -}}
+  {{- /* The messages below never print the URL itself: it may carry the database password. */}}
+  {{- if not (regexMatch "^jdbc:(postgresql|oracle|sqlserver):" $coreDbUrl) -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB JDBC URL (from agentOrchestrator.coreDb.jdbcUrl, or else jdbcOverwrite.jdbcUrl) is not a PostgreSQL, Oracle or Microsoft SQL Server one: it must start with jdbc:postgresql:, jdbc:oracle: or jdbc:sqlserver:, not '%s'." (regexFind "^[a-zA-Z0-9]*(:[a-zA-Z0-9]*)?:?" $coreDbUrl)) -}}
   {{- end -}}
-  {{- if and (not .Values.agentOrchestrator.coreDb.name) (not (include "sonarqube.agent.jdbc.dbname" .)) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB name could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.name is not set." -}}
+  {{- /* Orchestrator images before multi-database support (such as the default 2026.5.0) only read
+         the CORE_DB_READ_WRITE_ENDPOINT/CORE_DB_NAME pair parsed from a PostgreSQL URL, so both must
+         be derivable from it. */}}
+  {{- if and (hasPrefix "jdbc:postgresql:" $coreDbUrl) (or (not (include "sonarqube.agent.jdbc.endpoint" $coreDbUrl)) (not (include "sonarqube.agent.jdbc.dbname" $coreDbUrl))) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB host or database name could not be parsed from the PostgreSQL JDBC URL (from agentOrchestrator.coreDb.jdbcUrl, or else jdbcOverwrite.jdbcUrl): it must include both, as in jdbc:postgresql://host:port/database. Forms without them, such as jdbc:postgresql:database for localhost, are valid for SonarQube but not for orchestrator images such as the default 2026.5.0, which read the host and database name separately. Alternatively, set agentOrchestrator.coreDb.endpoint and agentOrchestrator.coreDb.name." -}}
   {{- end -}}
   {{- /* The orchestrator only exists to dispatch jobs to an agent runtime - with neither hunterAgent
          nor remediationAgent enabled, it has nothing to talk to. */}}

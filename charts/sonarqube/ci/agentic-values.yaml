@@ -33,6 +33,10 @@ jdbcOverwrite:
   jdbcUsername: "postgres"
   jdbcSecretName: "external-postgres-postgresql"
   jdbcSecretPasswordKey: "postgres-password"
+  # Unused by the PostgreSQL database above: only there so the Oracle driver install, in both the
+  # SonarQube and the orchestrator pods, runs against a real download.
+  oracleJdbcDriver:
+    url: "https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/23.26.3.0.0/ojdbc11-23.26.3.0.0.jar"
 
 agenticSigningSecret:
   existingSecret: agentic-ci-instance-secret

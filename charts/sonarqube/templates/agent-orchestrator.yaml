@@ -59,6 +59,7 @@ spec:
       {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" .Values.agentOrchestrator.securityContext))) }}
       securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- $oracleDriver := and .Values.jdbcOverwrite.oracleJdbcDriver .Values.jdbcOverwrite.oracleJdbcDriver.url }}
       initContainers:
         - name: wait-for-sonarqube
           image: {{ include "sonarqube.image" . }}
@@ -73,6 +74,52 @@ spec:
               until curl -sf "{{ include "sonarqube.agent.sonarqube.url" . }}/api/system/status" | grep -q '"status":"UP"'; do
                 echo "Waiting for SonarQube to be UP..."; sleep 10;
               done
+        {{- /* Same driver download as the SonarQube pod's install-oracle-jdbc-driver init container,
+               reusing its ConfigMap script: the script writes to
+               <sonarqubeFolder>/extensions/jdbc-driver/oracle, where this pod mounts the
+               oracle-jdbc-driver emptyDir the orchestrator then reads the JAR from. The CA bundle
+               the script's curl --cacert expects is built here from caCerts, as the SonarQube
+               pod's ca-certs init container does. */}}
+        {{- if $oracleDriver }}
+        - name: install-oracle-jdbc-driver
+          image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
+          imagePullPolicy: {{ (fromYaml (include "sonarqube.agent.sonarqubeImage" .)).pullPolicy }}
+          {{- with (fromYaml (include "sonarqube.agent.initContainerSecurityContext" .)) }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.initContainers.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - sh
+            - -e
+            - -c
+            - |
+              {{- if .Values.caCerts.enabled }}
+              : > /tmp/certs/ca-bundle.pem
+              if [ "$(ls /tmp/secrets/ca-certs)" ]; then
+                for f in /tmp/secrets/ca-certs/*; do cat "$f"; echo; done > /tmp/certs/ca-bundle.pem
+              fi
+              {{- end }}
+              sh -e /tmp/scripts/install_oracle_jdbc_driver.sh
+          volumeMounts:
+            - name: oracle-jdbc-driver
+              mountPath: {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
+            - name: install-oracle-jdbc-driver
+              mountPath: /tmp/scripts/
+            {{- if .Values.jdbcOverwrite.oracleJdbcDriver.netrcCreds }}
+            - name: oracle-jdbc-driver-netrc-file
+              mountPath: /root
+            {{- end }}
+            {{- if .Values.caCerts.enabled }}
+            - name: ca-certs
+              mountPath: /tmp/secrets/ca-certs
+            - name: ca-bundle
+              mountPath: /tmp/certs
+            {{- end }}
+          env:
+          {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 12 }}
+        {{- end }}
       containers:
         - name: agent-orchestrator
           image: "{{ .Values.agentOrchestrator.image.repository }}:{{ .Values.agentOrchestrator.image.tag }}"
@@ -117,10 +164,29 @@ spec:
                    sonarSecretKey mounted above (AGENTIC_SECRET_KEY_PATH) is unrelated to this: it
                    does not let the orchestrator decrypt an `{aes-gcm}` CORE_DB_PASSWORD. */}}
             {{- $coreDb := .Values.agentOrchestrator.coreDb }}
+            {{- $coreDbUrl := include "sonarqube.agent.jdbc.url" . }}
+            {{- /* With only the legacy coreDb.endpoint/name, the pair below is enough: the orchestrator
+                   then builds the PostgreSQL URL itself, with its ApplicationName connection tag. */}}
+            {{- if or $coreDb.jdbcUrl (not (or $coreDb.endpoint $coreDb.name)) }}
+            - name: CORE_DB_JDBC_URL
+              value: {{ $coreDbUrl | quote }}
+            {{- end }}
+            {{- /* Orchestrator images before multi-database support only read this
+                   PostgreSQL-only pair; newer ones prefer CORE_DB_JDBC_URL above. */}}
+            {{- if hasPrefix "jdbc:postgresql:" $coreDbUrl }}
+            {{- with include "sonarqube.agent.jdbc.endpoint" $coreDbUrl }}
             - name: CORE_DB_READ_WRITE_ENDPOINT
-              value: {{ $coreDb.endpoint | default (include "sonarqube.agent.jdbc.endpoint" .) | quote }}
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with include "sonarqube.agent.jdbc.dbname" $coreDbUrl }}
             - name: CORE_DB_NAME
-              value: {{ $coreDb.name | default (include "sonarqube.agent.jdbc.dbname" .) | quote }}
+              value: {{ . | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if $oracleDriver }}
+            - name: CORE_DB_ORACLE_DRIVER_DIR
+              value: /app/jdbc-driver/oracle
+            {{- end }}
             - name: CORE_DB_USERNAME
               {{- if $coreDb.username }}
               value: {{ $coreDb.username | quote }}
@@ -188,7 +254,7 @@ spec:
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- $keyMount := include "sonarqube.agentic.keyVolumeMount" (dict "ctx" . "consumer" "orchestrator" "mountPath" (include "sonarqube.agentic.keyDir" .)) }}
-          {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey $keyMount .Values.agentOrchestrator.extraVolumeMounts }}
+          {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey $keyMount $oracleDriver .Values.agentOrchestrator.extraVolumeMounts }}
           volumeMounts:
             {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
             - name: tmp
@@ -200,6 +266,11 @@ spec:
             {{- end }}
             {{- with $keyMount }}
             {{- . | trim | nindent 12 }}
+            {{- end }}
+            {{- if $oracleDriver }}
+            - name: oracle-jdbc-driver
+              mountPath: /app/jdbc-driver/oracle
+              readOnly: true
             {{- end }}
             {{- with .Values.agentOrchestrator.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
@@ -218,7 +289,7 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "sonarqube.agentOrchestrator.serviceAccountName" . }}
       {{- $keyVolume := include "sonarqube.agentic.keyVolume" (dict "ctx" . "consumer" "orchestrator") }}
-      {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey $keyVolume .Values.agentOrchestrator.extraVolumes }}
+      {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey $keyVolume $oracleDriver .Values.agentOrchestrator.extraVolumes }}
       volumes:
         {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
         - name: tmp
@@ -234,6 +305,29 @@ spec:
         {{- end }}
         {{- with $keyVolume }}
         {{- . | trim | nindent 8 }}
+        {{- end }}
+        {{- if $oracleDriver }}
+        - name: oracle-jdbc-driver
+          emptyDir: {}
+        - name: install-oracle-jdbc-driver
+          configMap:
+            name: {{ include "sonarqube.fullname" . }}-install-oracle-jdbc-driver
+            items:
+              - key: install_oracle_jdbc_driver.sh
+                path: install_oracle_jdbc_driver.sh
+        {{- if .Values.jdbcOverwrite.oracleJdbcDriver.netrcCreds }}
+        - name: oracle-jdbc-driver-netrc-file
+          secret:
+            secretName: {{ .Values.jdbcOverwrite.oracleJdbcDriver.netrcCreds }}
+            items:
+              - key: netrc
+                path: .netrc
+        {{- end }}
+        {{- if .Values.caCerts.enabled }}
+        {{- include "sonarqube.volumes.caCerts" . | nindent 8 }}
+        - name: ca-bundle
+          emptyDir: {}
+        {{- end }}
         {{- end }}
         {{- with .Values.agentOrchestrator.extraVolumes }}
         {{- toYaml . | nindent 8 }}
