@@ -4,6 +4,175 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
+          description: "Upgrade Chart's version to 2026.5.1000"
+        - kind: changed
+          description: "Decouple the chart's version from appVersion: it now follows <SonarQube major>.<minor>.<patch counter>, with the counter starting at 1000 per minor line"
+        - kind: changed
+          description: "Upgrade SonarQube Server to 2026.5.0"
+        - kind: changed
+          description: "Upgrade SonarQube Community build to 26.9.0.129388"
+        - kind: changed
+          description: "Breaking: The chart now manages liveness/readiness probe handlers; legacy exec/httpGet/tcpSocket/grpc values are ignored, use overrideCommand instead"
+        - kind: added
+          description: "Set a default MCP pod securityContext (fsGroup: 0), HOME=/data and an optional mcp.initContainers hook so the non-root MCP server can write to /data"
+        - kind: removed
+          description: "Remove the deprecated ingress-nginx.enabled/nginx.enabled bundled ingress-nginx controller subchart dependency; ingress.enabled remains supported for a self-managed controller, or use httproute (Gateway API)"
+        - kind: changed
+          description: "Update MCP image to sonarsource/sonarqube-mcp:2026.5.0"
+        - kind: added
+          description: "Add the Agent Orchestrator image sonarsource/sonarqube-agent-orchestrator:2026.5.0"
+        - kind: added
+          description: "Add the Hunter Agent image sonarsource/sonarqube-hunter-agent:2026.5.0"
+        - kind: added
+          description: "Add the Remediation Agent image sonarsource/sonarqube-remediation-agent:2026.5.0"
+        - kind: added
+          description: "Add the Vortex image sonarsource/sonar-vortex:2026.5.0"
+        - kind: added
+          description: "Add optional gVisor (runsc) sandboxing for the agent runtimes"
+        - kind: added
+          description: "Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via agentOrchestrator.enabled, hunterAgent.enabled and remediationAgent.enabled; the agent runtimes get their own ServiceAccount by default (<hunterAgent|remediationAgent>.serviceAccount.create), not the top-level one"
+        - kind: added
+          description: "Set the Hunter Agent's SCRIPT_PATH (detection mode) from hunterAgent.scriptPath"
+        - kind: added
+          description: "Default the Hunter Agent's PLAYBOOK_KEY/PLAYBOOK_VERSION to appsec/stable via hunterAgent.playbookKey/playbookVersion"
+        - kind: added
+          description: "Add agentOrchestrator.env/extraVolumes/extraVolumeMounts and a FILESYSTEM/NFS backend for the shared agentic job storage (agentOrchestrator.storage.type)"
+        - kind: added
+          description: "Add autoscaling for the Agent Orchestrator (CPU/memory HPA) and the Hunter/Remediation Agent runtimes (KEDA ScaledObject) via <component>.autoscaling"
+        - kind: added
+          description: "Add an optional KEDA operator subchart dependency (keda.enabled) to install KEDA together with the release"
+        - kind: changed
+          description: "Ship default resource requests and limits for the Hunter Agent and Vortex so neither runs in the BestEffort QoS class"
+        - kind: changed
+          description: "Point the Agent Orchestrator and agent runtime probes at /readyz//livez instead of /health, and add agentOrchestrator.terminationGracePeriodSeconds"
+        - kind: added
+          description: "Add <hunterAgent|remediationAgent>.storage to scope each agent runtime to its own subtree of a shared FILESYSTEM/NFS job storage"
+        - kind: changed
+          description: "Upgrade the bundled JMX Prometheus Exporter to 1.6.0; versions 1.1.0 and later download from GitHub Releases, earlier ones from Maven Central"
+        - kind: added
+          description: "Add prometheusExporter.metricsPath (default /metrics) and optional prometheusExporter.sha256 download verification"
+        - kind: changed
+          description: "Default exporter downloads from GitHub require access to github.com and release-assets.githubusercontent.com"
+        - kind: changed
+          description: "Breaking: Built-in JVM metrics use OpenMetrics names (e.g. jvm_memory_bytes_used is now jvm_memory_used_bytes); config.rules metrics are unaffected"
+        - kind: changed
+          description: "Breaking: The default exporter scrape path is now /metrics instead of /; set prometheusExporter.metricsPath: / to keep the old path"
+        - kind: added
+          description: "Sandbox the agent runtimes with Kata Containers instead of gVisor on OpenShift via OpenShift.agentRuntimeClassName (default kata); the RuntimeClass must exist"
+        - kind: fixed
+          description: "Target openshift-dns on port 5353 (UDP/TCP) in the NetworkPolicy DNS egress rules when OpenShift.enabled is true; the kube-dns rule never matched there"
+        - kind: added
+          description: "Add KEDA-based autoscaling for Vortex (vortexAnalysis.autoscaling) on its concurrent-request metric; requires KEDA >= 2.20.0"
+        - kind: fixed
+          description: "Allow a fractional vortexAnalysis.autoscaling.targetConcurrentRequests (e.g. 1.5), as KEDA parses it as a float"
+        - kind: fixed
+          description: "Stop emitting the Vortex ScaledObject's spec.fallback with aggregateAcrossReplicas: false, where KEDA < 2.17 scaled the fleet down on scrape failure"
+        - kind: fixed
+          description: "Fix caCerts.configMap mounting a single certificate; omitting configMap.key/path now imports every key, and path without key fails fast"
+        - kind: added
+          description: "Add istio.enabled to run every chart-owned workload under STRICT mTLS, and istio.meshSidecar.enabled to give sandboxed agent runtimes a mesh identity"
+        - kind: added
+          description: "Add mcp.nodeSelector/affinity/tolerations (falling back to the chart-wide values) and mcp.topologySpreadConstraints; priorityClassName now also applies to MCP"
+        - kind: added
+          description: "Add topologySpreadConstraints for Vortex, the Agent Orchestrator and the agent runtimes, and apply the chart-wide priorityClassName to them"
+        - kind: fixed
+          description: "Fix jvmOpts/jvmCeOpts being dropped instead of merged when sonar.web.javaOpts/sonar.ce.javaOpts is also set in sonarProperties"
+        - kind: changed
+          description: "Raise the default probe timeoutSeconds to 5 so the sh/curl exec probe is not killed under CPU contention"
+        - kind: changed
+          description: "Agent runtimes reach the Agent Egress Proxy by ClusterIP instead of DNS, dropping their kube-dns egress; recreating the proxy Service requires restarting them"
+        - kind: added
+          description: "Add istio.istiodClusterIP (default auto) to pin istiod's address in agent runtime pods and drop their kube-dns egress; helm template needs it set"
+        - kind: added
+          description: "Add istio.revision to target a revisioned (canary) Istio control plane's istiod-<revision> Service"
+        - kind: changed
+          description: "vortexAnalysis.enabled now defaults to true when remediationAgent.enabled is true"
+        - kind: fixed
+          description: "Raise the Remediation Agent's default runAsUser/runAsGroup from 1000 to 10001, fixing incomplete generated PR content"
+        - kind: added
+          description: "Support Oracle and Microsoft SQL Server for the Agent Orchestrator: it now gets the full JDBC URL (CORE_DB_JDBC_URL, overridable with agentOrchestrator.coreDb.jdbcUrl), and the Oracle driver from jdbcOverwrite.oracleJdbcDriver.url is installed in its pod"
+        - kind: fixed
+          description: "Fix the install-oracle-jdbc-driver init container keeping runAsUser/runAsGroup on OpenShift, which kept the restricted-v2 SCC from admitting the SonarQube pod"
+        - kind: changed
+          description: "Raise the default resources.requests.memory to 4096M and resources.limits.memory to 10240M to fit the higher SonarQube Server 2026.5 Web/CE heap defaults"
+        - kind: changed
+          description: "Supported Kubernetes versions are now 1.34 to 1.37 and OpenShift 4.19 to 4.22"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube-community
+          image: sonarqube:26.9.0.129388-community
+        - name: sonarqube-developer
+          image: sonarqube:2026.5.0-developer
+        - name: sonarqube-enterprise
+          image: sonarqube:2026.5.0-enterprise
+        - name: sonarqube-mcp
+          image: sonarsource/sonarqube-mcp:2026.5.0
+        - name: sonarqube-agent-orchestrator
+          image: sonarsource/sonarqube-agent-orchestrator:2026.5.0
+        - name: sonarqube-hunter-agent
+          image: sonarsource/sonarqube-hunter-agent:2026.5.0
+        - name: sonarqube-remediation-agent
+          image: sonarsource/sonarqube-remediation-agent:2026.5.0
+        - name: sonar-vortex
+          image: sonarsource/sonar-vortex:2026.5.0
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
+      charts.openshift.io/name: sonarqube
+    apiVersion: v2
+    appVersion: 2026.5.0
+    created: "2026-09-29T15:50:20.302615619Z"
+    dependencies:
+    - condition: keda.enabled
+      name: keda
+      repository: https://kedacore.github.io/charts
+      version: 2.20.2
+    description: SonarQube is a self-managed, automatic code review tool that systematically
+      helps you deliver clean code. As a core element of our Sonar solution, SonarQube
+      integrates into your existing workflow and detects issues in your code to help
+      you perform continuous code inspections of your projects. The tool analyses
+      30+ different programming languages and integrates into your CI pipeline and
+      DevOps platform to ensure that your code meets high-quality standards.
+    digest: 587682f35141031d10bc9966a18886929c70cb0ab6ddf9eb482cf5da26d7b512
+    home: https://www.sonarqube.org/
+    icon: https://raw.githubusercontent.com/SonarSource/sonarqube-static-resources/master/helm/SonarQubeServerLogo.png
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: carmine.vassallo@sonarsource.com
+      name: carminevassallo
+    - email: emma.mansalier@sonarsource.com
+      name: emma44-m
+    - email: hatem.amairi@sonarsource.com
+      name: hatem-amairi-sonarsource
+    - email: jimil.desai@sonarsource.com
+      name: jimil09
+    - email: julien.lancelot@sonarsource.com
+      name: julienlancelot
+    - email: lukasz.jarocki@sonarsource.com
+      name: lukasz-jarocki-sonarsource
+    - email: matteo.mara@sonarsource.com
+      name: matteo-mara-sonarsource
+    - email: navya.otturu@sonarsource.com
+      name: navyatejaotturu-sonarsource
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-2026.5.1000-sonarqube-dce-2026.5.1000b/sonarqube-2026.5.1000.tgz
+    version: 2026.5.1000
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
           description: "Upgrade Chart's version to 2026.4.1"
         - kind: changed
           description: "Upgrade SonarQube Server to 2026.4.1"
@@ -5193,6 +5362,175 @@ entries:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-1.1.1+98.tgz
     version: 1.1.1+98
   sonarqube-dce:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "Upgrade Chart's version to 2026.5.1000"
+        - kind: changed
+          description: "Decouple the chart's version from appVersion: it now follows <SonarQube major>.<minor>.<patch counter>, with the counter starting at 1000 per minor line"
+        - kind: changed
+          description: "Upgrade SonarQube Server to 2026.5.0"
+        - kind: changed
+          description: "Fail DCE upgrades across an Elasticsearch major while search pods are still running; scale searchNodes.replicaCount to 0 first"
+        - kind: changed
+          description: "Breaking: The chart now manages Application node liveness/readiness probe handlers; legacy exec/httpGet/tcpSocket/grpc values are ignored, use overrideCommand instead"
+        - kind: added
+          description: "Set a default MCP pod securityContext (fsGroup: 0), HOME=/data and an optional mcp.initContainers hook so the non-root MCP server can write to /data"
+        - kind: removed
+          description: "Remove the deprecated ingress-nginx.enabled/nginx.enabled bundled ingress-nginx controller subchart dependency; ingress.enabled remains supported for a self-managed controller, or use httproute (Gateway API)"
+        - kind: changed
+          description: "Update MCP image to sonarsource/sonarqube-mcp:2026.5.0"
+        - kind: added
+          description: "Add the Agent Orchestrator image sonarsource/sonarqube-agent-orchestrator:2026.5.0"
+        - kind: added
+          description: "Add the Hunter Agent image sonarsource/sonarqube-hunter-agent:2026.5.0"
+        - kind: added
+          description: "Add the Remediation Agent image sonarsource/sonarqube-remediation-agent:2026.5.0"
+        - kind: added
+          description: "Add the Vortex image sonarsource/sonar-vortex:2026.5.0"
+        - kind: added
+          description: "Add optional gVisor (runsc) sandboxing for the agent runtimes"
+        - kind: added
+          description: "Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via agentOrchestrator.enabled, hunterAgent.enabled and remediationAgent.enabled; the agent runtimes get their own ServiceAccount by default (<hunterAgent|remediationAgent>.serviceAccount.create), not the top-level one"
+        - kind: added
+          description: "Set the Hunter Agent's SCRIPT_PATH (detection mode) from hunterAgent.scriptPath"
+        - kind: added
+          description: "Default the Hunter Agent's PLAYBOOK_KEY/PLAYBOOK_VERSION to appsec/stable via hunterAgent.playbookKey/playbookVersion"
+        - kind: added
+          description: "Add agentOrchestrator.env/extraVolumes/extraVolumeMounts and a FILESYSTEM/NFS backend for the shared agentic job storage (agentOrchestrator.storage.type)"
+        - kind: added
+          description: "Mount the sonarSecretKey secret into the Agent Orchestrator and expose its path as AGENTIC_SECRET_KEY_PATH"
+        - kind: added
+          description: "Add autoscaling for the Agent Orchestrator (CPU/memory HPA) and the Hunter/Remediation Agent runtimes (KEDA ScaledObject) via <component>.autoscaling"
+        - kind: added
+          description: "Add an optional KEDA operator subchart dependency (keda.enabled) to install KEDA together with the release"
+        - kind: changed
+          description: "Ship default resource requests and limits for the Hunter Agent and Vortex so neither runs in the BestEffort QoS class"
+        - kind: changed
+          description: "Point the Agent Orchestrator and agent runtime probes at /readyz//livez instead of /health, and add agentOrchestrator.terminationGracePeriodSeconds"
+        - kind: added
+          description: "Add <hunterAgent|remediationAgent>.storage to scope each agent runtime to its own subtree of a shared FILESYSTEM/NFS job storage"
+        - kind: changed
+          description: "Upgrade the bundled JMX Prometheus Exporter to 1.6.0; versions 1.1.0 and later download from GitHub Releases, earlier ones from Maven Central"
+        - kind: added
+          description: "Add applicationNodes.prometheusExporter.metricsPath (default /metrics) and optional applicationNodes.prometheusExporter.sha256 download verification"
+        - kind: changed
+          description: "Default exporter downloads from GitHub require access to github.com and release-assets.githubusercontent.com"
+        - kind: changed
+          description: "Breaking: Built-in JVM metrics use OpenMetrics names (e.g. jvm_memory_bytes_used is now jvm_memory_used_bytes); config.rules metrics are unaffected"
+        - kind: changed
+          description: "Breaking: The default exporter scrape path is now /metrics instead of /; set applicationNodes.prometheusExporter.metricsPath: / to keep the old path"
+        - kind: added
+          description: "Sandbox the agent runtimes with Kata Containers instead of gVisor on OpenShift via OpenShift.agentRuntimeClassName (default kata); the RuntimeClass must exist"
+        - kind: fixed
+          description: "Target openshift-dns on port 5353 (UDP/TCP) in the NetworkPolicy DNS egress rules when OpenShift.enabled is true; the kube-dns rule never matched there"
+        - kind: added
+          description: "Add KEDA-based autoscaling for Vortex (vortexAnalysis.autoscaling) on its concurrent-request metric; requires KEDA >= 2.20.0"
+        - kind: fixed
+          description: "Allow a fractional vortexAnalysis.autoscaling.targetConcurrentRequests (e.g. 1.5), as KEDA parses it as a float"
+        - kind: fixed
+          description: "Stop emitting the Vortex ScaledObject's spec.fallback with aggregateAcrossReplicas: false, where KEDA < 2.17 scaled the fleet down on scrape failure"
+        - kind: fixed
+          description: "Fix caCerts.configMap mounting a single certificate; omitting configMap.key/path now imports every key, and path without key fails fast"
+        - kind: added
+          description: "Add istio.enabled to run every chart-owned workload under STRICT mTLS, and istio.meshSidecar.enabled to give sandboxed agent runtimes a mesh identity"
+        - kind: added
+          description: "Add mcp.nodeSelector/affinity/tolerations (falling back to the chart-wide values) and mcp.topologySpreadConstraints; priorityClassName now also applies to MCP"
+        - kind: added
+          description: "Add topologySpreadConstraints for Vortex, the Agent Orchestrator and the agent runtimes, and apply the chart-wide priorityClassName to them"
+        - kind: fixed
+          description: "Fix applicationNodes.jvmOpts/jvmCeOpts being dropped instead of merged when sonar.web.javaOpts/sonar.ce.javaOpts is set in sonarProperties"
+        - kind: changed
+          description: "Raise the default probe timeoutSeconds to 5 on search and application nodes, and applicationNodes.livenessProbe.failureThreshold to 8"
+        - kind: changed
+          description: "Agent runtimes reach the Agent Egress Proxy by ClusterIP instead of DNS, dropping their kube-dns egress; recreating the proxy Service requires restarting them"
+        - kind: added
+          description: "Add istio.istiodClusterIP (default auto) to pin istiod's address in agent runtime pods and drop their kube-dns egress; helm template needs it set"
+        - kind: added
+          description: "Add istio.revision to target a revisioned (canary) Istio control plane's istiod-<revision> Service"
+        - kind: changed
+          description: "vortexAnalysis.enabled now defaults to true when remediationAgent.enabled is true"
+        - kind: fixed
+          description: "Raise the Remediation Agent's default runAsUser/runAsGroup from 1000 to 10001, fixing incomplete generated PR content"
+        - kind: added
+          description: "Support Oracle and Microsoft SQL Server for the Agent Orchestrator: it now gets the full JDBC URL (CORE_DB_JDBC_URL, overridable with agentOrchestrator.coreDb.jdbcUrl), and the Oracle driver from jdbcOverwrite.oracleJdbcDriver.url is installed in its pod"
+        - kind: fixed
+          description: "Fix the install-oracle-jdbc-driver init container keeping runAsUser/runAsGroup on OpenShift, which kept the restricted-v2 SCC from admitting the application pods"
+        - kind: changed
+          description: "Raise the default applicationNodes.resources memory request and limit to 8192M to fit the higher SonarQube Server 2026.5 Web/CE heap defaults"
+        - kind: changed
+          description: "Supported Kubernetes versions are now 1.34 to 1.37 and OpenShift 4.19 to 4.22"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube-app
+          image: sonarqube:2026.5.0-datacenter-app
+        - name: sonarqube-search
+          image: sonarqube:2026.5.0-datacenter-search
+        - name: sonarqube-mcp
+          image: sonarsource/sonarqube-mcp:2026.5.0
+        - name: sonarqube-agent-orchestrator
+          image: sonarsource/sonarqube-agent-orchestrator:2026.5.0
+        - name: sonarqube-hunter-agent
+          image: sonarsource/sonarqube-hunter-agent:2026.5.0
+        - name: sonarqube-remediation-agent
+          image: sonarsource/sonarqube-remediation-agent:2026.5.0
+        - name: sonar-vortex
+          image: sonarsource/sonar-vortex:2026.5.0
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
+      charts.openshift.io/name: sonarqube-dce
+    apiVersion: v2
+    appVersion: 2026.5.0
+    created: "2026-09-29T15:50:20.316072341Z"
+    dependencies:
+    - condition: keda.enabled
+      name: keda
+      repository: https://kedacore.github.io/charts
+      version: 2.20.2
+    description: SonarQube is a self-managed, automatic code review tool that systematically
+      helps you deliver clean code. As a core element of our Sonar solution, SonarQube
+      integrates into your existing workflow and detects issues in your code to help
+      you perform continuous code inspections of your projects. The tool analyses
+      30+ different programming languages and integrates into your CI pipeline and
+      DevOps platform to ensure that your code meets high-quality standards.
+    digest: 0d1c1baae3938d8f4c374b8f60f7a07c28300eb5fdc6f2bad3d5456b2394ca44
+    home: https://www.sonarqube.org/
+    icon: https://raw.githubusercontent.com/SonarSource/sonarqube-static-resources/master/helm/SonarQubeServerLogo.png
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: carmine.vassallo@sonarsource.com
+      name: carminevassallo
+    - email: emma.mansalier@sonarsource.com
+      name: emma44-m
+    - email: hatem.amairi@sonarsource.com
+      name: hatem-amairi-sonarsource
+    - email: jimil.desai@sonarsource.com
+      name: jimil09
+    - email: julien.lancelot@sonarsource.com
+      name: julienlancelot
+    - email: lukasz.jarocki@sonarsource.com
+      name: lukasz-jarocki-sonarsource
+    - email: matteo.mara@sonarsource.com
+      name: matteo-mara-sonarsource
+    - email: navya.otturu@sonarsource.com
+      name: navyatejaotturu-sonarsource
+    name: sonarqube-dce
+    sources:
+    - https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-2026.5.1000-sonarqube-dce-2026.5.1000b/sonarqube-dce-2026.5.1000.tgz
+    version: 2026.5.1000
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
@@ -10892,4 +11230,4 @@ entries:
     urls:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-lts-1.0.16+98.tgz
     version: 1.0.16+98
-generated: "2026-09-22T10:28:43.705244594Z"
+generated: "2026-09-29T15:50:20.28738644Z"
