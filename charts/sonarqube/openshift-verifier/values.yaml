@@ -1,7 +1,8 @@
-# chart-verifier installs the chart once per ci/*-values.yaml with this file over each of them, but
-# the merge is shallow: every top-level key set here replaces the ci file's one wholesale. So this
-# file only carries top-level keys the ci files don't set (edition, image, resources and the
-# agentic components come from ci-values.yaml: Community Build, agentic-values.yaml: Enterprise).
+# chart-verifier installs the chart once per ci/*-values.yaml, deep-merging this file over each of
+# them. But its helm-lint check first fills the chart defaults into this file's maps in place, and
+# those defaults then override the ci file. So this file only carries top-level keys the ci files
+# don't set (edition, image, resources and the agentic components come from ci-values.yaml:
+# Community Build, agentic-values.yaml: Enterprise).
 OpenShift:
   enabled: true
   route:

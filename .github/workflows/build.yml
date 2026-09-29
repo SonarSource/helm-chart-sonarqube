@@ -93,6 +93,8 @@ jobs:
       contents: read
     strategy:
       matrix:
+        # Skipped checks are absent from the report, which chart-verifier's partner profile counts as
+        # missing mandatory checks: fine as long as we don't submit it for Red Hat certification.
         # not-contains-crds: since chart-verifier 1.16.0 the check also scans dependency templates,
         # so it flags the CRDs of the optional KEDA subchart (keda.enabled, off by default).
         include:
@@ -102,7 +104,8 @@ jobs:
           - verifying_chart: sonarqube
             report_name: sonarqube-openshift-report
             # helm-lint only lints the chart defaults plus openshift-verifier/values.yaml, which can't
-            # pick an edition: that comes from each ci/*-values.yaml (Community Build vs Enterprise).
+            # pick an edition: that comes from each ci/*-values.yaml (Community Build vs Enterprise),
+            # and a community/edition key in the verifier file would conflict with one of them.
             # ct lint covers every ci file in the kind job.
             skipped_checks: images-are-certified,not-contains-crds,helm-lint
     env:

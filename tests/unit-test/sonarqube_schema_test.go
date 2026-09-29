@@ -146,8 +146,10 @@ func TestCiValues(t *testing.T) {
 
 // TestCiOpenshiftVerifierValues loads the values used by the OpenShift Verifier at runtime: like
 // chart-verifier, it layers openshift-verifier/values.yaml over each ci/*-values.yaml.
-// chart-verifier's merge is shallow (a top-level key replaces the ci file's one wholesale), so the
-// verifier file must not set a map-valued top-level key that a ci file sets too.
+// chart-verifier deep-merges them, but its helm-lint check first fills the chart defaults into the
+// verifier file's maps in place, and those defaults then override the ci file at install (e.g. a
+// verifier agentOrchestrator.storage turned the ci file's agentOrchestrator.enabled into false).
+// So the verifier file must not set a map-valued top-level key that a ci file sets too.
 func TestCiOpenshiftVerifierValues(t *testing.T) {
 	verifierValues, err := chartutil.ReadValuesFile(chartPath + "/openshift-verifier/values.yaml")
 	assert.NoError(t, err)
@@ -165,7 +167,7 @@ func TestCiOpenshiftVerifierValues(t *testing.T) {
 			for key, value := range verifierValues {
 				_, isMap := value.(map[string]interface{})
 				_, inCiFile := ciValues[key]
-				assert.False(t, isMap && inCiFile, "openshift-verifier/values.yaml would replace %s of %s", key, tc.ciValuesFile)
+				assert.False(t, isMap && inCiFile, "openshift-verifier/values.yaml sets %s, which chart-verifier would reset to the chart defaults in %s", key, tc.ciValuesFile)
 			}
 			helmOptions := newSQHelmOptions()
 			helmOptions.ValuesFiles = []string{chartPath + "/ci/" + tc.ciValuesFile, chartPath + "/openshift-verifier/values.yaml"}

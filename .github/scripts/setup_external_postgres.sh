@@ -20,6 +20,11 @@ echo ""
 # Install PostgreSQL
 echo "Installing PostgreSQL chart..."
 HELM_CMD="helm upgrade -i -n ${NAMESPACE} ${NAME} oci://registry-1.docker.io/bitnamicharts/postgresql --version ${VERSION}"
+# The chart's default "nano" preset caps memory at 192Mi, which the agentic scenario (SonarQube plus
+# the Agent Orchestrator on the same database) gets OOMKilled at.
+HELM_CMD="${HELM_CMD} --set primary.resourcesPreset=none"
+HELM_CMD="${HELM_CMD} --set primary.resources.requests.cpu=100m,primary.resources.requests.memory=256Mi"
+HELM_CMD="${HELM_CMD} --set primary.resources.limits.cpu=1,primary.resources.limits.memory=768Mi"
 if [[ -n "${VALUES_FILE}" ]]; then
   HELM_CMD="${HELM_CMD} -f ${VALUES_FILE}"
 fi
