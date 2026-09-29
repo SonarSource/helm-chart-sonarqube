@@ -1101,7 +1101,8 @@ agentOrchestrator:
   # jdbcOverwrite.oracleJdbcDriver.url: the chart installs that driver in the orchestrator pod too.
   coreDb:
     jdbcUrl: ""             # full JDBC URL; default jdbcOverwrite.jdbcUrl
-    # Legacy, PostgreSQL only: setting either builds jdbc:postgresql://<endpoint>/<name>. Prefer jdbcUrl.
+    # Legacy, PostgreSQL only: setting either passes only this pair, and the orchestrator builds
+    # jdbc:postgresql://<endpoint>/<name> itself. Prefer jdbcUrl.
     endpoint: ""            # host:port; default parsed from jdbcOverwrite.jdbcUrl
     name: ""                # database name; default parsed from jdbcOverwrite.jdbcUrl
     username: ""            # default jdbcOverwrite.jdbcUsername

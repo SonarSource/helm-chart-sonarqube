@@ -169,8 +169,12 @@ spec:
                    does not let the orchestrator decrypt an `{aes-gcm}` CORE_DB_PASSWORD. */}}
             {{- $coreDb := .Values.agentOrchestrator.coreDb }}
             {{- $coreDbUrl := include "sonarqube.agent.jdbc.url" . }}
+            {{- /* With only the legacy coreDb.endpoint/name, the pair below is enough: the orchestrator
+                   then builds the PostgreSQL URL itself, with its ApplicationName connection tag. */}}
+            {{- if or $coreDb.jdbcUrl (not (or $coreDb.endpoint $coreDb.name)) }}
             - name: CORE_DB_JDBC_URL
               value: {{ $coreDbUrl | quote }}
+            {{- end }}
             {{- /* Orchestrator images before multi-database support only read this
                    PostgreSQL-only pair; newer ones prefer CORE_DB_JDBC_URL above. */}}
             {{- if hasPrefix "jdbc:postgresql:" $coreDbUrl }}

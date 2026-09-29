@@ -193,7 +193,7 @@ func TestOrchestratorCoreDbExplicitOverridesTakePrecedence(t *testing.T) {
 				values["agentOrchestrator.coreDb.name"] = "explicitdb"
 				output, err := renderWithValidation(t, chart, values)
 				require.NoError(t, err)
-				assert.Contains(t, output, "- name: CORE_DB_JDBC_URL\n              value: \"jdbc:postgresql://explicit-host:5432/explicitdb\"")
+				assert.NotContains(t, output, "CORE_DB_JDBC_URL")
 				assert.Contains(t, output, "- name: CORE_DB_READ_WRITE_ENDPOINT\n              value: \"explicit-host:5432\"")
 				assert.Contains(t, output, "- name: CORE_DB_NAME\n              value: \"explicitdb\"")
 			})
@@ -203,7 +203,9 @@ func TestOrchestratorCoreDbExplicitOverridesTakePrecedence(t *testing.T) {
 				values["agentOrchestrator.coreDb.name"] = "explicitdb"
 				output, err := renderWithValidation(t, chart, values)
 				require.NoError(t, err)
-				assert.Contains(t, output, "- name: CORE_DB_JDBC_URL\n              value: \"jdbc:postgresql://test-host:5432/explicitdb\"")
+				assert.NotContains(t, output, "CORE_DB_JDBC_URL")
+				assert.Contains(t, output, "- name: CORE_DB_READ_WRITE_ENDPOINT\n              value: \"test-host:5432\"")
+				assert.Contains(t, output, "- name: CORE_DB_NAME\n              value: \"explicitdb\"")
 			})
 		})
 	}
@@ -215,10 +217,11 @@ func TestOrchestratorRejectsUnsupportedCoreDbUrl(t *testing.T) {
 		t.Run(chart.name, func(t *testing.T) {
 			t.Run("from jdbcOverwrite", func(t *testing.T) {
 				values := orchestratorCoreDbBase()
-				values["jdbcOverwrite.jdbcUrl"] = "jdbc:h2:tcp://test-host/testdb"
+				values["jdbcOverwrite.jdbcUrl"] = "jdbc:h2:tcp://test-host/testdb;PASSWORD=SECRETVALUE"
 				_, err := renderWithValidation(t, chart, values)
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), "the CORE DB JDBC URL 'jdbc:h2:tcp://test-host/testdb'")
+				assert.Contains(t, err.Error(), "not 'jdbc:h2:'")
+				assert.NotContains(t, err.Error(), "SECRETVALUE")
 			})
 
 			t.Run("from coreDb.jdbcUrl", func(t *testing.T) {
@@ -236,7 +239,8 @@ func TestOrchestratorRejectsUnsupportedCoreDbUrl(t *testing.T) {
 // as orchestrator images before multi-database support only read it.
 func TestOrchestratorRejectsIncompletePostgresqlCoreDbUrl(t *testing.T) {
 	cases := map[string]map[string]string{
-		"no database name":    {"jdbcOverwrite.jdbcUrl": "jdbc:postgresql://test-host:5432"},
+		"no database name":    {"jdbcOverwrite.jdbcUrl": "jdbc:postgresql://test-host:5432?password=SECRETVALUE"},
+		"no host":             {"jdbcOverwrite.jdbcUrl": "jdbc:postgresql:testdb"},
 		"empty database name": {"agentOrchestrator.coreDb.jdbcUrl": "jdbc:postgresql://test-host:5432/"},
 		"endpoint only":       {"jdbcOverwrite.jdbcUrl": "jdbc:postgresql://", "agentOrchestrator.coreDb.endpoint": "test-host:5432"},
 		"database name only":  {"jdbcOverwrite.jdbcUrl": "jdbc:postgresql://", "agentOrchestrator.coreDb.name": "testdb"},
@@ -251,6 +255,7 @@ func TestOrchestratorRejectsIncompletePostgresqlCoreDbUrl(t *testing.T) {
 				_, err := renderWithValidation(t, chart, values)
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "the CORE DB host or database name could not be parsed from the PostgreSQL JDBC URL")
+				assert.NotContains(t, err.Error(), "SECRETVALUE")
 			})
 		}
 	}

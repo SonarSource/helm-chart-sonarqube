@@ -1554,10 +1554,11 @@ sidecar.istio.io/inject: "true"
 {{- end -}}
 
 {{/*
-JDBC URL of the Agent Orchestrator's CORE DB (SonarQube's own database), for CORE_DB_JDBC_URL.
-agentOrchestrator.coreDb.jdbcUrl wins; otherwise the legacy PostgreSQL-only coreDb.endpoint/name,
-when either is set, build a PostgreSQL URL (each falling back to what jdbcOverwrite.jdbcUrl holds);
-otherwise jdbcOverwrite.jdbcUrl is used as is, whatever its database vendor.
+JDBC URL of the Agent Orchestrator's CORE DB (SonarQube's own database), for CORE_DB_JDBC_URL
+and the validation. agentOrchestrator.coreDb.jdbcUrl wins; otherwise the legacy PostgreSQL-only
+coreDb.endpoint/name, when either is set, build a PostgreSQL URL (each falling back to what
+jdbcOverwrite.jdbcUrl holds) that is only used to derive the legacy CORE_DB_READ_WRITE_ENDPOINT/
+CORE_DB_NAME pair; otherwise jdbcOverwrite.jdbcUrl is used as is, whatever its database vendor.
 */}}
 {{- define "sonarqube.agent.jdbc.url" -}}
 {{- $coreDb := .Values.agentOrchestrator.coreDb -}}
