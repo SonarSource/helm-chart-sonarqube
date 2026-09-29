@@ -93,14 +93,24 @@ jobs:
       contents: read
     strategy:
       matrix:
+        # Skipped checks are absent from the report, which chart-verifier's partner profile counts as
+        # missing mandatory checks: fine as long as we don't submit it for Red Hat certification.
+        # not-contains-crds: since chart-verifier 1.16.0 the check also scans dependency templates,
+        # so it flags the CRDs of the optional KEDA subchart (keda.enabled, off by default).
         include:
           - verifying_chart: sonarqube-dce
             report_name: sonarqube-dce-openshift-report
+            skipped_checks: images-are-certified,not-contains-crds
           - verifying_chart: sonarqube
             report_name: sonarqube-openshift-report
+            # helm-lint only lints the chart defaults plus openshift-verifier/values.yaml, which can't
+            # pick an edition: that comes from each ci/*-values.yaml (Community Build vs Enterprise),
+            # and a community/edition key in the verifier file would conflict with one of them.
+            # ct lint covers every ci file in the kind job.
+            skipped_checks: images-are-certified,not-contains-crds,helm-lint
     env:
-      OPENSHIFT_VERSION: 4.20.12
-      CHART_VERIFIER_VERSION: 1.14.0
+      OPENSHIFT_VERSION: 4.22.14
+      CHART_VERIFIER_VERSION: 1.16.0
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -120,7 +130,7 @@ jobs:
       - name: Install chart-verifier
         run: | 
           curl -LO https://github.com/redhat-certification/chart-verifier/releases/download/${{ env.CHART_VERIFIER_VERSION }}/chart-verifier-${{ env.CHART_VERIFIER_VERSION }}.tgz
-          echo "48dc6eb859bcae7722808fa3234440562c17e074dfa698161644f7b372a260e8  chart-verifier-${{ env.CHART_VERIFIER_VERSION }}.tgz" | sha256sum -c
+          echo "5f64557bf8cdc30b147beff777c28cc69bd558b6c9a3b8d8c657f1860322c849  chart-verifier-${{ env.CHART_VERIFIER_VERSION }}.tgz" | sha256sum -c
           tar -xf chart-verifier-${{ env.CHART_VERIFIER_VERSION }}.tgz
           mkdir -p $HOME/bin
           mv chart-verifier $HOME/bin/
@@ -128,7 +138,7 @@ jobs:
       - name: Install kubectl CLI
         uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4.0.1
         with:
-          version: 'v1.35.5'
+          version: 'v1.37.1'
       - name: Install OpenShift CLI
         run: |
           curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${{ env.OPENSHIFT_VERSION }}/openshift-client-linux.tar.gz
@@ -156,12 +166,20 @@ jobs:
           ./.github/scripts/build_chart_dependencies.sh charts/${{ matrix.verifying_chart }}
           chart-verifier version
       - name: Setup external PostgreSQL
-        if: matrix.verifying_chart == 'sonarqube-dce'
         run: NAMESPACE="${{ matrix.verifying_chart }}" VALUES_FILE="charts/${{ matrix.verifying_chart }}/openshift-verifier/postgres-values.yaml" ./.github/scripts/setup_external_postgres.sh
+      - name: Setup agentic dependencies
+        if: matrix.verifying_chart == 'sonarqube'
+        # For ci/agentic-values.yaml: the S3 stand-in and the instance secret the agentic key
+        # derivation hook derives the per-hop keys from.
+        run: |
+          NAMESPACE="${{ matrix.verifying_chart }}" ./.github/scripts/setup_s3mock.sh
+          kubectl create secret generic agentic-ci-instance-secret --namespace ${{ matrix.verifying_chart }} \
+            --from-literal=instance-secret="$(openssl rand -hex 32)" \
+            --dry-run=client -o yaml | kubectl apply -f -
       - name: Run chart verification
         run: |
           mkdir -p "$(pwd)/report-${{ matrix.verifying_chart}}"
-          chart-verifier verify -x images-are-certified charts/${{ matrix.verifying_chart }} --helm-install-timeout 20m -F charts/${{ matrix.verifying_chart }}/openshift-verifier/values.yaml -n ${{ matrix.verifying_chart }} --openshift-version ${{ env.OPENSHIFT_VERSION }} > "$(pwd)/report-${{ matrix.verifying_chart}}/report.yaml"
+          chart-verifier verify -x ${{ matrix.skipped_checks }} charts/${{ matrix.verifying_chart }} --helm-install-timeout 20m -F charts/${{ matrix.verifying_chart }}/openshift-verifier/values.yaml -n ${{ matrix.verifying_chart }} --openshift-version ${{ env.OPENSHIFT_VERSION }} > "$(pwd)/report-${{ matrix.verifying_chart}}/report.yaml"
       - name: Upload verification report
         if: always() && ! cancelled()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -181,7 +199,8 @@ jobs:
         include:
           - chart: sonarqube
             config: ct-sonarqube-test.yaml
-            runner: github-ubuntu-latest-s
+            # ci/agentic-values.yaml runs SonarQube Server with every agentic component (~10Gi).
+            runner: github-ubuntu-latest-m
             secrets_id: secrets
           - chart: sonarqube-dce
             config: ct-sonarqube-dce-test.yaml
@@ -202,8 +221,11 @@ jobs:
       - name: Set up chart-testing
         uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
       - name: Create kind cluster
-        uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1.14.0
+        uses: helm/kind-action@06c1ae10762d3b9c1644e7fe69596ae519e015a2 # v1.15.0
         with:
+          version: v0.33.0
+          node_image: kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5
+          kubectl_version: v1.37.1
           config: .github/kind-config.yaml
       - name: Setup Kind cluster
         run: |
@@ -219,7 +241,6 @@ jobs:
           kubectl create namespace test --dry-run=client -o yaml | kubectl apply -f -
           kubectl label namespace test istio-injection=enabled
       - name: Setup External PostgreSQL
-        if: matrix.chart == 'sonarqube-dce'
         run: NAMESPACE=test ./.github/scripts/setup_external_postgres.sh
       - id: secrets
         uses: SonarSource/vault-action-wrapper@v3
@@ -232,6 +253,15 @@ jobs:
           DOCKER_USERNAME: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_PASSWORD }}
         run: kubectl create secret docker-registry pullsecret --namespace test --docker-username=${DOCKER_USERNAME} --docker-password=${DOCKER_PASSWORD} --dry-run=client -o yaml | kubectl apply -f -
+      - name: Setup agentic dependencies
+        if: matrix.chart == 'sonarqube'
+        # For ci/agentic-values.yaml: the S3 stand-in and the instance secret. Unlike the DCE run
+        # below, the images are the public ones, so the key derivation hook runs for real.
+        run: |
+          NAMESPACE=test ./.github/scripts/setup_s3mock.sh
+          kubectl create secret generic agentic-ci-instance-secret --namespace test \
+            --from-literal=instance-secret="$(openssl rand -hex 32)" \
+            --dry-run=client -o yaml | kubectl apply -f -
       - name: Setup agentic signing secrets
         if: matrix.chart == 'sonarqube-dce'
         # The DCE ci-values enable a runtime so gVisor renders, which also turns on the agentic
@@ -265,7 +295,6 @@ jobs:
           ct lint --config ${{ matrix.config }}
           ct install --namespace test --config ${{ matrix.config }} --debug
       - name: Verify gVisor installed on the cluster
-        if: matrix.chart == 'sonarqube-dce'
         run: |
           # Wait until the installer has labeled at least one node with gvisor.enabled=true, or fail after 2 minutes. 
           # The installer DaemonSet runs on all worker nodes (empty tolerations = it does not tolerate the control-plane taint), 

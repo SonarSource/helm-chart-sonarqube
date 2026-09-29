@@ -110,7 +110,7 @@ func TestShouldUseImageTag(t *testing.T) {
 
 	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, "sonarqube:2026.4.0-enterprise", actualContainers[0].Image)
+	assert.Equal(t, "sonarqube:2026.5.0-enterprise", actualContainers[0].Image)
 }
 
 func TestCustomCommunityTag(t *testing.T) {
@@ -144,19 +144,49 @@ func TestCiValues(t *testing.T) {
 	assert.Equal(t, "sonarsource/"+expectedContainerImage+"-master-community", actualContainers[0].Image)
 }
 
-// TestCiOpenshiftVerifierValues loads the values.yaml used by the OpenShift Verifier at runtime.
+// TestCiOpenshiftVerifierValues loads the values used by the OpenShift Verifier at runtime: like
+// chart-verifier, it layers openshift-verifier/values.yaml over each ci/*-values.yaml.
+// chart-verifier deep-merges them, but its helm-lint check first fills the chart defaults into the
+// verifier file's maps in place, and those defaults then override the ci file at install (e.g. a
+// verifier agentOrchestrator.storage turned the ci file's agentOrchestrator.enabled into false).
+// So the verifier file must not set a map-valued top-level key that a ci file sets too.
 func TestCiOpenshiftVerifierValues(t *testing.T) {
-	rendered := renderSQStsTemplate(t, chartPath+"/openshift-verifier/values.yaml", newSQHelmOptions())
-	actualContainers := rendered.Spec.Template.Spec.Containers
-	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, "sonarsource/"+expectedContainerImage+"-master-community", actualContainers[0].Image)
+	verifierValues, err := chartutil.ReadValuesFile(chartPath + "/openshift-verifier/values.yaml")
+	assert.NoError(t, err)
+	table := []struct {
+		ciValuesFile  string
+		expectedImage string
+	}{
+		{ciValuesFile: "ci-values.yaml", expectedImage: "sonarsource/" + expectedContainerImage + "-master-community"},
+		{ciValuesFile: "agentic-values.yaml", expectedImage: "sonarqube:2026.5.0-enterprise"},
+	}
+	for _, tc := range table {
+		t.Run(tc.ciValuesFile, func(t *testing.T) {
+			ciValues, err := chartutil.ReadValuesFile(chartPath + "/ci/" + tc.ciValuesFile)
+			assert.NoError(t, err)
+			for key, value := range verifierValues {
+				_, isMap := value.(map[string]interface{})
+				_, inCiFile := ciValues[key]
+				assert.False(t, isMap && inCiFile, "openshift-verifier/values.yaml sets %s, which chart-verifier would reset to the chart defaults in %s", key, tc.ciValuesFile)
+			}
+			helmOptions := newSQHelmOptions()
+			helmOptions.ValuesFiles = []string{chartPath + "/ci/" + tc.ciValuesFile, chartPath + "/openshift-verifier/values.yaml"}
+			output, err := helm.RenderTemplateE(t, helmOptions, chartPath, releaseName, sqStsTemplate)
+			assert.NoError(t, err)
+			var rendered appsv1.StatefulSet
+			helm.UnmarshalK8SYaml(t, output, &rendered)
+			actualContainers := rendered.Spec.Template.Spec.Containers
+			assert.Equal(t, 1, len(actualContainers))
+			assert.Equal(t, tc.expectedImage, actualContainers[0].Image)
+		})
+	}
 }
 
 func TestDeveloperEdition(t *testing.T) {
 	rendered := renderSQStsTemplate(t, "test-cases-values/sonarqube/test-developer-edition.yaml", newSQHelmOptions())
 	actualContainers := rendered.Spec.Template.Spec.Containers
 	assert.Equal(t, 1, len(actualContainers))
-	assert.Equal(t, "sonarqube:2026.4.0-developer", actualContainers[0].Image)
+	assert.Equal(t, "sonarqube:2026.5.0-developer", actualContainers[0].Image)
 }
 
 func findVolumeByName(volumes []v1.Volume, name string) *v1.Volume {

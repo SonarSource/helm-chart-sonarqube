@@ -1,10 +1,10 @@
 # SonarQube
 
-Code better in up to 27 languages. Improve Code Quality and Code Security throughout your workflow. [SonarQube](https://www.sonarsource.com/products/sonarqube/) can detect Bugs, Vulnerabilities, Security Hotspots, and Code Smells plus gives you the guidance to fix them.
+Code better in more than 30 languages. Improve Code Quality and Code Security throughout your workflow. [SonarQube](https://www.sonarsource.com/products/sonarqube/) can detect Bugs, Vulnerabilities, Security Hotspots, and Code Smells plus gives you the guidance to fix them.
 
 ## Introduction
 
-This helm chart bootstraps a SonarQube Data Center Edition cluster with a PostgreSQL database.
+This helm chart bootstraps a SonarQube Data Center Edition cluster. It requires an external database (see [Installing the chart](#installing-the-chart)).
 
 The latest version of the chart installs the latest SonarQube version.
 
@@ -12,34 +12,29 @@ To install SonarQube Server Long-Term Active (LTA), please read the section [bel
 
 Please note that this chart does NOT support SonarQube Community, Developer, and Enterprise Editions.
 
-## Compatibility
+## Default Versions
 
-Compatible SonarQube Version: `2026.4.0`
+| Component | Image | Default tag |
+| --------- | ----- | ----------- |
+| SonarQube Server application nodes | `sonarqube` | `2026.5.0-datacenter-app` |
+| SonarQube Server search nodes | `sonarqube` | `2026.5.0-datacenter-search` |
+| MCP Server | `sonarsource/sonarqube-mcp` | `2026.5.0` |
+| Agent Orchestrator | `sonarsource/sonarqube-agent-orchestrator` | `2026.5.0` |
+| Hunter Agent | `sonarsource/sonarqube-hunter-agent` | `2026.5.0` |
+| Remediation Agent | `sonarsource/sonarqube-remediation-agent` | `2026.5.0` |
+| Vortex | `sonarsource/sonar-vortex` | `2026.5.0` |
 
-Supported Kubernetes Versions: From `1.32` to `1.35`
-Supported Openshift Versions: From `4.17` to `4.20`
+## Kubernetes and Openshift Compatibility
+
+Supported Kubernetes Versions: From `1.34` to `1.37`
+
+Supported Openshift Versions: From `4.19` to `4.22`
 
 **Note:** The Kubernetes version range above applies to non-OpenShift Kubernetes clusters. For OpenShift, the supported range is defined by the OpenShift versions listed here and is validated as a platform, including its embedded Kubernetes version.
 
-## Helm Chart Versioning
-
-Starting with this release, the chart's `version` is decoupled from `appVersion`. `appVersion`
-continues to track the SonarQube Server version, while the chart `version` follows its own
-format: `<SonarQube major>.<minor>.<patch counter>`, where the patch counter increments
-independently of the SonarQube release and starts at `1000` for each new SonarQube
-`<major>.<minor>` line (e.g. `2026.5.1000`, `2026.5.1001`, ...). This lets chart-only fixes ship
-without waiting for a new SonarQube Server release.
-
-**MCP server:** the bundled MCP server image (`sonarsource/sonarqube-mcp`) keeps its own upstream
-`1.x.y.z` version line — one build serves every supported SonarQube line, so a per-line prefix
-would describe a build that doesn't exist. It's also published under an additional per-line alias
-tag, `<SonarQube major>.<minor>.<MCP patch counter>`, and the chart always pins that alias tag.
-Until the alias tag exists for this LTA, `mcp.image.tag` still points at the canonical build
-`1.27.0.4335`; it moves to the alias tag at release time.
-
 ## Installing the chart
 
-> **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/dce/introduction/) for further information on how to install and tune the helm chart specifications.
+> **_NOTE:_**  Please refer to [the official page](https://docs.sonarsource.com/sonarqube-server/server-installation/data-center-edition/introduction) for further information on how to install and tune the helm chart specifications.
 
 Prior to installing the chart, please ensure that the `monitoringPasscode` and `applicationNodes.jwtSecret` are properly set. The `applicationNodes.jwtSecret` value needs to be set with a HS256 key encoded with base64. In the following, an example on how to generate this key on a Unix system:
 
@@ -57,14 +52,14 @@ helm repo update
 kubectl create namespace sonarqube-dce
 export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64)
 export MONITORING_PASSCODE="yourPasscode"
-export JDBC_URL="jdbc:postgresql://myPostgres/myDatabase"
+export JDBC_URL="jdbc:postgresql://<your-db-host>:5432/<your-database>" # must be replaced: the chart rejects the placeholder URL
 export JDBC_USERNAME="sonar"
 export JDBC_PASSWORD_SECRET_NAME="jdbc-secret"
 export JDBC_PASSWORD_SECRET_KEY="jdbc-password"
 helm upgrade --install -n sonarqube-dce sonarqube sonarqube/sonarqube-dce --set applicationNodes.jwtSecret=$JWT_SECRET,monitoringPasscode=$MONITORING_PASSCODE,jdbcOverwrite.jdbcUrl=$JDBC_URL,jdbcOverwrite.jdbcUsername=$JDBC_USERNAME,jdbcOverwrite.jdbcSecretName=$JDBC_PASSWORD_SECRET_NAME,jdbcOverwrite.jdbcSecretPasswordKey=$JDBC_PASSWORD_SECRET_KEY
 ```
 
-The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the sonarqube namespace.
+The above command deploys SonarQube on the Kubernetes cluster in the default configuration in the `sonarqube-dce` namespace.
 If you are interested in deploying SonarQube on Openshift, please check the [dedicated section](#openshift).
 
 The [configuration](#configuration) section lists the parameters that can be configured during installation.
@@ -75,41 +70,53 @@ The default login is admin/admin.
 
 When upgrading your SonarQube Server to a new Long-Term Active (LTA) release, you should carefully read the official upgrade documentation to determine the correct update path based on your current server version.
 
-* For SonarQube Server 2025.6 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.6)](https://docs.sonarsource.com/sonarqube-server/server-2026.1-lta/server-update-and-maintenance/lta-to-lta-release-notes).
+* For SonarQube Server 2026.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2026.1)](https://docs.sonarsource.com/sonarqube-server/2026.1/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.4 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.4)](https://docs.sonarsource.com/sonarqube-server/2025.4/server-update-and-maintenance/lta-to-lta-release-notes).
 * For SonarQube Server 2025.1 LTA, refer to the [LTA-to-LTA Upgrade Notes (2025.1)](https://docs.sonarsource.com/sonarqube-server/2025.1/server-update-and-maintenance/release-notes-and-notices/lta-to-lta-release-upgrade-notes).
 
-When upgrading to the 2025.6 LTA version, you will experience a few changes.
+When upgrading to the 2026.5 LTA chart (`2026.5.1000`) from the 2026.1 LTA, the search nodes move from Elasticsearch 8 to 9 and need a specific procedure (see [below](#elasticsearch-8-to-9-upgrading-from-20263-or-earlier-to-20264-or-later)). Read also [Upgrade to 2026.5.1000](#upgrade-to-202651000).
+
+When upgrading from a chart prior to `2026.1.0` (the 2026.1 LTA), you will experience a few changes.
 
 * The deprecated PostgreSQL dependency has been removed. You must connect your SonarQube Server instance to an external database (`jdbcOverwrite.enabled` is set to true by default). You must set the following parameters: `jdbcOverwrite.jdbcUrl`, `jdbcOverwrite.jdbcUsername`, `jdbcOverwrite.jdbcSecretName`, and `jdbcOverwrite.jdbcSecretPasswordKey`.
 
 ### Upgrade process
 
-1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/roadmap/) to familiarize yourself with the general upgrade process (most importantly, back up your database)
-2. Change the SonarQube version on `values.yaml`
-3. Redeploy SonarQube with the same helm chart (see [Install instructions](#installing-the-chart))
+1. Read through the [SonarQube Upgrade Guide](https://docs.sonarsource.com/sonarqube-server/server-update-and-maintenance/update/roadmap) to familiarize yourself with the general upgrade process (most importantly, back up your database)
+2. Read the chart-specific notes below for every chart version you cross
+3. Upgrade to the chart version that ships the target SonarQube version (`helm repo update`, then `helm upgrade` with `--version`), rather than only changing `applicationNodes.image.tag` and `searchNodes.image.tag` on your current chart. When crossing an Elasticsearch major, follow the [Elasticsearch 8 to 9](#elasticsearch-8-to-9-upgrading-from-20263-or-earlier-to-20264-or-later) procedure instead
 4. Browse to <http://yourSonarQubeServerURL/setup> and follow the setup instructions
 5. Reanalyze your projects to get fresh data
 
-### Elasticsearch 8 to 9 (2026.1 LTA to 2026.5 LTA)
+### Elasticsearch 8 to 9 (upgrading from 2026.3 or earlier to 2026.4 or later)
 
-A rolling update of the search StatefulSet cannot cross an Elasticsearch major version. Plan a maintenance window and back up the database first.
+SonarQube Server 2026.4 and later run Elasticsearch 9; 2025.x to 2026.3 (including the 2026.1 LTA) run Elasticsearch 8. A rolling update of the search StatefulSet cannot cross an Elasticsearch major version. Plan a maintenance window and back up the database first.
 
-1. Scale search to 0 with your **current** chart and wait until the search pods are gone:
+1. Scale search to 0 with your **current** chart, without changing the image tag, and wait until the search pods are gone:
 
 ```bash
 helm upgrade -n sonarqube-dce <yourReleaseName> <yourCurrentChart> --reuse-values --set searchNodes.replicaCount=0
 ```
 
-2. Upgrade to the new chart and restore the search replica count. Do not change the image tag in step 1:
+2. Upgrade to the new chart and restore your previous search replica count (default `3`). Use `--reset-then-reuse-values` (Helm `>= 3.14`) or pass your values file with `-f`: `--reuse-values` would keep the previous chart's image tags and skip the new defaults.
 
 ```bash
-helm upgrade -n sonarqube-dce <yourReleaseName> <yourNewChart> --reuse-values --set searchNodes.replicaCount=3
+helm upgrade -n sonarqube-dce <yourReleaseName> <yourNewChart> --reset-then-reuse-values --set searchNodes.replicaCount=3
 ```
 
 3. After search is Ready, browse to `/setup` and follow the instructions. Indexes are rebuilt into `es9`; rolling back in place is not supported.
 
-The upgrade fails while search pods are still running on the previous Elasticsearch major.
+On `helm upgrade`, the chart fails while search pods are still running on the previous Elasticsearch major. The check relies on `lookup`, so it does not run under `helm template` or GitOps tools that render manifests (Argo CD, Flux), nor for custom image tags: in those cases follow the procedure above yourself. Set `searchNodes.skipEsMajorUpgradeCheck: true` only if you need to bypass the check.
+
+### Upgrade to 2026.5.1000
+
+Chart `2026.5.1000` (SonarQube Server 2026.5 LTA) contains the following breaking or behavior changes:
+
+* **Elasticsearch 9**: see [above](#elasticsearch-8-to-9-upgrading-from-20263-or-earlier-to-20264-or-later) when upgrading from SonarQube Server 2026.3 or earlier.
+* **Probes**: the chart now manages the application node liveness/readiness probe handlers. Custom `exec`/`httpGet`/`tcpSocket`/`grpc` handlers are ignored; use `overrideCommand` instead. The default `timeoutSeconds` is now `5` on search and application nodes, and `applicationNodes.livenessProbe.failureThreshold` is now `8`.
+* **Prometheus exporter**: the default scrape path is now `/metrics` instead of `/` (set `applicationNodes.prometheusExporter.metricsPath: /` to keep the old one), and built-in JVM metrics use OpenMetrics names (see [Export JMX metrics](#export-jmx-metrics)).
+* **Memory defaults**: the `applicationNodes.resources` memory request and limit are now `8192M`, to fit the higher Web/CE heap defaults of SonarQube Server 2026.5. Make sure your nodes can schedule them, or set your own values.
+* **ingress-nginx**: the bundled ingress-nginx controller subchart has been removed (see [below](#upgrade-from-versions-prior-to-202651000-ingress-nginx-controller-subchart-removed)). If you use `ingress.enabled`, set `ingress.ingressClassName` to your controller's class unless your cluster has a default `IngressClass`.
 
 ### Upgrade from versions prior to 2026.1.0
 
@@ -117,7 +124,7 @@ The upgrade fails while search pods are still running on the previous Elasticsea
 
 > **⚠️ Important**: Users upgrading to this chart from versions before 2026.1.0 and relying on the deprecated PostgreSQL dependency **must** follow the below instructions to avoid data loss.
 
-Starting from `2026.1.0`, this chart relies on the embedded H2 database for testing purposes. Therefore, we removed the deprecated PostgreSQL dependency.
+Starting from `2026.1.0`, we removed the deprecated PostgreSQL dependency: this chart always requires an external database.
 
 In order to upgrade to the newest chart from one version prior to this, you need to 
 
@@ -166,8 +173,8 @@ Please check `postgresql-migration-k8s.sh` as a reference to build your own scri
 ./postgresql-migration-k8s.sh [OPTIONS] <source_service>
 
 # Options:
-# -s source_ns    Source namespace (default: sonarqube-new-dev)
-# -t target_ns    Target namespace (default: sonarqube-new-dev)
+# -s source_ns    Source namespace (default: sonarqube)
+# -t target_ns    Target namespace (default: sonarqube)
 # -u username     PostgreSQL username (default: sonarUser)
 # -p password     PostgreSQL password (default: sonarPass)
 # -d database     Database name (default: sonarDB)
@@ -188,17 +195,17 @@ After migration, update your SonarQube configuration:
 
 ```yaml
 jdbcOverwrite:
-  enabled: true
   jdbcUrl: "jdbc:postgresql://<your-endpoint>:5432/<database>"
   jdbcUsername: "<username>"
-  jdbcPassword: "<password>"
+  jdbcSecretName: "<secret-with-the-password>"
+  jdbcSecretPasswordKey: "<password-key>"
 ```
 
-### Upgrade from versions prior to 2026.5.0 (ingress-nginx controller subchart removed)
+### Upgrade from versions prior to 2026.5.1000 (ingress-nginx controller subchart removed)
 
 > **Note**: If you are not using the `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart, you can skip this section. `ingress.enabled` (the plain `Ingress` resource, for use with your own controller) remains supported and needs no migration.
 
-> **⚠️ Important**: Starting from `2026.5.0`, this chart no longer bundles the deprecated `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart, following the retirement of the ingress-nginx controller. `httproute.enabled` (Gateway API) has been available since before this removal, so you can adopt it on your current chart version, side-by-side with your existing ingress, before upgrading past `2026.5.0`. Alternatively, you can switch to `ingress.enabled` with a self-managed ingress controller.
+> **⚠️ Important**: Starting from `2026.5.1000`, this chart no longer bundles the deprecated `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart, following the retirement of the ingress-nginx controller. `httproute.enabled` (Gateway API) has been available since before this removal, so you can adopt it on your current chart version, side-by-side with your existing ingress, before upgrading to `2026.5.1000`. Alternatively, you can switch to `ingress.enabled` with a self-managed ingress controller.
 
 We provide a migration script to help with this: `nginx-to-istio-migration.sh`, available in the `gateway-api-migration-scripts/` directory of this chart's GitHub repository. **This script is provided for reference and should be reviewed and adapted to your specific environment before use.**
 
@@ -259,17 +266,25 @@ helm upgrade sonarqube sonarqube/sonarqube-dce -f gateway-api-migration-sonarqub
 
 Run these commands yourself once you've reviewed the generated files and are ready to switch your release over to Gateway API.
 
+### ApplicationNodes renamed to applicationNodes
+
+Prior to SonarQube Server Datacenter 10.8, we used different naming conventions for `searchNodes` and `ApplicationNodes`: camel case in the former and not in the latter.
+
+Starting from 10.8, `ApplicationNodes` is deprecated in favor of `applicationNodes`. `ApplicationNodes` is still accepted, but it will be removed in a future release, so we advise you to rename it (if you are interested in the technical implementation, please take a look at this [PR](https://github.com/SonarSource/helm-chart-sonarqube/pull/586)).
+
+Please report any encountered bugs to <https://community.sonarsource.com/>.
+
 ### Upgrade from the old sonarqube-lts to this chart
 
-Please refer to the Helm upgrade section accessible [here](https://docs.sonarsource.com/sonarqube-server/latest/server-upgrade-and-maintenance/upgrade/upgrade/#upgrade-from-89x-lta-to-99x-lta).
+The sonarqube-lts chart was never a Data Center Edition chart. To move an 8.9 LTA installation to this chart, please refer to the [SonarQube 9.9 upgrade guide](https://docs.sonarsource.com/sonarqube-server/9.9/setup-and-upgrade/upgrade-the-server/upgrade-guide/); SonarQube 8.9 LTA is end-of-life.
 
 ## Installing previous chart versions
 
 ### Installing the SonarQube 9.9 LTA chart
 
-The version of the chart for the SonarQube 9.9 LTA is being distributed as the `7.x.x` version of this chart.
+The version of the chart for the SonarQube 9.9 LTA, which is end-of-life, is being distributed as the `7.x.x` version of this chart.
 
-In order to use it, please set the version constraint `~7`, which is equivalent to `>=7.0.0 && <= 8.0.0`. That version parameter **must** be used in every helm related command including `install`, `upgrade`, `template`, and `diff` (don't treat this as an exhaustive list).
+In order to use it, please set the version constraint `~7`, which is equivalent to `>=7.0.0 <8.0.0`. That version parameter **must** be used in every helm related command including `install`, `upgrade`, `template`, and `diff` (don't treat this as an exhaustive list).
 
 Example:
 
@@ -279,7 +294,7 @@ helm upgrade --install -n sonarqube-dce --version '~7' sonarqube sonarqube/sonar
 
 ## How to use it
 
-Take some time to read the Deploy [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/dce/introduction/) page.
+Take some time to read the Deploy [SonarQube on Kubernetes](https://docs.sonarsource.com/sonarqube-server/server-installation/data-center-edition/introduction) page.
 SonarQube deployment on Kubernetes has been tested with the recommendations and constraints documented there, and deployment has some limitations.
 
 ## Uninstalling the chart
@@ -287,15 +302,13 @@ SonarQube deployment on Kubernetes has been tested with the recommendations and 
 To uninstall/delete the deployment:
 
 ```bash
-$ helm list
-NAME        REVISION    UPDATED                     STATUS      CHART            NAMESPACE
-kindly-newt 1           Mon Oct  2 15:05:44 2017    DEPLOYED    sonarqube-0.1.0  sonarqube
-$ helm delete kindly-newt
+helm list -n sonarqube-dce
+helm uninstall -n sonarqube-dce <yourReleaseName>
 ```
 
 ## Setting up an external database for quick testing
 
-In order to perform a quick testing of the chart, you can install a [postgresql chart](https://artifacthub.io/packages/helm/bitnami/postgresql) on your cluster. You can look at [this setup example](.github/scripts/setup_external_postgres.sh) to get install the chart. For more information and settings, please refer to the chart documentation.
+In order to perform a quick testing of the chart, you can install a [postgresql chart](https://artifacthub.io/packages/helm/bitnami/postgresql) on your cluster. You can look at [this setup example](../../.github/scripts/setup_external_postgres.sh) to get install the chart. For more information and settings, please refer to the chart documentation.
 
 After the database is available, please set the values, as in the following example.
 
@@ -309,7 +322,7 @@ jdbcOverwrite:
 
 ## Prerequisites and suggested settings for production
 
-Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/installation-requirements/overview/).
+Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube-server/server-installation/server-host-requirements).
 
 ### Kubernetes - Pod Security Standards
 
@@ -322,7 +335,8 @@ Here is the list of containers that are compatible with the [Pod Security levels
 * restricted:
   * SQ application containers
   * SQ init containers.
-  * postgresql containers.
+
+When the [agentic features](#agentic-features) are enabled with `gvisor.enabled` and `gvisor.installer.enabled` (the default, outside OpenShift), the chart also deploys the `gvisor-installer` DaemonSet in the release namespace, which requires the **privileged** level.
 
 This is achieved by setting this SecurityContext as default on **most** containers:
 
@@ -335,10 +349,11 @@ seccompProfile:
   type: RuntimeDefault
 capabilities:
   drop: ["ALL"]
-readOnlyRootFilesystem: true
 ```
 
-Based on that, one can run the SQ helm chart in a full restricted namespace, by deactivating the `initSysctl.enabled` and `initFs.enabled` parameters, which require root access.
+The init containers additionally set `readOnlyRootFilesystem: true`; the application and search containers do not by default.
+
+Based on that, one can run the SQ helm chart in a full restricted namespace, by deactivating the `initSysctl.enabled` and `initFs.enabled` parameters, which require root access, and, with the agentic features, `gvisor.installer.enabled` (see [Production use case](#production-use-case)).
 
 Please take a look at [production-use-case](#production-use-case) for more information or directly at the values.yaml file.
 
@@ -346,14 +361,14 @@ Please take a look at [production-use-case](#production-use-case) for more infor
 
 SonarQube runs Elasticsearch under the hood.
 
-Elasticsearch is rolling out (strict) prerequisites that cannot be disabled when running in production context (see [this](https://www.elastic.co/blog/bootstrap_checks_annoying_instead_of_devastating) blog post regarding bootstrap checks, and the [official guide](https://www.elastic.co/guide/en/elasticsearch/reference/5.0/bootstrap-checks.html)).
+Elasticsearch is rolling out (strict) prerequisites that cannot be disabled when running in production context (see [this](https://www.elastic.co/blog/bootstrap_checks_annoying_instead_of_devastating) blog post regarding bootstrap checks, and the [official guide](https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html)).
 
 Because of such constraints, even when running in Docker containers, SonarQube requires some settings at the host/kernel level.
 
 Please carefully read the following and make sure these configurations are set up at the host level:
 
 * [vm.max_map_count](https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html#vm-max-map-count)
-* [seccomp filter should be available](https://github.com/SonarSource/docker-sonarqube/issues/614)
+* [seccomp filter should be available](https://www.elastic.co/docs/deploy-manage/deploy/self-managed/bootstrap-checks)
 
 In general, please carefully read the Elasticsearch's [documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/system-config.html) and specifically [here](https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-virtual-memory.html) for tutorial on how to change those parameters.
 
@@ -365,7 +380,8 @@ Nonetheless, if you intend to run a production-grade SonarQube please follow the
 
 * Set `initSysctl.enabled` to **false**. This parameter would run **root** `sysctl` commands, while those sysctl-related values should be set by the Kubernetes administrator at the node level (see [here](#elasticsearch-prerequisites))
 * Set `initFs.enabled` to **false**. This parameter would run **root** `chown` commands. The parameter exists to fix non-posix, CSI, or deprecated drivers.
-* Set `gvisor.installer.enabled` to **false**. This parameter deploys a **privileged**, host-mutating DaemonSet that installs `runsc` on every node. In production, provision gVisor yourself instead — either through your own node-provisioning process on self-managed nodes, or through your managed Kubernetes provider's built-in sandbox mechanism where one exists (e.g. GKE Sandbox) — see [Agents](#agents). Leave `gvisor.enabled` at its default (`true`) so the agent runtimes still use the `RuntimeClass` once `runsc` is available.
+* If you enable the [agentic features](#agentic-features), install the sandbox runtime yourself: provision gVisor (`runsc`) on the nodes, or use your provider's sandbox, and set `gvisor.installer.enabled` to **false**. The bundled installer runs a **privileged** DaemonSet that modifies the node's containerd configuration. Keep `gvisor.enabled` set to **true**, or bring your own runtime (see [Sandboxing](#sandboxing)). On OpenShift, install the OpenShift sandboxed containers operator (Kata).
+* If you want autoscaling for the agentic features, install [KEDA](https://keda.sh/) cluster-wide yourself and leave `keda.enabled` set to **false**. KEDA is a cluster-wide operator whose lifecycle should not be tied to a SonarQube release. Vortex autoscaling requires KEDA `>= 2.20`.
 * If your cluster spans multiple failure domains, configure `searchNodes.topologySpreadConstraints` to spread search pods across zones and nodes. This is especially important for search pods because they are stateful and depend on persistent volumes.
 
 #### Spreading pods across topology domains
@@ -404,46 +420,49 @@ applicationNodes:
           app: sonarqube-dce
 ```
 
-### ApplicationNodes renamed to applicationNodes
-
-Prior to SonarQube Server Datacenter 10.8, we used a different naming conventions for `searchNodes` and `ApplicationNodes`. Specifically, we used the [Camel Case](https://en.wikipedia.org/wiki/Camel_case) notation in the former and not in the latter. While this can be viewed as a minor difference, we promote [Clean Code](https://www.sonarsource.com/solutions/clean-code/) at Sonar and this is a clear maintanability (and inconsistency) issue.
-
-Starting from 10.8, we advise users to rename your `ApplicationNodes` to `applicationNodes`. While this is a straightforward change for users, ensuring cross-compability between both usage is challenging (if you are interested in the technical implementation, please take a look at this [PR](https://github.com/SonarSource/helm-chart-sonarqube/pull/586)).
-
-Please report any encountered bugs to <https://community.sonarsource.com/>.
-
 #### CPU and memory settings
 
-Monitoring CPU and memory is an important part of software reliability. The SonarQube helm chart comes with default values for CPU and memory requests and limits. Those memory values are matching the default SonarQube JVM Xmx and Xms values.
+Monitoring CPU and memory is an important part of software reliability. The SonarQube helm chart comes with default values for CPU and memory requests and limits.
 
-Xmx defines the maximum size of the JVM heap, this is **not** the maximum memory the JVM can allocate.
-
-For this reason, it is recommended to set Xmx to the ~80% of the total amount of memory available on the machine (in Kubernetes, this corresponds to requests and limits).
+Xmx defines the maximum size of the JVM heap, this is **not** the maximum memory the JVM can allocate. For this reason, it is recommended to set the sum of the Xmx values to ~80% of the memory available to the container (in Kubernetes, this corresponds to requests and limits).
 
 Please find here the default SonarQube Xmx parameters to setup the memory requests and limits accordingly.
 
-| Edition                             | Sum of Xmx |
-| ----------------------------------- | ---------- |
-| datacenter edition searchNodes      | 2G         |
-| datacenter edition applicationNodes | 6G         |
+| Nodes            | Web | Compute Engine | Search | Sum of Xmx |
+| ---------------- | --- | -------------- | ------ | ---------- |
+| applicationNodes | 2G  | 4G             | -      | 6G         |
+| searchNodes      | -   | -              | 2G     | 2G         |
 
-To comply with the 80% rule mentioned above, we set the following default values:
+The chart defaults are:
 
-* searchNodes.resources.memory.request/limit=3072M
-* applicationNodes.resources.memory.request/limit=8192M
+* `searchNodes.resources` memory request/limit: `3072M`, which fits the search nodes' heap.
+* `applicationNodes.resources` memory request/limit: `8192M`, which fits the application nodes' heap.
 
-Please feel free to adjust those values to your needs. However, given that memory is a “non-compressible” resource, we advise you to set the memory requests and limits to the **same**, making memory a guaranteed resource. This is needed especially for production use cases.
+The default CPU limit (`800m`) is low for production workloads; raise it according to your analysis load.
 
-To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/environment-variables/) and set the environment variables or sonar.properties accordingly.
+Given that memory is a “non-compressible” resource, we advise you to set the memory requests and limits to the **same**, making memory a guaranteed resource. This is needed especially for production use cases.
+
+When the [agentic features](#agentic-features) are enabled, size your nodes for these additional default requests and limits (CPU / memory / ephemeral storage):
+
+| Component | Requests | Limits |
+| --------- | -------- | ------ |
+| Vortex | `1` / `6Gi` / `2Gi` | `2` / `8Gi` / `2Gi` |
+| Agent Orchestrator | `250m` / `512Mi` / `512Mi` | `1` / `1Gi` / `2Gi` |
+| Hunter Agent (per replica) | `1` / `8Gi` / `15Gi` | `2` / `8Gi` / `15Gi` |
+| Remediation Agent (per replica) | `1` / `2Gi` / `10Gi` | `4` / `8Gi` / `50Gi` |
+| Agent Egress Proxy (2 replicas) | `50m` / `64Mi` / `64Mi` | `250m` / `128Mi` / `128Mi` |
+| MCP Server | not set | not set |
+
+To get some guidance when setting the Xmx and Xms values, please refer to this [documentation](https://docs.sonarsource.com/sonarqube-server/server-installation/system-properties/configuration-methods) and set the environment variables or sonar.properties accordingly.
 
 ## Ingress usage
 
-> **Note**: The bundled `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart has been removed, following the retirement of the ingress-nginx controller in November 2025. `ingress.enabled` (the plain `Ingress` resource) remains supported, for use with a self-managed ingress controller.
+> **Note**: The bundled `ingress-nginx.enabled`/`nginx.enabled` ingress-nginx controller subchart has been removed, following the retirement of the ingress-nginx controller (announced in November 2025, effective March 2026). `ingress.enabled` (the plain `Ingress` resource) remains supported, for use with a self-managed ingress controller.
 We recommend migrating to the [Gateway API](https://gateway-api.sigs.k8s.io/guides/) via `httproute.enabled` (see the `httproute.*` values below). If you continue using `ingress.enabled`, please refer to the [Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/) for a list of controllers to install yourself.
 
 ### Path
 
-Some cloud may need the path to be `/*` instead of `/.` Try this first if you are having issues getting traffic through the ingress.
+Some clouds may need the path to be `/*` instead of `/`. Try this first if you are having issues getting traffic through the ingress.
 
 ### Default Backend
 
@@ -465,7 +484,7 @@ ingress:
 
 ## Monitoring
 
-This Helm chart offers the possibility to monitor SonarQube with Prometheus. You can find [Information on the SonarQube monitoring on Kubernetes](https://docs.sonarsource.com/sonarqube-server/latest/setup-and-upgrade/deploy-on-kubernetes/set-up-monitoring/introduction/) in the SonarQube documentation.
+This Helm chart offers the possibility to monitor SonarQube with Prometheus. You can find [Information on SonarQube monitoring on Kubernetes](https://docs.sonarsource.com/sonarqube-server/server-installation/on-kubernetes-or-openshift/set-up-monitoring) in the SonarQube documentation.
 
 ### Export JMX metrics
 
@@ -479,7 +498,7 @@ In version 1.6.0, built-in JVM metric names use OpenMetrics naming (for example,
 
 ### PodMonitor
 
-If a Prometheus Operator is deployed in your cluster, you can enable a PodMonitor resource with `applicationNodes.prometheusMonitoring.podMonitor.enabled`. It scrapes the Prometheus endpoint `/api/monitoring/metrics` exposed by the SonarQube application.
+If a Prometheus Operator is deployed in your cluster, you can enable a PodMonitor resource with `applicationNodes.prometheusMonitoring.podMonitor.enabled`. It scrapes the Prometheus endpoint `/api/monitoring/metrics` exposed by the SonarQube application nodes and, when `applicationNodes.prometheusExporter.enabled` is `true`, the exporter ports on `applicationNodes.prometheusExporter.metricsPath`.
 
 If running on OpenShift, make sure your account has permissions to create PodMonitor resources under the monitoring.coreos.com/v1 apiVersion.
 
@@ -487,7 +506,7 @@ If running on OpenShift, make sure your account has permissions to create PodMon
 
 The chart can be installed on OpenShift by setting `OpenShift.enabled=true`. Among the others, please note that this value will disable the initContainer that performs the settings required by Elasticsearch (see [here](#elasticsearch-prerequisites)). Furthermore, we strongly recommend following the [Production Use Case guidelines](#production-use-case).
 
-Please note that `Openshift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
+Please note that `OpenShift.createSCC` is deprecated and should be set to `false`. The default securityContext, together with the production configurations described [above](#production-use-case), is compatible with restricted SCCv2.
 
 The below command will deploy SonarQube on the Openshift Kubernetes cluster.
 
@@ -495,10 +514,10 @@ The below command will deploy SonarQube on the Openshift Kubernetes cluster.
 helm repo add sonarqube https://SonarSource.github.io/helm-chart-sonarqube
 helm repo update
 kubectl create namespace sonarqube-dce # If you dont have permissions to create the namespace, skip this step and replace all -n with an existing namespace name.
-# Please take a look at the official documentation https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/
+# Please take a look at the official documentation https://docs.sonarsource.com/sonarqube-server/server-installation/data-center-edition/introduction
 export JWT_SECRET=$(echo -n "your_secret" | openssl dgst -sha256 -hmac "your_key" -binary | base64) 
 export MONITORING_PASSCODE="yourPasscode"
-export JDBC_URL="jdbc:postgresql://myPostgres/myDatabase"
+export JDBC_URL="jdbc:postgresql://<your-db-host>:5432/<your-database>" # must be replaced: the chart rejects the placeholder URL
 export JDBC_USERNAME="sonar"
 export JDBC_PASSWORD_SECRET_NAME="jdbc-secret"
 export JDBC_PASSWORD_SECRET_KEY="jdbc-password"
@@ -551,49 +570,7 @@ When upgrading your SonarQube instance, due to high CPU usage, it is recommended
 
 You can achieve that by either setting `applicationNodes.hpa.enabled` to `false` or by setting `applicationNodes.hpa.maxReplicas` to be the same value as `applicationNodes.hpa.minReplicas`.
 
-## Working with Istio
-
-> SonarQube Server is tested using Istio in sidecar mode.
-
-When deploying SonarQube in an Istio service mesh environment, you need to configure fixed ports for Hazelcast communication between application nodes. This is required because Istio's sidecar proxy needs to know all ports in advance for traffic management, security policies, and observability.
-
-By default, SonarQube's Hazelcast cluster uses dynamic port allocation, which conflicts with Istio's requirement for explicit port declarations in service definitions and network policies. To resolve this, you must set fixed ports for the following Hazelcast communication channels:
-
-* `applicationNodes.webPort` - Used by the Web process for cluster communication
-* `applicationNodes.cePort` - Used by the Compute Engine process for cluster communication
-
-**Example configuration:**
-
-```yaml
-applicationNodes:
-  webPort: 4023   # Web process communication
-  cePort: 4024    # Compute Engine process communication
-```
-
-This ensures that Istio can properly route traffic, apply security policies, and provide telemetry for all inter-node communication within the SonarQube cluster.
-
-Both ports are **required** whenever `istio.enabled=true`, and the chart enforces this at render time: leaving either unset fails `helm install`/`helm upgrade` with a message naming the missing value, rather than installing a release whose Hazelcast cluster only half-forms.
-
-## Secure the communication within the cluster
-
-In order to secure the communication between Application and Search nodes, you need to set both `nodeEncryption.enabled` and `searchNodes.searchAuthentication.enabled` to `true`.
-
-In a secured cluster, Elasticsearch nodes use certificates to identify themselves when communicating with other nodes. You need to generate a Certificate Authority (CA) together with a certificate and private key for the nodes in your cluster. Furthemore, you need to specify the Search nodes' hostnames that will be added as DNS names in the Subject Alternative Name (SAN).
-
-As an example, let's assume that your cluster has three search nodes with the release's name set to "sq", the chart's name set to "sonarqube-dce", and the namespace set to "sonar". You will need to add the following DNS names in the SAN.
-
-```
-sq-sonarqube-dce-search-0.sq-sonarqube-dce-search.sonar.svc.cluster.local
-sq-sonarqube-dce-search-1.sq-sonarqube-dce-search.sonar.svc.cluster.local
-sq-sonarqube-dce-search-2.sq-sonarqube-dce-search.sonar.svc.cluster.local
-sq-sonarqube-dce-search
-```
-
-Please do not forget to add the service name in the list (in this case, `sq-sonarqube-dce-search`). Also note that you can retrieve the search nodes' FQDN running `hostname -f` within one of the pods.
-
-You can generate the required certificate, create a secret, and add it to `searchNodes.searchAuthentication.keyStoreSecret` (specifying any password using the `keyStorePassword` or `keyStorePasswordSecret` values). To do so, you might want to use the `elasticsearch-certutil` to generate the [certificate authority](https://www.elastic.co/guide/en/elasticsearch/reference/current/security-basic-setup.html#generate-certificates) and the [certificate](https://www.elastic.co/guide/en/elasticsearch/reference/current/security-basic-setup-https.html#encrypt-http-communication) to be added (when creating the last certificate, please generate only one valid for all the nodes and add the required hostnames as specified above). As a result of this process, you should get a file called `http.p12`. Please rename it to `elastic-stack-ca.p12` and create the secret whose name should be assigned to the `searchNodes.searchAuthentication.keyStoreSecret` parameter.
-
-Finally, do not forget to set the `searchNodes.searchAuthentication.userPassword`.
+## Additional features
 
 ### Use custom `cacerts`
 
@@ -627,13 +604,261 @@ In environments with air-gapped setup, especially with internal tooling (repos) 
 
 ### Elasticsearch Settings
 
-Since SonarQube needs Elasticsearch, some [bootstrap checks](https://www.elastic.co/guide/en/elasticsearch/reference/master/bootstrap-checks.html) of the host settings are done at start.
+Since SonarQube needs Elasticsearch, some [bootstrap checks](https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html) of the host settings are done at start on the search nodes.
 
-This chart offers the option to use an initContainer in privilaged mode to automatically set certain kernel settings on the kube worker. While this can ensure proper functionality of Elasticsearch, modifying the underlying kernel settings on the Kubernetes node can impact other users. It may be best to work with your cluster administrator to either provide specific nodes with the proper kernel settings, or ensure they are set cluster wide.
+This chart offers the option to use an initContainer in privileged mode to automatically set certain kernel settings on the kube worker. While this can ensure proper functionality of Elasticsearch, modifying the underlying kernel settings on the Kubernetes node can impact other users. It may be best to work with your cluster administrator to either provide specific nodes with the proper kernel settings, or ensure they are set cluster wide.
 
-To enable auto-configuration of the kube worker node, set `elasticsearch.configureNode` to `true`. This is the default behavior, so you do not need to explicitly set this.
+Auto-configuration of the kube worker node is controlled by `initSysctl.enabled`, which is `true` by default (and disabled on OpenShift). The initContainer runs on the search nodes only.
 
-This will run `sysctl -w vm.max_map_count=262144` on the worker where the sonarqube pod(s) get scheduled. This needs to be set to `262144` but normally defaults to `65530`. Other kernel settings are recommended by the [docker image](https://hub.docker.com/_/sonarqube/#requirements), but the defaults work fine in most cases.
+This will run `sysctl -w vm.max_map_count=524288` (`initSysctl.vmMaxMapCount`) on the workers where the search pods get scheduled, together with `fs.file-max`, `nofile` and `nproc` (`initSysctl.fsFileMax`, `initSysctl.nofile`, `initSysctl.nproc`). The kernel default for `vm.max_map_count` is usually `65530`, which is too low.
+
+To disable worker node configuration, set `initSysctl.enabled` to `false`. The nodes running the search pods must then already meet these settings.
+
+### MCP (Model Context Protocol) Server
+
+When `mcp.enabled` is set to `true`, the chart deploys a separate MCP server pod alongside the SonarQube application nodes and automatically wires the two together.
+
+**What gets deployed:**
+- A `Deployment` running the MCP container
+- A `ClusterIP` Service exposing port `8080` within the cluster
+- A `PersistentVolumeClaim` for MCP's `/data` directory (when `mcp.persistence.enabled=true`)
+
+**How the integration works:**
+
+The MCP pod waits for SonarQube to report `"status":"UP"` before starting (via an init container). Once running, the application nodes are configured to call MCP at `http://<release>-sonarqube-dce-mcp:8080` via the `SONAR_MCP_SERVERURL` and `SONAR_MCP_ENABLED` environment variables, which the chart injects automatically.
+
+**Minimal configuration example:**
+
+```yaml
+mcp:
+  enabled: true
+  image:
+    repository: sonarsource/sonarqube-mcp
+    tag: "2026.5.0"
+```
+
+**Accessing the MCP server locally:**
+
+```bash
+kubectl port-forward svc/<release>-sonarqube-dce-mcp 8080:8080 -n <namespace>
+```
+
+**Persistence:**
+
+MCP uses `/data` to store its files. `mcp.persistence.enabled` defaults to `true`. For local testing only (e.g. Kind/minikube), you can disable it — but data will be lost on pod restarts:
+
+```yaml
+mcp:
+  enabled: true
+  persistence:
+    enabled: false
+```
+
+**Storage permissions:**
+
+The MCP server runs as a non-root user (UID 1000, GID 0) and must write to `/data`. The chart sets `mcp.podSecurityContext.fsGroup: 0` by default so the mounted volume is group-writable by the MCP process.
+
+**Your storage provider must honor filesystem group ownership changes (`fsGroup`).** Drivers such as NFS, hostPath, CSI drivers configured with `fsGroupPolicy: None`, and many pre-provisioned or `existingClaim` volumes ignore `fsGroup`. In those cases the volume stays root-owned and MCP fails to start with errors like `Cannot create directory` under `/data`. To handle them, either pre-provision a `/data` volume writable by group `0` (or UID `1000`), or add an ownership-fixing init container:
+
+```yaml
+mcp:
+  initContainers:
+    - name: chown-data
+      image: busybox:1.36
+      command: ["sh", "-c", "chown -R 1000:0 /data && chmod -R g+rwX /data"]
+      securityContext:
+        runAsUser: 0
+      volumeMounts:
+        - name: mcp-data
+          mountPath: /data
+```
+
+On OpenShift, do not set `fsGroup`/`runAsUser`/`runAsGroup` — the platform assigns the UID from the namespace's SCC range, and the chart removes these keys automatically when `OpenShift.enabled=true`. Note that the `chown` init container above runs as root and is therefore rejected by the `restricted` Pod Security Standard and by OpenShift's default SCC; in those environments, pre-provision a `/data` volume writable by group `0` instead — the MCP image's process runs under group `0` regardless of which UID the SCC assigns, so a UID-specific owner will not work.
+
+**TLS (encrypted communication):**
+
+When `mcp.tls.enabled` is set to `true`, the MCP server starts in HTTPS mode using the keystore from `mcp.tls.keystoreSecretName`. Application nodes connect to it over `https://`. Alternatively, `istio.enabled` encrypts this hop together with every other one (see [Securing communication with TLS](#securing-communication-with-tls)).
+
+If the keystore uses a self-signed certificate, SonarQube's JVM will reject the connection unless the CA certificate is trusted. Use the `caCerts` feature to import it into SonarQube's JVM truststore:
+
+1. Create a Secret containing the CA certificate in PEM format:
+
+   ```bash
+   kubectl create secret generic mcp-ca-cert \
+     --from-file=mcp-ca.crt=/path/to/ca.pem \
+     -n <namespace>
+   ```
+
+2. Reference it in your values:
+
+   ```yaml
+   mcp:
+     tls:
+       enabled: true
+       keystoreSecretName: mcp-keystore-secret
+       keystoreSecretKey: keystore.p12
+       passwordSecretName: mcp-keystore-password
+       passwordSecretKey: password
+       keystoreType: PKCS12
+
+   caCerts:
+     enabled: true
+     secret: mcp-ca-cert
+   ```
+
+**Scheduling:**
+
+`mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` set scheduling for the MCP pod; each wins over the chart's global `.Values.nodeSelector`/`.affinity`/`.tolerations` when set, and falls back to it otherwise — same convention as `vortexAnalysis`/`agentOrchestrator`/`hunterAgent`/`remediationAgent`. Note that the search and application nodes use the opposite precedence: the chart-wide `nodeSelector` wins over `searchNodes.nodeSelector`/`applicationNodes.nodeSelector`. `mcp.topologySpreadConstraints` is MCP-specific with no chart-wide equivalent to fall back to. The chart-wide `priorityClassName` value is applied to the MCP pod automatically; there is no separate `mcp.priorityClassName`.
+
+### Agentic features
+
+The chart can deploy the SonarQube agentic components next to the SonarQube application nodes:
+
+* **Vortex** (`vortexAnalysis.enabled`): analysis service that SonarQube sends analysis requests to.
+* **Agent Orchestrator** (`agentOrchestrator.enabled`): dispatches jobs to the agent runtimes. Required by both agents.
+* **Hunter Agent** (`hunterAgent.enabled`): detection agent runtime.
+* **Remediation Agent** (`remediationAgent.enabled`): remediation agent runtime. Enabling it also enables Vortex.
+* **Agent Egress Proxy** (`agentEgressProxy`): a forward proxy that is the only way out of the cluster for the agent runtimes. It has no toggle: it is deployed automatically whenever an agent is enabled.
+
+**Prerequisites:**
+
+* **Database.** The Agent Orchestrator shares SonarQube's database and supports **PostgreSQL** only. SonarQube itself also supports Microsoft SQL Server and Oracle (see the [installation requirements](https://docs.sonarsource.com/sonarqube-server/server-installation/server-host-requirements)), but the agentic features need PostgreSQL. `agentOrchestrator.coreDb.*` defaults to the `jdbcOverwrite` values and can override them individually.
+* **Storage.** The agentic features share an object store: the Agent Orchestrator writes the job artifacts to it (`agentOrchestrator.storage`), SonarQube reads the agent job logs from it (`sonar.agentic.storage.*` in `applicationNodes.sonarProperties`), and Vortex restores the analysis context from it (`vortexAnalysis.storage`). The simplest setup points all three at the same bucket. Supported backends:
+  * `S3` (default, recommended for production): AWS S3, or any S3-compatible endpoint such as MinIO via `endpoint` and path-style addressing. Credentials come from inline keys, an `existingSecret`, or, when both are blank, the pod's IAM identity (node instance role or IRSA through the component's `serviceAccount.annotations`).
+  * `FILESYSTEM` / `NFS`: a shared `ReadWriteMany` volume mounted through `extraVolumes`/`extraVolumeMounts`, with `storage.filesystem.baseDir` set. Use a single `securityContext.fsGroup` across the orchestrator and the agents.
+  * Vortex additionally supports `AZURE` and `GCS`.
+
+  When the pods authenticate with their IAM identity (e.g. IRSA), SonarQube (`serviceAccount`), the Agent Orchestrator and Vortex (`<component>.serviceAccount`) each need their own ServiceAccount (`create: true`) carrying the role annotation. The agent runtimes don't access the store directly (the orchestrator hands them presigned URLs) and get their own ServiceAccount by default, so they never inherit SonarQube's cloud role; keep `<hunterAgent|remediationAgent>.serviceAccount.create` set to `true`.
+* **Signing secret.** The agentic components sign the messages they exchange with keys derived from one instance secret you create:
+
+  ```bash
+  kubectl create secret generic agentic-instance-secret -n <namespace> \
+    --from-literal=instance-secret="$(openssl rand -base64 48)"
+  ```
+
+* **A sandboxed container runtime** on the nodes running the agents (see [Sandboxing](#sandboxing)).
+* **KEDA**, only if you want to autoscale the agents or Vortex.
+
+No LLM provider key is needed at install time: the LLM provider is configured in the SonarQube UI once the features are running. Only its hostname has to be allowed through the egress proxy. For the Remediation Agent to open pull requests, bind the project to a GitHub App DevOps Platform integration in SonarQube.
+
+**Minimal configuration example:**
+
+```yaml
+monitoringPasscode: "<your-passcode>"   # or monitoringPasscodeSecretName/Key
+applicationNodes:
+  jwtSecret: "<your-jwt-secret>"      # or existingJwtSecret
+  sonarProperties:
+    sonar.agentic.storage.type: S3
+    sonar.agentic.storage.bucket: my-agentic-artifacts
+    sonar.agentic.storage.region: eu-west-1
+jdbcOverwrite:
+  jdbcUrl: "jdbc:postgresql://postgres.example.com:5432/sonarqube"
+  jdbcUsername: "sonarqube"
+  jdbcSecretName: "sonarqube-db"
+  jdbcSecretPasswordKey: "password"
+agenticSigningSecret:
+  existingSecret: agentic-instance-secret
+agentOrchestrator:
+  enabled: true
+  storage:
+    type: S3
+    region: eu-west-1
+    bucket: my-agentic-artifacts
+    pathStyle: false
+vortexAnalysis:
+  storage:
+    type: S3
+    region: eu-west-1
+    bucket: my-agentic-artifacts
+hunterAgent:
+  enabled: true
+remediationAgent:
+  enabled: true
+agentEgressProxy:
+  allowedDomains:
+    - api.anthropic.com                               # your LLM provider
+    - my-agentic-artifacts.s3.eu-west-1.amazonaws.com # agentOrchestrator.storage
+```
+
+The Vortex pod can take several minutes to become ready on a first start, while it loads its analyzers.
+
+#### Sandboxing
+
+The agent runtimes execute LLM-driven jobs, so they run under a sandboxed container runtime:
+
+* **gVisor (default).** `gvisor.enabled=true` creates a `gvisor` RuntimeClass (handler `runsc`) and schedules the agents on nodes labeled `gvisor.enabled: "true"`. The bundled installer (`gvisor.installer.enabled`) is convenient for testing, but it is a privileged DaemonSet that only works on self-managed containerd nodes. In production, provision `runsc` yourself (node image, GKE Sandbox, ...), label the nodes, and set `gvisor.installer.enabled=false`. `RuntimeClass` is cluster-scoped: give each release its own `gvisor.runtimeClassName`.
+* **Bring your own secure runtime.** Set `gvisor.enabled=false`, `agentRuntimeSandbox.enabled=true` and `agentRuntimeSandbox.runtimeClassName` to a RuntimeClass your platform provides, e.g. Kata Containers (`kata-mshv-vm-isolation` on AKS Pod Sandboxing).
+* **OpenShift.** gVisor is not available; the agents run under Kata Containers through `OpenShift.agentRuntimeClassName` (default `kata`, or `kata-remote` for peer pods). Install the OpenShift sandboxed containers operator first: the chart does not create this RuntimeClass and fails the install if it is missing.
+
+Running the agents without a sandbox (`gvisor.enabled=false` with no `agentRuntimeSandbox`) is possible but not recommended.
+
+#### Network egress
+
+The agent runtimes reach the internet only through the Agent Egress Proxy, which allows the domains in `agentEgressProxy.allowedDomains` and nothing else. Add:
+
+* your LLM provider's API hostname;
+* the hostname of `agentOrchestrator.storage` (agents read and write job artifacts directly through presigned URLs), otherwise jobs fail at the first artifact download;
+* any other endpoint your agents must reach.
+
+Prefer exact hostnames: an entry with a leading dot (`.example.com`) also allows every subdomain. Overlapping entries (for example `.example.com` together with `api.example.com`) are rejected.
+
+The proxy allows ports 80 and 443. For another port, add it both to `agentEgressProxy.extraSquidConf` (`Safe_ports`/`SSL_ports`) and to `agentEgressProxy.networkPolicy.egressPorts`.
+
+#### Autoscaling
+
+Autoscaling is off by default:
+
+* `agentOrchestrator.autoscaling`: a standard `HorizontalPodAutoscaler` on CPU/memory.
+* `hunterAgent.autoscaling` / `remediationAgent.autoscaling`: a KEDA `ScaledObject` driven by the orchestrator's job queue.
+* `vortexAnalysis.autoscaling`: a KEDA `ScaledObject` driven by Vortex's concurrent requests. Requires KEDA `>= 2.20`.
+
+`minReplicas` must be at least `2`, except for Vortex with `vortexAnalysis.autoscaling.aggregateAcrossReplicas: false`, where it must be exactly `1`. The KEDA CRDs are detected at install time; under `helm template` set `agentKeda.assumeInstalled: true`. With GitOps tools that apply rendered manifests (Argo CD, Flux), set `autoscaling.manageReplicas: false` so each sync does not reset the replica count.
+
+To encrypt the traffic between the agentic components, see [Securing communication with TLS](#securing-communication-with-tls).
+
+### Securing communication with TLS
+
+Each hop of a deployment can be encrypted:
+
+1. **Traffic from users to SonarQube.** Terminate TLS at the entry point: `ingress.tls` for an Ingress, a TLS listener on the Gateway referenced by `httproute`, or `OpenShift.route.tls` on OpenShift.
+2. **Traffic between the chart's workloads.** Set `istio.enabled=true` (requires Istio installed in sidecar mode; SonarQube Server is tested with it). Every chart-owned workload (the application and search nodes, MCP, Vortex, the Agent Orchestrator and the Agent Egress Proxy) gets an Istio sidecar and a `STRICT` `PeerAuthentication`, so they only accept mutual TLS. Istio must know every port up front, so also pin the Hazelcast ports that the application nodes otherwise allocate dynamically; the chart fails the install if either is missing:
+
+   ```yaml
+   istio:
+     enabled: true
+   applicationNodes:
+     webPort: 4023   # Web process cluster communication
+     cePort: 4024    # Compute Engine process cluster communication
+   ```
+
+   Use `istio.revision` for a revisioned control plane. `istio.istiodClusterIP` (default `auto`) looks up istiod's address at install time; under `helm template`, set it to istiod's ClusterIP.
+3. **Traffic from the sandboxed agent runtimes.** Standard sidecar injection does not work under gVisor or Kata, so the agents stay outside the mesh and the egress proxy accepts them through a `PERMISSIVE` exception. Set `istio.meshSidecar.enabled=true` to give them a mesh identity and remove that exception. Requires Kubernetes `>= 1.29` and a CNI that enforces NetworkPolicies.
+4. **Application nodes to search nodes.** Set `nodeEncryption.enabled=true` and `searchNodes.searchAuthentication.enabled=true`. Elasticsearch nodes then identify themselves with certificates:
+   1. Generate a certificate authority and a single certificate valid for all search nodes with [`elasticsearch-certutil`](https://www.elastic.co/guide/en/elasticsearch/reference/current/security-basic-setup-https.html#encrypt-http-communication). Its Subject Alternative Names must include every search pod's FQDN and the search Service name. For a release `sq` in namespace `sonar` with three search nodes:
+
+      ```
+      sq-sonarqube-dce-search-0.sq-sonarqube-dce-search.sonar.svc.cluster.local
+      sq-sonarqube-dce-search-1.sq-sonarqube-dce-search.sonar.svc.cluster.local
+      sq-sonarqube-dce-search-2.sq-sonarqube-dce-search.sonar.svc.cluster.local
+      sq-sonarqube-dce-search
+      ```
+
+      `hostname -f` inside a search pod prints its FQDN.
+   2. Rename the resulting `http.p12` to `elastic-stack-ca.p12`, store it in a Secret and set `searchNodes.searchAuthentication.keyStoreSecret` to its name, with the password in `keyStorePassword` or `keyStorePasswordSecret`.
+   3. Set `searchNodes.searchAuthentication.userPassword`.
+5. **Application nodes to MCP without Istio.** Set `mcp.tls.*` and add the CA to SonarQube's truststore with `caCerts` (see [MCP (Model Context Protocol) Server](#mcp-model-context-protocol-server)).
+6. **Traffic from SonarQube to the database.** Add the TLS parameters to the JDBC URL, e.g. `jdbc:postgresql://host:5432/sonarqube?sslmode=verify-full`, and add its CA with `caCerts` if it is not publicly trusted. The Agent Orchestrator only takes the host and database name from that URL, not its parameters.
+7. **Traffic to object storage and the LLM provider.** Use an `https://` storage endpoint. Agent traffic through the egress proxy is tunneled with HTTPS `CONNECT`; the proxy does not intercept TLS.
+
+| Hop | Mechanism | Values |
+| --- | --------- | ------ |
+| Users → SonarQube | Ingress / Gateway / Route TLS | `ingress.tls`, `httproute`, `OpenShift.route.tls` |
+| Between chart workloads | Istio mutual TLS | `istio.enabled`, `applicationNodes.webPort`, `applicationNodes.cePort` |
+| Agent runtimes → egress proxy | Istio mutual TLS | `istio.meshSidecar.enabled` |
+| Application nodes → search nodes | Elasticsearch TLS and authentication | `nodeEncryption.enabled`, `searchNodes.searchAuthentication.*` |
+| Application nodes → MCP | HTTPS | `mcp.tls.*`, `caCerts` |
+| SonarQube → database | JDBC TLS | `jdbcOverwrite.jdbcUrl`, `caCerts` |
+| Agents → storage and LLM | HTTPS through the egress proxy | `agentOrchestrator.storage.endpoint`, `agentEgressProxy.allowedDomains` |
 
 ### Extra Config
 
@@ -649,9 +874,11 @@ In such environments, configuration may be read, via environment variables, from
    metadata:
      name: external-sonarqube-opts
    data:
-     SONARQUBE_JDBC_USERNAME: foo
-     SONARQUBE_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
+     SONAR_LOG_LEVEL: INFO
+     SONAR_TELEMETRY_ENABLE: "false"
    ```
+
+   Do not set the `SONAR_JDBC_*` variables this way: the chart sets them from `jdbcOverwrite`, and values set here would override its `SONAR_JDBC_URL`/`SONAR_JDBC_USERNAME` for SonarQube only, while the Agent Orchestrator keeps using `jdbcOverwrite`. Keep the database password in a Secret referenced by `jdbcOverwrite.jdbcSecretName`/`jdbcOverwrite.jdbcSecretPasswordKey`.
 
 2. Set the following in your `values.yaml` (using the key `extraConfig.secrets` to reference `Secret`s)
 
@@ -665,14 +892,14 @@ In such environments, configuration may be read, via environment variables, from
 
 The following table lists the configurable parameters of the SonarQube chart and their default values.
 
-> **DEPRECATION NOTICE: ApplicationNodes values should be renamed to applicationNodes.** We deprecated `ApplicationNodes` (with capital **A**); you can still use it for the current version, but it will be removed in the next one. We advise everyone to rename `ApplicationNodes` to `applicationNodes`. More information can be found [in the section above](#applicationnodes-renamed-to-applicationnodes).
+> **DEPRECATION NOTICE: ApplicationNodes values should be renamed to applicationNodes.** We deprecated `ApplicationNodes` (with capital **A**); it is still accepted, but it will be removed in a future release. We advise everyone to rename `ApplicationNodes` to `applicationNodes`. More information can be found [in the section above](#applicationnodes-renamed-to-applicationnodes).
 
 ### Search Nodes Configuration
 
 | Parameter                                                 | Description                                                                                | Default                                                                |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
 | `searchNodes.image.repository`                            | search image repository                                                                    | `sonarqube`                                                            |
-| `searchNodes.image.tag`                                   | search image tag                                                                           | `2026.4.0-datacenter-search`                                             |
+| `searchNodes.image.tag`                                   | search image tag                                                                           | `2026.5.0-datacenter-search`                                             |
 | `searchNodes.image.pullPolicy`                            | search image pull policy                                                                   | `IfNotPresent`                                                         |
 | `searchNodes.image.pullSecret`                            | (DEPRECATED) search imagePullSecret to use for private repository                          | `nil`                                                                  |
 | `searchNodes.image.pullSecrets`                           | search imagePullSecrets to use for private repository                                      | `nil`                                                                  |
@@ -714,7 +941,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `searchNodes.persistence.annotations`                     | PVC annotations for the Search Nodes                                                       | `{}`                                                                   |
 | `searchNodes.persistence.storageClass`                    | Storage class to be used                                                                   | `""`                                                                   |
 | `searchNodes.persistence.accessMode`                      | Volumes access mode to be set                                                              | `ReadWriteOnce`                                                        |
-| `searchNodes.persistence.size`                            | Size of the PVC                                                                            | `5G`                                                                   |
+| `searchNodes.persistence.size`                            | Size of the PVC                                                                            | `5Gi`                                                                  |
 | `searchNodes.persistence.uid`                             | UID used for init-fs container                                                             | `1000`                                                                 |
 | `searchNodes.persistence.volumes`                         | Set existing volumes                                                                       | `[]`                                                                   |
 | `searchNodes.persistence.guid`                            | GUID used for init-fs container                                                            | `0`                                                                    |
@@ -730,7 +957,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                                                        | Description                                                                                                                                                                                                    | Default                                                                |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `applicationNodes.image.repository`                              | app image repository                                                                                                                                                                                           | `sonarqube`                                                            |
-| `applicationNodes.image.tag`                                     | app image tag                                                                                                                                                                                                  | `2026.4.0-datacenter-app`                                                |
+| `applicationNodes.image.tag`                                     | app image tag                                                                                                                                                                                                  | `2026.5.0-datacenter-app`                                                |
 | `applicationNodes.image.pullPolicy`                              | app image pull policy                                                                                                                                                                                          | `IfNotPresent`                                                         |
 | `applicationNodes.image.pullSecret`                              | (DEPRECATED) app imagePullSecret to use for private repository                                                                                                                                                 | `nil`                                                                  |
 | `applicationNodes.image.pullSecrets`                             | app imagePullSecrets to use for private repository                                                                                                                                                             | `nil`                                                                  |
@@ -803,7 +1030,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.plugins.securityContext`                       | Security context for the container to download plugins                                                                                                                                                         | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `applicationNodes.jvmOpts`                                       | (DEPRECATED) Values to add to `SONAR_WEB_JAVAOPTS`. Please set directly `SONAR_WEB_JAVAOPTS` or `sonar.web.javaOpts`                                                                                           | `""`                                                                   |
 | `applicationNodes.jvmCeOpts`                                     | (DEPRECATED) Values to add to `SONAR_CE_JAVAOPTS`. Please set directly `SONAR_CE_JAVAOPTS` or `sonar.ce.javaOpts`                                                                                              | `""`                                                                   |
-| `applicationNodes.jwtSecret`                                     | A HS256 key encoded with base64 (_This value must be set before installing the chart, see [the documentation](https://docs.sonarsource.com/sonarqube/latest/setup-and-upgrade/deploy-on-kubernetes/cluster/)_) | `""`                                                                   |
+| `applicationNodes.jwtSecret`                                     | A HS256 key encoded with base64 (_This value must be set before installing the chart, see [the documentation](#installing-the-chart)_) | `""`                                                                   |
 | `applicationNodes.existingJwtSecret`                             | secret that contains the `jwtSecret`                                                                                                                                                                           | `nil`                                                                  |
 | `applicationNodes.extraContainers`                               | Array of extra containers to run alongside                                                                                                                                                                     | `[]`                                                                   |
 | `applicationNodes.extraInitContainers`                           | Array of extra init containers to run before the application container                                                                                                                                         | `[]`                                                                   |
@@ -819,8 +1046,8 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.tolerations`                                   | List of node taints to tolerate for applicationNodes, global tolerations take precedence                                                                                                                       | `[]`                                                                   |
 | `applicationNodes.topologySpreadConstraints`                     | Topology spread constraints to apply to the application pods                                                                                                                                                    | `[]`                                                                   |
 | `applicationNodes.port`                                   | The Hazelcast port for communication with each application member of the cluster.                                                                                                                       | `9003`                                                                   |
-| `applicationNodes.webPort`                                   | The Hazelcast port for communication with the WebServer process. If not specified, a dynamic port will be chosen. **Required when `istio.enabled=true`** - see "Working with Istio"                                                  | ``                                                                   |
-| `applicationNodes.cePort`                                   | The Hazelcast port for communication with the ComputeEngine process. If not specified, a dynamic port will be chosen. **Required when `istio.enabled=true`** - see "Working with Istio"                                               | ``                                                                   |
+| `applicationNodes.webPort`                                   | The Hazelcast port for communication with the WebServer process. If not specified, a dynamic port will be chosen. **Required when `istio.enabled=true`** - see [Securing communication with TLS](#securing-communication-with-tls)                                                  | ``                                                                   |
+| `applicationNodes.cePort`                                   | The Hazelcast port for communication with the ComputeEngine process. If not specified, a dynamic port will be chosen. **Required when `istio.enabled=true`** - see [Securing communication with TLS](#securing-communication-with-tls)                                               | ``                                                                   |
 
 ### Generic Configuration
 
@@ -847,7 +1074,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                                 | Description                                                               | Default |
 | ----------------------------------------- | ------------------------------------------------------------------------- | ------- |
 | `networkPolicy.enabled`                   | Create NetworkPolicies                                                    | `false` |
-| `networkPolicy.prometheusNamespace`       | Allow incoming traffic to monitoring ports from this namespace            | `nil`   |
+| `networkPolicy.prometheusNamespace`       | Allow incoming traffic to monitoring ports from this namespace            | `"monitoring"` |
 | `networkPolicy.additionalNetworkPolicys`  | (DEPRECATED) Please use `networkPolicy.additionalNetworkPolicies` instead | `nil`   |
 | `networkPolicy.additionalNetworkPolicies` | User defined NetworkPolicies (usefull for external database)              | `nil`   |
 
@@ -928,7 +1155,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `initSysctl.resources`              | InitSysctl container resource requests & limits                                                                                       | `{}`                                                                   |
 | `initFs.enabled`                    | Enable file permission change with init container                                                                                     | `true`                                                                 |
 | `initFs.image`                      | InitFS container image                                                                                                                | `applicationNodes.image`                                               |
-| `initFs.securityContext.privileged` | InitFS container needs to run privileged                                                                                              | `true`                                                                 |
+| `initFs.securityContext.privileged` | InitFS container needs to run privileged                                                                                              | `false`                                                                |
 
 ### SonarQube Specific
 
@@ -946,7 +1173,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
 | `jdbcOverwrite.enable`                      | (DEPRECATED) Enable JDBC overwrites for external Databases. (It must be set to true)                          | `true`                                    |
 | `jdbcOverwrite.enabled`                     | (DEPRECATED) Enable JDBC overwrites for external Databases. (It must be set to true)                                                                                  | `true`                                    |
-| `jdbcOverwrite.jdbcUrl`                     | The JDBC url to connect the external DB (e.g., `jdbc:postgresql://myPostgres/myDatabase`)                                                                                                                      | `None` |
+| `jdbcOverwrite.jdbcUrl`                     | The JDBC url to connect the external DB; the placeholder default is rejected and must be replaced                                                                                                             | `jdbc:postgresql://myPostgres/myDatabase` |
 | `jdbcOverwrite.jdbcUsername`                | The DB user that should be used for the JDBC connection                                                                                                       | `None`                                |
 | `jdbcOverwrite.jdbcPassword`                | (DEPRECATED) The DB password that should be used for the JDBC connection, please use `jdbcOverwrite.jdbcSecretName` and `jdbcOverwrite.jdbcSecretPasswordKey` | `None`                                |
 | `jdbcOverwrite.jdbcSecretName`              | Alternatively, use a pre-existing k8s secret containing the DB password                                                                                       | `None`                                     |
@@ -978,7 +1205,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `mcp.enabled`                           | Deploy the MCP server alongside SonarQube DCE                                                            | `false`                                                                |
 | `mcp.image.repository`                  | MCP server image repository                                                                              | `sonarsource/sonarqube-mcp`                                            |
-| `mcp.image.tag`                         | MCP server image tag                                                                                     | `"1.27.0.4335"`                                                        |
+| `mcp.image.tag`                         | MCP server image tag                                                                                     | `"2026.5.0"` |
 | `mcp.image.pullPolicy`                  | Image pull policy for the MCP container                                                                  | `IfNotPresent`                                                         |
 | `mcp.port`                              | Port the MCP server listens on                                                                           | `8080`                                                                 |
 | `mcp.healthCheckInterval`               | How often SonarQube checks MCP health (seconds). Sets `SONAR_MCP_HEALTHCHECKINTERVAL` on SonarQube.     | `""`                                                                   |
@@ -1009,226 +1236,31 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `mcp.tolerations`                       | Tolerations for the MCP pod                                                                              | `[]`                                                                   |
 | `mcp.topologySpreadConstraints`         | Topology spread constraints for the MCP pod                                                              | `[]`                                                                   |
 
-### MCP (Model Context Protocol) Server
-
-When `mcp.enabled` is set to `true`, the chart deploys a separate MCP server pod alongside the SonarQube application nodes and automatically wires the two together via `SONAR_MCP_ENABLED` and `SONAR_MCP_SERVERURL` environment variables.
-
-**Storage permissions:**
-
-The MCP server runs as a non-root user (UID 1000, GID 0) and must write to `/data`. The chart sets `mcp.podSecurityContext.fsGroup: 0` by default so the mounted volume is group-writable by the MCP process.
-
-**Your storage provider must honor filesystem group ownership changes (`fsGroup`).** Drivers such as NFS, hostPath, CSI drivers configured with `fsGroupPolicy: None`, and many pre-provisioned or `existingClaim` volumes ignore `fsGroup`. In those cases the volume stays root-owned and MCP fails to start with errors like `Cannot create directory` under `/data`. To handle them, either pre-provision a `/data` volume writable by group `0` (or UID `1000`), or add an ownership-fixing init container:
-
-```yaml
-mcp:
-  initContainers:
-    - name: chown-data
-      image: busybox:1.36
-      command: ["sh", "-c", "chown -R 1000:0 /data && chmod -R g+rwX /data"]
-      securityContext:
-        runAsUser: 0
-      volumeMounts:
-        - name: mcp-data
-          mountPath: /data
-```
-
-On OpenShift, do not set `fsGroup`/`runAsUser`/`runAsGroup` — the platform assigns the UID from the namespace's SCC range, and the chart removes these keys automatically when `OpenShift.enabled=true`. Note that the `chown` init container above runs as root and is therefore rejected by the `restricted` Pod Security Standard and by OpenShift's default SCC; in those environments, pre-provision a `/data` volume writable by group `0` instead — the MCP image's process runs under group `0` regardless of which UID the SCC assigns, so a UID-specific owner will not work.
-
-**TLS (encrypted communication):**
-
-When `mcp.tls.enabled` is set to `true`, the MCP server starts in HTTPS mode using the keystore from `mcp.tls.keystoreSecretName`. Application nodes connect to it over `https://`.
-
-If the keystore uses a self-signed certificate, SonarQube's JVM will reject the connection unless the CA certificate is trusted. Use the `caCerts` feature to import it into SonarQube's JVM truststore:
-
-1. Create a Secret containing the CA certificate in PEM format:
-
-   ```bash
-   kubectl create secret generic mcp-ca-cert \
-     --from-file=mcp-ca.crt=/path/to/ca.pem \
-     -n <namespace>
-   ```
-
-2. Reference it in your values:
-
-   ```yaml
-   mcp:
-     tls:
-       enabled: true
-       keystoreSecretName: mcp-keystore-secret
-       keystoreSecretKey: keystore.p12
-       passwordSecretName: mcp-keystore-password
-       passwordSecretKey: password
-       keystoreType: PKCS12
-
-   caCerts:
-     enabled: true
-     secret: mcp-ca-cert
-   ```
-
-**Scheduling:**
-
-`mcp.nodeSelector`, `mcp.affinity` and `mcp.tolerations` set scheduling for the MCP pod; each wins over the chart's global `.Values.nodeSelector`/`.affinity`/`.tolerations` when set, and falls back to it otherwise — same convention as `vortex`/`agentOrchestrator`/`hunterAgent`/`remediationAgent`. `mcp.topologySpreadConstraints` is MCP-specific with no chart-wide equivalent to fall back to. The chart-wide `priorityClassName` value is applied to the MCP pod automatically; there is no separate `mcp.priorityClassName`.
-
 ### Agents
 
-Four independently toggled features: Vortex (`vortexAnalysis.enabled`), the shared Agent Orchestrator (`agentOrchestrator.enabled`), and one Deployment/Service each for the Hunter Agent (`hunterAgent.enabled`) and the Remediation Agent (`remediationAgent.enabled`). Dependencies are enforced at template time (see `templates/validation.yaml`): `hunterAgent.enabled=true` requires `agentOrchestrator.enabled=true`; `remediationAgent.enabled=true` requires `agentOrchestrator.enabled=true` and auto-enables `vortexAnalysis.enabled` unless it is explicitly set to `false` (which fails validation). A fifth component, the Agent Egress Proxy (`agentEgressProxy`), has **no `enabled` toggle of its own** — unlike everything else in this section, it activates automatically whenever `hunterAgent.enabled` or `remediationAgent.enabled` is `true`, and renders nothing when both are `false`. There is no way to enable a runtime without the proxy, or vice versa; see below.
-
-`vortexAnalysis.enabled` points the SonarQube app nodes at Vortex via `sonar.vortex.analysis.url`; `agentOrchestrator.enabled` points them at the orchestrator via `sonar.hunteragent.orchestrator.url` and `sonar.remediationagent.orchestrator.url`. Each is set both as a pod env var (`SONAR_VORTEX_ANALYSIS_URL`, `SONAR_HUNTERAGENT_ORCHESTRATOR_URL`, `SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL`) and as a real line in the rendered `conf/sonar.properties` — SonarQube's `Configuration` API only honours a `SONAR_*` env var override for a property that already has a `conf/sonar.properties` line, so the env var alone is silently ignored by anything reading it that way (SONAR-31416).
-
-**Autoscaling.** Three independent mechanisms, all opt-in and off by default:
-
-- **`agentOrchestrator.autoscaling`** — a plain Kubernetes `HorizontalPodAutoscaler` (`autoscaling/v2`) on CPU/Memory. No extra cluster component required.
-- **`<hunterAgent|remediationAgent>.autoscaling`** — a [KEDA](https://keda.sh) `ScaledObject` per runtime family, reading the Agent Orchestrator's `GET /metrics/queue` endpoint (a `metrics-api` trigger). **Requires the KEDA CRDs installed in-cluster** — `templates/validation.yaml` fails the install if a family's autoscaling is enabled but `keda.sh/v1alpha1` isn't detected via `.Capabilities.APIVersions` (which is empty under `helm template`/`--dry-run=client` — set `agentKeda.assumeInstalled: true` explicitly there). Set `keda.enabled: true` to have this chart install the KEDA operator itself as a dependency instead of requiring a separate cluster-wide install — but its CRDs land in the same apply as the rest of the release, so the CRD-availability check above still won't pass in that same install; enable autoscaling in a follow-up `helm upgrade` once KEDA is up (or set `agentKeda.assumeInstalled: true` if you're certain it already is). Every `minReplicas` (orchestrator and each runtime family) is validated `>= 2` — this fleet never scales to zero, so there is never a 0↔1 transition to reason about.
-- **`vortexAnalysis.autoscaling`** — a [KEDA](https://keda.sh) `ScaledObject` reading Vortex's own unauthenticated `GET /metrics/max-concurrent-requests` endpoint (peak concurrent requests over a sliding window, `vortexAnalysis.autoscaling.windowSeconds`). Unlike the agent runtimes, Vortex has no shared queue-depth endpoint — each replica only knows its own peak — so KEDA aggregates across every replica behind the Service itself (`aggregateFromKubeServiceEndpoints`, summed rather than averaged so `vortexAnalysis.autoscaling.targetConcurrentRequests` reads as a genuine per-replica ceiling: `desiredReplicas = ceil(fleetTotalPeak / targetConcurrentRequests)`). This **requires KEDA >= 2.20.0** — a version this chart cannot detect at template time (`agentKeda.assumeInstalled` only confirms the CRDs, not the operator version) — so set `vortexAnalysis.autoscaling.aggregateAcrossReplicas: false` to fall back to KEDA's older single-random-replica probe against a pre-existing cluster-wide KEDA below that floor — only correct with exactly one replica, which is why validation requires `minReplicas` to be exactly `1` for that combination, not just a relaxed floor. `vortexAnalysis.autoscaling.pollingInterval` must stay `<= windowSeconds`, or a peak between polls is lost; the KEDA scaler also silently drops any replica whose poll fails from the sum instead of erroring, so `scaleDownStabilizationSeconds` defaults to a deliberately long `900`s (matching Cloud's own 15-minute `ConcurrentRequestCount` scale-in cooldown) to absorb a handful of failed polls without a spurious scale-down. The trigger pins `metricType: AverageValue` explicitly, since KEDA's metrics-api scaler documents no default of its own; if every scrape fails for 3 consecutive polls (a broken `metricPath`, or every replica unready), `spec.fallback` holds the fleet at its current replica count — raised only to `minReplicas` if lower — rather than jumping to `maxReplicas`; that `spec.fallback` block is emitted only with `aggregateAcrossReplicas: true`, because a KEDA older than 2.17 silently prunes its `behavior` field and would instead force the fleet down to `minReplicas` (exactly `1` on the opt-out path), so with `aggregateAcrossReplicas: false` the chart omits `fallback` and leaves KEDA's own default (freeze the fleet on a scrape error) in place. Like the agent runtimes, `minReplicas` is validated `>= 2` (or exactly `1` with `aggregateAcrossReplicas: false`, above) — enabling this on a default `vortexAnalysis.replicaCount: 1` install therefore raises Vortex to its default `minReplicas` of `3` pods. `vortexAnalysis.strategy.type` must be `RollingUpdate` (the chart's own default) once autoscaling is enabled — validation fails otherwise, since `Recreate` with N replicas takes the whole Vortex fleet down on every rollout.
-- Once a component's `autoscaling.enabled` is `true`, its Deployment's `replicas` field is rendered only on the very first install and omitted from every subsequent `helm upgrade`, so the autoscaler's current value isn't reset on each upgrade. This relies on `Release.IsInstall`, which is also `true` under `helm template`/`--dry-run=client` — GitOps tooling that applies that output directly (Argo CD, Flux) would otherwise reset `replicas` on every sync. Set `autoscaling.manageReplicas: false` there to always omit `replicas` once autoscaling is enabled, even on the first apply.
-- `<hunterAgent|remediationAgent>.terminationGracePeriodSeconds` (default `44430`/`3630`) ships unconditionally, independent of autoscaling, so an in-flight job survives an ordinary scale-down, rollout, or node drain — not just a KEDA-driven one. Each default is sized to comfortably clear that runtime image's own fixed, non-overridable `uvicorn --timeout-graceful-shutdown` (`44400`s for `hunter-agent-runtime`, `3600`s for `remediation-agent-runtime`) — the chart does **not** set `SHUTDOWN_GRACE_SECONDS` or `LIVENESS_JOB_MAX_SECONDS`; the image already sizes both internally against its own ceiling. `vortexAnalysis.terminationGracePeriodSeconds` ships the same way, unconditionally, for the same reason, with a default of `180`s.
-- `agentOrchestrator.terminationGracePeriodSeconds` (default `2580`) similarly ships unconditionally. It's sized against the orchestrator image's own `spring.lifecycle.timeout-per-shutdown-phase: 21m` (`1260`s), which Spring applies *per* shutdown phase — the `server.shutdown: graceful` web drain and the two additive same-phase db-schedulers are separate phases, so the default budgets both plus margin.
-- `agentOrchestrator`/`hunterAgent`/`remediationAgent` liveness probes target the dedicated `/livez` endpoint, never the aggregate `/health` — the latter also reports the pod's db/storage connectivity and would falsely trip liveness (and get the pod killed) during an outage that readiness alone should absorb. `/livez`/`/readyz` only exist on images built after EA-937/EA-938; pointing an older image at this chart version 404s on both probes — the readiness 404 only holds the pod NotReady, but the liveness 404 restarts it into a CrashLoopBackOff — `image.tag` is operator-supplied and empty by default, so the chart can't enforce a minimum version itself.
-
-**Scheduling.** Vortex, the Agent Orchestrator, and the Hunter/Remediation Agent runtimes each support their own `nodeSelector`/`affinity`/`tolerations`, winning over the chart's global `.Values.nodeSelector`/`.affinity`/`.tolerations` when set — the opposite of `applicationNodes`/`searchNodes`, where the chart-wide value wins over the component's own — plus `topologySpreadConstraints`. The chart-wide `priorityClassName` value applies to all of these pods automatically; there is no per-component `priorityClassName`.
-
-**gVisor sandboxing.** The (untrusted) agent runtimes run under the [gVisor](https://gvisor.dev/) (`runsc`) sandbox by default, via two toggles under `gvisor` — independent of whether any agent runtime is enabled:
-
-- **`gvisor.enabled`** (default `true`) creates a cluster-scoped `RuntimeClass` (default name `gvisor`) and runs the agent runtimes under it. Assumes `runsc` is already on your nodes (out-of-band: node bootstrap, custom AMI, GKE Sandbox, Bottlerocket). `RuntimeClass` is cluster-scoped, so any two installs sharing the name collide - give each a distinct `runtimeClassName`. That covers multiple releases of this chart, and this chart installed alongside `charts/sonarqube`, which ships the same feature.
-- **`gvisor.installer.enabled`** (default `true`) *additionally* deploys a **privileged** DaemonSet that installs `runsc` and labels each node once ready. **Self-managed nodes only**. **On fully-managed, no-node-access compute** (GKE Autopilot, Fargate-style EKS/AKS profiles) this can't run at all — use the provider's own sandbox where one exists (GKE Sandbox on GKE; AWS and Azure have no equivalent) or provision `runsc` via a custom node image. Standard EKS/AKS managed node groups aren't restricted this way. Pods requesting the RuntimeClass stay `Pending` until a node is labeled — expected, not a failure. Idempotent, and skips the install step (still labels the node) when containerd already exposes the handler — e.g. GKE Sandbox. Recommended **off** in production — see [Production use case](#production-use-case).
-
-**On OpenShift.** gVisor is not usable there — CRI-O ships no `runsc` handler, and the installer DaemonSet needs containerd plus privileged/hostPID that no default SCC allows — so with `OpenShift.enabled: true` every `gvisor.*` setting is ignored and the agent runtimes are sandboxed with [Kata Containers](https://docs.redhat.com/en/documentation/openshift_sandboxed_containers) instead. `OpenShift.agentRuntimeClassName` (default `kata`) is the only runtime control in that case, and unlike the gVisor path **the chart never creates the `RuntimeClass`** — it comes from the OpenShift sandboxed containers operator, which you install yourself. Use `kata` for a default `KataConfig` (bare metal, or bare-metal instance types on a cloud provider), `kata-remote` for peer pods (`KataConfig` with `enablePeerPods: true`, on AWS/Azure/vSphere/IBM Z); the two are mutually exclusive, so a cluster has one or the other. Any other `RuntimeClass` you provisioned yourself works too, including `gvisor` if you brought `runsc` to your nodes out of band. Sandboxing is **opt-out**: the name is set by default, and `OpenShift.agentRuntimeClassName: ""` deliberately runs the runtimes under the cluster's default runtime with no sandbox. If the name doesn't exist in the cluster **the install fails**, instead of succeeding while the API server rejects every runtime pod (`RuntimeClass "kata" not found`) and the two Deployments stay at 0 available. That check has to query the cluster, so it is skipped wherever it cannot — `helm template` and client-side `--dry-run` — and `OpenShift.skipAgentRuntimeClassCheck: true` bypasses it outright, for installing credentials that cannot read cluster-scoped `RuntimeClass` objects, or when something else creates it alongside this release. A template can catch an empty `lookup` but not a failed one, so under credentials that are denied cluster-scoped reads the install aborts with the API server's own ``runtimeclasses.node.k8s.io "kata" is forbidden`` message instead of the chart's — that error is the signal to set this flag.
-
-**Node pinning.** The `RuntimeClass` merges `gvisor.nodeSelector` into each runtime pod's own `nodeSelector`, so a runtime's effective `nodeSelector` (its own, else the top-level one) must not set any of those keys to a different value — the chart fails the install rather than let Kubernetes reject the pod.
-
-**Opting out.** Set `gvisor.enabled=false` to run the agent runtimes under your cluster's standard container runtime instead. Trade-off: without gVisor, isolation between an LLM-influenced job and the host relies on standard container isolation (namespaces/cgroups/seccomp) only — no syscall-interception sandbox layer underneath it.
-
-**Version pin.** The `runsc` release the installer downloads (`gvisor.installer.runscVersion`) is pinned and must be bumped deliberately, in the same change as any other gVisor-related update to this chart — never left to float to "latest".
-
-**Generic sandboxing (`agentRuntimeSandbox`).** For a sandbox other than gVisor — e.g. Kata Containers under AKS's Pod Sandboxing feature, which also can't grant `istio-init` the `NET_ADMIN` capability it needs — set `agentRuntimeSandbox.enabled=true` and `agentRuntimeSandbox.runtimeClassName` to the RuntimeClass your platform already provides (e.g. `kata-mshv-vm-isolation` on AKS). This is independent of `gvisor.*`: it schedules the runtime pods onto that RuntimeClass and, from Istio's perspective, is treated exactly like `gvisor.enabled=true` — excluded from standard injection, eligible for `istio.meshSidecar.enabled` — see "mTLS for sandboxed agent runtimes" below. `gvisor.enabled=true` implies this automatically; don't set both.
-
-**Agent Egress Proxy.** `hunterAgent`/`remediationAgent` pods reach the internet (LLM APIs) and SonarQube Server itself only through a Squid forward-proxy, `agentEgressProxy`. Kubernetes `NetworkPolicy` is L3/L4-only — it can restrict egress to a CIDR or a pod/namespace selector, but it cannot express "only allow HTTPS to `api.anthropic.com`". Routing runtime egress through Squid lets `agentEgressProxy.allowedDomains` (a `dstdomain` ACL) enforce an actual domain allow-list, which `NetworkPolicy` alone cannot do.
-
-- **Not optional, no toggle.** As noted above, the proxy has no `agentEgressProxy.enabled` flag — it exists whenever a runtime does, and doesn't when neither does.
-- **Never a sidecar, always a standalone Deployment.** `NetworkPolicy` is enforced per pod, so a sidecar would force the untrusted runtime container to share its pod's network identity with Squid — which itself needs broad internet egress — leaking that egress straight back into the runtime's own pod instead of isolating it here.
-- **No direct egress, ever.** Every runtime egress path — including the remediation runtime's rule-info and analysis-creation calls to SonarQube Server, and reading/writing job artifacts against object storage via presigned URLs — transits the proxy. `HTTP_PROXY`/`http_proxy`/`HTTPS_PROXY`/`https_proxy` are injected into each runtime container pointing at the proxy, and `NO_PROXY`/`no_proxy` are always forced to `""`; unlike every other auto-generated env var in `agent-runtime.yaml`, these six are appended *after* `<hunterAgent|remediationAgent>.env` and always win on a name collision, so they can't be overridden into a bypass.
-- **Addressed by ClusterIP, so the runtime needs no resolver.** Resolving the proxy's Service name used to be the only reason an agent runtime pod needed DNS at all, and `NetworkPolicy` selects pods rather than containers - so a kube-dns egress rule added for the runtime is also handed to the untrusted agent container next to it, where a recursive resolver is a bidirectional channel out of the cluster that `allowedDomains` never sees. The runtime therefore addresses the proxy by ClusterIP instead: kubelet publishes every in-namespace Service's ClusterIP as `<SERVICE_NAME>_SERVICE_HOST` (`enableServiceLinks`, on by default) and expands the `$(VAR)` reference the chart puts in `HTTP_PROXY`, so the container sees a literal IP and there is no name left to look up. With no sidecar injected, a runtime's whole egress list is one rule: the proxy's pods on `agentEgressProxy.port`. Two consequences worth knowing: a pod resolves that variable once at start, so **deleting and recreating the proxy's Service** (which changes its ClusterIP - `helm upgrade` alone preserves it) requires restarting the runtime Deployments; and a runtime pod that somehow predates the Service has nothing to expand and needs the same restart. Under Istio, the paths that get a sidecar (standard injection, or `istio.meshSidecar.enabled`) need istiod's `discoveryAddress` by name; `istio.istiodClusterIP` (see "Taking DNS away from the agent runtimes" below) pins it via `hostAliases` - and its default, `"auto"`, fails the render rather than reopening kube-dns egress when it can't resolve one.
-- **Storage access via `allowedDomains`, not a NetworkPolicy carve-out.** The previous `<hunterAgent|remediationAgent>.networkPolicy.egressAllow` escape hatch (used mainly to let a runtime reach S3-compatible storage directly via presigned URLs) has been **removed outright**, not deprecated. Add the storage hostname to `agentEgressProxy.allowedDomains` instead.
-- **SonarQube's own rule-lookup (`api/rules/show`) and analysis-creation (`api/v2/a3s/private/analyses`) endpoints are reachable only when `remediationAgent.enabled`, and not editable when they are.** Hunter must never reach SonarQube through this proxy (SONAR-32432), so these ACLs, `remediation_listener`, and the `Safe_ports` entry for `service.externalPort` render only in that block; a Hunter-only (default) deployment has none of them and the proxy has no path to SonarQube at all. When Remediation is enabled, the in-cluster SonarQube service is plain HTTP (not CONNECT-tunneled like `allowedDomains`' HTTPS targets), so Squid can filter on the request path itself: a hardcoded `urlpath_regex` ACL allows these two endpoints, independently of `allowedDomains`. There is no values key that can remove or edit this rule. The match tolerates a path prefix, which it has to: the two endpoints sit on different API versions (v1 and v2), and when `sonarWebContext` is set the agents are handed a web-context-aware base URL, so the path Squid sees becomes e.g. `/sonarqube/api/v2/a3s/private/analyses`. Tolerance stays confined to the path, so a query string can't smuggle these endpoints past the scoping, and the allowance is per-endpoint rather than the whole `a3s` surface.
-- **The orchestrator's `/artifact-locators` endpoint is always reachable too — also not editable.** Runtime locator renewal targets the orchestrator's own in-cluster Service, which is likewise plain HTTP, so it gets the same treatment: a hardcoded `dstdomain` + `urlpath_regex` pair allows that one endpoint and nothing else of the orchestrator's API, independently of `allowedDomains`, and `agentOrchestrator.port` is added to `Safe_ports` or `deny !Safe_ports` would reject the call before any allow rule is reached. The proxy's own `NetworkPolicy` gets a matching pod-selector egress rule to the orchestrator; that port is deliberately **not** added to `agentEgressProxy.networkPolicy.egressPorts`, which applies to the broad `0.0.0.0/0` rule and would open it to the entire internet in order to reach one in-cluster Service. The whole block renders only when `agentOrchestrator.enabled`.
-- **No TLS interception.** Squid runs CONNECT-tunnel pass-through only; `dstdomain` matching for HTTPS relies on the CONNECT request's target hostname, not decrypted SNI.
-- **Non-standard ports need two changes.** Squid allows 80 and 443 (plus SonarQube's own port, and the orchestrator's when it is deployed). To reach an endpoint on another port, append to Squid's `Safe_ports`/`SSL_ports` via `agentEgressProxy.extraSquidConf` — Squid resolves `http_access` rules to the named ACL object, so entries added there still apply to the `deny !Safe_ports` rule despite being spliced in after it — **and** add the port to `agentEgressProxy.networkPolicy.egressPorts`, or `NetworkPolicy` drops the request before Squid ever sees it.
-- **Availability.** The proxy is a hard dependency of the runtimes' data path, so it defaults to `replicaCount: 2` plus a `PodDisruptionBudget` (`podDisruptionBudget.minAvailable: 1`) — Squid is stateless here (caching is disabled), so plain Service load-balancing across replicas is enough.
-- **Not the same as `httpProxy`/`httpsProxy`/`noProxy`/`prometheusExporter.httpProxy`/`plugins.httpProxy` elsewhere in this README.** Those proxy SonarQube's own install-time downloads (JMX agent, plugins); `agentEgressProxy` is unrelated and only governs agent runtime egress.
-
-**mTLS for chart-owned workloads.** `istio.enabled=true` puts every chart-owned workload under STRICT mTLS via `templates/peerauthentication.yaml`: Application nodes, Search nodes, the Agent Orchestrator, MCP, Vortex, and the Agent Egress Proxy each get their own `PeerAuthentication`, scoped per-workload rather than as a namespace-wide default so other releases sharing the namespace aren't affected. Unlike `charts/sonarqube`, there's no single monolith workload here, so Application nodes and Search (Elasticsearch) nodes each get their own block instead of one shared with the rest of the pod. Each of those pods also gets `sidecar.istio.io/inject: "true"` on its own template - not left to a namespace-wide `istio-injection=enabled` label, since that's an external cluster policy this chart can't see, and STRICT mode without a sidecar doesn't degrade to "unenforced": it rejects the plaintext traffic that's then all the pod can ever receive. The explicit annotation is a no-op alongside namespace-wide auto-injection, so having both is harmless.
-
-- **The Agent Egress Proxy also stamps an explicit `"false"`, as both annotation and label, when `istio.enabled` is off.** The other chart-owned workloads above only ever get `"true"`, since a stray namespace-wide sidecar on them is harmless. The egress proxy is different: its own `NetworkPolicy` (`agent-egress-proxy-networkpolicy.yaml`) grants istiod egress only when `istio.enabled`, so a sidecar it didn't expect - from a namespace-wide `istio-injection=enabled` label the chart can't see - would sit permanently `NotReady`, taking this Deployment's availability down with it; every agent runtime's egress depends on reaching it. The label duplicates the annotation for the same reason agent runtime pods do (see "Taking DNS away from the agent runtimes" below): the sidecar-injector webhook's `objectSelector` is a `LabelSelector` and never sees annotations.
-
-**mTLS for sandboxed agent runtimes.** Standard Istio sidecar injection can't run on a sandboxed runtime — `istio-init`'s iptables setup needs `NET_ADMIN`, which a sandboxing RuntimeClass (gVisor, Kata, ...) may not grant — so by default those pods have no mesh identity at all, and reach the Agent Egress Proxy through a `PERMISSIVE` exception carved into its own `PeerAuthentication`. `istio.meshSidecar.enabled` (default `false`, requires `istio.enabled=true` **and** the runtime being sandboxed — `gvisor.enabled=true` or `agentRuntimeSandbox.enabled=true`) closes that gap:
-
-- **What it adds.** A hand-authored `istio-proxy` init container per runtime pod - the same container the Istio injector would produce, minus `istio-init`, with `ISTIO_META_INTERCEPTION_MODE=NONE` so it never attempts iptables interception - paired with a chart-owned Istio `Sidecar` resource that programs both directions explicitly: an `ingress` listener on `istio.meshSidecar.meshPort` forwarding to the app over loopback, and an `egress` listener scoped to the Agent Egress Proxy alone (an unscoped one would let Envoy bind a loopback listener for every mesh service port it imports, including the runtime's own).
-- **No image change, no elevated capabilities.** The `agent-runtime` image, its command and its own port are untouched. The proxy container runs as non-root with every capability dropped.
-- **What moves.** The runtime Service's `targetPort` moves from the app's own port to `meshPort`; `HTTP_PROXY`/`HTTPS_PROXY` become `http://127.0.0.1:<agentEgressProxy.port>` instead of the proxy's ClusterIP; the egress proxy's `PERMISSIVE` exception is removed outright, since the runtime can now present a real client cert.
-- **`istio.meshSidecar.meshPort` (default `18080`)** must differ from `hunterAgent.port`/`remediationAgent.port` (checked at render time - both failure modes are otherwise silent) and stay outside Istio's reserved `15000`-`15100` range (enforced in `values.schema.json`).
-- **The app's own port stays directly dialable on the pod IP.** With no `istio-init`, nothing redirects it. `<hunterAgent|remediationAgent>.networkPolicy.enabled`'s ingress rule fences it (only `meshPort` plus the proxy's own health/metrics ports are allowed) - which makes **NetworkPolicy enforcement by the cluster's CNI a hard prerequisite** for this one path, not defence in depth.
-- **Not a hot toggle.** Flipping this flag changes the runtime Service's `targetPort` and its effective `HTTP_PROXY` - traffic reroutes and the runtime pods restart.
-- **Version pin.** `istio.meshSidecar.proxyImage.tag` is a snapshot of one Istio injector's output, validated against `1.30.4`. Bump it deliberately and confirm compatibility against the target istiod version on a live cluster - golden fixtures only prove rendering, not runtime compatibility.
-- **Requires Kubernetes >= 1.29.** The `istio-proxy` container is a native sidecar (an `initContainers` entry with `restartPolicy: Always`), which needs the `SidecarContainers` feature - on by default only from 1.29 (alpha and gated in 1.28, absent before). `helm install`/`helm upgrade` reads the target cluster's version and fails the render rather than admitting a Deployment whose pods never progress past `Init`. Rendering manifests out of cluster (`helm template`, GitOps tooling that applies its output) sees Helm's built-in default version instead, so pass `--kube-version` matching the target cluster for the check to apply.
-
-**Taking DNS away from the agent runtimes (`istio.istiodClusterIP`).** An agent runtime's `NetworkPolicy` is the fence around untrusted code, and `NetworkPolicy` selects *pods*, not containers - so every egress rule on it is equally a capability of the agent container sharing that pod. That makes kube-dns egress load-bearing in a way it usually isn't: a recursive resolver is a bidirectional channel out of the cluster (payload in the query name, answer in a `TXT` record) which neither the Agent Egress Proxy's `allowedDomains` ACL nor any L3/L4 rule can see, because L3/L4 cannot see names. Istio does not close it either - `istio-iptables` installs no UDP redirect unless DNS capture is explicitly enabled, so Envoy is not in that path at all.
-
-With `istio.enabled=false` the runtimes already resolve nothing: they reach the proxy by the ClusterIP kubelet publishes as a service-link variable, so their entire egress list is the proxy's pods. The paths that get an Envoy (standard injection, or `istio.meshSidecar.enabled`) need exactly one name - `istiod.<istio.namespace>.svc`, or `istiod-<istio.revision>.<istio.namespace>.svc` when `istio.revision` pins a revisioned (canary) control plane - and it is **pilot-agent**, not Envoy, that resolves it: Envoy's `xds-grpc` cluster is `STATIC` over a Unix socket. pilot-agent is Go, so `/etc/hosts` satisfies it.
-
-`istio.istiodClusterIP` puts that one mapping in the pod's `/etc/hosts` via `hostAliases` and drops the kube-dns rule from the runtime's `NetworkPolicy`, leaving istiod on `15012` and the egress proxy as its whole egress list. Because the *hostname* is preserved (rather than an IP going into `discoveryAddress`), istiod's TLS SAN still validates. It takes three kinds of setting:
-
-- **`"auto"` (the default)** reads the `istiod` Service (`istiod-<istio.revision>` when `istio.revision` is set) in `istio.namespace` at install time, so there is normally nothing to supply.
-- **An address** is used verbatim, and is the only setting that survives `helm template`.
-- **`""`** opts out, leaving the Istio paths exactly as they were.
-
-```bash
-# only needed to pin the address by hand - substitute istiod-<istio.revision> for istiod if set
-kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'
-```
-
-- **`"auto"` needs a live cluster, and fails closed without one.** It reads the Service through Helm's `lookup`, which returns nothing under `helm template` or when the Service genuinely doesn't exist yet - so if you render manifests and apply them separately (ArgoCD and friends), the render fails outright instead of quietly keeping the runtimes' kube-dns rule. Fix `istio.namespace`/`istio.revision`, install istiod first, or pin the address explicitly (or set `""` to knowingly accept DNS egress) to get past it. An identity that lacks `get`/`list` on Services in `istio.namespace` is a different failure mode, not this one: Helm's `lookup` only swallows a true not-found, so an RBAC-Forbidden error there aborts the entire `helm install`/`template` render with the raw API error instead. Grant that RBAC, or pin an explicit address (or `""`), if it can't be granted.
-- **The value is a ClusterIP, not a name.** A hostname in `hostAliases` is rejected by the API server, so `values.schema.json` catches it at render time instead.
-- **A stale value fails closed.** The sidecar simply never reaches ready; it does not silently fall back to DNS. The `istiod` Service's ClusterIP is stable for the life of the Service, but it changes if that Service is deleted and recreated (a mesh reinstall), so treat this as a value to re-check when the control plane is rebuilt.
-- **Not a hot toggle.** Changing it restarts the agent runtime pods.
-- **One caveat on the standard-injection path.** With `istio.meshSidecar.enabled=false` there is no chart-owned `Sidecar` resource, so the runtime's Envoy imports the whole mesh registry. Kubernetes Services arrive as `EDS` clusters that istiod resolves, needing no DNS in the pod - but a third-party `ServiceEntry` with `resolution: DNS` would produce a `STRICT_DNS` cluster that Envoy resolves itself, and that one would fail to warm. It affects only traffic to that entry, which a runtime does not send (all of its egress goes to the Agent Egress Proxy), but it does mean stray resolution failures in the proxy's logs. Scope the runtime's Envoy with your own `Sidecar` resource, or use `istio.meshSidecar.enabled`, if that matters.
-
-**Agentic signing keys.** Messages exchanged between the agentic components are signed, and each communication hop uses its own key pair. All of them are derived from a single operator-provided *instance secret* — an existing Secret you create out of band and name in `agenticSigningSecret.existingSecret`, the same convention as `sonarSecretKey`. A `pre-install`/`pre-upgrade` hook Job (`agentKeyDerivation`) runs `derive-keys.sh` — HKDF-SHA256 key expansion, per EA-791/ADR-10 — and writes one `<fullname>-agentic-keys-<consumer>` Secret per consumer through the Kubernetes API. The consuming pods then mount their own Secret read-only.
-
-- **Fail closed.** Enabling any of `hunterAgent`/`remediationAgent`/`vortexAnalysis` without `agenticSigningSecret.existingSecret` fails the install at template time rather than deploying components that can't verify each other's messages. Nothing agentic enabled means no instance secret is needed and none of this renders.
-- **Least privilege per hop.** A pod only ever holds the keys for the hops it actually takes part in, so a compromised runtime can't forge messages for a hop it isn't on:
-
-  | Derived key                   | Derived when                        | Mounted on                             |
-  | ----------------------------- | ----------------------------------- | -------------------------------------- |
-  | `orchestrator-to-hunter`      | `hunterAgent.enabled`               | orchestrator, hunter                   |
-  | `orchestrator-to-remediation` | `remediationAgent.enabled`          | orchestrator, remediation              |
-  | `remediation-to-sqs`          | `remediationAgent.enabled`          | remediation                            |
-  | `agentic-shared`              | any of hunter/remediation/vortex    | orchestrator, SQS, Vortex              |
-  | `hunter-to-orchestrator`      | `agentOrchestrator.enabled`         | orchestrator; hunter when enabled      |
-  | `remediation-to-orchestrator` | `agentOrchestrator.enabled`         | orchestrator; remediation when enabled |
-  | `orchestrator-job-capability` | `agentOrchestrator.enabled`         | orchestrator, and nothing else         |
-
-  A consumer that needs no keys for the enabled component set gets no Secret written and no mount — a Vortex-only install, for instance, writes only the SQS and Vortex Secrets. The app nodes verify the `remediation-to-sqs` hop without mounting its key: they hold the instance secret and re-derive that one in-process.
-
-  The orchestrator is the one deliberate exception to "only the hops it takes part in". It derives and mounts both `hunter-to-orchestrator` and `remediation-to-orchestrator` whenever it is enabled, even on a single-family install, because its runtime-facing API refuses to start unless both verification key paths are set — gating them per family would turn a hunter-only install into a `CrashLoopBackOff`. The unused one is inert: nothing signs with it, since the runtime it belongs to isn't deployed. `orchestrator-job-capability` goes the other way and has a single holder — see the renewal bullet below.
-- **Mount paths.** The orchestrator, the runtimes and Vortex mount their keys at `/etc/agentic/keys` (three different base images, so one neutral path); the SonarQube app nodes get theirs at `<sonarqubeFolder>/agentic-keys`, and the instance secret itself at `<sonarqubeFolder>/agentic-secret/instance-secret`. Both app-node paths are also written into `conf/sonar.properties` (as `sonar.agentic.signing.secretFile` and `sonar.agentic.orchestrator.signingKeyPath`), since a property with a properties-file line ignores its env override.
-- **Each pod is pointed at its keys one env var per key file**, named for the pod's role in the hop rather than for the key — so the two ends of a hop read the same file under different names:
-
-  | Pod          | Env var                                             | Key                           |
-  | ------------ | --------------------------------------------------- | ----------------------------- |
-  | orchestrator | `AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH`           | `orchestrator-to-hunter`      |
-  | orchestrator | `AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH`      | `orchestrator-to-remediation` |
-  | orchestrator | `AGENTIC_SONARQUBE_SIGNING_KEY_PATH`                | `agentic-shared`              |
-  | orchestrator | `AGENTIC_INBOUND_VERIFICATION_KEY_PATH`             | `agentic-shared`              |
-  | orchestrator | `AGENTIC_INBOUND_HUNTER_VERIFICATION_KEY_PATH`      | `hunter-to-orchestrator`      |
-  | orchestrator | `AGENTIC_INBOUND_REMEDIATION_VERIFICATION_KEY_PATH` | `remediation-to-orchestrator` |
-  | orchestrator | `AGENTIC_JOB_CAPABILITY_SIGNING_KEY_PATH`           | `orchestrator-job-capability` |
-  | hunter       | `AGENTIC_VERIFY_KEY_PATH`                           | `orchestrator-to-hunter`      |
-  | hunter       | `AGENTIC_VERIFY_KEY_ID`                             | `orchestrator-to-hunter`      |
-  | hunter       | `AGENT_ORCHESTRATOR_SIGNING_KEY_PATH`               | `hunter-to-orchestrator`      |
-  | remediation  | `AGENTIC_VERIFY_KEY_PATH`                           | `orchestrator-to-remediation` |
-  | remediation  | `AGENTIC_VERIFY_KEY_ID`                             | `orchestrator-to-remediation` |
-  | remediation  | `REMEDIATION_AGENTIC_SIGNING_KEY_PATH`              | `remediation-to-sqs`          |
-  | remediation  | `AGENT_ORCHESTRATOR_SIGNING_KEY_PATH`               | `remediation-to-orchestrator` |
-  | Vortex       | `AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH`             | `agentic-shared`              |
-
-  A variable is only set when the key behind it is actually mounted. The SonarQube app nodes are the exception: they mount `agentic-shared` too, but get no variable for it — see below.
-
-  `AGENTIC_VERIFY_KEY_PATH` is the one name that appears on two pods for *different* keys, since each runtime mounts exactly one verification key — so it is paired with `AGENTIC_VERIFY_KEY_ID`, which carries the label itself and is what tells the runtime which hop the key belongs to.
-
-  `AGENT_ORCHESTRATOR_SIGNING_KEY_PATH` is the second name that appears on two pods for different keys — each runtime signs its artifact-locator renewal requests with its own `<family>-to-orchestrator` key. Unlike `AGENTIC_VERIFY_KEY_PATH` it gets **no** `_KEY_ID` companion: each runtime image hardcodes the key id for its own hop, so the label never has to be communicated through the chart. In the other direction, `agentic-shared` is the one label that maps to *two* variables on a single pod, for the two directions it covers on the orchestrator — `AGENTIC_SONARQUBE_SIGNING_KEY_PATH` to sign its outbound calls to SonarQube, `AGENTIC_INBOUND_VERIFICATION_KEY_PATH` to verify SonarQube's inbound ones. That second variable is what registers the orchestrator's security filter chain at all: without it no authority is granted and every SonarQube-facing endpoint answers 403, so it is not optional even though the key was already mounted.
-
-  The app nodes read `agentic-shared`'s path a different way: through the `sonar.agentic.orchestrator.signingKeyPath` property in `conf/sonar.properties`, not an env var — `Configuration.get()` doesn't fall back to plain env vars, so a variable here would just go unread. Vortex has no properties mechanism (it's a standalone Deployment, not a SonarQube JVM process), so `AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH` remains its only way to find the key. The property sits alongside `sonar.agentic.signing.secretFile` in `conf/sonar.properties`; the two are opposite directions — the secret is what SQS verifies incoming agentic calls with, the key path is what it signs its own calls to the orchestrator with. Leaving the key path unset would leave those calls unsigned rather than fail.
-- **Artifact-locator renewal is wired end-to-end, with nothing to set.** A runtime whose dispatch-time presigned storage URLs expire mid-job re-requests them from the orchestrator instead of failing the upload. The chart sets `AGENT_ORCHESTRATOR_URL` on each runtime — the same in-cluster Service URL the app nodes use — whenever `agentOrchestrator.enabled`; a blank value is how the runtime disables renewal, and the runtime refuses to start when the URL is set without `AGENT_ORCHESTRATOR_SIGNING_KEY_PATH`, so the two are always emitted together. The request travels over the egress proxy like every other runtime egress (see the hardcoded `/artifact-locators` rule above) and carries an opaque, expiring per-job capability token that the orchestrator mints and verifies with `orchestrator-job-capability`. That key is the only derived key with a single holder: a runtime that had it could mint a capability for any job and defeat the mechanism, so it is never projected into a runtime Secret. Neither is the raw instance secret — only the derivation hook and the SonarQube app nodes mount that.
-- **Rollout order matters for renewal, and this chart ships all three images in one release.** The capability token is minted at dispatch, so the orchestrator must be upgraded before the runtime images that sign renewals: a job dispatched by an older orchestrator carries no capability, and its renewal is rejected. A plain `helm upgrade` bumps the orchestrator and both runtimes simultaneously, which is the one sequence to avoid. Pin the runtimes to their current tags (`hunterAgent.image.tag`, `remediationAgent.image.tag`) in the same upgrade that raises `agentOrchestrator.image.tag`, wait for every orchestrator replica to become Ready, then release the runtime pins one family at a time. Pause dispatch and drain RUNNING jobs first if you can't accept failed uploads — only jobs already running across the window are affected, and only if their locators expire.
-- **Roll back the orchestrator and both runtimes together.** They implement two ends of one signing protocol, so a partial rollback reproduces the mixed-version window in the direction that fails: pause dispatch, drain again, and revert all three tags as a single set. The derived Kubernetes Secrets can stay — they are deterministic functions of `agenticSigningSecret`, and images that predate these keys simply ignore the extra entries.
-- **The hook needs RBAC, hence its own ServiceAccount.** Writing the derived Secrets means a namespace-scoped Role granting `create`/`update` on `secrets` — nothing cluster-scoped, no `get`, no `list`, no `delete`. `create` can't be scoped by name (the Secret doesn't exist yet), but `update` is restricted via `resourceNames` to exactly the `<fullname>-agentic-keys-<consumer>` Secrets the enabled consumer set actually writes. The chart creates the account and binds the Role at hook weight `-5`, so both exist before the Job runs at weight `0`. `agentKeyDerivation.serviceAccount.create=false` runs the Job under `agentKeyDerivation.serviceAccount.name`, or the release's top-level `serviceAccount` when that is empty; the chart still binds the Role to whichever it lands on.
-- **Image defaults to the orchestrator's.** `derive-keys.sh` ships inside the Agent Orchestrator image, so `agentKeyDerivation.image` normally needs nothing set: leave `repository` blank and the whole block falls back to `agentOrchestrator.image`. Set it only when derived keys are part of the install but the orchestrator isn't (`vortexAnalysis.enabled` on its own), so the release doesn't pull an orchestrator image it never deploys. The fallback is all-or-nothing — once you set `repository`, the rest of `agentKeyDerivation.image` is used as-is rather than filled in from the orchestrator's.
-- **Opting out.** `agentKeyDerivation.enabled=false` skips the hook, for when you materialize the `<fullname>-agentic-keys-*` Secrets yourself (GitOps, sealed-secrets, an external KMS). The consumer pods mount those Secrets either way, so opting out *without* providing them leaves the pods stuck in `ContainerCreating`.
-- **The derived Secrets aren't Helm-owned.** They're written through the Kubernetes API by the hook, not rendered as release manifests, so `helm uninstall` leaves them behind. The hook's own ServiceAccount, `Role` and `RoleBinding` are hook resources, which Helm doesn't track for uninstall either, so those survive too. Delete `<fullname>-agentic-keys-*` and `<fullname>-agent-key-derivation` (ServiceAccount, Role, RoleBinding) by hand if you want the namespace clean.
-- **Scheduling.** `agentKeyDerivation.nodeSelector`/`.tolerations`/`.affinity`/`.topologySpreadConstraints` place the hook Job's pod, same convention as the other agentic workloads — `nodeSelector`/`tolerations`/`affinity` each fall back to the chart's global `.Values.nodeSelector`/`.tolerations`/`.affinity` when unset; `topologySpreadConstraints` has no chart-wide equivalent. The chart-wide `priorityClassName` applies to this pod too.
-- **Rotating `agenticSigningSecret` is a hard cutover today, not a rolling rotation.** `derive-keys.sh` supports emitting a `.previous` sibling key from a `<secret-file>.previous` instance secret, and the consumer pods accept one, but the hook's per-consumer Secret projection is single-key, so a `.previous` key can never actually be produced or mounted. Rotating the instance secret and upgrading replaces every derived key at once; old and new pods briefly disagree on signatures during the rollout, and cross-component calls between them fail until the rollout completes.
+See [Agentic features](#agentic-features) for how to enable and configure these components.
 
 | Parameter                                       | Description                                                                                                     | Default                                                                |
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | `vortexAnalysis.enabled`                        | Deploy Vortex and set `sonar.vortex.analysis.url` on the app nodes. When unset, defaults to `true` if `remediationAgent.enabled` is `true` | `null`                                                                 |
 | `vortexAnalysis.image.repository`               | Vortex image repository (required when enabled)                                                         | `"sonarsource/sonar-vortex"`                                           |
-| `vortexAnalysis.image.tag`                      | Vortex image tag (required when enabled)                                                                | `""`                                                                   |
+| `vortexAnalysis.image.tag`                      | Vortex image tag | `"2026.5.0"` |
 | `vortexAnalysis.image.pullPolicy`               | Vortex image pull policy                                                                                | `IfNotPresent`                                                         |
 | `vortexAnalysis.image.pullSecret`               | imagePullSecret for the Vortex image                                                                    | `nil`                                                                  |
 | `vortexAnalysis.image.pullSecrets`              | imagePullSecrets for the Vortex image                                                                   | `nil`                                                                  |
 | `vortexAnalysis.port`                           | Port the container / Service serves HTTP on                                                                      | `8080`                                                                 |
 | `vortexAnalysis.replicaCount`                   | Vortex replica count                                                                                    | `1`                                                                    |
-| `vortexAnalysis.strategy`                       | Deployment update strategy. Must be `RollingUpdate` once `vortexAnalysis.autoscaling.enabled` is `true` — see below | `{type: RollingUpdate}`                                       |
+| `vortexAnalysis.strategy`                       | Deployment update strategy. Must be `RollingUpdate` once `vortexAnalysis.autoscaling.enabled` is `true` | `{type: RollingUpdate}`                                       |
 | `vortexAnalysis.autoscaling.enabled`             | Enable a KEDA `ScaledObject` reading Vortex's own `GET /metrics/max-concurrent-requests`. Requires the KEDA CRDs — see `agentKeda.assumeInstalled` below | `false`                                                    |
 | `vortexAnalysis.autoscaling.minReplicas`         | Minimum replicas; validated `>= 2` (exactly `1` when `aggregateAcrossReplicas` is `false` - no scale-to-zero for this fleet) | `3`                                                     |
 | `vortexAnalysis.autoscaling.maxReplicas`         | Maximum replicas                                                                                          | `20`                                                                   |
 | `vortexAnalysis.autoscaling.pollingInterval`     | KEDA `pollingInterval` (seconds) for the `metrics-api` trigger; validated `<= windowSeconds`              | `15`                                                                   |
-| `vortexAnalysis.autoscaling.scaleDownStabilizationSeconds` | KEDA-managed HPA `behavior.scaleDown.stabilizationWindowSeconds`; deliberately long — see above | `900`                                                        |
+| `vortexAnalysis.autoscaling.scaleDownStabilizationSeconds` | KEDA-managed HPA `behavior.scaleDown.stabilizationWindowSeconds`; deliberately long to absorb a few failed polls | `900`                                                        |
 | `vortexAnalysis.autoscaling.targetConcurrentRequests` | Max concurrent requests one replica should carry before the fleet scales out (per-replica, not a fleet total) | `2`                                                        |
 | `vortexAnalysis.autoscaling.aggregateAcrossReplicas` | `true` sums the metric across every replica behind the Service (requires KEDA `>= 2.20.0`); `false` falls back to KEDA's single-random-replica probe | `true`                                        |
 | `vortexAnalysis.autoscaling.windowSeconds`       | Sliding window Vortex reports its peak concurrency over (`METRICS_CONCURRENT_REQUESTS_WINDOW_SECONDS`); blank leaves the image's own default | `30`                                            |
 | `vortexAnalysis.autoscaling.metricPath`          | Path of the metric endpoint on the Vortex container                                                      | `/metrics/max-concurrent-requests`                                     |
-| `vortexAnalysis.autoscaling.manageReplicas`      | Set `false` to always omit `replicas` once autoscaling is enabled, even on the first apply — needed for GitOps tooling, see above | `true`                                                |
+| `vortexAnalysis.autoscaling.manageReplicas`      | Set `false` to always omit `replicas` once autoscaling is enabled, even on the first apply — needed for GitOps tooling (Argo CD, Flux) | `true`                                                |
 | `vortexAnalysis.terminationGracePeriodSeconds`   | Pod grace period; ships unconditionally, independent of autoscaling                                      | `180`                                                                  |
 | `vortexAnalysis.storage.type`                   | Object storage backend for Vortex analysis context restoration (`SONAR_AGENTIC_STORAGE_TYPE`); `S3`, `FILESYSTEM`, `AZURE`, `GCS` or `NFS`; required | `S3`                                                       |
 | `vortexAnalysis.storage.bucket`                 | Bucket holding Vortex analysis context items (`SONAR_AGENTIC_STORAGE_BUCKET`); required for an object-store type, ignored for `FILESYSTEM`/`NFS` | `""`                                                        |
@@ -1290,12 +1322,12 @@ kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'
 | `agentOrchestrator.serviceAccount.name`                               | Name of that ServiceAccount; defaults to `<fullname>-agent-orchestrator` when `create` is true                                         | `""`                                                                           |
 | `agentOrchestrator.serviceAccount.automountToken`                     | Automount the ServiceAccount token into the pod; needed for IRSA                                                                          | `false`                                                                        |
 | `agentOrchestrator.serviceAccount.annotations`                        | Annotations for that ServiceAccount (e.g. an IRSA role ARN)                                                                              | `{}`                                                                           |
-| `<hunterAgent\|remediationAgent>.serviceAccount.create`          | Create a dedicated ServiceAccount for this agent's pod, independent of the top-level `serviceAccount`                                    | `false`                                                                        |
+| `<hunterAgent\|remediationAgent>.serviceAccount.create`          | Create a dedicated ServiceAccount for this agent's pod. With `false`, the pod runs under the top-level `serviceAccount` and inherits its token and cloud role                                    | `true`                                                                       |
 | `<hunterAgent\|remediationAgent>.serviceAccount.name`            | Name of that ServiceAccount; defaults to `<fullname>-agent-runtime-<family>` when `create` is true                                     | `""`                                                                           |
 | `<hunterAgent\|remediationAgent>.serviceAccount.automountToken`  | Automount the ServiceAccount token into the pod; needed for IRSA                                                                          | `false`                                                                        |
 | `<hunterAgent\|remediationAgent>.serviceAccount.annotations`     | Annotations for that ServiceAccount (e.g. an IRSA role ARN)                                                                              | `{}`                                                                           |
 | `agentOrchestrator.image.repository`                                  | Agent Orchestrator image repository (required when enabled)                                                                              | `"sonarsource/sonarqube-agent-orchestrator"`                                   |
-| `agentOrchestrator.image.tag`                                         | Agent Orchestrator image tag                                                                                                             | `""`                                                                           |
+| `agentOrchestrator.image.tag`                                         | Agent Orchestrator image tag                                                                                                             | `"2026.5.0"` |
 | `agentOrchestrator.image.pullPolicy`                                  | Agent Orchestrator image pull policy                                                                                                     | `IfNotPresent`                                                                 |
 | `agentOrchestrator.image.pullSecrets`                                 | imagePullSecrets for the orchestrator image                                                                                              | `nil`                                                                          |
 | `agentOrchestrator.port`                                              | Port the orchestrator listens on (also set as `SERVER_PORT`)                                                                             | `8080`                                                                         |
@@ -1327,7 +1359,7 @@ kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'
 | `agentOrchestrator.storage.accessKey`                                 | Inline S3 access key; leave blank for credential-less access (pod IAM role / IRSA)                                                       | `""`                                                                           |
 | `agentOrchestrator.storage.secretKey`                                 | Inline S3 secret key; leave blank for credential-less access                                                                             | `""`                                                                           |
 | `agentOrchestrator.storage.existingSecret`                            | Existing secret providing `AGENTIC_STORAGE_ACCESS_KEY` / `AGENTIC_STORAGE_SECRET_KEY`                                                     | `""`                                                                           |
-| `agentOrchestrator.storage.filesystem.baseDir`                        | Shared agent-jobs directory (`SONAR_AGENTIC_ORCHESTRATOR_STORAGE_FILESYSTEM_BASE_DIR`) when `type` is `FILESYSTEM`/`NFS`, mounted at its root here; each of `hunterAgent`/`remediationAgent` mounts only its own `subPath` at the matching `extraVolumeMounts` entry on this pod - see the per-component access model above. Not related to `vortexAnalysis.storage.filesystem.baseDir`, which is Vortex's own, separate store | `""`             |
+| `agentOrchestrator.storage.filesystem.baseDir`                        | Shared agent-jobs directory (`SONAR_AGENTIC_ORCHESTRATOR_STORAGE_FILESYSTEM_BASE_DIR`) when `type` is `FILESYSTEM`/`NFS`, mounted at its root here; each of `hunterAgent`/`remediationAgent` mounts only its own `subPath` at the matching `extraVolumeMounts` entry on this pod. Not related to `vortexAnalysis.storage.filesystem.baseDir`, which is Vortex's own, separate store | `""`             |
 | `agentOrchestrator.github.apiBaseUrl`                                 | `AGENTIC_GITHUB_API_BASE_URL`; blank = the orchestrator's default (real api.github.com)                                                  | `""`                                                                           |
 | `agentOrchestrator.env`                                               | Extra env vars for the orchestrator container, appended after the chart-set env                                                          | `[]`                                                                           |
 | `agentOrchestrator.extraVolumes`                                      | Extra volumes for the orchestrator pod - e.g. the shared agent-jobs volume (mounted at its root here; `hunterAgent`/`remediationAgent` each mount only their own `subPath` - see `storage.filesystem.baseDir` above) | `[]`                    |
@@ -1337,9 +1369,9 @@ kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'
 | `agentOrchestrator.autoscaling.maxReplicas`                           | Maximum replicas                                                                                                                          | `5`                                                                            |
 | `agentOrchestrator.autoscaling.metrics`                               | Raw `autoscaling/v2` HPA `metrics:` pass-through                                                                                          | CPU `averageUtilization: 75`                                                   |
 | `agentOrchestrator.autoscaling.behavior`                              | Raw `autoscaling/v2` HPA `behavior:` pass-through                                                                                         | `scaleDown.stabilizationWindowSeconds: 300`                                    |
-| `agentOrchestrator.autoscaling.manageReplicas`                        | Set `false` to always omit `replicas` once autoscaling is enabled, even on the first apply — needed for GitOps tooling, see above         | `true`                                                                         |
+| `agentOrchestrator.autoscaling.manageReplicas`                        | Set `false` to always omit `replicas` once autoscaling is enabled, even on the first apply — needed for GitOps tooling (Argo CD, Flux)         | `true`                                                                         |
 | `<hunterAgent\|remediationAgent>.image.repository`               | Agent image repository (required when the agent is enabled)                                                                              | `"sonarsource/sonarqube-hunter-agent"` / `"sonarsource/sonarqube-remediation-agent"` |
-| `<hunterAgent\|remediationAgent>.image.tag`                      | Agent image tag                                                                                                                          | `""`                                                                           |
+| `<hunterAgent\|remediationAgent>.image.tag`                      | Agent image tag                                                                                                                          | `"2026.5.0"` |
 | `<hunterAgent\|remediationAgent>.image.pullPolicy`               | Agent image pull policy                                                                                                                  | `IfNotPresent`                                                                 |
 | `<hunterAgent\|remediationAgent>.port`                           | Agent container / Service port                                                                                                           | `8090`                                                                         |
 | `<hunterAgent\|remediationAgent>.replicaCount`                   | Agent replica count (`>1` enables L4 429 re-routing across replicas)                                                                     | `1`                                                                            |
@@ -1351,7 +1383,7 @@ kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'
 | `<hunterAgent\|remediationAgent>.tolerations`                    | This runtime's tolerations                                                                                                                 | `[]`                                                                           |
 | `<hunterAgent\|remediationAgent>.affinity`                       | This runtime's affinity                                                                                                                    | `{}`                                                                           |
 | `<hunterAgent\|remediationAgent>.topologySpreadConstraints`      | This runtime's topology spread constraints                                                                                                | `[]`                                                                           |
-| `<hunterAgent\|remediationAgent>.resources`                      | Agent container resources (both runtimes ship sized defaults — see below)                                                                 | see below                                                                      |
+| `<hunterAgent\|remediationAgent>.resources`                      | Agent container resources (both runtimes ship sized defaults)                                                                 | see [CPU and memory](#cpu-and-memory-settings)                                                                      |
 | `<hunterAgent\|remediationAgent>.securityContext`                | Agent pod security context                                                                                                               | `{}`                                                                           |
 | `<hunterAgent\|remediationAgent>.containerSecurityContext`       | Agent container security context. No `readOnlyRootFilesystem`: the agent images need their home directory writable | [Restricted podSecurityStandard](#kubernetes---pod-security-standards)        |
 | `<hunterAgent\|remediationAgent>.probes.readiness`/`.liveness`   | This runtime's readiness/liveness probes (`enabled`, `path`, `initialDelaySeconds`, `periodSeconds`, `timeoutSeconds`, `successThreshold`, `failureThreshold`) | `enabled: true`, `/readyz`/`/livez`, see `values.yaml` |
@@ -1366,7 +1398,7 @@ kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'
 | `<hunterAgent\|remediationAgent>.storage.secretKey`              | Inline secret key for `endpoint` above; ignored when `existingSecret` is set                                                              | `""`                                                                           |
 | `<hunterAgent\|remediationAgent>.storage.existingSecret`         | Existing secret providing the access/secret key pair above                                                                                | `""`                                                                           |
 | `<hunterAgent\|remediationAgent>.env`                            | Extra env vars for the agent container                                                                                                   | `[]`                                                                           |
-| `<hunterAgent\|remediationAgent>.extraVolumes`                   | Extra volumes for the agent pod - e.g. this runtime's `subPath` mount of a shared FILESYSTEM/NFS agent-jobs volume; see the per-component access model on `agentOrchestrator.storage` above | `[]`     |
+| `<hunterAgent\|remediationAgent>.extraVolumes`                   | Extra volumes for the agent pod - e.g. this runtime's `subPath` mount of a shared FILESYSTEM/NFS agent-jobs volume | `[]`     |
 | `<hunterAgent\|remediationAgent>.extraVolumeMounts`              | Extra volume mounts for the agent container - same use case as `extraVolumes` above                                                     | `[]`                                                                           |
 | `<hunterAgent\|remediationAgent>.terminationGracePeriodSeconds`  | Pod grace period; ships unconditionally. Must comfortably exceed that runtime image's fixed `uvicorn --timeout-graceful-shutdown` (`44400`s hunter / `3600`s remediation) | `44430` / `3630`                                                              |
 | `<hunterAgent\|remediationAgent>.autoscaling.enabled`            | Enable a KEDA `ScaledObject` for this runtime family. Requires the KEDA CRDs — see `agentKeda.assumeInstalled` below                       | `false`                                                                        |
@@ -1374,7 +1406,7 @@ kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'
 | `<hunterAgent\|remediationAgent>.autoscaling.maxReplicas`        | Maximum replicas                                                                                                                          | `25`                                                                           |
 | `<hunterAgent\|remediationAgent>.autoscaling.pollingInterval`    | KEDA `pollingInterval` (seconds) for the `metrics-api` trigger against the orchestrator's `GET /metrics/queue`                             | `15`                                                                           |
 | `<hunterAgent\|remediationAgent>.autoscaling.scaleDownStabilizationSeconds` | KEDA-managed HPA `behavior.scaleDown.stabilizationWindowSeconds`                                                                | `600`                                                                          |
-| `<hunterAgent\|remediationAgent>.autoscaling.manageReplicas`     | Set `false` to always omit `replicas` once autoscaling is enabled, even on the first apply — needed for GitOps tooling, see above         | `true`                                                                         |
+| `<hunterAgent\|remediationAgent>.autoscaling.manageReplicas`     | Set `false` to always omit `replicas` once autoscaling is enabled, even on the first apply — needed for GitOps tooling (Argo CD, Flux)         | `true`                                                                         |
 | `agentKeda.assumeInstalled`                                      | Override the `.Capabilities.APIVersions`-based KEDA CRD detection (`true`/`false`); needed under `helm template`/`--dry-run=client`, where `Capabilities` is always empty | `nil` (auto-detect)                                    |
 | `keda.enabled`                                                   | Install the [KEDA](https://keda.sh) operator as a dependency of this release. Any other key under `keda` is passed through to the upstream `keda` chart's own values | `false`                                                |
 | `hunterAgent.scriptPath`                                         | Detection-agent entrypoint exposed as `SCRIPT_PATH`, which switches the runtime into hunter/detection mode; `""` omits the env var                        | `/home/agent/app/.venv/bin/detection-agent`                                    |
@@ -1426,16 +1458,6 @@ kubectl -n istio-system get svc istiod -o jsonpath='{.spec.clusterIP}'
 | `agentKeyDerivation.securityContext`                             | Hook Job pod security context                                                                                                            | `{}`                                                                           |
 | `agentKeyDerivation.containerSecurityContext`                    | Hook Job container security context                                                                                                      | non-root `900:900`, no privilege escalation, all capabilities dropped, read-only root filesystem |
 | `agentKeyDerivation.activeDeadlineSeconds`                       | Fail the hook Job (and the release) if key derivation and the Secret writes don't finish within this window, instead of hanging the install | `300`                                                                        |
-
-When `vortexAnalysis.enabled` is set to `true`, the chart deploys a separate Vortex pod alongside the SonarQube application nodes, and SonarQube starts sending analysis requests to it. While it is disabled, SonarQube sends none.
-
-Context restoration requires an S3-compatible object store matching `sonar.agentic.storage.*`: set `vortexAnalysis.storage.bucket` and `vortexAnalysis.storage.region`, and, if needed, `vortexAnalysis.serviceAccount` for IRSA access to it.
-
-The Vortex pod can take several minutes to become ready on a first start, while it loads its analyzers.
-
-Each agent also reads/writes job artifacts directly against `agentOrchestrator.storage` via presigned URLs, transiting the Agent Egress Proxy like all other runtime egress. Add the storage endpoint's hostname to `agentEgressProxy.allowedDomains`, or jobs fail at the first artifact download.
-
-Process-count limits for the agent runtimes are a node/kubelet setting (`podPidsLimit`), not something a Kubernetes `LimitRange` can express, so they're outside this chart's scope.
 
 ### ExtraConfig
 

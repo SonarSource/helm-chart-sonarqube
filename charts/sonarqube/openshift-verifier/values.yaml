@@ -1,15 +1,15 @@
-community:
-  enabled: true
-
+# chart-verifier installs the chart once per ci/*-values.yaml, deep-merging this file over each of
+# them. But its helm-lint check first fills the chart defaults into this file's maps in place, and
+# those defaults then override the ci file. So this file only carries top-level keys the ci files
+# don't set (edition, image, resources and the agentic components come from ci-values.yaml:
+# Community Build, agentic-values.yaml: Enterprise).
 OpenShift:
   enabled: true
   route:
-      enabled: true
-
-image:
-  pullSecrets:
-    - name: pullsecret
-  repository: "sonarsource/sonarqube"
-  tag: "26.9.0.129388-master-community"
+    enabled: true
+  # Clusters without Kata have no sandboxing RuntimeClass. Run the agent runtimes on the default
+  # runtime rather than leaving them Pending on a missing "kata" handler. gvisor.* is already
+  # ignored on OpenShift.
+  agentRuntimeClassName: ""
 
 monitoringPasscode: "test"

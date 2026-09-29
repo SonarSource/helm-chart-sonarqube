@@ -88,13 +88,13 @@ func TestDCEEsMajorUpgrade(t *testing.T) {
 	upgradeOpts.ExtraArgs["upgrade"] = []string{"--wait", "--timeout", "25m"}
 	helm.Upgrade(t, upgradeOpts, helmChartPath, releaseName)
 	waitSearchReplicas(t, kubectlOptions, 3)
-	assertSearchImageContains(t, kubectlOptions, "2026.4")
+	assertSearchImageContains(t, kubectlOptions, "2026.5")
 	assertSearchPVCsRemain(t, kubectlOptions)
 	assertAppResponds(t, kubectlOptions, releaseName)
 
 	helm.Upgrade(t, upgradeOpts, helmChartPath, releaseName)
 	waitSearchReplicas(t, kubectlOptions, 3)
-	assertSearchImageContains(t, kubectlOptions, "2026.4")
+	assertSearchImageContains(t, kubectlOptions, "2026.5")
 	assertAppResponds(t, kubectlOptions, releaseName)
 }
 

@@ -54,11 +54,6 @@ assert_present "${CHART_DIR}/ci/ci-values.yaml" "tag: \"${OLD_BUILD}-master-comm
 sed -i "s|tag: \"${OLD_BUILD}-master-community\"|tag: \"${NEW_BUILD}-master-community\"|" \
     "${CHART_DIR}/ci/ci-values.yaml"
 
-# openshift-verifier/values.yaml — image.tag
-assert_present "${CHART_DIR}/openshift-verifier/values.yaml" "tag: \"${OLD_BUILD}-master-community\""
-sed -i "s|tag: \"${OLD_BUILD}-master-community\"|tag: \"${NEW_BUILD}-master-community\"|" \
-    "${CHART_DIR}/openshift-verifier/values.yaml"
-
 # tests/unit-test/sonarqube_schema_test.go — expectedContainerImage constant
 assert_present tests/unit-test/sonarqube_schema_test.go "expectedContainerImage string = \"sonarqube:${OLD_BUILD}\""
 sed -i "s|expectedContainerImage string = \"sonarqube:${OLD_BUILD}\"|expectedContainerImage string = \"sonarqube:${NEW_BUILD}\"|" \

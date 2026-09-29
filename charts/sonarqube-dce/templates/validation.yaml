@@ -37,11 +37,10 @@
   {{/* Whether an explicitly-configured agentOrchestrator.image needs a tag is that install's own
        business - plenty of fixtures/private registries key on a mutable tag per repository and
        that's fine. But the chart's own repository default ("sonarsource/sonarqube-agent-orchestrator")
-       has no matching tag default (no build exists yet), so leaving the image config untouched
-       entirely would silently render "sonarsource/sonarqube-agent-orchestrator:" - an unpullable
-       reference no node can resolve. Only guard that exact untouched-default case. */}}
+       with its tag blanked out would silently render "sonarsource/sonarqube-agent-orchestrator:" -
+       an unpullable reference no node can resolve. Only guard that exact case. */}}
   {{- if and (eq .Values.agentOrchestrator.image.repository "sonarsource/sonarqube-agent-orchestrator") (not .Values.agentOrchestrator.image.tag) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true and agentOrchestrator.image.repository is still the chart's default, which has no matching default tag. Set agentOrchestrator.image.tag explicitly." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true and agentOrchestrator.image.repository is the chart's default but agentOrchestrator.image.tag is empty. Set agentOrchestrator.image.tag." -}}
   {{- end -}}
   {{- $agentOrchestratorStorage := .Values.agentOrchestrator.storage -}}
   {{- /* bucket is meaningless for a file-based backend (FILESYSTEM, NFS): those hand the runtime a
@@ -81,11 +80,10 @@
   {{- if not .Values.hunterAgent.image.repository -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true but hunterAgent.image.repository is not set." -}}
   {{- end -}}
-  {{/* Same untouched-default precedent as agentOrchestrator.image above: the chart's own
-       repository default ("sonarsource/sonarqube-hunter-agent") has no matching tag default, so
-       leaving the image config untouched would silently render an unpullable reference. */}}
+  {{/* Same precedent as agentOrchestrator.image above: the chart's own repository default
+       ("sonarsource/sonarqube-hunter-agent") with a blank tag would render an unpullable reference. */}}
   {{- if and (eq .Values.hunterAgent.image.repository "sonarsource/sonarqube-hunter-agent") (not .Values.hunterAgent.image.tag) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true and hunterAgent.image.repository is still the chart's default, which has no matching default tag. Set hunterAgent.image.tag explicitly." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true and hunterAgent.image.repository is the chart's default but hunterAgent.image.tag is empty. Set hunterAgent.image.tag." -}}
   {{- end -}}
 {{- end -}}
 {{- if .Values.remediationAgent.enabled -}}
@@ -96,7 +94,7 @@
 {{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but remediationAgent.image.repository is not set." -}}
   {{- end -}}
   {{- if and (eq .Values.remediationAgent.image.repository "sonarsource/sonarqube-remediation-agent") (not .Values.remediationAgent.image.tag) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true and remediationAgent.image.repository is still the chart's default, which has no matching default tag. Set remediationAgent.image.tag explicitly." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true and remediationAgent.image.repository is the chart's default but remediationAgent.image.tag is empty. Set remediationAgent.image.tag." -}}
   {{- end -}}
   {{- if eq .Values.vortexAnalysis.enabled false -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n remediationAgent.enabled is true but vortexAnalysis.enabled is explicitly set to false." -}}
@@ -372,7 +370,7 @@
     {{- $missing = append $missing "applicationNodes.cePort" -}}
   {{- end -}}
   {{- if $missing -}}
-{{- fail (printf "\n ** The values.yaml file is not valid. ** \n istio.enabled is true but the Hazelcast web/CE ports are not pinned (missing: %s). Istio only manages ports that are declared up front, and Hazelcast allocates these two dynamically when unset - so the Web and Compute Engine cluster channels are left off the application Service and container ports, and out of the mesh with them. Pin both to fixed, free ports (for example applicationNodes.webPort: 4023 and applicationNodes.cePort: 4024). See \"Working with Istio\" in the chart README." (join ", " $missing)) -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n istio.enabled is true but the Hazelcast web/CE ports are not pinned (missing: %s). Istio only manages ports that are declared up front, and Hazelcast allocates these two dynamically when unset - so the Web and Compute Engine cluster channels are left off the application Service and container ports, and out of the mesh with them. Pin both to fixed, free ports (for example applicationNodes.webPort: 4023 and applicationNodes.cePort: 4024). See \"Securing communication with TLS\" in the chart README." (join ", " $missing)) -}}
   {{- end -}}
 {{- end -}}
 

@@ -679,8 +679,8 @@ serviceAccount:
 # metadata:
 #   name: external-sonarqube-opts
 # data:
-#   SONARQUBE_JDBC_USERNAME: foo
-#   SONARQUBE_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
+#   SONAR_JDBC_USERNAME: foo
+#   SONAR_JDBC_URL: jdbc:postgresql://db.example.com:5432/sonar
 #
 # These vars can then be injected into the environment by uncommenting the following:
 #
@@ -747,7 +747,7 @@ mcp:
 
   image:
     repository: sonarsource/sonarqube-mcp
-    tag: "1.27.0.4335"
+    tag: "2026.5.0"
     pullPolicy: IfNotPresent
     # pullSecrets:
     #   - name: my-repo-secret
@@ -871,7 +871,7 @@ vortexAnalysis:
 
   image:
     repository: "sonarsource/sonar-vortex"
-    tag: ""
+    tag: "2026.5.0"
     pullPolicy: IfNotPresent
     # pullSecret: my-repo-secret
     # pullSecrets:
@@ -1017,7 +1017,7 @@ agentOrchestrator:
 
   image:
     repository: "sonarsource/sonarqube-agent-orchestrator"
-    tag: ""
+    tag: "2026.5.0"
     pullPolicy: IfNotPresent
     # For the orchestrator's own image only; its wait-for-sonarqube init container pulls the
     # SonarQube image instead, and always gets image.pullSecret(s) for that.
@@ -1194,7 +1194,7 @@ hunterAgent:
   enabled: false
   image:
     repository: "sonarsource/sonarqube-hunter-agent"
-    tag: ""
+    tag: "2026.5.0"
     pullPolicy: IfNotPresent
   port: 8090
   # >1 enables the L4 429 re-routing: the Service is a load-balanced ClusterIP (not
@@ -1257,8 +1257,10 @@ hunterAgent:
       drop: ["ALL"]
   # ServiceAccount for this runtime, independent of the top-level serviceAccount. `name` pins the
   # SA name for an external IAM trust policy; defaults to <fullname>-agent-runtime-hunter.
+  # With create: false the runtime runs under the top-level serviceAccount and inherits its token
+  # and any cloud role bound to it (e.g. IRSA), which the runtimes never need.
   serviceAccount:
-    create: false
+    create: true
     name: ""
     automountToken: false
     annotations: {}
@@ -1337,10 +1339,10 @@ hunterAgent:
 # Remediation Agent runtime that remediates issues. Requires agentOrchestrator.enabled - see
 # validation.yaml. Automatically enables vortexAnalysis unless it's explicitly set to false.
 remediationAgent:
-  enabled: false  # enable once the remediation runtime image is available
+  enabled: false
   image:
     repository: "sonarsource/sonarqube-remediation-agent"
-    tag: ""
+    tag: "2026.5.0"
     pullPolicy: IfNotPresent
   port: 8090
   replicaCount: 1
@@ -1397,8 +1399,10 @@ remediationAgent:
       drop: ["ALL"]
   # ServiceAccount for this runtime, independent of the top-level serviceAccount. `name` pins the
   # SA name for an external IAM trust policy; defaults to <fullname>-agent-runtime-remediation.
+  # With create: false the runtime runs under the top-level serviceAccount and inherits its token
+  # and any cloud role bound to it (e.g. IRSA), which the runtimes never need.
   serviceAccount:
-    create: false
+    create: true
     name: ""
     automountToken: false
     annotations: {}
