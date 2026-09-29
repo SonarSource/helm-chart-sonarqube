@@ -73,6 +73,12 @@ It is used to validate the values.yaml file before the installation starts.
   {{- if not (regexMatch "^jdbc:(postgresql|oracle|sqlserver):" $coreDbUrl) -}}
 {{- fail (printf "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB JDBC URL '%s' (from agentOrchestrator.coreDb.jdbcUrl, or else jdbcOverwrite.jdbcUrl) is not a PostgreSQL, Oracle or Microsoft SQL Server one (jdbc:postgresql:, jdbc:oracle: or jdbc:sqlserver:)." $coreDbUrl) -}}
   {{- end -}}
+  {{- /* Orchestrator images before multi-database support (such as the default 2026.5.0) only read
+         the CORE_DB_READ_WRITE_ENDPOINT/CORE_DB_NAME pair parsed from a PostgreSQL URL, so both must
+         be derivable from it. */}}
+  {{- if and (hasPrefix "jdbc:postgresql:" $coreDbUrl) (or (not (include "sonarqube.agent.jdbc.endpoint" $coreDbUrl)) (not (include "sonarqube.agent.jdbc.dbname" $coreDbUrl))) -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB host or database name could not be parsed from the PostgreSQL JDBC URL '%s'. Set a jdbc:postgresql://host:port/database URL, or agentOrchestrator.coreDb.endpoint and agentOrchestrator.coreDb.name." $coreDbUrl) -}}
+  {{- end -}}
   {{- /* The orchestrator only exists to dispatch jobs to an agent runtime - with neither hunterAgent
          nor remediationAgent enabled, it has nothing to talk to. */}}
   {{- if not (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}

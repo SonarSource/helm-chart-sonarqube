@@ -232,6 +232,30 @@ func TestOrchestratorRejectsUnsupportedCoreDbUrl(t *testing.T) {
 	}
 }
 
+// The legacy CORE_DB_READ_WRITE_ENDPOINT/CORE_DB_NAME pair must be derivable from a PostgreSQL URL,
+// as orchestrator images before multi-database support only read it.
+func TestOrchestratorRejectsIncompletePostgresqlCoreDbUrl(t *testing.T) {
+	cases := map[string]map[string]string{
+		"no database name":    {"jdbcOverwrite.jdbcUrl": "jdbc:postgresql://test-host:5432"},
+		"empty database name": {"agentOrchestrator.coreDb.jdbcUrl": "jdbc:postgresql://test-host:5432/"},
+		"endpoint only":       {"jdbcOverwrite.jdbcUrl": "jdbc:postgresql://", "agentOrchestrator.coreDb.endpoint": "test-host:5432"},
+		"database name only":  {"jdbcOverwrite.jdbcUrl": "jdbc:postgresql://", "agentOrchestrator.coreDb.name": "testdb"},
+	}
+	for _, chart := range agentCharts {
+		for name, extraValues := range cases {
+			t.Run(chart.name+"/"+name, func(t *testing.T) {
+				values := orchestratorCoreDbBase()
+				for k, v := range extraValues {
+					values[k] = v
+				}
+				_, err := renderWithValidation(t, chart, values)
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "the CORE DB host or database name could not be parsed from the PostgreSQL JDBC URL")
+			})
+		}
+	}
+}
+
 // renderOracleCoreDb renders the orchestrator against an Oracle jdbcOverwrite.jdbcUrl, with the
 // given extra (driver-related) values layered on top.
 func renderOracleCoreDb(t *testing.T, chart agentChart, extraValues map[string]string) string {
