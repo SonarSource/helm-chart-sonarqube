@@ -47,6 +47,7 @@ All changes to this chart will be documented in this file.
 * `vortexAnalysis.enabled` now defaults to `true` when `remediationAgent.enabled` is `true`
 * Raise the Remediation Agent's default `runAsUser`/`runAsGroup` from `1000` to `10001`, fixing incomplete generated PR content
 * Support Oracle and Microsoft SQL Server for the Agent Orchestrator: it now gets the full JDBC URL (`CORE_DB_JDBC_URL`, overridable with `agentOrchestrator.coreDb.jdbcUrl`), and the Oracle driver from `jdbcOverwrite.oracleJdbcDriver.url` is installed in its pod
+* Fix the `install-oracle-jdbc-driver` init container keeping `runAsUser`/`runAsGroup` on OpenShift, which kept the restricted-v2 SCC from admitting the SonarQube pod
 * Raise the default `resources.requests.memory` to `4096M` and `resources.limits.memory` to `10240M` to fit the higher SonarQube Server 2026.5 Web/CE heap defaults
 * Supported Kubernetes versions are now 1.34 to 1.37 and OpenShift 4.19 to 4.22
 

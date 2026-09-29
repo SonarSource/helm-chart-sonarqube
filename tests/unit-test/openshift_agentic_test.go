@@ -304,6 +304,38 @@ func TestOpenShiftOrchestratorPodSecurityContextAbsent(t *testing.T) {
 	}
 }
 
+// The install-oracle-jdbc-driver init containers, in the SonarQube and the orchestrator pods, must
+// drop the UIDs too: the SonarQube pod's one used to take initContainers.securityContext as is,
+// whose default runAsUser: 1000 restricted-v2 rejects, so the pod was never created (SONAR-32565).
+func TestOpenShiftOracleJdbcDriverInitContainersDropUids(t *testing.T) {
+	oracleDriver := map[string]string{"jdbcOverwrite.oracleJdbcDriver.url": "https://example.com/ojdbc11.jar"}
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, template := range []string{chart.appTemplate, "templates/agent-orchestrator.yaml"} {
+				t.Run(template, func(t *testing.T) {
+					output, err := renderOpenShift(t, chart, oracleDriver, template)
+					require.NoError(t, err)
+
+					var pod struct {
+						Spec struct {
+							Template corev1.PodTemplateSpec `json:"template"`
+						} `json:"spec"`
+					}
+					helm.UnmarshalK8SYaml(t, output, &pod)
+					found := false
+					for _, container := range pod.Spec.Template.Spec.InitContainers {
+						if container.Name == "install-oracle-jdbc-driver" {
+							found = true
+							assertNoExplicitUser(t, container.Name, container.SecurityContext)
+						}
+					}
+					assert.True(t, found, "install-oracle-jdbc-driver init container not rendered")
+				})
+			}
+		})
+	}
+}
+
 func assertNoExplicitUser(t *testing.T, name string, securityContext *corev1.SecurityContext) {
 	t.Helper()
 	require.NotNil(t, securityContext, name)

@@ -212,7 +212,7 @@ spec:
           image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
-          {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) .Values.initContainers.securityContext) }}
+          {{- with (fromYaml (include "sonarqube.initContainersSecurityContext" .)) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- with .Values.initContainers.resources }}
