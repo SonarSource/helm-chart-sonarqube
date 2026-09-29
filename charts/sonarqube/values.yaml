@@ -1097,7 +1097,11 @@ agentOrchestrator:
   # In particular the password must be a value the orchestrator can use directly - SonarQube may
   # store an encrypted `{aes-gcm}` password it can't decrypt, or a chart-managed secret your GitOps
   # doesn't apply - so point passwordSecretName/passwordSecretKey at a usable secret.
+  # PostgreSQL, Oracle and Microsoft SQL Server are supported. For Oracle, set
+  # jdbcOverwrite.oracleJdbcDriver.url: the chart installs that driver in the orchestrator pod too.
   coreDb:
+    jdbcUrl: ""             # full JDBC URL; default jdbcOverwrite.jdbcUrl
+    # Legacy, PostgreSQL only: setting either builds jdbc:postgresql://<endpoint>/<name>. Prefer jdbcUrl.
     endpoint: ""            # host:port; default parsed from jdbcOverwrite.jdbcUrl
     name: ""                # database name; default parsed from jdbcOverwrite.jdbcUrl
     username: ""            # default jdbcOverwrite.jdbcUsername

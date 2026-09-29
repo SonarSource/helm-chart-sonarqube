@@ -1708,20 +1708,39 @@ sidecar.istio.io/inject: "true"
 {{- end -}}
 
 {{/*
-Parse the host:port endpoint out of jdbcOverwrite.jdbcUrl (jdbc:postgresql://host:port/db[?params]),
-for the Agent Orchestrator's CORE_DB_READ_WRITE_ENDPOINT env, since it reuses SonarQube's own DB.
+JDBC URL of the Agent Orchestrator's CORE DB (SonarQube's own database), for CORE_DB_JDBC_URL.
+agentOrchestrator.coreDb.jdbcUrl wins; otherwise the legacy PostgreSQL-only coreDb.endpoint/name,
+when either is set, build a PostgreSQL URL (each falling back to what jdbcOverwrite.jdbcUrl holds);
+otherwise jdbcOverwrite.jdbcUrl is used as is, whatever its database vendor.
+*/}}
+{{- define "sonarqube.agent.jdbc.url" -}}
+{{- $coreDb := .Values.agentOrchestrator.coreDb -}}
+{{- if $coreDb.jdbcUrl -}}
+{{- $coreDb.jdbcUrl -}}
+{{- else if or $coreDb.endpoint $coreDb.name -}}
+{{- $endpoint := $coreDb.endpoint | default (include "sonarqube.agent.jdbc.endpoint" .Values.jdbcOverwrite.jdbcUrl) -}}
+{{- $name := $coreDb.name | default (include "sonarqube.agent.jdbc.dbname" .Values.jdbcOverwrite.jdbcUrl) -}}
+{{- printf "jdbc:postgresql://%s/%s" $endpoint $name -}}
+{{- else -}}
+{{- .Values.jdbcOverwrite.jdbcUrl -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Parse the host:port endpoint out of a PostgreSQL JDBC URL (jdbc:postgresql://host:port/db[?params])
+passed as the context, for the Agent Orchestrator's legacy CORE_DB_READ_WRITE_ENDPOINT env.
 */}}
 {{- define "sonarqube.agent.jdbc.endpoint" -}}
-{{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" .Values.jdbcOverwrite.jdbcUrl "" -}}
+{{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" . "" -}}
 {{- (splitn "/" 2 $stripped)._0 -}}
 {{- end -}}
 
 {{/*
-Parse the database name out of jdbcOverwrite.jdbcUrl (jdbc:postgresql://host:port/db[?params]),
-for the Agent Orchestrator's CORE_DB_NAME env.
+Parse the database name out of a PostgreSQL JDBC URL (jdbc:postgresql://host:port/db[?params])
+passed as the context, for the Agent Orchestrator's legacy CORE_DB_NAME env.
 */}}
 {{- define "sonarqube.agent.jdbc.dbname" -}}
-{{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" .Values.jdbcOverwrite.jdbcUrl "" -}}
+{{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" . "" -}}
 {{- $rest := (splitn "/" 2 $stripped)._1 | default "" -}}
 {{- regexReplaceAll "\\?.*$" $rest "" -}}
 {{- end -}}

@@ -126,47 +126,160 @@ func orchestratorCoreDbBase() map[string]string {
 	}
 }
 
-// With no agentOrchestrator.coreDb set at all, the endpoint and name are derived from
-// jdbcOverwrite.jdbcUrl.
+// With no agentOrchestrator.coreDb set at all, CORE_DB_JDBC_URL is jdbcOverwrite.jdbcUrl as is, and
+// for PostgreSQL the legacy endpoint/name pair older orchestrator images read is derived from it
+// too (SONAR-32565).
 func TestOrchestratorCoreDbDerivedFromJdbcOverwrite(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			output, err := renderWithValidation(t, chart, orchestratorCoreDbBase())
+			values := orchestratorCoreDbBase()
+			values["jdbcOverwrite.jdbcUrl"] = "jdbc:postgresql://test-host:5432/testdb?sslmode=require"
+			output, err := renderWithValidation(t, chart, values)
 			require.NoError(t, err)
-			assert.Contains(t, output, `value: "test-host:5432"`)
-			assert.Contains(t, output, `value: "testdb"`)
+			assert.Contains(t, output, "- name: CORE_DB_JDBC_URL\n              value: \"jdbc:postgresql://test-host:5432/testdb?sslmode=require\"")
+			assert.Contains(t, output, "- name: CORE_DB_READ_WRITE_ENDPOINT\n              value: \"test-host:5432\"")
+			assert.Contains(t, output, "- name: CORE_DB_NAME\n              value: \"testdb\"")
 		})
 	}
 }
 
-// jdbcOverwrite.jdbcUrl with no database path segment can't yield a name, and
-// agentOrchestrator.coreDb.name is not set either, so the render must fail rather than deploy with an
-// empty CORE_DB_NAME.
-func TestOrchestratorRequiresCoreDbNameWhenNotDerivable(t *testing.T) {
+// Oracle and Microsoft SQL Server URLs are passed through as CORE_DB_JDBC_URL, without the
+// PostgreSQL-only endpoint/name pair (SONAR-32565).
+func TestOrchestratorCoreDbNonPostgresqlUrlPassedThrough(t *testing.T) {
+	urls := map[string]string{
+		"oracle":    "jdbc:oracle:thin:@//oracle-host:1521/FREEPDB1",
+		"sqlserver": "jdbc:sqlserver://mssql-host:1433;databaseName=sonar;encrypt=true",
+	}
+	for _, chart := range agentCharts {
+		for vendor, url := range urls {
+			t.Run(chart.name+"/"+vendor, func(t *testing.T) {
+				values := orchestratorCoreDbBase()
+				values["jdbcOverwrite.jdbcUrl"] = url
+				output, err := renderWithValidation(t, chart, values)
+				require.NoError(t, err)
+				assert.Contains(t, output, "- name: CORE_DB_JDBC_URL\n              value: \""+url+"\"")
+				assert.NotContains(t, output, "CORE_DB_READ_WRITE_ENDPOINT")
+				assert.NotContains(t, output, "CORE_DB_NAME")
+			})
+		}
+	}
+}
+
+// agentOrchestrator.coreDb.jdbcUrl overrides jdbcOverwrite.jdbcUrl, and wins over the legacy
+// endpoint/name fields.
+func TestOrchestratorCoreDbJdbcUrlOverride(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			values := orchestratorCoreDbBase()
-			values["jdbcOverwrite.jdbcUrl"] = "jdbc:postgresql://test-host:5432"
-			_, err := renderWithValidation(t, chart, values)
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), "the CORE DB name could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.name is not set")
+			values["agentOrchestrator.coreDb.jdbcUrl"] = "jdbc:sqlserver://explicit-host:1433;databaseName=explicitdb"
+			values["agentOrchestrator.coreDb.endpoint"] = "ignored-host:5432"
+			output, err := renderWithValidation(t, chart, values)
+			require.NoError(t, err)
+			assert.Contains(t, output, "- name: CORE_DB_JDBC_URL\n              value: \"jdbc:sqlserver://explicit-host:1433;databaseName=explicitdb\"")
+			assert.NotContains(t, output, "test-host")
+			assert.NotContains(t, output, "ignored-host")
 		})
 	}
 }
 
-// Explicit agentOrchestrator.coreDb.endpoint/name take precedence and let the render succeed even when
-// jdbcOverwrite.jdbcUrl alone wouldn't be derivable.
+// The legacy, PostgreSQL-only agentOrchestrator.coreDb.endpoint/name still take precedence over
+// what jdbcOverwrite.jdbcUrl holds, each falling back to it on its own.
 func TestOrchestratorCoreDbExplicitOverridesTakePrecedence(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			values := orchestratorCoreDbBase()
-			values["jdbcOverwrite.jdbcUrl"] = "jdbc:postgresql://test-host:5432"
-			values["agentOrchestrator.coreDb.endpoint"] = "explicit-host:5432"
-			values["agentOrchestrator.coreDb.name"] = "explicitdb"
-			output, err := renderWithValidation(t, chart, values)
-			require.NoError(t, err)
-			assert.Contains(t, output, `value: "explicit-host:5432"`)
-			assert.Contains(t, output, `value: "explicitdb"`)
+			t.Run("both", func(t *testing.T) {
+				values := orchestratorCoreDbBase()
+				values["agentOrchestrator.coreDb.endpoint"] = "explicit-host:5432"
+				values["agentOrchestrator.coreDb.name"] = "explicitdb"
+				output, err := renderWithValidation(t, chart, values)
+				require.NoError(t, err)
+				assert.Contains(t, output, "- name: CORE_DB_JDBC_URL\n              value: \"jdbc:postgresql://explicit-host:5432/explicitdb\"")
+				assert.Contains(t, output, "- name: CORE_DB_READ_WRITE_ENDPOINT\n              value: \"explicit-host:5432\"")
+				assert.Contains(t, output, "- name: CORE_DB_NAME\n              value: \"explicitdb\"")
+			})
+
+			t.Run("name only", func(t *testing.T) {
+				values := orchestratorCoreDbBase()
+				values["agentOrchestrator.coreDb.name"] = "explicitdb"
+				output, err := renderWithValidation(t, chart, values)
+				require.NoError(t, err)
+				assert.Contains(t, output, "- name: CORE_DB_JDBC_URL\n              value: \"jdbc:postgresql://test-host:5432/explicitdb\"")
+			})
+		})
+	}
+}
+
+// A CORE DB URL for a database the orchestrator doesn't support must fail the render.
+func TestOrchestratorRejectsUnsupportedCoreDbUrl(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("from jdbcOverwrite", func(t *testing.T) {
+				values := orchestratorCoreDbBase()
+				values["jdbcOverwrite.jdbcUrl"] = "jdbc:h2:tcp://test-host/testdb"
+				_, err := renderWithValidation(t, chart, values)
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "the CORE DB JDBC URL 'jdbc:h2:tcp://test-host/testdb'")
+			})
+
+			t.Run("from coreDb.jdbcUrl", func(t *testing.T) {
+				values := orchestratorCoreDbBase()
+				values["agentOrchestrator.coreDb.jdbcUrl"] = "postgresql://test-host:5432/testdb"
+				_, err := renderWithValidation(t, chart, values)
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "is not a PostgreSQL, Oracle or Microsoft SQL Server one")
+			})
+		})
+	}
+}
+
+// jdbcOverwrite.oracleJdbcDriver.url installs the Oracle driver in the orchestrator pod the same way
+// as in SonarQube's, into an emptyDir the orchestrator reads it from (SONAR-32565).
+func TestOrchestratorInstallsOracleJdbcDriver(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("absent without a driver URL", func(t *testing.T) {
+				values := orchestratorCoreDbBase()
+				values["jdbcOverwrite.jdbcUrl"] = "jdbc:oracle:thin:@//oracle-host:1521/FREEPDB1"
+				output, err := renderWithValidation(t, chart, values)
+				require.NoError(t, err)
+				assert.NotContains(t, output, "install-oracle-jdbc-driver")
+				assert.NotContains(t, output, "oracle-jdbc-driver")
+				assert.NotContains(t, output, "CORE_DB_ORACLE_DRIVER_DIR")
+			})
+
+			t.Run("present with a driver URL", func(t *testing.T) {
+				values := orchestratorCoreDbBase()
+				values["jdbcOverwrite.jdbcUrl"] = "jdbc:oracle:thin:@//oracle-host:1521/FREEPDB1"
+				values["jdbcOverwrite.oracleJdbcDriver.url"] = "https://repo.example.com/ojdbc11.jar"
+				output, err := renderWithValidation(t, chart, values)
+				require.NoError(t, err)
+				assert.Contains(t, output, "- name: install-oracle-jdbc-driver\n          image:")
+				assert.Contains(t, output, "sh -e /tmp/scripts/install_oracle_jdbc_driver.sh")
+				assert.Contains(t, output, "- name: oracle-jdbc-driver\n              mountPath: /opt/sonarqube/extensions/jdbc-driver/oracle")
+				assert.Contains(t, output, "- name: oracle-jdbc-driver\n              mountPath: /app/jdbc-driver/oracle\n              readOnly: true")
+				assert.Contains(t, output, "- name: oracle-jdbc-driver\n          emptyDir: {}")
+				assert.Contains(t, output, "name: "+chart.release+"-"+chart.name+"-install-oracle-jdbc-driver")
+				assert.Contains(t, output, "- name: CORE_DB_ORACLE_DRIVER_DIR\n              value: /app/jdbc-driver/oracle")
+				assert.NotContains(t, output, "oracle-jdbc-driver-netrc-file")
+				assert.NotContains(t, output, "ca-bundle")
+			})
+
+			t.Run("with netrc credentials and CA certificates", func(t *testing.T) {
+				values := orchestratorCoreDbBase()
+				values["jdbcOverwrite.jdbcUrl"] = "jdbc:oracle:thin:@//oracle-host:1521/FREEPDB1"
+				values["jdbcOverwrite.oracleJdbcDriver.url"] = "https://repo.example.com/ojdbc11.jar"
+				values["jdbcOverwrite.oracleJdbcDriver.netrcCreds"] = "oracle-netrc"
+				values["caCerts.enabled"] = "true"
+				values["caCerts.secret"] = "test-ca-certs"
+				output, err := renderWithValidation(t, chart, values)
+				require.NoError(t, err)
+				assert.Contains(t, output, "- name: oracle-jdbc-driver-netrc-file\n              mountPath: /root")
+				assert.Contains(t, output, "- name: oracle-jdbc-driver-netrc-file\n          secret:\n            secretName: oracle-netrc")
+				assert.Contains(t, output, "> /tmp/certs/ca-bundle.pem")
+				assert.Contains(t, output, "- name: ca-certs\n              mountPath: /tmp/secrets/ca-certs")
+				assert.Contains(t, output, "- name: ca-certs\n          secret:\n            secretName: test-ca-certs")
+				assert.Contains(t, output, "- name: ca-bundle\n              mountPath: /tmp/certs")
+			})
 		})
 	}
 }

@@ -26,7 +26,7 @@
   
 {{/* Validation for jdbcUrl - must not be the default placeholder value */}}
   {{- if eq .Values.jdbcOverwrite.jdbcUrl "jdbc:postgresql://myPostgres/myDatabase" -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n jdbcOverwrite.jdbcUrl is still set to the default placeholder value 'jdbc:postgresql://myPostgres/myDatabase'.\n Please provide a valid JDBC URL for your PostgreSQL database." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n jdbcOverwrite.jdbcUrl is still set to the default placeholder value 'jdbc:postgresql://myPostgres/myDatabase'.\n Please provide a valid JDBC URL for your database." -}}
   {{- end -}}
 
 {{/* Validation for the Agent Orchestrator, when enabled */}}
@@ -59,11 +59,12 @@
   {{- if and (not $agentOrchestratorStorage.existingSecret) (or $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey) (not (and $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but only one of agentOrchestrator.storage.accessKey / agentOrchestrator.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
   {{- end -}}
-  {{- if and (not .Values.agentOrchestrator.coreDb.endpoint) (not (include "sonarqube.agent.jdbc.endpoint" .)) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB endpoint could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.endpoint is not set." -}}
-  {{- end -}}
-  {{- if and (not .Values.agentOrchestrator.coreDb.name) (not (include "sonarqube.agent.jdbc.dbname" .)) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB name could not be derived from jdbcOverwrite.jdbcUrl and agentOrchestrator.coreDb.name is not set." -}}
+  {{- /* The orchestrator bundles the PostgreSQL and SQL Server JDBC drivers and loads the Oracle
+         one installed from jdbcOverwrite.oracleJdbcDriver.url. As for SonarQube itself, an Oracle
+         URL without that driver is not rejected here: the orchestrator fails at startup instead. */}}
+  {{- $coreDbUrl := include "sonarqube.agent.jdbc.url" . -}}
+  {{- if not (regexMatch "^jdbc:(postgresql|oracle|sqlserver):" $coreDbUrl) -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but the CORE DB JDBC URL '%s' (from agentOrchestrator.coreDb.jdbcUrl, or else jdbcOverwrite.jdbcUrl) is not a PostgreSQL, Oracle or Microsoft SQL Server one (jdbc:postgresql:, jdbc:oracle: or jdbc:sqlserver:)." $coreDbUrl) -}}
   {{- end -}}
   {{- /* The orchestrator only exists to dispatch jobs to an agent runtime - with neither hunterAgent
          nor remediationAgent enabled, it has nothing to talk to. */}}
