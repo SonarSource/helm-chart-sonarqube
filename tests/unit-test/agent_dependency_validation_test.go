@@ -232,27 +232,36 @@ func TestOrchestratorRejectsUnsupportedCoreDbUrl(t *testing.T) {
 	}
 }
 
+// renderOracleCoreDb renders the orchestrator against an Oracle jdbcOverwrite.jdbcUrl, with the
+// given extra (driver-related) values layered on top.
+func renderOracleCoreDb(t *testing.T, chart agentChart, extraValues map[string]string) string {
+	t.Helper()
+	values := orchestratorCoreDbBase()
+	values["jdbcOverwrite.jdbcUrl"] = "jdbc:oracle:thin:@//oracle-host:1521/FREEPDB1"
+	for k, v := range extraValues {
+		values[k] = v
+	}
+	output, err := renderWithValidation(t, chart, values)
+	require.NoError(t, err)
+	return output
+}
+
 // jdbcOverwrite.oracleJdbcDriver.url installs the Oracle driver in the orchestrator pod the same way
 // as in SonarQube's, into an emptyDir the orchestrator reads it from (SONAR-32565).
 func TestOrchestratorInstallsOracleJdbcDriver(t *testing.T) {
+	const driverURL = "https://repo.example.com/ojdbc11.jar"
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
 			t.Run("absent without a driver URL", func(t *testing.T) {
-				values := orchestratorCoreDbBase()
-				values["jdbcOverwrite.jdbcUrl"] = "jdbc:oracle:thin:@//oracle-host:1521/FREEPDB1"
-				output, err := renderWithValidation(t, chart, values)
-				require.NoError(t, err)
-				assert.NotContains(t, output, "install-oracle-jdbc-driver")
+				output := renderOracleCoreDb(t, chart, nil)
 				assert.NotContains(t, output, "oracle-jdbc-driver")
 				assert.NotContains(t, output, "CORE_DB_ORACLE_DRIVER_DIR")
 			})
 
 			t.Run("present with a driver URL", func(t *testing.T) {
-				values := orchestratorCoreDbBase()
-				values["jdbcOverwrite.jdbcUrl"] = "jdbc:oracle:thin:@//oracle-host:1521/FREEPDB1"
-				values["jdbcOverwrite.oracleJdbcDriver.url"] = "https://repo.example.com/ojdbc11.jar"
-				output, err := renderWithValidation(t, chart, values)
-				require.NoError(t, err)
+				output := renderOracleCoreDb(t, chart, map[string]string{
+					"jdbcOverwrite.oracleJdbcDriver.url": driverURL,
+				})
 				assert.Contains(t, output, "- name: install-oracle-jdbc-driver\n          image:")
 				assert.Contains(t, output, "sh -e /tmp/scripts/install_oracle_jdbc_driver.sh")
 				assert.Contains(t, output, "- name: oracle-jdbc-driver\n              mountPath: /opt/sonarqube/extensions/jdbc-driver/oracle")
@@ -265,14 +274,12 @@ func TestOrchestratorInstallsOracleJdbcDriver(t *testing.T) {
 			})
 
 			t.Run("with netrc credentials and CA certificates", func(t *testing.T) {
-				values := orchestratorCoreDbBase()
-				values["jdbcOverwrite.jdbcUrl"] = "jdbc:oracle:thin:@//oracle-host:1521/FREEPDB1"
-				values["jdbcOverwrite.oracleJdbcDriver.url"] = "https://repo.example.com/ojdbc11.jar"
-				values["jdbcOverwrite.oracleJdbcDriver.netrcCreds"] = "oracle-netrc"
-				values["caCerts.enabled"] = "true"
-				values["caCerts.secret"] = "test-ca-certs"
-				output, err := renderWithValidation(t, chart, values)
-				require.NoError(t, err)
+				output := renderOracleCoreDb(t, chart, map[string]string{
+					"jdbcOverwrite.oracleJdbcDriver.url":        driverURL,
+					"jdbcOverwrite.oracleJdbcDriver.netrcCreds": "oracle-netrc",
+					"caCerts.enabled":                           "true",
+					"caCerts.secret":                            "test-ca-certs",
+				})
 				assert.Contains(t, output, "- name: oracle-jdbc-driver-netrc-file\n              mountPath: /root")
 				assert.Contains(t, output, "- name: oracle-jdbc-driver-netrc-file\n          secret:\n            secretName: oracle-netrc")
 				assert.Contains(t, output, "> /tmp/certs/ca-bundle.pem")
