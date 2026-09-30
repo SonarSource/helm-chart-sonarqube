@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [2026.6.1000]
 * Upgrade Chart's version to 2026.6.1000
+* Upgrade SonarQube Community build to 26.9.0.129388
 
 ## [2026.5.1000]
 * Upgrade Chart's version to 2026.5.1000
