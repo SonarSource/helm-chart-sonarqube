@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 var marketplaceTestSchemaPath string = "../../google-cloud-marketplace-k8s-app/data-test/schema.yaml"
@@ -63,4 +64,28 @@ func TestMarketplaceDataTestSchemaRenders(t *testing.T) {
 	}
 	_, err := helm.RenderTemplateE(t, helmOptions, dceChartPath, dceReleaseName, []string{"templates/sonarqube-application.yaml"})
 	assert.NoError(t, err, "DCE chart must render with the GCP Marketplace data-test schema defaults")
+}
+
+// TestMarketplaceDataTestSchemaFitsStagingNodes guards the regression where raising the chart's
+// applicationNodes memory default (SONAR-24525) made the app pods unschedulable on the GCP staging
+// cluster: the data-test schema must keep overriding the app node memory to the test sizing.
+func TestMarketplaceDataTestSchemaFitsStagingNodes(t *testing.T) {
+	defaults := marketplaceTestSchemaDefaults(t)
+
+	setValues := map[string]string{"gcp_marketplace": "true"}
+	for k, v := range defaults {
+		setValues[k] = v
+	}
+
+	helmOptions := &helm.Options{
+		Logger:    logger.Discard,
+		SetValues: setValues,
+	}
+	output := helm.RenderTemplate(t, helmOptions, dceChartPath, dceReleaseName, []string{"templates/sonarqube-application.yaml"})
+
+	var deployment appsv1.Deployment
+	helm.UnmarshalK8SYaml(t, output, &deployment)
+	resources := deployment.Spec.Template.Spec.Containers[0].Resources
+	assert.Equal(t, "4096M", resources.Requests.Memory().String())
+	assert.Equal(t, "4096M", resources.Limits.Memory().String())
 }
