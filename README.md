@@ -13,9 +13,9 @@
 
 # SonarQube Helm Chart
 
-This repository contains the official Helm chart for deploying SonarQube Server or SonarQube Community Build on Kubernetes.
+This repository contains the official Helm charts for deploying SonarQube Server and SonarQube Community Build on Kubernetes.
 
-Start with the chart in the [`charts/sonarqube`](charts/sonarqube) directory, or learn more on the [SonarQube Server product page](https://www.sonarsource.com/products/sonarqube/server/).
+For Data Center Edition, use the [`charts/sonarqube-dce`](charts/sonarqube-dce) chart. Learn more on the [SonarQube Server product page](https://www.sonarsource.com/products/sonarqube/server/).
 
 <!-- sonar-marketing:end -->
 
