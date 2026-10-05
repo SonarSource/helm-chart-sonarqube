@@ -191,6 +191,7 @@ func TestPrometheusExporterNetrcCreds(t *testing.T) {
 
 			args := strings.Join(container.Args, " ")
 			assert.Contains(t, args, "--netrc-file /root/.netrc")
+			assert.Contains(t, args, " -S")
 			assert.NotContains(t, args, " -v")
 
 			var netrcMount *corev1.VolumeMount

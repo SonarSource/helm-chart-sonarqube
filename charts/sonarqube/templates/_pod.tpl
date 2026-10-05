@@ -149,7 +149,7 @@ spec:
       resources: {{- toYaml . | nindent 8 }}
       {{- end }}
       command: ["/bin/sh", "-c"]
-      args: ["curl -s -L --fail {{ if $.Values.prometheusExporter.netrcCreds }}--netrc-file /root/.netrc {{ end }}'{{ include "prometheusExporter.downloadURL" . }}' {{ if $.Values.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar{{ if not $.Values.prometheusExporter.netrcCreds }} -v{{ end }}{{ if $.Values.prometheusExporter.sha256 }} && echo '{{ $.Values.prometheusExporter.sha256 }}  /data/jmx_prometheus_javaagent.jar' | sha256sum -c -{{ end }}"]
+      args: ["curl -s -L --fail {{ if $.Values.prometheusExporter.netrcCreds }}--netrc-file /root/.netrc {{ end }}'{{ include "prometheusExporter.downloadURL" . }}' {{ if $.Values.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar{{ if $.Values.prometheusExporter.netrcCreds }} -S{{ else }} -v{{ end }}{{ if $.Values.prometheusExporter.sha256 }} && echo '{{ $.Values.prometheusExporter.sha256 }}  /data/jmx_prometheus_javaagent.jar' | sha256sum -c -{{ end }}"]
       volumeMounts:
         - mountPath: /data
           name: sonarqube
