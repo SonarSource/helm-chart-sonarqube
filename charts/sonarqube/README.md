@@ -405,6 +405,8 @@ Per default the JMX metrics for the Web Bean and the CE Bean are exposed on port
 
 The exporter uses version `1.6.0` by default. Versions `1.1.0` and later are downloaded from GitHub Releases, while earlier versions are downloaded from Maven Central. GitHub downloads redirect to `release-assets.githubusercontent.com`; restricted environments must allowlist both `github.com` and `release-assets.githubusercontent.com`, or set `prometheusExporter.downloadURL` to an accessible JAR URL. Exporter metrics are served on `/metrics` by default; set `prometheusExporter.metricsPath` to `/` when using an exporter or configuration that serves metrics at the root path. Set `prometheusExporter.sha256` to optionally verify the downloaded JAR; the checksum must match the selected version or custom URL.
 
+To download the exporter from a URL that requires authentication, store a `.netrc` file in a Secret under the key `netrc` and set `prometheusExporter.netrcCreds` to that Secret's name. The init container passes it to curl with `--netrc-file`, the same way as `plugins.netrcCreds`.
+
 In version 1.6.0, built-in JVM metric names use OpenMetrics naming (for example, `jvm_memory_bytes_used` is now `jvm_memory_used_bytes`), so update related dashboards and alerts. Metrics generated from `config.rules` are unaffected.
 
 ### PodMonitor
@@ -928,6 +930,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `prometheusExporter.version`            | jmx_prometheus_javaagent version; versions 1.1.0 and later download from GitHub Releases, earlier versions from Maven Central | `1.6.0`                                                                |
 | `prometheusExporter.metricsPath`        | HTTP path served by the jmx_prometheus_javaagent (`/` can be used for exporters or configurations serving metrics at the root) | `/metrics`                                                             |
 | `prometheusExporter.noCheckCertificate` | Flag to not check server's certificate when downloading jmx_prometheus_javaagent                                        | `false`                                                                |
+| `prometheusExporter.netrcCreds`         | Name of the secret containing a .netrc file (key `netrc`) to use creds when downloading the jmx_prometheus_javaagent   | `""`                                                                   |
 | `prometheusExporter.webBeanPort`        | Port where the jmx_prometheus_javaagent exposes the metrics for the webBean                                             | `8000`                                                                 |
 | `prometheusExporter.ceBeanPort`         | Port where the jmx_prometheus_javaagent exposes the metrics for the ceBean                                              | `8001`                                                                 |
 | `prometheusExporter.downloadURL`        | Custom full download URL for the jmx_prometheus_javaagent.jar (overrides `prometheusExporter.version`)                 | `""`                                                                   |
