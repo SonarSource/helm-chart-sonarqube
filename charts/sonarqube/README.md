@@ -17,7 +17,7 @@ Please note that this chart only supports SonarQube Server Developer and Enterpr
 | Component | Image | Default tag |
 | --------- | ----- | ----------- |
 | SonarQube Server | `sonarqube` | `2026.5.0` |
-| SonarQube Community Build | `sonarqube` | `26.9.0.129388` |
+| SonarQube Community Build | `sonarqube` | `26.10.0.132816` |
 | MCP Server | `sonarsource/sonarqube-mcp` | `2026.5.0` |
 | Agent Orchestrator | `sonarsource/sonarqube-agent-orchestrator` | `2026.5.0` |
 | Hunter Agent | `sonarsource/sonarqube-hunter-agent` | `2026.5.0` |
@@ -778,7 +778,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `annotations`           | SonarQube Pod annotations                                                                                             | `{}`               |
 | `edition`               | SonarQube Edition to use (`developer` or `enterprise`).                                                               | `None`             |
 | `community.enabled`     | Install SonarQube Community Build. When set to `true`, `edition` must not be set.                                     | `false`            |
-| `community.buildNumber` | The SonarQube Community Build number to install                                                                       | `26.9.0.129388`    |
+| `community.buildNumber` | The SonarQube Community Build number to install                                                                       | `26.10.0.132816`    |
 | `sonarWebContext`       | SonarQube web context, also serve as default value for `ingress.path`, `httproute` path, `account.sonarWebContext` and probes path. | ``                 |
 | `httpProxySecret`       | Should contain `http_proxy`, `https_proxy` and `no_proxy` keys, will supersede every other proxy variables            | ``                 |
 | `httpProxy`             | HTTP proxy for downloading JMX agent and install plugins, will supersede initContainer specific http proxy variables  | ``                 |

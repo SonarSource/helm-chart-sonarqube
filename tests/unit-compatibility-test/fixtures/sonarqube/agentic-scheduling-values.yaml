@@ -1211,7 +1211,7 @@ spec:
       automountServiceAccountToken: false
       initContainers:
         - name: wait-for-sonarqube
-          image: sonarqube:26.9.0.129388-community
+          image: sonarqube:26.10.0.132816-community
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -1780,7 +1780,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: agentic-scheduling-values.yaml-sonarqube
-    app.kubernetes.io/version: "26.9.0.129388-community"
+    app.kubernetes.io/version: "26.10.0.132816-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -1805,7 +1805,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:26.9.0.129388-community
+          image: sonarqube:26.10.0.132816-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -1823,7 +1823,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: ""
         - name: concat-properties
-          image: sonarqube:26.9.0.129388-community
+          image: sonarqube:26.10.0.132816-community
           imagePullPolicy: IfNotPresent
           command:
             - sh
@@ -1865,7 +1865,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:26.9.0.129388-community
+          image: sonarqube:26.10.0.132816-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -2129,7 +2129,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: agentic-scheduling-values.yaml-ui-test
-      image: "sonarqube:26.9.0.129388-community"
+      image: "sonarqube:26.10.0.132816-community"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [
