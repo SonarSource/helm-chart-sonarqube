@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [2026.6.1000]
 * Upgrade Chart's version to 2026.6.1000
 * Add `applicationNodes.prometheusExporter.netrcCreds` to authenticate the JMX exporter download with a `.netrc` Secret
+* Omit curl `-v` from that download when `applicationNodes.prometheusExporter.netrcCreds` is set, so the Authorization header is not written to the init container logs
 
 ## [2026.5.1000]
 * Upgrade Chart's version to 2026.5.1000

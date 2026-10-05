@@ -104,6 +104,7 @@ func TestPrometheusExporterDefaultRendering(t *testing.T) {
 			assert.Contains(t, args, prometheusExporterURL(defaultPrometheusExporterVersion))
 			assert.NotContains(t, args, "sha256sum")
 			assert.NotContains(t, args, "--netrc-file")
+			assert.Contains(t, args, " -v")
 		})
 	}
 }
@@ -190,6 +191,7 @@ func TestPrometheusExporterNetrcCreds(t *testing.T) {
 
 			args := strings.Join(container.Args, " ")
 			assert.Contains(t, args, "--netrc-file /root/.netrc")
+			assert.NotContains(t, args, " -v")
 
 			var netrcMount *corev1.VolumeMount
 			for i := range container.VolumeMounts {
