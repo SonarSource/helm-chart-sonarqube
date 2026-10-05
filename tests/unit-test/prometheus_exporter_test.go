@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -51,7 +52,7 @@ func renderPrometheusExporterWorkload(t *testing.T, chart agentChart, fixtures [
 	return helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{chart.appTemplate})
 }
 
-func prometheusExporterArgs(t *testing.T, chart agentChart, fixtures []string, setValues map[string]string) string {
+func prometheusExporterPodSpec(t *testing.T, chart agentChart, fixtures []string, setValues map[string]string) corev1.PodSpec {
 	t.Helper()
 	output, err := renderPrometheusExporterWorkload(t, chart, fixtures, setValues)
 	require.NoError(t, err)
@@ -59,15 +60,18 @@ func prometheusExporterArgs(t *testing.T, chart agentChart, fixtures []string, s
 	if chart.name == "sonarqube-dce" {
 		var rendered appsv1.Deployment
 		helm.UnmarshalK8SYaml(t, output, &rendered)
-		container := findInitContainerByName(rendered.Spec.Template.Spec.InitContainers, "inject-prometheus-exporter")
-		require.NotNil(t, container)
-		require.NotEmpty(t, container.Args)
-		return strings.Join(container.Args, " ")
+		return rendered.Spec.Template.Spec
 	}
 
 	var rendered appsv1.StatefulSet
 	helm.UnmarshalK8SYaml(t, output, &rendered)
-	container := findInitContainerByName(rendered.Spec.Template.Spec.InitContainers, "inject-prometheus-exporter")
+	return rendered.Spec.Template.Spec
+}
+
+func prometheusExporterArgs(t *testing.T, chart agentChart, fixtures []string, setValues map[string]string) string {
+	t.Helper()
+	podSpec := prometheusExporterPodSpec(t, chart, fixtures, setValues)
+	container := findInitContainerByName(podSpec.InitContainers, "inject-prometheus-exporter")
 	require.NotNil(t, container)
 	require.NotEmpty(t, container.Args)
 	return strings.Join(container.Args, " ")
@@ -99,6 +103,7 @@ func TestPrometheusExporterDefaultRendering(t *testing.T) {
 			assert.Contains(t, args, "curl -s -L --fail")
 			assert.Contains(t, args, prometheusExporterURL(defaultPrometheusExporterVersion))
 			assert.NotContains(t, args, "sha256sum")
+			assert.NotContains(t, args, "--netrc-file")
 		})
 	}
 }
@@ -167,6 +172,48 @@ func TestPrometheusExporterChecksumDisabled(t *testing.T) {
 					assert.NotContains(t, args, "sha256sum")
 				})
 			}
+		})
+	}
+}
+
+func TestPrometheusExporterNetrcCreds(t *testing.T) {
+	const secretName = "jmx-exporter-netrc"
+
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			setValues := map[string]string{
+				prometheusExporterValueKey(chart, "netrcCreds"): secretName,
+			}
+			podSpec := prometheusExporterPodSpec(t, chart, []string{"prometheus-exporter-enabled.yaml"}, setValues)
+			container := findInitContainerByName(podSpec.InitContainers, "inject-prometheus-exporter")
+			require.NotNil(t, container)
+
+			args := strings.Join(container.Args, " ")
+			assert.Contains(t, args, "--netrc-file /root/.netrc")
+
+			var netrcMount *corev1.VolumeMount
+			for i := range container.VolumeMounts {
+				if container.VolumeMounts[i].Name == "prometheus-exporter-netrc-file" {
+					netrcMount = &container.VolumeMounts[i]
+					break
+				}
+			}
+			require.NotNil(t, netrcMount)
+			assert.Equal(t, "/root", netrcMount.MountPath)
+
+			var netrcVolume *corev1.Volume
+			for i := range podSpec.Volumes {
+				if podSpec.Volumes[i].Name == "prometheus-exporter-netrc-file" {
+					netrcVolume = &podSpec.Volumes[i]
+					break
+				}
+			}
+			require.NotNil(t, netrcVolume)
+			require.NotNil(t, netrcVolume.Secret)
+			assert.Equal(t, secretName, netrcVolume.Secret.SecretName)
+			require.Len(t, netrcVolume.Secret.Items, 1)
+			assert.Equal(t, "netrc", netrcVolume.Secret.Items[0].Key)
+			assert.Equal(t, ".netrc", netrcVolume.Secret.Items[0].Path)
 		})
 	}
 }

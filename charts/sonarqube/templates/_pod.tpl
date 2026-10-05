@@ -149,11 +149,15 @@ spec:
       resources: {{- toYaml . | nindent 8 }}
       {{- end }}
       command: ["/bin/sh", "-c"]
-      args: ["curl -s -L --fail '{{ include "prometheusExporter.downloadURL" . }}' {{ if $.Values.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v{{ if $.Values.prometheusExporter.sha256 }} && echo '{{ $.Values.prometheusExporter.sha256 }}  /data/jmx_prometheus_javaagent.jar' | sha256sum -c -{{ end }}"]
+      args: ["curl -s -L --fail {{ if $.Values.prometheusExporter.netrcCreds }}--netrc-file /root/.netrc {{ end }}'{{ include "prometheusExporter.downloadURL" . }}' {{ if $.Values.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v{{ if $.Values.prometheusExporter.sha256 }} && echo '{{ $.Values.prometheusExporter.sha256 }}  /data/jmx_prometheus_javaagent.jar' | sha256sum -c -{{ end }}"]
       volumeMounts:
         - mountPath: /data
           name: sonarqube
           subPath: data
+        {{- if .Values.prometheusExporter.netrcCreds }}
+        - name: prometheus-exporter-netrc-file
+          mountPath: /root
+        {{- end }}
       env:
         {{- with (include "sonarqube.prometheusExporterProxy.env" .) }}
         {{- . | nindent 8 }}
@@ -522,6 +526,14 @@ spec:
     - name: plugins-netrc-file
       secret:
         secretName: {{ .Values.plugins.netrcCreds }}
+        items:
+        - key: netrc
+          path: .netrc
+    {{- end }}
+    {{- if and .Values.prometheusExporter.enabled .Values.prometheusExporter.netrcCreds }}
+    - name: prometheus-exporter-netrc-file
+      secret:
+        secretName: {{ .Values.prometheusExporter.netrcCreds }}
         items:
         - key: netrc
           path: .netrc

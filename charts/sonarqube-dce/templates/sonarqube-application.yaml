@@ -158,11 +158,15 @@ spec:
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.ApplicationNodes.prometheusExporter.resources) | indent 12 }}
           command: ["/bin/sh","-c"]
-          args: ["curl -s -L --fail '{{ template "prometheusExporter.downloadURL" . }}' {{ if .Values.ApplicationNodes.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v{{ if .Values.ApplicationNodes.prometheusExporter.sha256 }} && echo '{{ .Values.ApplicationNodes.prometheusExporter.sha256 }}  /data/jmx_prometheus_javaagent.jar' | sha256sum -c -{{ end }}"]
+          args: ["curl -s -L --fail {{ if .Values.ApplicationNodes.prometheusExporter.netrcCreds }}--netrc-file /root/.netrc {{ end }}'{{ template "prometheusExporter.downloadURL" . }}' {{ if .Values.ApplicationNodes.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v{{ if .Values.ApplicationNodes.prometheusExporter.sha256 }} && echo '{{ .Values.ApplicationNodes.prometheusExporter.sha256 }}  /data/jmx_prometheus_javaagent.jar' | sha256sum -c -{{ end }}"]
           volumeMounts:
             - mountPath: /data
               name: sonarqube
               subPath: data
+            {{- if .Values.ApplicationNodes.prometheusExporter.netrcCreds }}
+            - name: prometheus-exporter-netrc-file
+              mountPath: /root
+            {{- end }}
           env:
           {{- with (include "sonarqube.prometheusExporterProxy.env" .) }}
           {{- . | nindent 12 }}
@@ -571,6 +575,14 @@ spec:
       - name: plugins-netrc-file
         secret:
           secretName: {{ .Values.ApplicationNodes.plugins.netrcCreds }}
+          items:
+          - key: netrc
+            path: .netrc
+      {{- end }}
+      {{- if and .Values.ApplicationNodes.prometheusExporter.enabled .Values.ApplicationNodes.prometheusExporter.netrcCreds }}
+      - name: prometheus-exporter-netrc-file
+        secret:
+          secretName: {{ .Values.ApplicationNodes.prometheusExporter.netrcCreds }}
           items:
           - key: netrc
             path: .netrc
