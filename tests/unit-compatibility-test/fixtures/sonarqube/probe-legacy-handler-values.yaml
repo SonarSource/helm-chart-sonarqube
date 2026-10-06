@@ -7,7 +7,7 @@ metadata:
   name: probe-legacy-handler-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: probe-legacy-handler-values.yaml
     heritage: Helm
 type: Opaque
@@ -22,7 +22,7 @@ metadata:
   name: probe-legacy-handler-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: probe-legacy-handler-values.yaml
     heritage: Helm
 type: Opaque
@@ -41,7 +41,7 @@ metadata:
   name: probe-legacy-handler-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: probe-legacy-handler-values.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: probe-legacy-handler-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: probe-legacy-handler-values.yaml
     heritage: Helm
 data:
@@ -101,7 +101,7 @@ metadata:
   name: probe-legacy-handler-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: probe-legacy-handler-values.yaml
     heritage: Helm
 data:
@@ -114,7 +114,7 @@ metadata:
   name: probe-legacy-handler-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: probe-legacy-handler-values.yaml
     heritage: Helm
 spec:
@@ -135,7 +135,7 @@ metadata:
   name: probe-legacy-handler-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: probe-legacy-handler-values.yaml
     heritage: Helm
     app.kubernetes.io/name: probe-legacy-handler-values.yaml
@@ -143,7 +143,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: probe-legacy-handler-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.5.1-enterprise"
+    app.kubernetes.io/version: "2026.5.2-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -155,10 +155,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: fa882d26bf95ebcced2ae01b609ace6f3b0cbc0cd814dff25cd1c028fc49637f
-        checksum/init-sysctl: 6030a71ce6785cdddf31b4c4e37edb121fbe2882c413c43a97233c821eaab715
-        checksum/plugins: 833d5e1a85615841dfd08ef98313c4a96e78e36cafedbd530ea2172615a21edb
-        checksum/secret: 71c57da992a084393b26817e765d33d5189d7467a476b2280b52507cb24d3104
+        checksum/config: 22a0e3d9b9f766d70aa93a11685f311190fb5ba3661d7c94e101f2d733ac3d1d
+        checksum/init-sysctl: deb320865dafd512dfc09177436e2c508d7df3e8d0f1fef6661fa1a654355e4d
+        checksum/plugins: 0503b4585d92d5ec007e045b548087197b977a2bb8cdd60b6409c6b74627703c
+        checksum/secret: e406b083fcb2959c1880f53a76785de486f4e47decabe67ea9a94fe7e067be8d
       labels:
         app: sonarqube
         release: probe-legacy-handler-values.yaml
@@ -168,7 +168,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.5.1-enterprise
+          image: sonarqube:2026.5.2-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -187,7 +187,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2026.5.1-enterprise
+          image: sonarqube:2026.5.2-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -204,7 +204,7 @@ spec:
               memory: 4096M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.5.1001
+              value: 2026.5.1002
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -306,14 +306,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: probe-legacy-handler-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: probe-legacy-handler-values.yaml-ui-test
-      image: "sonarqube:2026.5.1-enterprise"
+      image: "sonarqube:2026.5.2-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [
