@@ -16,7 +16,7 @@ Please note that this chart only supports SonarQube Server Developer and Enterpr
 
 | Component | Image | Default tag |
 | --------- | ----- | ----------- |
-| SonarQube Server | `sonarqube` | `2026.5.1` |
+| SonarQube Server | `sonarqube` | `2026.5.2` |
 | SonarQube Community Build | `sonarqube` | `26.9.0.129388` |
 | MCP Server | `sonarsource/sonarqube-mcp` | `2026.5.0` |
 | Agent Orchestrator | `sonarsource/sonarqube-agent-orchestrator` | `2026.5.0` |

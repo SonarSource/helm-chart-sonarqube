@@ -7,7 +7,7 @@ metadata:
   name: pvc-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: pvc-values.yaml
     heritage: Helm
 type: Opaque
@@ -22,7 +22,7 @@ metadata:
   name: pvc-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: pvc-values.yaml
     heritage: Helm
 type: Opaque
@@ -41,7 +41,7 @@ metadata:
   name: pvc-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: pvc-values.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: pvc-values.yaml-sonarqube-init-fs
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: pvc-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: pvc-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: pvc-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: pvc-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: pvc-values.yaml
     heritage: Helm
 data:
@@ -130,7 +130,7 @@ metadata:
   name: pvc-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: pvc-values.yaml
     heritage: Helm
   annotations:
@@ -149,7 +149,7 @@ metadata:
   name: pvc-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: pvc-values.yaml
     heritage: Helm
 spec:
@@ -170,7 +170,7 @@ metadata:
   name: pvc-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: pvc-values.yaml
     heritage: Helm
     app.kubernetes.io/name: pvc-values.yaml
@@ -178,7 +178,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: pvc-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.5.1-enterprise"
+    app.kubernetes.io/version: "2026.5.2-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -190,11 +190,11 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 9efc9343923f85ddf2ab8fbcbee1a675465d95eaea70cb8a08f33d5cc4992397
-        checksum/init-fs: 7be3268c8af0b00f1713b57ac9a93dc49d00a78169ecbad3d891116149923a63
-        checksum/init-sysctl: df035ff4dc59791cf6de158ab9adfc74258b45186796cb274eb9329ac50496de
-        checksum/plugins: 6f0a98f3bf500a3965630b020741cfd7dfe6036b20986646bfe7687692060756
-        checksum/secret: 989cdd9e812bec7ee893bd5a6a79940b2a309c08451948006abdd24710642341
+        checksum/config: c819b6911e8d19c9233d48ed1d34afcd8a73d62a37671fe7fbeaa236d90419f9
+        checksum/init-fs: f3e69cdb59f121beb40e3ee1059381fedf3942c54c8cc83d8fcdc79299a234a8
+        checksum/init-sysctl: bf81905e6d72c3d52182a9869f0c2bbd186331923df5039de622e490da67fb04
+        checksum/plugins: 1e80191d716c117054a397b0df49c4151570983d103159d3727b2f4665eefbfc
+        checksum/secret: bb1b4b95b8571f00ee7c87d41975819432b27623164c6321c36759b2a87af498
       labels:
         app: sonarqube
         release: pvc-values.yaml
@@ -204,7 +204,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.5.1-enterprise
+          image: sonarqube:2026.5.2-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -222,7 +222,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: ""
         - name: init-fs
-          image: sonarqube:2026.5.1-enterprise
+          image: sonarqube:2026.5.2-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -257,7 +257,7 @@ spec:
               subPath: extensions
       containers:
         - name: sonarqube
-          image: sonarqube:2026.5.1-enterprise
+          image: sonarqube:2026.5.2-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -274,7 +274,7 @@ spec:
               memory: 4096M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.5.1001
+              value: 2026.5.1002
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -382,14 +382,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1001
+    chart: sonarqube-2026.5.1002
     release: pvc-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: pvc-values.yaml-ui-test
-      image: "sonarqube:2026.5.1-enterprise"
+      image: "sonarqube:2026.5.2-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [
