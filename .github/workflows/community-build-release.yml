@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       jira_key:
-        description: "Jira release ticket key (e.g. REL-4517)"
+        description: "Jira release ticket key (REL or SONAR, e.g. REL-4517 or SONAR-32714)"
         required: true
         type: string
 
@@ -35,8 +35,8 @@ jobs:
             echo "ERROR: community_build_number '${COMMUNITY_BUILD_NUMBER}' must match ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$" >&2
             exit 1
           fi
-          if [[ ! "${JIRA_KEY}" =~ ^REL-[0-9]+$ ]]; then
-            echo "ERROR: jira_key '${JIRA_KEY}' must match ^REL-[0-9]+$" >&2
+          if [[ ! "${JIRA_KEY}" =~ ^(REL|SONAR)-[0-9]+$ ]]; then
+            echo "ERROR: jira_key '${JIRA_KEY}' must match ^(REL|SONAR)-[0-9]+$" >&2
             exit 1
           fi
 
