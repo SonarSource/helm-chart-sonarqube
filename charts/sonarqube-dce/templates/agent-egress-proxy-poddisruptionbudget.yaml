@@ -1,0 +1,19 @@
+{{- if and (include "sonarqube.agentEgressProxy.required" .) .Values.agentEgressProxy.podDisruptionBudget }}
+apiVersion: {{ include "common.capabilities.policy.apiVersion" . }}
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "sonarqube.agentEgressProxy.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agent/component: egress-proxy
+    app.kubernetes.io/component: agent-egress-proxy
+spec:
+  {{- with .Values.agentEgressProxy.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ . }}
+  {{- end }}
+  selector:
+    matchLabels: {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 6 }}
+{{- end }}

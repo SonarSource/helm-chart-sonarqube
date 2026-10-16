@@ -1,0 +1,48 @@
+community:
+  enabled: true
+monitoringPasscode: test-passcode
+# Global scheduling settings alongside Vortex's own, which take precedence over them.
+nodeSelector:
+  global: "true"
+tolerations:
+  - key: global
+    operator: Exists
+    effect: NoSchedule
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: global
+              operator: In
+              values: ["true"]
+vortexAnalysis:
+  enabled: true
+  image:
+    repository: example.com/vortex
+    tag: "7593"
+  storage:
+    bucket: agent-artifacts
+    region: eu-west-1
+  nodeSelector:
+    vortex: "true"
+  tolerations:
+    - key: vortex
+      operator: Exists
+      effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: vortex
+                operator: In
+                values: ["true"]
+agenticSigningSecret:
+  existingSecret: test-agentic-instance-secret
+# Vortex needs derived signing keys but no orchestrator, so the key-derivation hook Job gets
+# its image here rather than from agentOrchestrator.image.
+agentKeyDerivation:
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "42"

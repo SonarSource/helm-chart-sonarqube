@@ -1,11 +1,94 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2026.6.1000]
+* Upgrade Chart's version to 2026.6.1000
+* Add `applicationNodes.prometheusExporter.netrcCreds` to authenticate the JMX exporter download with a `.netrc` Secret
+* When `applicationNodes.prometheusExporter.netrcCreds` is set, download the JMX exporter with `curl -S` instead of `-v`, so a failed download is visible without writing the Authorization header to the init container logs
+
+## [2026.5.1000]
+* Upgrade Chart's version to 2026.5.1000
+* Decouple the chart's `version` from `appVersion`: it now follows `<SonarQube major>.<minor>.<patch counter>`, with the counter starting at `1000` per minor line
+* Upgrade SonarQube Server to 2026.5.0
+* Fail DCE upgrades across an Elasticsearch major while search pods are still running; scale `searchNodes.replicaCount` to 0 first
+* **Breaking**: The chart now manages Application node liveness/readiness probe handlers; legacy `exec`/`httpGet`/`tcpSocket`/`grpc` values are ignored, use `overrideCommand` instead
+* Set a default MCP pod `securityContext` (`fsGroup: 0`), `HOME=/data` and an optional `mcp.initContainers` hook so the non-root MCP server can write to `/data`
+* **Breaking**: Remove the deprecated `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart dependency. `ingress.enabled` remains supported for use with a self-managed ingress controller; `httproute.enabled` (Gateway API) is also available
+* Add `gateway-api-migration-scripts/nginx-to-istio-migration.sh` to help migrate from the bundled ingress-nginx controller to Gateway API
+* Update MCP image to `sonarsource/sonarqube-mcp:2026.5.0`
+* Add the Agent Orchestrator image `sonarsource/sonarqube-agent-orchestrator:2026.5.0`
+* Add the Hunter Agent image `sonarsource/sonarqube-hunter-agent:2026.5.0`
+* Add the Remediation Agent image `sonarsource/sonarqube-remediation-agent:2026.5.0`
+* Add the Vortex image `sonarsource/sonar-vortex:2026.5.0`
+* Add optional gVisor (runsc) sandboxing for the agent runtimes
+* Add the SonarQube Agent Orchestrator, Hunter Agent and Remediation Agent via `agentOrchestrator.enabled`, `hunterAgent.enabled` and `remediationAgent.enabled`; the agent runtimes get their own ServiceAccount by default (`<hunterAgent|remediationAgent>.serviceAccount.create`), not the top-level one
+* Set the Hunter Agent's `SCRIPT_PATH` (detection mode) from `hunterAgent.scriptPath`
+* Default the Hunter Agent's `PLAYBOOK_KEY`/`PLAYBOOK_VERSION` to `appsec`/`stable` via `hunterAgent.playbookKey`/`playbookVersion`
+* Add `agentOrchestrator.env`/`extraVolumes`/`extraVolumeMounts` and a FILESYSTEM/NFS backend for the shared agentic job storage (`agentOrchestrator.storage.type`)
+* Mount the `sonarSecretKey` secret into the Agent Orchestrator and expose its path as `AGENTIC_SECRET_KEY_PATH`
+* Add autoscaling for the Agent Orchestrator (CPU/memory HPA) and the Hunter/Remediation Agent runtimes (KEDA `ScaledObject`) via `<component>.autoscaling`
+* Add an optional KEDA operator subchart dependency (`keda.enabled`) to install KEDA together with the release
+* Ship default resource requests and limits for the Hunter Agent and Vortex so neither runs in the BestEffort QoS class
+* Point the Agent Orchestrator and agent runtime probes at `/readyz`/`/livez` instead of `/health`, and add `agentOrchestrator.terminationGracePeriodSeconds`
+* Add `<hunterAgent|remediationAgent>.storage` to scope each agent runtime to its own subtree of a shared FILESYSTEM/NFS job storage
+* Upgrade the bundled JMX Prometheus Exporter to 1.6.0; versions 1.1.0 and later download from GitHub Releases, earlier ones from Maven Central
+* Add `applicationNodes.prometheusExporter.metricsPath` (default `/metrics`) and optional `applicationNodes.prometheusExporter.sha256` download verification
+* Default exporter downloads from GitHub require access to `github.com` and `release-assets.githubusercontent.com`
+* **Breaking**: Built-in JVM metrics use OpenMetrics names (e.g. `jvm_memory_bytes_used` is now `jvm_memory_used_bytes`); `config.rules` metrics are unaffected
+* **Breaking**: The default exporter scrape path is now `/metrics` instead of `/`; set `applicationNodes.prometheusExporter.metricsPath: /` to keep the old path
+* Sandbox the agent runtimes with Kata Containers instead of gVisor on OpenShift via `OpenShift.agentRuntimeClassName` (default `kata`); the RuntimeClass must exist
+* Target `openshift-dns` on port 5353 (UDP/TCP) in the NetworkPolicy DNS egress rules when `OpenShift.enabled` is `true`; the `kube-dns` rule never matched there
+* Add KEDA-based autoscaling for Vortex (`vortexAnalysis.autoscaling`) on its concurrent-request metric; requires KEDA `>= 2.20.0`
+* Allow a fractional `vortexAnalysis.autoscaling.targetConcurrentRequests` (e.g. `1.5`), as KEDA parses it as a float
+* Stop emitting the Vortex `ScaledObject`'s `spec.fallback` with `aggregateAcrossReplicas: false`, where KEDA < 2.17 scaled the fleet down on scrape failure
+* Fix `caCerts.configMap` mounting a single certificate; omitting `configMap.key`/`path` now imports every key, and `path` without `key` fails fast
+* Add `istio.enabled` to run every chart-owned workload under STRICT mTLS, and `istio.meshSidecar.enabled` to give sandboxed agent runtimes a mesh identity
+* Add `mcp.nodeSelector`/`affinity`/`tolerations` (falling back to the chart-wide values) and `mcp.topologySpreadConstraints`; `priorityClassName` now also applies to MCP
+* Add `topologySpreadConstraints` for Vortex, the Agent Orchestrator and the agent runtimes, and apply the chart-wide `priorityClassName` to them
+* Fix `applicationNodes.jvmOpts`/`jvmCeOpts` being dropped instead of merged when `sonar.web.javaOpts`/`sonar.ce.javaOpts` is set in `sonarProperties`
+* Raise the default probe `timeoutSeconds` to `5` on search and application nodes, and `applicationNodes.livenessProbe.failureThreshold` to `8`
+* Agent runtimes reach the Agent Egress Proxy by ClusterIP instead of DNS, dropping their kube-dns egress; recreating the proxy Service requires restarting them
+* Add `istio.istiodClusterIP` (default `auto`) to pin istiod's address in agent runtime pods and drop their kube-dns egress; `helm template` needs it set
+* Add `istio.revision` to target a revisioned (canary) Istio control plane's `istiod-<revision>` Service
+* `vortexAnalysis.enabled` now defaults to `true` when `remediationAgent.enabled` is `true`
+* Raise the Remediation Agent's default `runAsUser`/`runAsGroup` from `1000` to `10001`, fixing incomplete generated PR content
+* Support Oracle and Microsoft SQL Server for the Agent Orchestrator: it now gets the full JDBC URL (`CORE_DB_JDBC_URL`, overridable with `agentOrchestrator.coreDb.jdbcUrl`), and the Oracle driver from `jdbcOverwrite.oracleJdbcDriver.url` is installed in its pod
+* Fix the `install-oracle-jdbc-driver` init container keeping `runAsUser`/`runAsGroup` on OpenShift, which kept the restricted-v2 SCC from admitting the application pods
+* Raise the default `applicationNodes.resources` memory request and limit to `8192M` to fit the higher SonarQube Server 2026.5 Web/CE heap defaults
+* Supported Kubernetes versions are now 1.34 to 1.37 and OpenShift 4.19 to 4.22
+
+## [2026.4.0]
+* Upgrade Chart's version to 2026.4.0
+* Upgrade SonarQube Server to 2026.4.0
+* Upgrade SonarQube Community build to 26.6.0.123539
+* Add `searchNodes.extraInitContainers` and `applicationNodes.extraInitContainers` to allow per-node-type extra init containers
+* Deprecate root-level `extraInitContainers` in favour of the node-specific values
+* Add CA certificate support with multi-cert bundling to `install-plugins` init container for plugin downloads from servers using self-signed or private CA certificates
+* Fix multi-cert CA bundle handling in `install-oracle-jdbc-driver` init container
+* Fix `ca-certs` init container failing with "keytool: Permission denied" on base images whose JVM keystore is read-only, by making the keystore working copy writable
+* Add IPv6 support: resolve the DCE cluster node address from the pod IP (IPv4 or IPv6)
+* Fix DCE health probes for IPv6
+* Fix NetworkPolicy blocking IPv6 egress by allowing `::/0`
+
+## [2026.3.1]
+* Upgrade Chart's version to 2026.3.1
+* Upgrade SonarQube Server to 2026.3.1
+
+## [2026.3.0]
+* Upgrade Chart's version to 2026.3.0
+* Upgrade SonarQube Server to 2026.3.0
+* Add `applicationNodes.topologySpreadConstraints` and `searchNodes.topologySpreadConstraints` to support spreading pods across topology domains
+* Add MCP (Model Context Protocol) server support via `mcp.enabled`
+* Fix MCP init container and SONARQUBE_URL to respect `sonarWebContext` when non-root
+* Update MCP image to `sonarsource/sonarqube-mcp:1.22.0.3040`
+
 ## [2026.2.0]
 * Upgrade Chart's version to 2026.2.0
+* Upgrade SonarQube Server to 2026.2.0
 * Update ingress-nginx subchart to 4.14.3
 * Replace wget with curl in health probes
 * Added optional sectionName option to httproute
+* Use -fS flag in curl to show errors in liveness and startup probes
 
 ## [2026.1.0]
 * Upgrade SonarQube Server to 2026.1.0

@@ -7,7 +7,7 @@ x-google-marketplace:
   publishedVersion: "$TAG"
   publishedVersionMetadata:
     releaseNote: >-
-      SonarQube Server 2026.1.x google cloud marketpalce release test schema.
+      SonarQube Server $TAG Google Cloud Marketplace release test schema.
   images:
     '':
       properties:
@@ -50,7 +50,7 @@ properties:
     title: JDBC URL
     description: The JDBC URL to connect to the database
     type: string
-    default: 'jdbc:postgresql://myPostgres/myDatabase'
+    default: 'jdbc:postgresql://external-postgres-postgresql:5432/sonarqube'
   jdbcOverwrite.jdbcUsername:
     title: JDBC Username
     description: The username to connect to the database
@@ -63,6 +63,16 @@ properties:
     default: 'password'
     x-google-marketplace:
         type: MASKED_FIELD
+  # Test-only sizing: the chart's production default (8192M) doesn't fit a single node of the
+  # staging cluster. Mirrors charts/sonarqube-dce/ci/ci-values.yaml.
+  ApplicationNodes.resources.requests.memory:
+    title: Application nodes memory request
+    type: string
+    default: '4096M'
+  ApplicationNodes.resources.limits.memory:
+    title: Application nodes memory limit
+    type: string
+    default: '4096M'
 required:
 - name
 - namespace

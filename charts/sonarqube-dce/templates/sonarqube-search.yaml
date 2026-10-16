@@ -62,6 +62,9 @@ spec:
 {{- with .Values.searchNodes.podLabels }}
 {{ toYaml . | indent 8 }}
 {{- end }}
+{{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+{{ . | indent 8 }}
+{{- end }}
       annotations:
         {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
         checksum/init-sysctl: {{ include (print $.Template.BasePath "/init-sysctl.yaml") . | sha256sum }}
@@ -77,6 +80,9 @@ spec:
 {{- with .Values.searchNodes.annotations }}
 {{ toYaml . | indent 8 }}
 {{- end }}
+{{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+{{ . | indent 8 }}
+{{- end }}
     spec:
       automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
       {{- if or .Values.searchNodes.image.pullSecrets .Values.searchNodes.image.pullSecret }}
@@ -89,7 +95,9 @@ spec:
         {{- end }}
       {{- end }}
       initContainers:
-      {{- if .Values.extraInitContainers }}
+      {{- if .Values.searchNodes.extraInitContainers }}
+{{ toYaml .Values.searchNodes.extraInitContainers | indent 8 }}
+      {{- else if .Values.extraInitContainers }}
 {{ toYaml .Values.extraInitContainers | indent 8 }}
       {{- end }}
       {{- if and .Values.initSysctl.enabled (not .Values.OpenShift.enabled) }}
@@ -116,8 +124,17 @@ spec:
         - name: ca-certs
           image: {{ default (include "sonarqube.image" .) .Values.caCerts.image }}
           imagePullPolicy: {{ .Values.searchNodes.image.pullPolicy  }}
-          command: ["sh"]
-          args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
+          command: ["sh", "-c"]
+          args:
+            - |
+              cp -f "${JAVA_HOME}/lib/security/cacerts" /tmp/certs/cacerts
+              chmod u+w /tmp/certs/cacerts
+              if [ "$(ls /tmp/secrets/ca-certs)" ]; then
+                for f in /tmp/secrets/ca-certs/*; do
+                  keytool -importcert -file "${f}" -alias "$(basename "${f}")" \
+                    -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt
+                done
+              fi
           {{- with (include "sonarqube.initContainersSecurityContext" .) }}
           securityContext: {{- . | nindent 12 }}
           {{- end }}
@@ -239,6 +256,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: SONAR_CLUSTER_NODE_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
             {{- if .Values.searchNodes.searchAuthentication.enabled }}
             - name: SONAR_CLUSTER_SEARCH_PASSWORD
               valueFrom:
@@ -289,8 +310,8 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered live if http call returns 200
-                host="$(hostname -i || echo '127.0.0.1')"
-                if curl --noproxy "*" -s -u "elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}" "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                {{- include "sonarqube.probeHostScript" . | nindent 16 }}
+                if curl --noproxy "*" -sS -u "elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}" "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
@@ -298,8 +319,8 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered live if http call returns 200
-                host="$(hostname -i || echo '127.0.0.1')"
-                if curl --noproxy "*" -s -k -u "elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}" "https://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                {{- include "sonarqube.probeHostScript" . | nindent 16 }}
+                if curl --noproxy "*" -sS -k -u "elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}" "https://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
@@ -307,8 +328,8 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered live if http call returns 200
-                host="$(hostname -i || echo '127.0.0.1')"
-                if curl --noproxy "*" -s "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                {{- include "sonarqube.probeHostScript" . | nindent 16 }}
+                if curl --noproxy "*" -sS "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
@@ -326,7 +347,7 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
-                host="$(hostname -i || echo '127.0.0.1')"
+                {{- include "sonarqube.probeHostScript" . | nindent 16 }}
                 if curl --noproxy "*" -s -u "elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}" "http://${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
@@ -335,7 +356,7 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
-                host="$(hostname -i || echo '127.0.0.1')"
+                {{- include "sonarqube.probeHostScript" . | nindent 16 }}
                 if curl --noproxy "*" -s -k -u "elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}" "https://${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
@@ -344,7 +365,7 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
-                host="$(hostname -i || echo '127.0.0.1')"
+                {{- include "sonarqube.probeHostScript" . | nindent 16 }}
                 if curl --noproxy "*" -s "http://${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
@@ -363,8 +384,8 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered started if http call returns 200
-                host="$(hostname -i || echo '127.0.0.1')"
-                if curl --noproxy "*" -s -u "elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}" "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                {{- include "sonarqube.probeHostScript" . | nindent 16 }}
+                if curl --noproxy "*" -sS -u "elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}" "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
@@ -372,8 +393,8 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered started if http call returns 200
-                host="$(hostname -i || echo '127.0.0.1')"
-                if curl --noproxy "*" -s -k -u "elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}" "https://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                {{- include "sonarqube.probeHostScript" . | nindent 16 }}
+                if curl --noproxy "*" -sS -k -u "elastic:{{ .Values.searchNodes.searchAuthentication.userPassword }}" "https://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
@@ -381,8 +402,8 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered started if http call returns 200
-                host="$(hostname -i || echo '127.0.0.1')"
-                if curl --noproxy "*" -s "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                {{- include "sonarqube.probeHostScript" . | nindent 16 }}
+                if curl --noproxy "*" -sS "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
@@ -453,6 +474,10 @@ spec:
     {{- else if .Values.searchNodes.affinity }}
       affinity:
 {{ toYaml .Values.searchNodes.affinity | indent 8 }}
+    {{- end }}
+    {{- with .Values.searchNodes.topologySpreadConstraints }}
+      topologySpreadConstraints:
+{{ toYaml . | indent 8 }}
     {{- end }}
       serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
       volumes:

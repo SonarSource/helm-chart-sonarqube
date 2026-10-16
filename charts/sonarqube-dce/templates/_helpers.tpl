@@ -39,6 +39,205 @@
 {{- $applicationNodes }}
 {{- end -}}
 
+{{/*
+Create the fully qualified name for the MCP service.
+*/}}
+{{- define "sonarqube.mcp.fullname" -}}
+{{- printf "%s-mcp" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Create the fully qualified name for Vortex.
+Usage: {{ include "sonarqube.vortex.fullname" . }}
+*/}}
+{{- define "sonarqube.vortex.fullname" -}}
+{{- printf "%s-vortex" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+URL the application nodes use to reach Vortex (the sonar.vortex.analysis.url property).
+*/}}
+{{- define "sonarqube.vortex.url" -}}
+{{- printf "http://%s:%d" (include "sonarqube.vortex.fullname" .) (int .Values.vortexAnalysis.port) -}}
+{{- end -}}
+
+{{/*
+Name of the ServiceAccount for the Vortex pod. Same create / pinned-name / "default"
+fallback logic as sonarqube.serviceAccountName, but independent of it.
+*/}}
+{{- define "sonarqube.vortex.serviceAccountName" -}}
+{{- if .Values.vortexAnalysis.serviceAccount.create -}}
+    {{ default (include "sonarqube.vortex.fullname" .) .Values.vortexAnalysis.serviceAccount.name }}
+{{- else -}}
+    {{ default "default" .Values.vortexAnalysis.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Create the fully qualified name for the gVisor installer.
+Usage: {{ include "sonarqube.gvisor.fullname" . }}
+*/}}
+{{- define "sonarqube.gvisor.fullname" -}}
+{{- printf "%s-gvisor-installer" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Effective gvisor.enabled: requires at least one of hunterAgent.enabled / remediationAgent.enabled
+too, so gVisor only ever renders when there's a runtime to sandbox.
+Never on OpenShift: the installer needs containerd plus privileged/hostPID (no default SCC allows
+that) and CRI-O ships no runsc handler, so leaving it on would emit a RuntimeClass the runtimes can
+never be scheduled with. OpenShift.agentRuntimeClassName sandboxes them with Kata instead.
+Usage: {{ include "sonarqube.gvisor.enabled" . }}
+*/}}
+{{- define "sonarqube.gvisor.enabled" -}}
+{{- and .Values.gvisor.enabled (not .Values.OpenShift.enabled) (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
+{{- end -}}
+
+{{/*
+RuntimeClass for the agent runtime pods: OpenShift.agentRuntimeClassName on OpenShift ("kata" by
+default - created by the sandboxed containers operator, never by this chart), gVisor's elsewhere
+when that feature is on, else the generic agentRuntimeSandbox.runtimeClassName for any other
+sandboxed RuntimeClass (e.g. Kata outside OpenShift). Empty output means no runtimeClassName at
+all, i.e. the cluster's default runtime with no sandbox under it.
+Usage: {{ include "sonarqube.agentRuntime.runtimeClassName" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.runtimeClassName" -}}
+{{- if .Values.OpenShift.enabled -}}
+{{- .Values.OpenShift.agentRuntimeClassName | default "" -}}
+{{- else if eq (include "sonarqube.gvisor.enabled" .) "true" -}}
+{{- .Values.gvisor.runtimeClassName -}}
+{{- else if .Values.agentRuntimeSandbox.enabled -}}
+{{- .Values.agentRuntimeSandbox.runtimeClassName -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Fail the release when OpenShift.agentRuntimeClassName names a RuntimeClass the cluster does not
+have. Sandboxing the agent runtimes is opt-out, not opt-in, so the name is set by default - but the
+chart never creates the RuntimeClass (it comes from the OpenShift sandboxed containers operator).
+Without this check Helm reports success while the API server rejects every agent runtime pod with
+'RuntimeClass "kata" not found', leaving both Deployments at 0 available indefinitely. Clearing
+OpenShift.agentRuntimeClassName is the documented opt-out and also skips this check, since there is
+then no RuntimeClass to find.
+
+'lookup' returns nothing whenever there is no live API connection - 'helm template', and
+client-side '--dry-run' - which is indistinguishable from "the RuntimeClass is absent". So the
+check only runs once a positive control proves lookup is live: the release namespace's 'default'
+ServiceAccount, which every existing namespace has. When even that comes back empty (offline
+rendering, or --create-namespace before the namespace exists) the guard is skipped rather than
+guessing, the same way sonarqube.search.assertEsMajorUpgrade treats an empty lookup.
+Usage: {{ include "sonarqube.openshift.assertAgentRuntimeClass" . }}
+*/}}
+{{- define "sonarqube.openshift.assertAgentRuntimeClass" -}}
+{{- $rcName := .Values.OpenShift.agentRuntimeClassName | default "" | toString -}}
+{{- if and .Values.OpenShift.enabled $rcName (not .Values.OpenShift.skipAgentRuntimeClassCheck) -}}
+{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+{{- /* Nested ifs, not one 'and': the positive control must be evaluated before the RuntimeClass
+       lookup, and template 'and' evaluating its arguments eagerly is a Go version detail. */ -}}
+{{- if lookup "v1" "ServiceAccount" .Release.Namespace "default" -}}
+{{- /* RuntimeClass is cluster-scoped, hence the empty namespace. */ -}}
+{{- if not (lookup "node.k8s.io/v1" "RuntimeClass" "" $rcName) -}}
+{{- fail (printf "\n ** The RuntimeClass %q does not exist in this cluster. ** \n OpenShift.agentRuntimeClassName=%q sandboxes the agent runtimes, but this chart never creates that RuntimeClass - it comes from the OpenShift sandboxed containers operator (\"kata\" for a default KataConfig, \"kata-remote\" for peer pods). Install the operator and check with 'kubectl get runtimeclass %s', or set OpenShift.agentRuntimeClassName=\"\" to run the agent runtimes unsandboxed under the cluster's default runtime. Set OpenShift.skipAgentRuntimeClassCheck=true to bypass this check, for example when the installing credentials cannot read cluster-scoped RuntimeClasses." $rcName $rcName $rcName) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Whether the agent runtimes are on a RuntimeClass that can't run istio-init (no NET_ADMIN) - i.e.
+sonarqube.agentRuntime.runtimeClassName resolves to something: Kata on OpenShift, gVisor, or the
+generic agentRuntimeSandbox.runtimeClassName. Inert unless a runtime is actually enabled, same
+precedent as sonarqube.gvisor.enabled.
+Usage: {{ include "sonarqube.agentRuntime.sandboxed" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.sandboxed" -}}
+{{- $anyRuntime := or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+{{- if and $anyRuntime (include "sonarqube.agentRuntime.runtimeClassName" .) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Whether agent runtime pods actually end up with an Envoy: at least one runtime enabled, plus
+istio.enabled, plus either standard injection (not sandboxed) or the hand-authored mesh sidecar.
+Under a sandbox with the mesh sidecar off the pods are stamped sidecar.istio.io/inject: "false"
+and get none, so they need neither the istiod egress rule nor the sidecar probe ports. Requiring a
+runtime to actually be enabled keeps this "" when istio.enabled=true but hunterAgent/remediationAgent
+are both off, so callers with no runtime-enabled gate of their own (NOTES.txt) don't warn about a
+kube-dns rule that no pod exists to carry. Emits "true" or "".
+Usage: {{ include "sonarqube.agentRuntime.hasEnvoy" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.hasEnvoy" -}}
+{{- $anyRuntime := or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+{{- $sandboxed := eq (include "sonarqube.agentRuntime.sandboxed" .) "true" -}}
+{{- $mesh := eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" -}}
+{{- if and $anyRuntime .Values.istio.enabled (or (not $sandboxed) $mesh) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+The istiod Service name to resolve, honoring a revisioned control plane. A canary/revisioned
+istiod (the istio.io/rev namespace label, or an explicit --revision on istioctl) is addressed as
+istiod-<revision>, not the bare istiod Service - and that is the name a sidecar's own
+discoveryAddress actually uses (see CA_ADDR/PROXY_CONFIG in
+sonarqube.agentRuntime.meshSidecar.container), so istio.revision must drive every place this
+chart pins that address: the ClusterIP lookup (sonarqube.agentRuntime.istiodClusterIP), the
+hand-authored mesh sidecar's own config, and the hostAliases entry in agent-runtime.yaml. Emits
+"istiod" or "istiod-<revision>".
+Usage: {{ include "sonarqube.istio.istiodServiceName" . }}
+*/}}
+{{- define "sonarqube.istio.istiodServiceName" -}}
+{{- if .Values.istio.revision -}}
+{{- printf "istiod-%s" .Values.istio.revision -}}
+{{- else -}}
+istiod
+{{- end -}}
+{{- end -}}
+
+{{/*
+The address to pin istiod's Service name (sonarqube.istio.istiodServiceName) to in agent runtime
+pods, resolving istio.istiodClusterIP's three settings: an explicit address is returned verbatim,
+"auto" reads that Service in istio.namespace, and "" opts out. Emits the address, or "" when there
+is none - which includes "auto" under `helm template`, where lookup cannot reach a cluster and
+returns an empty dict rather than failing, and "auto" against a live cluster where the identity
+running helm lacks `get`/`list` on Services in istio.namespace: unlike a true NotFound, that RBAC
+error is not swallowed by Helm's lookup and aborts the whole render instead of yielding here - see
+the istio.istiodClusterIP comment in values.yaml. A headless Service is treated as no address,
+since "None" is not one.
+Usage: {{ include "sonarqube.agentRuntime.istiodClusterIP" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.istiodClusterIP" -}}
+{{- $configured := .Values.istio.istiodClusterIP | default "" -}}
+{{- if ne $configured "auto" -}}
+{{- $configured -}}
+{{- else -}}
+{{- $svc := lookup "v1" "Service" .Values.istio.namespace (include "sonarqube.istio.istiodServiceName" .) -}}
+{{- $ip := "" -}}
+{{- if $svc -}}
+{{- $ip = ($svc.spec | default dict).clusterIP | default "" -}}
+{{- end -}}
+{{- if ne $ip "None" -}}
+{{- $ip -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Whether an Envoy-carrying runtime can drop its kube-dns egress rule, because the one name it needs
+(istiod.<istio.namespace>.svc) is pinned into /etc/hosts via hostAliases. See the
+istio.istiodClusterIP comment in values.yaml for why that single name is the whole requirement.
+Only ever "true" alongside sonarqube.agentRuntime.hasEnvoy - with no Envoy there is no name to
+resolve and hence no rule to drop. Emits "true" or "".
+Usage: {{ include "sonarqube.agentRuntime.resolverlessMesh" . }}
+*/}}
+{{- define "sonarqube.agentRuntime.resolverlessMesh" -}}
+{{- if and (eq (include "sonarqube.agentRuntime.hasEnvoy" .) "true") (include "sonarqube.agentRuntime.istiodClusterIP" .) -}}
+true
+{{- end -}}
+{{- end -}}
+
 {{- define "accountDeprecation" -}}
 {{- $map1 := .Values.setAdminPassword -}}
 {{- $map2 := .Values.account -}}
@@ -144,9 +343,9 @@ Determine JDBC password if internal secret is used
 Set sonarqube.jvmOpts
 */}}
 {{- define "sonarqube.jvmOpts" -}}
-{{- $tempJvm := .Values.ApplicationNodes.jvmOpts -}}
+{{- $tempJvm := .Values.ApplicationNodes.jvmOpts | default "" -}}
 {{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.web.javaOpts")}}
-{{- $tempJvm = (get .Values.ApplicationNodes.sonarProperties "sonar.web.javaOpts") -}}
+{{- $tempJvm = trim (printf "%s %s" $tempJvm (get .Values.ApplicationNodes.sonarProperties "sonar.web.javaOpts" | default "")) -}}
 {{- else if .Values.ApplicationNodes.env -}}
 {{- range $index, $val := .Values.ApplicationNodes.env -}}
 {{- if eq $val.name "SONAR_WEB_JAVAOPTS" -}}
@@ -169,9 +368,9 @@ Set sonarqube.jvmOpts
 Set sonarqube.jvmCEOpts
 */}}
 {{- define "sonarqube.jvmCEOpts" -}}
-{{- $tempJvm := .Values.ApplicationNodes.jvmCeOpts -}}
+{{- $tempJvm := .Values.ApplicationNodes.jvmCeOpts | default "" -}}
 {{- if and .Values.ApplicationNodes.sonarProperties (hasKey (.Values.ApplicationNodes.sonarProperties) "sonar.ce.javaOpts")}}
-{{- $tempJvm = (get .Values.ApplicationNodes.sonarProperties "sonar.ce.javaOpts") -}}
+{{- $tempJvm = trim (printf "%s %s" $tempJvm (get .Values.ApplicationNodes.sonarProperties "sonar.ce.javaOpts" | default "")) -}}
 {{- else if .Values.ApplicationNodes.env -}}
 {{- range $index, $val := .Values.ApplicationNodes.env -}}
 {{- if eq $val.name "SONAR_CE_JAVAOPTS" -}}
@@ -225,6 +424,8 @@ Set prometheusExporter.downloadURL
 {{- define "prometheusExporter.downloadURL" -}}
 {{- if .Values.ApplicationNodes.prometheusExporter.downloadURL -}}
 {{ printf "%s" .Values.ApplicationNodes.prometheusExporter.downloadURL }}
+{{- else if and (regexMatch "^[0-9]+[.][0-9]+[.][0-9]+$" .Values.ApplicationNodes.prometheusExporter.version) (semverCompare ">=1.1.0" .Values.ApplicationNodes.prometheusExporter.version) -}}
+{{ printf "https://github.com/prometheus/jmx_exporter/releases/download/%s/jmx_prometheus_javaagent-%s.jar" .Values.ApplicationNodes.prometheusExporter.version .Values.ApplicationNodes.prometheusExporter.version }}
 {{- else -}}
 {{ printf "https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/%s/jmx_prometheus_javaagent-%s.jar" .Values.ApplicationNodes.prometheusExporter.version .Values.ApplicationNodes.prometheusExporter.version }}
 {{- end -}}
@@ -381,6 +582,16 @@ Set combined_search_env, ensuring we don't have any duplicates with our features
 {{- end -}}
 
 {{/*
+Node address for exec probes: SONAR_CLUSTER_NODE_HOST (the pod IP), IPv6 bracket-wrapped for the
+URL, falling back to `hostname -i` then `localhost`.
+*/}}
+{{- define "sonarqube.probeHostScript" -}}
+host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+host="${host:-localhost}"
+case "${host}" in *:*) host="[${host}]" ;; esac
+{{- end -}}
+
+{{/*
   generate Proxy env var from httpProxySecret
 */}}
 {{- define "sonarqube.proxyFromSecret" -}}
@@ -509,6 +720,42 @@ Remove incompatible user/group values that do not work in Openshift out of the b
 {{- end -}}
 
 {{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.mcp.securityContext" -}}
+{{- $adaptedMcpSecurityContext := .Values.mcp.podSecurityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedMcpSecurityContext = omit $adaptedMcpSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedMcpSecurityContext -}}
+{{- end -}}
+
+{{/*
+Remove incompatible user/group values that do not work in Openshift out of the box
+*/}}
+{{- define "sonarqube.mcp.containerSecurityContext" -}}
+{{- $adaptedMcpContainerSecurityContext := .Values.mcp.containerSecurityContext -}}
+  {{- if .Values.OpenShift.enabled -}}
+    {{- $adaptedMcpContainerSecurityContext = omit $adaptedMcpContainerSecurityContext "fsGroup" "runAsUser" "runAsGroup" -}}
+  {{- end -}}
+{{- toYaml $adaptedMcpContainerSecurityContext -}}
+{{- end -}}
+
+{{/*
+Returns non-empty when mcp.env already defines a HOME entry, so the chart's
+default HOME=/data env can be skipped instead of emitted twice.
+*/}}
+{{- define "sonarqube.mcp.envHasHome" -}}
+{{- $found := false -}}
+{{- range .Values.mcp.env -}}
+  {{- if eq .name "HOME" -}}
+    {{- $found = true -}}
+  {{- end -}}
+{{- end -}}
+{{- if $found -}}true{{- end -}}
+{{- end -}}
+
+{{/*
   generate caCerts volume
 */}}
 {{- define "sonarqube.volumes.caCerts" -}}
@@ -520,9 +767,11 @@ Remove incompatible user/group values that do not work in Openshift out of the b
   {{- else if .Values.caCerts.configMap }}
   configMap:
     name: {{ .Values.caCerts.configMap.name }}
+    {{- if or .Values.caCerts.configMap.key .Values.caCerts.configMap.path }}
     items:
-      - key: {{ .Values.caCerts.configMap.key }}
-        path: {{ .Values.caCerts.configMap.path }}
+      - key: {{ required "caCerts.configMap.key is required when caCerts.configMap.path is set" .Values.caCerts.configMap.key }}
+        path: {{ default .Values.caCerts.configMap.key .Values.caCerts.configMap.path }}
+    {{- end }}
   {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -547,15 +796,45 @@ Hazelcast ports (port, webPort, cePort) are configured, ensuring proper cluster 
 {{- end -}}
 
 {{/*
-Merge user-provided sonarProperties with automatically generated Hazelcast properties.
-User-provided properties take precedence over automatically generated ones.
+Also give these properties a real conf/sonar.properties line — the pod env vars set further down
+aren't picked up by plain Configuration.get() consumers (SONAR-31416). Additive: env vars stay too,
+for consumers like hunter-agent-unified-app that read them via Spring instead.
+*/}}
+{{- define "sonarqube.agentHealthProperties" -}}
+{{- $props := dict -}}
+{{- if .Values.agentOrchestrator.enabled -}}
+{{- $_ := set $props "sonar.hunteragent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
+{{- $_ := set $props "sonar.remediationagent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
+{{- end -}}
+{{- if eq (include "sonarqube.vortex.enabled" .) "true" -}}
+{{- $_ := set $props "sonar.vortex.analysis.url" (include "sonarqube.vortex.url" .) -}}
+{{- end -}}
+{{- if eq (include "sonarqube.agentic.enabled" .) "true" -}}
+{{- $_ := set $props "sonar.agentic.signing.secretFile" (include "sonarqube.agentic.sqsSecretFile" .) -}}
+{{- /* Inbound and outbound are two different settings. The secret above is what SQS *verifies*
+       with: it derives remediation-to-sqs and agentic-shared from it in-process, which is why it
+       mounts neither. This one is what it *signs* with when it calls the orchestrator itself
+       (health, supported models, the hunter/remediation web configs) - a path, since the key is
+       mounted rather than derived. Unset leaves those calls unsigned. */}}
+{{- $_ := set $props "sonar.agentic.orchestrator.signingKeyPath" (printf "%s/agentic-shared" (include "sonarqube.agentic.sqsKeyDir" .)) -}}
+{{- end -}}
+{{- toYaml $props -}}
+{{- end -}}
+
+{{/*
+Merge user-provided sonarProperties with automatically generated properties (Hazelcast, agent health).
+User-provided properties take precedence.
 */}}
 {{- define "sonarqube.mergedSonarProperties" -}}
 {{- $hazelcastProps := fromYaml (include "sonarqube.hazelcastProperties" .) | default dict -}}
+{{- $agentHealthProps := fromYaml (include "sonarqube.agentHealthProperties" .) | default dict -}}
 {{- $userProps := .Values.ApplicationNodes.sonarProperties | default dict -}}
 {{- $merged := dict -}}
 {{- /* Start with automatically generated properties */}}
 {{- range $key, $val := $hazelcastProps -}}
+  {{- $_ := set $merged $key $val -}}
+{{- end -}}
+{{- range $key, $val := $agentHealthProps -}}
   {{- $_ := set $merged $key $val -}}
 {{- end -}}
 {{- /* User properties override automatic ones */}}
@@ -563,4 +842,1128 @@ User-provided properties take precedence over automatically generated ones.
   {{- $_ := set $merged $key $val -}}
 {{- end -}}
 {{- toYaml $merged -}}
+{{- end -}}
+
+{{/*
+Create the fully qualified name for the Agent Orchestrator.
+*/}}
+{{- define "sonarqube.agentOrchestrator.fullname" -}}
+{{- printf "%s-agent-orchestrator" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Create the fully qualified name for an agent runtime family.
+Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
+*/}}
+{{- define "sonarqube.agentRuntime.fullname" -}}
+{{- printf "%s-agent-runtime-%s" (include "sonarqube.fullname" .ctx) .family | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Selector labels for the Agent Orchestrator: app: <chart>-agent-orchestrator + release, matching
+the Vortex convention so the value doesn't collide with the SonarQube app Deployment's own
+selector (app: <chart> + release).
+*/}}
+{{- define "sonarqube.agentOrchestrator.selectorLabels" -}}
+app: {{ include "sonarqube.name" . }}-agent-orchestrator
+release: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Selector labels for one agent runtime family: app: <chart>-agent-runtime-<family> + release.
+Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
+*/}}
+{{- define "sonarqube.agentRuntime.selectorLabels" -}}
+app: {{ include "sonarqube.name" .ctx }}-agent-runtime-{{ .family }}
+release: {{ .ctx.Release.Name }}
+{{- end -}}
+
+{{/*
+The two agent runtime families, keyed by name, for templates that iterate over both.
+Usage: {{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" .) }}
+*/}}
+{{- define "sonarqube.agentRuntimes" -}}
+hunter: {{- .Values.hunterAgent | toYaml | nindent 2 }}
+remediation: {{- .Values.remediationAgent | toYaml | nindent 2 }}
+{{- end -}}
+
+{{/*
+Name of the ServiceAccount for the Agent Orchestrator.
+When agentOrchestrator.serviceAccount.create is true, use the pinned agentOrchestrator.serviceAccount.name
+(defaulting to the orchestrator fullname). Otherwise fall back to the main SonarQube ServiceAccount,
+so deployments that don't opt in to dedicated agent SAs are unaffected.
+*/}}
+{{- define "sonarqube.agentOrchestrator.serviceAccountName" -}}
+{{- if .Values.agentOrchestrator.serviceAccount.create -}}
+{{- default (include "sonarqube.agentOrchestrator.fullname" .) .Values.agentOrchestrator.serviceAccount.name -}}
+{{- else -}}
+{{- include "sonarqube.serviceAccountName" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Name of the ServiceAccount for an agent runtime family.
+Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
+Same create / pinned-name / fallback logic as the orchestrator helper above.
+*/}}
+{{- define "sonarqube.agentRuntime.serviceAccountName" -}}
+{{- $ctx := .ctx -}}
+{{- $family := .family -}}
+{{- $cfg := get (fromYaml (include "sonarqube.agentRuntimes" $ctx)) $family -}}
+{{- if $cfg.serviceAccount.create -}}
+{{- default (include "sonarqube.agentRuntime.fullname" (dict "ctx" $ctx "family" $family)) $cfg.serviceAccount.name -}}
+{{- else -}}
+{{- include "sonarqube.serviceAccountName" $ctx -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Fully qualified in-cluster DNS name for a Service, given its short name. Used for every in-cluster
+URL this chart builds (not just proxied ones, for consistency): Squid's own DNS resolver only
+reads `nameserver`/`ndots` from /etc/resolv.conf, not the `search` list, so it can never resolve a
+bare short Service name the way normal container DNS resolution does - any address a runtime
+reaches through the Agent Egress Proxy must be fully qualified or Squid fails with ERR_DNS_FAIL.
+Parameters (dict): name (required, the Service's short name), ctx (required, the root context '.')
+*/}}
+{{- define "sonarqube.svcFQDN" -}}
+{{- printf "%s.%s.svc.cluster.local" .name .ctx.Release.Namespace -}}
+{{- end -}}
+
+{{/*
+URL the app nodes use to reach the shared Agent Orchestrator.
+*/}}
+{{- define "sonarqube.agentOrchestrator.url" -}}
+{{- printf "http://%s:%d" (include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.agentOrchestrator.fullname" .) "ctx" .)) (int .Values.agentOrchestrator.port) -}}
+{{- end -}}
+
+{{/*
+In-cluster URL of the SonarQube service the Agent Orchestrator talks to (AGENTIC_SONARQUBE_URL
+and the wait-for-sonarqube init container). Always the co-deployed SonarQube service; honours the
+web context path.
+*/}}
+{{- define "sonarqube.agent.sonarqube.url" -}}
+{{- printf "http://%s:%d%s" (include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.fullname" .) "ctx" .)) (int .Values.service.externalPort) (trimSuffix "/" (include "sonarqube.webcontext" .)) -}}
+{{- end -}}
+
+{{/*
+Push URL the orchestrator uses to dispatch jobs to one agent runtime family.
+Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name)
+*/}}
+{{- define "sonarqube.agentRuntime.pushUrl" -}}
+{{- $port := (get (fromYaml (include "sonarqube.agentRuntimes" .ctx)) .family).port -}}
+{{- printf "http://%s:%d/jobs" (include "sonarqube.svcFQDN" (dict "name" (include "sonarqube.agentRuntime.fullname" .) "ctx" .ctx)) (int $port) -}}
+{{- end -}}
+
+{{/*
+Whether the hand-authored mesh sidecar is active (istio.enabled + the runtime being sandboxed +
+the opt-in flag) - every meshSidecar/Sidecar/PeerAuthentication/NetworkPolicy template gates on
+this one define. Also fails closed if meshPort collides with an enabled runtime's own port.
+Emits "true" or "".
+*/}}
+{{- define "sonarqube.agentRuntime.meshSidecar.enabled" -}}
+{{- if and .Values.istio.enabled (eq (include "sonarqube.agentRuntime.sandboxed" .) "true") .Values.istio.meshSidecar.enabled -}}
+{{- /* The hand-authored istio-proxy is a native sidecar (initContainers entry with
+       restartPolicy: Always) - that container type needs the SidecarContainers feature, on by
+       default only from Kubernetes 1.29 (alpha/gated in 1.28, absent before). A pre-1.29 cluster
+       admits the Deployment but pods never progress past Init - fail closed here instead. */}}
+{{- if semverCompare "<1.29-0" .Capabilities.KubeVersion.Version -}}
+{{- fail "istio.meshSidecar.enabled requires Kubernetes >= 1.29 (native sidecar containers: initContainers with restartPolicy: Always)" -}}
+{{- end -}}
+{{- $mesh := int .Values.istio.meshSidecar.meshPort -}}
+{{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" .) -}}
+{{- if and $cfg.enabled (eq (int $cfg.port) $mesh) -}}
+{{- fail (printf "istio.meshSidecar.meshPort (%d) must differ from the %s runtime port" $mesh $family) -}}
+{{- end -}}
+{{- end -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+ISTIO_KUBE_APP_PROBERS JSON: one entry per enabled probe, keyed by the rewritten path pilot-agent
+exposes on :15020, pointing at the app's real port (see sonarqube.agent.probe's rewritePath).
+Parameters (dict): ctx, family (runtime family name)
+*/}}
+{{- define "sonarqube.agentRuntime.meshSidecar.appProbers" -}}
+{{- $cfg := get (fromYaml (include "sonarqube.agentRuntimes" .ctx)) .family -}}
+{{- $probers := dict -}}
+{{- if $cfg.probes.readiness.enabled -}}
+{{- $probers = set $probers "/app-health/agent-runtime/readyz" (dict "httpGet" (dict "path" $cfg.probes.readiness.path "port" (int $cfg.port) "scheme" "HTTP") "timeoutSeconds" (int ($cfg.probes.readiness.timeoutSeconds | default 1))) -}}
+{{- end -}}
+{{- if $cfg.probes.liveness.enabled -}}
+{{- $probers = set $probers "/app-health/agent-runtime/livez" (dict "httpGet" (dict "path" $cfg.probes.liveness.path "port" (int $cfg.port) "scheme" "HTTP") "timeoutSeconds" (int ($cfg.probes.liveness.timeoutSeconds | default 1))) -}}
+{{- end -}}
+{{- toJson $probers -}}
+{{- end -}}
+
+{{/*
+Hand-authored istio-proxy init container for one sandboxed runtime family - what the Istio
+injector would produce minus istio-init, with ISTIO_META_INTERCEPTION_MODE=NONE (the sandboxing
+RuntimeClass can't do iptables). Parameters (dict): ctx, family (runtime family name)
+*/}}
+{{- define "sonarqube.agentRuntime.meshSidecar.container" -}}
+{{- $ctx := .ctx -}}
+{{- $family := .family -}}
+{{- $sidecar := $ctx.Values.istio.meshSidecar -}}
+{{- $probers := include "sonarqube.agentRuntime.meshSidecar.appProbers" (dict "ctx" $ctx "family" $family) -}}
+{{- $istiodSvc := include "sonarqube.istio.istiodServiceName" $ctx -}}
+- name: istio-proxy
+  image: "{{ $sidecar.proxyImage.repository }}:{{ $sidecar.proxyImage.tag }}"
+  restartPolicy: Always
+  args:
+    - proxy
+    - sidecar
+    - --domain
+    - $(POD_NAMESPACE).svc.cluster.local
+    - --proxyLogLevel=warning
+    - --proxyComponentLogLevel=misc:error
+    - --log_output_level=default:info
+  securityContext:
+    runAsUser: 1337
+    runAsGroup: 1337
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    privileged: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: ["ALL"]
+  {{- /* Bare k8s probe defaults (30s to first success) are too tight - cert issuance and XDS
+         bootstrap under gVisor's syscall interception can take longer. Verified on a live gVisor
+         cluster: startupProbe allows up to 600s, readinessProbe stays generous to avoid flapping. */}}
+  startupProbe:
+    httpGet:
+      path: /healthz/ready
+      port: 15021
+    periodSeconds: 1
+    timeoutSeconds: 3
+    failureThreshold: 600
+  readinessProbe:
+    httpGet:
+      path: /healthz/ready
+      port: 15021
+    periodSeconds: 15
+    timeoutSeconds: 3
+    failureThreshold: 4
+  resources: {{- toYaml $sidecar.resources | nindent 4 }}
+  env:
+    - name: PILOT_CERT_PROVIDER
+      value: istiod
+    - name: CA_ADDR
+      value: "{{ $istiodSvc }}.{{ $ctx.Values.istio.namespace }}.svc:15012"
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: INSTANCE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
+    - name: SERVICE_ACCOUNT
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.serviceAccountName
+    - name: HOST_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
+    - name: ISTIO_META_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    {{- /* discoveryAddress must be set explicitly - pilot-agent otherwise falls back to Istio's
+           hardcoded istiod.istio-system.svc:15012 default, silently ignoring istio.namespace
+           (CA_ADDR above is a separate config path and does not influence this one). */}}
+    - name: PROXY_CONFIG
+      value: |
+        {"discoveryAddress":"{{ $istiodSvc }}.{{ $ctx.Values.istio.namespace }}.svc:15012"}
+    {{- /* ISTIO_META_POD_PORTS must stay empty - the Sidecar resource (agent-runtime-sidecar.yaml)
+           owns inbound, not this env var. */}}
+    - name: ISTIO_META_POD_PORTS
+      value: |-
+        [
+        ]
+    - name: ISTIO_META_APP_CONTAINERS
+      value: agent-runtime
+    - name: ISTIO_META_CLUSTER_ID
+      value: Kubernetes
+    - name: ISTIO_META_INTERCEPTION_MODE
+      value: NONE
+    - name: ISTIO_META_WORKLOAD_NAME
+      value: {{ include "sonarqube.agentRuntime.fullname" (dict "ctx" $ctx "family" $family) }}
+    - name: ISTIO_META_MESH_ID
+      value: cluster.local
+    - name: TRUST_DOMAIN
+      value: cluster.local
+    {{- if ne $probers "{}" }}
+    - name: ISTIO_KUBE_APP_PROBERS
+      value: {{ $probers | quote }}
+    {{- end }}
+  volumeMounts:
+    - name: workload-socket
+      mountPath: /var/run/secrets/workload-spiffe-uds
+    - name: credential-socket
+      mountPath: /var/run/secrets/credential-uds
+    - name: workload-certs
+      mountPath: /var/run/secrets/workload-spiffe-credentials
+    - name: istiod-ca-cert
+      mountPath: /var/run/secrets/istio
+    - name: istio-ca-crl
+      mountPath: /var/run/secrets/istio/crl
+    - name: istio-data
+      mountPath: /var/lib/istio/data
+    - name: istio-envoy
+      mountPath: /etc/istio/proxy
+    - name: istio-token
+      mountPath: /var/run/secrets/tokens
+    - name: istio-podinfo
+      mountPath: /etc/istio/pod
+{{- end -}}
+
+{{/*
+The nine volumes the istio-proxy init container above mounts from. Same shapes the Istio injector
+itself would produce.
+*/}}
+{{- define "sonarqube.agentRuntime.meshSidecar.volumes" -}}
+- name: workload-socket
+  emptyDir: {}
+- name: credential-socket
+  emptyDir: {}
+- name: workload-certs
+  emptyDir: {}
+- name: istio-envoy
+  emptyDir:
+    medium: Memory
+- name: istio-data
+  emptyDir: {}
+- name: istio-podinfo
+  downwardAPI:
+    items:
+      - path: labels
+        fieldRef:
+          fieldPath: metadata.labels
+      - path: annotations
+        fieldRef:
+          fieldPath: metadata.annotations
+- name: istio-token
+  projected:
+    sources:
+      - serviceAccountToken:
+          audience: istio-ca
+          expirationSeconds: 43200
+          path: istio-token
+- name: istiod-ca-cert
+  configMap:
+    name: istio-ca-root-cert
+- name: istio-ca-crl
+  configMap:
+    name: istio-ca-crl
+    optional: true
+{{- end -}}
+
+{{/*
+Create the fully qualified name for the Agent Egress Proxy.
+*/}}
+{{- define "sonarqube.agentEgressProxy.fullname" -}}
+{{- printf "%s-agent-egress-proxy" (include "sonarqube.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Selector labels for the Agent Egress Proxy: app: <chart>-agent-egress-proxy + release.
+*/}}
+{{- define "sonarqube.agentEgressProxy.selectorLabels" -}}
+app: {{ include "sonarqube.name" . }}-agent-egress-proxy
+release: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Name of the ServiceAccount for the Agent Egress Proxy.
+Same create / pinned-name / fallback logic as the orchestrator helper above.
+*/}}
+{{- define "sonarqube.agentEgressProxy.serviceAccountName" -}}
+{{- if .Values.agentEgressProxy.serviceAccount.create -}}
+{{- default (include "sonarqube.agentEgressProxy.fullname" .) .Values.agentEgressProxy.serviceAccount.name -}}
+{{- else -}}
+{{- include "sonarqube.serviceAccountName" . -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+In-cluster URL the agent runtimes reach the Agent Egress Proxy through. Plain http:// even for
+HTTPS_PROXY - the runtime talks plain HTTP to Squid itself, which then CONNECT-tunnels the actual
+HTTPS session (no TLS interception between the runtime and the proxy).
+
+When the hand-authored mesh sidecar is enabled, the runtime's own Envoy owns the egress hop instead - the
+app dials its own sidecar over loopback, and the Sidecar resource's egress listener
+(agent-runtime-sidecar.yaml) forwards it mTLS-wrapped to the real Service. The port is identical in
+both branches; an egress listener's port must match the destination Service's port.
+
+Neither branch emits the proxy's DNS name, and that is the point: a runtime must not need a
+resolver at all. kubelet publishes every same-namespace Service's ClusterIP as
+<SERVICE_NAME>_SERVICE_HOST (enableServiceLinks defaults to true and this chart never turns it
+off) and expands $(VAR) references in a container's env values against those variables, so the
+proxy's address arrives as a literal IP at container start. That is what lets
+agent-networkpolicy.yaml omit kube-dns egress for un-injected runtimes entirely: resolving this
+one name was the only reason an agent container ever needed a recursive resolver, and a recursive
+resolver is a covert egress channel for a workload that runs prompt-injectable content
+(SONAR-32023). The trade-off is that the IP is resolved once, at pod start - deleting and
+recreating the Service assigns a new ClusterIP and needs a runtime rollout. `helm upgrade`
+preserves a Service's ClusterIP, so upgrades are unaffected.
+
+Family-scoped: Remediation dials agentEgressProxy.remediationPort, the only listener whose Squid
+ACL admits SonarQube's own agentic endpoints (agent-egress-proxy-configmap.yaml); every other
+family dials agentEgressProxy.port, which never carries that allow rule.
+Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name).
+*/}}
+{{- define "sonarqube.agentEgressProxy.url" -}}
+{{- $port := ternary (int .ctx.Values.agentEgressProxy.remediationPort) (int .ctx.Values.agentEgressProxy.port) (eq .family "remediation") -}}
+{{- if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .ctx) "true" -}}
+{{- printf "http://127.0.0.1:%d" $port -}}
+{{- else -}}
+{{- printf "http://$(%s):%d" (include "sonarqube.agentEgressProxy.serviceHostVar" .ctx) $port -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+The kubelet-published service-link env var name that sonarqube.agentEgressProxy.url expands
+$(...) against - <SERVICE_NAME>_SERVICE_HOST, uppercased with dashes as underscores. Kubelet
+resolves $(VAR) references against a flat per-container map built by scanning that container's
+own env array in order; once any entry in it - anywhere, regardless of position - declares this
+exact name, that key is set for the rest of the scan and no later entry (even one appended after
+it) can "reach back" past it to the real service-link value. A user-provided hunterAgent.env /
+remediationAgent.env entry with this literal name would therefore override the proxy's address
+before HTTP_PROXY ever expands it, and no ordering trick in agent-runtime.yaml can undo that -
+only rejecting the name up front (see the fail guard in agent-runtime.yaml) can.
+Usage: {{ include "sonarqube.agentEgressProxy.serviceHostVar" . }}
+*/}}
+{{- define "sonarqube.agentEgressProxy.serviceHostVar" -}}
+{{- printf "%s_SERVICE_HOST" (include "sonarqube.agentEgressProxy.fullname" . | upper | replace "-" "_") -}}
+{{- end -}}
+
+{{/*
+Whether the Agent Egress Proxy must be rendered: it has no independent enable/disable switch of
+its own (unlike every other agentic component) - it auto-activates whenever hunterAgent.enabled
+or remediationAgent.enabled is true, and renders nothing when both are false. Every Agent Egress
+Proxy template gates on this helper instead of a values flag.
+Usage: {{- if include "sonarqube.agentEgressProxy.required" . }}
+*/}}
+{{- define "sonarqube.agentEgressProxy.required" -}}
+{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Whether any agentic component that needs derived signing/verification keys is enabled: hunterAgent,
+remediationAgent, or vortexAnalysis. Broader than sonarqube.agentEgressProxy.required (which excludes
+vortex - vortex doesn't route through the egress proxy) - gates the key-derivation hook Job, its
+RBAC/ServiceAccount, the fail-closed agenticSigningSecret validation, and the "agentic-shared" key
+mount everywhere it's needed.
+Usage: {{- if include "sonarqube.agentic.enabled" . }}
+*/}}
+{{- define "sonarqube.agentic.enabled" -}}
+{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled .Values.vortexAnalysis.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Effective vortexAnalysis.enabled: an explicit true/false always wins, but when unset it defaults to
+true whenever remediationAgent.enabled is true (remediation is not useful without vortex).
+Usage: {{- if eq (include "sonarqube.vortex.enabled" .) "true" }}
+*/}}
+{{- define "sonarqube.vortex.enabled" -}}
+{{- $override := .Values.vortexAnalysis.enabled -}}
+{{- if not (kindIs "invalid" $override) -}}
+{{- if $override -}}
+true
+{{- end -}}
+{{- else if .Values.remediationAgent.enabled -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Name of the per-consumer derived signing/verification key Secret produced by the key-derivation
+hook Job.
+Parameters (dict): ctx (required, the root context '.'), consumer (required, one of "orchestrator",
+"hunter", "remediation", "sqs", "vortex").
+*/}}
+{{- define "sonarqube.agentic.keySecretName" -}}
+{{- /* Truncate the fullname prefix, not the consumer suffix. Truncating the whole thing at 63
+       would collapse every consumer onto one name once the fullname passes 49 characters (a
+       release name of ~39 is well inside the fullname budget): the hook's five write_secret calls
+       would overwrite each other, and every pod's items: projection would then ask the surviving
+       Secret for labels it doesn't hold, wedging them in ContainerCreating. 36 + len
+       "-agentic-keys-" + the longest consumer ("remediation") is 61, so the suffix always
+       survives intact. */}}
+{{- printf "%s-agentic-keys-%s" (include "sonarqube.fullname" .ctx | trunc 36 | trimSuffix "-") .consumer | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Which derived key labels a given consumer needs mounted. Single source of truth: the
+key-derivation hook Job derives and writes exactly these per consumer, and every pod template
+projects exactly these out of its own Secret - so the Secret's data keys and the volume's
+items: projection can never drift apart (a projected key that doesn't exist wedges the pod in
+ContainerCreating).
+
+Least privilege: each pod only ever holds the keys for the hops it actually participates in.
+
+  orchestrator -> orchestrator-to-hunter (hunter), orchestrator-to-remediation (remediation),
+                  agentic-shared (SQS <-> orchestrator), hunter-to-orchestrator and
+                  remediation-to-orchestrator (verifying runtime locator renewals),
+                  orchestrator-job-capability (its own, never shared)
+  hunter       -> orchestrator-to-hunter, hunter-to-orchestrator
+  remediation  -> orchestrator-to-remediation, remediation-to-sqs, remediation-to-orchestrator
+  sqs          -> agentic-shared
+  vortex       -> agentic-shared (Vortex -> SQS)
+
+Note SQS does *not* mount remediation-to-sqs even though it verifies that hop: it has the
+instance secret itself (sonarqube.agentic.sqsSecretFile) and re-derives the key in-process.
+
+Two deliberate asymmetries with the rest of this table (EA-968):
+
+Both inbound verification keys are unconditional on the orchestrator - not gated on
+hunterAgent.enabled / remediationAgent.enabled the way orchestrator-to-hunter and
+orchestrator-to-remediation are. Once AGENTIC_INBOUND_VERIFICATION_KEY_PATH is set (which
+sonarqube.agentic.keyPathEnv does whenever agentic-shared is mounted), the orchestrator's
+InboundSignatureConfiguration requires *both* runtime verification key paths and throws on startup
+if either is blank. Gating them per family would therefore CrashLoop any single-family install.
+
+orchestrator-job-capability is the one label with a single holder. It is the HMAC key behind the
+per-job X-Sonar-Job-Capability token the orchestrator issues and verifies entirely on its own; a
+runtime only ever echoes back the opaque token it was dispatched with. Mounting it into a runtime
+would let that runtime mint capabilities for any job, so it must never appear under any other
+consumer here.
+
+Parameters (dict): ctx (required, the root context '.'), consumer (required).
+Returns a YAML list; "[]" when the consumer needs none.
+*/}}
+{{- define "sonarqube.agentic.keyLabels" -}}
+{{- $v := .ctx.Values -}}
+{{- $any := eq (include "sonarqube.agentic.enabled" .ctx) "true" -}}
+{{- $labels := list -}}
+{{- if eq .consumer "orchestrator" -}}
+{{- if $v.hunterAgent.enabled }}{{- $labels = append $labels "orchestrator-to-hunter" }}{{- end }}
+{{- if $v.remediationAgent.enabled }}{{- $labels = append $labels "orchestrator-to-remediation" }}{{- end }}
+{{- if and $any $v.agentOrchestrator.enabled }}{{- $labels = concat $labels (list "agentic-shared" "hunter-to-orchestrator" "remediation-to-orchestrator" "orchestrator-job-capability") }}{{- end }}
+{{- else if eq .consumer "hunter" -}}
+{{- if $v.hunterAgent.enabled }}{{- $labels = append $labels "orchestrator-to-hunter" }}{{- end }}
+{{- if and $v.hunterAgent.enabled $v.agentOrchestrator.enabled }}{{- $labels = append $labels "hunter-to-orchestrator" }}{{- end }}
+{{- else if eq .consumer "remediation" -}}
+{{- if $v.remediationAgent.enabled }}{{- $labels = concat $labels (list "orchestrator-to-remediation" "remediation-to-sqs") }}{{- end }}
+{{- if and $v.remediationAgent.enabled $v.agentOrchestrator.enabled }}{{- $labels = append $labels "remediation-to-orchestrator" }}{{- end }}
+{{- else if eq .consumer "sqs" -}}
+{{- if $any }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
+{{- else if eq .consumer "vortex" -}}
+{{- if and $any (eq (include "sonarqube.vortex.enabled" .ctx) "true") }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
+{{- end -}}
+{{- toYaml $labels -}}
+{{- end -}}
+
+{{/*
+The union of every derived key label any enabled consumer needs - i.e. exactly what the hook Job
+has to run derive-keys.sh for. Returns a YAML list.
+*/}}
+{{- define "sonarqube.agentic.allKeyLabels" -}}
+{{- $all := list -}}
+{{- range $consumer := (list "orchestrator" "hunter" "remediation" "sqs" "vortex") -}}
+{{- $all = concat $all (fromYamlArray (include "sonarqube.agentic.keyLabels" (dict "ctx" $ "consumer" $consumer))) -}}
+{{- end -}}
+{{- toYaml (uniq $all) -}}
+{{- end -}}
+
+{{/*
+Whether a given consumer mounts any derived keys at all. Emits "true" or "".
+Parameters (dict): ctx, consumer.
+*/}}
+{{- define "sonarqube.agentic.hasKeys" -}}
+{{- if (fromYamlArray (include "sonarqube.agentic.keyLabels" .)) -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Where the derived keys are mounted. Agent-side components (orchestrator, runtimes, Vortex) share
+one neutral path since they're three different base images; SQS keeps its material under
+sonarqubeFolder alongside the existing secret/ mount.
+*/}}
+{{- define "sonarqube.agentic.keyDir" -}}/etc/agentic/keys{{- end -}}
+{{- define "sonarqube.agentic.sqsKeyDir" -}}{{ .Values.sonarqubeFolder }}/agentic-keys{{- end -}}
+
+{{/*
+The key directory for one consumer - sqsKeyDir on the application nodes, the neutral keyDir
+everywhere else.
+Parameters (dict): ctx, consumer.
+*/}}
+{{- define "sonarqube.agentic.consumerKeyDir" -}}
+{{- if eq .consumer "sqs" -}}
+{{- include "sonarqube.agentic.sqsKeyDir" .ctx -}}
+{{- else -}}
+{{- include "sonarqube.agentic.keyDir" .ctx -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Env vars pointing each consumer at the individual key *files* it mounts. The same key is named
+differently on either side of a hop - it is the consumer's role in the hop that picks the name, not
+the key:
+
+  orchestrator  orchestrator-to-hunter       -> AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH
+                orchestrator-to-remediation  -> AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH
+                agentic-shared               -> AGENTIC_SONARQUBE_SIGNING_KEY_PATH
+                                                AGENTIC_INBOUND_VERIFICATION_KEY_PATH
+                hunter-to-orchestrator       -> AGENTIC_INBOUND_HUNTER_VERIFICATION_KEY_PATH
+                remediation-to-orchestrator  -> AGENTIC_INBOUND_REMEDIATION_VERIFICATION_KEY_PATH
+                orchestrator-job-capability  -> AGENTIC_JOB_CAPABILITY_SIGNING_KEY_PATH
+  hunter        orchestrator-to-hunter       -> AGENTIC_VERIFY_KEY_PATH
+                hunter-to-orchestrator       -> AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
+  remediation   orchestrator-to-remediation  -> AGENTIC_VERIFY_KEY_PATH
+                remediation-to-sqs           -> REMEDIATION_AGENTIC_SIGNING_KEY_PATH
+                remediation-to-orchestrator  -> AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
+  vortex        agentic-shared               -> AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
+
+One label can map to several variables - the dict value is a space-separated list. agentic-shared
+on the orchestrator is the only such case: the same file is both what it signs outbound calls to
+SonarQube with (AGENTIC_SONARQUBE_SIGNING_KEY_PATH) and what it verifies SonarQube's inbound calls
+against (AGENTIC_INBOUND_VERIFICATION_KEY_PATH). The second one is not cosmetic - it is the switch
+that registers the orchestrator's SecurityFilterChain at all. Leave it unset and, since EA-968 made
+@EnableMethodSecurity unconditional, no request can ever be granted the AGENTIC_KEY_agentic-shared
+authority its handlers demand, so every SonarQube-facing endpoint answers 403 (EA-968).
+
+AGENTIC_VERIFY_KEY_PATH is reused across the two runtimes without colliding: each pod mounts
+exactly one verification key. Because the name is the same on both, it is paired with
+AGENTIC_VERIFY_KEY_ID, whose value is the label itself (orchestrator-to-hunter or
+orchestrator-to-remediation) - that is what tells the runtime which hop the key belongs to.
+
+AGENT_ORCHESTRATOR_SIGNING_KEY_PATH is likewise the same name on both runtimes, but must NOT get
+the same treatment: each runtime image hardcodes its own OrchestratorSigningKeyId in main.py
+(HUNTER_TO_ORCHESTRATOR / REMEDIATION_TO_ORCHESTRATOR), so there is no companion ID variable to
+set and adding one to $idNames below would emit a variable nothing reads.
+
+SQS deliberately has no entry here even though it mounts agentic-shared too (see keyLabels): what
+the JVM reads to sign its own outbound calls to the orchestrator is the
+sonar.agentic.orchestrator.signingKeyPath property (SONAR-31996), set by
+sonarqube.agentHealthProperties - Configuration.get() does not fall back to plain env vars
+(SONAR-31416), so an env var here would just go unread. Vortex has no properties mechanism (it's a
+standalone Deployment, not a SonarQube JVM process), so AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
+remains its only way to find the key.
+
+AGENTIC_SONARQUBE_SIGNING_KEY_PATH fills in the previously-unnamed use of agentic-shared on the
+orchestrator: the file was already mounted (sonarqube.agentic.keyLabels), it just had no variable
+pointing at it.
+
+Driven off sonarqube.agentic.keyLabels, so a variable can only appear when the file behind it is
+actually projected into the pod. Returns a YAML list of env entries; "[]" when there are none.
+Parameters (dict): ctx, consumer.
+*/}}
+{{- define "sonarqube.agentic.keyPathEnv" -}}
+{{- /* label -> one or more variable names, space-separated. */}}
+{{- $names := dict
+  "orchestrator" (dict
+    "orchestrator-to-hunter" "AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH"
+    "orchestrator-to-remediation" "AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH"
+    "agentic-shared" "AGENTIC_SONARQUBE_SIGNING_KEY_PATH AGENTIC_INBOUND_VERIFICATION_KEY_PATH"
+    "hunter-to-orchestrator" "AGENTIC_INBOUND_HUNTER_VERIFICATION_KEY_PATH"
+    "remediation-to-orchestrator" "AGENTIC_INBOUND_REMEDIATION_VERIFICATION_KEY_PATH"
+    "orchestrator-job-capability" "AGENTIC_JOB_CAPABILITY_SIGNING_KEY_PATH")
+  "hunter" (dict
+    "orchestrator-to-hunter" "AGENTIC_VERIFY_KEY_PATH"
+    "hunter-to-orchestrator" "AGENT_ORCHESTRATOR_SIGNING_KEY_PATH")
+  "remediation" (dict
+    "orchestrator-to-remediation" "AGENTIC_VERIFY_KEY_PATH"
+    "remediation-to-sqs" "REMEDIATION_AGENTIC_SIGNING_KEY_PATH"
+    "remediation-to-orchestrator" "AGENT_ORCHESTRATOR_SIGNING_KEY_PATH")
+  "vortex" (dict "agentic-shared" "AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH")
+-}}
+{{- /* Path variables that need a companion variable naming *which* key the file holds, keyed by
+       the path variable they accompany. Only the runtimes need one: AGENTIC_VERIFY_KEY_PATH is
+       the same name on both, so the label is what tells the runtime which hop it is verifying. */}}
+{{- $idNames := dict "AGENTIC_VERIFY_KEY_PATH" "AGENTIC_VERIFY_KEY_ID" -}}
+{{- $forConsumer := get $names .consumer | default dict -}}
+{{- $dir := include "sonarqube.agentic.consumerKeyDir" . -}}
+{{- $env := list -}}
+{{- range $label := (fromYamlArray (include "sonarqube.agentic.keyLabels" .)) -}}
+{{- /* splitList on "" yields a single empty element, hence the guard rather than `with`. */}}
+{{- range $name := (splitList " " (get $forConsumer $label | default "")) -}}
+{{- if $name -}}
+{{- $env = append $env (dict "name" $name "value" (printf "%s/%s" $dir $label)) -}}
+{{- with (get $idNames $name) -}}
+{{- $env = append $env (dict "name" . "value" $label) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- toYaml $env -}}
+{{- end -}}
+
+{{/*
+Where the operator-provided instance secret is mounted on SQS, and the file it's projected to.
+Projected to a fixed filename so the mount path doesn't change with agenticSigningSecret.key.
+*/}}
+{{- define "sonarqube.agentic.sqsSecretDir" -}}{{ .Values.sonarqubeFolder }}/agentic-secret{{- end -}}
+{{- define "sonarqube.agentic.sqsSecretFile" -}}{{ include "sonarqube.agentic.sqsSecretDir" . }}/instance-secret{{- end -}}
+
+{{/*
+Key within .Values.agenticSigningSecret.existingSecret holding the instance secret.
+*/}}
+{{- define "sonarqube.agentic.signingSecretKey" -}}
+{{- .Values.agenticSigningSecret.key | default "instance-secret" -}}
+{{- end -}}
+
+{{/*
+volumeMount for a consumer's derived-key Secret. Renders nothing when the consumer needs no keys.
+Parameters (dict): ctx, consumer, mountPath.
+*/}}
+{{- define "sonarqube.agentic.keyVolumeMount" -}}
+{{- if eq (include "sonarqube.agentic.hasKeys" (dict "ctx" .ctx "consumer" .consumer)) "true" }}
+- name: agentic-keys
+  mountPath: {{ .mountPath }}
+  readOnly: true
+{{- end }}
+{{- end -}}
+
+{{/*
+volume for a consumer's derived-key Secret, projecting only that consumer's labels (one file per
+label, named after the label). Renders nothing when the consumer needs no keys.
+Parameters (dict): ctx, consumer.
+*/}}
+{{- define "sonarqube.agentic.keyVolume" -}}
+{{- $labels := fromYamlArray (include "sonarqube.agentic.keyLabels" (dict "ctx" .ctx "consumer" .consumer)) }}
+{{- if $labels }}
+- name: agentic-keys
+  secret:
+    secretName: {{ include "sonarqube.agentic.keySecretName" (dict "ctx" .ctx "consumer" .consumer) }}
+    items:
+    {{- range $label := $labels }}
+    - key: {{ $label }}
+      path: {{ $label }}
+    {{- end }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Whether the key-derivation hook Job (and its ServiceAccount/RBAC) renders. Emits "true" or "".
+It has no enable switch of its own beyond the explicit agentKeyDerivation.enabled opt-out: it
+follows the components that consume its output. validation.yaml guarantees agenticSigningSecret
+is set whenever any of them is enabled, so the check here is belt-and-braces for `helm template`
+runs that bypass validation.
+*/}}
+{{- define "sonarqube.agentKeyDerivation.required" -}}
+{{- if and .Values.agentKeyDerivation.enabled (eq (include "sonarqube.agentic.enabled" .) "true") .Values.agenticSigningSecret .Values.agenticSigningSecret.existingSecret -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{- define "sonarqube.agentKeyDerivation.fullname" -}}
+{{- /* Truncate the fullname prefix, not the "-agent-key-derivation" suffix (21 chars) - the same
+       collision sonarqube.agentic.keySecretName guards against. Truncating the concatenation at 63
+       would render this exactly as sonarqube.fullname once that name reaches 63 characters,
+       colliding the Job/Role/RoleBinding/ServiceAccount with the chart's own primary resources. */}}
+{{- printf "%s-agent-key-derivation" (include "sonarqube.fullname" . | trunc 41 | trimSuffix "-") | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "sonarqube.agentKeyDerivation.serviceAccountName" -}}
+{{- if .Values.agentKeyDerivation.serviceAccount.create -}}
+{{- default (include "sonarqube.agentKeyDerivation.fullname" .) .Values.agentKeyDerivation.serviceAccount.name -}}
+{{- else -}}
+{{- /* An explicit name still wins when create is false: that's the "I bound the Role myself"
+       path, and it's the one the validation error points operators at. Without the override it
+       would fall through to the release's top-level ServiceAccount - "default" unless that one is
+       named too - and the same failure would come straight back. */ -}}
+{{- default (include "sonarqube.serviceAccountName" .) .Values.agentKeyDerivation.serviceAccount.name -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+The image the hook Job runs. What it actually needs is *an* image carrying /derive-keys.sh, which
+today is the Agent Orchestrator image (baked in there so air-gapped installs don't need a second
+pull, per EA-791/ADR-10) - hence the fallback to agentOrchestrator.image. It is a separate value
+rather than a hard reference to agentOrchestrator.image because vortexAnalysis.enabled alone still needs
+derived keys while not otherwise deploying, or even pulling, the orchestrator: such an install sets
+agentKeyDerivation.image.* and keeps agentOrchestrator untouched.
+Returns the image block as a dict, so callers can read .repository/.tag/.pullPolicy/.pullSecrets.
+*/}}
+{{- define "sonarqube.agentKeyDerivation.image" -}}
+{{- $own := .Values.agentKeyDerivation.image | default dict -}}
+{{- if $own.repository -}}
+{{- toYaml $own -}}
+{{- else -}}
+{{- toYaml (.Values.agentOrchestrator.image | default dict) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+The repository of the image above, or "" when neither it nor agentOrchestrator.image sets one.
+validation.yaml fails closed on the empty case.
+*/}}
+{{- define "sonarqube.agentKeyDerivation.imageRepository" -}}
+{{- (fromYaml (include "sonarqube.agentKeyDerivation.image" .)).repository | default "" -}}
+{{- end -}}
+
+{{/*
+Scheduling block (nodeSelector/tolerations/affinity) for the Agent Egress Proxy.
+
+Identical to sonarqube.agent.scheduling except for the affinity default: with replicaCount 2 and a
+podDisruptionBudget of minAvailable 1, nothing otherwise stops both replicas landing on the same
+node - which would make a single node drain sever every runtime's only egress path *and* be
+blocked by the PDB. So when neither agentEgressProxy.affinity nor the global affinity is set, fall
+back to a soft (preferred, not required) anti-affinity on hostname: spreads across nodes when the
+cluster has them, still schedulable on a single-node cluster such as kind.
+
+Setting agentEgressProxy.affinity replaces this default wholesale - it is not merged.
+*/}}
+{{- define "sonarqube.agentEgressProxy.scheduling" -}}
+{{- $proxy := .Values.agentEgressProxy -}}
+{{- $affinity := default .Values.affinity $proxy.affinity -}}
+{{- if not $affinity -}}
+{{- $affinity = fromYaml (include "sonarqube.agentEgressProxy.defaultAntiAffinity" .) -}}
+{{- end -}}
+{{- include "sonarqube.agent.scheduling" (dict "ctx" . "component" (dict "nodeSelector" $proxy.nodeSelector "tolerations" $proxy.tolerations "affinity" $affinity)) -}}
+{{- end -}}
+
+{{- define "sonarqube.agentEgressProxy.defaultAntiAffinity" -}}
+podAntiAffinity:
+  preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchLabels:
+{{ include "sonarqube.agentEgressProxy.selectorLabels" . | indent 12 }}
+{{- end -}}
+
+{{/*
+The DNS egress rule shared by every NetworkPolicy this chart renders (SonarQube itself, the agent
+runtimes and the egress proxy alike).
+OpenShift needs its own form: its CoreDNS pods live in the openshift-dns namespace and carry no
+k8s-app label, and OVN-Kubernetes matches egress ACLs after DNAT, so the rule has to allow the
+container port 5353 rather than the Service port 53.
+Output is unindented; callers should pipe through `indent`/`nindent` to place it under `egress:`.
+Usage: {{ include "sonarqube.dnsEgressRule" $ | indent 4 }}
+*/}}
+{{- define "sonarqube.dnsEgressRule" -}}
+{{- if .Values.OpenShift.enabled -}}
+- to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-dns
+  ports:
+    - port: 5353
+      protocol: UDP
+    - port: 5353
+      protocol: TCP
+{{- else -}}
+- to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+  ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+{{- end -}}
+{{- end -}}
+
+{{/*
+Egress rule letting a sidecar reach istiod's control plane (port 15012). Callers must gate this
+behind .Values.istio.enabled themselves. Unindented - pipe through indent/nindent for `egress:`.
+*/}}
+{{- define "sonarqube.agent.istiodEgressRule" -}}
+- to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: {{ .Values.istio.namespace }}
+      podSelector:
+        matchLabels:
+          app: istiod
+  ports:
+    - port: 15012
+      protocol: TCP
+{{- end -}}
+
+{{/*
+Requests Istio sidecar injection explicitly for a STRICT-mTLS workload, rather than relying on a
+namespace-wide istio-injection=enabled label the chart can't see - without a sidecar, STRICT mode
+rejects the plaintext traffic that's all the pod can then receive. No-op alongside namespace-wide
+auto-injection. Emits nothing when istio.enabled is false.
+
+Callers MUST render this under both `labels:` and `annotations:` on the pod template - not just
+annotations. `sidecar.istio.io/inject` is conventionally documented as an annotation, but the
+sidecar-injector MutatingWebhookConfiguration's own `objectSelector` (a LabelSelector, per the
+Kubernetes API - webhooks can only pre-filter admission requests on an object's labels, never its
+annotations) matches this same key as a LABEL for the "opt in from an unlabeled namespace" webhook
+rule (object.sidecar-injector.istio.io). Annotation-only was verified live to silently never
+invoke the webhook at all (zero istiod log activity) - not a rejection, just never considered.
+*/}}
+{{- define "sonarqube.istio.sidecarInjectAnnotation" -}}
+{{- if .Values.istio.enabled -}}
+sidecar.istio.io/inject: "true"
+{{- end -}}
+{{- end -}}
+
+{{/*
+JDBC URL of the Agent Orchestrator's CORE DB (SonarQube's own database), for CORE_DB_JDBC_URL
+and the validation. agentOrchestrator.coreDb.jdbcUrl wins; otherwise the legacy PostgreSQL-only
+coreDb.endpoint/name, when either is set, build a PostgreSQL URL (each falling back to what
+jdbcOverwrite.jdbcUrl holds) that is only used to derive the legacy CORE_DB_READ_WRITE_ENDPOINT/
+CORE_DB_NAME pair; otherwise jdbcOverwrite.jdbcUrl is used as is, whatever its database vendor.
+*/}}
+{{- define "sonarqube.agent.jdbc.url" -}}
+{{- $coreDb := .Values.agentOrchestrator.coreDb -}}
+{{- if $coreDb.jdbcUrl -}}
+{{- $coreDb.jdbcUrl -}}
+{{- else if or $coreDb.endpoint $coreDb.name -}}
+{{- $endpoint := $coreDb.endpoint | default (include "sonarqube.agent.jdbc.endpoint" .Values.jdbcOverwrite.jdbcUrl) -}}
+{{- $name := $coreDb.name | default (include "sonarqube.agent.jdbc.dbname" .Values.jdbcOverwrite.jdbcUrl) -}}
+{{- printf "jdbc:postgresql://%s/%s" $endpoint $name -}}
+{{- else -}}
+{{- .Values.jdbcOverwrite.jdbcUrl -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Parse the host:port endpoint out of a PostgreSQL JDBC URL (jdbc:postgresql://host:port/db[?params])
+passed as the context, for the Agent Orchestrator's legacy CORE_DB_READ_WRITE_ENDPOINT env.
+*/}}
+{{- define "sonarqube.agent.jdbc.endpoint" -}}
+{{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" . "" -}}
+{{- (splitn "/" 2 $stripped)._0 -}}
+{{- end -}}
+
+{{/*
+Parse the database name out of a PostgreSQL JDBC URL (jdbc:postgresql://host:port/db[?params])
+passed as the context, for the Agent Orchestrator's legacy CORE_DB_NAME env.
+*/}}
+{{- define "sonarqube.agent.jdbc.dbname" -}}
+{{- $stripped := regexReplaceAll "^jdbc:[a-zA-Z0-9]+://" . "" -}}
+{{- $rest := (splitn "/" 2 $stripped)._1 | default "" -}}
+{{- regexReplaceAll "\\?.*$" $rest "" -}}
+{{- end -}}
+
+{{/*
+Render the `imagePullSecrets` list items for one or more image blocks, each optionally providing
+`pullSecret` (string) and/or `pullSecrets` (list), in the order given - callers combine e.g. the
+application nodes' image with their own. Nil-safe against an image block the chart doesn't define
+(e.g. a top-level .Values.image). Output is unindented and empty when no source has anything.
+Usage: {{- $pullSecrets := include "sonarqube.agent.imagePullSecrets" (list .Values.a.image .Values.b.image) }}
+*/}}
+{{- define "sonarqube.agent.imagePullSecrets" -}}
+{{- $refs := list -}}
+{{- range . -}}
+{{- $img := . | default dict -}}
+{{- with $img.pullSecret -}}
+{{- $refs = append $refs (dict "name" .) -}}
+{{- end -}}
+{{- range ($img.pullSecrets | default list) -}}
+{{- $refs = append $refs . -}}
+{{- end -}}
+{{- end -}}
+{{- with $refs -}}
+{{- toYaml . -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Whether to automount the ServiceAccount token: the component's own value when it creates a
+dedicated ServiceAccount, else the top-level serviceAccount.automountToken.
+Parameters (dict): ctx (required, the root context '.'), serviceAccount (required, the component's
+own serviceAccount block)
+*/}}
+{{- define "sonarqube.agent.automountServiceAccountToken" -}}
+{{- if .serviceAccount.create -}}
+{{- .serviceAccount.automountToken -}}
+{{- else -}}
+{{- .ctx.Values.serviceAccount.automountToken -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+The SonarQube application image config: repository/tag/pullPolicy/pullSecret(s).
+*/}}
+{{- define "sonarqube.agent.sonarqubeImage" -}}
+{{- (fromYaml (include "applicationNodes" .)).image | toYaml -}}
+{{- end -}}
+
+{{/*
+Security context for the wait-for-sonarqube init container.
+*/}}
+{{- define "sonarqube.agent.initContainerSecurityContext" -}}
+{{- include "sonarqube.initContainersSecurityContext" . -}}
+{{- end -}}
+
+{{/*
+Container/pod securityContext for an agent workload, omitting runAsUser/runAsGroup/fsGroup under
+OpenShift's restricted-v2 SCC (same reasoning as sonarqube.containerSecurityContext) - unlike that
+helper, this one is parameterized per-component since agent workloads hardcode different UIDs.
+Parameters (dict): ctx (required, the root context '.'), securityContext (required, the
+component's own securityContext block)
+*/}}
+{{- define "sonarqube.agent.containerSecurityContext" -}}
+{{- $securityContext := .securityContext -}}
+{{- if .ctx.Values.OpenShift.enabled -}}
+{{- $securityContext = omit $securityContext "runAsUser" "runAsGroup" "fsGroup" -}}
+{{- end -}}
+{{- toYaml $securityContext -}}
+{{- end -}}
+
+{{/*
+Render priorityClassName/nodeSelector/tolerations/affinity/topologySpreadConstraints for an agent
+workload: the component's own nodeSelector/tolerations/affinity wins when set (whole field, not
+merged), else the chart's global one; priorityClassName always comes from the chart-wide
+.Values.priorityClassName, and topologySpreadConstraints only from the component.
+Parameters (dict): ctx (required, the root context '.'), component (required, the component's own
+values block, providing nodeSelector/tolerations/affinity/topologySpreadConstraints)
+Usage: {{- with (include "sonarqube.agent.scheduling" (dict "ctx" $ "component" .Values.agentOrchestrator)) }}
+{{ . | indent 6 }}
+      {{- end }}
+*/}}
+{{- define "sonarqube.agent.scheduling" -}}
+{{- trimPrefix "\n" (include "sonarqube.agent.scheduling.render" .) -}}
+{{- end -}}
+
+{{- define "sonarqube.agent.scheduling.render" -}}
+{{- $ctx := .ctx -}}
+{{- $component := .component -}}
+{{- with $ctx.Values.priorityClassName }}
+priorityClassName: {{ . }}
+{{- end }}
+{{- with default $ctx.Values.nodeSelector $component.nodeSelector }}
+nodeSelector:
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- with default $ctx.Values.tolerations $component.tolerations }}
+tolerations:
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- with default $ctx.Values.affinity $component.affinity }}
+affinity:
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- with $component.topologySpreadConstraints }}
+topologySpreadConstraints:
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Render one HTTP probe (readiness or liveness) from a probes.<kind> block.
+Parameters (dict): probe (the probes.<kind> values block), rewritePath (optional) - for the
+hand-authored mesh sidecar, targets pilot-agent's :15020 with this path instead of the app port
+directly.
+*/}}
+{{- define "sonarqube.agent.probe" -}}
+{{- if .probe.enabled -}}
+httpGet:
+  path: {{ .rewritePath | default .probe.path }}
+  port: {{ if .rewritePath }}15020{{ else }}http{{ end }}
+{{- with .probe.initialDelaySeconds }}
+initialDelaySeconds: {{ . }}
+{{- end }}
+{{- with .probe.periodSeconds }}
+periodSeconds: {{ . }}
+{{- end }}
+{{- with .probe.timeoutSeconds }}
+timeoutSeconds: {{ . }}
+{{- end }}
+{{- with .probe.successThreshold }}
+successThreshold: {{ . }}
+{{- end }}
+{{- with .probe.failureThreshold }}
+failureThreshold: {{ . }}
+{{- end }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Render one tcpSocket probe (readiness or liveness) for the Agent Egress Proxy - Squid has no HTTP
+health endpoint worth curling, so unlike sonarqube.agent.probe above this checks the proxy port is
+accepting TCP connections.
+Parameters: dict "ctx" . "probe" (the agentEgressProxy.probes.<kind> values block).
+Usage: {{- with (include "sonarqube.agent.egressProxy.probe" (dict "ctx" . "probe" .Values.agentEgressProxy.probes.readiness)) }}
+          readinessProbe:
+{{ . | indent 12 }}
+          {{- end }}
+*/}}
+{{- define "sonarqube.agent.egressProxy.probe" -}}
+tcpSocket:
+  port: {{ ternary "tcp-proxy" "http-proxy" .ctx.Values.istio.enabled }}
+{{- with .probe.periodSeconds }}
+periodSeconds: {{ . }}
+{{- end }}
+{{- with .probe.timeoutSeconds }}
+timeoutSeconds: {{ . }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Elasticsearch major (8 or 9) inferred from a search image tag.
+Returns "" for tags this chart doesn't support upgrading from/to (custom tags, or the pre-calendar
+versioning scheme), so the upgrade guard below is intentionally skipped for those.
+*/}}
+{{- define "sonarqube.search.esMajorFromTag" -}}
+{{- $tag := . | toString -}}
+{{- $ver := regexFind "^[0-9]+\\.[0-9]+" $tag -}}
+{{- if $ver -}}
+{{- $year := int (split "." $ver)._0 -}}
+{{- $minor := int (split "." $ver)._1 -}}
+{{- if ge $year 2025 -}}
+{{- if or (gt $year 2026) (and (eq $year 2026) (ge $minor 4)) -}}
+9
+{{- else -}}
+8
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "sonarqube.search.esMajor" -}}
+{{- include "sonarqube.search.esMajorFromTag" (tpl (.Values.searchNodes.image.tag | toString) .) -}}
+{{- end -}}
+
+{{/*
+Fail helm upgrade across an Elasticsearch major while search pods are still running.
+*/}}
+{{- define "sonarqube.search.assertEsMajorUpgrade" -}}
+{{- if and .Release.IsUpgrade (not .Values.searchNodes.skipEsMajorUpgradeCheck) -}}
+{{- $stsName := printf "%s-search" (include "sonarqube.fullname" .) -}}
+{{- $sts := lookup "apps/v1" "StatefulSet" .Release.Namespace $stsName -}}
+{{- if $sts -}}
+{{- $currentMajor := "" -}}
+{{- if and $sts.spec $sts.spec.template $sts.spec.template.spec $sts.spec.template.spec.containers -}}
+{{- $searchContainerName := printf "%s-search" .Chart.Name -}}
+{{- range $sts.spec.template.spec.containers -}}
+{{- if eq (.name | toString) $searchContainerName -}}
+{{- $currentMajor = include "sonarqube.search.esMajorFromTag" (regexFind "[^:]+$" (.image | toString)) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $targetMajor := include "sonarqube.search.esMajor" . -}}
+{{- /* $currentMajor/$targetMajor are "" for unsupported tags; skip the guard rather than guess. */ -}}
+{{- if and $currentMajor $targetMajor (ne $currentMajor $targetMajor) -}}
+{{- $replicas := 0 -}}
+{{- if $sts.spec.replicas -}}
+{{- $replicas = int $sts.spec.replicas -}}
+{{- end -}}
+{{- $searchPods := 0 -}}
+{{- $podList := lookup "v1" "Pod" .Release.Namespace "" -}}
+{{- if and $podList $podList.items -}}
+{{- range $podList.items -}}
+{{- $labels := .metadata.labels | default dict -}}
+{{- if and (eq (index $labels "sonarqube.datacenter/type" | toString) "search") (eq (index $labels "release" | toString) $.Release.Name) -}}
+{{- $searchPods = add $searchPods 1 -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if or (gt $replicas 0) (gt $searchPods 0) -}}
+{{- fail "\n ** Elasticsearch major upgrade is not a rolling update. ** \n Scale searchNodes.replicaCount to 0 with your current chart and wait until search pods are gone, then upgrade. Do not change the image tag in the same command." -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}

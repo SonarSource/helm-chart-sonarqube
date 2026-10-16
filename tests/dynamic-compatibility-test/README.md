@@ -2,16 +2,23 @@
 
 ## Dynamic compatibility tests
 
-In order to execute the dynamic compatibility test locally, you need to have a k8s cluster running (configurations stored in the default folder), go (at least version 1.22).
+In order to execute the dynamic compatibility test locally, it is required to have a kind cluster (or any reachable Kubernetes context) sized for DCE (~22 GB) running (configurations stored in the default folder), Go (at least version 1.25), Helm, Kubectl.
 
-When the pre-requisites are fulfilled, just run:
+When the pre-requisites are fulfilled, just execute the bash script `./.github/scripts/run_dynamic_compatibility_tests.sh`
 
 ```bash
-go test -timeout=0 -v sonarqube_standard_dynamic_test.go pod_utils.go
+./.github/scripts/run_dynamic_compatibility_tests.sh
 ```
 
-## Schema validation tests
+To run the DCE Elasticsearch major-upgrade test (installs the 2026.1 chart, then upgrades to the local chart):
 
 ```bash
-go test -v schema_test.go
+SONARQUBE_ES_MAJOR_E2E=1 go test -v -timeout=90m -count=1 ./sonarqube-dce -run TestDCEEsMajorUpgrade
+```
+
+To run the OpenShift agent RuntimeClass check (renders with `--dry-run=server`, so it needs a
+reachable cluster but no database, and creates one temporary cluster-scoped `RuntimeClass`):
+
+```bash
+SONARQUBE_RUNTIME_CLASS_E2E=1 go test -v -timeout=15m -count=1 ./... -run TestAgentRuntimeClassCheck
 ```

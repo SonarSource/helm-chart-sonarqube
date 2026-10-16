@@ -1,0 +1,416 @@
+package tests
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/gruntwork-io/terratest/modules/helm"
+	"github.com/gruntwork-io/terratest/modules/logger"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+)
+
+// Both hunter and remediation are enabled in the fixture, so the render emits one Deployment per
+// family; pick out the one for family.
+func renderAgentRuntime(t *testing.T, chart agentChart, family string, setValues map[string]string) appsv1.Deployment {
+	t.Helper()
+	opts := &helm.Options{
+		Logger:      logger.Discard,
+		ValuesFiles: []string{chart.valuesDir + "/agent-runtimes-enabled.yaml"},
+		SetValues:   setValues,
+	}
+	output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-runtime.yaml"})
+	require.NoError(t, err)
+
+	for _, doc := range strings.Split(output, "\n---") {
+		if strings.TrimSpace(doc) == "" || !strings.Contains(doc, "kind: Deployment") {
+			continue
+		}
+		var deployment appsv1.Deployment
+		helm.UnmarshalK8SYaml(t, doc, &deployment)
+		if deployment.Labels["sonarqube.agent/family"] == family {
+			return deployment
+		}
+	}
+	require.FailNowf(t, "no Deployment rendered", "family %q", family)
+	return appsv1.Deployment{}
+}
+
+// renderAgentRuntimeService renders templates/agent-runtime-service.yaml and returns the
+// Service for family - both hunter and remediation are enabled in the fixture, so it emits one
+// Service document per family.
+func renderAgentRuntimeService(t *testing.T, chart agentChart, family string, setValues map[string]string) corev1.Service {
+	t.Helper()
+	opts := &helm.Options{
+		Logger:      logger.Discard,
+		ValuesFiles: []string{chart.valuesDir + "/agent-runtimes-enabled.yaml"},
+		SetValues:   setValues,
+	}
+	output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-runtime-service.yaml"})
+	require.NoError(t, err)
+
+	for _, doc := range strings.Split(output, "\n---") {
+		if strings.TrimSpace(doc) == "" || !strings.Contains(doc, "kind: Service") {
+			continue
+		}
+		var service corev1.Service
+		helm.UnmarshalK8SYaml(t, doc, &service)
+		if service.Labels["sonarqube.agent/family"] == family {
+			return service
+		}
+	}
+	require.FailNowf(t, "no Service rendered", "family %q", family)
+	return corev1.Service{}
+}
+
+// Off by default, so an existing install picks up nothing new until hunterAgent/remediationAgent
+// is enabled.
+func TestAgentRuntimeDisabledByDefault(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, tpl := range []string{
+				"templates/agent-runtime.yaml",
+				"templates/agent-runtime-service.yaml",
+			} {
+				opts := &helm.Options{
+					Logger:      logger.Discard,
+					ValuesFiles: []string{chart.valuesDir + "/agent-all-disabled.yaml"},
+				}
+				output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{tpl})
+				require.Error(t, err, "%s must render nothing when neither runtime is enabled", tpl)
+				assert.Empty(t, strings.TrimSpace(output))
+			}
+		})
+	}
+}
+
+// Each runtime's Service must select its own Deployment's pods, not the other family's - a label
+// typo or a shared selector here silently yields no endpoints or cross-routes traffic.
+func TestAgentRuntimeService(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, family := range []string{"hunter", "remediation"} {
+				t.Run(family, func(t *testing.T) {
+					service := renderAgentRuntimeService(t, chart, family, nil)
+					podLabels := renderAgentRuntime(t, chart, family, nil).Spec.Template.Labels
+
+					require.NotEmpty(t, service.Spec.Selector)
+					for k, v := range service.Spec.Selector {
+						assert.Equal(t, v, podLabels[k], "Service selector %q must match the pod labels", k)
+					}
+				})
+			}
+		})
+	}
+}
+
+// Each runtime can be scheduled apart from the SonarQube pods, and its own scheduling settings
+// take precedence over the chart's global ones.
+func TestAgentRuntimeSchedulingWinsOverGlobal(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, family := range []string{"hunter", "remediation"} {
+				t.Run(family, func(t *testing.T) {
+					opts := &helm.Options{
+						Logger:      logger.Discard,
+						ValuesFiles: []string{chart.valuesDir + "/agent-runtimes-global-scheduling.yaml"},
+					}
+					output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-runtime.yaml"})
+					require.NoError(t, err)
+
+					var podSpec corev1.PodSpec
+					for _, doc := range strings.Split(output, "\n---") {
+						if strings.TrimSpace(doc) == "" || !strings.Contains(doc, "kind: Deployment") {
+							continue
+						}
+						var deployment appsv1.Deployment
+						helm.UnmarshalK8SYaml(t, doc, &deployment)
+						if deployment.Labels["sonarqube.agent/family"] == family {
+							podSpec = deployment.Spec.Template.Spec
+						}
+					}
+
+					assert.Equal(t, map[string]string{family: "true"}, podSpec.NodeSelector)
+
+					require.Len(t, podSpec.Tolerations, 1)
+					assert.Equal(t, family, podSpec.Tolerations[0].Key)
+
+					require.NotNil(t, podSpec.Affinity)
+					require.NotNil(t, podSpec.Affinity.NodeAffinity)
+					terms := podSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+					require.Len(t, terms, 1)
+					require.Len(t, terms[0].MatchExpressions, 1)
+					assert.Equal(t, family, terms[0].MatchExpressions[0].Key)
+				})
+			}
+		})
+	}
+}
+
+// Both runtimes' probes default on, against the dedicated /readyz and /livez endpoints - never
+// the aggregate /health.
+func TestAgentRuntimeProbes(t *testing.T) {
+	cases := []struct {
+		family        string
+		readinessPath string
+		livenessPath  string
+	}{
+		{"hunter", "/readyz", "/livez"},
+		{"remediation", "/readyz", "/livez"},
+	}
+
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, c := range cases {
+				t.Run(c.family, func(t *testing.T) {
+					container := renderAgentRuntime(t, chart, c.family, nil).Spec.Template.Spec.Containers[0]
+
+					require.NotNil(t, container.ReadinessProbe)
+					require.NotNil(t, container.ReadinessProbe.HTTPGet)
+					assert.Equal(t, c.readinessPath, container.ReadinessProbe.HTTPGet.Path)
+
+					require.NotNil(t, container.LivenessProbe)
+					require.NotNil(t, container.LivenessProbe.HTTPGet)
+					assert.Equal(t, c.livenessPath, container.LivenessProbe.HTTPGet.Path)
+				})
+			}
+		})
+	}
+}
+
+// Neither runtime sets readOnlyRootFilesystem: the images need their home directory writable.
+func TestAgentRuntimeContainerSecurityContext(t *testing.T) {
+	cases := []struct {
+		family    string
+		runAsUser int64
+	}{
+		{"hunter", 10001},
+		{"remediation", 10001},
+	}
+
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, c := range cases {
+				t.Run(c.family, func(t *testing.T) {
+					deployment := renderAgentRuntime(t, chart, c.family, nil)
+					require.Len(t, deployment.Spec.Template.Spec.Containers, 1)
+					container := deployment.Spec.Template.Spec.Containers[0]
+
+					sc := container.SecurityContext
+					require.NotNil(t, sc)
+					require.NotNil(t, sc.AllowPrivilegeEscalation)
+					assert.False(t, *sc.AllowPrivilegeEscalation)
+					require.NotNil(t, sc.RunAsNonRoot)
+					assert.True(t, *sc.RunAsNonRoot)
+					require.NotNil(t, sc.RunAsUser)
+					assert.Equal(t, c.runAsUser, *sc.RunAsUser)
+					assert.Nil(t, sc.ReadOnlyRootFilesystem)
+					require.NotNil(t, sc.Capabilities)
+					assert.Contains(t, sc.Capabilities.Drop, corev1.Capability("ALL"))
+				})
+			}
+		})
+	}
+}
+
+// The runtimes run LLM-driven code, so by default they get their own tokenless ServiceAccount
+// instead of the top-level one, which may carry an IRSA/workload-identity role for SonarQube.
+// Opting out with create=false falls back to the top-level ServiceAccount and its automountToken.
+func TestAgentRuntimeServiceAccount(t *testing.T) {
+	topLevelWithRole := map[string]string{
+		"serviceAccount.create":         "true",
+		"serviceAccount.name":           "sonarqube-app",
+		"serviceAccount.automountToken": "true",
+	}
+
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, family := range []string{"hunter", "remediation"} {
+				t.Run(family, func(t *testing.T) {
+					t.Run("dedicated tokenless ServiceAccount by default", func(t *testing.T) {
+						spec := renderAgentRuntime(t, chart, family, topLevelWithRole).Spec.Template.Spec
+						assert.Equal(t, chart.fullnamePrefix()+"-agent-runtime-"+family, spec.ServiceAccountName)
+						require.NotNil(t, spec.AutomountServiceAccountToken)
+						assert.False(t, *spec.AutomountServiceAccountToken)
+					})
+
+					t.Run("create=false falls back to the top-level ServiceAccount", func(t *testing.T) {
+						setValues := map[string]string{family + "Agent.serviceAccount.create": "false"}
+						for k, v := range topLevelWithRole {
+							setValues[k] = v
+						}
+						spec := renderAgentRuntime(t, chart, family, setValues).Spec.Template.Spec
+						assert.Equal(t, "sonarqube-app", spec.ServiceAccountName)
+						require.NotNil(t, spec.AutomountServiceAccountToken)
+						assert.True(t, *spec.AutomountServiceAccountToken)
+					})
+				})
+			}
+		})
+	}
+}
+
+// The remediation runtime calls SonarQube Server directly for rule-info and
+// analysis-creation instead of proxying through the Agent Orchestrator, so both endpoint env
+// vars must be built from sonarqube.agent.sonarqube.url - including honouring sonarWebContext,
+// exactly like AGENTIC_SONARQUBE_URL already does for the orchestrator.
+func TestAgentRuntimeRemediationSonarQubeEndpoints(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, wc := range []struct {
+				name       string
+				webContext string
+			}{
+				{"default web context", ""},
+				{"sonarWebContext=/sonarqube", "/sonarqube"},
+			} {
+				t.Run(wc.name, func(t *testing.T) {
+					setValues := map[string]string{}
+					if wc.webContext != "" {
+						setValues["sonarWebContext"] = wc.webContext
+					}
+					container := renderAgentRuntime(t, chart, "remediation", setValues).Spec.Template.Spec.Containers[0]
+
+					env := map[string]string{}
+					for _, e := range container.Env {
+						env[e.Name] = e.Value
+					}
+
+					// Fully qualified, not the bare short name - same reasoning as the orchestrator's own
+					// URL: Squid's own DNS resolver doesn't honour /etc/resolv.conf's search list.
+					sonarqubeURL := "http://" + chart.fullnamePrefix() + ".default.svc.cluster.local:9000" + wc.webContext
+					assert.Equal(t, sonarqubeURL+"/api/rules/show", env["REMEDIATION_RULE_INFO_ENDPOINT"])
+					assert.Equal(t, sonarqubeURL+"/api/v2/a3s/private/analyses", env["REMEDIATION_ANALYSIS_ENDPOINT"])
+				})
+			}
+		})
+	}
+}
+
+// The hunter runtime defaults to the appsec/stable detection playbook, matching next-infra's
+// production override, so that override becomes unnecessary once these ship. "" is the escape
+// hatch to omit either var entirely, same convention as scriptPath -> SCRIPT_PATH.
+func TestAgentRuntimeHunterPlaybookEnv(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("defaults", func(t *testing.T) {
+				container := renderAgentRuntime(t, chart, "hunter", nil).Spec.Template.Spec.Containers[0]
+
+				key := findEnvByName(container, "PLAYBOOK_KEY")
+				require.NotNil(t, key)
+				assert.Equal(t, "appsec", key.Value)
+
+				version := findEnvByName(container, "PLAYBOOK_VERSION")
+				require.NotNil(t, version)
+				assert.Equal(t, "stable", version.Value)
+			})
+
+			t.Run("empty string omits the env var", func(t *testing.T) {
+				setValues := map[string]string{
+					"hunterAgent.playbookKey":     "",
+					"hunterAgent.playbookVersion": "",
+				}
+				container := renderAgentRuntime(t, chart, "hunter", setValues).Spec.Template.Spec.Containers[0]
+
+				assert.Nil(t, findEnvByName(container, "PLAYBOOK_KEY"))
+				assert.Nil(t, findEnvByName(container, "PLAYBOOK_VERSION"))
+			})
+		})
+	}
+}
+
+// Both runtimes ship sized resource defaults, so neither lands in the BestEffort QoS class.
+// Memory and ephemeral-storage are pinned on hunter (request == limit) because neither is
+// compressible; CPU stays burstable so 25 replicas can still be scheduled.
+func TestAgentRuntimeResources(t *testing.T) {
+	cases := []struct {
+		family                                      string
+		cpuRequest, memoryRequest, ephemeralRequest string
+		cpuLimit, memoryLimit, ephemeralLimit       string
+	}{
+		{"hunter", "1", "8Gi", "15Gi", "2", "8Gi", "15Gi"},
+		{"remediation", "1", "2Gi", "10Gi", "4", "8Gi", "50Gi"},
+	}
+
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, c := range cases {
+				t.Run(c.family, func(t *testing.T) {
+					container := renderAgentRuntime(t, chart, c.family, nil).Spec.Template.Spec.Containers[0]
+
+					assert.Equal(t, c.cpuRequest, container.Resources.Requests.Cpu().String())
+					assert.Equal(t, c.memoryRequest, container.Resources.Requests.Memory().String())
+					assert.Equal(t, c.ephemeralRequest, container.Resources.Requests.StorageEphemeral().String())
+					assert.Equal(t, c.cpuLimit, container.Resources.Limits.Cpu().String())
+					assert.Equal(t, c.memoryLimit, container.Resources.Limits.Memory().String())
+					assert.Equal(t, c.ephemeralLimit, container.Resources.Limits.StorageEphemeral().String())
+				})
+			}
+		})
+	}
+}
+
+// AGENT_ORCHESTRATOR_URL is what switches artifact-locator renewal on inside the runtime (EA-968):
+// agent_runtime/config.py reads a blank value as "renewal disabled" and keeps using the locators it
+// was dispatched with, so a job whose presigned URLs expire mid-run fails its upload instead of
+// asking for fresh ones. It has to be fully qualified for the same reason the SonarQube endpoints
+// above do - the request goes out through Squid, whose resolver ignores /etc/resolv.conf's search
+// list - and it has to be the same host the egress proxy's hardcoded allow rule and the proxy's own
+// NetworkPolicy egress rule name, which is why all three are built from the same helper.
+func TestAgentRuntimeOrchestratorRenewalURL(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, family := range []string{"hunter", "remediation"} {
+				t.Run(family, func(t *testing.T) {
+					container := renderAgentRuntime(t, chart, family, nil).Spec.Template.Spec.Containers[0]
+
+					env := findEnvByName(container, "AGENT_ORCHESTRATOR_URL")
+					require.NotNil(t, env, "renewal would be silently disabled")
+					assert.Equal(t, chart.orchestratorURL(), env.Value)
+
+					// orchestrator_wiring.py refuses to start when the URL is set without a signing
+					// key, rather than sending unsigned renewals - so these two travel together.
+					key := findEnvByName(container, "AGENT_ORCHESTRATOR_SIGNING_KEY_PATH")
+					require.NotNil(t, key, "the runtime would refuse to start")
+					assert.Equal(t, "/etc/agentic/keys/"+family+"-to-orchestrator", key.Value)
+				})
+			}
+		})
+	}
+}
+
+// Least privilege on the two things a runtime must never be able to read: the raw instance secret
+// every derived key comes from, and the orchestrator's job-capability key - either one lets a
+// compromised runtime mint a capability token for a job that isn't its own. Both are excluded by
+// construction (the per-consumer Secret split in sonarqube.agentic.keyLabels), but nothing else
+// asserts it from the runtime's side, and a plausible-looking "just mount the whole keys Secret"
+// simplification would not fail any other test.
+func TestAgentRuntimeNeverMountsInstanceSecretOrCapabilityKey(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, family := range []string{"hunter", "remediation"} {
+				t.Run(family, func(t *testing.T) {
+					podSpec := renderAgentRuntime(t, chart, family, nil).Spec.Template.Spec
+					assertNoInstanceSecretOrCapabilityKeyMounted(t, podSpec)
+				})
+			}
+		})
+	}
+}
+
+func assertNoInstanceSecretOrCapabilityKeyMounted(t *testing.T, podSpec corev1.PodSpec) {
+	t.Helper()
+	for _, volume := range podSpec.Volumes {
+		if volume.Secret == nil {
+			continue
+		}
+		assert.NotEqual(t, "test-agentic-instance-secret", volume.Secret.SecretName,
+			"volume %q mounts the instance secret every derived key comes from", volume.Name)
+		for _, item := range volume.Secret.Items {
+			assert.NotEqual(t, "orchestrator-job-capability", item.Key,
+				"volume %q projects the orchestrator's job-capability key", volume.Name)
+		}
+	}
+}

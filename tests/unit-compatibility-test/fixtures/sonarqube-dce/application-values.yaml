@@ -6,7 +6,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 spec:
@@ -23,7 +23,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 spec:
@@ -40,7 +40,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-monitoring-passcode
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 type: Opaque
@@ -54,7 +54,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 type: Opaque
@@ -68,7 +68,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-jwt
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 type: Opaque
@@ -83,7 +83,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-http-proxies
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 type: Opaque
@@ -102,7 +102,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-app-config
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 data:
@@ -115,7 +115,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-search-config
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 data:
@@ -128,7 +128,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-init-fs
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 data:
@@ -144,7 +144,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-init-sysctl
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 data:
@@ -191,7 +191,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-install-plugins
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 data:
@@ -204,7 +204,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-jdbc-config
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 data:
@@ -218,7 +218,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 
@@ -232,6 +232,7 @@ spec:
   selector:
     app: sonarqube-dce
     release: application-values.yaml
+    sonarqube.datacenter/type: "app"
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -240,7 +241,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-headless
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 
@@ -257,6 +258,7 @@ spec:
   selector:
     app: sonarqube-dce
     release: application-values.yaml
+    sonarqube.datacenter/type: "app"
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -265,7 +267,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 
@@ -279,6 +281,7 @@ spec:
     - port: 9002
       targetPort: es-port
       protocol: TCP
+      appProtocol: tcp
       name: es
   selector:
     app: sonarqube-dce-search
@@ -291,7 +294,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-search-headless
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 
@@ -306,6 +309,7 @@ spec:
     - port: 9002
       targetPort: es-port
       protocol: TCP
+      appProtocol: tcp
       name: es
   selector:
     app: sonarqube-dce-search
@@ -318,7 +322,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
     app.kubernetes.io/name: application-values.yaml
@@ -327,7 +331,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: application-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "2026.1.0-datacenter-app"
+    app.kubernetes.io/version: "2026.5.0-datacenter-app"
 spec:
   replicas: 2
   revisionHistoryLimit: 
@@ -344,9 +348,9 @@ spec:
         release: application-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: 803fe9e98102398fbb4a9ffbd2d0d257befd857d56a4ef08f6190d1e131e628a
-        checksum/config: b8e780af8c78e02784555b15926c129ab057909d75165ba89a5d9143d1a53013
-        checksum/secret: 65cb4e778542be91ee25f6bcd3b35091bc02938cdc382ab68909f716401b2f88
+        checksum/plugins: 74b1740a37e2c699fd8a10e841a38047b0d40f14b87aa43fd26a57c39082692c
+        checksum/config: 70a463b9ecebbd04b59c912a90a21220088736d2dcf1d7377c2adcd24535bc7b
+        checksum/secret: 3de9c40b99dab85c46358407780405b278ea301c33938e5a3b47be9f09de1d29
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -354,7 +358,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce
-          image: sonarqube:2026.1.0-datacenter-app
+          image: sonarqube:2026.5.0-datacenter-app
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -367,11 +371,11 @@ spec:
             limits:
               cpu: 800m
               ephemeral-storage: 512000M
-              memory: 4096M
+              memory: 8192M
             requests:
               cpu: 400m
               ephemeral-storage: 1536M
-              memory: 4096M
+              memory: 8192M
           env:
             - name: SONAR_WEB_CONTEXT
               value: /
@@ -382,7 +386,7 @@ spec:
             - name: SONAR_LOG_JSONOUTPUT
               value: "false"
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.2.0
+              value: 2026.6.1000
             - name: SONAR_CLUSTER_SEARCH_HOSTS
               value: "application-values.yaml-sonarqube-dce-search"
             - name: SONAR_CLUSTER_KUBERNETES
@@ -391,6 +395,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: SONAR_CLUSTER_NODE_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
             - name: SONAR_CLUSTER_HOSTS
               value: "application-values.yaml-sonarqube-dce-headless"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
@@ -416,23 +424,27 @@ spec:
               command:
               - sh
               - -c
-              - |-
-                host="$(hostname -i || echo '127.0.0.1')"
-                curl --noproxy "*" -s -o /dev/null --max-time 1 -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
-            failureThreshold: 6
+              - |
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
+                curl --noproxy "*" -fsS -o /dev/null --max-time 5 -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/api/system/liveness"
+            failureThreshold: 8
             initialDelaySeconds: 0
             periodSeconds: 30
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           readinessProbe:
             exec:
               command:
               - sh
               - -c
-              - |-
+              - |
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
-                host="$(hostname -i || echo '127.0.0.1')"
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
                 if curl --noproxy "*" -s http://${host}:9000/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
                   exit 0
                 fi
@@ -440,7 +452,7 @@ spec:
             failureThreshold: 8
             initialDelaySeconds: 0
             periodSeconds: 30
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           startupProbe:
             httpGet:
               scheme: HTTP
@@ -495,7 +507,7 @@ metadata:
   name: application-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
     app.kubernetes.io/name: "application-values.yaml"
@@ -504,7 +516,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: application-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "2026.1.0-datacenter-search"
+    app.kubernetes.io/version: "2026.5.0-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
@@ -533,15 +545,15 @@ spec:
         release: application-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: 3d6de55882e07e770a8526fdd96c76a69af832561c93e511ef8ce086c9373bc2
-        checksum/init-fs: 412db9f4f42a7b25c88031be1fa368b204332b81efd69cd91bee04d4434c05e4
-        checksum/config: b8e780af8c78e02784555b15926c129ab057909d75165ba89a5d9143d1a53013
-        checksum/secret: 65cb4e778542be91ee25f6bcd3b35091bc02938cdc382ab68909f716401b2f88
+        checksum/init-sysctl: 1441b0cdd9f70830fceb7b453954d6e4bd03fb475dd5d9721f0413d677f0b2d3
+        checksum/init-fs: 52e55e04e550aff3701792635681dc1c976b6cdcaac07e50b7dfa19aa8593fc4
+        checksum/config: 70a463b9ecebbd04b59c912a90a21220088736d2dcf1d7377c2adcd24535bc7b
+        checksum/secret: 3de9c40b99dab85c46358407780405b278ea301c33938e5a3b47be9f09de1d29
     spec:
       automountServiceAccountToken: false
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.1.0-datacenter-app
+          image: sonarqube:2026.5.0-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -556,7 +568,7 @@ spec:
             - name: init-sysctl
               mountPath: /tmp/scripts/
         - name: init-fs
-          image: sonarqube:2026.1.0-datacenter-app
+          image: sonarqube:2026.5.0-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -597,7 +609,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce-search
-          image: "sonarqube:2026.1.0-datacenter-search"
+          image: "sonarqube:2026.5.0-datacenter-search"
           imagePullPolicy: IfNotPresent
           ports:
             - name: search-port
@@ -626,6 +638,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: SONAR_CLUSTER_NODE_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           livenessProbe:
             exec:
               command:
@@ -634,15 +650,17 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered live if http call returns 200
-                host="$(hostname -i || echo '127.0.0.1')"
-                if curl --noproxy "*" -s "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
+                if curl --noproxy "*" -sS "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
             initialDelaySeconds: 0
             periodSeconds: 30
             failureThreshold: 6
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           readinessProbe:
             exec:
               command:
@@ -651,7 +669,9 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
-                host="$(hostname -i || echo '127.0.0.1')"
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
                 if curl --noproxy "*" -s "http://${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
@@ -659,7 +679,7 @@ spec:
             initialDelaySeconds: 0
             periodSeconds: 30
             failureThreshold: 6
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           startupProbe:
             exec:
              command:
@@ -668,15 +688,17 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered started if http call returns 200
-                host="$(hostname -i || echo '127.0.0.1')"
-                if curl --noproxy "*" -s "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
+                if curl --noproxy "*" -sS "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
             initialDelaySeconds: 20
             periodSeconds: 10
             failureThreshold: 24
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -739,7 +761,7 @@ metadata:
 spec:
   descriptor:
     type: sonarqube-dce
-    version: "2026.1.0-datacenter-app"
+    version: "2026.5.0-datacenter-app"
     description: |-
         [SonarQube](https://www.sonarsource.com/products/sonarqube/) is a self-managed, automatic code review tool that systematically helps you deliver Clean Code.
         As a core element of our [Sonar solution](https://www.sonarsource.com/), SonarQube integrates into your existing workflow and detects issues in your code to help you perform continuous code inspections of your projects.
@@ -793,14 +815,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: application-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: application-values.yaml-ui-test
-      image: "sonarqube:2026.1.0-datacenter-app"
+      image: "sonarqube:2026.5.0-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [

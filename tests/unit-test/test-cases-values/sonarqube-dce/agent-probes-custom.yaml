@@ -1,0 +1,28 @@
+monitoringPasscode: test-passcode
+applicationNodes:
+  jwtSecret: test-jwt-secret
+jdbcOverwrite:
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+agentOrchestrator:
+  enabled: true
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "42"
+  storage:
+    bucket: agent-jobs
+  probes:
+    readiness:
+      path: /custom-readyz
+      timeoutSeconds: 3
+      failureThreshold: 6
+    liveness:
+      enabled: false
+hunterAgent:
+  enabled: true
+  image:
+    repository: example.com/hunter-agent
+    tag: "1"
+agenticSigningSecret:
+  existingSecret: test-agentic-instance-secret

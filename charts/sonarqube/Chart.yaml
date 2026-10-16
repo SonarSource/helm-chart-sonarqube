@@ -2,8 +2,8 @@ apiVersion: v2
 name: sonarqube
 description: SonarQube is a self-managed, automatic code review tool that systematically helps you deliver clean code. As a core element of our Sonar solution, SonarQube integrates into your existing workflow and detects issues in your code to help you perform continuous code inspections of your projects. The tool analyses 30+ different programming languages and integrates into your CI pipeline and DevOps platform to ensure that your code meets high-quality standards.
 type: application
-version: 2026.2.0
-appVersion: 2026.1.0
+version: 2026.6.1000
+appVersion: 2026.5.0
 keywords:
   - coverage
   - security
@@ -16,6 +16,11 @@ sources:
   - https://github.com/SonarSource/docker-sonarqube
   - https://github.com/SonarSource/sonarqube
 kubeVersion: ">= 1.24.0-0"
+dependencies:
+  - name: keda
+    version: 2.20.2
+    repository: https://kedacore.github.io/charts
+    condition: keda.enabled
 maintainers:
   - name: carminevassallo
     email: carmine.vassallo@sonarsource.com
@@ -31,6 +36,8 @@ maintainers:
     email: lukasz.jarocki@sonarsource.com
   - name: matteo-mara-sonarsource
     email: matteo.mara@sonarsource.com
+  - name: navyatejaotturu-sonarsource
+    email: navya.otturu@sonarsource.com
 annotations:
   artifacthub.io/links: |
     - name: support
@@ -38,25 +45,28 @@ annotations:
     - name: Chart Source
       url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
   artifacthub.io/changes: |
-    - kind: changed
-      description: "Upgrade Chart's version to 2026.2.0"
-    - kind: security
-      description: "Update ingress-nginx subchart to v4.14.3"
     - kind: added
-      description: "Upgrade SonarQube Community build to 26.3.0.120487"
+      description: "Add prometheusExporter.netrcCreds to authenticate the JMX exporter download with a .netrc Secret"
     - kind: changed
-      description: "Replace wget with curl in health probes"
+      description: "Upgrade Chart's version to 2026.6.1000"
+    - kind: changed
+      description: "Upgrade SonarQube Community build to 26.9.0.129388"
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/images: |
     - name: sonarqube-community
-      image: sonarqube:26.3.0.120487-community
+      image: sonarqube:26.9.0.129388-community
     - name: sonarqube-developer
-      image: sonarqube:2026.1.0-developer
+      image: sonarqube:2026.5.0-developer
     - name: sonarqube-enterprise
-      image: sonarqube:2026.1.0-enterprise
+      image: sonarqube:2026.5.0-enterprise
+    - name: sonarqube-mcp
+      image: sonarsource/sonarqube-mcp:2026.5.0
+    - name: sonarqube-agent-orchestrator
+      image: sonarsource/sonarqube-agent-orchestrator:2026.5.0
+    - name: sonarqube-hunter-agent
+      image: sonarsource/sonarqube-hunter-agent:2026.5.0
+    - name: sonarqube-remediation-agent
+      image: sonarsource/sonarqube-remediation-agent:2026.5.0
+    - name: sonar-vortex
+      image: sonarsource/sonar-vortex:2026.5.0
   charts.openshift.io/name: sonarqube
-dependencies:
-  - name: ingress-nginx
-    version: 4.14.3
-    repository: https://kubernetes.github.io/ingress-nginx
-    condition: nginx.enabled,ingress-nginx.enabled

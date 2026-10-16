@@ -1,0 +1,50 @@
+monitoringPasscode: test-passcode
+applicationNodes:
+  jwtSecret: test-jwt-secret
+  image:
+    pullSecret: app-node-secret
+    pullSecrets:
+      - name: app-node-secret-list
+jdbcOverwrite:
+  jdbcUrl: jdbc:postgresql://test-host:5432/testdb
+  jdbcUsername: test-user
+  jdbcPassword: test-password
+networkPolicy:
+  enabled: true
+# Vortex enabled, with no agentOrchestrator/hunterAgent/remediationAgent configured.
+vortexAnalysis:
+  enabled: true
+  image:
+    repository: example.com/vortex
+    tag: "7593"
+    pullSecret: vortex-secret
+    pullSecrets:
+      - name: vortex-secret-list
+  storage:
+    bucket: agent-artifacts
+    region: eu-west-1
+  env:
+    - name: MY_VAR
+      value: my-value
+  nodeSelector:
+    vortex: "true"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: vortex
+                operator: In
+                values: ["true"]
+  tolerations:
+    - key: vortex
+      operator: Exists
+      effect: NoSchedule
+agenticSigningSecret:
+  existingSecret: test-agentic-instance-secret
+# Vortex needs derived signing keys but no orchestrator, so the key-derivation hook Job gets
+# its image here rather than from agentOrchestrator.image.
+agentKeyDerivation:
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "42"

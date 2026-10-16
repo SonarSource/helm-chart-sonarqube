@@ -1,3 +1,4 @@
+{{- $appNodes := fromYaml (include "applicationNodes" .) -}}
 1. Get the application URL by running these commands:
 {{- if .Values.ingress.enabled }}
 {{- range .Values.ingress.hosts }}
@@ -20,12 +21,40 @@
 WARNING: 
          Please note that the SonarQube images run with a non-root user (uid=1000) belonging to the root group (guid=0). In this way, the chart can support arbitrary user ids as recommended in OpenShift.
          Please visit https://docs.openshift.com/container-platform/4.14/openshift_images/create-images.html#use-uid_create-images for more information.
-{{ if or (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled") }}
-WARNING: The ingress-nginx controller dependency is deprecated. A replacement for this dependency will be included in a future release.
-         Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#ingress-use-cases for more information.
-{{- end }}
 {{ if hasKey .Values.logging "jsonOutput" }}
 WARNING: The logging.jsonOutput value is deprecated in favor of the ENV var SONAR_LOG_JSONOUTPUT or the sonar.properties's sonar.log.jsonOutput.
 {{ end }}
 WARNING: If your values' file contains values under "ApplicationNodes", please note that this key is DEPRECATED and should be renamed to "applicationNodes".
          Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#applicationnodes-renamed-to-applicationnodes for more information.
+{{ if or (hasKey ($appNodes.livenessProbe | default dict) "exec") (hasKey ($appNodes.livenessProbe | default dict) "httpGet") (hasKey ($appNodes.livenessProbe | default dict) "tcpSocket") (hasKey ($appNodes.livenessProbe | default dict) "grpc") (hasKey ($appNodes.readinessProbe | default dict) "exec") (hasKey ($appNodes.readinessProbe | default dict) "httpGet") (hasKey ($appNodes.readinessProbe | default dict) "tcpSocket") (hasKey ($appNodes.readinessProbe | default dict) "grpc") }}
+WARNING: applicationNodes.livenessProbe/applicationNodes.readinessProbe handler values are deprecated and no longer have any effect. The chart manages these probes with exec; use overrideCommand to customize their commands.
+{{- end }}
+{{ if or (.Values.nginx | default dict).enabled ((index .Values "ingress-nginx") | default dict).enabled }}
+WARNING: This chart no longer bundles the ingress-nginx controller. Setting nginx.enabled/ingress-nginx.enabled no longer has any effect.
+         Run gateway-api-migration-scripts/nginx-to-istio-migration.sh to migrate to Gateway API using Istio (the controller our script sets up), or set httproute.enabled and bring your own Gateway API controller of choice, or set ingress.enabled and bring your own self-managed ingress controller.
+         Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#ingress-usage for more information.
+{{- end }}
+{{ if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" }}
+WARNING: istio.meshSidecar.enabled is set. The sandboxed agent runtimes have no istio-init, so nothing redirects their own app port (hunterAgent.port/remediationAgent.port) - it stays directly
+         dialable on the pod IP, bypassing the mesh and its mTLS entirely. This is fenced by the runtime NetworkPolicy (<family>.networkPolicy.enabled), which requires your cluster's CNI to
+         actually enforce NetworkPolicy. If it doesn't (e.g. aws-node --enable-network-policy=false), that port is reachable unauthenticated on the pod network regardless of this flag.
+{{- end }}
+{{ if and .Values.OpenShift.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) }}
+{{- if .Values.OpenShift.agentRuntimeClassName }}
+NOTE: The agent runtimes are sandboxed with the RuntimeClass {{ .Values.OpenShift.agentRuntimeClassName | quote }} (OpenShift.agentRuntimeClassName).
+      This chart does not create it: it comes from the OpenShift sandboxed containers operator, which
+      you install separately (a default KataConfig gives you "kata"; set enablePeerPods for peer pods
+      on AWS/Azure/vSphere and use "kata-remote" here instead).
+      The install fails when that RuntimeClass is missing, rather than succeeding while every runtime
+      pod is rejected at admission with 'RuntimeClass "{{ .Values.OpenShift.agentRuntimeClassName }}" not found'.
+      That check needs a live cluster, so helm template, client-side --dry-run and
+      OpenShift.skipAgentRuntimeClassCheck all skip it - in those cases confirm it yourself with
+        kubectl get runtimeclass {{ .Values.OpenShift.agentRuntimeClassName }}
+      gVisor is not usable on OpenShift, so every gvisor.* setting is ignored in this install.
+{{- else }}
+WARNING: OpenShift.agentRuntimeClassName is empty, so the agent runtimes run under the cluster's
+         default runtime with no sandbox around the LLM-driven workloads.
+         Set it to "kata" (or "kata-remote" for peer pods) and install the OpenShift sandboxed
+         containers operator to isolate them.
+{{- end }}
+{{- end }}

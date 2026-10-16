@@ -1,0 +1,77 @@
+{{/* Ephemeral PostgreSQL, overlaid only during the Marketplace functionality
+     test (--mode=test). Never shipped in the chart or deployed for real installs.
+     Credentials/service name match data-test/schema.yaml. */}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-postgres-postgresql
+  labels:
+    app.kubernetes.io/component: test-postgresql
+spec:
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: postgresql
+  selector:
+    app.kubernetes.io/component: test-postgresql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-postgres-postgresql
+  labels:
+    app.kubernetes.io/component: test-postgresql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: test-postgresql
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: test-postgresql
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgresql
+          image: postgres:16-alpine
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: POSTGRES_USER
+              value: username
+            - name: POSTGRES_PASSWORD
+              value: password
+            - name: POSTGRES_DB
+              value: sonarqube
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: postgresql
+              containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "username", "-d", "sonarqube"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          emptyDir: {}

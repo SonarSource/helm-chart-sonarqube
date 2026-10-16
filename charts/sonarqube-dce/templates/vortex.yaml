@@ -1,0 +1,156 @@
+{{- if eq (include "sonarqube.vortex.enabled" .) "true" }}
+{{- $vortex := .Values.vortexAnalysis }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sonarqube.vortex.fullname" . }}
+  labels: {{- include "sonarqube.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vortex
+spec:
+  {{- /* Same guard as the agent runtimes/orchestrator: once the ScaledObject owns this Deployment,
+         only render replicas on the very first install (or always, per manageReplicas), so a
+         `helm upgrade` doesn't reset the autoscaler's current value. */}}
+  {{- if or (not $vortex.autoscaling.enabled) (and .Release.IsInstall $vortex.autoscaling.manageReplicas) }}
+  replicas: {{ $vortex.replicaCount }}
+  {{- end }}
+  {{- with $vortex.strategy }}
+  strategy: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ include "sonarqube.name" . }}-vortex
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/vortex-secret.yaml") . | sha256sum }}
+        {{- with $vortex.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
+      labels:
+        app: {{ include "sonarqube.name" . }}-vortex
+        release: {{ .Release.Name }}
+        {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- /* Protects an in-flight analysis from an ordinary scale-down (manual, rollout, node
+             drain, or KEDA-driven) dropping it mid-run - independent of whether autoscaling is
+             enabled. */}}
+      terminationGracePeriodSeconds: {{ $vortex.terminationGracePeriodSeconds }}
+      serviceAccountName: {{ include "sonarqube.vortex.serviceAccountName" . }}
+      automountServiceAccountToken: {{ include "sonarqube.agent.automountServiceAccountToken" (dict "ctx" . "serviceAccount" $vortex.serviceAccount) }}
+      {{- $pullSecrets := include "sonarqube.agent.imagePullSecrets" (list $vortex.image) }}
+      {{- if $pullSecrets }}
+      imagePullSecrets: {{- $pullSecrets | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: vortex
+          image: "{{ $vortex.image.repository }}:{{ $vortex.image.tag }}"
+          imagePullPolicy: {{ $vortex.image.pullPolicy }}
+          {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" $vortex.containerSecurityContext))) }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ $vortex.port }}
+              protocol: TCP
+          env:
+            - name: VORTEX_ANALYSIS_SONARQUBE_URL
+              value: {{ printf "http://%s:%d%s" (include "sonarqube.fullname" .) (int .Values.service.externalPort) (trimSuffix "/" (include "sonarqube.webcontext" .)) | quote }}
+            - name: SONAR_AGENTIC_STORAGE_TYPE
+              value: {{ $vortex.storage.type | quote }}
+            - name: SONAR_AGENTIC_STORAGE_BUCKET
+              value: {{ $vortex.storage.bucket | quote }}
+            - name: SONAR_AGENTIC_STORAGE_REGION
+              value: {{ $vortex.storage.region | quote }}
+            - name: SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS
+              value: {{ $vortex.storage.pathStyleAccess | quote }}
+            - name: SONAR_AGENTIC_STORAGE_ENDPOINT
+              value: {{ $vortex.storage.endpoint | quote }}
+            - name: SONAR_AGENTIC_STORAGE_FILESYSTEM_BASE_DIR
+              value: {{ $vortex.storage.filesystem.baseDir | quote }}
+            {{- /* Inject static storage keys only when provided (inline or via existingSecret). When
+                   none are set, the env vars are omitted so the AWS SDK falls back to its default
+                   credential chain - i.e. the pod's IAM identity (node instance role or IRSA) for
+                   credential-less access to a real S3 bucket. */}}
+            {{- if or $vortex.storage.accessKey $vortex.storage.secretKey $vortex.storage.existingSecret }}
+            - name: SONAR_AGENTIC_STORAGE_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.vortex.fullname" .) $vortex.storage.existingSecret }}
+                  key: SONAR_AGENTIC_STORAGE_ACCESS_KEY
+            - name: SONAR_AGENTIC_STORAGE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.vortex.fullname" .) $vortex.storage.existingSecret }}
+                  key: SONAR_AGENTIC_STORAGE_SECRET_KEY
+            {{- end }}
+            {{- /* Points Vortex at the agentic-shared key mounted below, which it signs its
+                   handoffs to SQS with - AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH. SQS reads the same
+                   key via the sonar.agentic.orchestrator.signingKeyPath property instead of an env
+                   var (it has a properties mechanism Vortex, a standalone process, does not); see
+                   sonarqube.agentic.keyPathEnv. */}}
+            {{- with (include "sonarqube.agentic.keyPathEnv" (dict "ctx" . "consumer" "vortex") | fromYamlArray) }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- /* Sets the sliding window the new GET <metricPath> endpoint reports its peak
+                   concurrency over. Only relevant once the ScaledObject actually polls that
+                   endpoint, so it's emitted with autoscaling only - windowSeconds defaults to a
+                   non-empty 30, so gating on it alone would pin every Vortex pod to this env var
+                   even when autoscaling.enabled is false. Emitted before $vortex.env so an
+                   explicit user entry of the same name still wins, matching every other
+                   auto-generated var here. */}}
+            {{- if and $vortex.autoscaling.enabled $vortex.autoscaling.windowSeconds }}
+            - name: METRICS_CONCURRENT_REQUESTS_WINDOW_SECONDS
+              value: {{ $vortex.autoscaling.windowSeconds | quote }}
+            {{- end }}
+            {{- with $vortex.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with $vortex.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 90
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+          {{- $keyMount := include "sonarqube.agentic.keyVolumeMount" (dict "ctx" . "consumer" "vortex" "mountPath" (include "sonarqube.agentic.keyDir" .)) }}
+          {{- if or $keyMount $vortex.extraVolumeMounts }}
+          volumeMounts:
+            {{- with $keyMount }}
+            {{- . | trim | nindent 12 }}
+            {{- end }}
+            {{- with $vortex.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+      {{- with (include "sonarqube.agent.scheduling" (dict "ctx" . "component" $vortex)) }}
+{{ . | indent 6 }}
+      {{- end }}
+      {{- $keyVolume := include "sonarqube.agentic.keyVolume" (dict "ctx" . "consumer" "vortex") }}
+      {{- if or $keyVolume $vortex.extraVolumes }}
+      volumes:
+        {{- with $keyVolume }}
+        {{- . | trim | nindent 8 }}
+        {{- end }}
+        {{- with $vortex.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+{{- end }}

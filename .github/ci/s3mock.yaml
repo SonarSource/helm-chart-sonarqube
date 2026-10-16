@@ -1,0 +1,65 @@
+# In-cluster S3 stand-in for the agentic CI scenario (charts/sonarqube/ci/agentic-values.yaml):
+# accepts any credentials and creates the Agent Orchestrator and Vortex buckets on startup.
+# Restricted-SCC friendly so the same manifest runs on kind and OpenShift: no fixed UID, and the
+# store root is an emptyDir so it doesn't depend on the image's file ownership.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s3
+spec:
+  selector:
+    matchLabels:
+      app: s3
+  template:
+    metadata:
+      labels:
+        app: s3
+    spec:
+      imagePullSecrets:
+        - name: pullsecret
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: s3mock
+          image: adobe/s3mock:5.2.3@sha256:ab01a6946750f451ca215a47e91030695b260e4003b8a5a6201d25029b8fca92
+          env:
+            - name: COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS
+              value: "agent-jobs,vortex"
+            - name: COM_ADOBE_TESTING_S3MOCK_STORE_ROOT
+              value: /data
+          ports:
+            - containerPort: 9090
+          readinessProbe:
+            tcpSocket:
+              port: 9090
+          resources:
+            requests:
+              cpu: 50m
+              memory: 384Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: s3
+spec:
+  selector:
+    app: s3
+  ports:
+    - port: 9000
+      targetPort: 9090

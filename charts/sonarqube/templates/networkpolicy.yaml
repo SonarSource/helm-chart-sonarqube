@@ -31,20 +31,31 @@ spec:
         - port: {{ .Values.prometheusExporter.webBeanPort }}
           protocol: TCP
     {{ end }}
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              networking/namespace: kube-system
-          podSelector:
-            matchLabels:
-              k8s-app: kube-dns
+    {{- if .Values.agentOrchestrator.enabled }}
+    - from:
+        - podSelector:
+            matchLabels: {{- include "sonarqube.agentOrchestrator.selectorLabels" . | nindent 14 }}
       ports:
-        - port: 53
-          protocol: UDP
+        - port: {{ .Values.service.internalPort }}
+          protocol: TCP
+    {{- end }}
+    {{- if eq (include "sonarqube.vortex.enabled" .) "true" }}
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ include "sonarqube.name" . }}-vortex
+              release: {{ .Release.Name }}
+      ports:
+        - port: {{ .Values.service.internalPort }}
+          protocol: TCP
+    {{- end }}
+  egress:
+{{ include "sonarqube.dnsEgressRule" . | indent 4 }}
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
+        - ipBlock:
+            cidr: "::/0"
 {{- end -}}
 
 {{- if and .Values.networkPolicy.enabled (or .Values.networkPolicy.additionalNetworkPolicies .Values.networkPolicy.additionalNetworkPolicys) }}

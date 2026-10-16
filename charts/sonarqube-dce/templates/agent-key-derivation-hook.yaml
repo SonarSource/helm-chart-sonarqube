@@ -1,0 +1,187 @@
+{{- /*
+Agentic signing key derivation (EA-791/ADR-10, EA-802).
+
+One operator-supplied instance secret is expanded - via HKDF-SHA256 - into one key per
+communication hop, so that compromising one component doesn't yield the keys for hops it isn't
+part of. The expansion is done by /derive-keys.sh, which is baked into the Agent Orchestrator
+image; this Job runs it and materializes the result as one Secret per consumer.
+
+Why a pre-install/pre-upgrade hook: the orchestrator, runtime, Vortex and SQS pods all mount these
+Secrets. A post-install hook would deadlock - Helm applies (and, under --wait, waits on) those
+workloads before post hooks run, so the pods would sit in ContainerCreating waiting for Secrets
+that the hook hasn't been allowed to create yet.
+
+Why the Kubernetes API instead of a chart-rendered Secret: the derived keys only exist once
+derive-keys.sh has run, i.e. long after template rendering. The Job writes them with curl and the
+pod's own ServiceAccount token (see agent-key-derivation-rbac.yaml for the Role) using
+stringData, which the API server base64-encodes for us.
+
+Failures are deliberately not swallowed: derive-keys.sh runs under `set -e` and every API write is
+status-checked, so a failure fails the Job, and a failed hook fails the release. Silently shipping
+pods with missing or stale keys would surface much later as unexplained signature rejections.
+*/}}
+{{- if eq (include "sonarqube.agentKeyDerivation.required" .) "true" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "sonarqube.agentKeyDerivation.fullname" . }}
+  labels:
+    app: {{ template "sonarqube.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    sonarqube.agent/component: key-derivation
+    app.kubernetes.io/component: agent-key-derivation
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded
+spec:
+  backoffLimit: 1
+  {{- with .Values.agentKeyDerivation.activeDeadlineSeconds }}
+  activeDeadlineSeconds: {{ . }}
+  {{- end }}
+  template:
+    metadata:
+      name: {{ include "sonarqube.agentKeyDerivation.fullname" . }}
+      labels:
+        app: {{ template "sonarqube.name" . }}
+        release: {{ .Release.Name }}
+        sonarqube.agent/component: key-derivation
+        app.kubernetes.io/component: agent-key-derivation
+      annotations:
+        # The hook Job talks to the Kubernetes API and then exits; an Istio sidecar would keep the
+        # pod running forever and the hook would never be seen to succeed.
+        "sidecar.istio.io/inject": "false"
+    spec:
+      restartPolicy: OnFailure
+      # The script authenticates to the API with the projected token, so force the mount here
+      # rather than inheriting it: with serviceAccount.create=false the Job runs under the
+      # release's top-level ServiceAccount, whose automountToken defaults to false - the `cat` of
+      # the token would fail under `set -eu` and take the whole release down with it.
+      automountServiceAccountToken: true
+      {{- $image := fromYaml (include "sonarqube.agentKeyDerivation.image" .) }}
+      {{- $pullSecrets := include "sonarqube.agent.imagePullSecrets" (list $image) }}
+      {{- if $pullSecrets }}
+      imagePullSecrets: {{- $pullSecrets | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "sonarqube.agentKeyDerivation.serviceAccountName" . }}
+      {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" .Values.agentKeyDerivation.securityContext))) }}
+      securityContext: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (include "sonarqube.agent.scheduling" (dict "ctx" . "component" .Values.agentKeyDerivation)) }}
+{{ . | indent 6 }}
+      {{- end }}
+      containers:
+        - name: derive-keys
+          image: "{{ $image.repository }}:{{ $image.tag }}"
+          imagePullPolicy: {{ $image.pullPolicy | default "IfNotPresent" }}
+          {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" .Values.agentKeyDerivation.containerSecurityContext))) }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.agentKeyDerivation.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: TMPDIR
+              value: /tmp
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+
+              SECRET_FILE=/etc/agentic/instance-secret/instance-secret
+              KEYS=$(mktemp -d)
+              RESP=$(mktemp)
+              BODY_FILE=$(mktemp)
+              CFG_FILE=$(mktemp)
+
+              # Derive every label any enabled consumer needs, in one pass. derive-keys.sh is
+              # deterministic, so re-running it on upgrade reproduces the same keys - an upgrade
+              # that doesn't change agenticSigningSecret rewrites the Secrets byte-identically and
+              # therefore doesn't churn the consumer pods.
+              /derive-keys.sh --secret-file "$SECRET_FILE" \
+              {{- range $label := (fromYamlArray (include "sonarqube.agentic.allKeyLabels" .)) }}
+                --label {{ $label }}="$KEYS/{{ $label }}" \
+              {{- end }}
+                --mode 0444
+
+              API=https://kubernetes.default.svc
+              SA=/var/run/secrets/kubernetes.io/serviceaccount
+              TOKEN=$(cat "$SA/token")
+              NS=$(cat "$SA/namespace")
+
+              # Upsert: PUT first (the common case is an upgrade over an existing Secret), fall
+              # back to POST when it isn't there yet. Any other status is fatal - notably 403,
+              # which means the Role didn't apply and silently continuing would leave the
+              # consumers mounting nothing.
+              #
+              # Method/URL are passed as argv (no secret material there); the token and body go
+              # through a curl config file instead of -H/--data, since curl's own argv is readable
+              # by anything with host /proc access via /proc/<pid>/cmdline for as long as the
+              # request is in flight. printf is a shell builtin here (no execve, so its arguments
+              # never appear in any process's /proc/<pid>/cmdline either).
+              api_write() {
+                printf '%s' "$3" > "$BODY_FILE"
+                {
+                  printf 'cacert = "%s/ca.crt"\n' "$SA"
+                  printf 'header = "Authorization: Bearer %s"\n' "$TOKEN"
+                  printf 'header = "Content-Type: application/json"\n'
+                  printf 'data-binary = "@%s"\n' "$BODY_FILE"
+                } > "$CFG_FILE"
+                curl -sS -o "$RESP" -w '%{http_code}' -X "$1" "$2" -K "$CFG_FILE"
+              }
+
+              write_secret() {
+                name=$1
+                shift
+                data=""
+                for label in "$@"; do
+                  # Derived keys are lowercase hex, so no JSON escaping is needed here.
+                  value=$(cat "$KEYS/$label")
+                  # Not `[ -n "$data" ] && ...`: under set -e a false test as the last command of
+                  # a loop body is an exit in some shells.
+                  if [ -n "$data" ]; then data="$data,"; fi
+                  data="$data\"$label\":\"$value\""
+                done
+                body="{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"type\":\"Opaque\",\"metadata\":{\"name\":\"$name\",\"labels\":{\"app.kubernetes.io/managed-by\":\"Helm\",\"app.kubernetes.io/component\":\"agent-key-derivation\",\"release\":\"{{ .Release.Name }}\"}},\"stringData\":{$data}}"
+
+                code=$(api_write PUT "$API/api/v1/namespaces/$NS/secrets/$name" "$body")
+                if [ "$code" = "404" ]; then
+                  code=$(api_write POST "$API/api/v1/namespaces/$NS/secrets" "$body")
+                fi
+                case "$code" in
+                  200|201)
+                    echo "wrote Secret $name ($*)"
+                    ;;
+                  *)
+                    echo "FATAL: writing Secret $name failed with HTTP $code" >&2
+                    cat "$RESP" >&2
+                    exit 1
+                    ;;
+                esac
+              }
+
+              {{- range $consumer := (list "orchestrator" "hunter" "remediation" "sqs" "vortex") }}
+              {{- $labels := fromYamlArray (include "sonarqube.agentic.keyLabels" (dict "ctx" $ "consumer" $consumer)) }}
+              {{- if $labels }}
+              write_secret {{ include "sonarqube.agentic.keySecretName" (dict "ctx" $ "consumer" $consumer) }} {{ join " " $labels }}
+              {{- end }}
+              {{- end }}
+          volumeMounts:
+            - name: instance-secret
+              mountPath: /etc/agentic/instance-secret
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: instance-secret
+          secret:
+            secretName: {{ .Values.agenticSigningSecret.existingSecret }}
+            items:
+              - key: {{ include "sonarqube.agentic.signingSecretKey" . }}
+                path: instance-secret
+        - name: tmp
+          emptyDir: {}
+{{- end }}

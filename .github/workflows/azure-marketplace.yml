@@ -16,8 +16,8 @@ concurrency:
   cancel-in-progress: ${{ !(github.ref_name == 'master' || startsWith(github.ref_name, 'release/')) }}
 
 env:
-  SQ_VERSION: 2026.1.0
-  SQ_IMAGE_VERSION: 2026.1.0
+  SQ_VERSION: 2026.5.0
+  SQ_IMAGE_VERSION: 2026.5.0
 
 jobs:
   build-azure-staging-app:
@@ -30,11 +30,11 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
-          version: 2025.7.12
+          version: 2026.3.13
       - id: secrets
-        uses: SonarSource/vault-action-wrapper@545e7cfbb5528e7009a1edcc83e073898d292627 # v3.2.0
+        uses: SonarSource/vault-action-wrapper@v3
         with:
           secrets: |
             development/team/sonarqube/kv/data/azure-marketplace-staging url | AZURE_ACR_REGISTRY_STAGING;
@@ -76,11 +76,11 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # v3.6.1
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
         with:
-          version: 2025.7.12
+          version: 2026.3.13
       - id: secrets
-        uses: SonarSource/vault-action-wrapper@545e7cfbb5528e7009a1edcc83e073898d292627 # v3.2.0
+        uses: SonarSource/vault-action-wrapper@v3
         with:
           secrets: |
             development/team/sonarqube/kv/data/azure-marketplace-production url | AZURE_ACR_REGISTRY_PRODUCTION;

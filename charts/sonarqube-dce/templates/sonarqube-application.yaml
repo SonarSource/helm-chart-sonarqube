@@ -39,6 +39,9 @@ spec:
 {{- with .Values.ApplicationNodes.podLabels }}
 {{ toYaml . | indent 8 }}
 {{- end }}
+{{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+{{ . | indent 8 }}
+{{- end }}
       annotations:
         checksum/plugins: {{ include (print $.Template.BasePath "/install-plugins.yaml") . | sha256sum }}
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
@@ -52,6 +55,9 @@ spec:
 {{- end }}
 {{- with .Values.ApplicationNodes.annotations }}
 {{ toYaml . | indent 8 }}
+{{- end }}
+{{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
+{{ . | indent 8 }}
 {{- end }}
     spec:
       automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
@@ -72,8 +78,18 @@ spec:
         - name: ca-certs
           image: {{ default (include "sonarqube.image" .) .Values.caCerts.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
-          command: ["sh"]
-          args: ["-c", "cp -f \"${JAVA_HOME}/lib/security/cacerts\" /tmp/certs/cacerts; if [ \"$(ls /tmp/secrets/ca-certs)\" ]; then for f in /tmp/secrets/ca-certs/*; do keytool -importcert -file \"${f}\" -alias \"$(basename \"${f}\")\" -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt; done; fi;"]
+          command: ["sh", "-c"]
+          args:
+            - |
+              cp -f "${JAVA_HOME}/lib/security/cacerts" /tmp/certs/cacerts
+              chmod u+w /tmp/certs/cacerts
+              if [ "$(ls /tmp/secrets/ca-certs)" ]; then
+                for f in /tmp/secrets/ca-certs/*; do
+                  keytool -importcert -file "${f}" -alias "$(basename "${f}")" \
+                    -keystore /tmp/certs/cacerts -storepass changeit -trustcacerts -noprompt
+                done
+                for f in /tmp/secrets/ca-certs/*; do cat "$f"; echo; done > /tmp/certs/ca-bundle.pem
+              fi
           {{- with (include "sonarqube.initContainersSecurityContext" .) }}
           securityContext: {{- . | nindent 12 }}
           {{- end }}
@@ -90,7 +106,7 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
-      {{- $hasMergedProps := or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.port .Values.ApplicationNodes.webPort .Values.ApplicationNodes.cePort }}
+      {{- $hasMergedProps := or .Values.ApplicationNodes.sonarProperties .Values.ApplicationNodes.port .Values.ApplicationNodes.webPort .Values.ApplicationNodes.cePort .Values.agentOrchestrator.enabled .Values.vortexAnalysis.enabled (eq (include "sonarqube.agentic.enabled" .) "true") }}
       {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
         - name: concat-properties
           image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
@@ -142,11 +158,15 @@ spec:
           resources:
 {{ toYaml (default .Values.initContainers.resources .Values.ApplicationNodes.prometheusExporter.resources) | indent 12 }}
           command: ["/bin/sh","-c"]
-          args: ["curl -s '{{ template "prometheusExporter.downloadURL" . }}' {{ if .Values.ApplicationNodes.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar -v"]
+          args: ["curl -s -L --fail {{ if .Values.ApplicationNodes.prometheusExporter.netrcCreds }}--netrc-file /root/.netrc {{ end }}'{{ template "prometheusExporter.downloadURL" . }}' {{ if .Values.ApplicationNodes.prometheusExporter.noCheckCertificate }}--insecure{{ end }} --output /data/jmx_prometheus_javaagent.jar{{ if .Values.ApplicationNodes.prometheusExporter.netrcCreds }} -S{{ else }} -v{{ end }}{{ if .Values.ApplicationNodes.prometheusExporter.sha256 }} && echo '{{ .Values.ApplicationNodes.prometheusExporter.sha256 }}  /data/jmx_prometheus_javaagent.jar' | sha256sum -c -{{ end }}"]
           volumeMounts:
             - mountPath: /data
               name: sonarqube
               subPath: data
+            {{- if .Values.ApplicationNodes.prometheusExporter.netrcCreds }}
+            - name: prometheus-exporter-netrc-file
+              mountPath: /root
+            {{- end }}
           env:
           {{- with (include "sonarqube.prometheusExporterProxy.env" .) }}
           {{- . | nindent 12 }}
@@ -172,6 +192,12 @@ spec:
             - name: plugins-netrc-file
               mountPath: /root
             {{- end }}
+            {{- if .Values.caCerts.enabled }}
+            - mountPath: /tmp/certs
+              name: sonarqube
+              subPath: certs
+              readOnly: true
+            {{- end }}
           {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) .Values.ApplicationNodes.plugins.securityContext) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -190,7 +216,7 @@ spec:
           image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy  }}
           command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
-          {{- with (default (fromYaml (include "sonarqube.initContainersSecurityContext" .)) .Values.initContainers.securityContext) }}
+          {{- with (fromYaml (include "sonarqube.initContainersSecurityContext" .)) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- with .Values.initContainers.resources }}
@@ -206,9 +232,11 @@ spec:
             - name: oracle-jdbc-driver-netrc-file
               mountPath: /root
           {{- end }}
-          {{- if .Values.caCerts.enabled }} 
-            - mountPath: /tmp/secrets/ca-certs
-              name: ca-certs
+          {{- if .Values.caCerts.enabled }}
+            - mountPath: /tmp/certs
+              name: sonarqube
+              subPath: certs
+              readOnly: true
           {{- end }}
           {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
@@ -271,6 +299,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: SONAR_CLUSTER_NODE_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
             - name: SONAR_CLUSTER_HOSTS
               value: "{{ template "sonarqube.fullname" . }}-headless"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
@@ -293,6 +325,21 @@ spec:
                   name: {{ template "sonarqube.fullname" . }}-monitoring-passcode
                   key: SONAR_WEB_SYSTEMPASSCODE
                 {{- end }}
+            {{- if .Values.mcp.enabled }}
+            - name: SONAR_MCP_ENABLED
+              value: "true"
+            - name: SONAR_MCP_SERVERURL
+              value: {{ printf "%s://%s:%d" (ternary "https" "http" .Values.mcp.tls.enabled) (include "sonarqube.mcp.fullname" .) (.Values.mcp.port | int) | quote }}
+            {{- if .Values.mcp.healthCheckInterval }}
+            - name: SONAR_MCP_HEALTHCHECKINTERVAL
+              value: {{ .Values.mcp.healthCheckInterval | quote }}
+            {{- end }}
+            {{- end }}
+            {{- /* Also given a conf/sonar.properties line via mergedSonarProperties (SONAR-31416). */}}
+            {{- if eq (include "sonarqube.vortex.enabled" .) "true" }}
+            - name: SONAR_VORTEX_ANALYSIS_URL
+              value: {{ include "sonarqube.vortex.url" . | quote }}
+            {{- end }}
             {{- if .Values.searchNodes.searchAuthentication.enabled }}
             - name: SONAR_CLUSTER_SEARCH_PASSWORD
               valueFrom:
@@ -309,6 +356,33 @@ spec:
                   name: "{{ template "search.ksPassword" . }}"
                   key: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
             {{- end }}
+            {{- /* Points the agent capabilities at the in-cluster Agent Orchestrator. Also given a
+                   conf/sonar.properties line via mergedSonarProperties (SONAR-31416); env var kept
+                   for consumers reading it via Spring instead (e.g. hunter-agent-unified-app). */}}
+            {{- if .Values.agentOrchestrator.enabled }}
+            - name: SONAR_HUNTERAGENT_ORCHESTRATOR_URL
+              value: {{ include "sonarqube.agentOrchestrator.url" . | quote }}
+            - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
+              value: {{ include "sonarqube.agentOrchestrator.url" . | quote }}
+            {{- end }}
+            {{- /* The instance secret is mounted here because SQS derives material in-process from
+                   it (the remediation-to-sqs key it verifies, which is why it doesn't mount that
+                   key). What the JVM actually reads is the sonar.agentic.signing.secretFile
+                   property, set by sonarqube.agentHealthProperties; unlike the SONAR_*-prefixed
+                   vars above, this name is not mapped onto a property, so it only reaches a
+                   consumer reading the environment directly. Emitted because SONAR-32065 names it
+                   alongside the property - drop it if nothing turns out to read it.
+
+                   SQS's other agentic key, agentic-shared, gets no env var at all (see
+                   sonarqube.agentic.keyPathEnv): it signs its own calls to the orchestrator using
+                   the sonar.agentic.orchestrator.signingKeyPath property instead, since
+                   Configuration.get() doesn't fall back to plain env vars (SONAR-31416). Vortex - a
+                   separate process with no properties mechanism - still reads that same key via
+                   AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH. */}}
+            {{- if eq (include "sonarqube.agentic.enabled" .) "true" }}
+            - name: AGENTIC_SIGNING_SECRET_FILE
+              value: {{ include "sonarqube.agentic.sqsSecretFile" . | quote }}
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ template "sonarqube.fullname" . }}-jdbc-config
@@ -321,9 +395,41 @@ spec:
                 name: {{ . }}
 {{- end }}
           livenessProbe:
-{{ tpl (omit .Values.ApplicationNodes.livenessProbe "sonarWebContext" | toYaml | indent 12) . }}
+            exec:
+              command:
+              {{- with .Values.ApplicationNodes.livenessProbe.overrideCommand }}
+              {{- tpl (toYaml .) $ | nindent 14 }}
+              {{- else }}
+              - sh
+              - -c
+              - |
+                {{- include "sonarqube.probeHostScript" . | nindent 16 }}
+                curl --noproxy "*" -fsS -o /dev/null --max-time {{ .Values.ApplicationNodes.livenessProbe.timeoutSeconds }} -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.livenessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/liveness"
+              {{- end }}
+            {{- with (omit .Values.ApplicationNodes.livenessProbe "exec" "httpGet" "tcpSocket" "grpc" "sonarWebContext" "overrideCommand") }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
           readinessProbe:
-{{ tpl (omit .Values.ApplicationNodes.readinessProbe "sonarWebContext" | toYaml | indent 12) . }}
+            exec:
+              command:
+              {{- with .Values.ApplicationNodes.readinessProbe.overrideCommand }}
+              {{- tpl (toYaml .) $ | nindent 14 }}
+              {{- else }}
+              - sh
+              - -c
+              - |
+                #!/bin/bash
+                # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
+                # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
+                {{- include "sonarqube.probeHostScript" . | nindent 16 }}
+                if curl --noproxy "*" -s http://${host}:{{ .Values.service.internalPort }}{{ .Values.ApplicationNodes.readinessProbe.sonarWebContext | default (include "sonarqube.webcontext" .) }}api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
+                  exit 0
+                fi
+                exit 1
+              {{- end }}
+            {{- with (omit .Values.ApplicationNodes.readinessProbe "exec" "httpGet" "tcpSocket" "grpc" "sonarWebContext" "overrideCommand") }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
           startupProbe:
             httpGet:
               scheme: HTTP
@@ -345,6 +451,14 @@ spec:
             {{- if .Values.sonarSecretKey }}
             - mountPath: {{ .Values.sonarqubeFolder }}/secret/
               name: secret
+            {{- end }}
+            {{- if eq (include "sonarqube.agentic.enabled" .) "true" }}
+            - mountPath: {{ include "sonarqube.agentic.sqsSecretDir" . }}
+              name: agentic-instance-secret
+              readOnly: true
+            {{- end }}
+            {{- with (include "sonarqube.agentic.keyVolumeMount" (dict "ctx" . "consumer" "sqs" "mountPath" (include "sonarqube.agentic.sqsKeyDir" .))) }}
+            {{- . | trim | nindent 12 }}
             {{- end }}
             {{- if .Values.caCerts.enabled }}
             - mountPath: {{ .Values.sonarqubeFolder }}/certs
@@ -412,6 +526,10 @@ spec:
       affinity:
 {{ toYaml .Values.ApplicationNodes.affinity | indent 8 }}
     {{- end }}
+    {{- with .Values.ApplicationNodes.topologySpreadConstraints }}
+      topologySpreadConstraints:
+{{ toYaml . | indent 8 }}
+    {{- end }}
       serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
       volumes:
       {{- if or $hasMergedProps .Values.sonarSecretKey }}
@@ -438,11 +556,33 @@ spec:
           - key: sonar-secret.txt
             path: sonar-secret.txt
       {{- end }}
+      {{- /* The instance secret itself, not just the derived keys: SQS derives some material
+             in-process. Projected to a fixed filename so the property/env value above is
+             independent of whatever key name the operator chose in their Secret. */}}
+      {{- if eq (include "sonarqube.agentic.enabled" .) "true" }}
+      - name: agentic-instance-secret
+        secret:
+          secretName: {{ .Values.agenticSigningSecret.existingSecret }}
+          items:
+          - key: {{ include "sonarqube.agentic.signingSecretKey" . }}
+            path: instance-secret
+      {{- end }}
+      {{- with (include "sonarqube.agentic.keyVolume" (dict "ctx" . "consumer" "sqs")) }}
+      {{- . | trim | nindent 6 }}
+      {{- end }}
       {{- include "sonarqube.volumes.caCerts" . | nindent 6 }}
       {{- if .Values.ApplicationNodes.plugins.netrcCreds }}
       - name: plugins-netrc-file
         secret:
           secretName: {{ .Values.ApplicationNodes.plugins.netrcCreds }}
+          items:
+          - key: netrc
+            path: .netrc
+      {{- end }}
+      {{- if and .Values.ApplicationNodes.prometheusExporter.enabled .Values.ApplicationNodes.prometheusExporter.netrcCreds }}
+      - name: prometheus-exporter-netrc-file
+        secret:
+          secretName: {{ .Values.ApplicationNodes.prometheusExporter.netrcCreds }}
           items:
           - key: netrc
             path: .netrc

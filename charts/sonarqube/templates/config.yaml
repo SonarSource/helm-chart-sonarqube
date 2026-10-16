@@ -5,7 +5,7 @@ metadata:
   labels: {{- include "sonarqube.labels" . | nindent 4 }}
 data:
   sonar.properties: |
-  {{- range $key, $val := .Values.sonarProperties }}
+  {{- range $key, $val := (fromYaml (include "sonarqube.mergedSonarProperties" $)) }}
     {{ $key }}={{ $val }}
   {{- end }}
   {{- if not .Values.elasticsearch.bootstrapChecks }}

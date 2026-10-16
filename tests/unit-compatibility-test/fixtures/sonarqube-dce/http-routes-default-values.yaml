@@ -6,7 +6,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 spec:
@@ -23,7 +23,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 spec:
@@ -40,7 +40,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-monitoring-passcode
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 type: Opaque
@@ -54,7 +54,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 type: Opaque
@@ -68,7 +68,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-jwt
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 type: Opaque
@@ -83,7 +83,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-http-proxies
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 type: Opaque
@@ -102,7 +102,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-app-config
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 data:
@@ -115,7 +115,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-search-config
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 data:
@@ -128,7 +128,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-init-fs
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 data:
@@ -144,7 +144,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-init-sysctl
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 data:
@@ -191,7 +191,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-install-plugins
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 data:
@@ -204,7 +204,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-jdbc-config
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 data:
@@ -218,7 +218,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 
@@ -232,6 +232,7 @@ spec:
   selector:
     app: sonarqube-dce
     release: http-routes-default-values.yaml
+    sonarqube.datacenter/type: "app"
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -240,7 +241,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-headless
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 
@@ -257,6 +258,7 @@ spec:
   selector:
     app: sonarqube-dce
     release: http-routes-default-values.yaml
+    sonarqube.datacenter/type: "app"
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -265,7 +267,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 
@@ -279,6 +281,7 @@ spec:
     - port: 9002
       targetPort: es-port
       protocol: TCP
+      appProtocol: tcp
       name: es
   selector:
     app: sonarqube-dce-search
@@ -291,7 +294,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-search-headless
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 
@@ -306,6 +309,7 @@ spec:
     - port: 9002
       targetPort: es-port
       protocol: TCP
+      appProtocol: tcp
       name: es
   selector:
     app: sonarqube-dce-search
@@ -318,7 +322,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-app
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
     app.kubernetes.io/name: http-routes-default-values.yaml
@@ -327,7 +331,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: http-routes-default-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "2026.1.0-datacenter-app"
+    app.kubernetes.io/version: "2026.5.0-datacenter-app"
 spec:
   replicas: 2
   revisionHistoryLimit: 
@@ -344,9 +348,9 @@ spec:
         release: http-routes-default-values.yaml
         sonarqube.datacenter/type: "app"
       annotations:
-        checksum/plugins: d9c335ed6ce84ca3a16a8065b84a8796d5685a3a8a1ccbed645374c8891d48d2
-        checksum/config: a93c6119296171d49da3709cd9b7e13e869f08775eebea24c5e49db1813cfc7a
-        checksum/secret: acceed49d20251d643b671a5547f079152155701f4223329f34c3a39af8711be
+        checksum/plugins: 276a9a8da024c8f7feb86ae1a85ac8bdfec2d11c5758143179548213dc69f986
+        checksum/config: 40c06a02566cd4b9aaad2ade9225a10288b020fbd9f3a9c0a3b7f3a156817ddb
+        checksum/secret: ae6716e0ea4124d448db68f0417ac1e53c8b68da9c7d9a24d362422a7651b20f
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -354,7 +358,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce
-          image: sonarqube:2026.1.0-datacenter-app
+          image: sonarqube:2026.5.0-datacenter-app
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -367,11 +371,11 @@ spec:
             limits:
               cpu: 800m
               ephemeral-storage: 512000M
-              memory: 4096M
+              memory: 8192M
             requests:
               cpu: 400m
               ephemeral-storage: 1536M
-              memory: 4096M
+              memory: 8192M
           env:
             - name: SONAR_WEB_CONTEXT
               value: /sonarqube/
@@ -382,7 +386,7 @@ spec:
             - name: SONAR_LOG_JSONOUTPUT
               value: "false"
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.2.0
+              value: 2026.6.1000
             - name: SONAR_CLUSTER_SEARCH_HOSTS
               value: "http-routes-default-values.yaml-sonarqube-dce-search"
             - name: SONAR_CLUSTER_KUBERNETES
@@ -391,6 +395,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: SONAR_CLUSTER_NODE_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
             - name: SONAR_CLUSTER_HOSTS
               value: "http-routes-default-values.yaml-sonarqube-dce-headless"
             - name: SONAR_AUTH_JWTBASE64HS256SECRET
@@ -416,23 +424,27 @@ spec:
               command:
               - sh
               - -c
-              - |-
-                host="$(hostname -i || echo '127.0.0.1')"
-                curl --noproxy "*" -s -o /dev/null --max-time 1 -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/sonarqube/api/system/liveness"
-            failureThreshold: 6
+              - |
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
+                curl --noproxy "*" -fsS -o /dev/null --max-time 5 -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://${host}:9000/sonarqube/api/system/liveness"
+            failureThreshold: 8
             initialDelaySeconds: 0
             periodSeconds: 30
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           readinessProbe:
             exec:
               command:
               - sh
               - -c
-              - |-
+              - |
                 #!/bin/bash
                 # A Sonarqube container is considered ready if the status is UP, DB_MIGRATION_NEEDED or DB_MIGRATION_RUNNING
                 # status about migration are added to prevent the node to be kill while sonarqube is upgrading the database.
-                host="$(hostname -i || echo '127.0.0.1')"
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
                 if curl --noproxy "*" -s http://${host}:9000/sonarqube/api/system/status | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; then
                   exit 0
                 fi
@@ -440,7 +452,7 @@ spec:
             failureThreshold: 8
             initialDelaySeconds: 0
             periodSeconds: 30
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           startupProbe:
             httpGet:
               scheme: HTTP
@@ -495,7 +507,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-search
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
     app.kubernetes.io/name: "http-routes-default-values.yaml"
@@ -504,7 +516,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: http-routes-default-values.yaml-sonarqube-dce
-    app.kubernetes.io/version: "2026.1.0-datacenter-search"
+    app.kubernetes.io/version: "2026.5.0-datacenter-search"
 spec:
   podManagementPolicy : Parallel
   replicas: 3
@@ -533,15 +545,15 @@ spec:
         release: http-routes-default-values.yaml
         sonarqube.datacenter/type: "search"
       annotations:
-        checksum/init-sysctl: f80ec089d77eac602908fb0101276a8fd735093ffee3cedf87db4ad8827d281f
-        checksum/init-fs: 45373320aa30bd1297c0c9c76e7bfb42500dc1935527986959b4bfc00f0d4fa7
-        checksum/config: a93c6119296171d49da3709cd9b7e13e869f08775eebea24c5e49db1813cfc7a
-        checksum/secret: acceed49d20251d643b671a5547f079152155701f4223329f34c3a39af8711be
+        checksum/init-sysctl: 5c89fac5098ed486a30ac4ec4e9fc47b9289abe4d85150d9720a7ea9a7bcd4a1
+        checksum/init-fs: 8484b8ec8aff54e853871020ae5f6e6f7d96a94af8c819aa46fad22450bfe6b0
+        checksum/config: 40c06a02566cd4b9aaad2ade9225a10288b020fbd9f3a9c0a3b7f3a156817ddb
+        checksum/secret: ae6716e0ea4124d448db68f0417ac1e53c8b68da9c7d9a24d362422a7651b20f
     spec:
       automountServiceAccountToken: false
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.1.0-datacenter-app
+          image: sonarqube:2026.5.0-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -556,7 +568,7 @@ spec:
             - name: init-sysctl
               mountPath: /tmp/scripts/
         - name: init-fs
-          image: sonarqube:2026.1.0-datacenter-app
+          image: sonarqube:2026.5.0-datacenter-app
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -597,7 +609,7 @@ spec:
         fsGroup: 0
       containers:
         - name: sonarqube-dce-search
-          image: "sonarqube:2026.1.0-datacenter-search"
+          image: "sonarqube:2026.5.0-datacenter-search"
           imagePullPolicy: IfNotPresent
           ports:
             - name: search-port
@@ -626,6 +638,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: SONAR_CLUSTER_NODE_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           livenessProbe:
             exec:
               command:
@@ -634,15 +650,17 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered live if http call returns 200
-                host="$(hostname -i || echo '127.0.0.1')"
-                if curl --noproxy "*" -s "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
+                if curl --noproxy "*" -sS "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
             initialDelaySeconds: 0
             periodSeconds: 30
             failureThreshold: 6
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           readinessProbe:
             exec:
               command:
@@ -651,7 +669,9 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered ready if the status of embedded ES is green or yellow
-                host="$(hostname -i || echo '127.0.0.1')"
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
                 if curl --noproxy "*" -s "http://${host}:9001/_cluster/health?wait_for_status=yellow&timeout=50s" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
@@ -659,7 +679,7 @@ spec:
             initialDelaySeconds: 0
             periodSeconds: 30
             failureThreshold: 6
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           startupProbe:
             exec:
              command:
@@ -668,15 +688,17 @@ spec:
               - |
                 #!/bin/bash
                 # A Sonarqube search node container is considered started if http call returns 200
-                host="$(hostname -i || echo '127.0.0.1')"
-                if curl --noproxy "*" -s "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
+                host="${SONAR_CLUSTER_NODE_HOST:-$(hostname -i | awk '{print $1}')}"
+                host="${host:-localhost}"
+                case "${host}" in *:*) host="[${host}]" ;; esac
+                if curl --noproxy "*" -sS "http://${host}:9001/_cluster/health?local=true" | grep -q -e '"status":"green"' -e '"status":"yellow"'; then
                   exit 0
                 fi
                 exit 1
             initialDelaySeconds: 20
             periodSeconds: 10
             failureThreshold: 24
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -730,7 +752,7 @@ metadata:
   name: http-routes-default-values.yaml-sonarqube-dce-http-route
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
     custom: toto
@@ -759,14 +781,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube-dce
-    chart: sonarqube-dce-2026.2.0
+    chart: sonarqube-dce-2026.6.1000
     release: http-routes-default-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: http-routes-default-values.yaml-ui-test
-      image: "sonarqube:2026.1.0-datacenter-app"
+      image: "sonarqube:2026.5.0-datacenter-app"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [

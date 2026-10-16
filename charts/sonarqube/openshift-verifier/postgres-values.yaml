@@ -1,0 +1,24 @@
+# PostgreSQL values for OpenShift verifier
+
+podSecurityContext:
+  fsGroup: null
+
+primary:
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    runAsUser: null
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
+
+volumePermissions:
+  enabled: false
+
+shmVolume:
+  enabled: false

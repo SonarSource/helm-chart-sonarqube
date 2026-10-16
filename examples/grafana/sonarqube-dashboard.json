@@ -805,7 +805,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "ms"
         },
         "overrides": []
       },
@@ -833,7 +834,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
-          "expr": "avg(sonarqube_compute_engine_tasks_running_duration_seconds_count{instance=\"$Node\", task_type=\"REPORT\"})",
+          "expr": "sum(sonarqube_compute_engine_tasks_running_duration_seconds_sum{instance=\"$Node\", task_type=\"REPORT\"}) / sum(sonarqube_compute_engine_tasks_running_duration_seconds_count{instance=\"$Node\", task_type=\"REPORT\"})",
           "interval": "",
           "legendFormat": "Reports",
           "refId": "A"
@@ -844,7 +845,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
-          "expr": "avg(sonarqube_compute_engine_tasks_running_duration_seconds_count{instance=\"$Node\", task_type=\"VIEW_REFRESH\"})",
+          "expr": "sum(sonarqube_compute_engine_tasks_running_duration_seconds_sum{instance=\"$Node\", task_type=\"VIEW_REFRESH\"}) / sum(sonarqube_compute_engine_tasks_running_duration_seconds_count{instance=\"$Node\", task_type=\"VIEW_REFRESH\"})",
           "hide": false,
           "interval": "",
           "legendFormat": "View Refreshes",
@@ -856,7 +857,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
-          "expr": "avg(sonarqube_compute_engine_tasks_running_duration_seconds_count{instance=\"$Node\", task_type=\"APP_REFRESH\"})",
+          "expr": "sum(sonarqube_compute_engine_tasks_running_duration_seconds_sum{instance=\"$Node\", task_type=\"APP_REFRESH\"}) / sum(sonarqube_compute_engine_tasks_running_duration_seconds_count{instance=\"$Node\", task_type=\"APP_REFRESH\"})",
           "hide": false,
           "interval": "",
           "legendFormat": "App Refreshes",

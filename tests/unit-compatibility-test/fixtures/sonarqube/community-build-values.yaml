@@ -7,7 +7,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.2.0
+    chart: sonarqube-2026.6.1000
     release: community-build-values.yaml
     heritage: Helm
 type: Opaque
@@ -22,7 +22,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.2.0
+    chart: sonarqube-2026.6.1000
     release: community-build-values.yaml
     heritage: Helm
 type: Opaque
@@ -41,7 +41,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.2.0
+    chart: sonarqube-2026.6.1000
     release: community-build-values.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.2.0
+    chart: sonarqube-2026.6.1000
     release: community-build-values.yaml
     heritage: Helm
 data:
@@ -101,7 +101,7 @@ metadata:
   name: community-build-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.2.0
+    chart: sonarqube-2026.6.1000
     release: community-build-values.yaml
     heritage: Helm
 data:
@@ -114,7 +114,7 @@ metadata:
   name: community-build-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.2.0
+    chart: sonarqube-2026.6.1000
     release: community-build-values.yaml
     heritage: Helm
 spec:
@@ -135,7 +135,7 @@ metadata:
   name: community-build-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.2.0
+    chart: sonarqube-2026.6.1000
     release: community-build-values.yaml
     heritage: Helm
     app.kubernetes.io/name: community-build-values.yaml
@@ -155,10 +155,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: f1d6f6712ee82d0cdf6695d364b63706b2bcd6c3eae4b481f78156f35a70e24a
-        checksum/init-sysctl: 5607a437fb67e4a5e3480e6c97c62daf1101467282f5d6543518ac1d9f909a25
-        checksum/plugins: 0831336e94692a3889b7e269d1c0bfd46306286d4e291c67bd8c7bd5f8e7e4b7
-        checksum/secret: 9bdfa39c3a7cc90affdcf3f14d0c377a1f4b8da373b561fc62fef12fe3c818ff
+        checksum/config: ef13a26c1f7dd3ca04b8ec2bf93372744dae750e3fe7ac00a042b4619572d102
+        checksum/init-sysctl: 386e06175b1014083b619633d89ac82c6b0c53f436c005798fda6adc89b3fc2d
+        checksum/plugins: 37df75030ebee3f6b96789dbc2853b1c7341b1f262468abae70e8bb402672197
+        checksum/secret: 507d7310089158d6b80439ca2567c6e3c0e89b401a3e58af452229f84f43959f
       labels:
         app: sonarqube
         release: community-build-values.yaml
@@ -197,14 +197,14 @@ spec:
             limits:
               cpu: 800m
               ephemeral-storage: 512000M
-              memory: 6144M
+              memory: 10240M
             requests:
               cpu: 400m
               ephemeral-storage: 1536M
-              memory: 2048M
+              memory: 4096M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.2.0
+              value: 2026.6.1000
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -223,11 +223,11 @@ spec:
               - sh
               - -c
               - |
-                curl --noproxy "*" -s -o /dev/null --max-time 1 -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/api/system/liveness"
+                curl --noproxy "*" -fsS -o /dev/null --max-time 5 -H "X-Sonar-Passcode: $SONAR_WEB_SYSTEMPASSCODE" "http://localhost:9000/api/system/liveness"
             failureThreshold: 6
             initialDelaySeconds: 60
             periodSeconds: 30
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           readinessProbe:
             exec:
               command:
@@ -244,7 +244,7 @@ spec:
             failureThreshold: 6
             initialDelaySeconds: 60
             periodSeconds: 30
-            timeoutSeconds: 1
+            timeoutSeconds: 5
           startupProbe:
             httpGet:
               scheme: HTTP
@@ -306,7 +306,7 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.2.0
+    chart: sonarqube-2026.6.1000
     release: community-build-values.yaml
     heritage: Helm
 spec:

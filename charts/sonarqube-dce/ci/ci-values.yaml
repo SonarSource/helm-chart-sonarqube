@@ -5,7 +5,7 @@ searchNodes:
   replicaCount: 3
   image:
     repository: "sonarsource/sonarqube"
-    tag: "2026.1.0-master-datacenter-search"
+    tag: "2026.5.0-master-datacenter-search"
     pullSecrets:
       - name: pullsecret
 
@@ -14,11 +14,18 @@ ApplicationNodes:
   jwtSecret: "mnGBJtmwRbIREqy3vSw6Cinoi2WEom9JH+iw/tXOJX4="
   image:
     repository: "sonarsource/sonarqube"
-    tag: "2026.1.0-master-datacenter-app"
+    tag: "2026.5.0-master-datacenter-app"
     pullSecrets:
       - name: pullsecret
   webPort: 4023
   cePort: 4024
+  # Keep the kind test's memory requests independent of the chart defaults, which are sized for
+  # production heaps and don't fit 3 app nodes plus 3 search nodes on the kind nodes.
+  resources:
+    limits:
+      memory: 4096M
+    requests:
+      memory: 4096M
 
 # Connection to external PostgreSQL
 jdbcOverwrite:
@@ -40,3 +47,44 @@ tests:
       cpu: 50m
       memory: 200M
       ephemeral-storage: 1000M
+
+# gVisor only renders when an agent is enabled. The Agent Orchestrator and Hunter Agent images are
+# not pullable from CI, so both run with replicaCount 0: they're on here purely to satisfy that
+# dependency and exercise the gVisor RuntimeClass and its installer DaemonSet on the kind worker.
+agentOrchestrator:
+  enabled: true
+  replicaCount: 0
+  image:
+    repository: "example.com/agent-orchestrator"
+    tag: "0.0.0"
+  storage:
+    bucket: "ci"
+
+hunterAgent:
+  enabled: true
+  replicaCount: 0
+  image:
+    repository: "example.com/hunter-agent"
+    tag: "0.0.0"
+
+gvisor:
+  enabled: true
+  installer:
+    enabled: true
+    tolerations: []
+    annotations:
+      sidecar.istio.io/inject: "false"
+
+# Enabling a runtime above also turns on the agentic signing path, so the Application Nodes mount
+# the instance secret and the derived per-hop keys (SONAR-32065). The image carrying derive-keys.sh
+# isn't pullable from CI, so the derivation hook is off and the workflow pre-creates both Secrets
+# with dummy values - the "bring your own keys" mode agentKeyDerivation.enabled documents.
+# fullnameOverride pins the derived Secret's name, which is otherwise built from the release name
+# chart-testing generates at random.
+fullnameOverride: sonarqube-dce-ci
+
+agenticSigningSecret:
+  existingSecret: agentic-ci-instance-secret
+
+agentKeyDerivation:
+  enabled: false
