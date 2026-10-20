@@ -1,6 +1,5 @@
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -13,6 +12,7 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube/templates/secret.yaml
 apiVersion: v1
@@ -28,6 +28,7 @@ type: Opaque
 stringData:
   password: "admin1"
   currentPassword: "admin"
+
 ---
 # Source: sonarqube/templates/secret.yaml
 apiVersion: v1
@@ -60,6 +61,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
@@ -123,6 +125,7 @@ data:
       rm -f /opt/sonarqube/extensions/plugins/*
       cd /opt/sonarqube/extensions/plugins
       curl   -fsSLO "do-not-exist"
+
 ---
 # Source: sonarqube/templates/prometheus-ce-config.yaml
 apiVersion: v1
@@ -138,6 +141,7 @@ data:
   prometheus-ce-config.yaml: |-
     rules:
     - pattern: .*
+
 ---
 # Source: sonarqube/templates/prometheus-config.yaml
 apiVersion: v1
@@ -153,6 +157,7 @@ data:
   prometheus-config.yaml: |-
     rules:
     - pattern: .*
+
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
@@ -174,6 +179,7 @@ spec:
   selector:
     app: sonarqube
     release: non-default-security-context-values.yaml
+
 ---
 # Source: sonarqube/templates/sonarqube-sts.yaml
 apiVersion: apps/v1
@@ -556,3 +562,4 @@ spec:
           requests:
             cpu: 100m
             memory: 128Mi
+

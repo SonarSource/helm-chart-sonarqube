@@ -12,6 +12,7 @@ metadata:
 type: Opaque
 data:
   jdbc-password: "cGFzcw=="
+
 ---
 # Source: sonarqube/templates/secret.yaml
 apiVersion: v1
@@ -26,9 +27,9 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -59,6 +60,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
@@ -119,6 +121,7 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
@@ -133,6 +136,7 @@ metadata:
 data:
   SONAR_JDBC_USERNAME: "user"
   SONAR_JDBC_URL: "jdbc:postgresql://myPostgres/myDatabase?socketTimeout=1500"
+
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
@@ -154,6 +158,7 @@ spec:
   selector:
     app: sonarqube
     release: jdbc-config-values.yaml
+
 ---
 # Source: sonarqube/templates/sonarqube-sts.yaml
 apiVersion: apps/v1

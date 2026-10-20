@@ -1,6 +1,5 @@
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -13,9 +12,9 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -46,6 +45,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
@@ -109,6 +109,7 @@ data:
       rm -f /opt/sonarqube/extensions/plugins/*
       cd /opt/sonarqube/extensions/plugins
       curl   -fsSLO "https://github.com/sbaudoin/sonar-yaml/releases/download/v1.7.0/sonar-yaml-plugin-1.7.0.jar"
+
 ---
 # Source: sonarqube/templates/prometheus-ce-config.yaml
 apiVersion: v1
@@ -124,6 +125,7 @@ data:
   prometheus-ce-config.yaml: |-
     rules:
     - pattern: .*
+
 ---
 # Source: sonarqube/templates/prometheus-config.yaml
 apiVersion: v1
@@ -139,6 +141,7 @@ data:
   prometheus-config.yaml: |-
     rules:
     - pattern: .*
+
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
@@ -160,6 +163,7 @@ spec:
   selector:
     app: sonarqube
     release: proxies-values.yaml
+
 ---
 # Source: sonarqube/templates/sonarqube-sts.yaml
 apiVersion: apps/v1
