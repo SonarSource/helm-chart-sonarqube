@@ -65,6 +65,7 @@ spec:
           protocol: TCP
         - port: 443
           protocol: TCP
+
 ---
 # Source: sonarqube-dce/templates/agent-networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
@@ -105,6 +106,7 @@ spec:
       ports:
         - port: 3129
           protocol: TCP
+
 ---
 # Source: sonarqube-dce/templates/networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
@@ -197,6 +199,8 @@ spec:
       ports:
         - port: 8080
           protocol: TCP
+
+
 ---
 # Source: sonarqube-dce/templates/networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
@@ -272,6 +276,7 @@ spec:
     matchLabels:
       app: sonarqube-dce-agent-egress-proxy
       release: remediation-agent-values.yaml
+
 ---
 # Source: sonarqube-dce/templates/pod-disruption-budget.yaml
 apiVersion: policy/v1
@@ -289,6 +294,7 @@ spec:
   selector:
     matchLabels:
       sonarqube.datacenter/type: "search"
+
 ---
 # Source: sonarqube-dce/templates/pod-disruption-budget.yaml
 apiVersion: policy/v1
@@ -306,6 +312,7 @@ spec:
   selector:
     matchLabels:
       sonarqube.datacenter/type: "app"
+
 ---
 # Source: sonarqube-dce/templates/agent-serviceaccount.yaml
 apiVersion: v1
@@ -322,6 +329,7 @@ metadata:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agent-orchestrator
 automountServiceAccountToken: true
+
 ---
 # Source: sonarqube-dce/templates/agent-serviceaccount.yaml
 apiVersion: v1
@@ -339,6 +347,7 @@ metadata:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/approles/agent-orchestrator
 automountServiceAccountToken: true
+
 ---
 # Source: sonarqube-dce/templates/gvisor.yaml
 apiVersion: v1
@@ -351,6 +360,7 @@ metadata:
     release: remediation-agent-values.yaml
     heritage: Helm
     app.kubernetes.io/component: gvisor
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
@@ -365,6 +375,7 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
@@ -379,6 +390,7 @@ metadata:
 type: Opaque
 data:
   jdbc-password: "cGFzcw=="
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
@@ -393,9 +405,9 @@ metadata:
 type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: "c29tZS1zZWNyZXQ="
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -532,6 +544,7 @@ data:
     http_access allow sonarqube_host sonarqube_agentic_endpoints remediation_listener
     http_access allow agent_orchestrator_host agent_orchestrator_endpoints
     http_access deny all
+
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
@@ -550,6 +563,7 @@ data:
     sonar.hunteragent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator.default.svc.cluster.local:8080
     sonar.remediationagent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator.default.svc.cluster.local:8080
     sonar.vortex.analysis.url=http://remediation-agent-values.yaml-sonarqube-dce-vortex:8080
+
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
@@ -563,6 +577,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube-dce/templates/gvisor.yaml
 apiVersion: v1
@@ -909,6 +924,7 @@ data:
         -O- "${API}/api/v1/nodes/${NODE_NAME}" >/dev/null
     fi
     echo "[label-node] labeled ${NODE_NAME}"
+
 ---
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
@@ -985,6 +1001,7 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
@@ -999,6 +1016,7 @@ metadata:
 data:
   SONAR_JDBC_USERNAME: "user"
   SONAR_JDBC_URL: "jdbc:postgresql://myPostgres/myDatabase?socketTimeout=1500"
+
 ---
 # Source: sonarqube-dce/templates/gvisor.yaml
 # The installer patches a label onto its own Node so the RuntimeClass scheduler only admits runtime
@@ -1019,6 +1037,7 @@ rules:
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "patch"]
+
 ---
 # Source: sonarqube-dce/templates/gvisor.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1039,6 +1058,7 @@ subjects:
   - kind: ServiceAccount
     name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
     namespace: default
+
 ---
 # Source: sonarqube-dce/templates/agent-egress-proxy-service.yaml
 apiVersion: v1
@@ -1066,6 +1086,7 @@ spec:
   selector:
     app: sonarqube-dce-agent-egress-proxy
     release: remediation-agent-values.yaml
+
 ---
 # Source: sonarqube-dce/templates/agent-orchestrator-service.yaml
 apiVersion: v1
@@ -1089,6 +1110,7 @@ spec:
   selector:
     app: sonarqube-dce-agent-orchestrator
     release: remediation-agent-values.yaml
+
 ---
 # Source: sonarqube-dce/templates/agent-runtime-service.yaml
 apiVersion: v1
@@ -1115,6 +1137,7 @@ spec:
   selector:
     app: sonarqube-dce-agent-runtime-remediation
     release: remediation-agent-values.yaml
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -1138,6 +1161,8 @@ spec:
     app: sonarqube-dce
     release: remediation-agent-values.yaml
     sonarqube.datacenter/type: "app"
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -1164,6 +1189,9 @@ spec:
     app: sonarqube-dce
     release: remediation-agent-values.yaml
     sonarqube.datacenter/type: "app"
+
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -1191,6 +1219,8 @@ spec:
   selector:
     app: sonarqube-dce-search
     release: remediation-agent-values.yaml
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -1219,6 +1249,7 @@ spec:
   selector:
     app: sonarqube-dce-search
     release: remediation-agent-values.yaml
+
 ---
 # Source: sonarqube-dce/templates/vortex-service.yaml
 apiVersion: v1
@@ -1241,6 +1272,7 @@ spec:
   selector:
     app: sonarqube-dce-vortex
     release: remediation-agent-values.yaml
+
 ---
 # Source: sonarqube-dce/templates/gvisor.yaml
 apiVersion: apps/v1
@@ -1308,6 +1340,7 @@ spec:
           configMap:
             name: remediation-agent-values.yaml-sonarqube-dce-gvisor-installer
             defaultMode: 0755
+
 ---
 # Source: sonarqube-dce/templates/agent-egress-proxy.yaml
 apiVersion: apps/v1
@@ -1413,6 +1446,7 @@ spec:
           emptyDir: {}
         - name: tmp
           emptyDir: {}
+
 ---
 # Source: sonarqube-dce/templates/agent-orchestrator.yaml
 apiVersion: apps/v1
@@ -1575,6 +1609,7 @@ spec:
               path: remediation-to-orchestrator
             - key: orchestrator-job-capability
               path: orchestrator-job-capability
+
 ---
 # Source: sonarqube-dce/templates/agent-runtime.yaml
 apiVersion: apps/v1
@@ -1695,6 +1730,7 @@ spec:
               path: remediation-to-sqs
             - key: remediation-to-orchestrator
               path: remediation-to-orchestrator
+
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
 apiVersion: apps/v1
@@ -1954,6 +1990,7 @@ spec:
       - name : concat-dir
         emptyDir:
           {}
+
 ---
 # Source: sonarqube-dce/templates/vortex.yaml
 apiVersion: apps/v1
@@ -2056,6 +2093,7 @@ spec:
             items:
             - key: agentic-shared
               path: agentic-shared
+
 ---
 # Source: sonarqube-dce/templates/sonarqube-search.yaml
 apiVersion: apps/v1
@@ -2301,6 +2339,7 @@ spec:
       - name : tmp-dir
         emptyDir:
           {}
+
 ---
 # Source: sonarqube-dce/templates/gvisor.yaml
 # gVisor (runsc) sandboxing for the agent runtimes. gvisor.enabled renders the RuntimeClass
@@ -2339,6 +2378,7 @@ metadata:
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation
 automountServiceAccountToken: true
+
 ---
 # Source: sonarqube-dce/templates/agent-key-derivation-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -2368,6 +2408,7 @@ rules:
       - remediation-agent-values.yaml-sonarq-agentic-keys-remediation
       - remediation-agent-values.yaml-sonarq-agentic-keys-sqs
       - remediation-agent-values.yaml-sonarq-agentic-keys-vortex
+
 ---
 # Source: sonarqube-dce/templates/agent-key-derivation-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -2393,6 +2434,7 @@ subjects:
   - kind: ServiceAccount
     name: remediation-agent-values.yaml-sonarqube-d-agent-key-derivation
     namespace: default
+
 ---
 # Source: sonarqube-dce/templates/tests/sonarqube-test.yaml
 apiVersion: v1
@@ -2602,3 +2644,4 @@ spec:
                 path: instance-secret
         - name: tmp
           emptyDir: {}
+

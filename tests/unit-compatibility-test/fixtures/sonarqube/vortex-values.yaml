@@ -51,7 +51,6 @@ spec:
             cidr: "::/0"
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -64,9 +63,9 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -100,6 +99,7 @@ type: Opaque
 data:
   SONAR_AGENTIC_STORAGE_ACCESS_KEY: "bWluaW9hZG1pbg=="
   SONAR_AGENTIC_STORAGE_SECRET_KEY: "bWluaW9zZWNyZXQ="
+
 ---
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
@@ -116,6 +116,7 @@ data:
     sonar.agentic.orchestrator.signingKeyPath=/opt/sonarqube/agentic-keys/agentic-shared
     sonar.agentic.signing.secretFile=/opt/sonarqube/agentic-secret/instance-secret
     sonar.vortex.analysis.url=http://vortex-values.yaml-sonarqube-vortex:8080
+
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
@@ -176,6 +177,7 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
@@ -197,6 +199,7 @@ spec:
   selector:
     app: sonarqube
     release: vortex-values.yaml
+
 ---
 # Source: sonarqube/templates/vortex-service.yaml
 apiVersion: v1
@@ -219,6 +222,7 @@ spec:
   selector:
     app: sonarqube-vortex
     release: vortex-values.yaml
+
 ---
 # Source: sonarqube/templates/vortex.yaml
 apiVersion: apps/v1
@@ -333,6 +337,7 @@ spec:
             items:
             - key: agentic-shared
               path: agentic-shared
+
 ---
 # Source: sonarqube/templates/sonarqube-sts.yaml
 apiVersion: apps/v1
@@ -592,6 +597,7 @@ metadata:
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation
 automountServiceAccountToken: true
+
 ---
 # Source: sonarqube/templates/agent-key-derivation-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -619,6 +625,7 @@ rules:
     resourceNames:
       - vortex-values.yaml-sonarqube-agentic-keys-sqs
       - vortex-values.yaml-sonarqube-agentic-keys-vortex
+
 ---
 # Source: sonarqube/templates/agent-key-derivation-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -644,6 +651,7 @@ subjects:
   - kind: ServiceAccount
     name: vortex-values.yaml-sonarqube-agent-key-derivation
     namespace: default
+
 ---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1
@@ -846,3 +854,4 @@ spec:
                 path: instance-secret
         - name: tmp
           emptyDir: {}
+
