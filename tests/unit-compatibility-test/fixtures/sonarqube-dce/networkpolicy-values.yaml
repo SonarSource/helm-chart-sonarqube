@@ -52,6 +52,8 @@ spec:
       ports:
         - port: 9000
           protocol: TCP
+
+
 ---
 # Source: sonarqube-dce/templates/networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
@@ -106,6 +108,7 @@ spec:
           protocol: TCP
         - port: 9002
           protocol: TCP
+
 ---
 # Source: sonarqube-dce/templates/networkpolicy.yaml
 kind: NetworkPolicy
@@ -163,6 +166,7 @@ spec:
   selector:
     matchLabels:
       sonarqube.datacenter/type: "search"
+
 ---
 # Source: sonarqube-dce/templates/pod-disruption-budget.yaml
 apiVersion: policy/v1
@@ -180,6 +184,7 @@ spec:
   selector:
     matchLabels:
       sonarqube.datacenter/type: "app"
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
@@ -194,6 +199,7 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
@@ -208,6 +214,7 @@ metadata:
 type: Opaque
 data:
   jdbc-password: "cGFzcw=="
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
@@ -222,9 +229,9 @@ metadata:
 type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: "c29tZS1zZWNyZXQ="
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -255,6 +262,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
@@ -268,6 +276,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
@@ -344,6 +353,7 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
@@ -358,6 +368,7 @@ metadata:
 data:
   SONAR_JDBC_USERNAME: "user"
   SONAR_JDBC_URL: "jdbc:postgresql://myPostgres/myDatabase?socketTimeout=1500"
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -380,6 +391,8 @@ spec:
   selector:
     app: sonarqube-dce
     release: networkpolicy-values.yaml
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -405,6 +418,9 @@ spec:
   selector:
     app: sonarqube-dce
     release: networkpolicy-values.yaml
+
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -431,6 +447,8 @@ spec:
   selector:
     app: sonarqube-dce-search
     release: networkpolicy-values.yaml
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -458,6 +476,7 @@ spec:
   selector:
     app: sonarqube-dce-search
     release: networkpolicy-values.yaml
+
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
 apiVersion: apps/v1
@@ -635,6 +654,7 @@ spec:
       - name : tmp-dir
         emptyDir:
           {}
+
 ---
 # Source: sonarqube-dce/templates/sonarqube-search.yaml
 apiVersion: apps/v1

@@ -1,6 +1,5 @@
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -13,9 +12,9 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -46,6 +45,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube/templates/install-plugins.yaml
 apiVersion: v1
@@ -59,6 +59,7 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
@@ -80,6 +81,7 @@ spec:
   selector:
     app: sonarqube
     release: openshift-values.yaml
+
 ---
 # Source: sonarqube/templates/sonarqube-sts.yaml
 apiVersion: apps/v1
@@ -222,6 +224,7 @@ spec:
         - name : tmp-dir
           emptyDir:
             {}
+
 ---
 # Source: sonarqube/templates/route.yaml
 kind: Route
