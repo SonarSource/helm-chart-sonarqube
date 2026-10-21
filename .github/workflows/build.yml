@@ -29,7 +29,9 @@ jobs:
           python-version: '3.x'
           check-latest: true
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v3.14.0
+        uses: helm/chart-testing-action@720270857a28afd41e2426521a7801db09e9b510 # v2.9.0
+        with:
+          version: 3.15.0
       - name: Build chart dependencies
         run: |
           ./.github/scripts/build_chart_dependencies.sh charts/sonarqube
@@ -201,7 +203,9 @@ jobs:
         with:
           version: 2026.3.13
       - name: Set up chart-testing
-        uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v3.14.0
+        uses: helm/chart-testing-action@720270857a28afd41e2426521a7801db09e9b510 # v2.9.0
+        with:
+          version: 3.15.0
       - name: Create kind cluster
         uses: helm/kind-action@f5f117a566cacf2b7e54d9ddbfa40584fdf3b127 # v0.31.0
       - name: Setup Kind cluster
