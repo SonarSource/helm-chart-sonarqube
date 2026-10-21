@@ -41,6 +41,7 @@ spec:
             cidr: 0.0.0.0/0
         - ipBlock:
             cidr: "::/0"
+
 ---
 # Source: sonarqube/templates/networkpolicy.yaml
 kind: NetworkPolicy
@@ -83,7 +84,6 @@ spec:
   - Egress
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -96,9 +96,9 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -129,6 +129,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
@@ -189,6 +190,7 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
@@ -210,6 +212,7 @@ spec:
   selector:
     app: sonarqube
     release: networkpolicy-new-values.yaml
+
 ---
 # Source: sonarqube/templates/sonarqube-sts.yaml
 apiVersion: apps/v1

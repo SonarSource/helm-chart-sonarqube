@@ -1,6 +1,5 @@
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -13,9 +12,9 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -46,6 +45,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
@@ -106,6 +106,7 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+
 ---
 # Source: sonarqube/templates/prometheus-ce-config.yaml
 apiVersion: v1
@@ -121,6 +122,7 @@ data:
   prometheus-ce-config.yaml: |-
     rules:
     - pattern: .*
+
 ---
 # Source: sonarqube/templates/prometheus-config.yaml
 apiVersion: v1
@@ -136,6 +138,7 @@ data:
   prometheus-config.yaml: |-
     rules:
     - pattern: .*
+
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
@@ -157,6 +160,7 @@ spec:
   selector:
     app: sonarqube
     release: duplicated-env-values.yaml
+
 ---
 # Source: sonarqube/templates/sonarqube-sts.yaml
 apiVersion: apps/v1

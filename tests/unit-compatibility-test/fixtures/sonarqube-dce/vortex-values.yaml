@@ -74,6 +74,8 @@ spec:
       ports:
         - port: 8080
           protocol: TCP
+
+
 ---
 # Source: sonarqube-dce/templates/networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
@@ -147,6 +149,7 @@ spec:
   selector:
     matchLabels:
       sonarqube.datacenter/type: "search"
+
 ---
 # Source: sonarqube-dce/templates/pod-disruption-budget.yaml
 apiVersion: policy/v1
@@ -164,6 +167,7 @@ spec:
   selector:
     matchLabels:
       sonarqube.datacenter/type: "app"
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
@@ -178,6 +182,7 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
@@ -192,6 +197,7 @@ metadata:
 type: Opaque
 data:
   jdbc-password: "cGFzcw=="
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
 apiVersion: v1
@@ -206,9 +212,9 @@ metadata:
 type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: "c29tZS1zZWNyZXQ="
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -242,6 +248,7 @@ type: Opaque
 data:
   SONAR_AGENTIC_STORAGE_ACCESS_KEY: "bWluaW9hZG1pbg=="
   SONAR_AGENTIC_STORAGE_SECRET_KEY: "bWluaW9zZWNyZXQ="
+
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
@@ -258,6 +265,7 @@ data:
     sonar.agentic.orchestrator.signingKeyPath=/opt/sonarqube/agentic-keys/agentic-shared
     sonar.agentic.signing.secretFile=/opt/sonarqube/agentic-secret/instance-secret
     sonar.vortex.analysis.url=http://vortex-values.yaml-sonarqube-dce-vortex:8080
+
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
@@ -271,6 +279,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
@@ -347,6 +356,7 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
@@ -361,6 +371,7 @@ metadata:
 data:
   SONAR_JDBC_USERNAME: "user"
   SONAR_JDBC_URL: "jdbc:postgresql://myPostgres/myDatabase?socketTimeout=1500"
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -384,6 +395,8 @@ spec:
     app: sonarqube-dce
     release: vortex-values.yaml
     sonarqube.datacenter/type: "app"
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -410,6 +423,9 @@ spec:
     app: sonarqube-dce
     release: vortex-values.yaml
     sonarqube.datacenter/type: "app"
+
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -437,6 +453,8 @@ spec:
   selector:
     app: sonarqube-dce-search
     release: vortex-values.yaml
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -465,6 +483,7 @@ spec:
   selector:
     app: sonarqube-dce-search
     release: vortex-values.yaml
+
 ---
 # Source: sonarqube-dce/templates/vortex-service.yaml
 apiVersion: v1
@@ -487,6 +506,7 @@ spec:
   selector:
     app: sonarqube-dce-vortex
     release: vortex-values.yaml
+
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
 apiVersion: apps/v1
@@ -742,6 +762,7 @@ spec:
       - name : concat-dir
         emptyDir:
           {}
+
 ---
 # Source: sonarqube-dce/templates/vortex.yaml
 apiVersion: apps/v1
@@ -856,6 +877,7 @@ spec:
             items:
             - key: agentic-shared
               path: agentic-shared
+
 ---
 # Source: sonarqube-dce/templates/sonarqube-search.yaml
 apiVersion: apps/v1
@@ -1119,6 +1141,7 @@ metadata:
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation
 automountServiceAccountToken: true
+
 ---
 # Source: sonarqube-dce/templates/agent-key-derivation-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1146,6 +1169,7 @@ rules:
     resourceNames:
       - vortex-values.yaml-sonarqube-dce-agentic-keys-sqs
       - vortex-values.yaml-sonarqube-dce-agentic-keys-vortex
+
 ---
 # Source: sonarqube-dce/templates/agent-key-derivation-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1171,6 +1195,7 @@ subjects:
   - kind: ServiceAccount
     name: vortex-values.yaml-sonarqube-dce-agent-key-derivation
     namespace: default
+
 ---
 # Source: sonarqube-dce/templates/tests/sonarqube-test.yaml
 apiVersion: v1
@@ -1373,3 +1398,4 @@ spec:
                 path: instance-secret
         - name: tmp
           emptyDir: {}
+
