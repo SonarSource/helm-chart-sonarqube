@@ -16,7 +16,6 @@ data:
   postgresql-password: "c29uYXJQYXNz"
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -29,9 +28,9 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -62,6 +61,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube/templates/init-fs.yaml
 apiVersion: v1
@@ -138,6 +138,7 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
@@ -152,6 +153,7 @@ metadata:
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
   SONAR_JDBC_URL: "jdbc:postgresql://host-path-values.yaml-postgresql:5432/sonarDB"
+
 ---
 # Source: sonarqube/templates/pvc.yaml
 kind: PersistentVolumeClaim
@@ -169,6 +171,7 @@ spec:
   resources:
     requests:
       storage: "5Gi"
+
 ---
 # Source: sonarqube/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
@@ -200,6 +203,7 @@ spec:
   selector:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/instance: host-path-values.yaml
+
 ---
 # Source: sonarqube/charts/postgresql/templates/svc.yaml
 apiVersion: v1
@@ -223,6 +227,7 @@ spec:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/instance: host-path-values.yaml
     role: primary
+
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
@@ -244,6 +249,7 @@ spec:
   selector:
     app: sonarqube
     release: host-path-values.yaml
+
 ---
 # Source: sonarqube/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
@@ -405,6 +411,8 @@ spec:
         resources:
           requests:
             storage: "20Gi"
+        
+
 ---
 # Source: sonarqube/templates/sonarqube-sts.yaml
 apiVersion: apps/v1

@@ -15,6 +15,7 @@ spec:
   selector:
     matchLabels:
       sonarqube.datacenter/type: "search"
+
 ---
 # Source: sonarqube-dce/templates/pod-disruption-budget.yaml
 apiVersion: policy/v1
@@ -32,6 +33,7 @@ spec:
   selector:
     matchLabels:
       sonarqube.datacenter/type: "app"
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/controller-serviceaccount.yaml
 apiVersion: v1
@@ -48,6 +50,7 @@ metadata:
   name: ingress-with-controller.yaml-ingress-nginx
   namespace: default
 automountServiceAccountToken: true
+
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/secrets.yaml
 apiVersion: v1
@@ -78,9 +81,9 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -93,9 +96,9 @@ metadata:
 type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: "c29tZS1zZWNyZXQ="
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -129,6 +132,7 @@ metadata:
   name: ingress-with-controller.yaml-ingress-nginx-controller
   namespace: default
 data:
+
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
@@ -142,6 +146,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
@@ -155,6 +160,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
@@ -231,6 +237,7 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
@@ -245,6 +252,7 @@ metadata:
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
   SONAR_JDBC_URL: "jdbc:postgresql://ingress-with-controller.yaml-postgresql:5432/sonarDB"
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -329,6 +337,7 @@ rules:
       - list
       - watch
       - get
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -350,6 +359,7 @@ subjects:
   - kind: ServiceAccount
     name: ingress-with-controller.yaml-ingress-nginx
     namespace: default
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/controller-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -444,6 +454,7 @@ rules:
       - list
       - watch
       - get
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/controller-rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -467,6 +478,7 @@ subjects:
   - kind: ServiceAccount
     name: ingress-with-controller.yaml-ingress-nginx
     namespace: default
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/controller-service-webhook.yaml
 apiVersion: v1
@@ -493,6 +505,7 @@ spec:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/instance: ingress-with-controller.yaml
     app.kubernetes.io/component: controller
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/controller-service.yaml
 apiVersion: v1
@@ -529,6 +542,7 @@ spec:
     app.kubernetes.io/name: ingress-nginx
     app.kubernetes.io/instance: ingress-with-controller.yaml
     app.kubernetes.io/component: controller
+
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
@@ -560,6 +574,7 @@ spec:
   selector:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/instance: ingress-with-controller.yaml
+
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/svc.yaml
 apiVersion: v1
@@ -583,6 +598,7 @@ spec:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/instance: ingress-with-controller.yaml
     role: primary
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -605,6 +621,8 @@ spec:
   selector:
     app: sonarqube-dce
     release: ingress-with-controller.yaml
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -630,6 +648,9 @@ spec:
   selector:
     app: sonarqube-dce
     release: ingress-with-controller.yaml
+
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -656,6 +677,8 @@ spec:
   selector:
     app: sonarqube-dce-search
     release: ingress-with-controller.yaml
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -683,6 +706,7 @@ spec:
   selector:
     app: sonarqube-dce-search
     release: ingress-with-controller.yaml
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/controller-deployment.yaml
 apiVersion: apps/v1
@@ -809,6 +833,7 @@ spec:
         - name: webhook-cert
           secret:
             secretName: ingress-with-controller.yaml-ingress-nginx-admission
+
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
 apiVersion: apps/v1
@@ -1004,6 +1029,7 @@ spec:
       - name : tmp-dir
         emptyDir:
           {}
+
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
@@ -1165,6 +1191,8 @@ spec:
         resources:
           requests:
             storage: "20Gi"
+        
+
 ---
 # Source: sonarqube-dce/templates/sonarqube-search.yaml
 apiVersion: apps/v1
@@ -1400,6 +1428,7 @@ spec:
       - name : tmp-dir
         emptyDir:
           {}
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/controller-ingressclass.yaml
 apiVersion: networking.k8s.io/v1
@@ -1416,6 +1445,7 @@ metadata:
   name: nginx
 spec:
   controller: k8s.io/ingress-nginx
+
 ---
 # Source: sonarqube-dce/templates/ingress.yaml
 apiVersion: networking.k8s.io/v1
@@ -1449,6 +1479,7 @@ spec:
     - hosts:
       - chart-example.local
       secretName: chart-example-tls
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/admission-webhooks/validating-webhook.yaml
 # before changing this value, check the required kubernetes version
@@ -1489,6 +1520,7 @@ webhooks:
         namespace: default
         port: 443
         path: /networking/v1/ingresses
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/controller-poddisruptionbudget.yaml
 # PDB is not supported for DaemonSets.
@@ -1512,6 +1544,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
 automountServiceAccountToken: true
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/admission-webhooks/job-patch/clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1537,6 +1570,7 @@ rules:
     verbs:
       - get
       - update
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/admission-webhooks/job-patch/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1562,6 +1596,7 @@ subjects:
   - kind: ServiceAccount
     name: ingress-with-controller.yaml-ingress-nginx-admission
     namespace: default
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/admission-webhooks/job-patch/role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1588,6 +1623,7 @@ rules:
     verbs:
       - get
       - create
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/admission-webhooks/job-patch/rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1614,6 +1650,7 @@ subjects:
   - kind: ServiceAccount
     name: ingress-with-controller.yaml-ingress-nginx-admission
     namespace: default
+
 ---
 # Source: sonarqube-dce/templates/tests/sonarqube-test.yaml
 apiVersion: v1
@@ -1717,6 +1754,7 @@ spec:
       automountServiceAccountToken: true
       nodeSelector: 
         kubernetes.io/os: linux
+
 ---
 # Source: sonarqube-dce/charts/ingress-nginx/templates/admission-webhooks/job-patch/job-patchWebhook.yaml
 apiVersion: batch/v1
@@ -1781,3 +1819,4 @@ spec:
       automountServiceAccountToken: true
       nodeSelector: 
         kubernetes.io/os: linux
+

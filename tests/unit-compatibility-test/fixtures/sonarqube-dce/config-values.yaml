@@ -15,6 +15,7 @@ spec:
   selector:
     matchLabels:
       sonarqube.datacenter/type: "search"
+
 ---
 # Source: sonarqube-dce/templates/pod-disruption-budget.yaml
 apiVersion: policy/v1
@@ -32,6 +33,7 @@ spec:
   selector:
     matchLabels:
       sonarqube.datacenter/type: "app"
+
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/secrets.yaml
 apiVersion: v1
@@ -62,9 +64,9 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -77,9 +79,9 @@ metadata:
 type: Opaque
 data:
   SONAR_AUTH_JWTBASE64HS256SECRET: "c29tZS1zZWNyZXQ="
+
 ---
 # Source: sonarqube-dce/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -113,6 +115,7 @@ data:
     otherProp=false
     prop=true
     sonar.secretKeyPath=/opt/sonarqube/secret/sonar-secret.txt
+
 ---
 # Source: sonarqube-dce/templates/config.yaml
 apiVersion: v1
@@ -129,6 +132,7 @@ data:
     otherProp=false
     prop=true
     sonar.secretKeyPath=/opt/sonarqube/secret/sonar-secret.txt
+
 ---
 # Source: sonarqube-dce/templates/init-fs.yaml
 apiVersion: v1
@@ -205,6 +209,7 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+
 ---
 # Source: sonarqube-dce/templates/jdbc-config.yaml
 apiVersion: v1
@@ -219,6 +224,7 @@ metadata:
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
   SONAR_JDBC_URL: "jdbc:postgresql://config-values.yaml-postgresql:5432/sonarDB"
+
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
@@ -250,6 +256,7 @@ spec:
   selector:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/instance: config-values.yaml
+
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/svc.yaml
 apiVersion: v1
@@ -273,6 +280,7 @@ spec:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/instance: config-values.yaml
     role: primary
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -295,6 +303,8 @@ spec:
   selector:
     app: sonarqube-dce
     release: config-values.yaml
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -320,6 +330,9 @@ spec:
   selector:
     app: sonarqube-dce
     release: config-values.yaml
+
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -346,6 +359,8 @@ spec:
   selector:
     app: sonarqube-dce-search
     release: config-values.yaml
+
+
 ---
 # Source: sonarqube-dce/templates/service.yaml
 apiVersion: v1
@@ -373,6 +388,7 @@ spec:
   selector:
     app: sonarqube-dce-search
     release: config-values.yaml
+
 ---
 # Source: sonarqube-dce/templates/sonarqube-application.yaml
 apiVersion: apps/v1
@@ -629,6 +645,7 @@ spec:
           {}
       - emptyDir: {}
         name: extra-volume
+
 ---
 # Source: sonarqube-dce/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
@@ -790,6 +807,8 @@ spec:
         resources:
           requests:
             storage: "20Gi"
+        
+
 ---
 # Source: sonarqube-dce/templates/sonarqube-search.yaml
 apiVersion: apps/v1

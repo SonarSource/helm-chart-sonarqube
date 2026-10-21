@@ -16,7 +16,6 @@ data:
   postgresql-password: "c29uYXJQYXNz"
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -29,9 +28,9 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -62,6 +61,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
@@ -125,6 +125,7 @@ data:
       rm -f /opt/sonarqube/extensions/jdbc-driver/oracle/*
       cd /opt/sonarqube/extensions/jdbc-driver/oracle
       curl --cacert /tmp/secrets/ca-certs/* --netrc-file /root/.netrc -fsSLO https://download.oracle.com/otn-pub/otn_software/jdbc/2113/ojdbc11.jar
+
 ---
 # Source: sonarqube/templates/install-plugins.yaml
 apiVersion: v1
@@ -138,6 +139,7 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
@@ -152,6 +154,7 @@ metadata:
 data:
   SONAR_JDBC_USERNAME: "sonarUser"
   SONAR_JDBC_URL: "jdbc:postgresql://ca-certificates-configmap.yaml-postgresql:5432/sonarDB"
+
 ---
 # Source: sonarqube/charts/postgresql/templates/svc-headless.yaml
 apiVersion: v1
@@ -183,6 +186,7 @@ spec:
   selector:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/instance: ca-certificates-configmap.yaml
+
 ---
 # Source: sonarqube/charts/postgresql/templates/svc.yaml
 apiVersion: v1
@@ -206,6 +210,7 @@ spec:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/instance: ca-certificates-configmap.yaml
     role: primary
+
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
@@ -227,6 +232,7 @@ spec:
   selector:
     app: sonarqube
     release: ca-certificates-configmap.yaml
+
 ---
 # Source: sonarqube/charts/postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
@@ -388,6 +394,8 @@ spec:
         resources:
           requests:
             storage: "20Gi"
+        
+
 ---
 # Source: sonarqube/templates/sonarqube-sts.yaml
 apiVersion: apps/v1
