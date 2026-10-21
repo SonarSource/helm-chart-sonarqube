@@ -73,6 +73,7 @@ spec:
           protocol: TCP
         - port: 443
           protocol: TCP
+
 ---
 # Source: sonarqube/templates/agent-networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
@@ -113,6 +114,7 @@ spec:
       ports:
         - port: 3128
           protocol: TCP
+
 ---
 # Source: sonarqube/templates/agent-networkpolicy.yaml
 apiVersion: networking.k8s.io/v1
@@ -153,6 +155,7 @@ spec:
       ports:
         - port: 3129
           protocol: TCP
+
 ---
 # Source: sonarqube/templates/agent-egress-proxy-poddisruptionbudget.yaml
 apiVersion: policy/v1
@@ -172,6 +175,7 @@ spec:
     matchLabels:
       app: sonarqube-agent-egress-proxy
       release: agentic-scheduling-values.yaml
+
 ---
 # Source: sonarqube/templates/agent-serviceaccount.yaml
 apiVersion: v1
@@ -187,6 +191,7 @@ metadata:
     sonarqube.agent/family: hunter
     app.kubernetes.io/component: agent-runtime-hunter
 automountServiceAccountToken: false
+
 ---
 # Source: sonarqube/templates/agent-serviceaccount.yaml
 apiVersion: v1
@@ -202,6 +207,7 @@ metadata:
     sonarqube.agent/family: remediation
     app.kubernetes.io/component: agent-runtime-remediation
 automountServiceAccountToken: false
+
 ---
 # Source: sonarqube/templates/gvisor.yaml
 apiVersion: v1
@@ -214,6 +220,7 @@ metadata:
     release: agentic-scheduling-values.yaml
     heritage: Helm
     app.kubernetes.io/component: gvisor
+
 ---
 # Source: sonarqube/templates/secret.yaml
 apiVersion: v1
@@ -228,6 +235,7 @@ metadata:
 type: Opaque
 data:
   jdbc-password: "cGFzcw=="
+
 ---
 # Source: sonarqube/templates/secret.yaml
 apiVersion: v1
@@ -242,9 +250,9 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -381,6 +389,7 @@ data:
     http_access allow sonarqube_host sonarqube_agentic_endpoints remediation_listener
     http_access allow agent_orchestrator_host agent_orchestrator_endpoints
     http_access deny all
+
 ---
 # Source: sonarqube/templates/config.yaml
 apiVersion: v1
@@ -399,6 +408,7 @@ data:
     sonar.hunteragent.orchestrator.url=http://agentic-scheduling-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
     sonar.remediationagent.orchestrator.url=http://agentic-scheduling-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
     sonar.vortex.analysis.url=http://agentic-scheduling-values.yaml-sonarqube-vortex:8080
+
 ---
 # Source: sonarqube/templates/gvisor.yaml
 apiVersion: v1
@@ -745,6 +755,7 @@ data:
         -O- "${API}/api/v1/nodes/${NODE_NAME}" >/dev/null
     fi
     echo "[label-node] labeled ${NODE_NAME}"
+
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
@@ -805,6 +816,7 @@ metadata:
     heritage: Helm
 data:
   install_plugins.sh: |-
+
 ---
 # Source: sonarqube/templates/jdbc-config.yaml
 apiVersion: v1
@@ -819,6 +831,7 @@ metadata:
 data:
   SONAR_JDBC_USERNAME: "user"
   SONAR_JDBC_URL: "jdbc:postgresql://myPostgres/myDatabase?socketTimeout=1500"
+
 ---
 # Source: sonarqube/templates/gvisor.yaml
 # The installer patches a label onto its own Node so the RuntimeClass scheduler only admits runtime
@@ -839,6 +852,7 @@ rules:
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "patch"]
+
 ---
 # Source: sonarqube/templates/gvisor.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -859,6 +873,7 @@ subjects:
   - kind: ServiceAccount
     name: agentic-scheduling-values.yaml-sonarqube-gvisor-installer
     namespace: default
+
 ---
 # Source: sonarqube/templates/agent-egress-proxy-service.yaml
 apiVersion: v1
@@ -886,6 +901,7 @@ spec:
   selector:
     app: sonarqube-agent-egress-proxy
     release: agentic-scheduling-values.yaml
+
 ---
 # Source: sonarqube/templates/agent-orchestrator-service.yaml
 apiVersion: v1
@@ -909,6 +925,7 @@ spec:
   selector:
     app: sonarqube-agent-orchestrator
     release: agentic-scheduling-values.yaml
+
 ---
 # Source: sonarqube/templates/agent-runtime-service.yaml
 apiVersion: v1
@@ -935,6 +952,7 @@ spec:
   selector:
     app: sonarqube-agent-runtime-hunter
     release: agentic-scheduling-values.yaml
+
 ---
 # Source: sonarqube/templates/agent-runtime-service.yaml
 apiVersion: v1
@@ -961,6 +979,7 @@ spec:
   selector:
     app: sonarqube-agent-runtime-remediation
     release: agentic-scheduling-values.yaml
+
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
@@ -982,6 +1001,7 @@ spec:
   selector:
     app: sonarqube
     release: agentic-scheduling-values.yaml
+
 ---
 # Source: sonarqube/templates/vortex-service.yaml
 apiVersion: v1
@@ -1004,6 +1024,7 @@ spec:
   selector:
     app: sonarqube-vortex
     release: agentic-scheduling-values.yaml
+
 ---
 # Source: sonarqube/templates/gvisor.yaml
 apiVersion: apps/v1
@@ -1071,6 +1092,7 @@ spec:
           configMap:
             name: agentic-scheduling-values.yaml-sonarqube-gvisor-installer
             defaultMode: 0755
+
 ---
 # Source: sonarqube/templates/agent-egress-proxy.yaml
 apiVersion: apps/v1
@@ -1177,6 +1199,7 @@ spec:
           emptyDir: {}
         - name: tmp
           emptyDir: {}
+
 ---
 # Source: sonarqube/templates/agent-orchestrator.yaml
 apiVersion: apps/v1
@@ -1353,6 +1376,7 @@ spec:
               path: remediation-to-orchestrator
             - key: orchestrator-job-capability
               path: orchestrator-job-capability
+
 ---
 # Source: sonarqube/templates/agent-runtime.yaml
 apiVersion: apps/v1
@@ -1493,6 +1517,7 @@ spec:
               path: orchestrator-to-hunter
             - key: hunter-to-orchestrator
               path: hunter-to-orchestrator
+
 ---
 # Source: sonarqube/templates/agent-runtime.yaml
 apiVersion: apps/v1
@@ -1637,6 +1662,7 @@ spec:
               path: remediation-to-sqs
             - key: remediation-to-orchestrator
               path: remediation-to-orchestrator
+
 ---
 # Source: sonarqube/templates/vortex.yaml
 apiVersion: apps/v1
@@ -1764,6 +1790,7 @@ spec:
             items:
             - key: agentic-shared
               path: agentic-shared
+
 ---
 # Source: sonarqube/templates/sonarqube-sts.yaml
 apiVersion: apps/v1
@@ -2017,6 +2044,7 @@ spec:
         - name : concat-dir
           emptyDir:
             {}
+
 ---
 # Source: sonarqube/templates/gvisor.yaml
 # gVisor (runsc) sandboxing for the agent runtimes. gvisor.enabled renders the RuntimeClass
@@ -2055,6 +2083,7 @@ metadata:
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation
 automountServiceAccountToken: true
+
 ---
 # Source: sonarqube/templates/agent-key-derivation-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -2085,6 +2114,7 @@ rules:
       - agentic-scheduling-values.yaml-sonar-agentic-keys-remediation
       - agentic-scheduling-values.yaml-sonar-agentic-keys-sqs
       - agentic-scheduling-values.yaml-sonar-agentic-keys-vortex
+
 ---
 # Source: sonarqube/templates/agent-key-derivation-rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -2110,6 +2140,7 @@ subjects:
   - kind: ServiceAccount
     name: agentic-scheduling-values.yaml-sonarqube-agent-key-derivation
     namespace: default
+
 ---
 # Source: sonarqube/templates/tests/sonarqube-test.yaml
 apiVersion: v1
@@ -2322,3 +2353,4 @@ spec:
                 path: instance-secret
         - name: tmp
           emptyDir: {}
+

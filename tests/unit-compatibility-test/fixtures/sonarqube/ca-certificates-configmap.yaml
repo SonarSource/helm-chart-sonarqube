@@ -1,6 +1,5 @@
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -13,9 +12,9 @@ metadata:
 type: Opaque
 data:
   SONAR_WEB_SYSTEMPASSCODE: "dGVzdA=="
+
 ---
 # Source: sonarqube/templates/secret.yaml
----
 apiVersion: v1
 kind: Secret
 metadata:
@@ -46,6 +45,7 @@ metadata:
     heritage: Helm
 data:
   sonar.properties: |
+
 ---
 # Source: sonarqube/templates/init-sysctl.yaml
 apiVersion: v1
@@ -109,6 +109,7 @@ data:
       rm -f /opt/sonarqube/extensions/jdbc-driver/oracle/*
       cd /opt/sonarqube/extensions/jdbc-driver/oracle
       curl --cacert /tmp/certs/ca-bundle.pem --netrc-file /root/.netrc -fsSLO https://download.oracle.com/otn-pub/otn_software/jdbc/2113/ojdbc11.jar
+
 ---
 # Source: sonarqube/templates/install-plugins.yaml
 apiVersion: v1
@@ -125,6 +126,7 @@ data:
       rm -f /opt/sonarqube/extensions/plugins/*
       cd /opt/sonarqube/extensions/plugins
       curl --cacert /tmp/certs/ca-bundle.pem   -fsSLO "https://binaries.sonarsource.com/plugins/org/sonarsource/java/sonar-java-plugin/3.4/sonar-java-plugin-3.4.jar"
+
 ---
 # Source: sonarqube/templates/service.yaml
 apiVersion: v1
@@ -146,6 +148,7 @@ spec:
   selector:
     app: sonarqube
     release: ca-certificates-configmap.yaml
+
 ---
 # Source: sonarqube/templates/sonarqube-sts.yaml
 apiVersion: apps/v1
