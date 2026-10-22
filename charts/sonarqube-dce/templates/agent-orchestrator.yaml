@@ -31,7 +31,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secret: {{ include (print $.Template.BasePath "/agent-orchestrator-secret.yaml") . | sha256sum }}
+        checksum/secret: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/agent-orchestrator-secret.yaml") }}
         {{- with .Values.agentOrchestrator.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

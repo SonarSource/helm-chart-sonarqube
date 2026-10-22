@@ -23,7 +23,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/secret: {{ include (print $.Template.BasePath "/vortex-secret.yaml") . | sha256sum }}
+        checksum/secret: {{ include "sonarqube.configMapOrSecretContentHash" (dict "ctx" . "name" "/vortex-secret.yaml") }}
         {{- with $vortex.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
