@@ -2,7 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [2026.6.1001]
-* Hash only the ConfigMap and Secret data in the `checksum/*` pod annotations, so that a chart version bump on its own no longer restarts the pods
+* Hash only the ConfigMap and Secret data in the `checksum/*` pod annotations, so that a chart version bump on its own no longer restarts the pods. This now covers every `checksum/*` annotation in the chart, including the Vortex, Agent Orchestrator and agent egress proxy workloads
 
 ## [2026.6.1000]
 * Upgrade Chart's version to 2026.6.1000
