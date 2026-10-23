@@ -2,6 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [2026.6.1000]
+* Update MCP image to `sonarsource/sonarqube-mcp:1.27.1.4755`
 * Upgrade Chart's version to 2026.6.1000
 * Add `applicationNodes.prometheusExporter.netrcCreds` to authenticate the JMX exporter download with a `.netrc` Secret
 * When `applicationNodes.prometheusExporter.netrcCreds` is set, download the JMX exporter with `curl -S` instead of `-v`, so a failed download is visible without writing the Authorization header to the init container logs
@@ -15,7 +16,7 @@ All changes to this chart will be documented in this file.
 * Set a default MCP pod `securityContext` (`fsGroup: 0`), `HOME=/data` and an optional `mcp.initContainers` hook so the non-root MCP server can write to `/data`
 * **Breaking**: Remove the deprecated `ingress-nginx.enabled`/`nginx.enabled` bundled ingress-nginx controller subchart dependency. `ingress.enabled` remains supported for use with a self-managed ingress controller; `httproute.enabled` (Gateway API) is also available
 * Add `gateway-api-migration-scripts/nginx-to-istio-migration.sh` to help migrate from the bundled ingress-nginx controller to Gateway API
-* Update MCP image to `sonarsource/sonarqube-mcp:2026.5.0`
+* Update MCP image to `sonarsource/sonarqube-mcp:1.27.1.4755`
 * Add the Agent Orchestrator image `sonarsource/sonarqube-agent-orchestrator:2026.5.0`
 * Add the Hunter Agent image `sonarsource/sonarqube-hunter-agent:2026.5.0`
 * Add the Remediation Agent image `sonarsource/sonarqube-remediation-agent:2026.5.0`

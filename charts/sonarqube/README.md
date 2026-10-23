@@ -18,7 +18,7 @@ Please note that this chart only supports SonarQube Server Developer and Enterpr
 | --------- | ----- | ----------- |
 | SonarQube Server | `sonarqube` | `2026.5.0` |
 | SonarQube Community Build | `sonarqube` | `26.10.0.133078` |
-| MCP Server | `sonarsource/sonarqube-mcp` | `2026.5.0` |
+| MCP Server | `sonarsource/sonarqube-mcp` | `1.27.1.4755` |
 | Agent Orchestrator | `sonarsource/sonarqube-agent-orchestrator` | `2026.5.0` |
 | Hunter Agent | `sonarsource/sonarqube-hunter-agent` | `2026.5.0` |
 | Remediation Agent | `sonarsource/sonarqube-remediation-agent` | `2026.5.0` |
@@ -513,7 +513,7 @@ mcp:
   enabled: true
   image:
     repository: sonarsource/sonarqube-mcp
-    tag: "2026.5.0"
+    tag: "1.27.1.4755"
 ```
 
 **Accessing the MCP server locally:**
@@ -1061,7 +1061,7 @@ See [Persistence](#persistence) for usage.
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `mcp.enabled`                          | Deploy the SonarQube MCP server alongside SonarQube                                                     | `false`                                                                |
 | `mcp.image.repository`                 | MCP container image repository                                                                           | `sonarsource/sonarqube-mcp`                                            |
-| `mcp.image.tag`                        | MCP container image tag                                                                                  | `"2026.5.0"`                                                           |
+| `mcp.image.tag`                        | MCP container image tag                                                                                  | `"1.27.1.4755"`                                                           |
 | `mcp.image.pullPolicy`                 | MCP image pull policy                                                                                    | `IfNotPresent`                                                         |
 | `mcp.image.pullSecrets`                | MCP image pull secrets                                                                                   | `[]`                                                                   |
 | `mcp.port`                             | Port the MCP server listens on                                                                           | `8080`                                                                 |
