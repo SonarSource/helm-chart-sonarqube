@@ -1114,7 +1114,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: agent-egress-proxy
-          image: ubuntu/squid@sha256:8a3baed477e2c282ab8aa5edad442f69873246964f225c5c2ae8364b6610963c
+          image: ubuntu/squid@sha256:d11db6479501aa4618b3253f95a88b2547229e2d081726b6fb20dc75a98cc61b
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -1127,7 +1127,7 @@ spec:
             runAsUser: 13
             seccompProfile:
               type: RuntimeDefault
-          command: ["squid", "-N", "-f", "/etc/squid/squid.conf"]
+          command: ["sh", "-c", "exec \"$(command -v squid || command -v squid-gnutls)\" -N -f /etc/squid/squid.conf"]
           ports:
             - name: http-proxy
               containerPort: 3128

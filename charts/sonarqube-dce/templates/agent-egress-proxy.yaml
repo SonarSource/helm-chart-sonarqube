@@ -80,7 +80,10 @@ spec:
           {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" .Values.agentEgressProxy.containerSecurityContext))) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
-          command: ["squid", "-N", "-f", "/etc/squid/squid.conf"]
+          {{- /* The binary is squid in the 6.x ubuntu/squid images and squid-gnutls in the 7.x rocks, so
+                 resolve whichever one the image ships: an image override back to 6.x keeps working.
+                 exec keeps squid as PID 1, so it still receives SIGTERM directly. */}}
+          command: ["sh", "-c", "exec \"$(command -v squid || command -v squid-gnutls)\" -N -f /etc/squid/squid.conf"]
           ports:
             {{- /* Named tcp-proxy, not http-proxy, only once Istio is enabled: Istio's sidecar
                    infers L7 protocol from the port name, and an "http"-prefixed name makes it
