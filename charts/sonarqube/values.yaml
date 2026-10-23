@@ -747,7 +747,7 @@ mcp:
 
   image:
     repository: sonarsource/sonarqube-mcp
-    tag: "2026.5.0"
+    tag: "2026.5.1"
     pullPolicy: IfNotPresent
     # pullSecrets:
     #   - name: my-repo-secret
@@ -871,7 +871,7 @@ vortexAnalysis:
 
   image:
     repository: "sonarsource/sonar-vortex"
-    tag: "2026.5.0"
+    tag: "2026.5.1"
     pullPolicy: IfNotPresent
     # pullSecret: my-repo-secret
     # pullSecrets:
@@ -1017,7 +1017,7 @@ agentOrchestrator:
 
   image:
     repository: "sonarsource/sonarqube-agent-orchestrator"
-    tag: "2026.5.0"
+    tag: "2026.5.1"
     pullPolicy: IfNotPresent
     # For the orchestrator's own image only; its wait-for-sonarqube init container pulls the
     # SonarQube image instead, and always gets image.pullSecret(s) for that.
@@ -1199,7 +1199,7 @@ hunterAgent:
   enabled: false
   image:
     repository: "sonarsource/sonarqube-hunter-agent"
-    tag: "2026.5.0"
+    tag: "2026.5.1"
     pullPolicy: IfNotPresent
   port: 8090
   # >1 enables the L4 429 re-routing: the Service is a load-balanced ClusterIP (not
@@ -1347,7 +1347,7 @@ remediationAgent:
   enabled: false
   image:
     repository: "sonarsource/sonarqube-remediation-agent"
-    tag: "2026.5.0"
+    tag: "2026.5.1"
     pullPolicy: IfNotPresent
   port: 8090
   replicaCount: 1
@@ -1477,12 +1477,12 @@ agentEgressProxy:
     #
     # Pinning matters more than usual for this image: Canonical's channel naming is
     # <squidVersion>-<ubuntuRelease>_<risk>, and `_edge` is a *floating* risk channel that gets
-    # rebuilt in place. The 6.6-24.04_edge tag already resolves to Squid 6.14, not 6.6, so the tag
+    # rebuilt in place. The 7.2-26.04_edge tag already resolves to Squid 7.7, not 7.2, so the tag
     # alone is not a reproducible reference. Bump both together, deliberately, after re-checking
     # `docker buildx imagetools inspect ubuntu/squid:<tag>`.
-    tag: "6.6-24.04_edge"
-    # Multi-arch index digest for 6.6-24.04_edge (amd64/arm64/ppc64le/s390x), resolved 2026-08-27.
-    digest: sha256:8a3baed477e2c282ab8aa5edad442f69873246964f225c5c2ae8364b6610963c
+    tag: "7.2-26.04_edge"
+    # Multi-arch index digest for 7.2-26.04_edge (amd64/arm64/ppc64le/s390x), resolved 2026-10-23.
+    digest: sha256:d11db6479501aa4618b3253f95a88b2547229e2d081726b6fb20dc75a98cc61b
     pullPolicy: IfNotPresent
     pullSecret: ""
     pullSecrets: []
@@ -1535,9 +1535,10 @@ agentEgressProxy:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: true
     runAsNonRoot: true
-    # The pinned ubuntu/squid image declares no non-root USER (it starts as root by convention,
-    # matching its own cache_effective_user startup-then-drop-privileges model), so runAsNonRoot
-    # requires an explicit runAsUser or the container fails to start (CreateContainerConfigError).
+    # runAsUser is set explicitly rather than inherited from the image: older ubuntu/squid images
+    # declare no non-root USER (they start as root, matching squid's cache_effective_user
+    # startup-then-drop-privileges model), which runAsNonRoot rejects (CreateContainerConfigError),
+    # and the 7.x rocks declare an unrelated pebble user (584792) rather than squid's own.
     # 13 is the image's built-in "proxy" uid/gid — verified to start squid cleanly with no cache_dir
     # and no TLS interception (D6), matching the cache_effective_user directive in squid.conf below.
     runAsUser: 13
