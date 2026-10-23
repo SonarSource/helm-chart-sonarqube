@@ -6,7 +6,7 @@ metadata:
   name: template-refactoring-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: template-refactoring-values.yaml
     heritage: Helm
 type: Opaque
@@ -21,7 +21,7 @@ metadata:
   name: template-refactoring-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: template-refactoring-values.yaml
     heritage: Helm
 type: Opaque
@@ -40,7 +40,7 @@ metadata:
   name: template-refactoring-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: template-refactoring-values.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: template-refactoring-values.yaml-sonarqube-init-fs
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: template-refactoring-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: template-refactoring-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: template-refactoring-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: template-refactoring-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: template-refactoring-values.yaml
     heritage: Helm
 data:
@@ -131,7 +131,7 @@ metadata:
   name: template-refactoring-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: template-refactoring-values.yaml
     heritage: Helm
 spec:
@@ -149,7 +149,7 @@ metadata:
   name: template-refactoring-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: template-refactoring-values.yaml
     heritage: Helm
 spec:
@@ -171,7 +171,7 @@ metadata:
   name: template-refactoring-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: template-refactoring-values.yaml
     heritage: Helm
     app.kubernetes.io/name: template-refactoring-values.yaml
@@ -179,7 +179,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: template-refactoring-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.5.2-enterprise"
+    app.kubernetes.io/version: "2026.5.3-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -191,11 +191,11 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 719deb91f14f29be9486389336de9a5819d529eb9e7ba43d89ba728b9a3b4f09
-        checksum/init-fs: d48605cd1211e6bcdc59fbf9fc4bb4fe4342258fe80cacddce6a2118fa0968ec
-        checksum/init-sysctl: 690e3d34eea2b63fd0846047967ed98cfe223f838851876d474d2beb08c194a4
-        checksum/plugins: 513f22a862b3d40cff005d59720aef73762d6edf417446c56b3e5da6f238e909
-        checksum/secret: 7a5f7b4ae4aaef7aba8e09893c1e7cb8e7d450f9106f462ea231946a55da994b
+        checksum/config: 85088ee3c52e514f301187837589a638a06d3d9c88ae8db732d4491335dc5fb2
+        checksum/init-fs: 53e31742032fb190c0ca5b12cb6ee853964424e8567e21821057d822c6290e03
+        checksum/init-sysctl: f15dbfd87e2a96cc578c4c23a6142887f6ec29ca6b59adea737d4fc4f36e4e97
+        checksum/plugins: 6d468b305e805570f56df33f76379a064011fc9967e73a796ba5859a5f27e1f7
+        checksum/secret: b338530e720c9fc050a560bc6f7292a594a84f602a6de4b8ae735f2f9fa04eba
       labels:
         app: sonarqube
         release: template-refactoring-values.yaml
@@ -206,7 +206,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.5.2-enterprise
+          image: sonarqube:2026.5.3-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -228,7 +228,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: ""
         - name: init-fs
-          image: sonarqube:2026.5.2-enterprise
+          image: sonarqube:2026.5.3-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -267,7 +267,7 @@ spec:
               subPath: extensions
       containers:
         - name: sonarqube
-          image: sonarqube:2026.5.2-enterprise
+          image: sonarqube:2026.5.3-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -284,7 +284,7 @@ spec:
               memory: 4096M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.5.1002
+              value: 2026.5.1003
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -392,14 +392,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: template-refactoring-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: template-refactoring-values.yaml-ui-test
-      image: "sonarqube:2026.5.2-enterprise"
+      image: "sonarqube:2026.5.3-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [

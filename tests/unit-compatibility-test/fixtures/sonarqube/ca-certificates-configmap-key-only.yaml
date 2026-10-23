@@ -6,7 +6,7 @@ metadata:
   name: ca-certificates-configmap-key-only.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: ca-certificates-configmap-key-only.yaml
     heritage: Helm
 type: Opaque
@@ -21,7 +21,7 @@ metadata:
   name: ca-certificates-configmap-key-only.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: ca-certificates-configmap-key-only.yaml
     heritage: Helm
 type: Opaque
@@ -40,7 +40,7 @@ metadata:
   name: ca-certificates-configmap-key-only.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: ca-certificates-configmap-key-only.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: ca-certificates-configmap-key-only.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: ca-certificates-configmap-key-only.yaml
     heritage: Helm
 data:
@@ -101,7 +101,7 @@ metadata:
   name: ca-certificates-configmap-key-only.yaml-sonarqube-install-oracle-jdbc-driver
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: ca-certificates-configmap-key-only.yaml
     heritage: Helm
 data:
@@ -118,7 +118,7 @@ metadata:
   name: ca-certificates-configmap-key-only.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: ca-certificates-configmap-key-only.yaml
     heritage: Helm
 data:
@@ -135,7 +135,7 @@ metadata:
   name: ca-certificates-configmap-key-only.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: ca-certificates-configmap-key-only.yaml
     heritage: Helm
 spec:
@@ -157,7 +157,7 @@ metadata:
   name: ca-certificates-configmap-key-only.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: ca-certificates-configmap-key-only.yaml
     heritage: Helm
     app.kubernetes.io/name: ca-certificates-configmap-key-only.yaml
@@ -165,7 +165,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: ca-certificates-configmap-key-only.yaml-sonarqube
-    app.kubernetes.io/version: "2026.5.2-enterprise"
+    app.kubernetes.io/version: "2026.5.3-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -177,10 +177,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 78af4efda87b6755f933ec82065d5e4e57ee8e0fae31119fca50838b5b7efc0b
-        checksum/init-sysctl: e078a0d983cc8265a940d571ec0f49e844dec8ddc791ad838a1848c0c35cd57a
-        checksum/plugins: ecfd6f2c0761e8cd5b112a2cd09eb0fe78e9977d3e9690c455f6be70a00c1290
-        checksum/secret: 846b1a7cfe2aa897f735a45ae22d42fa4fff3397d6e5467df69ae1ab108286cc
+        checksum/config: 31a3fac377f4c970332bcbf581c6287fe13ec49e567951090d0dd7386a77e45a
+        checksum/init-sysctl: 3bc459ce0a95b5cdf07456e8f12e725e9014ad998435d14168014fdb20e03050
+        checksum/plugins: 41726cdfebb70692e774f8d56a255546e190a447697c8fa171a9b430899c3266
+        checksum/secret: 0183bada85172c4336784043770f8080fe8a025bdd53ec1942f1d9f6337dad41
       labels:
         app: sonarqube
         release: ca-certificates-configmap-key-only.yaml
@@ -190,7 +190,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: ca-certs
-          image: sonarqube:2026.5.2-enterprise
+          image: sonarqube:2026.5.3-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-c"]
           args:
@@ -229,7 +229,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: init-sysctl
-          image: sonarqube:2026.5.2-enterprise
+          image: sonarqube:2026.5.3-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -247,7 +247,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: install-plugins
-          image: sonarqube:2026.5.2-enterprise
+          image: sonarqube:2026.5.3-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
           securityContext:
@@ -294,7 +294,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: install-oracle-jdbc-driver
-          image: sonarqube:2026.5.2-enterprise
+          image: sonarqube:2026.5.3-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
           securityContext:
@@ -329,7 +329,7 @@ spec:
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
       containers:
         - name: sonarqube
-          image: sonarqube:2026.5.2-enterprise
+          image: sonarqube:2026.5.3-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -346,7 +346,7 @@ spec:
               memory: 4096M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.5.1002
+              value: 2026.5.1003
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -474,14 +474,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: ca-certificates-configmap-key-only.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: ca-certificates-configmap-key-only.yaml-ui-test
-      image: "sonarqube:2026.5.2-enterprise"
+      image: "sonarqube:2026.5.3-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [

@@ -6,7 +6,7 @@ metadata:
   name: probe-override-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: probe-override-values.yaml
     heritage: Helm
 type: Opaque
@@ -21,7 +21,7 @@ metadata:
   name: probe-override-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: probe-override-values.yaml
     heritage: Helm
 type: Opaque
@@ -40,7 +40,7 @@ metadata:
   name: probe-override-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: probe-override-values.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: probe-override-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: probe-override-values.yaml
     heritage: Helm
 data:
@@ -101,7 +101,7 @@ metadata:
   name: probe-override-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: probe-override-values.yaml
     heritage: Helm
 data:
@@ -115,7 +115,7 @@ metadata:
   name: probe-override-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: probe-override-values.yaml
     heritage: Helm
 spec:
@@ -137,7 +137,7 @@ metadata:
   name: probe-override-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: probe-override-values.yaml
     heritage: Helm
     app.kubernetes.io/name: probe-override-values.yaml
@@ -145,7 +145,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: probe-override-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.5.2-enterprise"
+    app.kubernetes.io/version: "2026.5.3-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -157,10 +157,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: df8b647ff09afcd6690d358b2067e250ca5302a6f6e33840c12a1035a216e1af
-        checksum/init-sysctl: b943f32a69b1b6305c4dc296df6ce3f4198be3ef404a706ea7bd47ba519c9542
-        checksum/plugins: 8fc04c677795e4407b05d3e3848f9faafe47a1a879cc992ecbe465fc23447f52
-        checksum/secret: c79b70e938b035444213bf7c9932cd6ea2dfd2378bcfa5acf0818dcc15a74cef
+        checksum/config: d3e342d45bb7a82bd923b6598d7b649ad6b1f6e8ef7668e7f26229eb5d0b45fc
+        checksum/init-sysctl: a8758d8e9e0271c601afce51ac6f859548b7bba893d111c2a75bd2e688ad1ab6
+        checksum/plugins: da9e4f1aad815c808baec2ea0b34d8dc517828fc70dd4d02a00be482556170d5
+        checksum/secret: 639178001b40dae2315f138090a1522eba8f469b004bb055949a0df243c69918
       labels:
         app: sonarqube
         release: probe-override-values.yaml
@@ -170,7 +170,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.5.2-enterprise
+          image: sonarqube:2026.5.3-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -189,7 +189,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2026.5.2-enterprise
+          image: sonarqube:2026.5.3-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -206,7 +206,7 @@ spec:
               memory: 4096M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.5.1002
+              value: 2026.5.1003
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -300,14 +300,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1002
+    chart: sonarqube-2026.5.1003
     release: probe-override-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: probe-override-values.yaml-ui-test
-      image: "sonarqube:2026.5.2-enterprise"
+      image: "sonarqube:2026.5.3-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [
