@@ -18,7 +18,7 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 | --------- | ----- | ----------- |
 | SonarQube Server application nodes | `sonarqube` | `2026.5.0-datacenter-app` |
 | SonarQube Server search nodes | `sonarqube` | `2026.5.0-datacenter-search` |
-| MCP Server | `sonarsource/sonarqube-mcp` | `2026.5.0` |
+| MCP Server | `sonarsource/sonarqube-mcp` | `1.27.1.4755` |
 | Agent Orchestrator | `sonarsource/sonarqube-agent-orchestrator` | `2026.5.0` |
 | Hunter Agent | `sonarsource/sonarqube-hunter-agent` | `2026.5.0` |
 | Remediation Agent | `sonarsource/sonarqube-remediation-agent` | `2026.5.0` |
@@ -636,7 +636,7 @@ mcp:
   enabled: true
   image:
     repository: sonarsource/sonarqube-mcp
-    tag: "2026.5.0"
+    tag: "1.27.1.4755"
 ```
 
 **Accessing the MCP server locally:**
@@ -1210,7 +1210,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `mcp.enabled`                           | Deploy the MCP server alongside SonarQube DCE                                                            | `false`                                                                |
 | `mcp.image.repository`                  | MCP server image repository                                                                              | `sonarsource/sonarqube-mcp`                                            |
-| `mcp.image.tag`                         | MCP server image tag                                                                                     | `"2026.5.0"` |
+| `mcp.image.tag`                         | MCP server image tag                                                                                     | `"1.27.1.4755"` |
 | `mcp.image.pullPolicy`                  | Image pull policy for the MCP container                                                                  | `IfNotPresent`                                                         |
 | `mcp.port`                              | Port the MCP server listens on                                                                           | `8080`                                                                 |
 | `mcp.healthCheckInterval`               | How often SonarQube checks MCP health (seconds). Sets `SONAR_MCP_HEALTHCHECKINTERVAL` on SonarQube.     | `""`                                                                   |
