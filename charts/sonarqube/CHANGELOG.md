@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2026.1.7]
+* Upgrade Chart's version to 2026.1.7
+* Upgrade SonarQube Server to 2026.1.7
+
 ## [2026.1.6]
 * Upgrade Chart's version to 2026.1.6
 * Upgrade SonarQube Server to 2026.1.6

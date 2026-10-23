@@ -23,7 +23,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.6
+    chart: sonarqube-2026.1.7
     release: ingress-with-controller.yaml
     heritage: Helm
 type: Opaque
@@ -38,7 +38,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.6
+    chart: sonarqube-2026.1.7
     release: ingress-with-controller.yaml
     heritage: Helm
 type: Opaque
@@ -74,7 +74,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.6
+    chart: sonarqube-2026.1.7
     release: ingress-with-controller.yaml
     heritage: Helm
 data:
@@ -88,7 +88,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.6
+    chart: sonarqube-2026.1.7
     release: ingress-with-controller.yaml
     heritage: Helm
 data:
@@ -135,7 +135,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.6
+    chart: sonarqube-2026.1.7
     release: ingress-with-controller.yaml
     heritage: Helm
 data:
@@ -439,7 +439,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.6
+    chart: sonarqube-2026.1.7
     release: ingress-with-controller.yaml
     heritage: Helm
 spec:
@@ -588,7 +588,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.6
+    chart: sonarqube-2026.1.7
     release: ingress-with-controller.yaml
     heritage: Helm
     app.kubernetes.io/name: ingress-with-controller.yaml
@@ -596,7 +596,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: ingress-with-controller.yaml-sonarqube
-    app.kubernetes.io/version: "2026.1.6-enterprise"
+    app.kubernetes.io/version: "2026.1.7-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -608,10 +608,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 95e6866e12e24782f9b7b2eacd4be992914b2dc99167a3e6178c973a66a9d063
-        checksum/init-sysctl: c8a3baffb8c1868fb9834963677c4428688133e3d0e8529095125eeab9d5aeff
-        checksum/plugins: 5f281019157d051276ba6a6ad2eb308a7d99c00c1d893bde491b8943e4d26862
-        checksum/secret: f415814ff2d5c89c1aa1092a5540186023cb9b18a0054da1b2dd7182e0e03cde
+        checksum/config: c5515a338864f061dd133f6a609b7d0c33caae05726fb25cc1ef28a8ac01b64d
+        checksum/init-sysctl: 716880e9fedb3e376b77292a94be4c886851eb8967fe7b765cfa8ec7166babfb
+        checksum/plugins: 0c7b648d4e978ee48fed980c1cb1528d676511bf6b685f5f8ab2390665c20597
+        checksum/secret: 691994d676fd03e02169206a96a740f395671d5ce8eb5ccfc425537ec48d0c4a
       labels:
         app: sonarqube
         release: ingress-with-controller.yaml
@@ -621,7 +621,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.1.6-enterprise
+          image: sonarqube:2026.1.7-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -640,7 +640,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2026.1.6-enterprise
+          image: sonarqube:2026.1.7-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -657,7 +657,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.1.6
+              value: 2026.1.7
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -773,7 +773,7 @@ metadata:
   name: ingress-with-controller.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.6
+    chart: sonarqube-2026.1.7
     release: ingress-with-controller.yaml
     heritage: Helm
     traffic-type: external
@@ -982,14 +982,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.6
+    chart: sonarqube-2026.1.7
     release: ingress-with-controller.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: ingress-with-controller.yaml-ui-test
-      image: "sonarqube:2026.1.6-enterprise"
+      image: "sonarqube:2026.1.7-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
