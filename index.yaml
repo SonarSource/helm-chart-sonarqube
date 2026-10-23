@@ -1439,6 +1439,77 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
+          description: "Update Chart's version to 2025.4.10"
+        - kind: changed
+          description: "Upgrade SonarQube Server to 2025.4.10"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube-community
+          image: sonarqube:25.8.0.112029-community
+        - name: sonarqube-developer
+          image: sonarqube:2025.4.10-developer
+        - name: sonarqube-enterprise
+          image: sonarqube:2025.4.10-enterprise
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
+      charts.openshift.io/name: sonarqube
+    apiVersion: v2
+    appVersion: 2025.4.10
+    created: "2026-10-23T19:38:48.857847688Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
+      version: 10.15.0
+    - condition: nginx.enabled,ingress-nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.14.3
+    description: SonarQube is a self-managed, automatic code review tool that systematically
+      helps you deliver clean code. As a core element of our Sonar solution, SonarQube
+      integrates into your existing workflow and detects issues in your code to help
+      you perform continuous code inspections of your projects. The tool analyses
+      30+ different programming languages and integrates into your CI pipeline and
+      DevOps platform to ensure that your code meets high-quality standards.
+    digest: b693098ec72bd8c586b1748da0adb12ac9e904b7447016a74db9131f3ffa3eb9
+    home: https://www.sonarqube.org/
+    icon: https://raw.githubusercontent.com/SonarSource/sonarqube-static-resources/master/helm/SonarQubeServerLogo.png
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: carmine.vassallo@sonarsource.com
+      name: carminevassallo
+    - email: emma.mansalier@sonarsource.com
+      name: emma44-m
+    - email: hatem.amairi@sonarsource.com
+      name: hatem-amairi-sonarsource
+    - email: jimil.desai@sonarsource.com
+      name: jimil09
+    - email: julien.lancelot@sonarsource.com
+      name: julienlancelot
+    - email: lukasz.jarocki@sonarsource.com
+      name: lukasz-jarocki-sonarsource
+    - email: matteo.mara@sonarsource.com
+      name: matteo-mara-sonarsource
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-2025.4.10-sonarqube-dce-2025.4.10/sonarqube-2025.4.10.tgz
+    version: 2025.4.10
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
           description: "Update Chart's version to 2025.4.9"
         - kind: changed
           description: "Upgrade SonarQube Server to 2025.4.9"
@@ -6938,6 +7009,75 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
+          description: "Update Chart's version to 2025.4.10"
+        - kind: changed
+          description: "Upgrade SonarQube Server to 2025.4.10"
+      artifacthub.io/containsSecurityUpdates: "false"
+      artifacthub.io/images: |
+        - name: sonarqube-app
+          image: sonarqube:2025.4.10-datacenter-app
+        - name: sonarqube-search
+          image: sonarqube:2025.4.10-datacenter-search
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
+      charts.openshift.io/name: sonarqube-dce
+    apiVersion: v2
+    appVersion: 2025.4.10
+    created: "2026-10-23T19:38:48.869111272Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://raw.githubusercontent.com/bitnami/charts/archive-full-index/bitnami
+      version: 10.15.0
+    - condition: nginx.enabled,ingress-nginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.14.3
+    description: SonarQube is a self-managed, automatic code review tool that systematically
+      helps you deliver clean code. As a core element of our Sonar solution, SonarQube
+      integrates into your existing workflow and detects issues in your code to help
+      you perform continuous code inspections of your projects. The tool analyses
+      30+ different programming languages and integrates into your CI pipeline and
+      DevOps platform to ensure that your code meets high-quality standards.
+    digest: a1b1c18ce9188f7f4ffe517c34532b02905d96b1c2cf4add30db46ad0edb1691
+    home: https://www.sonarqube.org/
+    icon: https://raw.githubusercontent.com/SonarSource/sonarqube-static-resources/master/helm/SonarQubeServerLogo.png
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: carmine.vassallo@sonarsource.com
+      name: carminevassallo
+    - email: emma.mansalier@sonarsource.com
+      name: emma44-m
+    - email: hatem.amairi@sonarsource.com
+      name: hatem-amairi-sonarsource
+    - email: jimil.desai@sonarsource.com
+      name: jimil09
+    - email: julien.lancelot@sonarsource.com
+      name: julienlancelot
+    - email: lukasz.jarocki@sonarsource.com
+      name: lukasz-jarocki-sonarsource
+    - email: matteo.mara@sonarsource.com
+      name: matteo-mara-sonarsource
+    name: sonarqube-dce
+    sources:
+    - https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-2025.4.10-sonarqube-dce-2025.4.10/sonarqube-dce-2025.4.10.tgz
+    version: 2025.4.10
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
           description: "Update Chart's version to 2025.4.9"
         - kind: changed
           description: "Upgrade SonarQube Server to 2025.4.9"
@@ -11542,4 +11682,4 @@ entries:
     urls:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-lts-1.0.16+98.tgz
     version: 1.0.16+98
-generated: "2026-10-06T15:43:13.002733745Z"
+generated: "2026-10-23T19:38:48.846346005Z"
