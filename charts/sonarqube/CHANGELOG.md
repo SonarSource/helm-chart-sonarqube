@@ -5,7 +5,7 @@ All changes to this chart will be documented in this file.
 * Upgrade Chart's version to 2026.5.1003
 * Upgrade SonarQube Server to 2026.5.3
 * Upgrade MCP, Agent Orchestrator, Hunter Agent, Remediation Agent and Vortex images to 2026.5.1
-* Upgrade the Agent Egress Proxy image to ubuntu/squid 7.2-26.04_edge (Squid 7.7), which no longer trusts the compromised eMudhra root CA (emSign ECC Root CA - G3)
+* Upgrade the Agent Egress Proxy image to ubuntu/squid 7.2-26.04_edge (Squid 7.7)
 
 ## [2026.5.1002]
 * Upgrade Chart's version to 2026.5.1002
