@@ -397,7 +397,7 @@ Parameters:
 */}}
 {{- define "sonarqube.log.jsonoutput" -}}
   {{- $node := (get .ctx.Values .node) }}
-  {{- $tempJsonOutput := default "false" (get .ctx.Values.logging "jsonOutput") -}}
+  {{- $tempJsonOutput := default "false" (get (.ctx.Values.logging | default dict) "jsonOutput") -}}
   {{- if and $node.sonarProperties (hasKey $node.sonarProperties "sonar.log.jsonOutput") -}}
     {{- $tempJsonOutput = (get $node.sonarProperties "sonar.log.jsonOutput") -}}
   {{- end -}}
