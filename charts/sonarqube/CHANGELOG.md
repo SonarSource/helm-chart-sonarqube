@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Add `prometheusExporter.netrcCreds` to authenticate the JMX exporter download with a `.netrc` Secret
 * When `prometheusExporter.netrcCreds` is set, download the JMX exporter with `curl -S` instead of `-v`, so a failed download is visible without writing the Authorization header to the init container logs
 * Upgrade SonarQube Community build to 26.10.0.133078
+* Apply `initContainers.resources` to the MCP and Agent Orchestrator `wait-for-sonarqube` init containers
 
 ## [2026.5.1000]
 * Upgrade Chart's version to 2026.5.1000

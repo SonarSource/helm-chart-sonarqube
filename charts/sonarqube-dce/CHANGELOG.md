@@ -6,6 +6,7 @@ All changes to this chart will be documented in this file.
 * Add `applicationNodes.prometheusExporter.netrcCreds` to authenticate the JMX exporter download with a `.netrc` Secret
 * When `applicationNodes.prometheusExporter.netrcCreds` is set, download the JMX exporter with `curl -S` instead of `-v`, so a failed download is visible without writing the Authorization header to the init container logs
 * Fix rendering when the deprecated `logging.jsonOutput` (or the whole `logging` block) is removed from the values, so `SONAR_LOG_JSONOUTPUT`/`sonar.log.jsonOutput` work on their own
+* Apply `initContainers.resources` to the MCP and Agent Orchestrator `wait-for-sonarqube` init containers
 
 ## [2026.5.1000]
 * Upgrade Chart's version to 2026.5.1000
