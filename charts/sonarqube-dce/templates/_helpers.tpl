@@ -805,6 +805,9 @@ for consumers like hunter-agent-unified-app that read them via Spring instead.
 {{- if .Values.agentOrchestrator.enabled -}}
 {{- $_ := set $props "sonar.hunteragent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
 {{- $_ := set $props "sonar.remediationagent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
+{{- if .Values.architectureAgent.enabled -}}
+{{- $_ := set $props "sonar.architectureagent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
+{{- end -}}
 {{- end -}}
 {{- if eq (include "sonarqube.vortex.enabled" .) "true" -}}
 {{- $_ := set $props "sonar.vortex.analysis.url" (include "sonarqube.vortex.url" .) -}}

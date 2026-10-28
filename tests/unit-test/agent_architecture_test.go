@@ -472,3 +472,22 @@ func TestArchitectureAloneSatisfiesOrchestratorRuntimeRequirement(t *testing.T) 
 		})
 	}
 }
+
+func TestArchitectureOrchestratorURLOnApplication(t *testing.T) {
+	const property = "sonar.architectureagent.orchestrator.url"
+	const envName = "SONAR_ARCHITECTUREAGENT_ORCHESTRATOR_URL"
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			props := appSonarProperties(t, chart, agentPropertiesOptions(chart, architectureFixture, nil))
+			assert.Equal(t, chart.orchestratorURL(), props[property])
+			podSpec := agenticPodSpec(t, chart, chart.appTemplate, architectureFixture, nil, "")
+			assert.Equal(t, chart.orchestratorURL(), envByName(podSpec.Containers[0].Env)[envName].Value)
+
+			off := map[string]string{"architectureAgent.enabled": "false"}
+			props = appSonarProperties(t, chart, agentPropertiesOptions(chart, architectureFixture, off))
+			assert.NotContains(t, props, property)
+			podSpec = agenticPodSpec(t, chart, chart.appTemplate, architectureFixture, off, "")
+			assert.NotContains(t, envByName(podSpec.Containers[0].Env), envName)
+		})
+	}
+}

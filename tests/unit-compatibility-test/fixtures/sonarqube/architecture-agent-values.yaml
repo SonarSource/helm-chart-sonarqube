@@ -362,6 +362,7 @@ data:
   sonar.properties: |
     sonar.agentic.orchestrator.signingKeyPath=/opt/sonarqube/agentic-keys/agentic-shared
     sonar.agentic.signing.secretFile=/opt/sonarqube/agentic-secret/instance-secret
+    sonar.architectureagent.orchestrator.url=http://architecture-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
     sonar.hunteragent.orchestrator.url=http://architecture-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
     sonar.remediationagent.orchestrator.url=http://architecture-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
 ---
@@ -1413,7 +1414,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 1e1e6d5fc555579a8229038948c13bb2d5f873e5082e2e71619ae9e85f4ed99d
+        checksum/config: bc47865bf88168f12ada8771f225bdc795aca168307cc5f75ba3d3d94240bc52
         checksum/init-sysctl: 300dab935644488dd40d21892d981ff6ae7d379762a2683b6344c7ec8e8e66f6
         checksum/plugins: 720e56b27688b0c21653621c7ed74cd00bfeb2491dfd49cc0e55e853aee31a95
         checksum/secret: ac235e0eea19d330623c47be9df4350d434af0d277e5338eeffe456233771e98
@@ -1517,6 +1518,8 @@ spec:
             - name: SONAR_HUNTERAGENT_ORCHESTRATOR_URL
               value: "http://architecture-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080"
             - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
+              value: "http://architecture-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080"
+            - name: SONAR_ARCHITECTUREAGENT_ORCHESTRATOR_URL
               value: "http://architecture-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080"
             - name: AGENTIC_SIGNING_SECRET_FILE
               value: "/opt/sonarqube/agentic-secret/instance-secret"

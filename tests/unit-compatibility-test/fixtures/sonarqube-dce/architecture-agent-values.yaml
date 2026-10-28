@@ -491,6 +491,7 @@ data:
   sonar.properties: |
     sonar.agentic.orchestrator.signingKeyPath=/opt/sonarqube/agentic-keys/agentic-shared
     sonar.agentic.signing.secretFile=/opt/sonarqube/agentic-secret/instance-secret
+    sonar.architectureagent.orchestrator.url=http://architecture-agent-values.yaml-sonarqube-dce-agent-orchestrator.default.svc.cluster.local:8080
     sonar.hunteragent.orchestrator.url=http://architecture-agent-values.yaml-sonarqube-dce-agent-orchestrator.default.svc.cluster.local:8080
     sonar.remediationagent.orchestrator.url=http://architecture-agent-values.yaml-sonarqube-dce-agent-orchestrator.default.svc.cluster.local:8080
 ---
@@ -1661,7 +1662,7 @@ spec:
         sonarqube.datacenter/type: "app"
       annotations:
         checksum/plugins: 5dbd6fbe2b612f4763a14d7ea678c66fc23aafda34a69f16f8568a7753c08d14
-        checksum/config: 5602320308147e792ce08aaca7452a6af8c86643638a3ac2af14c46591055f36
+        checksum/config: c6fb638fe1f47f16234cc0544e96172be71e081a4a7f9846e0f91c2252f7f940
         checksum/secret: 5161a58dfc8ad391b5be5b495fca788e549f4d2a840f846a4a3264807d8d8280
     spec:
       automountServiceAccountToken: false
@@ -1767,6 +1768,8 @@ spec:
             - name: SONAR_HUNTERAGENT_ORCHESTRATOR_URL
               value: "http://architecture-agent-values.yaml-sonarqube-dce-agent-orchestrator.default.svc.cluster.local:8080"
             - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
+              value: "http://architecture-agent-values.yaml-sonarqube-dce-agent-orchestrator.default.svc.cluster.local:8080"
+            - name: SONAR_ARCHITECTUREAGENT_ORCHESTRATOR_URL
               value: "http://architecture-agent-values.yaml-sonarqube-dce-agent-orchestrator.default.svc.cluster.local:8080"
             - name: AGENTIC_SIGNING_SECRET_FILE
               value: "/opt/sonarqube/agentic-secret/instance-secret"
@@ -1931,7 +1934,7 @@ spec:
       annotations:
         checksum/init-sysctl: c696a460fcdb9f3228f55b170dac3d6997c3d1e29263723c2ff9ce55a5bcf259
         checksum/init-fs: dbfd62754901691f56501c0f5849c9966f161a10aa7e2410aeffb8fdbd9ea45f
-        checksum/config: 5602320308147e792ce08aaca7452a6af8c86643638a3ac2af14c46591055f36
+        checksum/config: c6fb638fe1f47f16234cc0544e96172be71e081a4a7f9846e0f91c2252f7f940
         checksum/secret: 5161a58dfc8ad391b5be5b495fca788e549f4d2a840f846a4a3264807d8d8280
     spec:
       automountServiceAccountToken: false

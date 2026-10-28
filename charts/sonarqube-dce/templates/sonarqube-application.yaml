@@ -364,6 +364,10 @@ spec:
               value: {{ include "sonarqube.agentOrchestrator.url" . | quote }}
             - name: SONAR_REMEDIATIONAGENT_ORCHESTRATOR_URL
               value: {{ include "sonarqube.agentOrchestrator.url" . | quote }}
+            {{- if .Values.architectureAgent.enabled }}
+            - name: SONAR_ARCHITECTUREAGENT_ORCHESTRATOR_URL
+              value: {{ include "sonarqube.agentOrchestrator.url" . | quote }}
+            {{- end }}
             {{- end }}
             {{- /* The instance secret is mounted here because SQS derives material in-process from
                    it (the remediation-to-sqs key it verifies, which is why it doesn't mount that
