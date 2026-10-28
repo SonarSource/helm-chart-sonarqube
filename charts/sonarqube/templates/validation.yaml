@@ -82,12 +82,12 @@ It is used to validate the values.yaml file before the installation starts.
   {{- end -}}
   {{- /* The orchestrator only exists to dispatch jobs to an agent runtime - with neither hunterAgent
          nor remediationAgent enabled, it has nothing to talk to. */}}
-  {{- if not (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but neither hunterAgent.enabled nor remediationAgent.enabled is true. The orchestrator has no agent runtime to dispatch jobs to." -}}
+  {{- if not (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled .Values.architectureAgent.enabled) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but none of hunterAgent.enabled, remediationAgent.enabled and architectureAgent.enabled is true. The orchestrator has no agent runtime to dispatch jobs to." -}}
   {{- end -}}
 {{- end -}}
 
-{{/* Validation for hunterAgent/remediationAgent dependencies, when enabled */}}
+{{/* Validation for hunterAgent/remediationAgent/architectureAgent dependencies, when enabled */}}
 {{- if .Values.hunterAgent.enabled -}}
   {{- if not .Values.agentOrchestrator.enabled -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true but agentOrchestrator.enabled is not true." -}}
@@ -99,6 +99,30 @@ It is used to validate the values.yaml file before the installation starts.
        ("sonarsource/sonarqube-hunter-agent") with a blank tag would render an unpullable reference. */}}
   {{- if and (eq .Values.hunterAgent.image.repository "sonarsource/sonarqube-hunter-agent") (not .Values.hunterAgent.image.tag) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n hunterAgent.enabled is true and hunterAgent.image.repository is the chart's default but hunterAgent.image.tag is empty. Set hunterAgent.image.tag." -}}
+  {{- end -}}
+{{- end -}}
+{{- if .Values.architectureAgent.enabled -}}
+  {{- if not .Values.agentOrchestrator.enabled -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n architectureAgent.enabled is true but agentOrchestrator.enabled is not true." -}}
+  {{- end -}}
+  {{- if not .Values.architectureAgent.image.repository -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n architectureAgent.enabled is true but architectureAgent.image.repository is not set." -}}
+  {{- end -}}
+  {{- if and (eq .Values.architectureAgent.image.repository "sonarsource/sonarqube-architecture-agent") (not .Values.architectureAgent.image.tag) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n architectureAgent.enabled is true and architectureAgent.image.repository is the chart's default but architectureAgent.image.tag is empty. Set architectureAgent.image.tag." -}}
+  {{- end -}}
+  {{- /* The three listeners are http_port directives in the same Squid container; a duplicate
+         bind makes Squid refuse to start. */}}
+  {{- if eq (int .Values.agentEgressProxy.port) (int .Values.agentEgressProxy.architecturePort) -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n agentEgressProxy.architecturePort (%d) must differ from agentEgressProxy.port - both are http_port directives in the same Squid container." (int .Values.agentEgressProxy.architecturePort)) -}}
+  {{- end -}}
+  {{- if and .Values.remediationAgent.enabled (eq (int .Values.agentEgressProxy.remediationPort) (int .Values.agentEgressProxy.architecturePort)) -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n agentEgressProxy.architecturePort (%d) must differ from agentEgressProxy.remediationPort - both are http_port directives in the same Squid container." (int .Values.agentEgressProxy.architecturePort)) -}}
+  {{- end -}}
+  {{- if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" -}}
+    {{- if eq (int .Values.agentEgressProxy.architecturePort) (int .Values.istio.meshSidecar.meshPort) -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n agentEgressProxy.architecturePort (%d) must differ from istio.meshSidecar.meshPort." (int .Values.agentEgressProxy.architecturePort)) -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 {{- if .Values.remediationAgent.enabled -}}
@@ -200,8 +224,11 @@ It is used to validate the values.yaml file before the installation starts.
 {{- end -}}
 {{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" $) -}}
   {{- if and $cfg.enabled $cfg.autoscaling.enabled -}}
-    {{- if lt (int $cfg.autoscaling.minReplicas) 2 -}}
-{{- fail (printf "\n ** The values.yaml file is not valid. ** \n %sAgent.autoscaling.minReplicas must be >= 2 (scale-to-zero and single-replica autoscaling are not supported for the agent runtimes)." $family) -}}
+    {{- /* The architecture runtime serves one live session per pod and keeps one warm, so a single
+           replica is its floor; the others keep two so one eviction never takes the pool down. */}}
+    {{- $minFloor := ternary 1 2 (eq $family "architecture") -}}
+    {{- if lt (int $cfg.autoscaling.minReplicas) $minFloor -}}
+{{- fail (printf "\n ** The values.yaml file is not valid. ** \n %sAgent.autoscaling.minReplicas must be >= %d (scale-to-zero is not supported for the agent runtimes, and the hunter and remediation pools never run a single replica)." $family $minFloor) -}}
     {{- end -}}
     {{- if gt (int $cfg.autoscaling.minReplicas) (int $cfg.autoscaling.maxReplicas) -}}
 {{- fail (printf "\n ** The values.yaml file is not valid. ** \n %sAgent.autoscaling.maxReplicas must be >= minReplicas." $family) -}}
@@ -286,11 +313,11 @@ It is used to validate the values.yaml file before the installation starts.
 {{- end -}}
 
 {{/* Validation for the agentic signing secret: fail closed if any agentic component that needs
-     derived signing/verification keys (hunterAgent/remediationAgent/vortexAnalysis) is enabled without an
+     derived signing/verification keys (hunterAgent/remediationAgent/architectureAgent/vortexAnalysis) is enabled without an
      instance secret for the key-derivation hook Job to derive them from. */}}
 {{- if eq (include "sonarqube.agentic.enabled" .) "true" -}}
   {{- if or (not .Values.agenticSigningSecret) (not .Values.agenticSigningSecret.existingSecret) -}}
-{{- fail "\n ** The values.yaml file is not valid. ** \n One of hunterAgent.enabled / remediationAgent.enabled / vortexAnalysis.enabled is true but agenticSigningSecret.existingSecret is not set. Provide the name of an existing Secret holding the operator-provided agentic instance secret." -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n One of hunterAgent.enabled / remediationAgent.enabled / architectureAgent.enabled / vortexAnalysis.enabled is true but agenticSigningSecret.existingSecret is not set. Provide the name of an existing Secret holding the operator-provided agentic instance secret." -}}
   {{- end -}}
   {{/* The hook Job runs derive-keys.sh, which only exists inside the Agent Orchestrator image
        (baked in there so air-gapped installs don't need a second image pull, per EA-791/ADR-10).
@@ -359,7 +386,7 @@ It is used to validate the values.yaml file before the installation starts.
 
 {{/* Validation for agentRuntimeSandbox.* - the generic, non-gVisor alternative. Same "inert
      unless a runtime is enabled" precedent as the gVisor block above. */}}
-{{- if and .Values.agentRuntimeSandbox.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
+{{- if and .Values.agentRuntimeSandbox.enabled (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled .Values.architectureAgent.enabled) -}}
   {{- if not .Values.agentRuntimeSandbox.runtimeClassName -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentRuntimeSandbox.enabled=true requires a non-empty agentRuntimeSandbox.runtimeClassName." -}}
   {{- end -}}

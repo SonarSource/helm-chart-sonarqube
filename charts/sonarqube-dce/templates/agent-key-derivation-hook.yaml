@@ -163,7 +163,7 @@ spec:
                 esac
               }
 
-              {{- range $consumer := (list "orchestrator" "hunter" "remediation" "sqs" "vortex") }}
+              {{- range $consumer := (list "orchestrator" "hunter" "remediation" "architecture" "sqs" "vortex") }}
               {{- $labels := fromYamlArray (include "sonarqube.agentic.keyLabels" (dict "ctx" $ "consumer" $consumer)) }}
               {{- if $labels }}
               write_secret {{ include "sonarqube.agentic.keySecretName" (dict "ctx" $ "consumer" $consumer) }} {{ join " " $labels }}

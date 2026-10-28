@@ -262,6 +262,10 @@ ingress:
       # pathType: ImplementationSpecific
   annotations: {}
   # kubernetes.io/tls-acme: "true"
+  # Architecture Agent sessions stream Server-Sent Events with a 10 second keepalive: turn response
+  # buffering off and keep idle connections open longer than that. For ingress-nginx:
+  #   nginx.ingress.kubernetes.io/proxy-buffering: "off"
+  #   nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
 
   # Set the ingressClassName on the ingress record. Required, since this chart
   # no longer bundles an ingress-nginx controller to default it from.
@@ -1194,6 +1198,13 @@ agentOrchestrator:
   # spring.lifecycle.timeout-per-shutdown-phase: 21m (1260s), which Spring applies *per* phase: the
   # server.shutdown: graceful web drain and the two additive same-phase db-schedulers (5m + 15m)
   # are separate phases, so budget both - or Kubernetes SIGKILLs it mid-drain.
+  # Test knobs for Architecture Agent sessions, rendered on the orchestrator as
+  # ARCHITECTURE_IDLE_TTL_SECONDS and ARCHITECTURE_COST_BUDGET_USD when architectureAgent.enabled.
+  architecture:
+    # Seconds without activity before a session is checkpointed and stopped (10 minutes).
+    idleTtlSeconds: 600
+    # Cost budget per session in USD. Blank omits the variable and leaves the orchestrator default.
+    costBudgetUsd: ""
   terminationGracePeriodSeconds: 2580
 
 # Hunter Agent runtime that detects issues. Requires agentOrchestrator.enabled - see validation.yaml.
@@ -1464,6 +1475,115 @@ remediationAgent:
   # the pod before that bounded wait finishes. Don't set SHUTDOWN_GRACE_SECONDS - the image sizes it itself.
   terminationGracePeriodSeconds: 3630
 
+# Architecture Agent runtime that serves interactive architecture sessions. Requires
+# agentOrchestrator.enabled - see validation.yaml. Never shares a pool with hunterAgent or
+# remediationAgent: a pod busy with a long hunt cannot serve a chat. The orchestrator's idle TTL and
+# cost budget for its sessions are agentOrchestrator.architecture.*.
+architectureAgent:
+  enabled: false
+  image:
+    repository: "sonarsource/sonarqube-architecture-agent"
+    tag: ""
+    pullPolicy: IfNotPresent
+  port: 8080
+  replicaCount: 1
+  # Scheduling knobs for this runtime's pod. Each wins over the chart's global one of the same
+  # name (.Values.nodeSelector/tolerations/affinity) when set. gvisor.nodeSelector is merged in
+  # separately by the RuntimeClass when gVisor is enabled - see gvisor.nodeSelector in values.yaml.
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # Topology spread constraints for this runtime's pod.
+  # Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+  topologySpreadConstraints: []
+  # How many old ReplicaSets to retain. Blank uses the Kubernetes default (10).
+  revisionHistoryLimit: ""
+  # Deployment update strategy. Defaults to RollingUpdate.
+  strategy:
+    type: RollingUpdate
+  # Extra labels/annotations for this runtime's pod.
+  podLabels: {}
+  annotations: {}
+  # One session per pod: a checked-out repository, the work directory and the agent/LLM loop.
+  # Override for your workload.
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+      ephemeral-storage: 10Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+      ephemeral-storage: 20Gi
+  securityContext: {}
+  # Liveness must never gate on db/storage - see agentOrchestrator.probes above.
+  probes:
+    readiness:
+      enabled: true
+      path: /readyz
+      initialDelaySeconds: 5
+      periodSeconds: 10
+    liveness:
+      enabled: true
+      path: /livez
+      initialDelaySeconds: 10
+      periodSeconds: 30
+  # No readOnlyRootFilesystem: the image needs its home directory writable.
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
+  # ServiceAccount for this runtime, independent of the top-level serviceAccount. `name` pins the
+  # SA name for an external IAM trust policy; defaults to <fullname>-agent-runtime-architecture.
+  # With create: false the runtime runs under the top-level serviceAccount and inherits its token
+  # and any cloud role bound to it (e.g. IRSA), which the runtimes never need.
+  serviceAccount:
+    create: true
+    name: ""
+    automountToken: false
+    annotations: {}
+  # Restrict traffic to and from this runtime.
+  networkPolicy:
+    enabled: true
+  # This runtime's own subtree of the shared agent-jobs store - reuses the standard storage block
+  # (see agentOrchestrator.storage above) plus an optional prefix. Every field stays blank/unset so
+  # it defers to agentOrchestrator.storage; pathStyle is omitted rather than defaulted for the same
+  # reason.
+  storage:
+    type: ""
+    bucket: ""
+    region: ""
+    endpoint: ""
+    # pathStyle: true   # unset defers to agentOrchestrator.storage.pathStyle
+    filesystem:
+      baseDir: ""
+    prefix: ""
+    accessKey: ""
+    secretKey: ""
+    existingSecret: ""
+  env: []
+  # Extra volumes/mounts for this runtime's container/pod, incl. its own FILESYSTEM/NFS subtree -
+  # see agentOrchestrator.storage above.
+  extraVolumes: []
+  extraVolumeMounts: []
+  # KEDA ScaledObject reading the Agent Orchestrator's GET /metrics/queue (live sessions). Unlike
+  # the other runtimes, minReplicas may be 1 so a first session does not wait for a cold start.
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 10
+    manageReplicas: true
+    pollingInterval: 15
+    scaleDownStabilizationSeconds: 600
+  # A stopping session checkpoints its work directory to the artifact store before the pod exits;
+  # must cover that upload.
+  terminationGracePeriodSeconds: 300
+
 # Squid forward-proxy that all agent runtime (hunterAgent/remediationAgent) egress is routed
 # through, so FQDN allow-listing (Squid dstdomain ACLs) becomes possible where NetworkPolicy alone
 # cannot express it (L3/L4 only, no hostname matching). Always a standalone Deployment, never a
@@ -1499,6 +1619,10 @@ agentEgressProxy:
   # agent-egress-proxy-configmap.yaml's sonarqube_agentic_endpoints rule). Hunter only ever dials
   # agentEgressProxy.port above, which never carries that allow rule.
   remediationPort: 3129
+  # Third listening port on the same Squid process, used exclusively by the Architecture runtime:
+  # its listener admits only the read-only SonarQube endpoints the architecture agent calls (see
+  # agent-egress-proxy-configmap.yaml's architecture_endpoints rule).
+  architecturePort: 3130
   # D7: default 2 so a single pod eviction/restart/drain doesn't cut off every runtime's egress.
   # Override to 1 for local/dev/kind if the single point of failure is acceptable there - also set
   # podDisruptionBudget: null then, or minAvailable: 1 will block every node drain.

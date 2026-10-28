@@ -23,5 +23,11 @@ spec:
       protocol: TCP
       name: {{ ternary "tcp-proxy-rem" "http-proxy-rem" .Values.istio.enabled }}
     {{- end }}
+    {{- if .Values.architectureAgent.enabled }}
+    - port: {{ .Values.agentEgressProxy.architecturePort }}
+      targetPort: {{ ternary "tcp-proxy-arch" "http-proxy-arch" .Values.istio.enabled }}
+      protocol: TCP
+      name: {{ ternary "tcp-proxy-arch" "http-proxy-arch" .Values.istio.enabled }}
+    {{- end }}
   selector: {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 4 }}
 {{- end }}

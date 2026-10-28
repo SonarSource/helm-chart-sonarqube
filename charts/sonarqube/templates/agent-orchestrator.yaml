@@ -240,6 +240,14 @@ spec:
               value: {{ include "sonarqube.agentRuntime.pushUrl" (dict "ctx" $ "family" $family) | quote }}
             {{- end }}
             {{- end }}
+            {{- if .Values.architectureAgent.enabled }}
+            - name: ARCHITECTURE_IDLE_TTL_SECONDS
+              value: {{ .Values.agentOrchestrator.architecture.idleTtlSeconds | quote }}
+            {{- with .Values.agentOrchestrator.architecture.costBudgetUsd }}
+            - name: ARCHITECTURE_COST_BUDGET_USD
+              value: {{ . | quote }}
+            {{- end }}
+            {{- end }}
             {{- if .Values.agentOrchestrator.github.apiBaseUrl }}
             - name: AGENTIC_GITHUB_API_BASE_URL
               value: {{ .Values.agentOrchestrator.github.apiBaseUrl | quote }}

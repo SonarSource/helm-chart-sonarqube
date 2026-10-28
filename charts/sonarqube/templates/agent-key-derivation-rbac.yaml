@@ -60,7 +60,7 @@ rules:
     resources: ["secrets"]
     verbs: ["update"]
     resourceNames:
-      {{- range $consumer := (list "orchestrator" "hunter" "remediation" "sqs" "vortex") }}
+      {{- range $consumer := (list "orchestrator" "hunter" "remediation" "architecture" "sqs" "vortex") }}
       {{- $labels := fromYamlArray (include "sonarqube.agentic.keyLabels" (dict "ctx" $ "consumer" $consumer)) }}
       {{- if $labels }}
       - {{ include "sonarqube.agentic.keySecretName" (dict "ctx" $ "consumer" $consumer) }}

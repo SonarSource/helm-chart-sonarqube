@@ -130,6 +130,10 @@ spec:
     {{ .Values.agentEgressProxy.remediationPort | quote }}:
       mode: PERMISSIVE
     {{- end }}
+    {{- if .Values.architectureAgent.enabled }}
+    {{ .Values.agentEgressProxy.architecturePort | quote }}:
+      mode: PERMISSIVE
+    {{- end }}
   {{- end }}
 {{- end }}
 {{- end }}

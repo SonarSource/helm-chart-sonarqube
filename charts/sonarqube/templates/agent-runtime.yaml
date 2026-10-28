@@ -148,7 +148,10 @@ spec:
                  (which detection playbook and version to load); the remediation runtime reads
                  REMEDIATION_SCRIPT_PATH plus REMEDIATION_RULE_INFO_ENDPOINT and
                  REMEDIATION_ANALYSIS_ENDPOINT, which point directly at SonarQube Server, not the
-                 orchestrator (hunter never calls these endpoints, so it gets no such vars).
+                 orchestrator (hunter never calls these endpoints, so it gets no such vars); the
+                 architecture runtime reads SONARQUBE_URL (SonarQube Server, reached through its
+                 own egress listener) and POD_IP, the address the orchestrator routes a session's
+                 traffic to.
                  User-provided env (e.g. ANTHROPIC_API_KEY) is appended next and overrides these
                  if repeated - except the proxy vars below, which are appended last and always
                  win: see that comment for why. */}}
@@ -171,6 +174,10 @@ spec:
           {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_RULE_INFO_ENDPOINT" "value" (printf "%s/api/rules/show" (include "sonarqube.agent.sonarqube.url" $))) }}
           {{- $autoEnv = append $autoEnv (dict "name" "REMEDIATION_ANALYSIS_ENDPOINT" "value" (printf "%s/api/v2/a3s/private/analyses" (include "sonarqube.agent.sonarqube.url" $))) }}
           {{- end }}
+          {{- if eq $family "architecture" }}
+          {{- $autoEnv = append $autoEnv (dict "name" "SONARQUBE_URL" "value" (include "sonarqube.agent.sonarqube.url" $)) }}
+          {{- $autoEnv = append $autoEnv (dict "name" "POD_IP" "valueFrom" (dict "fieldRef" (dict "fieldPath" "status.podIP"))) }}
+          {{- end }}
           {{- /* Where the runtime renews an expired artifact locator mid-job (EA-968). The runtime
                  treats a blank value as "renewal disabled" and keeps the dispatch-time locators,
                  so this is only set when there is an orchestrator to call; setting it without the
@@ -184,7 +191,7 @@ spec:
           {{- $autoEnv = append $autoEnv (dict "name" "AGENT_ORCHESTRATOR_URL" "value" (include "sonarqube.agentOrchestrator.url" $)) }}
           {{- end }}
           {{- /* One variable per HKDF-derived key file mounted below - a runtime only ever holds
-                 the key for its own hop with the orchestrator (plus, for remediation, its hop to
+                 the key for its own hop with the orchestrator (plus, for remediation and architecture, its hop to
                  SQS). See sonarqube.agentic.keyPathEnv. */}}
           {{- $autoEnv = concat $autoEnv (include "sonarqube.agentic.keyPathEnv" (dict "ctx" $ "consumer" $family) | fromYamlArray) }}
           {{- /* The proxy vars below are appended last and always win on a literal name collision

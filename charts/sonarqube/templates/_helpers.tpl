@@ -516,7 +516,7 @@ never be scheduled with. OpenShift.agentRuntimeClassName sandboxes them with Kat
 Usage: {{ include "sonarqube.gvisor.enabled" . }}
 */}}
 {{- define "sonarqube.gvisor.enabled" -}}
-{{- and .Values.gvisor.enabled (not .Values.OpenShift.enabled) (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled) -}}
+{{- and .Values.gvisor.enabled (not .Values.OpenShift.enabled) (or .Values.hunterAgent.enabled .Values.remediationAgent.enabled .Values.architectureAgent.enabled) -}}
 {{- end -}}
 
 {{/*
@@ -557,7 +557,7 @@ Usage: {{ include "sonarqube.openshift.assertAgentRuntimeClass" . }}
 {{- define "sonarqube.openshift.assertAgentRuntimeClass" -}}
 {{- $rcName := .Values.OpenShift.agentRuntimeClassName | default "" | toString -}}
 {{- if and .Values.OpenShift.enabled $rcName (not .Values.OpenShift.skipAgentRuntimeClassCheck) -}}
-{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled .Values.architectureAgent.enabled -}}
 {{- /* Nested ifs, not one 'and': the positive control must be evaluated before the RuntimeClass
        lookup, and template 'and' evaluating its arguments eagerly is a Go version detail. */ -}}
 {{- if lookup "v1" "ServiceAccount" .Release.Namespace "default" -}}
@@ -578,7 +578,7 @@ precedent as sonarqube.gvisor.enabled.
 Usage: {{ include "sonarqube.agentRuntime.sandboxed" . }}
 */}}
 {{- define "sonarqube.agentRuntime.sandboxed" -}}
-{{- $anyRuntime := or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+{{- $anyRuntime := or .Values.hunterAgent.enabled .Values.remediationAgent.enabled .Values.architectureAgent.enabled -}}
 {{- if and $anyRuntime (include "sonarqube.agentRuntime.runtimeClassName" .) -}}
 true
 {{- end -}}
@@ -595,7 +595,7 @@ kube-dns rule that no pod exists to carry. Emits "true" or "".
 Usage: {{ include "sonarqube.agentRuntime.hasEnvoy" . }}
 */}}
 {{- define "sonarqube.agentRuntime.hasEnvoy" -}}
-{{- $anyRuntime := or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+{{- $anyRuntime := or .Values.hunterAgent.enabled .Values.remediationAgent.enabled .Values.architectureAgent.enabled -}}
 {{- $sandboxed := eq (include "sonarqube.agentRuntime.sandboxed" .) "true" -}}
 {{- $mesh := eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .) "true" -}}
 {{- if and $anyRuntime .Values.istio.enabled (or (not $sandboxed) $mesh) -}}
@@ -725,12 +725,13 @@ release: {{ .ctx.Release.Name }}
 {{- end -}}
 
 {{/*
-The two agent runtime families, keyed by name, for templates that iterate over both.
+The agent runtime families, keyed by name, for templates that iterate over all of them.
 Usage: {{- range $family, $cfg := fromYaml (include "sonarqube.agentRuntimes" .) }}
 */}}
 {{- define "sonarqube.agentRuntimes" -}}
 hunter: {{- .Values.hunterAgent | toYaml | nindent 2 }}
 remediation: {{- .Values.remediationAgent | toYaml | nindent 2 }}
+architecture: {{- .Values.architectureAgent | toYaml | nindent 2 }}
 {{- end -}}
 
 {{/*
@@ -1038,6 +1039,20 @@ Same create / pinned-name / fallback logic as the orchestrator helper above.
 {{- end -}}
 
 {{/*
+The Agent Egress Proxy listener port one runtime family dials.
+Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name).
+*/}}
+{{- define "sonarqube.agentEgressProxy.familyPort" -}}
+{{- if eq .family "remediation" -}}
+{{- int .ctx.Values.agentEgressProxy.remediationPort -}}
+{{- else if eq .family "architecture" -}}
+{{- int .ctx.Values.agentEgressProxy.architecturePort -}}
+{{- else -}}
+{{- int .ctx.Values.agentEgressProxy.port -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 In-cluster URL the agent runtimes reach the Agent Egress Proxy through. Plain http:// even for
 HTTPS_PROXY - the runtime talks plain HTTP to Squid itself, which then CONNECT-tunnels the actual
 HTTPS session (no TLS interception between the runtime and the proxy).
@@ -1059,17 +1074,18 @@ resolver is a covert egress channel for a workload that runs prompt-injectable c
 recreating the Service assigns a new ClusterIP and needs a runtime rollout. `helm upgrade`
 preserves a Service's ClusterIP, so upgrades are unaffected.
 
-Family-scoped: Remediation dials agentEgressProxy.remediationPort, the only listener whose Squid
-ACL admits SonarQube's own agentic endpoints (agent-egress-proxy-configmap.yaml); every other
-family dials agentEgressProxy.port, which never carries that allow rule.
+Family-scoped: Remediation dials agentEgressProxy.remediationPort and Architecture
+agentEgressProxy.architecturePort, the only listeners whose Squid ACLs admit SonarQube's own
+endpoints (agent-egress-proxy-configmap.yaml); every other family dials agentEgressProxy.port,
+which never carries those allow rules.
 Parameters (dict): ctx (required, the root context '.'), family (required, the runtime family name).
 */}}
 {{- define "sonarqube.agentEgressProxy.url" -}}
-{{- $port := ternary (int .ctx.Values.agentEgressProxy.remediationPort) (int .ctx.Values.agentEgressProxy.port) (eq .family "remediation") -}}
+{{- $port := include "sonarqube.agentEgressProxy.familyPort" . -}}
 {{- if eq (include "sonarqube.agentRuntime.meshSidecar.enabled" .ctx) "true" -}}
-{{- printf "http://127.0.0.1:%d" $port -}}
+{{- printf "http://127.0.0.1:%s" $port -}}
 {{- else -}}
-{{- printf "http://$(%s):%d" (include "sonarqube.agentEgressProxy.serviceHostVar" .ctx) $port -}}
+{{- printf "http://$(%s):%s" (include "sonarqube.agentEgressProxy.serviceHostVar" .ctx) $port -}}
 {{- end -}}
 {{- end -}}
 
@@ -1097,7 +1113,7 @@ Proxy template gates on this helper instead of a values flag.
 Usage: {{- if include "sonarqube.agentEgressProxy.required" . }}
 */}}
 {{- define "sonarqube.agentEgressProxy.required" -}}
-{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled -}}
+{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled .Values.architectureAgent.enabled -}}
 true
 {{- end -}}
 {{- end -}}
@@ -1111,7 +1127,7 @@ mount everywhere it's needed.
 Usage: {{- if include "sonarqube.agentic.enabled" . }}
 */}}
 {{- define "sonarqube.agentic.enabled" -}}
-{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled .Values.vortexAnalysis.enabled -}}
+{{- if or .Values.hunterAgent.enabled .Values.remediationAgent.enabled .Values.architectureAgent.enabled .Values.vortexAnalysis.enabled -}}
 true
 {{- end -}}
 {{- end -}}
@@ -1136,7 +1152,7 @@ true
 Name of the per-consumer derived signing/verification key Secret produced by the key-derivation
 hook Job.
 Parameters (dict): ctx (required, the root context '.'), consumer (required, one of "orchestrator",
-"hunter", "remediation", "sqs", "vortex").
+"hunter", "remediation", "architecture", "sqs", "vortex").
 */}}
 {{- define "sonarqube.agentic.keySecretName" -}}
 {{- /* Truncate the fullname prefix, not the consumer suffix. Truncating the whole thing at 63
@@ -1144,7 +1160,7 @@ Parameters (dict): ctx (required, the root context '.'), consumer (required, one
        release name of ~39 is well inside the fullname budget): the hook's five write_secret calls
        would overwrite each other, and every pod's items: projection would then ask the surviving
        Secret for labels it doesn't hold, wedging them in ContainerCreating. 36 + len
-       "-agentic-keys-" + the longest consumer ("remediation") is 61, so the suffix always
+       "-agentic-keys-" + the longest consumer ("architecture") is 62, so the suffix always
        survives intact. */}}
 {{- printf "%s-agentic-keys-%s" (include "sonarqube.fullname" .ctx | trunc 36 | trimSuffix "-") .consumer | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
@@ -1159,16 +1175,21 @@ ContainerCreating).
 Least privilege: each pod only ever holds the keys for the hops it actually participates in.
 
   orchestrator -> orchestrator-to-hunter (hunter), orchestrator-to-remediation (remediation),
+                  orchestrator-to-architecture and architecture-to-orchestrator (architecture,
+                  only when architectureAgent.enabled),
                   agentic-shared (SQS <-> orchestrator), hunter-to-orchestrator and
                   remediation-to-orchestrator (verifying runtime locator renewals),
                   orchestrator-job-capability (its own, never shared)
   hunter       -> orchestrator-to-hunter, hunter-to-orchestrator
   remediation  -> orchestrator-to-remediation, remediation-to-sqs, remediation-to-orchestrator
+  architecture -> orchestrator-to-architecture, architecture-to-sqs, architecture-to-orchestrator
   sqs          -> agentic-shared
   vortex       -> agentic-shared (Vortex -> SQS)
 
-Note SQS does *not* mount remediation-to-sqs even though it verifies that hop: it has the
-instance secret itself (sonarqube.agentic.sqsSecretFile) and re-derives the key in-process.
+Note SQS does *not* mount remediation-to-sqs or architecture-to-sqs even though it verifies those
+hops: it has the instance secret itself (sonarqube.agentic.sqsSecretFile) and re-derives the keys
+in-process, along with the SQS-only architecture-session-capability key, which no consumer is ever
+given.
 
 Two deliberate asymmetries with the rest of this table (EA-968):
 
@@ -1195,6 +1216,7 @@ Returns a YAML list; "[]" when the consumer needs none.
 {{- if eq .consumer "orchestrator" -}}
 {{- if $v.hunterAgent.enabled }}{{- $labels = append $labels "orchestrator-to-hunter" }}{{- end }}
 {{- if $v.remediationAgent.enabled }}{{- $labels = append $labels "orchestrator-to-remediation" }}{{- end }}
+{{- if $v.architectureAgent.enabled }}{{- $labels = concat $labels (list "orchestrator-to-architecture" "architecture-to-orchestrator") }}{{- end }}
 {{- if and $any $v.agentOrchestrator.enabled }}{{- $labels = concat $labels (list "agentic-shared" "hunter-to-orchestrator" "remediation-to-orchestrator" "orchestrator-job-capability") }}{{- end }}
 {{- else if eq .consumer "hunter" -}}
 {{- if $v.hunterAgent.enabled }}{{- $labels = append $labels "orchestrator-to-hunter" }}{{- end }}
@@ -1202,6 +1224,9 @@ Returns a YAML list; "[]" when the consumer needs none.
 {{- else if eq .consumer "remediation" -}}
 {{- if $v.remediationAgent.enabled }}{{- $labels = concat $labels (list "orchestrator-to-remediation" "remediation-to-sqs") }}{{- end }}
 {{- if and $v.remediationAgent.enabled $v.agentOrchestrator.enabled }}{{- $labels = append $labels "remediation-to-orchestrator" }}{{- end }}
+{{- else if eq .consumer "architecture" -}}
+{{- if $v.architectureAgent.enabled }}{{- $labels = concat $labels (list "orchestrator-to-architecture" "architecture-to-sqs") }}{{- end }}
+{{- if and $v.architectureAgent.enabled $v.agentOrchestrator.enabled }}{{- $labels = append $labels "architecture-to-orchestrator" }}{{- end }}
 {{- else if eq .consumer "sqs" -}}
 {{- if $any }}{{- $labels = append $labels "agentic-shared" }}{{- end }}
 {{- else if eq .consumer "vortex" -}}
@@ -1216,7 +1241,7 @@ has to run derive-keys.sh for. Returns a YAML list.
 */}}
 {{- define "sonarqube.agentic.allKeyLabels" -}}
 {{- $all := list -}}
-{{- range $consumer := (list "orchestrator" "hunter" "remediation" "sqs" "vortex") -}}
+{{- range $consumer := (list "orchestrator" "hunter" "remediation" "architecture" "sqs" "vortex") -}}
 {{- $all = concat $all (fromYamlArray (include "sonarqube.agentic.keyLabels" (dict "ctx" $ "consumer" $consumer))) -}}
 {{- end -}}
 {{- toYaml (uniq $all) -}}
@@ -1260,16 +1285,21 @@ the key:
 
   orchestrator  orchestrator-to-hunter       -> AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH
                 orchestrator-to-remediation  -> AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH
+                orchestrator-to-architecture -> AGENTIC_ARCHITECTURE_RUNTIME_SIGNING_KEY_PATH
                 agentic-shared               -> AGENTIC_SONARQUBE_SIGNING_KEY_PATH
                                                 AGENTIC_INBOUND_VERIFICATION_KEY_PATH
                 hunter-to-orchestrator       -> AGENTIC_INBOUND_HUNTER_VERIFICATION_KEY_PATH
                 remediation-to-orchestrator  -> AGENTIC_INBOUND_REMEDIATION_VERIFICATION_KEY_PATH
+                architecture-to-orchestrator -> AGENTIC_INBOUND_ARCHITECTURE_VERIFICATION_KEY_PATH
                 orchestrator-job-capability  -> AGENTIC_JOB_CAPABILITY_SIGNING_KEY_PATH
   hunter        orchestrator-to-hunter       -> AGENTIC_VERIFY_KEY_PATH
                 hunter-to-orchestrator       -> AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
   remediation   orchestrator-to-remediation  -> AGENTIC_VERIFY_KEY_PATH
                 remediation-to-sqs           -> REMEDIATION_AGENTIC_SIGNING_KEY_PATH
                 remediation-to-orchestrator  -> AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
+  architecture  orchestrator-to-architecture -> AGENTIC_VERIFY_KEY_PATH
+                architecture-to-sqs          -> ARCH_AGENT_SIGNING_KEY_PATH
+                architecture-to-orchestrator -> AGENT_ORCHESTRATOR_SIGNING_KEY_PATH
   vortex        agentic-shared               -> AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH
 
 One label can map to several variables - the dict value is a space-separated list. agentic-shared
@@ -1312,9 +1342,11 @@ Parameters (dict): ctx, consumer.
   "orchestrator" (dict
     "orchestrator-to-hunter" "AGENTIC_HUNTER_RUNTIME_SIGNING_KEY_PATH"
     "orchestrator-to-remediation" "AGENTIC_REMEDIATION_RUNTIME_SIGNING_KEY_PATH"
+    "orchestrator-to-architecture" "AGENTIC_ARCHITECTURE_RUNTIME_SIGNING_KEY_PATH"
     "agentic-shared" "AGENTIC_SONARQUBE_SIGNING_KEY_PATH AGENTIC_INBOUND_VERIFICATION_KEY_PATH"
     "hunter-to-orchestrator" "AGENTIC_INBOUND_HUNTER_VERIFICATION_KEY_PATH"
     "remediation-to-orchestrator" "AGENTIC_INBOUND_REMEDIATION_VERIFICATION_KEY_PATH"
+    "architecture-to-orchestrator" "AGENTIC_INBOUND_ARCHITECTURE_VERIFICATION_KEY_PATH"
     "orchestrator-job-capability" "AGENTIC_JOB_CAPABILITY_SIGNING_KEY_PATH")
   "hunter" (dict
     "orchestrator-to-hunter" "AGENTIC_VERIFY_KEY_PATH"
@@ -1323,6 +1355,10 @@ Parameters (dict): ctx, consumer.
     "orchestrator-to-remediation" "AGENTIC_VERIFY_KEY_PATH"
     "remediation-to-sqs" "REMEDIATION_AGENTIC_SIGNING_KEY_PATH"
     "remediation-to-orchestrator" "AGENT_ORCHESTRATOR_SIGNING_KEY_PATH")
+  "architecture" (dict
+    "orchestrator-to-architecture" "AGENTIC_VERIFY_KEY_PATH"
+    "architecture-to-sqs" "ARCH_AGENT_SIGNING_KEY_PATH"
+    "architecture-to-orchestrator" "AGENT_ORCHESTRATOR_SIGNING_KEY_PATH")
   "vortex" (dict "agentic-shared" "AGENTIC_ORCHESTRATOR_SIGNING_KEY_PATH")
 -}}
 {{- /* Path variables that need a companion variable naming *which* key the file holds, keyed by

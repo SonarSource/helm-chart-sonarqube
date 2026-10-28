@@ -37,6 +37,17 @@ spec:
         - port: {{ .Values.agentEgressProxy.remediationPort }}
           protocol: TCP
     {{- end }}
+    {{- if .Values.architectureAgent.enabled }}
+    {{- /* Architecture-only listener - see agentEgressProxy.architecturePort and the
+           architecture_listener ACL in agent-egress-proxy-configmap.yaml. No other runtime is
+           granted this port. */}}
+    - from:
+        - podSelector:
+            matchLabels: {{- include "sonarqube.agentRuntime.selectorLabels" (dict "ctx" . "family" "architecture") | nindent 14 }}
+      ports:
+        - port: {{ .Values.agentEgressProxy.architecturePort }}
+          protocol: TCP
+    {{- end }}
     {{- if .Values.istio.enabled }}
     {{- /* kubelet probes (15020/15021) and Prometheus scrape (15090) - no `from`: this pod is
            always injected when istio.enabled, unlike the runtimes, which gVisor can exclude. */}}

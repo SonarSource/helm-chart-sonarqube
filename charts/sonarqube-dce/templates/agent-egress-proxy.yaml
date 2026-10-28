@@ -98,6 +98,13 @@ spec:
               containerPort: {{ .Values.agentEgressProxy.remediationPort }}
               protocol: TCP
             {{- end }}
+            {{- if .Values.architectureAgent.enabled }}
+            {{- /* Third listener, Architecture-only - see agentEgressProxy.architecturePort in
+                   values.yaml. Keep in sync with agent-egress-proxy-service.yaml's targetPort. */}}
+            - name: {{ ternary "tcp-proxy-arch" "http-proxy-arch" .Values.istio.enabled }}
+              containerPort: {{ .Values.agentEgressProxy.architecturePort }}
+              protocol: TCP
+            {{- end }}
           {{- with .Values.agentEgressProxy.env }}
           env: {{- toYaml . | nindent 12 }}
           {{- end }}
