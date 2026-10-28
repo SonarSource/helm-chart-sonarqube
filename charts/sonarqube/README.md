@@ -594,9 +594,10 @@ If the keystore uses a self-signed certificate, SonarQube's JVM will reject the 
 The chart can deploy the SonarQube agentic components next to SonarQube Server:
 
 * **Vortex** (`vortexAnalysis.enabled`): analysis service that SonarQube sends analysis requests to.
-* **Agent Orchestrator** (`agentOrchestrator.enabled`): dispatches jobs to the agent runtimes. Required by both agents.
+* **Agent Orchestrator** (`agentOrchestrator.enabled`): dispatches jobs to the agent runtimes. Required by every agent.
 * **Hunter Agent** (`hunterAgent.enabled`): detection agent runtime.
 * **Remediation Agent** (`remediationAgent.enabled`): remediation agent runtime. Enabling it also enables Vortex.
+* **Architecture Agent** (`architectureAgent.enabled`): runtime for interactive architecture sessions. It has its own pool and Secret (`<release>-agentic-keys-architecture`) and is never shared with the Hunter or Remediation pools.
 * **Agent Egress Proxy** (`agentEgressProxy`): a forward proxy that is the only way out of the cluster for the agent runtimes. It has no toggle: it is deployed automatically whenever an agent is enabled.
 
 **Prerequisites:**
@@ -685,15 +686,26 @@ Prefer exact hostnames: an entry with a leading dot (`.example.com`) also allows
 
 The proxy allows ports 80 and 443. For another port, add it both to `agentEgressProxy.extraSquidConf` (`Safe_ports`/`SSL_ports`) and to `agentEgressProxy.networkPolicy.egressPorts`.
 
+#### Architecture Agent
+
+`architectureAgent.enabled=true` deploys the runtime that serves architecture sessions. Each pod runs one session and is reached by the orchestrator on its pod IP (`POD_IP`, from the downward API) and `architectureAgent.port` (default `8080`).
+
+* The pod mounts only `orchestrator-to-architecture`, `architecture-to-sqs` and `architecture-to-orchestrator` at `/etc/agentic/keys`. SonarQube derives the session capability key from the instance secret and never mounts it anywhere.
+* Egress goes through its own proxy listener, `agentEgressProxy.architecturePort` (default `3130`), which admits only `GET` requests to the SonarQube read endpoints the agent uses, with the `X-Sonar-Agent-Capability` and `X-Sonar-Agentic-Signature` headers passed unchanged. Add your LLM provider and `agentOrchestrator.storage` hosts to `agentEgressProxy.allowedDomains`.
+* `agentOrchestrator.architecture.idleTtlSeconds` (default `600`) and `agentOrchestrator.architecture.costBudgetUsd` (unset by default) are rendered on the orchestrator as `ARCHITECTURE_IDLE_TTL_SECONDS` and `ARCHITECTURE_COST_BUDGET_USD`; lower them to exercise idle shutdown and the budget limit quickly in a test environment.
+
+The session stream is Server-Sent Events with a 10 second keepalive. Your ingress must not buffer responses and must keep idle connections open longer than that. For ingress-nginx set `nginx.ingress.kubernetes.io/proxy-buffering: "off"` and `nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"` in `ingress.annotations`; other controllers have equivalent settings.
+
 #### Autoscaling
 
 Autoscaling is off by default:
 
 * `agentOrchestrator.autoscaling`: a standard `HorizontalPodAutoscaler` on CPU/memory.
 * `hunterAgent.autoscaling` / `remediationAgent.autoscaling`: a KEDA `ScaledObject` driven by the orchestrator's job queue.
+* `architectureAgent.autoscaling`: a KEDA `ScaledObject` driven by the orchestrator's live architecture sessions. `minReplicas` may be `1` so a first session does not wait for a cold start.
 * `vortexAnalysis.autoscaling`: a KEDA `ScaledObject` driven by Vortex's concurrent requests. Requires KEDA `>= 2.20`.
 
-`minReplicas` must be at least `2`, except for Vortex with `vortexAnalysis.autoscaling.aggregateAcrossReplicas: false`, where it must be exactly `1`. The KEDA CRDs are detected at install time; under `helm template` set `agentKeda.assumeInstalled: true`. With GitOps tools that apply rendered manifests (Argo CD, Flux), set `autoscaling.manageReplicas: false` so each sync does not reset the replica count.
+`minReplicas` must be at least `2` (at least `1` for `architectureAgent`), except for Vortex with `vortexAnalysis.autoscaling.aggregateAcrossReplicas: false`, where it must be exactly `1`. The KEDA CRDs are detected at install time; under `helm template` set `agentKeda.assumeInstalled: true`. With GitOps tools that apply rendered manifests (Argo CD, Flux), set `autoscaling.manageReplicas: false` so each sync does not reset the replica count.
 
 To encrypt the traffic between the agentic components, see [Securing communication with TLS](#securing-communication-with-tls).
 
@@ -1227,6 +1239,12 @@ See [Agentic features](#agentic-features) for how to enable and configure these 
 | `agentOrchestrator.autoscaling.metrics`                               | Raw `autoscaling/v2` HPA `metrics:` pass-through                                                                                          | CPU `averageUtilization: 75`                                                   |
 | `agentOrchestrator.autoscaling.behavior`                              | Raw `autoscaling/v2` HPA `behavior:` pass-through                                                                                         | `scaleDown.stabilizationWindowSeconds: 300`                                    |
 | `agentOrchestrator.autoscaling.manageReplicas`                        | Set `false` to always omit `replicas` once autoscaling is enabled, even on the first apply — needed for GitOps tooling (Argo CD, Flux)         | `true`                                                                         |
+| `architectureAgent.enabled`                                      | Deploy the Architecture Agent runtime (requires `agentOrchestrator.enabled=true`; image repository `sonarsource/sonarqube-architecture-agent`, tag required) | `false`                                                                        |
+| `architectureAgent.port`                                         | Architecture runtime container / Service port                                                                                            | `8080`                                                                         |
+| `architectureAgent.terminationGracePeriodSeconds`                | Time a stopping session has to upload its checkpoint                                                                                     | `300`                                                                          |
+| `architectureAgent.autoscaling.minReplicas`                      | Floor of the architecture `ScaledObject` (at least `1`)                                                                                  | `1`                                                                            |
+| `agentOrchestrator.architecture.idleTtlSeconds`                  | Idle seconds before an architecture session is checkpointed and stopped (`ARCHITECTURE_IDLE_TTL_SECONDS`)                                | `600`                                                                          |
+| `agentOrchestrator.architecture.costBudgetUsd`                   | Per-session cost budget in USD (`ARCHITECTURE_COST_BUDGET_USD`); omitted when blank                                                      | `""`                                                                           |
 | `<hunterAgent\|remediationAgent>.image.repository`               | Agent image repository (required when the agent is enabled)                                                                              | `"sonarsource/sonarqube-hunter-agent"` / `"sonarsource/sonarqube-remediation-agent"` |
 | `<hunterAgent\|remediationAgent>.image.tag`                      | Agent image tag                                                                                                                          | `"2026.5.0"` |
 | `<hunterAgent\|remediationAgent>.image.pullPolicy`               | Agent image pull policy                                                                                                                  | `IfNotPresent`                                                                 |
@@ -1277,7 +1295,8 @@ See [Agentic features](#agentic-features) for how to enable and configure these 
 | `agentEgressProxy.image.digest`                                  | Pinned Squid image digest; wins over `tag`, blank falls back to `repository:tag`. Pinned by default — `_edge` is a floating channel that is rebuilt in place, so the tag alone is not reproducible | see `values.yaml`                        |
 | `agentEgressProxy.image.pullPolicy`                              | Squid image pull policy                                                                                                                  | `IfNotPresent`                                                                 |
 | `agentEgressProxy.image.pullSecret`/`.pullSecrets`                | imagePullSecret(s) for the Squid image                                                                                                   | `""` / `[]`                                                                    |
-| `agentEgressProxy.port`                                          | Port Squid listens on for every family except Remediation, baked into each such runtime's `HTTP_PROXY`/`HTTPS_PROXY`                     | `3128`                                                                         |
+| `agentEgressProxy.architecturePort`                              | Port Squid listens on for the Architecture runtime only; its ACL admits just the read-only SonarQube endpoints the agent calls          | `3130`                                                                         |
+| `agentEgressProxy.port`                                          | Port Squid listens on for every family except Remediation and Architecture, baked into each such runtime's `HTTP_PROXY`/`HTTPS_PROXY`                     | `3128`                                                                         |
 | `agentEgressProxy.remediationPort`                               | Separate port Squid listens on for the Remediation runtime, the only listener whose ACL admits SonarQube's own agentic endpoints         | `3129`                                                                         |
 | `agentEgressProxy.replicaCount`                                  | Proxy replica count                                                                                                                       | `2`                                                                            |
 | `agentEgressProxy.revisionHistoryLimit`                          | How many old ReplicaSets to retain; blank uses the Kubernetes default (`10`)                                                              | `""`                                                                           |

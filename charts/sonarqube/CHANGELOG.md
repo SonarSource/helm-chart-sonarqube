@@ -3,6 +3,7 @@ All changes to this chart will be documented in this file.
 
 ## [2026.6.1000]
 * Upgrade Chart's version to 2026.6.1000
+* Add the opt-in Architecture Agent runtime (`architectureAgent`): its own key Secret, egress proxy listener restricted to read-only SonarQube endpoints, NetworkPolicies and KEDA `ScaledObject`, plus the `agentOrchestrator.architecture.idleTtlSeconds` and `agentOrchestrator.architecture.costBudgetUsd` knobs
 * Add `prometheusExporter.netrcCreds` to authenticate the JMX exporter download with a `.netrc` Secret
 * When `prometheusExporter.netrcCreds` is set, download the JMX exporter with `curl -S` instead of `-v`, so a failed download is visible without writing the Authorization header to the init container logs
 * Upgrade SonarQube Community build to 26.10.0.133078
