@@ -35,10 +35,10 @@ jobs:
       GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider
       GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
         with:
           version: 2026.3.13
       - id: secrets
@@ -47,7 +47,7 @@ jobs:
           secrets: |
             development/team/sonarqube/kv/data/gcp-marketplace-registry-staging key | DOCKER_GCLOUD_SA_KEY;
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Login to GCR
         env:
           DOCKER_GCLOUD_SA_KEY: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_GCLOUD_SA_KEY }}
@@ -86,10 +86,10 @@ jobs:
       GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider
       GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
         with:
           version: 2026.3.13
       - name: Setup GCP tools
@@ -145,10 +145,10 @@ jobs:
       GCLOUD_REGISTRY: gcr.io/sonarqube-marketplace-provider
       GCLOUD_PRODUCT_NAME: sonarqube-dce-staging
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
         with:
           version: 2026.3.13
       - name: Setup GCP tools
@@ -185,10 +185,10 @@ jobs:
       GCLOUD_REGISTRY: gcr.io/sonarsource-public
       GCLOUD_PRODUCT_NAME: official-sonarqube-data-center-edition
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # v4.0.1
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
         with:
           version: 2026.3.13
       - id: secrets
@@ -197,7 +197,7 @@ jobs:
           secrets: |
             development/team/sonarqube/kv/data/gcp-marketplace-registry-staging key | DOCKER_GCLOUD_SA_KEY;
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Login to GCR
         env:
           DOCKER_GCLOUD_SA_KEY: ${{ fromJSON(steps.secrets.outputs.vault).DOCKER_GCLOUD_SA_KEY }}
