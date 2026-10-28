@@ -1621,7 +1621,7 @@ architectureAgent:
     repository: "sonarsource/sonarqube-architecture-agent"
     tag: ""
     pullPolicy: IfNotPresent
-  port: 8080
+  port: 8090
   replicaCount: 1
   # Scheduling knobs for this runtime's pod. Each wins over the chart's global one of the same
   # name (.Values.nodeSelector/tolerations/affinity) when set. gvisor.nodeSelector is merged in
@@ -1718,7 +1718,7 @@ architectureAgent:
     scaleDownStabilizationSeconds: 600
   # A stopping session checkpoints its work directory to the artifact store before the pod exits;
   # must cover that upload.
-  terminationGracePeriodSeconds: 300
+  terminationGracePeriodSeconds: 360
 
 agentEgressProxy:
   image:

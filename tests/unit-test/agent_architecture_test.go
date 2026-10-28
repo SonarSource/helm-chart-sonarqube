@@ -77,17 +77,18 @@ func TestArchitectureRuntimeDeployment(t *testing.T) {
 		t.Run(chart.name, func(t *testing.T) {
 			deployment := architectureRuntime(t, chart, nil)
 			assert.Equal(t, chart.fullnamePrefix()+"-agent-runtime-architecture", deployment.Name)
-			assert.Equal(t, int64(300), *deployment.Spec.Template.Spec.TerminationGracePeriodSeconds)
+			assert.Equal(t, int64(360), *deployment.Spec.Template.Spec.TerminationGracePeriodSeconds)
 
 			container := deployment.Spec.Template.Spec.Containers[0]
 			assert.Equal(t, "example.com/architecture-agent:1", container.Image)
 			require.Len(t, container.Ports, 1)
-			assert.Equal(t, int32(8080), container.Ports[0].ContainerPort)
+			assert.Equal(t, int32(8090), container.Ports[0].ContainerPort)
 
 			env := envByName(container.Env)
 			podIP := env["POD_IP"]
 			require.NotNil(t, podIP.ValueFrom, "POD_IP must come from the downward API")
 			assert.Equal(t, "status.podIP", podIP.ValueFrom.FieldRef.FieldPath)
+			assert.Equal(t, "8090", env["PORT"].Value)
 			assert.Contains(t, env["SONARQUBE_URL"].Value, chart.fullnamePrefix()+".default.svc.cluster.local:9000")
 			assert.Equal(t, "/etc/agentic/keys/architecture-to-sqs", env["ARCH_AGENT_SIGNING_KEY_PATH"].Value)
 			assert.Equal(t, "/etc/agentic/keys/orchestrator-to-architecture", env["AGENTIC_VERIFY_KEY_PATH"].Value)
@@ -123,7 +124,7 @@ func TestArchitectureRuntimeService(t *testing.T) {
 				}
 				found = true
 				require.Len(t, service.Spec.Ports, 1)
-				assert.Equal(t, int32(8080), service.Spec.Ports[0].Port)
+				assert.Equal(t, int32(8090), service.Spec.Ports[0].Port)
 				assert.Equal(t, "architecture", service.Labels["sonarqube.agent/family"])
 				assert.Contains(t, service.Spec.Selector["app"], "agent-runtime-architecture")
 			}
@@ -394,7 +395,7 @@ func TestArchitectureRuntimeNetworkPolicy(t *testing.T) {
 
 			require.Len(t, policy.Spec.Ingress, 1)
 			assert.Equal(t, chart.name+"-agent-orchestrator", policy.Spec.Ingress[0].From[0].PodSelector.MatchLabels["app"])
-			assert.Equal(t, 8080, policy.Spec.Ingress[0].Ports[0].Port.IntValue())
+			assert.Equal(t, 8090, policy.Spec.Ingress[0].Ports[0].Port.IntValue())
 
 			require.Len(t, policy.Spec.Egress, 1)
 			assert.Equal(t, chart.name+"-agent-egress-proxy", policy.Spec.Egress[0].To[0].PodSelector.MatchLabels["app"])

@@ -150,7 +150,7 @@ spec:
                  REMEDIATION_ANALYSIS_ENDPOINT, which point directly at SonarQube Server, not the
                  orchestrator (hunter never calls these endpoints, so it gets no such vars); the
                  architecture runtime reads SONARQUBE_URL (SonarQube Server, reached through its
-                 own egress listener) and POD_IP, the address the orchestrator routes a session's
+                 own egress listener) and POD_IP and PORT, the address the orchestrator routes a session's
                  traffic to.
                  User-provided env (e.g. ANTHROPIC_API_KEY) is appended next and overrides these
                  if repeated - except the proxy vars below, which are appended last and always
@@ -177,6 +177,7 @@ spec:
           {{- if eq $family "architecture" }}
           {{- $autoEnv = append $autoEnv (dict "name" "SONARQUBE_URL" "value" (include "sonarqube.agent.sonarqube.url" $)) }}
           {{- $autoEnv = append $autoEnv (dict "name" "POD_IP" "valueFrom" (dict "fieldRef" (dict "fieldPath" "status.podIP"))) }}
+          {{- $autoEnv = append $autoEnv (dict "name" "PORT" "value" ($cfg.port | toString)) }}
           {{- end }}
           {{- /* Where the runtime renews an expired artifact locator mid-job (EA-968). The runtime
                  treats a blank value as "renewal disabled" and keeps the dispatch-time locators,

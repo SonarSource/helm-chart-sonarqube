@@ -94,7 +94,7 @@ spec:
               app: sonarqube-agent-orchestrator
               release: architecture-agent-values.yaml
       ports:
-        - port: 8080
+        - port: 8090
           protocol: TCP
   egress:
     - to:
@@ -893,7 +893,7 @@ spec:
   # socket so a retry's fresh TCP handshake gets re-routed by kube-proxy to another replica.
   type: ClusterIP
   ports:
-    - port: 8080
+    - port: 8090
       targetPort: http
       protocol: TCP
       name: http
@@ -1211,7 +1211,7 @@ spec:
             - name: AGENTIC_SONARQUBE_URL
               value: "http://architecture-agent-values.yaml-sonarqube.default.svc.cluster.local:9000"
             - name: AGENTIC_ARCHITECTURE_RUNTIME_PUSH_URL
-              value: "http://architecture-agent-values.yaml-sonarqube-agent-runtime-architec.default.svc.cluster.local:8080/jobs"
+              value: "http://architecture-agent-values.yaml-sonarqube-agent-runtime-architec.default.svc.cluster.local:8090/jobs"
             - name: ARCHITECTURE_IDLE_TTL_SECONDS
               value: "60"
             - name: ARCHITECTURE_COST_BUDGET_USD
@@ -1296,7 +1296,7 @@ spec:
         sonarqube.agent/family: architecture
         sidecar.istio.io/inject: "false"
     spec:
-      terminationGracePeriodSeconds: 300
+      terminationGracePeriodSeconds: 360
       runtimeClassName: gvisor
       automountServiceAccountToken: false
       containers:
@@ -1315,7 +1315,7 @@ spec:
               type: RuntimeDefault
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 8090
               protocol: TCP
           env:
             - name: SONARQUBE_URL
@@ -1324,6 +1324,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: PORT
+              value: "8090"
             - name: AGENT_ORCHESTRATOR_URL
               value: http://architecture-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
             - name: AGENTIC_VERIFY_KEY_PATH
