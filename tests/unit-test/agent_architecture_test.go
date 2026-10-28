@@ -420,7 +420,10 @@ func TestArchitectureScaledObject(t *testing.T) {
 			}
 			require.NotEmpty(t, so.Metadata.Name)
 			assert.Contains(t, output, `valueLocation: "architecture.unfinished"`)
-			assert.Contains(t, output, "minReplicaCount: 1")
+			assert.Contains(t, output, "minReplicaCount: 2")
+			assert.Contains(t, output, "maxReplicaCount: 25")
+			assert.Contains(t, output, `targetValue: "1"`)
+			assert.Contains(t, output, "stabilizationWindowSeconds: 600")
 			assert.NotContains(t, output, `valueLocation: "hunter.unfinished"`)
 
 			set["architectureAgent.autoscaling.minReplicas"] = "0"
@@ -429,6 +432,8 @@ func TestArchitectureScaledObject(t *testing.T) {
 			assert.Contains(t, err.Error(), "architectureAgent.autoscaling.minReplicas must be >= 1")
 
 			set["architectureAgent.autoscaling.minReplicas"] = "1"
+			_, err = renderArchitecture(t, chart, []string{"templates/agent-runtime-scaledobject.yaml"}, set)
+			require.NoError(t, err, "a single warm replica stays valid for architecture")
 			set["hunterAgent.autoscaling.enabled"] = "true"
 			set["hunterAgent.autoscaling.minReplicas"] = "1"
 			_, err = renderArchitecture(t, chart, []string{"templates/agent-runtime-scaledobject.yaml"}, set)

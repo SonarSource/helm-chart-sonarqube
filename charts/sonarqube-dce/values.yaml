@@ -1644,12 +1644,12 @@ architectureAgent:
   # Override for your workload.
   resources:
     requests:
-      cpu: "1"
-      memory: 2Gi
+      cpu: 250m
+      memory: 512Mi
       ephemeral-storage: 10Gi
     limits:
-      cpu: "2"
-      memory: 4Gi
+      cpu: 500m
+      memory: 1Gi
       ephemeral-storage: 20Gi
   securityContext: {}
   # Liveness must never gate on db/storage - see agentOrchestrator.probes above.
@@ -1711,8 +1711,8 @@ architectureAgent:
   # the other runtimes, minReplicas may be 1 so a first session does not wait for a cold start.
   autoscaling:
     enabled: false
-    minReplicas: 1
-    maxReplicas: 10
+    minReplicas: 2
+    maxReplicas: 25
     manageReplicas: true
     pollingInterval: 15
     scaleDownStabilizationSeconds: 600
