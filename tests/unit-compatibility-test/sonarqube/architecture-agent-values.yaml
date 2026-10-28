@@ -1,0 +1,43 @@
+# Exercises the Architecture Agent runtime (Deployment/Service), its key Secret wiring, the
+# dedicated egress proxy listener with the read-only SonarQube endpoint allowlist, the runtime
+# NetworkPolicy and the orchestrator's idle TTL and cost budget knobs.
+community:
+  enabled: true
+
+networkPolicy:
+  enabled: true
+
+jdbcOverwrite:
+  enabled: true
+
+agentOrchestrator:
+  enabled: true
+  image:
+    repository: example.com/agent-orchestrator
+    tag: "1.0.0"
+  port: 8080
+  storage:
+    endpoint: ""
+    region: eu-west-1
+    bucket: agent-artifacts
+    pathStyle: false
+  architecture:
+    idleTtlSeconds: 60
+    costBudgetUsd: "0.05"
+
+architectureAgent:
+  enabled: true
+  image:
+    repository: example.com/architecture-agent
+    tag: "1.0.0"
+  networkPolicy:
+    enabled: true
+
+agentEgressProxy:
+  allowedDomains:
+    - .anthropic.com
+  networkPolicy:
+    enabled: true
+
+agenticSigningSecret:
+  existingSecret: agentic-instance-secret
