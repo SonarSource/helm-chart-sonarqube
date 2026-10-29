@@ -564,3 +564,41 @@ func TestAgentOrchestratorExtraVolumes(t *testing.T) {
 		})
 	}
 }
+
+var initContainersResources = map[string]string{
+	"initContainers.resources.requests.cpu":    "10m",
+	"initContainers.resources.requests.memory": "32Mi",
+	"initContainers.resources.limits.cpu":      "50m",
+	"initContainers.resources.limits.memory":   "64Mi",
+}
+
+func assertInitContainersResources(t *testing.T, resources corev1.ResourceRequirements) {
+	t.Helper()
+	assert.Equal(t, "10m", resources.Requests.Cpu().String())
+	assert.Equal(t, "32Mi", resources.Requests.Memory().String())
+	assert.Equal(t, "50m", resources.Limits.Cpu().String())
+	assert.Equal(t, "64Mi", resources.Limits.Memory().String())
+}
+
+// The built-in wait-for-sonarqube init container follows initContainers.resources, like
+// install-oracle-jdbc-driver in the same pod (SONAR-33186).
+func TestAgentOrchestratorWaitForSonarqubeResources(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("unset renders no resources", func(t *testing.T) {
+				initContainers := renderAgentOrchestrator(t, chart, nil).Spec.Template.Spec.InitContainers
+				waitFor := findInitContainerByName(initContainers, "wait-for-sonarqube")
+				require.NotNil(t, waitFor)
+				assert.Empty(t, waitFor.Resources.Requests)
+				assert.Empty(t, waitFor.Resources.Limits)
+			})
+
+			t.Run("set renders initContainers.resources", func(t *testing.T) {
+				initContainers := renderAgentOrchestrator(t, chart, initContainersResources).Spec.Template.Spec.InitContainers
+				waitFor := findInitContainerByName(initContainers, "wait-for-sonarqube")
+				require.NotNil(t, waitFor)
+				assertInitContainersResources(t, waitFor.Resources)
+			})
+		})
+	}
+}

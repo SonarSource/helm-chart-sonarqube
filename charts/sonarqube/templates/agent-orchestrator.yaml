@@ -67,6 +67,9 @@ spec:
           {{- with (fromYaml (include "sonarqube.agent.initContainerSecurityContext" .)) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .Values.initContainers.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
           command:
             - sh
             - -c
