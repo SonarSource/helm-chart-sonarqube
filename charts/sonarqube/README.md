@@ -622,6 +622,24 @@ The chart can deploy the SonarQube agentic components next to SonarQube Server:
 
 No LLM provider key is needed at install time: the LLM provider is configured in the SonarQube UI once the features are running. Only its hostname has to be allowed through the egress proxy. For the Remediation Agent to open pull requests, bind the project to a GitHub App DevOps Platform integration in SonarQube.
 
+**Orchestrator temporary disk capacity.** `/tmp` uses a disk-backed `emptyDir` with the default read-only root filesystem. The default `agentOrchestrator.resources.limits.ephemeral-storage` is `2Gi`; it is not sufficient headroom for every repository allowed by a `2GB` extraction limit. Size both requests and limits for concurrent clones (including Git metadata), compressed archives, Remediation working copies, logs, and headroom. Increase these resources when raising `AGENTIC_DISPATCHER_MAX_EXTRACTED_REPO_SIZE` through `agentOrchestrator.env`; the extraction limit does not reserve disk. Exceeding ephemeral storage can evict the pod. Also size the Hunter and Remediation runtimes for the larger repositories.
+
+For example, these values allow up to `2GB` of extracted repository data with an illustrative `10Gi` orchestrator disk budget; measure peak usage and adjust for your concurrency:
+
+```yaml
+agentOrchestrator:
+  env:
+    - name: AGENTIC_DISPATCHER_MAX_EXTRACTED_REPO_SIZE
+      value: "2GB"
+  resources:
+    requests:
+      ephemeral-storage: 10Gi
+    limits:
+      ephemeral-storage: 10Gi
+```
+
+Use released Hunter, Remediation, and orchestrator images that support request limits, upgrading both runtimes first. Older runtime images retain their original caps. `emptyDir` survives a container restart and is deleted when its pod is removed. With the updated orchestrator image, its private `/tmp/agent-orchestrator` directory is cleared before startup; do not mount that directory on storage shared between replicas.
+
 **Minimal configuration example:**
 
 ```yaml
