@@ -282,26 +282,21 @@ func TestPrometheusExporterNotesWarnsOnDefaultVersion(t *testing.T) {
 				assert.Contains(t, notes, "jvm_memory_used_bytes")
 			})
 
-			t.Run("pinned", func(t *testing.T) {
-				notes := renderNotes(t, chart, []string{"prometheus-exporter-enabled.yaml"}, map[string]string{
-					prometheusExporterValueKey(chart, "version"): "0.17.2",
+			cases := []struct {
+				name   string
+				values map[string]string
+			}{
+				{name: "pinned", values: map[string]string{prometheusExporterValueKey(chart, "version"): "0.17.2"}},
+				{name: "disabled", values: map[string]string{prometheusExporterValueKey(chart, "enabled"): "false"}},
+				{name: "downloadURL", values: map[string]string{prometheusExporterValueKey(chart, "downloadURL"): "https://downloads.example.test/jmx_prometheus_javaagent.jar"}},
+				{name: "acknowledged", values: map[string]string{prometheusExporterValueKey(chart, "openMetricsAcknowledged"): "true"}},
+			}
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *testing.T) {
+					notes := renderNotes(t, chart, []string{"prometheus-exporter-enabled.yaml"}, tc.values)
+					assert.NotContains(t, notes, warning)
 				})
-				assert.NotContains(t, notes, warning)
-			})
-
-			t.Run("disabled", func(t *testing.T) {
-				notes := renderNotes(t, chart, []string{"prometheus-exporter-enabled.yaml"}, map[string]string{
-					prometheusExporterValueKey(chart, "enabled"): "false",
-				})
-				assert.NotContains(t, notes, warning)
-			})
-
-			t.Run("downloadURL", func(t *testing.T) {
-				notes := renderNotes(t, chart, []string{"prometheus-exporter-enabled.yaml"}, map[string]string{
-					prometheusExporterValueKey(chart, "downloadURL"): "https://downloads.example.test/jmx_prometheus_javaagent.jar",
-				})
-				assert.NotContains(t, notes, warning)
-			})
+			}
 		})
 	}
 }
