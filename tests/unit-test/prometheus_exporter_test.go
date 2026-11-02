@@ -295,6 +295,13 @@ func TestPrometheusExporterNotesWarnsOnDefaultVersion(t *testing.T) {
 				})
 				assert.NotContains(t, notes, warning)
 			})
+
+			t.Run("downloadURL", func(t *testing.T) {
+				notes := renderNotes(t, chart, []string{"prometheus-exporter-enabled.yaml"}, map[string]string{
+					prometheusExporterValueKey(chart, "downloadURL"): "https://downloads.example.test/jmx_prometheus_javaagent.jar",
+				})
+				assert.NotContains(t, notes, warning)
+			})
 		})
 	}
 }

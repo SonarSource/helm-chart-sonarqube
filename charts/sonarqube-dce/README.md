@@ -306,22 +306,27 @@ helm list -n sonarqube-dce
 helm uninstall -n sonarqube-dce <yourReleaseName>
 ```
 
-`helm uninstall` removes the chart's Kubernetes resources. It does not undo the [gVisor installer](#sandboxing). On each node that installer ran on, these stay behind:
+`helm uninstall` removes the chart's Kubernetes resources. It does not undo the [gVisor installer](#sandboxing). Remove only what that installer wrote. It skips the download when `runsc` is already on the node, and it leaves an existing `/etc/containerd/runsc.toml` alone unless the first line is `# Managed by SonarQube Helm chart (gVisor installer)`. When containerd already exposes the handler, the installer does not change the node.
 
-* `/usr/local/bin/runsc` and `/usr/local/bin/containerd-shim-runsc-v1`
-* `/etc/containerd/runsc.toml`
-* the `runsc` runtime block in `/etc/containerd/config.toml`
-* the node label `gvisor.enabled=true`
+On a node where the installer did run, it can leave:
 
-To remove them, drop the label, delete the files on the node, delete the `runsc` block from `/etc/containerd/config.toml`, and restart containerd:
+* `/usr/local/bin/runsc` and `/usr/local/bin/containerd-shim-runsc-v1`, only if the installer downloaded them
+* `/etc/containerd/runsc.toml`, only if its first line is `# Managed by SonarQube Helm chart (gVisor installer)`
+* the `runsc` runtime block in `gvisor.installer.containerdConfigPath` (default `/etc/containerd/config.toml`), and the backup `<path>.sonarqube-runsc.bak`. If the installer created that config because none existed, delete the file
+* `/etc/containerd/.sonarqube-runsc-restarted` and `/opt/gvisor/`
+* the node labels from `gvisor.nodeSelector` (default `gvisor.enabled=true`). No label is added when `gvisor.nodeSelector` is empty
 
 ```bash
+# default label; repeat for each key in gvisor.nodeSelector
 kubectl label node <node> gvisor.enabled-
 ```
 
 ```bash
-rm /usr/local/bin/runsc /usr/local/bin/containerd-shim-runsc-v1 /etc/containerd/runsc.toml
-# remove the runsc runtime block from /etc/containerd/config.toml, then:
+rm -rf /opt/gvisor /etc/containerd/.sonarqube-runsc-restarted
+# delete /usr/local/bin/runsc and /usr/local/bin/containerd-shim-runsc-v1 only if this installer downloaded them
+# delete /etc/containerd/runsc.toml only if its first line is "# Managed by SonarQube Helm chart (gVisor installer)"
+# remove the runsc block from gvisor.installer.containerdConfigPath (default /etc/containerd/config.toml)
+# and delete the <path>.sonarqube-runsc.bak beside it, then:
 systemctl restart containerd
 ```
 

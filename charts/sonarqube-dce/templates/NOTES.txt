@@ -59,9 +59,9 @@ WARNING: OpenShift.agentRuntimeClassName is empty, so the agent runtimes run und
 {{- end }}
 {{- end }}
 {{- $exporter := $appNodes.prometheusExporter | default dict }}
-{{ if and $exporter.enabled (eq ($exporter.version | toString) "1.6.0") }}
-WARNING: applicationNodes.prometheusExporter is enabled at the chart default version 1.6.0. The agent is downloaded from GitHub Releases, not Maven Central.
+{{ if and $exporter.enabled (not $exporter.downloadURL) (eq ($exporter.version | toString) "1.6.0") }}
+WARNING: applicationNodes.prometheusExporter is enabled at the chart default version 1.6.0, and applicationNodes.prometheusExporter.downloadURL is unset. The agent is downloaded from GitHub Releases, not Maven Central.
          Scrape /metrics. A scrape still aimed at / receives HTTP 200 HTML, so Prometheus fails to parse it instead of getting a 404.
          Built-in JVM metrics use OpenMetrics names (for example, jvm_memory_bytes_used is now jvm_memory_used_bytes). Metrics from config.rules are unchanged.
-         Pin applicationNodes.prometheusExporter.version to keep an earlier agent, or update the scrape path and dashboards.
+         This note stays while the version remains 1.6.0. Set applicationNodes.prometheusExporter.version to an earlier release to keep the previous agent.
 {{- end }}
