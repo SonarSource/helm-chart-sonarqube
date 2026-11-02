@@ -103,6 +103,25 @@ helm list -n sonarqube
 helm uninstall -n sonarqube <yourReleaseName>
 ```
 
+`helm uninstall` removes the chart's Kubernetes resources. It does not undo the [gVisor installer](#sandboxing). On each node that installer ran on, these stay behind:
+
+* `/usr/local/bin/runsc` and `/usr/local/bin/containerd-shim-runsc-v1`
+* `/etc/containerd/runsc.toml`
+* the `runsc` runtime block in `/etc/containerd/config.toml`
+* the node label `gvisor.enabled=true`
+
+To remove them, drop the label, delete the files on the node, delete the `runsc` block from `/etc/containerd/config.toml`, and restart containerd:
+
+```bash
+kubectl label node <node> gvisor.enabled-
+```
+
+```bash
+rm /usr/local/bin/runsc /usr/local/bin/containerd-shim-runsc-v1 /etc/containerd/runsc.toml
+# remove the runsc runtime block from /etc/containerd/config.toml, then:
+systemctl restart containerd
+```
+
 ## Prerequisites and suggested settings for production
 
 Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube-server/server-installation/server-host-requirements).
@@ -1202,6 +1221,16 @@ See [Agentic features](#agentic-features) for how to enable and configure these 
 | `agentOrchestrator.image.tag`                                         | Agent Orchestrator image tag                                                                                                             | `"2026.5.0"` |
 | `agentOrchestrator.image.pullPolicy`                                  | Agent Orchestrator image pull policy                                                                                                     | `IfNotPresent`                                                                 |
 | `agentOrchestrator.image.pullSecrets`                                 | imagePullSecrets for the orchestrator image                                                                                              | `nil`                                                                          |
+| `hunterAgent.image.repository`                                        | Hunter Agent image repository (required when enabled)                                                                                    | `"sonarsource/sonarqube-hunter-agent"`                                         |
+| `hunterAgent.image.tag`                                               | Hunter Agent image tag                                                                                                                   | `"2026.5.0"` |
+| `hunterAgent.image.pullPolicy`                                        | Hunter Agent image pull policy                                                                                                           | `IfNotPresent`                                                                 |
+| `hunterAgent.image.pullSecret`                                        | imagePullSecret for the Hunter Agent image                                                                                               | `nil`                                                                          |
+| `hunterAgent.image.pullSecrets`                                       | imagePullSecrets for the Hunter Agent image                                                                                              | `nil`                                                                          |
+| `remediationAgent.image.repository`                                   | Remediation Agent image repository (required when enabled)                                                                               | `"sonarsource/sonarqube-remediation-agent"`                                    |
+| `remediationAgent.image.tag`                                          | Remediation Agent image tag                                                                                                              | `"2026.5.0"` |
+| `remediationAgent.image.pullPolicy`                                   | Remediation Agent image pull policy                                                                                                      | `IfNotPresent`                                                                 |
+| `remediationAgent.image.pullSecret`                                   | imagePullSecret for the Remediation Agent image                                                                                          | `nil`                                                                          |
+| `remediationAgent.image.pullSecrets`                                  | imagePullSecrets for the Remediation Agent image                                                                                         | `nil`                                                                          |
 | `agentOrchestrator.port`                                              | Port the orchestrator listens on (also set as `SERVER_PORT`)                                                                             | `8080`                                                                         |
 | `agentOrchestrator.replicaCount`                                      | Orchestrator replica count                                                                                                               | `1`                                                                            |
 | `agentOrchestrator.revisionHistoryLimit`                              | How many old ReplicaSets to retain; blank uses the Kubernetes default (`10`)                                                              | `""`                                                                           |

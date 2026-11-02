@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -249,6 +250,51 @@ func TestPrometheusPodMonitorMetricsPath(t *testing.T) {
 					assert.Equal(t, tc.path, pathsByPort["monitoring-ce"])
 				})
 			}
+		})
+	}
+}
+
+func renderNotes(t *testing.T, chart agentChart, fixtures []string, setValues map[string]string) string {
+	t.Helper()
+	// NOTES.txt is not a Kubernetes manifest. Helm 4 prints it from install --dry-run and
+	// rejects --show-only templates/NOTES.txt, which is what helm template uses.
+	args := []string{"install", chart.release, chart.path, "--dry-run=client"}
+	for _, fixture := range fixtures {
+		args = append(args, "-f", chart.valuesDir+"/"+fixture)
+	}
+	for key, value := range setValues {
+		args = append(args, "--set", key+"="+value)
+	}
+	output, err := exec.Command("helm", args...).CombinedOutput()
+	require.NoError(t, err, string(output))
+	return string(output)
+}
+
+func TestPrometheusExporterNotesWarnsOnDefaultVersion(t *testing.T) {
+	const warning = "chart default version 1.6.0"
+
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("default", func(t *testing.T) {
+				notes := renderNotes(t, chart, []string{"prometheus-exporter-enabled.yaml"}, nil)
+				assert.Contains(t, notes, warning)
+				assert.Contains(t, notes, "Scrape /metrics")
+				assert.Contains(t, notes, "jvm_memory_used_bytes")
+			})
+
+			t.Run("pinned", func(t *testing.T) {
+				notes := renderNotes(t, chart, []string{"prometheus-exporter-enabled.yaml"}, map[string]string{
+					prometheusExporterValueKey(chart, "version"): "0.17.2",
+				})
+				assert.NotContains(t, notes, warning)
+			})
+
+			t.Run("disabled", func(t *testing.T) {
+				notes := renderNotes(t, chart, []string{"prometheus-exporter-enabled.yaml"}, map[string]string{
+					prometheusExporterValueKey(chart, "enabled"): "false",
+				})
+				assert.NotContains(t, notes, warning)
+			})
 		})
 	}
 }

@@ -9,6 +9,8 @@ All changes to this chart will be documented in this file.
 * Fix rendering when the deprecated `logging.jsonOutput` (or the whole `logging` block) is removed from the values, so `SONAR_LOG_JSONOUTPUT`/`sonar.log.jsonOutput` work on their own
 * Apply `initContainers.resources` to the MCP and Agent Orchestrator `wait-for-sonarqube` init containers. Those pods now request at least the `initContainers.resources` requests, so check that value before upgrading if you sized it for heavy init work such as plugin installs
 * Improve the gVisor installer's cleanup of its temporary files on the node
+* Document `hunterAgent.image` and `remediationAgent.image`, and the gVisor files and node label that `helm uninstall` leaves behind
+* Warn at install time when `applicationNodes.prometheusExporter` stays on the default 1.6.0: scrape `/metrics`, and built-in JVM metrics use OpenMetrics names
 
 ## [2026.5.1000]
 * Upgrade Chart's version to 2026.5.1000
