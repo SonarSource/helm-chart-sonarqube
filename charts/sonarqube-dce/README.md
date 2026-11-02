@@ -16,8 +16,8 @@ Please note that this chart does NOT support SonarQube Community, Developer, and
 
 | Component | Image | Default tag |
 | --------- | ----- | ----------- |
-| SonarQube Server application nodes | `sonarqube` | `2026.5.3-datacenter-app` |
-| SonarQube Server search nodes | `sonarqube` | `2026.5.3-datacenter-search` |
+| SonarQube Server application nodes | `sonarqube` | `2026.5.4-datacenter-app` |
+| SonarQube Server search nodes | `sonarqube` | `2026.5.4-datacenter-search` |
 | MCP Server | `sonarsource/sonarqube-mcp` | `2026.5.1` |
 | Agent Orchestrator | `sonarsource/sonarqube-agent-orchestrator` | `2026.5.1` |
 | Hunter Agent | `sonarsource/sonarqube-hunter-agent` | `2026.5.1` |
@@ -901,7 +901,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                                                 | Description                                                                                | Default                                                                |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
 | `searchNodes.image.repository`                            | search image repository                                                                    | `sonarqube`                                                            |
-| `searchNodes.image.tag`                                   | search image tag                                                                           | `2026.5.3-datacenter-search`                                             |
+| `searchNodes.image.tag`                                   | search image tag                                                                           | `2026.5.4-datacenter-search`                                             |
 | `searchNodes.image.pullPolicy`                            | search image pull policy                                                                   | `IfNotPresent`                                                         |
 | `searchNodes.image.pullSecret`                            | (DEPRECATED) search imagePullSecret to use for private repository                          | `nil`                                                                  |
 | `searchNodes.image.pullSecrets`                           | search imagePullSecrets to use for private repository                                      | `nil`                                                                  |
@@ -959,7 +959,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | Parameter                                                        | Description                                                                                                                                                                                                    | Default                                                                |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `applicationNodes.image.repository`                              | app image repository                                                                                                                                                                                           | `sonarqube`                                                            |
-| `applicationNodes.image.tag`                                     | app image tag                                                                                                                                                                                                  | `2026.5.3-datacenter-app`                                                |
+| `applicationNodes.image.tag`                                     | app image tag                                                                                                                                                                                                  | `2026.5.4-datacenter-app`                                                |
 | `applicationNodes.image.pullPolicy`                              | app image pull policy                                                                                                                                                                                          | `IfNotPresent`                                                         |
 | `applicationNodes.image.pullSecret`                              | (DEPRECATED) app imagePullSecret to use for private repository                                                                                                                                                 | `nil`                                                                  |
 | `applicationNodes.image.pullSecrets`                             | app imagePullSecrets to use for private repository                                                                                                                                                             | `nil`                                                                  |
