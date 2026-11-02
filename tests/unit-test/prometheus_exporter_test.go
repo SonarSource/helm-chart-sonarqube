@@ -289,7 +289,7 @@ func TestPrometheusExporterNotesWarnsOnDefaultVersion(t *testing.T) {
 				{name: "pinned", values: map[string]string{prometheusExporterValueKey(chart, "version"): "0.17.2"}},
 				{name: "disabled", values: map[string]string{prometheusExporterValueKey(chart, "enabled"): "false"}},
 				{name: "downloadURL", values: map[string]string{prometheusExporterValueKey(chart, "downloadURL"): "https://downloads.example.test/jmx_prometheus_javaagent.jar"}},
-				{name: "acknowledged", values: map[string]string{prometheusExporterValueKey(chart, "openMetricsAcknowledged"): "true"}},
+				{name: "acknowledged", values: map[string]string{prometheusExporterValueKey(chart, "prometheusAcknowledged"): "true"}},
 			}
 			for _, tc := range cases {
 				t.Run(tc.name, func(t *testing.T) {
