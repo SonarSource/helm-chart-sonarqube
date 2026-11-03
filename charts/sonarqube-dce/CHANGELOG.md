@@ -2,6 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [2026.6.1000]
+* Upgrade the Agent Egress Proxy to Squid 7.7 with a pinned multi-arch image digest. Preserve Squid 6.x image overrides
 * Upgrade Chart's version to 2026.6.1000
 * Add `applicationNodes.prometheusExporter.netrcCreds` to authenticate the JMX exporter download with a `.netrc` Secret
 * When `applicationNodes.prometheusExporter.netrcCreds` is set, download the JMX exporter with `curl -S` instead of `-v`, so a failed download is visible without writing the Authorization header to the init container logs
