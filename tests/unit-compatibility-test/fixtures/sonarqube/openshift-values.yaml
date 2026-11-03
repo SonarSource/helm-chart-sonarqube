@@ -6,7 +6,7 @@ metadata:
   name: openshift-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.7
+    chart: sonarqube-2026.1.8
     release: openshift-values.yaml
     heritage: Helm
 type: Opaque
@@ -21,7 +21,7 @@ metadata:
   name: openshift-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.7
+    chart: sonarqube-2026.1.8
     release: openshift-values.yaml
     heritage: Helm
 type: Opaque
@@ -40,7 +40,7 @@ metadata:
   name: openshift-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.7
+    chart: sonarqube-2026.1.8
     release: openshift-values.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: openshift-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.7
+    chart: sonarqube-2026.1.8
     release: openshift-values.yaml
     heritage: Helm
 data:
@@ -68,7 +68,7 @@ metadata:
   name: openshift-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.7
+    chart: sonarqube-2026.1.8
     release: openshift-values.yaml
     heritage: Helm
 spec:
@@ -90,7 +90,7 @@ metadata:
   name: openshift-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.7
+    chart: sonarqube-2026.1.8
     release: openshift-values.yaml
     heritage: Helm
     app.kubernetes.io/name: openshift-values.yaml
@@ -98,7 +98,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: openshift-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.1.7-enterprise"
+    app.kubernetes.io/version: "2026.1.8-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -110,9 +110,9 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 94a5dc5c348581309325fe26c940fb62b0709bfe4418348da9f540ba089cc5a0
-        checksum/plugins: 35c675820475b692c5c3091d58658e7b5af44631c3c5e858b8af199e904068b4
-        checksum/secret: 9f2639a90119e69cf1604f5c74ee184e2d6caebb4bba30389bb0eb874a21404c
+        checksum/config: 8c70855f1b6e5ad5bc30f4191d2c2fc83ae0f3ecad26a64e74227c7e06d29925
+        checksum/plugins: a92c1c81c930448ae5428955777a73ad0dfa7a8cc8c2d1e94af6bbf2cc2b646d
+        checksum/secret: 5897304f2d4076e1ab7791fe414d4b9def8d98b0af669cc30921b41508d8c988
       labels:
         app: sonarqube
         release: openshift-values.yaml
@@ -123,7 +123,7 @@ spec:
       initContainers:
       containers:
         - name: sonarqube
-          image: sonarqube:2026.1.7-enterprise
+          image: sonarqube:2026.1.8-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -140,7 +140,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.1.7
+              value: 2026.1.8
             - name: IS_HELM_OPENSHIFT_ENABLED
               value: "true"
             - name: SONAR_WEB_SYSTEMPASSCODE
@@ -233,7 +233,7 @@ metadata:
   name: openshift-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.7
+    chart: sonarqube-2026.1.8
     release: openshift-values.yaml
     heritage: Helm
 spec:
@@ -259,14 +259,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.7
+    chart: sonarqube-2026.1.8
     release: openshift-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: openshift-values.yaml-ui-test
-      image: "sonarqube:2026.1.7-enterprise"
+      image: "sonarqube:2026.1.8-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
