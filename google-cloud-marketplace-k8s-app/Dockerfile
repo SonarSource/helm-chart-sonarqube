@@ -1,6 +1,10 @@
 ARG FROM=gcr.io/cloud-marketplace-tools/k8s/deployer_helm:13.0.9
 FROM $FROM
 
+RUN apt-get update \
+        && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --only-upgrade libbrotli1 \
+        && rm -rf /var/lib/apt/lists/*
+
 ENV WAIT_FOR_READY_TIMEOUT 1200
 ENV TESTER_TIMEOUT 1200
 
