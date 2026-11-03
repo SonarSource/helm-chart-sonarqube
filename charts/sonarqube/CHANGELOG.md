@@ -4,6 +4,7 @@ All changes to this chart will be documented in this file.
 ## [2026.5.1004]
 * Upgrade Chart's version to 2026.5.1004
 * Upgrade SonarQube Server to 2026.5.4
+* Upgrade the Agent Orchestrator and Hunter Agent to 2026.5.2
 
 ## [2026.5.1003]
 * Upgrade Chart's version to 2026.5.1003
