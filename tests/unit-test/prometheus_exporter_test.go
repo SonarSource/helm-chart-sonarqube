@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -197,6 +198,54 @@ func TestPrometheusPodMonitorMetricsPath(t *testing.T) {
 
 					assert.Equal(t, tc.path, pathsByPort["monitoring-web"])
 					assert.Equal(t, tc.path, pathsByPort["monitoring-ce"])
+				})
+			}
+		})
+	}
+}
+
+func renderNotes(t *testing.T, chart agentChart, fixtures []string, setValues map[string]string) string {
+	t.Helper()
+	// NOTES.txt is not a Kubernetes manifest. Helm 4 prints it from install --dry-run and
+	// rejects --show-only templates/NOTES.txt, which is what helm template uses.
+	args := []string{"install", chart.release, chart.path, "--dry-run=client"}
+	for _, fixture := range fixtures {
+		args = append(args, "-f", chart.valuesDir+"/"+fixture)
+	}
+	for key, value := range setValues {
+		args = append(args, "--set", key+"="+value)
+	}
+	output, err := exec.Command("helm", args...).CombinedOutput()
+	require.NoError(t, err, string(output))
+	return string(output)
+}
+
+func TestPrometheusExporterNotesWarnsOnDefaultVersion(t *testing.T) {
+	const warning = "enabled at version 1.6.0"
+
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("default", func(t *testing.T) {
+				notes := renderNotes(t, chart, []string{"prometheus-exporter-enabled.yaml"}, nil)
+				assert.Contains(t, notes, warning)
+				assert.Contains(t, notes, "Scrape /metrics")
+				assert.Contains(t, notes, "jvm_memory_used_bytes")
+				assert.Contains(t, notes, "jvm_runtime_info")
+			})
+
+			cases := []struct {
+				name   string
+				values map[string]string
+			}{
+				{name: "pinned", values: map[string]string{prometheusExporterValueKey(chart, "version"): "0.17.2"}},
+				{name: "disabled", values: map[string]string{prometheusExporterValueKey(chart, "enabled"): "false"}},
+				{name: "downloadURL", values: map[string]string{prometheusExporterValueKey(chart, "downloadURL"): "https://downloads.example.test/jmx_prometheus_javaagent.jar"}},
+				{name: "acknowledged", values: map[string]string{prometheusExporterValueKey(chart, "prometheusAcknowledged"): "true"}},
+			}
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *testing.T) {
+					notes := renderNotes(t, chart, []string{"prometheus-exporter-enabled.yaml"}, tc.values)
+					assert.NotContains(t, notes, warning)
 				})
 			}
 		})
