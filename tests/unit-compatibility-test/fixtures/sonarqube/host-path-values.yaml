@@ -179,7 +179,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: host-path-values.yaml-sonarqube
-    app.kubernetes.io/version: "26.10.0.133078-community"
+    app.kubernetes.io/version: "26.11.0.134175-community"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -205,7 +205,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:26.10.0.133078-community
+          image: sonarqube:26.11.0.134175-community
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -223,7 +223,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: ""
         - name: init-fs
-          image: sonarqube:26.10.0.133078-community
+          image: sonarqube:26.11.0.134175-community
           imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
@@ -258,7 +258,7 @@ spec:
               subPath: extensions
       containers:
         - name: sonarqube
-          image: sonarqube:26.10.0.133078-community
+          image: sonarqube:26.11.0.134175-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -391,7 +391,7 @@ spec:
   automountServiceAccountToken: false
   containers:
     - name: host-path-values.yaml-ui-test
-      image: "sonarqube:26.10.0.133078-community"
+      image: "sonarqube:26.11.0.134175-community"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [

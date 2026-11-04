@@ -15,7 +15,7 @@ import (
 
 var chartPath string = "../../charts/sonarqube"
 var releaseName string = "sonarqube"
-var expectedContainerImage string = "sonarqube:26.10.0.133078"
+var expectedContainerImage string = "sonarqube:26.11.0.134175"
 var sqStsTemplate []string = []string{"templates/sonarqube-sts.yaml"}
 
 func newSQHelmOptions() *helm.Options {
