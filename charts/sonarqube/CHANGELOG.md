@@ -10,7 +10,7 @@ All changes to this chart will be documented in this file.
 * Upgrade SonarQube Community build to 26.10.0.133078
 * Apply `initContainers.resources` to the MCP and Agent Orchestrator `wait-for-sonarqube` init containers. Those pods now request at least the `initContainers.resources` requests, so check that value before upgrading if you sized it for heavy init work such as plugin installs
 * Document `hunterAgent.image` and `remediationAgent.image`, and the gVisor files and node labels that `helm uninstall` leaves behind when the installer created them
-* Warn at install time when `prometheusExporter` stays on the default 1.6.0 with no `downloadURL`: scrape `/metrics`, and built-in JVM metrics use OpenMetrics names. Set `prometheusExporter.prometheusAcknowledged` to hide the note
+* Warn at install time when `prometheusExporter` is at version 1.6.0 with no `downloadURL`: scrape `/metrics`, and built-in JVM metrics use OpenMetrics names (`jvm_info` is now `jvm_runtime_info`; the `*_created` series are no longer exported). Set `prometheusExporter.prometheusAcknowledged` to hide the note
 
 ## [2026.5.1000]
 * Upgrade Chart's version to 2026.5.1000

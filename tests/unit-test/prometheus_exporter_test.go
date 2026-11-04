@@ -271,7 +271,7 @@ func renderNotes(t *testing.T, chart agentChart, fixtures []string, setValues ma
 }
 
 func TestPrometheusExporterNotesWarnsOnDefaultVersion(t *testing.T) {
-	const warning = "chart default version 1.6.0"
+	const warning = "enabled at version 1.6.0"
 
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
@@ -280,6 +280,7 @@ func TestPrometheusExporterNotesWarnsOnDefaultVersion(t *testing.T) {
 				assert.Contains(t, notes, warning)
 				assert.Contains(t, notes, "Scrape /metrics")
 				assert.Contains(t, notes, "jvm_memory_used_bytes")
+				assert.Contains(t, notes, "jvm_runtime_info")
 			})
 
 			cases := []struct {

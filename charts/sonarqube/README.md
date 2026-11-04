@@ -103,13 +103,15 @@ helm list -n sonarqube
 helm uninstall -n sonarqube <yourReleaseName>
 ```
 
-`helm uninstall` removes the chart's Kubernetes resources. It does not undo the [gVisor installer](#sandboxing). Remove only what that installer wrote. It skips the download when `runsc` is already on the node, and it leaves an existing `/etc/containerd/runsc.toml` alone unless the first line is `# Managed by SonarQube Helm chart (gVisor installer)`. When containerd already exposes the handler, the installer does not change the node.
+`helm uninstall` removes the chart's Kubernetes resources. It does not undo the [gVisor installer](#sandboxing). Remove only what that installer wrote. It skips the download when `runsc` is already on the node, and it leaves an existing `/etc/containerd/runsc.toml` alone unless the first line is `# Managed by SonarQube Helm chart (gVisor installer)`. When containerd already exposes the handler, the installer leaves containerd and `runsc` alone, but still writes `/opt/gvisor/` and labels the node.
+
+Before `helm uninstall`, read the installer log (`kubectl logs -n sonarqube -l app.kubernetes.io/component=gvisor -c gvisor-installer`). `installed runsc to /usr/local/bin` means this installer downloaded the binaries. `runsc already present, skipping download` means it found them already there. After uninstall, that log is gone. The first line of `/etc/containerd/runsc.toml` still shows whether this installer wrote that file.
 
 On a node where the installer did run, it can leave:
 
-* `/usr/local/bin/runsc` and `/usr/local/bin/containerd-shim-runsc-v1`, only if the installer downloaded them
+* `/usr/local/bin/runsc` and `/usr/local/bin/containerd-shim-runsc-v1`, only if the log says `installed runsc to /usr/local/bin`
 * `/etc/containerd/runsc.toml`, only if its first line is `# Managed by SonarQube Helm chart (gVisor installer)`
-* the `runsc` runtime block in `gvisor.installer.containerdConfigPath` (default `/etc/containerd/config.toml`), and the backup `<path>.sonarqube-runsc.bak`. If the installer created that config because none existed, delete the file
+* the `runsc` runtime block in `gvisor.installer.containerdConfigPath` (default `/etc/containerd/config.toml`), and the backup `<path>.sonarqube-runsc.bak`. The installer appends a blank line, the comment `# gVisor sandbox runtime (managed by SonarQube Helm chart)`, and two tables, `[plugins."<cri plugin>".containerd.runtimes.<handler>]` and its `.options`. If the `.bak` still matches the config from install time, restore it. If the file changed afterwards, delete that comment and those two tables instead. If the installer created that config because none existed, delete the file
 * `/etc/containerd/.sonarqube-runsc-restarted` and `/opt/gvisor/`
 * the node labels from `gvisor.nodeSelector` (default `gvisor.enabled=true`). No label is added when `gvisor.nodeSelector` is empty
 
@@ -120,10 +122,12 @@ kubectl label node <node> gvisor.enabled-
 
 ```bash
 rm -rf /opt/gvisor /etc/containerd/.sonarqube-runsc-restarted
-# delete /usr/local/bin/runsc and /usr/local/bin/containerd-shim-runsc-v1 only if this installer downloaded them
+# delete /usr/local/bin/runsc and /usr/local/bin/containerd-shim-runsc-v1 only if the log says "installed runsc to /usr/local/bin"
 # delete /etc/containerd/runsc.toml only if its first line is "# Managed by SonarQube Helm chart (gVisor installer)"
-# remove the runsc block from gvisor.installer.containerdConfigPath (default /etc/containerd/config.toml)
-# and delete the <path>.sonarqube-runsc.bak beside it, then:
+# if <path>.sonarqube-runsc.bak still matches the containerd config, restore it over
+# gvisor.installer.containerdConfigPath (default /etc/containerd/config.toml);
+# otherwise delete the comment "# gVisor sandbox runtime (managed by SonarQube Helm chart)"
+# and the two runsc tables under it, then delete the .bak, and:
 systemctl restart containerd
 ```
 
@@ -431,7 +435,7 @@ The exporter uses version `1.6.0` by default. Versions `1.1.0` and later are dow
 
 To download the exporter from a URL that requires authentication, store a `.netrc` file in a Secret under the key `netrc` and set `prometheusExporter.netrcCreds` to that Secret's name. The init container passes it to curl with `--netrc-file`, the same way as `plugins.netrcCreds`.
 
-In version 1.6.0, built-in JVM metric names use OpenMetrics naming (for example, `jvm_memory_bytes_used` is now `jvm_memory_used_bytes`), so update related dashboards and alerts. Metrics generated from `config.rules` are unaffected.
+In version 1.6.0, built-in JVM metric names use OpenMetrics naming (for example, `jvm_memory_bytes_used` is now `jvm_memory_used_bytes`, and `jvm_info` is now `jvm_runtime_info`). The `*_created` series are no longer exported, so update related dashboards and alerts. Metrics generated from `config.rules` are unaffected.
 
 ### PodMonitor
 
