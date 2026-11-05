@@ -412,9 +412,13 @@ spec:
       release: {{ .Release.Name }}
   template:
     metadata:
-      {{- with $installer.annotations }}
-      annotations: {{- toYaml . | nindent 8 }}
-      {{- end }}
+      annotations:
+        # Roll the installer pods when their scripts can change (chart upgrade or gvisor.* values),
+        # so an upgrade runs the new scripts.
+        checksum/scripts: {{ printf "%s-%s" .Chart.Version (toJson $gvisor) | sha256sum }}
+        {{- with $installer.annotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       labels:
         app: {{ include "sonarqube.name" . }}-gvisor-installer
         release: {{ .Release.Name }}
