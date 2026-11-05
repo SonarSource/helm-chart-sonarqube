@@ -7,7 +7,7 @@ All changes to this chart will be documented in this file.
 * Upgrade Chart's version to 2026.6.1000
 * Add `prometheusExporter.netrcCreds` to authenticate the JMX exporter download with a `.netrc` Secret
 * When `prometheusExporter.netrcCreds` is set, download the JMX exporter with `curl -S` instead of `-v`, so a failed download is visible without writing the Authorization header to the init container logs
-* Upgrade SonarQube Community build to 26.10.0.133078
+* Upgrade SonarQube Community build to 26.11.0.134175
 * Apply `initContainers.resources` to the MCP and Agent Orchestrator `wait-for-sonarqube` init containers. Those pods now request at least the `initContainers.resources` requests, so check that value before upgrading if you sized it for heavy init work such as plugin installs
 * Document `hunterAgent.image` and `remediationAgent.image`, and the gVisor files and node labels that `helm uninstall` leaves behind when the installer created them
 * Warn at install time when `prometheusExporter` is at version 1.6.0 with no `downloadURL`: scrape `/metrics`, and built-in JVM metrics use OpenMetrics names (`jvm_info` is now `jvm_runtime_info`; the `*_created` series are no longer exported). Set `prometheusExporter.prometheusAcknowledged` to hide the note
