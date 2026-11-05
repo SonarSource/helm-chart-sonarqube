@@ -1215,6 +1215,10 @@ spec:
       release: agentic-scheduling-values.yaml
   template:
     metadata:
+      annotations:
+        # Roll the installer pods when their scripts can change (chart upgrade or gvisor.* values),
+        # so an upgrade runs the new scripts.
+        checksum/scripts: 7452182273ad47ac380cc53395104f1300019a2e9f60ecba3408c47a7c52f0c2
       labels:
         app: sonarqube-dce-gvisor-installer
         release: agentic-scheduling-values.yaml
