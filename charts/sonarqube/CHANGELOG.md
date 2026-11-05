@@ -1,6 +1,9 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2026.5.1005]
+* Improve the gVisor installer's cleanup of its temporary files on the node
+
 ## [2026.5.1004]
 * Upgrade Chart's version to 2026.5.1004
 * Upgrade SonarQube Server to 2026.5.4

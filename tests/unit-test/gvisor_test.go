@@ -35,6 +35,25 @@ func splitGvisorDocs(manifest string) []string {
 	return docs
 }
 
+// gvisorInstallerScript renders the installer fixture and returns the named script from its ConfigMap.
+func gvisorInstallerScript(t *testing.T, chart agentChart, key string) string {
+	t.Helper()
+	output, err := renderGvisor(t, chart, "gvisor-installer.yaml")
+	require.NoError(t, err)
+
+	var configMap corev1.ConfigMap
+	for _, doc := range splitGvisorDocs(output) {
+		if strings.Contains(doc, "kind: ConfigMap") {
+			helm.UnmarshalK8SYaml(t, doc, &configMap)
+		}
+	}
+	require.NotEmpty(t, configMap.Name)
+
+	script, ok := configMap.Data[key]
+	require.True(t, ok, "expected a %s key in the installer ConfigMap", key)
+	return script
+}
+
 func gvisorDocKind(doc string) string {
 	for _, line := range strings.Split(doc, "\n") {
 		trimmed := strings.TrimSpace(line)
@@ -295,19 +314,7 @@ func TestGvisorInstallerImageDigestFallback(t *testing.T) {
 func TestGvisorInstallerSafetyNets(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			output, err := renderGvisor(t, chart, "gvisor-installer.yaml")
-			require.NoError(t, err)
-
-			var configMap corev1.ConfigMap
-			for _, doc := range splitGvisorDocs(output) {
-				if strings.Contains(doc, "kind: ConfigMap") {
-					helm.UnmarshalK8SYaml(t, doc, &configMap)
-				}
-			}
-			require.NotEmpty(t, configMap.Name)
-
-			script, ok := configMap.Data["install-gvisor.sh"]
-			require.True(t, ok, "expected an install-gvisor.sh key in the installer ConfigMap")
+			script := gvisorInstallerScript(t, chart, "install-gvisor.sh")
 
 			assert.Contains(t, script, "containerd --config \"${CONTAINERD_CONFIG}\" config dump")
 			assert.Contains(t, script, "wait_for_containerd_healthy")
@@ -325,19 +332,7 @@ func TestGvisorInstallerSafetyNets(t *testing.T) {
 func TestGvisorInstallerPreflightSkipsExistingRuntime(t *testing.T) {
 	for _, chart := range agentCharts {
 		t.Run(chart.name, func(t *testing.T) {
-			output, err := renderGvisor(t, chart, "gvisor-installer.yaml")
-			require.NoError(t, err)
-
-			var configMap corev1.ConfigMap
-			for _, doc := range splitGvisorDocs(output) {
-				if strings.Contains(doc, "kind: ConfigMap") {
-					helm.UnmarshalK8SYaml(t, doc, &configMap)
-				}
-			}
-			require.NotEmpty(t, configMap.Name)
-
-			script, ok := configMap.Data["install-gvisor.sh"]
-			require.True(t, ok, "expected an install-gvisor.sh key in the installer ConfigMap")
+			script := gvisorInstallerScript(t, chart, "install-gvisor.sh")
 
 			preflightIdx := strings.Index(script, "skipping installation")
 			downloadIdx := strings.Index(script, "already present, skipping download")
@@ -346,6 +341,30 @@ func TestGvisorInstallerPreflightSkipsExistingRuntime(t *testing.T) {
 			assert.Less(t, preflightIdx, downloadIdx, "pre-flight check must run before the download step")
 			assert.Contains(t, script, "crictl info")
 			assert.Contains(t, script, `"${RUNSC_HANDLER}"`)
+		})
+	}
+}
+
+// run.sh must clean up /host/tmp/gvisor-sa on every exit path: an EXIT trap registered before the
+// install step, plus an explicit removal after labelling and before it execs into the idle loop
+// (SONAR-33336).
+func TestGvisorInstallerCleansUpAfterLabelling(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			script := gvisorInstallerScript(t, chart, "run.sh")
+
+			trapIdx := strings.Index(script, "trap 'rm -rf /host/tmp/gvisor-sa' EXIT")
+			installIdx := strings.Index(script, "chroot /host /bin/bash /opt/gvisor/install-gvisor.sh")
+			require.NotEqual(t, -1, trapIdx, "expected run.sh to register a cleanup EXIT trap")
+			require.NotEqual(t, -1, installIdx)
+			assert.Less(t, trapIdx, installIdx, "cleanup EXIT trap must be registered before the install step")
+
+			labelIdx := strings.Index(script, "chroot /host /bin/bash /opt/gvisor/label-node.sh")
+			execIdx := strings.Index(script, "exec tail -f /dev/null")
+			require.NotEqual(t, -1, labelIdx, "expected run.sh to label the node")
+			require.NotEqual(t, -1, execIdx)
+			cleanupIdx := strings.Index(script[labelIdx:execIdx], "\nrm -rf /host/tmp/gvisor-sa\n")
+			assert.NotEqual(t, -1, cleanupIdx, "run.sh must remove /host/tmp/gvisor-sa after labelling and before exec")
 		})
 	}
 }
