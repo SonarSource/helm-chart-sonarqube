@@ -103,6 +103,41 @@ helm list -n sonarqube
 helm uninstall -n sonarqube <yourReleaseName>
 ```
 
+`helm uninstall` removes the chart's Kubernetes resources. It does not undo the [gVisor installer](#sandboxing). Remove only what that installer wrote. It skips the download when `runsc` is already on the node, and it leaves an existing `/etc/containerd/runsc.toml` alone unless the first line is `# Managed by SonarQube Helm chart (gVisor installer)`. When containerd already exposes the handler, the installer leaves containerd and `runsc` alone, but still writes `/opt/gvisor/` and labels the node.
+
+Before `helm uninstall`, read the installer log. The pods are labeled `app=sonarqube-gvisor-installer` and `release=<yourReleaseName>`, unless `nameOverride` changes the chart name. Pass `--tail=-1`, or `kubectl logs` shows only the last 10 lines and can drop `installed runsc to /usr/local/bin`.
+
+```bash
+kubectl logs -n sonarqube -l app=sonarqube-gvisor-installer,release=<yourReleaseName> -c gvisor-installer --tail=-1 --prefix
+```
+
+`installed runsc to /usr/local/bin` means this installer downloaded the binaries. `runsc already present, skipping download` means it found them already there. After uninstall, that log is gone. The first line of `/etc/containerd/runsc.toml` still shows whether this installer wrote that file.
+
+On a node where the installer did run, it can leave:
+
+* `/usr/local/bin/runsc` and `/usr/local/bin/containerd-shim-runsc-v1`, only if the log says `installed runsc to /usr/local/bin`
+* `/etc/containerd/runsc.toml`, only if its first line is `# Managed by SonarQube Helm chart (gVisor installer)`
+* the `runsc` runtime block in `gvisor.installer.containerdConfigPath` (default `/etc/containerd/config.toml`), and the backup `<path>.sonarqube-runsc.bak`. The installer appends a blank line, the comment `# gVisor sandbox runtime (managed by SonarQube Helm chart)`, and two tables, `[plugins."<cri plugin>".containerd.runtimes.<handler>]` and its `.options`. The `.bak` is the config from before the install, so it does not match the file once the block is appended. If the config has not changed since the install apart from that block, restore the `.bak` over it. Otherwise delete that comment and those two tables. If the installer created that config because none existed, delete the file
+* `/etc/containerd/.sonarqube-runsc-restarted` and `/opt/gvisor/`
+* the node labels from `gvisor.nodeSelector` (default `gvisor.enabled=true`). No label is added when `gvisor.nodeSelector` is empty
+
+```bash
+# default label; repeat for each key in gvisor.nodeSelector
+kubectl label node <node> gvisor.enabled-
+```
+
+```bash
+rm -rf /opt/gvisor /etc/containerd/.sonarqube-runsc-restarted
+# delete /usr/local/bin/runsc and /usr/local/bin/containerd-shim-runsc-v1 only if the log says "installed runsc to /usr/local/bin"
+# delete /etc/containerd/runsc.toml only if its first line is "# Managed by SonarQube Helm chart (gVisor installer)"
+# the .bak is the config from before the install. If the file has not changed since
+# then apart from the runsc block, restore <path>.sonarqube-runsc.bak over
+# gvisor.installer.containerdConfigPath (default /etc/containerd/config.toml);
+# otherwise delete the comment "# gVisor sandbox runtime (managed by SonarQube Helm chart)"
+# and the two runsc tables under it, then delete the .bak, and:
+systemctl restart containerd
+```
+
 ## Prerequisites and suggested settings for production
 
 Please read the official documentation prerequisites [here](https://docs.sonarsource.com/sonarqube-server/server-installation/server-host-requirements).
@@ -407,7 +442,7 @@ The exporter uses version `1.6.0` by default. Versions `1.1.0` and later are dow
 
 To download the exporter from a URL that requires authentication, store a `.netrc` file in a Secret under the key `netrc` and set `prometheusExporter.netrcCreds` to that Secret's name. The init container passes it to curl with `--netrc-file`, the same way as `plugins.netrcCreds`.
 
-In version 1.6.0, built-in JVM metric names use OpenMetrics naming (for example, `jvm_memory_bytes_used` is now `jvm_memory_used_bytes`), so update related dashboards and alerts. Metrics generated from `config.rules` are unaffected.
+In version 1.6.0, built-in JVM metric names use OpenMetrics naming (for example, `jvm_memory_bytes_used` is now `jvm_memory_used_bytes`, and `jvm_info` is now `jvm_runtime_info`). The `*_created` series are no longer exported, so update related dashboards and alerts. Metrics generated from `config.rules` are unaffected.
 
 ### PodMonitor
 
@@ -943,6 +978,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `prometheusExporter.enabled`            | Use the Prometheus JMX exporter                                                                                         | `false`                                                                |
 | `prometheusExporter.version`            | jmx_prometheus_javaagent version; versions 1.1.0 and later download from GitHub Releases, earlier versions from Maven Central | `1.6.0`                                                                |
+| `prometheusExporter.prometheusAcknowledged` | Hide the install note about the 1.6.0 scrape path and OpenMetrics JVM metric names once dashboards are updated | `false`                                                                |
 | `prometheusExporter.metricsPath`        | HTTP path served by the jmx_prometheus_javaagent (`/` can be used for exporters or configurations serving metrics at the root) | `/metrics`                                                             |
 | `prometheusExporter.noCheckCertificate` | Flag to not check server's certificate when downloading jmx_prometheus_javaagent                                        | `false`                                                                |
 | `prometheusExporter.netrcCreds`         | Name of the secret containing a .netrc file (key `netrc`) to use creds when downloading the jmx_prometheus_javaagent   | `""`                                                                   |
@@ -1202,6 +1238,16 @@ See [Agentic features](#agentic-features) for how to enable and configure these 
 | `agentOrchestrator.image.tag`                                         | Agent Orchestrator image tag                                                                                                             | `"2026.5.0"` |
 | `agentOrchestrator.image.pullPolicy`                                  | Agent Orchestrator image pull policy                                                                                                     | `IfNotPresent`                                                                 |
 | `agentOrchestrator.image.pullSecrets`                                 | imagePullSecrets for the orchestrator image                                                                                              | `nil`                                                                          |
+| `hunterAgent.image.repository`                                        | Hunter Agent image repository (required when enabled)                                                                                    | `"sonarsource/sonarqube-hunter-agent"`                                         |
+| `hunterAgent.image.tag`                                               | Hunter Agent image tag                                                                                                                   | `"2026.5.0"` |
+| `hunterAgent.image.pullPolicy`                                        | Hunter Agent image pull policy                                                                                                           | `IfNotPresent`                                                                 |
+| `hunterAgent.image.pullSecret`                                        | imagePullSecret for the Hunter Agent image                                                                                               | `nil`                                                                          |
+| `hunterAgent.image.pullSecrets`                                       | imagePullSecrets for the Hunter Agent image                                                                                              | `nil`                                                                          |
+| `remediationAgent.image.repository`                                   | Remediation Agent image repository (required when enabled)                                                                               | `"sonarsource/sonarqube-remediation-agent"`                                    |
+| `remediationAgent.image.tag`                                          | Remediation Agent image tag                                                                                                              | `"2026.5.0"` |
+| `remediationAgent.image.pullPolicy`                                   | Remediation Agent image pull policy                                                                                                      | `IfNotPresent`                                                                 |
+| `remediationAgent.image.pullSecret`                                   | imagePullSecret for the Remediation Agent image                                                                                          | `nil`                                                                          |
+| `remediationAgent.image.pullSecrets`                                  | imagePullSecrets for the Remediation Agent image                                                                                         | `nil`                                                                          |
 | `agentOrchestrator.port`                                              | Port the orchestrator listens on (also set as `SERVER_PORT`)                                                                             | `8080`                                                                         |
 | `agentOrchestrator.replicaCount`                                      | Orchestrator replica count                                                                                                               | `1`                                                                            |
 | `agentOrchestrator.revisionHistoryLimit`                              | How many old ReplicaSets to retain; blank uses the Kubernetes default (`10`)                                                              | `""`                                                                           |
