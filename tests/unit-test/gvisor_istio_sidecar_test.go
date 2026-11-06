@@ -12,6 +12,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	"sigs.k8s.io/yaml"
 )
 
 // Minimal local shapes for the two Istio CRDs this feature renders - there's no vendored Istio
@@ -159,7 +160,9 @@ func gvisorIstioPeerAuthentications(t *testing.T, chart agentChart, fixture stri
 			continue
 		}
 		var pa istioPeerAuthentication
-		helm.UnmarshalK8SYaml(t, doc, &pa)
+		// Not helm.UnmarshalK8SYaml: since terratest v1 it decodes via yaml.v3, which can't JSON-encode
+		// the integer port keys under portLevelMtls.
+		require.NoError(t, yaml.Unmarshal([]byte(doc), &pa))
 		out = append(out, pa)
 	}
 	return out
