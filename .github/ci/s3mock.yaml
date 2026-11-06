@@ -15,6 +15,7 @@ spec:
       labels:
         app: s3
     spec:
+      automountServiceAccountToken: false
       imagePullSecrets:
         - name: pullsecret
       securityContext:
@@ -38,9 +39,11 @@ spec:
             requests:
               cpu: 50m
               memory: 384Mi
+              ephemeral-storage: 256Mi
             limits:
               cpu: 500m
               memory: 768Mi
+              ephemeral-storage: 1Gi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
