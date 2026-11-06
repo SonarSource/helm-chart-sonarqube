@@ -5,6 +5,7 @@ All changes to this chart will be documented in this file.
 * Improve the gVisor installer's cleanup of its temporary files on the node
 * Warn at install time when `applicationNodes.prometheusExporter` is at version 1.6.0 with no `downloadURL`: scrape `/metrics`, and built-in JVM metrics use OpenMetrics names (`jvm_info` is now `jvm_runtime_info`; the `*_created` series are no longer exported). Set `applicationNodes.prometheusExporter.prometheusAcknowledged` to hide the note
 * Document the gVisor files and node labels that `helm uninstall` leaves behind when the installer created them
+* Restart the gVisor installer pods on chart upgrades and gVisor value changes, so they always run the current scripts
 
 ## [2026.5.1004]
 * Upgrade Chart's version to 2026.5.1004

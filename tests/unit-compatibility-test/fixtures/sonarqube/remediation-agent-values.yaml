@@ -1032,6 +1032,10 @@ spec:
       release: remediation-agent-values.yaml
   template:
     metadata:
+      annotations:
+        # Roll the installer pods when their scripts can change (chart upgrade or gvisor.* values),
+        # so an upgrade runs the new scripts.
+        checksum/scripts: 6c8b15070074170dc4b1f8bde5efb037222ae09f779a4fdf12890c97dc8d4ca1
       labels:
         app: sonarqube-gvisor-installer
         release: remediation-agent-values.yaml

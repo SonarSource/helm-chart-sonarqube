@@ -345,6 +345,57 @@ func TestGvisorInstallerPreflightSkipsExistingRuntime(t *testing.T) {
 	}
 }
 
+// The installer DaemonSet must roll when its scripts can change (chart version or gvisor.* values),
+// so an upgrade replaces the running pods with ones that run the new scripts. User-supplied pod
+// annotations must still be rendered next to the checksum (SONAR-33343).
+func TestGvisorInstallerRollsOnScriptChange(t *testing.T) {
+	scriptsChecksum := func(t *testing.T, chart agentChart, setValues map[string]string) string {
+		t.Helper()
+		opts := &helm.Options{
+			Logger:      logger.Discard,
+			ValuesFiles: []string{chart.valuesDir + "/gvisor-installer.yaml"},
+			SetValues:   setValues,
+		}
+		output, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/gvisor.yaml"})
+		require.NoError(t, err)
+
+		var daemonSet appsv1.DaemonSet
+		for _, doc := range splitGvisorDocs(output) {
+			if strings.Contains(doc, "kind: DaemonSet") {
+				helm.UnmarshalK8SYaml(t, doc, &daemonSet)
+			}
+		}
+		require.NotEmpty(t, daemonSet.Name)
+		checksum := daemonSet.Spec.Template.Annotations["checksum/scripts"]
+		require.NotEmpty(t, checksum, "expected a checksum/scripts annotation on the installer pod template")
+		return checksum
+	}
+
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			base := scriptsChecksum(t, chart, nil)
+			assert.Equal(t, base, scriptsChecksum(t, chart, nil), "checksum must be stable across renders")
+			assert.NotEqual(t, base, scriptsChecksum(t, chart, map[string]string{"gvisor.installer.runscVersion": "20990101"}),
+				"checksum must change when the gvisor values change")
+
+			output, err := helm.RenderTemplateE(t, &helm.Options{
+				Logger:      logger.Discard,
+				ValuesFiles: []string{chart.valuesDir + "/gvisor-installer.yaml"},
+				SetValues:   map[string]string{"gvisor.installer.annotations.example\\.com/owner": "platform"},
+			}, chart.path, chart.release, []string{"templates/gvisor.yaml"})
+			require.NoError(t, err)
+			var daemonSet appsv1.DaemonSet
+			for _, doc := range splitGvisorDocs(output) {
+				if strings.Contains(doc, "kind: DaemonSet") {
+					helm.UnmarshalK8SYaml(t, doc, &daemonSet)
+				}
+			}
+			assert.Equal(t, "platform", daemonSet.Spec.Template.Annotations["example.com/owner"])
+			assert.NotEmpty(t, daemonSet.Spec.Template.Annotations["checksum/scripts"])
+		})
+	}
+}
+
 // run.sh must clean up /host/tmp/gvisor-sa on every exit path: an EXIT trap registered before the
 // install step, plus an explicit removal after labelling and before it execs into the idle loop
 // (SONAR-33336).
