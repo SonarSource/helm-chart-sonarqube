@@ -18,10 +18,10 @@ Please note that this chart only supports SonarQube Server Developer and Enterpr
 | --------- | ----- | ----------- |
 | SonarQube Server | `sonarqube` | `2026.5.0` |
 | SonarQube Community Build | `sonarqube` | `26.11.0.134175` |
-| MCP Server | `sonarsource/sonarqube-mcp` | `2026.5.0` |
-| Agent Orchestrator | `sonarsource/sonarqube-agent-orchestrator` | `2026.5.0` |
-| Hunter Agent | `sonarsource/sonarqube-hunter-agent` | `2026.5.0` |
-| Remediation Agent | `sonarsource/sonarqube-remediation-agent` | `2026.5.0` |
+| MCP Server | `sonarsource/sonarqube-mcp` | `2026.5.1` |
+| Agent Orchestrator | `sonarsource/sonarqube-agent-orchestrator` | `2026.5.2` |
+| Hunter Agent | `sonarsource/sonarqube-hunter-agent` | `2026.5.2` |
+| Remediation Agent | `sonarsource/sonarqube-remediation-agent` | `2026.5.1` |
 | Vortex | `sonarsource/sonar-vortex` | `2026.5.0` |
 
 ## Kubernetes and Openshift Compatibility
@@ -548,7 +548,7 @@ mcp:
   enabled: true
   image:
     repository: sonarsource/sonarqube-mcp
-    tag: "2026.5.0"
+    tag: "2026.5.1"
 ```
 
 **Accessing the MCP server locally:**
@@ -636,7 +636,7 @@ The chart can deploy the SonarQube agentic components next to SonarQube Server:
 
 **Prerequisites:**
 
-* **Database.** The Agent Orchestrator shares SonarQube's database and supports the same ones: **PostgreSQL**, **Microsoft SQL Server** and **Oracle** (see the [installation requirements](https://docs.sonarsource.com/sonarqube-server/server-installation/server-host-requirements)). In this chart, set `jdbcOverwrite.enabled=true`: the embedded H2 database is not reachable from the orchestrator. It connects with the full `jdbcOverwrite.jdbcUrl`, parameters included. `agentOrchestrator.coreDb.*` defaults to the `jdbcOverwrite` values and can override them individually: `coreDb.jdbcUrl` for the URL, `coreDb.username` and `coreDb.passwordSecretName`/`passwordSecretKey` for the credentials. The legacy `coreDb.endpoint`/`coreDb.name` are still supported for PostgreSQL: the orchestrator then builds the URL from them, without the `jdbcOverwrite.jdbcUrl` parameters. Prefer `coreDb.jdbcUrl`. Microsoft SQL Server and Oracle need an orchestrator image that reads `CORE_DB_JDBC_URL`: `2026.5.0` supports PostgreSQL only.
+* **Database.** The Agent Orchestrator shares SonarQube's database and supports the same ones: **PostgreSQL**, **Microsoft SQL Server** and **Oracle** (see the [installation requirements](https://docs.sonarsource.com/sonarqube-server/server-installation/server-host-requirements)). In this chart, set `jdbcOverwrite.enabled=true`: the embedded H2 database is not reachable from the orchestrator. It connects with the full `jdbcOverwrite.jdbcUrl`, parameters included. `agentOrchestrator.coreDb.*` defaults to the `jdbcOverwrite` values and can override them individually: `coreDb.jdbcUrl` for the URL, `coreDb.username` and `coreDb.passwordSecretName`/`passwordSecretKey` for the credentials. The legacy `coreDb.endpoint`/`coreDb.name` are still supported for PostgreSQL: the orchestrator then builds the URL from them, without the `jdbcOverwrite.jdbcUrl` parameters. Prefer `coreDb.jdbcUrl`. Microsoft SQL Server and Oracle need an orchestrator image that reads `CORE_DB_JDBC_URL`: images that do not read `CORE_DB_JDBC_URL` support PostgreSQL only. Check that the selected image supports your database.
   * **Oracle.** Set `jdbcOverwrite.oracleJdbcDriver.url`: the chart installs that driver in the orchestrator pod the same way as in SonarQube's, including `jdbcOverwrite.oracleJdbcDriver.netrcCreds` and `caCerts` for the download. As for SonarQube, an Oracle URL without that driver is not rejected at install time: the orchestrator fails to start instead.
   * **Database TLS and files referenced by the URL.** `caCerts` is not added to the orchestrator's truststore: it only covers SonarQube's own connections and the Oracle driver download. For a database whose certificate is signed by a private CA, mount the CA or truststore in the orchestrator with `agentOrchestrator.extraVolumes`/`extraVolumeMounts` and reference it from `agentOrchestrator.coreDb.jdbcUrl` with the driver's own parameter, e.g. `sslrootcert=` for PostgreSQL or `trustStore=`/`trustStorePassword=` for Microsoft SQL Server. The same applies to any URL parameter pointing at a file in the SonarQube pod, such as `sslrootcert=`, `trustStore=` or `TNS_ADMIN=`: that file does not exist in the orchestrator pod, so override the URL with `agentOrchestrator.coreDb.jdbcUrl`.
 * **Storage.** The agentic features share an object store: the Agent Orchestrator writes the job artifacts to it (`agentOrchestrator.storage`), SonarQube reads the agent job logs from it (`sonar.agentic.storage.*` in `sonarProperties`), and Vortex restores the analysis context from it (`vortexAnalysis.storage`). The simplest setup points all three at the same bucket. Supported backends:
@@ -670,7 +670,7 @@ agentOrchestrator:
       ephemeral-storage: 10Gi
 ```
 
-`emptyDir` survives a container restart and is deleted when its pod is removed. Keep temporary storage private to each pod. This example changes disk resources only; the chart-default `2026.5.0` runtime images still enforce repository caps of 1,000,000,000 bytes and 100,000 entries. Increasing orchestrator admission limits and disk resources does not change those runtime caps.
+`emptyDir` survives a container restart and is deleted when its pod is removed. Keep temporary storage private to each pod. This example changes disk resources only; the chart-default Hunter Agent `2026.5.2` and Remediation Agent `2026.5.1` runtime images still enforce repository caps of 1,000,000,000 bytes and 100,000 entries. Increasing orchestrator admission limits and disk resources does not change those runtime caps.
 
 **Minimal configuration example:**
 
@@ -764,7 +764,7 @@ Each hop of a deployment can be encrypted:
 2. **Traffic between the chart's workloads.** Set `istio.enabled=true` (requires Istio installed in sidecar mode). Every chart-owned workload (SonarQube, MCP, Vortex, the Agent Orchestrator and the Agent Egress Proxy) gets an Istio sidecar and a `STRICT` `PeerAuthentication`, so they only accept mutual TLS. Use `istio.revision` for a revisioned control plane. `istio.istiodClusterIP` (default `auto`) looks up istiod's address at install time; under `helm template`, set it to istiod's ClusterIP.
 3. **Traffic from the sandboxed agent runtimes.** Standard sidecar injection does not work under gVisor or Kata, so the agents stay outside the mesh and the egress proxy accepts them through a `PERMISSIVE` exception. Set `istio.meshSidecar.enabled=true` to give them a mesh identity and remove that exception. Requires Kubernetes `>= 1.29` and a CNI that enforces NetworkPolicies.
 4. **SonarQube to MCP without Istio.** Set `mcp.tls.*` and add the CA to SonarQube's truststore with `caCerts` (see [MCP (Model Context Protocol) Server](#mcp-model-context-protocol-server)).
-5. **Traffic from SonarQube to the database.** Add the TLS parameters to the JDBC URL, e.g. `jdbc:postgresql://host:5432/sonarqube?sslmode=verify-full`, and add its CA with `caCerts` if it is not publicly trusted. The Agent Orchestrator connects with the same URL, parameters included (the `2026.5.0` orchestrator image only takes its host and database name), but `caCerts` does not cover it: see the Agent Orchestrator's [database prerequisite](#agentic-features) for a private CA.
+5. **Traffic from SonarQube to the database.** Add the TLS parameters to the JDBC URL, e.g. `jdbc:postgresql://host:5432/sonarqube?sslmode=verify-full`, and add its CA with `caCerts` if it is not publicly trusted. The Agent Orchestrator connects with the same URL, parameters included (images that do not read `CORE_DB_JDBC_URL` only take its host and database name), but `caCerts` does not cover it: see the Agent Orchestrator's [database prerequisite](#agentic-features) for a private CA.
 6. **Traffic to object storage and the LLM provider.** Use an `https://` storage endpoint. Agent traffic through the egress proxy is tunneled with HTTPS `CONNECT`; the proxy does not intercept TLS.
 
 | Hop | Mechanism | Values |
@@ -1112,7 +1112,7 @@ See [Persistence](#persistence) for usage.
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `mcp.enabled`                          | Deploy the SonarQube MCP server alongside SonarQube                                                     | `false`                                                                |
 | `mcp.image.repository`                 | MCP container image repository                                                                           | `sonarsource/sonarqube-mcp`                                            |
-| `mcp.image.tag`                        | MCP container image tag                                                                                  | `"2026.5.0"`                                                           |
+| `mcp.image.tag`                        | MCP container image tag                                                                                  | `"2026.5.1"`                                                           |
 | `mcp.image.pullPolicy`                 | MCP image pull policy                                                                                    | `IfNotPresent`                                                         |
 | `mcp.image.pullSecrets`                | MCP image pull secrets                                                                                   | `[]`                                                                   |
 | `mcp.port`                             | Port the MCP server listens on                                                                           | `8080`                                                                 |
@@ -1235,16 +1235,16 @@ See [Agentic features](#agentic-features) for how to enable and configure these 
 | `<hunterAgent\|remediationAgent>.serviceAccount.automountToken`  | Automount the ServiceAccount token into the pod; needed for IRSA                                                                          | `false`                                                                        |
 | `<hunterAgent\|remediationAgent>.serviceAccount.annotations`     | Annotations for that ServiceAccount (e.g. an IRSA role ARN)                                                                              | `{}`                                                                           |
 | `agentOrchestrator.image.repository`                                  | Agent Orchestrator image repository (required when enabled)                                                                              | `"sonarsource/sonarqube-agent-orchestrator"`                                   |
-| `agentOrchestrator.image.tag`                                         | Agent Orchestrator image tag                                                                                                             | `"2026.5.0"` |
+| `agentOrchestrator.image.tag`                                         | Agent Orchestrator image tag                                                                                                             | `"2026.5.2"` |
 | `agentOrchestrator.image.pullPolicy`                                  | Agent Orchestrator image pull policy                                                                                                     | `IfNotPresent`                                                                 |
 | `agentOrchestrator.image.pullSecrets`                                 | imagePullSecrets for the orchestrator image                                                                                              | `nil`                                                                          |
 | `hunterAgent.image.repository`                                        | Hunter Agent image repository (required when enabled)                                                                                    | `"sonarsource/sonarqube-hunter-agent"`                                         |
-| `hunterAgent.image.tag`                                               | Hunter Agent image tag                                                                                                                   | `"2026.5.0"` |
+| `hunterAgent.image.tag`                                               | Hunter Agent image tag                                                                                                                   | `"2026.5.2"` |
 | `hunterAgent.image.pullPolicy`                                        | Hunter Agent image pull policy                                                                                                           | `IfNotPresent`                                                                 |
 | `hunterAgent.image.pullSecret`                                        | imagePullSecret for the Hunter Agent image                                                                                               | `nil`                                                                          |
 | `hunterAgent.image.pullSecrets`                                       | imagePullSecrets for the Hunter Agent image                                                                                              | `nil`                                                                          |
 | `remediationAgent.image.repository`                                   | Remediation Agent image repository (required when enabled)                                                                               | `"sonarsource/sonarqube-remediation-agent"`                                    |
-| `remediationAgent.image.tag`                                          | Remediation Agent image tag                                                                                                              | `"2026.5.0"` |
+| `remediationAgent.image.tag`                                          | Remediation Agent image tag                                                                                                              | `"2026.5.1"` |
 | `remediationAgent.image.pullPolicy`                                   | Remediation Agent image pull policy                                                                                                      | `IfNotPresent`                                                                 |
 | `remediationAgent.image.pullSecret`                                   | imagePullSecret for the Remediation Agent image                                                                                          | `nil`                                                                          |
 | `remediationAgent.image.pullSecrets`                                  | imagePullSecrets for the Remediation Agent image                                                                                         | `nil`                                                                          |
@@ -1289,7 +1289,7 @@ See [Agentic features](#agentic-features) for how to enable and configure these 
 | `agentOrchestrator.autoscaling.behavior`                              | Raw `autoscaling/v2` HPA `behavior:` pass-through                                                                                         | `scaleDown.stabilizationWindowSeconds: 300`                                    |
 | `agentOrchestrator.autoscaling.manageReplicas`                        | Set `false` to always omit `replicas` once autoscaling is enabled, even on the first apply — needed for GitOps tooling (Argo CD, Flux)         | `true`                                                                         |
 | `<hunterAgent\|remediationAgent>.image.repository`               | Agent image repository (required when the agent is enabled)                                                                              | `"sonarsource/sonarqube-hunter-agent"` / `"sonarsource/sonarqube-remediation-agent"` |
-| `<hunterAgent\|remediationAgent>.image.tag`                      | Agent image tag                                                                                                                          | `"2026.5.0"` |
+| `<hunterAgent\|remediationAgent>.image.tag`                      | Agent image tag                                                                                                                          | Hunter: `"2026.5.2"`; Remediation: `"2026.5.1"` |
 | `<hunterAgent\|remediationAgent>.image.pullPolicy`               | Agent image pull policy                                                                                                                  | `IfNotPresent`                                                                 |
 | `<hunterAgent\|remediationAgent>.port`                           | Agent container / Service port                                                                                                           | `8090`                                                                         |
 | `<hunterAgent\|remediationAgent>.replicaCount`                   | Agent replica count (`>1` enables L4 429 re-routing across replicas)                                                                     | `1`                                                                            |
