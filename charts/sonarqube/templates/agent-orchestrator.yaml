@@ -219,11 +219,33 @@ spec:
               value: {{ .Values.agentOrchestrator.storage.type | quote }}
             - name: SONAR_AGENTIC_ORCHESTRATOR_STORAGE_FILESYSTEM_BASE_DIR
               value: {{ .Values.agentOrchestrator.storage.filesystem.baseDir | quote }}
+            {{- if eq .Values.agentOrchestrator.storage.type "AZURE" }}
+            - name: SONAR_AGENTIC_ORCHESTRATOR_STORAGE_AZURE_CONTAINER
+              value: {{ .Values.agentOrchestrator.storage.azure.container | quote }}
+            {{- if or .Values.agentOrchestrator.storage.azure.connectionString .Values.agentOrchestrator.storage.existingSecret }}
+            - name: SONAR_AGENTIC_ORCHESTRATOR_STORAGE_AZURE_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.agentOrchestrator.fullname" .) .Values.agentOrchestrator.storage.existingSecret }}
+                  key: SONAR_AGENTIC_ORCHESTRATOR_STORAGE_AZURE_CONNECTION_STRING
+            {{- end }}
+            {{- end }}
+            {{- if eq .Values.agentOrchestrator.storage.type "GCS" }}
+            - name: SONAR_AGENTIC_ORCHESTRATOR_STORAGE_GCS_PROJECT_ID
+              value: {{ .Values.agentOrchestrator.storage.gcs.projectId | quote }}
+            {{- if or .Values.agentOrchestrator.storage.gcs.credentialsJson .Values.agentOrchestrator.storage.existingSecret }}
+            - name: SONAR_AGENTIC_ORCHESTRATOR_STORAGE_GCS_CREDENTIALS_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.agentOrchestrator.fullname" .) .Values.agentOrchestrator.storage.existingSecret }}
+                  key: SONAR_AGENTIC_ORCHESTRATOR_STORAGE_GCS_CREDENTIALS_JSON
+            {{- end }}
+            {{- end }}
             {{- /* Inject static storage keys only when provided (inline or via existingSecret). When
                    none are set, the env vars are omitted so the orchestrator's AWS SDK falls back to
                    its default credential chain - i.e. the pod's IAM identity (node instance role or
                    IRSA) for credential-less access to a real S3 bucket. */}}
-            {{- if or .Values.agentOrchestrator.storage.accessKey .Values.agentOrchestrator.storage.secretKey .Values.agentOrchestrator.storage.existingSecret }}
+            {{- if and (eq .Values.agentOrchestrator.storage.type "S3") (or .Values.agentOrchestrator.storage.accessKey .Values.agentOrchestrator.storage.secretKey .Values.agentOrchestrator.storage.existingSecret) }}
             - name: AGENTIC_STORAGE_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
