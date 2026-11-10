@@ -2,6 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [2026.6.1000]
+* Add `AZURE` and `GCS` storage settings for the Agent Orchestrator and Vortex: `storage.azure.container`, `storage.azure.connectionString`, `storage.gcs.projectId` and `storage.gcs.credentialsJson`. `vortexAnalysis.storage.region` is now required only for `S3`, and `vortexAnalysis.storage.bucket` is not required for `AZURE`
 * Upgrade the Agent Egress Proxy to Squid 7.7 with a pinned multi-arch image digest. Preserve Squid 6.x image overrides
 * Improve the gVisor installer's cleanup of its temporary files on the node
 * Upgrade Chart's version to 2026.6.1000

@@ -73,11 +73,33 @@ spec:
               value: {{ $vortex.storage.endpoint | quote }}
             - name: SONAR_AGENTIC_STORAGE_FILESYSTEM_BASE_DIR
               value: {{ $vortex.storage.filesystem.baseDir | quote }}
+            {{- if eq $vortex.storage.type "AZURE" }}
+            - name: SONAR_AGENTIC_STORAGE_AZURE_CONTAINER
+              value: {{ $vortex.storage.azure.container | quote }}
+            {{- if or $vortex.storage.azure.connectionString $vortex.storage.existingSecret }}
+            - name: SONAR_AGENTIC_STORAGE_AZURE_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.vortex.fullname" .) $vortex.storage.existingSecret }}
+                  key: SONAR_AGENTIC_STORAGE_AZURE_CONNECTION_STRING
+            {{- end }}
+            {{- end }}
+            {{- if eq $vortex.storage.type "GCS" }}
+            - name: SONAR_AGENTIC_STORAGE_GCS_PROJECT_ID
+              value: {{ $vortex.storage.gcs.projectId | quote }}
+            {{- if or $vortex.storage.gcs.credentialsJson $vortex.storage.existingSecret }}
+            - name: SONAR_AGENTIC_STORAGE_GCS_CREDENTIALS_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default (include "sonarqube.vortex.fullname" .) $vortex.storage.existingSecret }}
+                  key: SONAR_AGENTIC_STORAGE_GCS_CREDENTIALS_JSON
+            {{- end }}
+            {{- end }}
             {{- /* Inject static storage keys only when provided (inline or via existingSecret). When
                    none are set, the env vars are omitted so the AWS SDK falls back to its default
                    credential chain - i.e. the pod's IAM identity (node instance role or IRSA) for
                    credential-less access to a real S3 bucket. */}}
-            {{- if or $vortex.storage.accessKey $vortex.storage.secretKey $vortex.storage.existingSecret }}
+            {{- if and (eq $vortex.storage.type "S3") (or $vortex.storage.accessKey $vortex.storage.secretKey $vortex.storage.existingSecret) }}
             - name: SONAR_AGENTIC_STORAGE_ACCESS_KEY
               valueFrom:
                 secretKeyRef:

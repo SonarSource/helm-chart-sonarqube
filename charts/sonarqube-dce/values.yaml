@@ -1072,7 +1072,9 @@ vortexAnalysis:
   storage:
     # S3 (default), FILESYSTEM, AZURE, GCS or NFS.
     type: S3
+    # Bucket for S3 and GCS. Not used by AZURE (see azure.container) or FILESYSTEM/NFS.
     bucket: ""
+    # AWS region. Required for S3 only.
     region: ""
     # false for AWS S3, true for most S3-compatible endpoints (e.g. MinIO).
     pathStyleAccess: false
@@ -1082,12 +1084,29 @@ vortexAnalysis:
       # Path to Vortex's own directory when type is FILESYSTEM or NFS - a separate store from
       # agentOrchestrator.storage.filesystem.baseDir below, not required to match it.
       baseDir: ""
+    # Azure Blob Storage, when type is AZURE.
+    azure:
+      # Blob container name.
+      container: ""
+      # Storage account connection string. Stored in a Secret, or read from existingSecret under
+      # the key SONAR_AGENTIC_STORAGE_AZURE_CONNECTION_STRING.
+      connectionString: ""
+    # Google Cloud Storage, when type is GCS. The bucket is storage.bucket.
+    gcs:
+      # GCP project id; blank lets the client resolve it from the credentials or environment.
+      projectId: ""
+      # Service-account key JSON. Leave blank to use Application Default Credentials (e.g. GKE
+      # Workload Identity via vortexAnalysis.serviceAccount). Stored in a Secret, or read from
+      # existingSecret under the key SONAR_AGENTIC_STORAGE_GCS_CREDENTIALS_JSON.
+      credentialsJson: ""
     # Credentials for that endpoint. Leave accessKey/secretKey/existingSecret all blank for
     # credential-less access: the AWS SDK then falls back to its default credential chain (the
     # pod's own IAM identity - node instance role, or IRSA via vortexAnalysis.serviceAccount).
     accessKey: ""
     secretKey: ""
     # Existing secret providing SONAR_AGENTIC_STORAGE_ACCESS_KEY / SONAR_AGENTIC_STORAGE_SECRET_KEY
+    # (S3), SONAR_AGENTIC_STORAGE_AZURE_CONNECTION_STRING (AZURE) or
+    # SONAR_AGENTIC_STORAGE_GCS_CREDENTIALS_JSON (GCS).
     existingSecret: ""
 
   # ServiceAccount for the Vortex pod, independent of the top-level serviceAccount.
@@ -1267,7 +1286,7 @@ agentOrchestrator:
   #
   # Object storage (type: S3, the default) remains the recommended production backend.
   storage:
-    # S3 (default), FILESYSTEM or NFS - see the access model above.
+    # S3 (default), FILESYSTEM, NFS, AZURE or GCS - see the access model above for FILESYSTEM/NFS.
     type: S3
     # Custom S3 endpoint (e.g. MinIO). Leave blank for real AWS S3 so the SDK uses its regional
     # endpoint. pathStyle should be true for MinIO, false for AWS S3 (virtual-hosted style).
@@ -1278,13 +1297,30 @@ agentOrchestrator:
     filesystem:
       # Path to the shared directory when type is FILESYSTEM or NFS. Ignored otherwise.
       baseDir: ""
+    # Azure Blob Storage, when type is AZURE. Unlike S3 and GCS it does not use bucket.
+    azure:
+      # Blob container name.
+      container: ""
+      # Storage account connection string. Stored in a Secret, or read from existingSecret under
+      # the key SONAR_AGENTIC_ORCHESTRATOR_STORAGE_AZURE_CONNECTION_STRING.
+      connectionString: ""
+    # Google Cloud Storage, when type is GCS. The bucket is storage.bucket.
+    gcs:
+      # GCP project id; blank lets the client resolve it from the credentials or environment.
+      projectId: ""
+      # Service-account key JSON. Leave blank to use Application Default Credentials (e.g. GKE
+      # Workload Identity via agentOrchestrator.serviceAccount). Stored in a Secret, or read from
+      # existingSecret under the key SONAR_AGENTIC_ORCHESTRATOR_STORAGE_GCS_CREDENTIALS_JSON.
+      credentialsJson: ""
     # Credentials. Leave accessKey/secretKey/existingSecret all blank for credential-less access:
     # the orchestrator's AWS SDK then falls back to its default credential chain (the pod's IAM
     # identity - node instance role, or IRSA via agentOrchestrator.serviceAccount annotations).
     # Inline access/secret key; ignored when existingSecret is set
     accessKey: ""
     secretKey: ""
-    # Existing secret providing AGENTIC_STORAGE_ACCESS_KEY / AGENTIC_STORAGE_SECRET_KEY
+    # Existing secret providing AGENTIC_STORAGE_ACCESS_KEY / AGENTIC_STORAGE_SECRET_KEY (S3),
+    # SONAR_AGENTIC_ORCHESTRATOR_STORAGE_AZURE_CONNECTION_STRING (AZURE) or
+    # SONAR_AGENTIC_ORCHESTRATOR_STORAGE_GCS_CREDENTIALS_JSON (GCS).
     existingSecret: ""
 
   # Remediation flow: push a fix branch and open a PR via the GitHub REST API. No token is

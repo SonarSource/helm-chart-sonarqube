@@ -765,7 +765,52 @@ The chart can deploy the SonarQube agentic components next to the SonarQube appl
 * **Storage.** The agentic features share an object store: the Agent Orchestrator writes the job artifacts to it (`agentOrchestrator.storage`), SonarQube reads the agent job logs from it (`sonar.agentic.storage.*` in `applicationNodes.sonarProperties`), and Vortex restores the analysis context from it (`vortexAnalysis.storage`). The simplest setup points all three at the same bucket. Supported backends:
   * `S3` (default, recommended for production): AWS S3, or any S3-compatible endpoint such as MinIO via `endpoint` and path-style addressing. Credentials come from inline keys, an `existingSecret`, or, when both are blank, the pod's IAM identity (node instance role or IRSA through the component's `serviceAccount.annotations`).
   * `FILESYSTEM` / `NFS`: a shared `ReadWriteMany` volume mounted through `extraVolumes`/`extraVolumeMounts`, with `storage.filesystem.baseDir` set. Use a single `securityContext.fsGroup` across the orchestrator and the agents.
-  * Vortex additionally supports `AZURE` and `GCS`.
+  * `AZURE`: Azure Blob Storage. Set `storage.type: AZURE`, `storage.azure.container` and `storage.azure.connectionString` (or an `existingSecret`) on `agentOrchestrator` and `vortexAnalysis`. Azure does not use `bucket` or `region`. Managed identity is not supported.
+  * `GCS`: Google Cloud Storage. Set `storage.type: GCS` and `storage.bucket`, plus `storage.gcs.projectId` if it can't be resolved from the credentials. Credentials come from `storage.gcs.credentialsJson` (a service-account key), an `existingSecret`, or, when both are blank, Application Default Credentials such as GKE Workload Identity through the component's `serviceAccount.annotations`. GCS does not use `region`.
+
+  Example for Azure Blob Storage (create the Secret first, with one key per component):
+
+  ```bash
+  kubectl create secret generic agentic-azure-storage -n <namespace> \
+    --from-literal=SONAR_AGENTIC_ORCHESTRATOR_STORAGE_AZURE_CONNECTION_STRING="<connection string>" \
+    --from-literal=SONAR_AGENTIC_STORAGE_AZURE_CONNECTION_STRING="<connection string>"
+  ```
+
+  ```yaml
+  agentOrchestrator:
+    storage:
+      type: AZURE
+      azure:
+        container: agent-jobs
+      existingSecret: agentic-azure-storage
+  vortexAnalysis:
+    storage:
+      type: AZURE
+      azure:
+        container: analysis-context
+      existingSecret: agentic-azure-storage
+  ```
+
+  Example for Google Cloud Storage with Workload Identity (no credentials in the values):
+
+  ```yaml
+  agentOrchestrator:
+    storage:
+      type: GCS
+      bucket: my-agent-jobs
+    serviceAccount:
+      create: true
+      annotations:
+        iam.gke.io/gcp-service-account: orchestrator@my-project.iam.gserviceaccount.com
+  vortexAnalysis:
+    storage:
+      type: GCS
+      bucket: my-analysis-context
+    serviceAccount:
+      create: true
+      annotations:
+        iam.gke.io/gcp-service-account: vortex@my-project.iam.gserviceaccount.com
+  ```
 
   When the pods authenticate with their IAM identity (e.g. IRSA), SonarQube (`serviceAccount`), the Agent Orchestrator and Vortex (`<component>.serviceAccount`) each need their own ServiceAccount (`create: true`) carrying the role annotation. The agent runtimes don't access the store directly (the orchestrator hands them presigned URLs) and get their own ServiceAccount by default, so they never inherit SonarQube's cloud role; keep `<hunterAgent|remediationAgent>.serviceAccount.create` set to `true`.
 * **Signing secret.** The agentic components sign the messages they exchange with keys derived from one instance secret you create:
@@ -1319,14 +1364,18 @@ See [Agentic features](#agentic-features) for how to enable and configure these 
 | `vortexAnalysis.autoscaling.manageReplicas`      | Set `false` to always omit `replicas` once autoscaling is enabled, even on the first apply — needed for GitOps tooling (Argo CD, Flux) | `true`                                                |
 | `vortexAnalysis.terminationGracePeriodSeconds`   | Pod grace period; ships unconditionally, independent of autoscaling                                      | `180`                                                                  |
 | `vortexAnalysis.storage.type`                   | Object storage backend for Vortex analysis context restoration (`SONAR_AGENTIC_STORAGE_TYPE`); `S3`, `FILESYSTEM`, `AZURE`, `GCS` or `NFS`; required | `S3`                                                       |
-| `vortexAnalysis.storage.bucket`                 | Bucket holding Vortex analysis context items (`SONAR_AGENTIC_STORAGE_BUCKET`); required for an object-store type, ignored for `FILESYSTEM`/`NFS` | `""`                                                        |
-| `vortexAnalysis.storage.region`                 | AWS region of the bucket (`SONAR_AGENTIC_STORAGE_REGION`); required for an object-store type, ignored for `FILESYSTEM`/`NFS` | `""`                                                        |
+| `vortexAnalysis.storage.bucket`                 | Bucket holding Vortex analysis context items (`SONAR_AGENTIC_STORAGE_BUCKET`); required for `S3` and `GCS`, ignored for `AZURE` and `FILESYSTEM`/`NFS` | `""`                                                        |
+| `vortexAnalysis.storage.region`                 | AWS region of the bucket (`SONAR_AGENTIC_STORAGE_REGION`); required for `S3` only | `""`                                                        |
 | `vortexAnalysis.storage.pathStyleAccess`        | Path-style S3 access (`SONAR_AGENTIC_STORAGE_PATH_STYLE_ACCESS`); `false` for AWS S3, `true` for most S3-compatible endpoints | `false`                                                     |
 | `vortexAnalysis.storage.endpoint`               | Custom S3-compatible endpoint (`SONAR_AGENTIC_STORAGE_ENDPOINT`, e.g. MinIO); blank for real AWS S3   | `""`                                                                   |
 | `vortexAnalysis.storage.filesystem.baseDir`     | Vortex's own directory (`SONAR_AGENTIC_STORAGE_FILESYSTEM_BASE_DIR`) when `type` is `FILESYSTEM`/`NFS` - a separate store from `agentOrchestrator.storage.filesystem.baseDir`, not required to match it; needs a matching `extraVolumeMounts` entry on this pod | `""`                     |
+| `vortexAnalysis.storage.azure.container`        | Azure Blob container (`SONAR_AGENTIC_STORAGE_AZURE_CONTAINER`) when `type` is `AZURE` | `""` |
+| `vortexAnalysis.storage.azure.connectionString` | Azure storage account connection string, kept in a Secret (`SONAR_AGENTIC_STORAGE_AZURE_CONNECTION_STRING`); ignored when `existingSecret` is set | `""` |
+| `vortexAnalysis.storage.gcs.projectId`          | GCP project id (`SONAR_AGENTIC_STORAGE_GCS_PROJECT_ID`) when `type` is `GCS`; blank resolves it from the credentials or environment | `""` |
+| `vortexAnalysis.storage.gcs.credentialsJson`    | GCS service-account key JSON, kept in a Secret (`SONAR_AGENTIC_STORAGE_GCS_CREDENTIALS_JSON`); blank uses Application Default Credentials; ignored when `existingSecret` is set | `""` |
 | `vortexAnalysis.storage.accessKey`              | Inline access key for `endpoint` above; ignored when `existingSecret` is set                                      | `""`                                                                   |
 | `vortexAnalysis.storage.secretKey`              | Inline secret key for `endpoint` above; ignored when `existingSecret` is set                                      | `""`                                                                   |
-| `vortexAnalysis.storage.existingSecret`         | Existing secret providing `SONAR_AGENTIC_STORAGE_ACCESS_KEY` / `SONAR_AGENTIC_STORAGE_SECRET_KEY`                 | `""`                                                                   |
+| `vortexAnalysis.storage.existingSecret`         | Existing secret providing `SONAR_AGENTIC_STORAGE_ACCESS_KEY` / `SONAR_AGENTIC_STORAGE_SECRET_KEY` (`S3`), `SONAR_AGENTIC_STORAGE_AZURE_CONNECTION_STRING` (`AZURE`) or `SONAR_AGENTIC_STORAGE_GCS_CREDENTIALS_JSON` (`GCS`) | `""`                                                                   |
 | `vortexAnalysis.serviceAccount.create`          | Create a dedicated ServiceAccount for the Vortex pod, independent of the top-level `serviceAccount`      | `false`                                                                |
 | `vortexAnalysis.serviceAccount.name`            | Name of that ServiceAccount; defaults to the Vortex fullname when `create` is true                       | `""`                                                                   |
 | `vortexAnalysis.serviceAccount.automountToken`  | Automount the ServiceAccount token into the pod; needed for IRSA                                                  | `false`                                                                |
@@ -1417,15 +1466,19 @@ See [Agentic features](#agentic-features) for how to enable and configure these 
 | `agentOrchestrator.coreDb.username`                                   | CORE DB user (`CORE_DB_USERNAME`); blank = `jdbcOverwrite.jdbcUsername`                                                                  | `""`                                                                           |
 | `agentOrchestrator.coreDb.passwordSecretName`                         | Secret holding the CORE DB password (`CORE_DB_PASSWORD`); blank = the `jdbcOverwrite`-derived secret. Point at a raw-password secret if SonarQube's is encrypted/unavailable | `""`                                                                           |
 | `agentOrchestrator.coreDb.passwordSecretKey`                          | Key within `coreDb.passwordSecretName`; blank = the `jdbcOverwrite`-derived key                                                          | `""`                                                                           |
-| `agentOrchestrator.storage.type`                                      | Storage backend (`SONAR_AGENTIC_ORCHESTRATOR_STORAGE_TYPE`): `S3`, `FILESYSTEM` or `NFS`                                                 | `S3`                                                                           |
+| `agentOrchestrator.storage.type`                                      | Storage backend (`SONAR_AGENTIC_ORCHESTRATOR_STORAGE_TYPE`): `S3`, `FILESYSTEM`, `NFS`, `AZURE` or `GCS`                                | `S3`                                                                           |
 | `agentOrchestrator.storage.endpoint`                                  | Object-storage endpoint; blank = real AWS S3 regional endpoint                                                                           | `""`                                                                           |
 | `agentOrchestrator.storage.region`                                    | Object-storage region                                                                                                                    | `us-east-1`                                                                    |
 | `agentOrchestrator.storage.bucket`                                    | Object-storage bucket for the shared job artifacts (required for an object-store type, ignored for `FILESYSTEM`/`NFS`)                    | `agent-jobs`                                                                 |
 | `agentOrchestrator.storage.pathStyle`                                 | Path-style addressing (`true` for MinIO, `false` for AWS S3)                                                                             | `true`                                                                         |
 | `agentOrchestrator.storage.accessKey`                                 | Inline S3 access key; leave blank for credential-less access (pod IAM role / IRSA)                                                       | `""`                                                                           |
 | `agentOrchestrator.storage.secretKey`                                 | Inline S3 secret key; leave blank for credential-less access                                                                             | `""`                                                                           |
-| `agentOrchestrator.storage.existingSecret`                            | Existing secret providing `AGENTIC_STORAGE_ACCESS_KEY` / `AGENTIC_STORAGE_SECRET_KEY`                                                     | `""`                                                                           |
+| `agentOrchestrator.storage.existingSecret`                            | Existing secret providing `AGENTIC_STORAGE_ACCESS_KEY` / `AGENTIC_STORAGE_SECRET_KEY` (`S3`), `SONAR_AGENTIC_ORCHESTRATOR_STORAGE_AZURE_CONNECTION_STRING` (`AZURE`) or `SONAR_AGENTIC_ORCHESTRATOR_STORAGE_GCS_CREDENTIALS_JSON` (`GCS`) | `""`                                                                           |
 | `agentOrchestrator.storage.filesystem.baseDir`                        | Shared agent-jobs directory (`SONAR_AGENTIC_ORCHESTRATOR_STORAGE_FILESYSTEM_BASE_DIR`) when `type` is `FILESYSTEM`/`NFS`, mounted at its root here; each of `hunterAgent`/`remediationAgent` mounts only its own `subPath` at the matching `extraVolumeMounts` entry on this pod. Not related to `vortexAnalysis.storage.filesystem.baseDir`, which is Vortex's own, separate store | `""`             |
+| `agentOrchestrator.storage.azure.container`                           | Azure Blob container (`SONAR_AGENTIC_ORCHESTRATOR_STORAGE_AZURE_CONTAINER`) when `type` is `AZURE`; `bucket` is not used                | `""`                                                                           |
+| `agentOrchestrator.storage.azure.connectionString`                    | Azure storage account connection string, kept in a Secret (`SONAR_AGENTIC_ORCHESTRATOR_STORAGE_AZURE_CONNECTION_STRING`); ignored when `existingSecret` is set | `""`                                  |
+| `agentOrchestrator.storage.gcs.projectId`                             | GCP project id (`SONAR_AGENTIC_ORCHESTRATOR_STORAGE_GCS_PROJECT_ID`) when `type` is `GCS`; blank resolves it from the credentials or environment | `""`                                       |
+| `agentOrchestrator.storage.gcs.credentialsJson`                       | GCS service-account key JSON, kept in a Secret (`SONAR_AGENTIC_ORCHESTRATOR_STORAGE_GCS_CREDENTIALS_JSON`); blank uses Application Default Credentials; ignored when `existingSecret` is set | `""`                  |
 | `agentOrchestrator.github.apiBaseUrl`                                 | `AGENTIC_GITHUB_API_BASE_URL`; blank = the orchestrator's default (real api.github.com)                                                  | `""`                                                                           |
 | `agentOrchestrator.env`                                               | Extra env vars for the orchestrator container, appended after the chart-set env                                                          | `[]`                                                                           |
 | `agentOrchestrator.extraVolumes`                                      | Extra volumes for the orchestrator pod - e.g. the shared agent-jobs volume (mounted at its root here; `hunterAgent`/`remediationAgent` each mount only their own `subPath` - see `storage.filesystem.baseDir` above) | `[]`                    |

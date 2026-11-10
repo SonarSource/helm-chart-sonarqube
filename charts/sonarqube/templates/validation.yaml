@@ -52,8 +52,11 @@ It is used to validate the values.yaml file before the installation starts.
     {{- if not $agentOrchestratorStorage.filesystem.baseDir -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.storage.type is FILESYSTEM/NFS but agentOrchestrator.storage.filesystem.baseDir is not set." -}}
     {{- end -}}
-  {{- else if not $agentOrchestratorStorage.bucket -}}
+  {{- else if and (ne $agentOrchestratorStorage.type "AZURE") (not $agentOrchestratorStorage.bucket) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but agentOrchestrator.storage.bucket is not set." -}}
+  {{- end -}}
+  {{- if and (eq $agentOrchestratorStorage.type "AZURE") (not $agentOrchestratorStorage.azure.container) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.storage.type is AZURE but agentOrchestrator.storage.azure.container is not set." -}}
   {{- end -}}
   {{- if and (not $agentOrchestratorStorage.existingSecret) (or $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey) (not (and $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but only one of agentOrchestrator.storage.accessKey / agentOrchestrator.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
@@ -231,10 +234,15 @@ It is used to validate the values.yaml file before the installation starts.
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.storage.type is FILESYSTEM/NFS but vortexAnalysis.storage.filesystem.baseDir is not set." -}}
     {{- end -}}
   {{- else -}}
-    {{- if not $storage.bucket -}}
+    {{- /* AZURE addresses its container (azure.container), not a bucket, and neither AZURE nor GCS
+           has a region. */}}
+    {{- if and (ne $storage.type "AZURE") (not $storage.bucket) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.storage.bucket is not set." -}}
     {{- end -}}
-    {{- if not $storage.region -}}
+    {{- if and (eq $storage.type "AZURE") (not $storage.azure.container) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.storage.type is AZURE but vortexAnalysis.storage.azure.container is not set." -}}
+    {{- end -}}
+    {{- if and (eq $storage.type "S3") (not $storage.region) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.storage.region is not set." -}}
     {{- end -}}
   {{- end -}}
