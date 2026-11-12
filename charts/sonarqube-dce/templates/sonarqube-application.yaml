@@ -60,6 +60,9 @@ spec:
 {{ . | indent 8 }}
 {{- end }}
     spec:
+      {{- if .Values.ApplicationNodes.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.ApplicationNodes.terminationGracePeriodSeconds }}
+      {{- end }}
       automountServiceAccountToken: {{ .Values.serviceAccount.automountToken }}
       {{- if or .Values.ApplicationNodes.image.pullSecrets .Values.ApplicationNodes.image.pullSecret }}
       imagePullSecrets:
