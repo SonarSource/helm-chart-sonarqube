@@ -242,6 +242,38 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
+      {{- $waitForSearch := .Values.ApplicationNodes.waitForSearch | default dict }}
+      {{- if and (or (not (hasKey $waitForSearch "enabled")) $waitForSearch.enabled) (not .Values.istio.enabled) }}
+        - name: wait-for-search
+          image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
+          imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              host="{{ template "sonarqube.fullname" . }}-search"
+              echo "Waiting for search nodes at ${host} to report yellow or green before starting the application."
+              echo "The application container has not started. Connection errors while search is still starting are expected."
+              until {{ include "sonarqube.waitForSearch.check" . }}; do
+                echo "Search is not ready yet. If search pods stay unready, inspect their status and logs. Retrying in 10s."
+                sleep 10
+              done
+              echo "Search is healthy. Starting the application."
+          {{- if .Values.searchNodes.searchAuthentication.enabled }}
+          env:
+            - name: SONAR_CLUSTER_SEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ template "search.userPassword" . }}"
+                  key: SONAR_CLUSTER_SEARCH_PASSWORD
+          {{- end }}
+          {{- with (include "sonarqube.initContainersSecurityContext" .) }}
+          securityContext: {{- . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.initContainers.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- end }}
       {{- with (include "sonarqube.ApplicationNodes.securityContext" .) }}
       securityContext: {{- . | nindent 8 }}
       {{- end }}

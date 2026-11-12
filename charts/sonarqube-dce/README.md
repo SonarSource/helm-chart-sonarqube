@@ -651,6 +651,20 @@ This will run `sysctl -w vm.max_map_count=524288` (`initSysctl.vmMaxMapCount`) o
 
 To disable worker node configuration, set `initSysctl.enabled` to `false`. The nodes running the search pods must then already meet these settings.
 
+### Application startup and search readiness
+
+Application pods wait for the search Service to have a ready endpoint before the application container starts. A search pod is ready when cluster health is yellow or green, the same check as the search readiness probe. While the `wait-for-search` init container is running, the application process has not started. Its log lines are the expected wait, not an application failure.
+
+```bash
+kubectl logs -n sonarqube-dce <application-pod> -c wait-for-search
+```
+
+After that init container exits, connection errors in the application log are no longer the startup race. Inspect search pod status and logs if the wait continues after the search pods should be Ready.
+
+Set `applicationNodes.waitForSearch.enabled` to `false` to start application pods without waiting. During an Elasticsearch major upgrade, `searchNodes.replicaCount` is `0` for one step, so application pods stay in init until search is scaled back up.
+
+The wait is not added when `istio.enabled` is `true`. Search port 9001 requires mTLS, and an init container has no sidecar, so the check could not succeed.
+
 ### MCP (Model Context Protocol) Server
 
 When `mcp.enabled` is set to `true`, the chart deploys a separate MCP server pod alongside the SonarQube application nodes and automatically wires the two together.
@@ -1089,6 +1103,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.jwtSecret`                                     | A HS256 key encoded with base64 (_This value must be set before installing the chart, see [the documentation](#installing-the-chart)_) | `""`                                                                   |
 | `applicationNodes.existingJwtSecret`                             | secret that contains the `jwtSecret`                                                                                                                                                                           | `nil`                                                                  |
 | `applicationNodes.extraContainers`                               | Array of extra containers to run alongside                                                                                                                                                                     | `[]`                                                                   |
+| `applicationNodes.waitForSearch.enabled`                         | Wait until search is yellow or green before starting the application container. Skipped when `istio.enabled` is `true`                                                                                         | `true`                                                                 |
 | `applicationNodes.extraInitContainers`                           | Array of extra init containers to run before the application container                                                                                                                                         | `[]`                                                                   |
 | `applicationNodes.extraVolumes`                                  | Array of extra volumes to add to the SonarQube deployment                                                                                                                                                      | `[]`                                                                   |
 | `applicationNodes.extraVolumeMounts`                             | Array of extra volume mounts to add to the SonarQube deployment                                                                                                                                                | `[]`                                                                   |

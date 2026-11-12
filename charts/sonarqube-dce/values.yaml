@@ -397,6 +397,12 @@ applicationNodes:
   ##   image: busybox
   ##   command: ['sh', '-c', 'echo Hello']
   ##
+  # Wait until search is yellow or green before starting the application container.
+  # Set enabled to false to start application pods immediately.
+  # Not rendered when istio.enabled is true.
+  waitForSearch:
+    enabled: true
+
   extraInitContainers: []
   ## Array of extra volumes and VolumeMounts to add to the SonarQube deployment
   extraVolumes: []

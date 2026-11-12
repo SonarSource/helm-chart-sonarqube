@@ -583,6 +583,32 @@ spec:
               type: RuntimeDefault
           resources:
             {}
+        - name: wait-for-search
+          image: sonarqube:2026.5.0-datacenter-app
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              host="vortex-values.yaml-sonarqube-dce-search"
+              echo "Waiting for search nodes at ${host} to report yellow or green before starting the application."
+              echo "The application container has not started. Connection errors while search is still starting are expected."
+              until curl --noproxy "*" --connect-timeout 5 --max-time 15 -sS "http://vortex-values.yaml-sonarqube-dce-search:9001/_cluster/health" | grep -q -e '"status":"green"' -e '"status":"yellow"'; do
+                echo "Search is not ready yet. If search pods stay unready, inspect their status and logs. Retrying in 10s."
+                sleep 10
+              done
+              echo "Search is healthy. Starting the application."
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 1000
+            seccompProfile:
+              type: RuntimeDefault
       securityContext:
         fsGroup: 0
       containers:
