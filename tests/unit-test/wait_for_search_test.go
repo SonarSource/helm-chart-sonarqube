@@ -32,8 +32,15 @@ func waitForSearchScript(t *testing.T, container *corev1.Container) string {
 	return container.Command[2]
 }
 
-func TestWaitForSearchDefault(t *testing.T) {
+func TestWaitForSearchDefaultOff(t *testing.T) {
 	deployment := renderWaitForSearchApp(t, nil, nil)
+	assert.Nil(t, findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search"))
+}
+
+func TestWaitForSearchEnabled(t *testing.T) {
+	deployment := renderWaitForSearchApp(t, nil, map[string]string{
+		"applicationNodes.waitForSearch.enabled": "true",
+	})
 	initContainers := deployment.Spec.Template.Spec.InitContainers
 	waitFor := findInitContainerByName(initContainers, "wait-for-search")
 	script := waitForSearchScript(t, waitFor)
@@ -58,15 +65,16 @@ func TestWaitForSearchDisabled(t *testing.T) {
 	assert.Nil(t, findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search"))
 }
 
-func TestWaitForSearchMissingValueDefaultsToEnabled(t *testing.T) {
+func TestWaitForSearchMissingValueStaysOff(t *testing.T) {
 	deployment := renderWaitForSearchApp(t, nil, map[string]string{
 		"applicationNodes.waitForSearch": "null",
 	})
-	assert.NotNil(t, findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search"))
+	assert.Nil(t, findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search"))
 }
 
 func TestWaitForSearchAuthentication(t *testing.T) {
 	deployment := renderWaitForSearchApp(t, nil, map[string]string{
+		"applicationNodes.waitForSearch.enabled":        "true",
 		"searchNodes.searchAuthentication.enabled":      "true",
 		"searchNodes.searchAuthentication.userPassword": "search-test-password",
 	})
@@ -85,6 +93,7 @@ func TestWaitForSearchAuthentication(t *testing.T) {
 
 func TestWaitForSearchAuthenticationAndTls(t *testing.T) {
 	deployment := renderWaitForSearchApp(t, nil, map[string]string{
+		"applicationNodes.waitForSearch.enabled":        "true",
 		"nodeEncryption.enabled":                        "true",
 		"searchNodes.searchAuthentication.enabled":      "true",
 		"searchNodes.searchAuthentication.userPassword": "search-test-password",
@@ -97,15 +106,17 @@ func TestWaitForSearchAuthenticationAndTls(t *testing.T) {
 
 func TestWaitForSearchSkippedWhenIstioEnabled(t *testing.T) {
 	deployment := renderWaitForSearchApp(t, nil, map[string]string{
-		"istio.enabled":            "true",
-		"applicationNodes.webPort": "4023",
-		"applicationNodes.cePort":  "4024",
+		"applicationNodes.waitForSearch.enabled": "true",
+		"istio.enabled":                          "true",
+		"applicationNodes.webPort":               "4023",
+		"applicationNodes.cePort":                "4024",
 	})
 	assert.Nil(t, findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search"))
 }
 
 func TestWaitForSearchKeepsExtraInitContainersAndResources(t *testing.T) {
 	setValues := map[string]string{
+		"applicationNodes.waitForSearch.enabled":   "true",
 		"initContainers.resources.requests.cpu":    "10m",
 		"initContainers.resources.requests.memory": "32Mi",
 		"initContainers.resources.limits.cpu":      "50m",

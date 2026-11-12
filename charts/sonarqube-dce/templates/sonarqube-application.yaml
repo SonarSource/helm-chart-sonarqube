@@ -243,7 +243,7 @@ spec:
           {{- end }}
       {{- end }}
       {{- $waitForSearch := .Values.ApplicationNodes.waitForSearch | default dict }}
-      {{- if and (or (not (hasKey $waitForSearch "enabled")) $waitForSearch.enabled) (not .Values.istio.enabled) }}
+      {{- if and $waitForSearch.enabled (not .Values.istio.enabled) }}
         - name: wait-for-search
           image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}
