@@ -245,28 +245,19 @@ spec:
       {{- $waitForSearch := .Values.ApplicationNodes.waitForSearch | default dict }}
       {{- if and $waitForSearch.enabled (not .Values.istio.enabled) }}
         - name: wait-for-search
-          image: {{ default (include "sonarqube.image" .) .Values.initContainers.image }}
+          image: {{ include "sonarqube.image" . }}
           imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}
+          {{- /* Any response is enough. The search Service does not publish not-ready addresses, so a connection means a Ready pod, and the search readiness probe already requires yellow or green. Do not add -f: with search authentication a 401 is still success. */}}
           command:
             - sh
             - -c
             - |
               host="{{ template "sonarqube.fullname" . }}-search"
-              echo "Waiting for search nodes at ${host} to report yellow or green before starting the application."
-              echo "The application container has not started. Connection errors while search is still starting are expected."
-              until {{ include "sonarqube.waitForSearch.check" . }}; do
-                echo "Search is not ready yet. If search pods stay unready, inspect their status and logs. Retrying in 10s."
+              echo "Waiting for a ready search pod at ${host} before starting the application. This wait is expected."
+              {{ if .Values.nodeEncryption.enabled }}until curl --noproxy "*" --connect-timeout 5 --max-time 5 -sko /dev/null "https://${host}:9001"; do{{ else }}until curl --noproxy "*" --connect-timeout 5 --max-time 5 -so /dev/null "http://${host}:9001"; do{{ end }}
+                echo "Search is not ready yet. Retrying in 10s."
                 sleep 10
               done
-              echo "Search is healthy. Starting the application."
-          {{- if .Values.searchNodes.searchAuthentication.enabled }}
-          env:
-            - name: SONAR_CLUSTER_SEARCH_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ template "search.userPassword" . }}"
-                  key: SONAR_CLUSTER_SEARCH_PASSWORD
-          {{- end }}
           {{- with (include "sonarqube.initContainersSecurityContext" .) }}
           securityContext: {{- . | nindent 12 }}
           {{- end }}

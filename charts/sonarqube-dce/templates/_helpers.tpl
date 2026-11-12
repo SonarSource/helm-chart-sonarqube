@@ -498,20 +498,6 @@ true
 {{- end -}}
 
 {{/*
-Curl command that succeeds when the search Service has a ready endpoint whose cluster health is yellow or green.
-Authentication uses SONAR_CLUSTER_SEARCH_PASSWORD so the password is not written into the command.
-*/}}
-{{- define "sonarqube.waitForSearch.check" -}}
-{{- if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled -}}
-curl --noproxy "*" --connect-timeout 5 --max-time 15 -sS -k -u "elastic:${SONAR_CLUSTER_SEARCH_PASSWORD}" "https://{{ template "sonarqube.fullname" . }}-search:9001/_cluster/health" | grep -q -e '"status":"green"' -e '"status":"yellow"'
-{{- else if .Values.searchNodes.searchAuthentication.enabled -}}
-curl --noproxy "*" --connect-timeout 5 --max-time 15 -sS -u "elastic:${SONAR_CLUSTER_SEARCH_PASSWORD}" "http://{{ template "sonarqube.fullname" . }}-search:9001/_cluster/health" | grep -q -e '"status":"green"' -e '"status":"yellow"'
-{{- else -}}
-curl --noproxy "*" --connect-timeout 5 --max-time 15 -sS "http://{{ template "sonarqube.fullname" . }}-search:9001/_cluster/health" | grep -q -e '"status":"green"' -e '"status":"yellow"'
-{{- end -}}
-{{- end -}}
-
-{{/*
 set search.ksPassword
 */}}
 {{- define "search.ksPassword" -}}

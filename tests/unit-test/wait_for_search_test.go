@@ -8,16 +8,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 )
 
-func renderWaitForSearchApp(t *testing.T, valuesFiles []string, setValues map[string]string) appsv1.Deployment {
+func renderWaitForSearchApp(t *testing.T, setValues map[string]string) appsv1.Deployment {
 	t.Helper()
 	base := dceEsMajorBaseValues()
 	for k, v := range setValues {
 		base[k] = v
 	}
-	opts := &helm.Options{Logger: logger.Discard, ValuesFiles: valuesFiles, SetValues: base}
+	opts := &helm.Options{Logger: logger.Discard, SetValues: base}
 	output, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/sonarqube-application.yaml"})
 	require.NoError(t, err)
 	var deployment appsv1.Deployment
@@ -25,119 +24,85 @@ func renderWaitForSearchApp(t *testing.T, valuesFiles []string, setValues map[st
 	return deployment
 }
 
-func waitForSearchScript(t *testing.T, container *corev1.Container) string {
-	t.Helper()
-	require.NotNil(t, container)
-	require.GreaterOrEqual(t, len(container.Command), 3)
-	return container.Command[2]
+func TestWaitForSearchOffUnlessEnabled(t *testing.T) {
+	for _, setValues := range []map[string]string{
+		nil,
+		{"applicationNodes.waitForSearch.enabled": "false"},
+		{
+			"applicationNodes.waitForSearch.enabled": "true",
+			"istio.enabled":                          "true",
+			"applicationNodes.webPort":               "4023",
+			"applicationNodes.cePort":                "4024",
+		},
+	} {
+		deployment := renderWaitForSearchApp(t, setValues)
+		assert.Nil(t, findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search"))
+	}
 }
 
-func TestWaitForSearchDefaultOff(t *testing.T) {
-	deployment := renderWaitForSearchApp(t, nil, nil)
-	assert.Nil(t, findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search"))
-}
-
-func TestWaitForSearchEnabled(t *testing.T) {
-	deployment := renderWaitForSearchApp(t, nil, map[string]string{
+func TestWaitForSearchWaitsForReadyEndpoint(t *testing.T) {
+	deployment := renderWaitForSearchApp(t, map[string]string{
 		"applicationNodes.waitForSearch.enabled": "true",
 	})
-	initContainers := deployment.Spec.Template.Spec.InitContainers
-	waitFor := findInitContainerByName(initContainers, "wait-for-search")
-	script := waitForSearchScript(t, waitFor)
-
-	assert.Equal(t, "wait-for-search", initContainers[len(initContainers)-1].Name)
-	assert.Contains(t, script, "Waiting for search nodes at ${host} to report yellow or green")
-	assert.Contains(t, script, "Connection errors while search is still starting are expected.")
-	assert.Contains(t, script, `http://sonarqube-dce-sonarqube-dce-search:9001/_cluster/health`)
+	waitFor := findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search")
+	require.NotNil(t, waitFor)
+	assert.Equal(t, "sonarqube:2026.5.0-datacenter-app", waitFor.Image)
+	require.GreaterOrEqual(t, len(waitFor.Command), 3)
+	script := waitFor.Command[2]
+	assert.Contains(t, script, `host="sonarqube-dce-sonarqube-dce-search"`)
+	assert.Contains(t, script, `curl --noproxy "*" --connect-timeout 5 --max-time 5 -so /dev/null "http://${host}:9001"`)
 	assert.NotContains(t, script, "https://")
-	assert.NotContains(t, script, "-u ")
 	assert.Empty(t, waitFor.Env)
-	require.NotNil(t, waitFor.SecurityContext)
-	require.NotNil(t, waitFor.SecurityContext.RunAsNonRoot)
-	assert.True(t, *waitFor.SecurityContext.RunAsNonRoot)
 	assert.Empty(t, waitFor.Resources.Requests)
 }
 
-func TestWaitForSearchDisabled(t *testing.T) {
-	deployment := renderWaitForSearchApp(t, nil, map[string]string{
-		"applicationNodes.waitForSearch.enabled": "false",
-	})
-	assert.Nil(t, findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search"))
-}
-
-func TestWaitForSearchMissingValueStaysOff(t *testing.T) {
-	deployment := renderWaitForSearchApp(t, nil, map[string]string{
-		"applicationNodes.waitForSearch": "null",
-	})
-	assert.Nil(t, findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search"))
-}
-
-func TestWaitForSearchAuthentication(t *testing.T) {
-	deployment := renderWaitForSearchApp(t, nil, map[string]string{
-		"applicationNodes.waitForSearch.enabled":        "true",
-		"searchNodes.searchAuthentication.enabled":      "true",
-		"searchNodes.searchAuthentication.userPassword": "search-test-password",
+func TestWaitForSearchUsesHttpsWhenNodeEncryptionIsOn(t *testing.T) {
+	deployment := renderWaitForSearchApp(t, map[string]string{
+		"applicationNodes.waitForSearch.enabled": "true",
+		"nodeEncryption.enabled":                 "true",
 	})
 	waitFor := findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search")
-	script := waitForSearchScript(t, waitFor)
-
-	assert.Contains(t, script, `-u "elastic:${SONAR_CLUSTER_SEARCH_PASSWORD}"`)
-	assert.Contains(t, script, `http://sonarqube-dce-sonarqube-dce-search:9001/_cluster/health`)
-	assert.NotContains(t, script, "search-test-password")
-	require.Len(t, waitFor.Env, 1)
-	assert.Equal(t, "SONAR_CLUSTER_SEARCH_PASSWORD", waitFor.Env[0].Name)
-	require.NotNil(t, waitFor.Env[0].ValueFrom)
-	assert.Equal(t, "sonarqube-dce-sonarqube-dce-user-pass", waitFor.Env[0].ValueFrom.SecretKeyRef.Name)
-	assert.Equal(t, "SONAR_CLUSTER_SEARCH_PASSWORD", waitFor.Env[0].ValueFrom.SecretKeyRef.Key)
-}
-
-func TestWaitForSearchAuthenticationAndTls(t *testing.T) {
-	deployment := renderWaitForSearchApp(t, nil, map[string]string{
-		"applicationNodes.waitForSearch.enabled":        "true",
-		"nodeEncryption.enabled":                        "true",
-		"searchNodes.searchAuthentication.enabled":      "true",
-		"searchNodes.searchAuthentication.userPassword": "search-test-password",
-	})
-	script := waitForSearchScript(t, findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search"))
-	assert.Contains(t, script, `-k -u "elastic:${SONAR_CLUSTER_SEARCH_PASSWORD}"`)
-	assert.Contains(t, script, `https://sonarqube-dce-sonarqube-dce-search:9001/_cluster/health`)
-	assert.NotContains(t, script, "search-test-password")
-}
-
-func TestWaitForSearchSkippedWhenIstioEnabled(t *testing.T) {
-	deployment := renderWaitForSearchApp(t, nil, map[string]string{
-		"applicationNodes.waitForSearch.enabled": "true",
-		"istio.enabled":                          "true",
-		"applicationNodes.webPort":               "4023",
-		"applicationNodes.cePort":                "4024",
-	})
-	assert.Nil(t, findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search"))
-}
-
-func TestWaitForSearchKeepsExtraInitContainersAndResources(t *testing.T) {
-	setValues := map[string]string{
-		"applicationNodes.waitForSearch.enabled":   "true",
-		"initContainers.resources.requests.cpu":    "10m",
-		"initContainers.resources.requests.memory": "32Mi",
-		"initContainers.resources.limits.cpu":      "50m",
-		"initContainers.resources.limits.memory":   "64Mi",
-	}
-	deployment := renderWaitForSearchApp(t, []string{"test-cases-values/sonarqube-dce/test-app-extra-init-containers.yaml"}, setValues)
-	initContainers := deployment.Spec.Template.Spec.InitContainers
-	extra := findInitContainerByName(initContainers, "extra-app-init")
-	waitFor := findInitContainerByName(initContainers, "wait-for-search")
-
-	require.NotNil(t, extra)
 	require.NotNil(t, waitFor)
-	assert.Greater(t, indexOfInitContainer(initContainers, "wait-for-search"), indexOfInitContainer(initContainers, "extra-app-init"))
-	assertInitContainersResources(t, waitFor.Resources)
+	script := waitFor.Command[2]
+	assert.Contains(t, script, `curl --noproxy "*" --connect-timeout 5 --max-time 5 -sko /dev/null "https://${host}:9001"`)
+	assert.NotContains(t, script, `http://${host}:9001`)
 }
 
-func indexOfInitContainer(containers []corev1.Container, name string) int {
-	for i := range containers {
-		if containers[i].Name == name {
-			return i
-		}
-	}
-	return -1
+func TestWaitForSearchAppliesInitContainerSettings(t *testing.T) {
+	deployment := renderWaitForSearchApp(t, map[string]string{
+		"applicationNodes.waitForSearch.enabled":                "true",
+		"initContainers.resources.requests.cpu":                 "10m",
+		"initContainers.resources.requests.memory":              "32Mi",
+		"initContainers.securityContext.runAsUser":              "1000",
+		"initContainers.securityContext.readOnlyRootFilesystem": "true",
+	})
+	waitFor := findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search")
+	require.NotNil(t, waitFor)
+	require.NotNil(t, waitFor.SecurityContext)
+	require.NotNil(t, waitFor.SecurityContext.RunAsUser)
+	assert.Equal(t, int64(1000), *waitFor.SecurityContext.RunAsUser)
+	require.NotNil(t, waitFor.SecurityContext.ReadOnlyRootFilesystem)
+	assert.True(t, *waitFor.SecurityContext.ReadOnlyRootFilesystem)
+	assert.Equal(t, "10m", waitFor.Resources.Requests.Cpu().String())
+	assert.Equal(t, "32Mi", waitFor.Resources.Requests.Memory().String())
+}
+
+func TestWaitForSearchRejectsZeroSearchReplicas(t *testing.T) {
+	base := dceEsMajorBaseValues()
+	base["applicationNodes.waitForSearch.enabled"] = "true"
+	base["searchNodes.replicaCount"] = "0"
+	opts := &helm.Options{Logger: logger.Discard, SetValues: base}
+	_, err := helm.RenderTemplateE(t, opts, dceChartPath, dceReleaseName, []string{"templates/validation.yaml"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "applicationNodes.waitForSearch.enabled is true but searchNodes.replicaCount is 0")
+}
+
+func TestWaitForSearchIgnoresInitContainerImageOverride(t *testing.T) {
+	deployment := renderWaitForSearchApp(t, map[string]string{
+		"applicationNodes.waitForSearch.enabled": "true",
+		"initContainers.image":                   "ubuntu:24.04",
+	})
+	waitFor := findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search")
+	require.NotNil(t, waitFor)
+	assert.Equal(t, "sonarqube:2026.5.0-datacenter-app", waitFor.Image)
 }

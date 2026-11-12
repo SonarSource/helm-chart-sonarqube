@@ -2,7 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [2026.6.1000]
-* Add `applicationNodes.waitForSearch.enabled` (default `false`) to hold application startup until search reports yellow or green. The `wait-for-search` init container logs that this wait is expected. The wait is skipped when `istio.enabled` is `true`, because search requires mTLS and the init container has no sidecar
+* Add `applicationNodes.waitForSearch.enabled` (default `false`) so application pods can wait until the search Service has a ready endpoint. Skipped when `istio.enabled` is `true`. Rejected at install time when `searchNodes.replicaCount` is `0`
 * Update MCP to 2026.5.1, Agent Orchestrator and Hunter Agent to 2026.5.2, and Remediation Agent to 2026.5.1
 * Upgrade the Agent Egress Proxy to Squid 7.7 with a pinned multi-arch image digest. Preserve Squid 6.x image overrides
 * Improve the gVisor installer's cleanup of its temporary files on the node

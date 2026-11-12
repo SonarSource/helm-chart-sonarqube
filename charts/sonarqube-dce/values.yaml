@@ -397,8 +397,8 @@ applicationNodes:
   ##   image: busybox
   ##   command: ['sh', '-c', 'echo Hello']
   ##
-  # Wait until search is yellow or green before starting the application container.
-  # Not rendered when istio.enabled is true.
+  # Wait until the search Service has a ready endpoint before starting the application container.
+  # Not rendered when istio.enabled is true. Rejected when searchNodes.replicaCount is 0.
   waitForSearch:
     enabled: false
 

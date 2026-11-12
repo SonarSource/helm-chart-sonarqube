@@ -382,6 +382,14 @@
   {{- end -}}
 {{- end -}}
 
+{{/* applicationNodes.waitForSearch.enabled has no deadline. With no search pod the init
+     container loops until the pod is killed, which is the Elasticsearch major-upgrade window
+     where searchNodes.replicaCount is 0. Reject it here so the mistake shows up at install. */}}
+{{- $waitForSearch := (fromYaml (include "applicationNodes" .)).waitForSearch | default dict -}}
+{{- if and $waitForSearch.enabled (eq (int .Values.searchNodes.replicaCount) 0) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n applicationNodes.waitForSearch.enabled is true but searchNodes.replicaCount is 0. The application pods would stay in Init until a search pod exists. Leave the option off while search is scaled to 0, for example during an Elasticsearch major upgrade." -}}
+{{- end -}}
+
 {{- include "sonarqube.search.assertEsMajorUpgrade" . -}}
 
 
