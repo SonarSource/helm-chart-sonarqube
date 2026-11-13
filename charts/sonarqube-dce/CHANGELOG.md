@@ -2,6 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [2026.6.1000]
+* Add `applicationNodes.waitForSearch.enabled` (default `false`) so application pods can wait until the search Service has a ready endpoint. Skipped when `istio.enabled` is `true`. Rejected at install time when `searchNodes.replicaCount` is `0`
 * Update MCP to 2026.5.1, Agent Orchestrator and Hunter Agent to 2026.5.2, and Remediation Agent to 2026.5.1
 * Upgrade the Agent Egress Proxy to Squid 7.7 with a pinned multi-arch image digest. Preserve Squid 6.x image overrides
 * Improve the gVisor installer's cleanup of its temporary files on the node

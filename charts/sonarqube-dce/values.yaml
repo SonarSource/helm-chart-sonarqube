@@ -397,6 +397,11 @@ applicationNodes:
   ##   image: busybox
   ##   command: ['sh', '-c', 'echo Hello']
   ##
+  # Wait until the search Service has a ready endpoint before starting the application container.
+  # Not rendered when istio.enabled is true. Rejected when searchNodes.replicaCount is 0.
+  waitForSearch:
+    enabled: false
+
   extraInitContainers: []
   ## Array of extra volumes and VolumeMounts to add to the SonarQube deployment
   extraVolumes: []

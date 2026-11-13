@@ -242,6 +242,29 @@ spec:
             {{- . | toYaml | trim | nindent 12 }}
           {{- end }}
       {{- end }}
+      {{- $waitForSearch := .Values.ApplicationNodes.waitForSearch | default dict }}
+      {{- if and $waitForSearch.enabled (not .Values.istio.enabled) }}
+        - name: wait-for-search
+          image: {{ include "sonarqube.image" . }}
+          imagePullPolicy: {{ .Values.ApplicationNodes.image.pullPolicy }}
+          {{- /* Any response is enough. The search Service does not publish not-ready addresses, so a connection means a Ready pod, and the search readiness probe already requires yellow or green. Do not add -f: with search authentication a 401 is still success. */}}
+          command:
+            - sh
+            - -c
+            - |
+              host="{{ template "sonarqube.fullname" . }}-search"
+              echo "Waiting for a ready search pod at ${host} before starting the application. This wait is expected."
+              {{ if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}until curl --noproxy "*" --connect-timeout 5 --max-time 5 -sko /dev/null "https://${host}:9001"; do{{ else }}until curl --noproxy "*" --connect-timeout 5 --max-time 5 -so /dev/null "http://${host}:9001"; do{{ end }}
+                echo "Search is not ready yet. Retrying in 10s."
+                sleep 10
+              done
+          {{- with (include "sonarqube.initContainersSecurityContext" .) }}
+          securityContext: {{- . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.initContainers.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- end }}
       {{- with (include "sonarqube.ApplicationNodes.securityContext" .) }}
       securityContext: {{- . | nindent 8 }}
       {{- end }}

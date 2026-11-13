@@ -651,6 +651,10 @@ This will run `sysctl -w vm.max_map_count=524288` (`initSysctl.vmMaxMapCount`) o
 
 To disable worker node configuration, set `initSysctl.enabled` to `false`. The nodes running the search pods must then already meet these settings.
 
+### Application startup and search readiness
+
+Set `applicationNodes.waitForSearch.enabled` to `true` to hold the application container until the search Service has a ready endpoint. The search readiness probe already requires yellow or green, including when authentication or TLS is on. The wait uses the application image, which provides `curl`, and ignores `initContainers.image`. It is skipped when `istio.enabled` is `true`. If a sidecar is injected for the namespace while `istio.enabled` stays `false`, the init container has no sidecar and cannot reach search, so leave the option off. The chart rejects the option while `searchNodes.replicaCount` is `0`.
+
 ### MCP (Model Context Protocol) Server
 
 When `mcp.enabled` is set to `true`, the chart deploys a separate MCP server pod alongside the SonarQube application nodes and automatically wires the two together.
@@ -1089,6 +1093,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `applicationNodes.jwtSecret`                                     | A HS256 key encoded with base64 (_This value must be set before installing the chart, see [the documentation](#installing-the-chart)_) | `""`                                                                   |
 | `applicationNodes.existingJwtSecret`                             | secret that contains the `jwtSecret`                                                                                                                                                                           | `nil`                                                                  |
 | `applicationNodes.extraContainers`                               | Array of extra containers to run alongside                                                                                                                                                                     | `[]`                                                                   |
+| `applicationNodes.waitForSearch.enabled`                         | Wait until the search Service has a ready endpoint before starting the application container. Skipped when `istio.enabled` is `true`. Leave it off when a namespace sidecar is injected. Rejected when `searchNodes.replicaCount` is `0` | `false`                                                                |
 | `applicationNodes.extraInitContainers`                           | Array of extra init containers to run before the application container                                                                                                                                         | `[]`                                                                   |
 | `applicationNodes.extraVolumes`                                  | Array of extra volumes to add to the SonarQube deployment                                                                                                                                                      | `[]`                                                                   |
 | `applicationNodes.extraVolumeMounts`                             | Array of extra volume mounts to add to the SonarQube deployment                                                                                                                                                | `[]`                                                                   |

@@ -1520,6 +1520,15 @@
                     "deprecated": true,
                     "$comment": "(DEPRECATED) Please use ApplicationNodes.podDisruptionBudget"
                 },
+                "waitForSearch": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "$comment": "Wait until the search Service has a ready endpoint before starting the application container. Skipped when istio.enabled is true. Rejected when searchNodes.replicaCount is 0."
+                        }
+                    }
+                },
                 "extraInitContainers": {
                     "type": "array",
                     "$comment": "Extra init containers to run before the sonarqube application container"
