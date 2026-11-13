@@ -56,10 +56,23 @@ func TestWaitForSearchWaitsForReadyEndpoint(t *testing.T) {
 	assert.Empty(t, waitFor.Resources.Requests)
 }
 
-func TestWaitForSearchUsesHttpsWhenNodeEncryptionIsOn(t *testing.T) {
+func TestWaitForSearchUsesHttpWhenOnlyNodeEncryptionIsOn(t *testing.T) {
 	deployment := renderWaitForSearchApp(t, map[string]string{
 		"applicationNodes.waitForSearch.enabled": "true",
 		"nodeEncryption.enabled":                 "true",
+	})
+	waitFor := findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search")
+	require.NotNil(t, waitFor)
+	script := waitFor.Command[2]
+	assert.Contains(t, script, `curl --noproxy "*" --connect-timeout 5 --max-time 5 -so /dev/null "http://${host}:9001"`)
+	assert.NotContains(t, script, "https://")
+}
+
+func TestWaitForSearchUsesHttpsWhenSearchHttpTlsIsOn(t *testing.T) {
+	deployment := renderWaitForSearchApp(t, map[string]string{
+		"applicationNodes.waitForSearch.enabled":   "true",
+		"nodeEncryption.enabled":                   "true",
+		"searchNodes.searchAuthentication.enabled": "true",
 	})
 	waitFor := findInitContainerByName(deployment.Spec.Template.Spec.InitContainers, "wait-for-search")
 	require.NotNil(t, waitFor)

@@ -254,7 +254,7 @@ spec:
             - |
               host="{{ template "sonarqube.fullname" . }}-search"
               echo "Waiting for a ready search pod at ${host} before starting the application. This wait is expected."
-              {{ if .Values.nodeEncryption.enabled }}until curl --noproxy "*" --connect-timeout 5 --max-time 5 -sko /dev/null "https://${host}:9001"; do{{ else }}until curl --noproxy "*" --connect-timeout 5 --max-time 5 -so /dev/null "http://${host}:9001"; do{{ end }}
+              {{ if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}until curl --noproxy "*" --connect-timeout 5 --max-time 5 -sko /dev/null "https://${host}:9001"; do{{ else }}until curl --noproxy "*" --connect-timeout 5 --max-time 5 -so /dev/null "http://${host}:9001"; do{{ end }}
                 echo "Search is not ready yet. Retrying in 10s."
                 sleep 10
               done
