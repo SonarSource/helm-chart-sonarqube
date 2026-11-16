@@ -1222,7 +1222,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 
 | Parameter                      | Description                                                                                                                              | Default          |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| `sonarqubeFolder`              | (DEPRECATED) Directory name of SonarQube, Due to 1-1 mapping between helm version and docker version, there is no need for configuration | `/opt/sonarqube` |
+| `sonarqubeFolder`              | (DEPRECATED) Must match the SonarQube image installation path. Do not change or unset it. A future release will replace this setting with a fixed path. Empty values use `/opt/sonarqube`. | `/opt/sonarqube` |
 | `monitoringPasscode`           | Value for sonar.web.systemPasscode needed for LivenessProbes                                                                             | `None`           |
 | `monitoringPasscodeSecretName` | Name of the secret where to load `monitoringPasscode`                                                                                    | `None`           |
 | `monitoringPasscodeSecretKey`  | Key of an existing secret containing `monitoringPasscode`                                                                                | `None`           |

@@ -178,23 +178,23 @@ spec:
       volumeMounts:
         - name: init-fs
           mountPath: /tmp/scripts/
-        - mountPath: {{ .Values.sonarqubeFolder }}/data
+        - mountPath: {{ include "sonarqube.folder" . }}/data
           name: sonarqube
           subPath: data
-        - mountPath: {{ .Values.sonarqubeFolder }}/temp
+        - mountPath: {{ include "sonarqube.folder" . }}/temp
           name: sonarqube
           subPath: temp
-        - mountPath: {{ .Values.sonarqubeFolder }}/logs
+        - mountPath: {{ include "sonarqube.folder" . }}/logs
           name: sonarqube
           subPath: logs
         - mountPath: /tmp
           name: tmp-dir
         {{- if .Values.caCerts.enabled }}
-        - mountPath: {{ .Values.sonarqubeFolder }}/certs
+        - mountPath: {{ include "sonarqube.folder" . }}/certs
           name: sonarqube
           subPath: certs
         {{- end }}
-        - mountPath: {{ .Values.sonarqubeFolder }}/extensions
+        - mountPath: {{ include "sonarqube.folder" . }}/extensions
           name: sonarqube
           subPath: extensions
         {{- with .Values.persistence.mounts }}
@@ -213,7 +213,7 @@ spec:
       resources: {{- toYaml . | nindent 8 }}
       {{- end }}
       volumeMounts:
-        - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins
+        - mountPath: {{ include "sonarqube.folder" . }}/extensions/plugins
           name: sonarqube
           subPath: extensions/plugins
         - name: install-plugins
@@ -246,7 +246,7 @@ spec:
       resources: {{- toYaml . | nindent 8 }}
       {{- end }}
       volumeMounts:
-        - mountPath: {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
+        - mountPath: {{ include "sonarqube.folder" . }}/extensions/jdbc-driver/oracle
           name: sonarqube
           subPath: extensions/jdbc-driver/oracle
         - name: install-oracle-jdbc-driver
@@ -411,23 +411,23 @@ spec:
       securityContext: {{- . | nindent 8 }}
       {{- end }}
       volumeMounts:
-        - mountPath: {{ .Values.sonarqubeFolder }}/data
+        - mountPath: {{ include "sonarqube.folder" . }}/data
           name: sonarqube
           subPath: data
-        - mountPath: {{ .Values.sonarqubeFolder }}/temp
+        - mountPath: {{ include "sonarqube.folder" . }}/temp
           name: sonarqube
           subPath: temp
-        - mountPath: {{ .Values.sonarqubeFolder }}/logs
+        - mountPath: {{ include "sonarqube.folder" . }}/logs
           name: sonarqube
           subPath: logs
         - mountPath: /tmp
           name: tmp-dir
         {{- if or $hasMergedProps .Values.sonarSecretProperties .Values.sonarSecretKey (not .Values.elasticsearch.bootstrapChecks) }}
-        - mountPath: {{ .Values.sonarqubeFolder }}/conf/
+        - mountPath: {{ include "sonarqube.folder" . }}/conf/
           name: concat-dir
         {{- end }}
         {{- if .Values.sonarSecretKey }}
-        - mountPath: {{ .Values.sonarqubeFolder }}/secret/
+        - mountPath: {{ include "sonarqube.folder" . }}/secret/
           name: secret
         {{- end }}
         {{- if eq (include "sonarqube.agentic.enabled" .) "true" }}
@@ -439,18 +439,18 @@ spec:
         {{- . | trim | nindent 8 }}
         {{- end }}
         {{- if .Values.caCerts.enabled }}
-        - mountPath: {{ .Values.sonarqubeFolder }}/certs
+        - mountPath: {{ include "sonarqube.folder" . }}/certs
           name: sonarqube
           subPath: certs
         {{- end }}
-        - mountPath: {{ .Values.sonarqubeFolder }}/extensions
+        - mountPath: {{ include "sonarqube.folder" . }}/extensions
           name: sonarqube
           subPath: extensions
         {{- if .Values.prometheusExporter.enabled }}
-        - mountPath: {{ .Values.sonarqubeFolder }}/conf/prometheus-config.yaml
+        - mountPath: {{ include "sonarqube.folder" . }}/conf/prometheus-config.yaml
           subPath: prometheus-config.yaml
           name: prometheus-config
-        - mountPath: {{ .Values.sonarqubeFolder }}/conf/prometheus-ce-config.yaml
+        - mountPath: {{ include "sonarqube.folder" . }}/conf/prometheus-ce-config.yaml
           subPath: prometheus-ce-config.yaml
           name: prometheus-ce-config
         {{- end }}

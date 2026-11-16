@@ -109,7 +109,7 @@ spec:
               sh -e /tmp/scripts/install_oracle_jdbc_driver.sh
           volumeMounts:
             - name: oracle-jdbc-driver
-              mountPath: {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
+              mountPath: {{ include "sonarqube.folder" . }}/extensions/jdbc-driver/oracle
             - name: install-oracle-jdbc-driver
               mountPath: /tmp/scripts/
             {{- if .Values.jdbcOverwrite.oracleJdbcDriver.netrcCreds }}

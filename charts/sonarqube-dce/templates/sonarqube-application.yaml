@@ -183,7 +183,7 @@ spec:
             "-e",
             "/tmp/scripts/install_plugins.sh"]
           volumeMounts:
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins
+            - mountPath: {{ include "sonarqube.folder" . }}/extensions/plugins
               name: sonarqube
               subPath: extensions/plugins
             - name: install-plugins
@@ -223,7 +223,7 @@ spec:
           resources: {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
+            - mountPath: {{ include "sonarqube.folder" . }}/extensions/jdbc-driver/oracle
               name: sonarqube
               subPath: extensions/jdbc-driver/oracle 
             - name: install-oracle-jdbc-driver
@@ -372,7 +372,7 @@ spec:
             {{- end }}
             {{- if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
             - name: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTORE
-              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
+              value: "{{ include "sonarqube.folder" . }}/es-secret/elastic-stack-ca.p12"
             - name: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
               valueFrom:
                 secretKeyRef:
@@ -467,12 +467,12 @@ spec:
           {{- end }}
           volumeMounts:
             {{- if or $hasMergedProps .Values.ApplicationNodes.sonarSecretProperties .Values.sonarSecretKey }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
+            - mountPath: {{ include "sonarqube.folder" . }}/conf/sonar.properties
               subPath: sonar.properties
               name: concat-dir
             {{- end }}
             {{- if .Values.sonarSecretKey }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/secret/
+            - mountPath: {{ include "sonarqube.folder" . }}/secret/
               name: secret
             {{- end }}
             {{- if eq (include "sonarqube.agentic.enabled" .) "true" }}
@@ -484,41 +484,41 @@ spec:
             {{- . | trim | nindent 12 }}
             {{- end }}
             {{- if .Values.caCerts.enabled }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/certs
+            - mountPath: {{ include "sonarqube.folder" . }}/certs
               name: sonarqube
               subPath: certs
             {{- end }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/data
+            - mountPath: {{ include "sonarqube.folder" . }}/data
               name: sonarqube
               subPath: data
             {{- if .Values.ApplicationNodes.plugins.install }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/plugins
+            - mountPath: {{ include "sonarqube.folder" . }}/extensions/plugins
               name: sonarqube
               subPath: extensions/plugins
             {{- end }}
             {{- if and .Values.jdbcOverwrite.oracleJdbcDriver .Values.jdbcOverwrite.oracleJdbcDriver.url }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/extensions/jdbc-driver/oracle
+            - mountPath: {{ include "sonarqube.folder" . }}/extensions/jdbc-driver/oracle
               name: sonarqube
               subPath: extensions/jdbc-driver/oracle
             {{- end }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/temp
+            - mountPath: {{ include "sonarqube.folder" . }}/temp
               name: sonarqube
               subPath: temp
-            - mountPath: {{ .Values.sonarqubeFolder }}/logs
+            - mountPath: {{ include "sonarqube.folder" . }}/logs
               name: sonarqube
               subPath: logs
             - mountPath: /tmp
               name: tmp-dir
             {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf/prometheus-config.yaml
+            - mountPath: {{ include "sonarqube.folder" . }}/conf/prometheus-config.yaml
               subPath: prometheus-config.yaml
               name: prometheus-config
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf/prometheus-ce-config.yaml
+            - mountPath: {{ include "sonarqube.folder" . }}/conf/prometheus-ce-config.yaml
               subPath: prometheus-ce-config.yaml
               name: prometheus-ce-config
             {{- end }}
             {{- if and .Values.searchNodes.searchAuthentication.enabled .Values.nodeEncryption.enabled }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/es-secret/
+            - mountPath: {{ include "sonarqube.folder" . }}/es-secret/
               name: es-secret
               readOnly: true
             {{- end }}

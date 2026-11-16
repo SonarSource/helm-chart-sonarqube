@@ -17,7 +17,7 @@ data:
     {{ $key }}={{ $val }}
   {{- end }}
   {{- if .Values.sonarSecretKey }}
-    sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
+    sonar.secretKeyPath={{ include "sonarqube.folder" . }}/secret/sonar-secret.txt
   {{- end }}
 ---
 apiVersion: v1
@@ -35,5 +35,5 @@ data:
     {{ $key }}={{ $val }}
   {{- end }}
   {{- if .Values.sonarSecretKey }}
-    sonar.secretKeyPath={{ .Values.sonarqubeFolder }}/secret/sonar-secret.txt
+    sonar.secretKeyPath={{ include "sonarqube.folder" . }}/secret/sonar-secret.txt
   {{- end }}
