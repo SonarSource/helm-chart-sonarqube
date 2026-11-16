@@ -324,7 +324,7 @@ func renderAgentEgressProxySquidConf(t *testing.T, chart agentChart, setValues m
 // would let the corresponding http_access allow rule fire. Squid treats each whitespace-separated
 // token as its own POSIX ERE and ORs them; Go's RE2 agrees with ERE on the constructs used here, so
 // compiling them directly lets a test assert on ACL *behaviour* rather than on the literal string.
-func urlpathRegexMatcher(t *testing.T, squidConf string, aclName string) func(path string) bool {
+func urlpathRegexMatcher(t *testing.T, squidConf, aclName string) func(path string) bool {
 	t.Helper()
 	prefix := "acl " + aclName + " urlpath_regex "
 
