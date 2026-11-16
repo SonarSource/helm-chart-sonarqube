@@ -12,8 +12,8 @@ metadata:
 data:
   install_plugins.sh: |-
     {{- if .Values.ApplicationNodes.plugins.install }}
-      rm -f {{ .Values.sonarqubeFolder }}/extensions/plugins/*
-      cd {{ .Values.sonarqubeFolder }}/extensions/plugins
+      rm -f {{ include "sonarqube.folder" . }}/extensions/plugins/*
+      cd {{ include "sonarqube.folder" . }}/extensions/plugins
       {{- range $index, $val := .Values.ApplicationNodes.plugins.install }}
       curl {{- if $.Values.caCerts.enabled }} --cacert /tmp/certs/ca-bundle.pem{{- end }} {{ if $.Values.ApplicationNodes.plugins.noCheckCertificate }}--insecure{{ end }} {{ if $.Values.ApplicationNodes.plugins.netrcCreds }}--netrc-file /root/.netrc{{ end }} -fsSLO {{ $val | quote }}
       {{- end }}

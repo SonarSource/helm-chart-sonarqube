@@ -211,17 +211,17 @@ spec:
             {{- toYaml .Values.searchNodes.persistence.mounts | nindent 12 }}
             {{- end }}
             {{- if .Values.caCerts }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/certs
+            - mountPath: {{ include "sonarqube.folder" . }}/certs
               name: "{{ template "sonarqube.fullname" . }}"
               subPath: certs
             {{- end }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/data
+            - mountPath: {{ include "sonarqube.folder" . }}/data
               name: "{{ template "sonarqube.fullname" . }}"
               subPath: data
-            - mountPath: {{ .Values.sonarqubeFolder }}/temp
+            - mountPath: {{ include "sonarqube.folder" . }}/temp
               name: "{{ template "sonarqube.fullname" . }}"
               subPath: temp
-            - mountPath: {{ .Values.sonarqubeFolder }}/logs
+            - mountPath: {{ include "sonarqube.folder" . }}/logs
               name: "{{ template "sonarqube.fullname" . }}"
               subPath: logs
             - mountPath: /tmp
@@ -267,9 +267,9 @@ spec:
                   name: "{{ template "search.userPassword" . }}" 
                   key: SONAR_CLUSTER_SEARCH_PASSWORD
             - name: SONAR_CLUSTER_ES_SSL_KEYSTORE
-              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
+              value: "{{ include "sonarqube.folder" . }}/es-secret/elastic-stack-ca.p12"
             - name: SONAR_CLUSTER_ES_SSL_TRUSTSTORE
-              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
+              value: "{{ include "sonarqube.folder" . }}/es-secret/elastic-stack-ca.p12"
             - name: SONAR_CLUSTER_ES_SSL_KEYSTOREPASSWORD
               valueFrom:
                 secretKeyRef:
@@ -282,7 +282,7 @@ spec:
                   key: SONAR_CLUSTER_ES_SSL_TRUSTSTOREPASSWORD
             {{- if .Values.nodeEncryption.enabled }}
             - name: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTORE
-              value: "{{ .Values.sonarqubeFolder }}/es-secret/elastic-stack-ca.p12"
+              value: "{{ include "sonarqube.folder" . }}/es-secret/elastic-stack-ca.p12"
             - name: SONAR_CLUSTER_ES_HTTP_SSL_KEYSTOREPASSWORD
               valueFrom:
                 secretKeyRef:
@@ -420,33 +420,33 @@ spec:
 {{ toYaml .Values.searchNodes.persistence.mounts | indent 12 }}
 {{- end }}
             {{- if or .Values.searchNodes.sonarProperties .Values.searchNodes.sonarSecretProperties .Values.sonarSecretKey }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/conf/sonar.properties
+            - mountPath: {{ include "sonarqube.folder" . }}/conf/sonar.properties
               subPath: sonar.properties
               name: concat-dir
             {{- end }}
             {{- if .Values.sonarSecretKey }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/secret/
+            - mountPath: {{ include "sonarqube.folder" . }}/secret/
               name: secret
               readOnly: true
             {{- end }}
             {{- if .Values.searchNodes.searchAuthentication.enabled }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/es-secret/
+            - mountPath: {{ include "sonarqube.folder" . }}/es-secret/
               name: es-secret
               readOnly: true
             {{- end }}
             {{- if .Values.caCerts }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/certs
+            - mountPath: {{ include "sonarqube.folder" . }}/certs
               name: "{{ template "sonarqube.fullname" . }}"
               subPath: certs
               readOnly: true
             {{- end }}
-            - mountPath: {{ .Values.sonarqubeFolder }}/data
+            - mountPath: {{ include "sonarqube.folder" . }}/data
               name: "{{ template "sonarqube.fullname" . }}"
               subPath: data
-            - mountPath: {{ .Values.sonarqubeFolder }}/temp
+            - mountPath: {{ include "sonarqube.folder" . }}/temp
               name: "{{ template "sonarqube.fullname" . }}"
               subPath: temp
-            - mountPath: {{ .Values.sonarqubeFolder }}/logs
+            - mountPath: {{ include "sonarqube.folder" . }}/logs
               name: "{{ template "sonarqube.fullname" . }}"
               subPath: logs
             - mountPath: /tmp

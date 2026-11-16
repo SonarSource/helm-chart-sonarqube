@@ -1,3 +1,8 @@
+{{/* SonarQube installation directory in the application and search images. */}}
+{{- define "sonarqube.folder" -}}
+{{- default "/opt/sonarqube" .Values.sonarqubeFolder -}}
+{{- end -}}
+
 {{/* vim: set filetype=mustache: */}}
 {{/*
 Expand the name of the chart.
@@ -161,6 +166,7 @@ Set sonarqube.jvmOpts
 */}}
 {{- define "sonarqube.jvmOpts" -}}
 {{- $tempJvm := .Values.jvmOpts | default "" -}}
+{{- $folder := include "sonarqube.folder" . -}}
 {{- if and .Values.sonarProperties (hasKey (.Values.sonarProperties) "sonar.web.javaOpts")}}
 {{- $tempJvm = trim (printf "%s %s" $tempJvm (get .Values.sonarProperties "sonar.web.javaOpts" | default "")) -}}
 {{- else if .Values.env -}}
@@ -171,11 +177,11 @@ Set sonarqube.jvmOpts
 {{- end -}}
 {{- end -}}
 {{- if and .Values.caCerts.enabled .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder $tempJvm | trim }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" $folder (int .Values.prometheusExporter.webBeanPort) $folder $folder $tempJvm | trim }}
 {{- else if .Values.caCerts.enabled -}}
-{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder $tempJvm | trim }}
+{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" $folder $tempJvm | trim }}
 {{- else if .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.webBeanPort) .Values.sonarqubeFolder $tempJvm | trim }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-config.yaml %s" $folder (int .Values.prometheusExporter.webBeanPort) $folder $tempJvm | trim }}
 {{- else -}}
 {{ printf "%s" $tempJvm }}
 {{- end -}}
@@ -186,6 +192,7 @@ Set sonarqube.jvmCEOpts
 */}}
 {{- define "sonarqube.jvmCEOpts" -}}
 {{- $tempJvm := .Values.jvmCeOpts | default "" -}}
+{{- $folder := include "sonarqube.folder" . -}}
 {{- if and .Values.sonarProperties (hasKey (.Values.sonarProperties) "sonar.ce.javaOpts")}}
 {{- $tempJvm = trim (printf "%s %s" $tempJvm (get .Values.sonarProperties "sonar.ce.javaOpts" | default "")) -}}
 {{- else if .Values.env -}}
@@ -196,11 +203,11 @@ Set sonarqube.jvmCEOpts
 {{- end -}}
 {{- end -}}
 {{- if and .Values.caCerts.enabled .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder .Values.sonarqubeFolder $tempJvm | trim }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml -Djavax.net.ssl.trustStore=%s/certs/cacerts %s" $folder (int .Values.prometheusExporter.ceBeanPort) $folder $folder $tempJvm | trim }}
 {{- else if .Values.caCerts.enabled -}}
-{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" .Values.sonarqubeFolder $tempJvm | trim }}
+{{ printf "-Djavax.net.ssl.trustStore=%s/certs/cacerts %s" $folder $tempJvm | trim }}
 {{- else if .Values.prometheusExporter.enabled -}}
-{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml %s" .Values.sonarqubeFolder (int .Values.prometheusExporter.ceBeanPort) .Values.sonarqubeFolder $tempJvm | trim }}
+{{ printf "-javaagent:%s/data/jmx_prometheus_javaagent.jar=%d:%s/conf/prometheus-ce-config.yaml %s" $folder (int .Values.prometheusExporter.ceBeanPort) $folder $tempJvm | trim }}
 {{- else -}}
 {{ printf "%s" $tempJvm }}
 {{- end -}}
@@ -1238,7 +1245,7 @@ one neutral path since they're three different base images; SQS keeps its materi
 sonarqubeFolder alongside the existing secret/ mount.
 */}}
 {{- define "sonarqube.agentic.keyDir" -}}/etc/agentic/keys{{- end -}}
-{{- define "sonarqube.agentic.sqsKeyDir" -}}{{ .Values.sonarqubeFolder }}/agentic-keys{{- end -}}
+{{- define "sonarqube.agentic.sqsKeyDir" -}}{{ include "sonarqube.folder" . }}/agentic-keys{{- end -}}
 
 {{/*
 The key directory for one consumer - sqsKeyDir on the application nodes, the neutral keyDir
@@ -1350,7 +1357,7 @@ Parameters (dict): ctx, consumer.
 Where the operator-provided instance secret is mounted on SQS, and the file it's projected to.
 Projected to a fixed filename so the mount path doesn't change with agenticSigningSecret.key.
 */}}
-{{- define "sonarqube.agentic.sqsSecretDir" -}}{{ .Values.sonarqubeFolder }}/agentic-secret{{- end -}}
+{{- define "sonarqube.agentic.sqsSecretDir" -}}{{ include "sonarqube.folder" . }}/agentic-secret{{- end -}}
 {{- define "sonarqube.agentic.sqsSecretFile" -}}{{ include "sonarqube.agentic.sqsSecretDir" . }}/instance-secret{{- end -}}
 
 {{/*

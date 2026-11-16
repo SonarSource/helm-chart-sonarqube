@@ -12,11 +12,11 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   init_fs.sh: |-
-    chown -R {{ .Values.searchNodes.persistence.uid }}:{{ .Values.searchNodes.persistence.guid }} {{ .Values.sonarqubeFolder }}/data
-    chown -R {{ .Values.searchNodes.persistence.uid }}:{{ .Values.searchNodes.persistence.guid }} {{ .Values.sonarqubeFolder }}/temp
-    chown -R {{ .Values.searchNodes.persistence.uid }}:{{ .Values.searchNodes.persistence.guid }} {{ .Values.sonarqubeFolder }}/logs
+    chown -R {{ .Values.searchNodes.persistence.uid }}:{{ .Values.searchNodes.persistence.guid }} {{ include "sonarqube.folder" . }}/data
+    chown -R {{ .Values.searchNodes.persistence.uid }}:{{ .Values.searchNodes.persistence.guid }} {{ include "sonarqube.folder" . }}/temp
+    chown -R {{ .Values.searchNodes.persistence.uid }}:{{ .Values.searchNodes.persistence.guid }} {{ include "sonarqube.folder" . }}/logs
     {{- if .Values.caCerts.enabled }}
-    chown -R {{ .Values.searchNodes.persistence.uid }}:{{ .Values.searchNodes.persistence.guid }} {{ .Values.sonarqubeFolder }}/certs
+    chown -R {{ .Values.searchNodes.persistence.uid }}:{{ .Values.searchNodes.persistence.guid }} {{ include "sonarqube.folder" . }}/certs
     {{- end }}
     {{- range .Values.searchNodes.persistence.mounts }}
     chown -R {{ $.Values.searchNodes.persistence.uid }}:{{ $.Values.searchNodes.persistence.guid }} {{ .mountPath }}
