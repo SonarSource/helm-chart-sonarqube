@@ -280,51 +280,50 @@ func TestVortexAzureRequiresContainer(t *testing.T) {
 // AZURE has no credential-less fallback (managed identity is unsupported), so it needs either an
 // inline connection string or an existingSecret.
 func TestAzureRequiresConnectionStringOrExistingSecret(t *testing.T) {
+	cases := map[string]struct {
+		prefix string
+		base   map[string]string
+		render func(*testing.T, agentChart, map[string]string) error
+	}{
+		"vortex": {
+			prefix: "vortexAnalysis.storage",
+			base: map[string]string{
+				"vortexAnalysis.storage.type":            "AZURE",
+				"vortexAnalysis.storage.azure.container": "ctx",
+			},
+			render: func(t *testing.T, chart agentChart, setValues map[string]string) error {
+				_, err := renderVortexDeploymentFromFixture(t, chart, setValues)
+				return err
+			},
+		},
+		"orchestrator": {
+			prefix: "agentOrchestrator.storage",
+			base: map[string]string{
+				"agentOrchestrator.storage.type":            "AZURE",
+				"agentOrchestrator.storage.azure.container": "jobs",
+			},
+			render: func(t *testing.T, chart agentChart, setValues map[string]string) error {
+				_, err := renderAgentOrchestratorDeployment(t, chart, setValues)
+				return err
+			},
+		},
+	}
 	for _, chart := range agentCharts {
-		t.Run(chart.name, func(t *testing.T) {
-			t.Run("vortex", func(t *testing.T) {
-				base := map[string]string{
-					"vortexAnalysis.storage.type":            "AZURE",
-					"vortexAnalysis.storage.azure.container": "ctx",
-				}
-				_, err := renderVortexDeploymentFromFixture(t, chart, base)
+		for name, tc := range cases {
+			t.Run(chart.name+"/"+name, func(t *testing.T) {
+				err := tc.render(t, chart, tc.base)
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), "neither vortexAnalysis.storage.azure.connectionString nor vortexAnalysis.storage.existingSecret is set")
+				assert.Contains(t, err.Error(), "neither "+tc.prefix+".azure.connectionString nor "+tc.prefix+".existingSecret is set")
 
-				for key, value := range map[string]string{
-					"vortexAnalysis.storage.azure.connectionString": "cs",
-					"vortexAnalysis.storage.existingSecret":         "my-secret",
-				} {
-					setValues := map[string]string{key: value}
-					for k, v := range base {
+				for _, key := range []string{tc.prefix + ".azure.connectionString", tc.prefix + ".existingSecret"} {
+					setValues := map[string]string{key: "value"}
+					for k, v := range tc.base {
 						setValues[k] = v
 					}
-					_, err := renderVortexDeploymentFromFixture(t, chart, setValues)
-					require.NoError(t, err, key)
+					require.NoError(t, tc.render(t, chart, setValues), key)
 				}
 			})
-			t.Run("orchestrator", func(t *testing.T) {
-				base := map[string]string{
-					"agentOrchestrator.storage.type":            "AZURE",
-					"agentOrchestrator.storage.azure.container": "jobs",
-				}
-				_, err := renderAgentOrchestratorDeployment(t, chart, base)
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), "neither agentOrchestrator.storage.azure.connectionString nor agentOrchestrator.storage.existingSecret is set")
-
-				for key, value := range map[string]string{
-					"agentOrchestrator.storage.azure.connectionString": "cs",
-					"agentOrchestrator.storage.existingSecret":         "my-secret",
-				} {
-					setValues := map[string]string{key: value}
-					for k, v := range base {
-						setValues[k] = v
-					}
-					_, err := renderAgentOrchestratorDeployment(t, chart, setValues)
-					require.NoError(t, err, key)
-				}
-			})
-		})
+		}
 	}
 }
 
