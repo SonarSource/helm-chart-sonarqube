@@ -5,6 +5,7 @@ All changes to this chart will be documented in this file.
 * Use `/opt/sonarqube` for all installation paths when `sonarqubeFolder` is empty or null. Preserve nonempty custom paths
 * Add `applicationNodes.waitForSearch.enabled` (default `false`) so application pods can wait until the search Service has a ready endpoint. Skipped when `istio.enabled` is `true`. Rejected at install time when `searchNodes.replicaCount` is `0`
 * Update MCP to 2026.5.1, Agent Orchestrator and Hunter Agent to 2026.5.2, and Remediation Agent to 2026.5.1
+* Add `AZURE` and `GCS` storage settings for the Agent Orchestrator and Vortex: `storage.azure.container`, `storage.azure.connectionString`, `storage.gcs.projectId` and `storage.gcs.credentialsJson`. `vortexAnalysis.storage.region` is now required only for `S3`, and `vortexAnalysis.storage.bucket` is not required for `AZURE`. `AZURE` requires `storage.azure.container` and either `storage.azure.connectionString` or `storage.existingSecret`
 * Upgrade the Agent Egress Proxy to Squid 7.7 with a pinned multi-arch image digest. Preserve Squid 6.x image overrides
 * Improve the gVisor installer's cleanup of its temporary files on the node
 * Upgrade Chart's version to 2026.6.1000
