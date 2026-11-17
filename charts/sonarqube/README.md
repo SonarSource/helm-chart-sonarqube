@@ -61,6 +61,16 @@ If you want to install the SonarQube Community Build chart, please set `communit
 This chart by default installs the SonarQube Community Build's latest version available at the time of the Helm chart release.
 If you want to use a more recent SonarQube Community Build, please set the `community.buildNumber` with the desired version.
 
+## Installing from the OCI registry
+
+The chart is also published as an OCI artifact to the GitHub Container Registry, which is convenient when your cluster pulls charts through an OCI registry or mirror such as Harbor or Quay. Use the `oci://` reference in place of `sonarqube/sonarqube`; `helm repo add` is not needed:
+
+```bash
+helm upgrade --install -n sonarqube sonarqube oci://ghcr.io/sonarsource/helm-chart-sonarqube/sonarqube --set edition=developer,monitoringPasscode=$MONITORING_PASSCODE
+```
+
+The OCI artifact is the same package as the one attached to the GitHub release. Chart versions released before OCI publishing was introduced might only be available from the Helm repository.
+
 ## Upgrading to SonarQube Server LTA
 
 When upgrading your SonarQube Server to a new Long-Term Active (LTA) release, you should carefully read the official upgrade documentation to determine the correct update path based on your current server version.
