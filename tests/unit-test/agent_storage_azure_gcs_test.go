@@ -276,3 +276,160 @@ func TestVortexAzureRequiresContainer(t *testing.T) {
 		})
 	}
 }
+
+// AZURE has no credential-less fallback (managed identity is unsupported), so it needs either an
+// inline connection string or an existingSecret.
+func TestAzureRequiresConnectionStringOrExistingSecret(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("vortex", func(t *testing.T) {
+				base := map[string]string{
+					"vortexAnalysis.storage.type":            "AZURE",
+					"vortexAnalysis.storage.azure.container": "ctx",
+				}
+				_, err := renderVortexDeploymentFromFixture(t, chart, base)
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "neither vortexAnalysis.storage.azure.connectionString nor vortexAnalysis.storage.existingSecret is set")
+
+				for key, value := range map[string]string{
+					"vortexAnalysis.storage.azure.connectionString": "cs",
+					"vortexAnalysis.storage.existingSecret":         "my-secret",
+				} {
+					setValues := map[string]string{key: value}
+					for k, v := range base {
+						setValues[k] = v
+					}
+					_, err := renderVortexDeploymentFromFixture(t, chart, setValues)
+					require.NoError(t, err, key)
+				}
+			})
+			t.Run("orchestrator", func(t *testing.T) {
+				base := map[string]string{
+					"agentOrchestrator.storage.type":            "AZURE",
+					"agentOrchestrator.storage.azure.container": "jobs",
+				}
+				_, err := renderAgentOrchestratorDeployment(t, chart, base)
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "neither agentOrchestrator.storage.azure.connectionString nor agentOrchestrator.storage.existingSecret is set")
+
+				for key, value := range map[string]string{
+					"agentOrchestrator.storage.azure.connectionString": "cs",
+					"agentOrchestrator.storage.existingSecret":         "my-secret",
+				} {
+					setValues := map[string]string{key: value}
+					for k, v := range base {
+						setValues[k] = v
+					}
+					_, err := renderAgentOrchestratorDeployment(t, chart, setValues)
+					require.NoError(t, err, key)
+				}
+			})
+		})
+	}
+}
+
+// With an existingSecret the Vortex env vars point at it and the chart renders no Secret of its own.
+func TestVortexExistingSecretForAzureAndGCS(t *testing.T) {
+	cases := map[string]struct {
+		setValues map[string]string
+		envName   string
+	}{
+		"AZURE": {
+			setValues: map[string]string{
+				"vortexAnalysis.storage.type":            "AZURE",
+				"vortexAnalysis.storage.azure.container": "ctx",
+			},
+			envName: "SONAR_AGENTIC_STORAGE_AZURE_CONNECTION_STRING",
+		},
+		"GCS": {
+			setValues: map[string]string{"vortexAnalysis.storage.type": "GCS"},
+			envName:   "SONAR_AGENTIC_STORAGE_GCS_CREDENTIALS_JSON",
+		},
+	}
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for name, tc := range cases {
+				t.Run(name, func(t *testing.T) {
+					tc.setValues["vortexAnalysis.storage.existingSecret"] = "my-secret"
+					deployment, err := renderVortexDeploymentFromFixture(t, chart, tc.setValues)
+					require.NoError(t, err)
+					assertSecretEnv(t, deployment.Spec.Template.Spec.Containers[0], tc.envName, "my-secret")
+
+					opts := &helm.Options{
+						Logger:      logger.Discard,
+						ValuesFiles: []string{chart.valuesDir + "/vortex-enabled.yaml"},
+						SetValues:   tc.setValues,
+					}
+					_, err = helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/vortex-secret.yaml"})
+					require.Error(t, err, "no chart-managed Secret is rendered when existingSecret is set")
+				})
+			}
+		})
+	}
+}
+
+func TestAgentOrchestratorGCSExistingSecret(t *testing.T) {
+	setValues := map[string]string{
+		"agentOrchestrator.storage.type":           "GCS",
+		"agentOrchestrator.storage.bucket":         "agent-jobs",
+		"agentOrchestrator.storage.existingSecret": "my-gcs-secret",
+	}
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			container := renderAgentOrchestrator(t, chart, setValues).Spec.Template.Spec.Containers[0]
+			assertSecretEnv(t, container, "SONAR_AGENTIC_ORCHESTRATOR_STORAGE_GCS_CREDENTIALS_JSON", "my-gcs-secret")
+
+			opts := &helm.Options{
+				Logger:      logger.Discard,
+				ValuesFiles: []string{chart.valuesDir + "/agent-orchestrator-enabled.yaml"},
+				SetValues:   setValues,
+			}
+			_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{"templates/agent-orchestrator-secret.yaml"})
+			require.Error(t, err, "no chart-managed Secret is rendered when existingSecret is set")
+		})
+	}
+}
+
+func TestAgentOrchestratorGCSStillRequiresBucket(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			_, err := renderAgentOrchestratorDeployment(t, chart, map[string]string{
+				"agentOrchestrator.storage.type":   "GCS",
+				"agentOrchestrator.storage.bucket": "",
+			})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "agentOrchestrator.storage.bucket is not set")
+		})
+	}
+}
+
+// S3 keys are only injected for S3, even when an existingSecret is set.
+func TestFilesystemAndNFSWithExistingSecretInjectNoS3Keys(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			for _, storageType := range []string{"FILESYSTEM", "NFS"} {
+				t.Run(storageType, func(t *testing.T) {
+					vortex, err := renderVortexDeploymentFromFixture(t, chart, map[string]string{
+						"vortexAnalysis.storage.type":               storageType,
+						"vortexAnalysis.storage.filesystem.baseDir": "/data",
+						"vortexAnalysis.storage.existingSecret":     "my-secret",
+					})
+					require.NoError(t, err)
+					for _, name := range []string{"SONAR_AGENTIC_STORAGE_ACCESS_KEY", "SONAR_AGENTIC_STORAGE_SECRET_KEY"} {
+						assert.Nil(t, findEnvByName(vortex.Spec.Template.Spec.Containers[0], name), name)
+					}
+
+					orchestrator, err := renderAgentOrchestratorDeployment(t, chart, map[string]string{
+						"agentOrchestrator.storage.type":               storageType,
+						"agentOrchestrator.storage.filesystem.baseDir": "/data",
+						"agentOrchestrator.storage.existingSecret":     "my-secret",
+					})
+					require.NoError(t, err)
+					for _, name := range []string{"AGENTIC_STORAGE_ACCESS_KEY", "AGENTIC_STORAGE_SECRET_KEY"} {
+						assert.Nil(t, findEnvByName(orchestrator.Spec.Template.Spec.Containers[0], name), name)
+					}
+				})
+			}
+		})
+	}
+}

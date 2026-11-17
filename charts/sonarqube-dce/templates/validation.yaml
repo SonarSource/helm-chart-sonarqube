@@ -59,6 +59,9 @@
   {{- if and (eq $agentOrchestratorStorage.type "AZURE") (not $agentOrchestratorStorage.azure.container) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.storage.type is AZURE but agentOrchestrator.storage.azure.container is not set." -}}
   {{- end -}}
+  {{- if and (eq $agentOrchestratorStorage.type "AZURE") (not $agentOrchestratorStorage.azure.connectionString) (not $agentOrchestratorStorage.existingSecret) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.storage.type is AZURE but neither agentOrchestrator.storage.azure.connectionString nor agentOrchestrator.storage.existingSecret is set." -}}
+  {{- end -}}
   {{- if and (not $agentOrchestratorStorage.existingSecret) (or $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey) (not (and $agentOrchestratorStorage.accessKey $agentOrchestratorStorage.secretKey)) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n agentOrchestrator.enabled is true but only one of agentOrchestrator.storage.accessKey / agentOrchestrator.storage.secretKey is set. Provide both, or neither for credential-less access." -}}
   {{- end -}}
@@ -234,6 +237,9 @@
     {{- end -}}
     {{- if and (eq $storage.type "AZURE") (not $storage.azure.container) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.storage.type is AZURE but vortexAnalysis.storage.azure.container is not set." -}}
+    {{- end -}}
+    {{- if and (eq $storage.type "AZURE") (not $storage.azure.connectionString) (not $storage.existingSecret) -}}
+{{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.storage.type is AZURE but neither vortexAnalysis.storage.azure.connectionString nor vortexAnalysis.storage.existingSecret is set." -}}
     {{- end -}}
     {{- if and (eq $storage.type "S3") (not $storage.region) -}}
 {{- fail "\n ** The values.yaml file is not valid. ** \n vortexAnalysis.enabled is true but vortexAnalysis.storage.region is not set." -}}
