@@ -66,6 +66,16 @@ The [configuration](#configuration) section lists the parameters that can be con
 
 The default login is admin/admin.
 
+### Installing from the OCI registry
+
+The chart is also published as an OCI artifact to the GitHub Container Registry, which is convenient when your cluster pulls charts through an OCI registry or mirror such as Harbor or Quay. Use the `oci://` reference in place of `sonarqube/sonarqube-dce`; `helm repo add` is not needed:
+
+```bash
+helm upgrade --install -n sonarqube-dce sonarqube oci://ghcr.io/sonarsource/helm-chart-sonarqube/sonarqube-dce --set applicationNodes.jwtSecret=$JWT_SECRET,monitoringPasscode=$MONITORING_PASSCODE,jdbcOverwrite.jdbcUrl=$JDBC_URL,jdbcOverwrite.jdbcUsername=$JDBC_USERNAME,jdbcOverwrite.jdbcSecretName=$JDBC_PASSWORD_SECRET_NAME,jdbcOverwrite.jdbcSecretPasswordKey=$JDBC_PASSWORD_SECRET_KEY
+```
+
+The OCI artifact is the same package as the one attached to the GitHub release. Chart versions released before OCI publishing was introduced might only be available from the Helm repository.
+
 ## Upgrading to SonarQube Server LTA
 
 When upgrading your SonarQube Server to a new Long-Term Active (LTA) release, you should carefully read the official upgrade documentation to determine the correct update path based on your current server version.

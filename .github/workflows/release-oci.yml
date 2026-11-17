@@ -1,0 +1,40 @@
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      releaseTag:
+        description: "Tag of the published Release to push to GHCR"
+        required: true
+        type: string
+
+name: Release (OCI)
+
+jobs:
+  push:
+    runs-on: github-ubuntu-latest-s
+    name: Push charts to GHCR
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: jdx/mise-action@6be3c7ed4c21d4f76b208d351d95aac273ebb76d # v5.2.4
+        with:
+          version: 2026.3.13
+          install_args: helm
+          # No tool cache in a publishing workflow: the helm binary that pushes the release is always freshly downloaded
+          cache: false
+      - name: Log in to GHCR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: helm registry login ghcr.io --username "$GITHUB_ACTOR" --password-stdin <<< "$GITHUB_TOKEN"
+      - name: Push charts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.releaseTag || github.event.release.tag_name }}
+        # GHCR repository names must be lowercase: SonarSource/helm-chart-sonarqube -> sonarsource/helm-chart-sonarqube
+        run: ./.github/scripts/push_chart_oci.sh "$RELEASE_TAG" "oci://ghcr.io/${GITHUB_REPOSITORY,,}"
