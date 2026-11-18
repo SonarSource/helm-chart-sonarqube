@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/gruntwork-io/terratest/modules/helm"
@@ -81,16 +82,11 @@ func TestMcpWaitForSonarqubeResources(t *testing.T) {
 // mcp.podLabels lands on the pod template only; the selector stays fixed so upgrades keep working.
 func TestMcpPodLabels(t *testing.T) {
 	for _, chart := range agentCharts {
-		if chart.name != "sonarqube" {
-			continue
-		}
 		t.Run(chart.name, func(t *testing.T) {
-			t.Run("unset renders only the default labels", func(t *testing.T) {
+			t.Run("unset renders only the selector labels", func(t *testing.T) {
 				deployment := mcpDeployment(t, chart, "mcp-enabled.yaml", nil)
-				assert.Equal(t, map[string]string{
-					"app":     "sonarqube-mcp",
-					"release": chart.release,
-				}, deployment.Spec.Template.Labels)
+				assert.Equal(t, []string{"app", "release"}, sortedKeys(deployment.Spec.Selector.MatchLabels))
+				assert.Equal(t, deployment.Spec.Selector.MatchLabels, deployment.Spec.Template.Labels)
 			})
 
 			t.Run("set renders podLabels on the pod template", func(t *testing.T) {
@@ -101,10 +97,20 @@ func TestMcpPodLabels(t *testing.T) {
 				labels := deployment.Spec.Template.Labels
 				assert.Equal(t, "platform", labels["team"])
 				assert.Equal(t, "cc-4711", labels["cost-center"])
-				assert.Equal(t, "sonarqube-mcp", labels["app"])
-				assert.Equal(t, chart.release, labels["release"])
-				assert.NotContains(t, deployment.Spec.Selector.MatchLabels, "team")
+				assert.Equal(t, []string{"app", "release"}, sortedKeys(deployment.Spec.Selector.MatchLabels))
+				for k, v := range deployment.Spec.Selector.MatchLabels {
+					assert.Equal(t, v, labels[k], "pod template must keep selector label %q", k)
+				}
 			})
 		})
 	}
+}
+
+func sortedKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }

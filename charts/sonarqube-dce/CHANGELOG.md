@@ -16,6 +16,7 @@ All changes to this chart will be documented in this file.
 * Document `hunterAgent.image` and `remediationAgent.image`, and the gVisor files and node labels that `helm uninstall` leaves behind when the installer created them
 * Warn at install time when `applicationNodes.prometheusExporter` is at version 1.6.0 with no `downloadURL`: scrape `/metrics`, and built-in JVM metrics use OpenMetrics names (`jvm_info` is now `jvm_runtime_info`; the `*_created` series are no longer exported). Set `applicationNodes.prometheusExporter.prometheusAcknowledged` to hide the note
 * Restart the gVisor installer pods on chart upgrades and gVisor value changes, so they always run the current scripts
+* Add `mcp.podLabels` to set additional labels on the MCP pod
 
 ## [2026.5.1000]
 * Upgrade Chart's version to 2026.5.1000
