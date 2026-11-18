@@ -44,6 +44,20 @@ var coreNetworkPolicyCharts = []struct {
 // the scenario under test on top. jsonValues go through --set-json, for nested selectors.
 func renderCoreNetworkPolicy(t *testing.T, i int, overrides, jsonValues map[string]string) networkingv1.NetworkPolicy {
 	t.Helper()
+	output, err := renderCoreNetworkPolicyOutput(t, i, overrides, jsonValues)
+	require.NoError(t, err)
+	return parseCorePolicy(t, i, output)
+}
+
+// renderCoreNetworkPolicyE returns only the render error, for scenarios the chart rejects.
+func renderCoreNetworkPolicyE(t *testing.T, i int, overrides, jsonValues map[string]string) error {
+	t.Helper()
+	_, err := renderCoreNetworkPolicyOutput(t, i, overrides, jsonValues)
+	return err
+}
+
+func renderCoreNetworkPolicyOutput(t *testing.T, i int, overrides, jsonValues map[string]string) (string, error) {
+	t.Helper()
 	c := coreNetworkPolicyCharts[i]
 	setValues := map[string]string{
 		"monitoringPasscode":         "test-passcode",
@@ -66,9 +80,12 @@ func renderCoreNetworkPolicy(t *testing.T, i int, overrides, jsonValues map[stri
 		SetJsonValues:  jsonValues,
 		KubectlOptions: k8s.NewKubectlOptions("", "", coreNetworkPolicyNamespace),
 	}
-	output, err := helm.RenderTemplateE(t, opts, c.chart.path, c.chart.release, []string{"templates/networkpolicy.yaml"})
-	require.NoError(t, err)
+	return helm.RenderTemplateE(t, opts, c.chart.path, c.chart.release, []string{"templates/networkpolicy.yaml"})
+}
 
+func parseCorePolicy(t *testing.T, i int, output string) networkingv1.NetworkPolicy {
+	t.Helper()
+	c := coreNetworkPolicyCharts[i]
 	var policy networkingv1.NetworkPolicy
 	for _, doc := range strings.Split(output, "\n---") {
 		if strings.Contains(doc, c.corePolicyNameHint) {
@@ -207,16 +224,37 @@ func TestCoreNetworkPolicyAdmitsEntryPoint(t *testing.T) {
 			assert.Nil(t, peer.PodSelector)
 		})
 
-		t.Run(c.chart.name+": httproute.enabled without gatewayNamespace admits the release namespace", func(t *testing.T) {
-			policy := renderCoreNetworkPolicy(t, i, map[string]string{
+		t.Run(c.chart.name+": httproute.enabled without gatewayNamespace fails rather than admit the release namespace", func(t *testing.T) {
+			err := renderCoreNetworkPolicyE(t, i, map[string]string{
 				"httproute.enabled": "true",
 				"httproute.gateway": "my-gateway",
 			}, nil)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "networkPolicy.ingressController is required")
+		})
+
+		t.Run(c.chart.name+": httproute gatewayNamespace equal to the release namespace fails", func(t *testing.T) {
+			err := renderCoreNetworkPolicyE(t, i, map[string]string{
+				"httproute.enabled":          "true",
+				"httproute.gateway":          "my-gateway",
+				"httproute.gatewayNamespace": coreNetworkPolicyNamespace,
+			}, nil)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "networkPolicy.ingressController is required")
+		})
+
+		t.Run(c.chart.name+": httproute in the release namespace renders with an ingressController podSelector", func(t *testing.T) {
+			policy := renderCoreNetworkPolicy(t, i, map[string]string{
+				"httproute.enabled": "true",
+				"httproute.gateway": "my-gateway",
+			}, map[string]string{
+				"networkPolicy.ingressController": `{"namespaceSelector":{"matchLabels":{"kubernetes.io/metadata.name":"sq-test"}},` +
+					`"podSelector":{"matchLabels":{"gateway.networking.k8s.io/gateway-name":"my-gateway"}}}`,
+			})
 
 			rules := entryPointRules(policy)
 			require.Len(t, rules, 1)
-			assert.Equal(t, map[string]string{"kubernetes.io/metadata.name": coreNetworkPolicyNamespace},
-				rules[0].From[0].NamespaceSelector.MatchLabels)
+			require.NotNil(t, rules[0].From[0].PodSelector, "namespace-wide admission would let Hunter in")
 		})
 
 		t.Run(c.chart.name+": ingressController alone admits it, without ingress or httproute", func(t *testing.T) {

@@ -146,7 +146,8 @@ networkPolicy:
 
   # Pods that forward external traffic to SonarQube (an Ingress controller or a Gateway API data
   # plane) and are admitted on service.internalPort. By default, ingress.enabled admits every
-  # namespace except the release namespace (set this if the controller runs there) and httproute.enabled admits httproute.gatewayNamespace (else the release namespace).
+  # namespace except the release namespace (set this if the controller runs there) and httproute.enabled admits httproute.gatewayNamespace; a Gateway in the release namespace must
+  # be selected here, with a podSelector, or the chart fails to render.
   # Set it to narrow that, or when the Ingress/Gateway is not created by this chart. The controller
   # normally runs in its own namespace, so set namespaceSelector; podSelector is optional and
   # applies within that namespace. A controller using hostNetwork reaches SonarQube from the node
