@@ -25,6 +25,9 @@ spec:
       labels:
         app: {{ include "sonarqube.name" . }}-mcp
         release: {{ .Release.Name }}
+        {{- with .Values.mcp.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
         {{- with include "sonarqube.istio.sidecarInjectAnnotation" . }}
         {{- . | nindent 8 }}
         {{- end }}
