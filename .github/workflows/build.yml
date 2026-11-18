@@ -90,6 +90,10 @@ jobs:
     runs-on: sonar-xs-public
     needs: [chart-fixture-test, chart-schema-test, static-compatibility-test]
     name: SonarQube OpenShift Tests
+    concurrency:
+      group: helm-chart-openshift-${{ matrix.verifying_chart }}
+      cancel-in-progress: false
+      queue: max
     permissions:
       id-token: write
       contents: read
@@ -192,7 +196,7 @@ jobs:
         run: cat "report-${{ matrix.verifying_chart}}/report.yaml" | ./.github/scripts/verify_openshift.sh
       - name: Cleanup
         if: always()
-        run: oc delete project ${{ matrix.verifying_chart }} || true
+        run: oc delete project ${{ matrix.verifying_chart }} --ignore-not-found=true --wait=true --timeout=5m
 
   kind-test:
     needs: [chart-fixture-test, chart-schema-test, static-compatibility-test]
