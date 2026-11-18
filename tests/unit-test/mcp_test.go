@@ -77,3 +77,34 @@ func TestMcpWaitForSonarqubeResources(t *testing.T) {
 		})
 	}
 }
+
+// mcp.podLabels lands on the pod template only; the selector stays fixed so upgrades keep working.
+func TestMcpPodLabels(t *testing.T) {
+	for _, chart := range agentCharts {
+		if chart.name != "sonarqube" {
+			continue
+		}
+		t.Run(chart.name, func(t *testing.T) {
+			t.Run("unset renders only the default labels", func(t *testing.T) {
+				deployment := mcpDeployment(t, chart, "mcp-enabled.yaml", nil)
+				assert.Equal(t, map[string]string{
+					"app":     "sonarqube-mcp",
+					"release": chart.release,
+				}, deployment.Spec.Template.Labels)
+			})
+
+			t.Run("set renders podLabels on the pod template", func(t *testing.T) {
+				deployment := mcpDeployment(t, chart, "mcp-enabled.yaml", map[string]string{
+					"mcp.podLabels.team":        "platform",
+					"mcp.podLabels.cost-center": "cc-4711",
+				})
+				labels := deployment.Spec.Template.Labels
+				assert.Equal(t, "platform", labels["team"])
+				assert.Equal(t, "cc-4711", labels["cost-center"])
+				assert.Equal(t, "sonarqube-mcp", labels["app"])
+				assert.Equal(t, chart.release, labels["release"])
+				assert.NotContains(t, deployment.Spec.Selector.MatchLabels, "team")
+			})
+		})
+	}
+}
