@@ -144,6 +144,21 @@ networkPolicy:
   # If you plan on using the jmx exporter, you need to define where the traffic is coming from
   prometheusNamespace: "monitoring"
 
+  # Pods that forward external traffic to SonarQube (an Ingress controller or a Gateway API data
+  # plane) and are admitted on service.internalPort. By default, ingress.enabled admits every
+  # namespace except the release namespace (set this if the controller runs there) and httproute.enabled admits httproute.gatewayNamespace (else the release namespace).
+  # Set it to narrow that, or when the Ingress/Gateway is not created by this chart. The controller
+  # normally runs in its own namespace, so set namespaceSelector; podSelector is optional and
+  # applies within that namespace. A controller using hostNetwork reaches SonarQube from the node
+  # IP, which neither selector matches: use additionalNetworkPolicies with an ipBlock instead.
+  # ingressController:
+  #   namespaceSelector:
+  #     matchLabels:
+  #       kubernetes.io/metadata.name: ingress-nginx
+  #   podSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/name: ingress-nginx
+
   # If you are using a external database and enable network Policies to be created
   # you will need to explicitly allow egress traffic to your database
   # (DEPRECATED) please use additionalNetworkPolicies instead

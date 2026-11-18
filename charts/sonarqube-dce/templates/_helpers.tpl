@@ -1974,3 +1974,36 @@ Fail helm upgrade across an Elasticsearch major while search pods are still runn
 {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Ingress rule for traffic that reaches SonarQube through an Ingress controller or a Gateway API data
+plane. Those run in their own namespace, so the peer is a namespaceSelector; a podSelector alone only
+matches the release namespace.
+Rendered when networkPolicy.ingressController is set (which also covers an Ingress or Gateway this
+chart does not create) or when ingress.enabled / httproute.enabled is. The peer is, in order:
+  - networkPolicy.ingressController, verbatim;
+  - ingress.enabled: every namespace except the release namespace, since the controller's namespace is
+    not known. Excluding it keeps sibling pods (e.g. Hunter) out; a controller running in the release
+    namespace needs networkPolicy.ingressController;
+  - httproute.enabled: httproute.gatewayNamespace, else the release namespace.
+Output is unindented and empty when no rule applies; callers should pipe through `nindent`.
+Usage: {{- with include "sonarqube.networkPolicy.entryPointRule" . }}{{ . | nindent 4 }}{{- end }}
+*/}}
+{{- define "sonarqube.networkPolicy.entryPointRule" -}}
+{{- $controller := .Values.networkPolicy.ingressController -}}
+{{- if or $controller .Values.ingress.enabled .Values.httproute.enabled -}}
+{{- $notRelease := dict "key" "kubernetes.io/metadata.name" "operator" "NotIn" "values" (list .Release.Namespace) -}}
+{{- $peer := dict "namespaceSelector" (dict "matchExpressions" (list $notRelease)) -}}
+{{- if $controller -}}
+{{- $peer = $controller -}}
+{{- else if not .Values.ingress.enabled -}}
+{{- $namespace := default .Release.Namespace .Values.httproute.gatewayNamespace -}}
+{{- $peer = dict "namespaceSelector" (dict "matchLabels" (dict "kubernetes.io/metadata.name" $namespace)) -}}
+{{- end -}}
+- from:
+    - {{- toYaml $peer | nindent 6 }}
+  ports:
+    - port: {{ .Values.service.internalPort }}
+      protocol: TCP
+{{- end -}}
+{{- end -}}

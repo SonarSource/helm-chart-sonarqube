@@ -1181,6 +1181,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | ----------------------------------------- | ------------------------------------------------------------------------- | ------- |
 | `networkPolicy.enabled`                   | Create NetworkPolicies                                                    | `false` |
 | `networkPolicy.prometheusNamespace`       | Allow incoming traffic to monitoring ports from this namespace            | `"monitoring"` |
+| `networkPolicy.ingressController`         | Selector (`namespaceSelector`, optional `podSelector`) for the Ingress controller or Gateway API data plane admitted on the SonarQube port. Overrides the default: every namespace except the release namespace for `ingress.enabled`, `httproute.gatewayNamespace` (else the release namespace) for `httproute.enabled`. Set it for an Ingress/Gateway this chart does not create | `nil` |
 | `networkPolicy.additionalNetworkPolicys`  | (DEPRECATED) Please use `networkPolicy.additionalNetworkPolicies` instead | `nil`   |
 | `networkPolicy.additionalNetworkPolicies` | User defined NetworkPolicies (usefull for external database)              | `nil`   |
 
