@@ -199,7 +199,7 @@ func assertReplicasRenderedWhenAutoscalingDisabled(t *testing.T, render func() (
 // no explicit agentKeda.assumeInstalled override) fails; --api-versions simulates the CRD being
 // registered on a real cluster (Capabilities.APIVersions is otherwise empty under `helm
 // template`). Used by both this file and vortex_autoscaling_test.go.
-func assertAutoscalingRequiresKedaCRDOrOverride(t *testing.T, opts *helm.Options, chart agentChart, template string, errSubstring string) {
+func assertAutoscalingRequiresKedaCRDOrOverride(t *testing.T, opts *helm.Options, chart agentChart, template, errSubstring string) {
 	t.Helper()
 	t.Run("no KEDA CRD, no override: fails", func(t *testing.T) {
 		_, err := helm.RenderTemplateE(t, opts, chart.path, chart.release, []string{template})
