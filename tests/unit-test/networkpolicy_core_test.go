@@ -224,23 +224,51 @@ func TestCoreNetworkPolicyAdmitsEntryPoint(t *testing.T) {
 			assert.Nil(t, peer.PodSelector)
 		})
 
-		t.Run(c.chart.name+": httproute.enabled without gatewayNamespace fails rather than admit the release namespace", func(t *testing.T) {
-			err := renderCoreNetworkPolicyE(t, i, map[string]string{
-				"httproute.enabled": "true",
-				"httproute.gateway": "my-gateway",
-			}, nil)
+		t.Run(c.chart.name+": httproute without gatewayNamespace and hunter enabled fails", func(t *testing.T) {
+			values := hunterAgentValues()
+			values["httproute.enabled"] = "true"
+			values["httproute.gateway"] = "my-gateway"
+			err := renderCoreNetworkPolicyE(t, i, values, nil)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), "networkPolicy.ingressController is required")
 		})
 
-		t.Run(c.chart.name+": httproute gatewayNamespace equal to the release namespace fails", func(t *testing.T) {
-			err := renderCoreNetworkPolicyE(t, i, map[string]string{
-				"httproute.enabled":          "true",
-				"httproute.gateway":          "my-gateway",
-				"httproute.gatewayNamespace": coreNetworkPolicyNamespace,
-			}, nil)
+		t.Run(c.chart.name+": httproute gatewayNamespace equal to the release namespace and hunter enabled fails", func(t *testing.T) {
+			values := hunterAgentValues()
+			values["httproute.enabled"] = "true"
+			values["httproute.gateway"] = "my-gateway"
+			values["httproute.gatewayNamespace"] = coreNetworkPolicyNamespace
+			err := renderCoreNetworkPolicyE(t, i, values, nil)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), "networkPolicy.ingressController is required")
+		})
+
+		t.Run(c.chart.name+": httproute without gatewayNamespace and no hunter admits the release namespace", func(t *testing.T) {
+			policy := renderCoreNetworkPolicy(t, i, map[string]string{
+				"httproute.enabled": "true",
+				"httproute.gateway": "my-gateway",
+			}, nil)
+
+			rules := entryPointRules(policy)
+			require.Len(t, rules, 1)
+			assert.Equal(t, map[string]string{"kubernetes.io/metadata.name": coreNetworkPolicyNamespace},
+				rules[0].From[0].NamespaceSelector.MatchLabels)
+		})
+
+		t.Run(c.chart.name+": ingressController with only a podSelector fails", func(t *testing.T) {
+			err := renderCoreNetworkPolicyE(t, i, nil, map[string]string{
+				"networkPolicy.ingressController": `{"podSelector":{"matchLabels":{"app":"gw"}}}`,
+			})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "namespaceSelector is required")
+		})
+
+		t.Run(c.chart.name+": ingressController with an unknown key is rejected by the schema", func(t *testing.T) {
+			err := renderCoreNetworkPolicyE(t, i, nil, map[string]string{
+				"networkPolicy.ingressController": `{"namespaceSelectr":{}}`,
+			})
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "namespaceSelectr")
 		})
 
 		t.Run(c.chart.name+": httproute in the release namespace renders with an ingressController podSelector", func(t *testing.T) {

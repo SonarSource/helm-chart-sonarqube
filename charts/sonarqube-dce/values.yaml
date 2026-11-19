@@ -612,13 +612,17 @@ networkPolicy:
   prometheusNamespace: "monitoring"
 
   # Pods that forward external traffic to SonarQube (an Ingress controller or a Gateway API data
-  # plane) and are admitted on service.internalPort. By default, ingress.enabled admits every
-  # namespace except the release namespace (set this if the controller runs there) and httproute.enabled admits httproute.gatewayNamespace; a Gateway in the release namespace must
-  # be selected here, with a podSelector, or the chart fails to render.
-  # Set it to narrow that, or when the Ingress/Gateway is not created by this chart. The controller
-  # normally runs in its own namespace, so set namespaceSelector; podSelector is optional and
-  # applies within that namespace. A controller using hostNetwork reaches SonarQube from the node
-  # IP, which neither selector matches: use additionalNetworkPolicies with an ipBlock instead.
+  # plane), admitted on service.internalPort. Defaults when unset:
+  #   - ingress.enabled: every namespace except the release namespace. This admits any pod in
+  #     those namespaces, not only the controller; set this value to narrow it.
+  #   - httproute.enabled: httproute.gatewayNamespace. If that is unset or the release namespace,
+  #     the whole release namespace is admitted, or rendering fails when hunterAgent.enabled is
+  #     true, since that would admit the Hunter runtime. Set this value with a podSelector then.
+  # Set it as well when the Ingress/Gateway is not created by this chart, or when the Gateway data
+  # plane runs outside httproute.gatewayNamespace (e.g. Envoy Gateway uses envoy-gateway-system).
+  # namespaceSelector is required; podSelector is optional and applies within that namespace. A
+  # controller using hostNetwork reaches SonarQube from the node IP, which neither selector
+  # matches: use additionalNetworkPolicies with an ipBlock instead.
   # ingressController:
   #   namespaceSelector:
   #     matchLabels:
@@ -1759,6 +1763,8 @@ agentEgressProxy:
   # Leaving this empty is a valid but near-useless configuration: the runtimes can still reach
   # SonarQube's own agentic endpoints (hardcoded, see squid.conf) but nothing else, so no external
   # LLM provider is callable. Set at least the provider domain the runtimes are pointed at.
+  # Do not list a domain that matches the SonarQube Service FQDN (e.g. .svc.cluster.local): the
+  # SonarQube policy admits the whole proxy pod, so Hunter would reach SonarQube through it.
   allowedDomains: []
   # - .anthropic.com
   # Raw squid.conf lines spliced in after the generated allow rules but *before* the final
