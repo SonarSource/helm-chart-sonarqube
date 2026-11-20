@@ -145,12 +145,11 @@ networkPolicy:
   prometheusNamespace: "monitoring"
 
   # Pods that forward external traffic to SonarQube (an Ingress controller or a Gateway API data
-  # plane), admitted on service.internalPort. Defaults when unset:
-  #   - ingress.enabled: every namespace except the release namespace. This admits any pod in
-  #     those namespaces, not only the controller; set this value to narrow it.
-  #   - httproute.enabled: httproute.gatewayNamespace. If that is unset or the release namespace,
-  #     the whole release namespace is admitted, or rendering fails when hunterAgent.enabled is
-  #     true, since that would admit the Hunter runtime. Set this value with a podSelector then.
+  # plane), admitted on service.internalPort. Required with ingress.enabled: the controller's
+  # namespace is not known, so without it no rule is rendered and the Ingress cannot reach SonarQube.
+  # For httproute.enabled it defaults to httproute.gatewayNamespace. If that is unset or the release
+  # namespace, the whole release namespace is admitted, or rendering fails when hunterAgent.enabled
+  # is true, since that would admit the Hunter runtime. Set this value with a podSelector then.
   # Set it as well when the Ingress/Gateway is not created by this chart, or when the Gateway data
   # plane runs outside httproute.gatewayNamespace (e.g. Envoy Gateway uses envoy-gateway-system).
   # namespaceSelector is required; podSelector is optional and applies within that namespace. A

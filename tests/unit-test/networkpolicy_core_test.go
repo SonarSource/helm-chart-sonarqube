@@ -193,21 +193,11 @@ func TestCoreNetworkPolicyAdmitsEntryPoint(t *testing.T) {
 	}
 
 	for i, c := range coreNetworkPolicyCharts {
-		t.Run(c.chart.name+": ingress.enabled with no selector admits every namespace but the release one", func(t *testing.T) {
+		t.Run(c.chart.name+": ingress.enabled alone admits no entry point", func(t *testing.T) {
+			// The controller's namespace is unknown; admitting every namespace would let in-cluster
+			// callers skip the Ingress. NOTES.txt tells the user to set ingressController.
 			policy := renderCoreNetworkPolicy(t, i, map[string]string{"ingress.enabled": "true"}, nil)
-
-			rules := entryPointRules(policy)
-			require.Len(t, rules, 1)
-			peer := rules[0].From[0]
-			assert.Empty(t, peer.NamespaceSelector.MatchLabels)
-			// Admitting the release namespace too would let sibling pods such as Hunter reach SonarQube.
-			require.Len(t, peer.NamespaceSelector.MatchExpressions, 1)
-			expr := peer.NamespaceSelector.MatchExpressions[0]
-			assert.Equal(t, "kubernetes.io/metadata.name", expr.Key)
-			assert.Equal(t, "NotIn", string(expr.Operator))
-			assert.Equal(t, []string{coreNetworkPolicyNamespace}, expr.Values)
-			assert.Nil(t, peer.PodSelector)
-			assert.Equal(t, "TCP", string(*rules[0].Ports[0].Protocol))
+			assert.Empty(t, entryPointRules(policy))
 		})
 
 		t.Run(c.chart.name+": httproute.enabled admits the gateway namespace", func(t *testing.T) {
@@ -296,27 +286,26 @@ func TestCoreNetworkPolicyAdmitsEntryPoint(t *testing.T) {
 			assert.Equal(t, map[string]string{"app.kubernetes.io/name": "traefik"}, peer.PodSelector.MatchLabels)
 		})
 
-		t.Run(c.chart.name+": ingressController replaces the default rather than adding to it", func(t *testing.T) {
+		t.Run(c.chart.name+": ingressController with ingress.enabled admits only the selected controller", func(t *testing.T) {
 			policy := renderCoreNetworkPolicy(t, i, map[string]string{"ingress.enabled": "true"}, overrideJSON)
 
 			rules := entryPointRules(policy)
-			require.Len(t, rules, 1, "the any-namespace default must not stay open next to a narrower override")
+			require.Len(t, rules, 1)
 			assert.Equal(t, map[string]string{"kubernetes.io/metadata.name": "traefik"},
 				rules[0].From[0].NamespaceSelector.MatchLabels)
 		})
 
-		t.Run(c.chart.name+": ingress and httproute together stay open for the Ingress controller", func(t *testing.T) {
+		t.Run(c.chart.name+": ingressController replaces the httproute default rather than adding to it", func(t *testing.T) {
 			policy := renderCoreNetworkPolicy(t, i, map[string]string{
-				"ingress.enabled":            "true",
 				"httproute.enabled":          "true",
 				"httproute.gateway":          "my-gateway",
 				"httproute.gatewayNamespace": "gw-ns",
-			}, nil)
+			}, overrideJSON)
 
 			rules := entryPointRules(policy)
 			require.Len(t, rules, 1)
-			assert.Empty(t, rules[0].From[0].NamespaceSelector.MatchLabels,
-				"narrowing to the gateway namespace would block the Ingress controller")
+			assert.Equal(t, map[string]string{"kubernetes.io/metadata.name": "traefik"},
+				rules[0].From[0].NamespaceSelector.MatchLabels)
 		})
 
 		t.Run(c.chart.name+": nothing exposing SonarQube admits no entry point", func(t *testing.T) {

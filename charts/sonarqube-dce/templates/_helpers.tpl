@@ -1979,29 +1979,27 @@ Fail helm upgrade across an Elasticsearch major while search pods are still runn
 Ingress rule for traffic that reaches SonarQube through an Ingress controller or a Gateway API data
 plane. Those run in their own namespace, so the peer is a namespaceSelector; a podSelector alone only
 matches the release namespace.
-Rendered when networkPolicy.ingressController is set (which also covers an Ingress or Gateway this
-chart does not create) or when ingress.enabled / httproute.enabled is. The peer is, in order:
-  - networkPolicy.ingressController, verbatim;
-  - ingress.enabled: every namespace except the release namespace, since the controller's namespace is
-    not known. Excluding it keeps sibling pods (e.g. Hunter) out; a controller running in the release
-    namespace needs networkPolicy.ingressController;
+Rendered when networkPolicy.ingressController or httproute.enabled is set. The peer is, in order:
+  - networkPolicy.ingressController, verbatim. This also covers an Ingress or Gateway this chart does
+    not create;
   - httproute.enabled: httproute.gatewayNamespace. When that is unset or the release namespace, the
     release namespace is admitted, which would also admit Hunter, so rendering fails if
     hunterAgent.enabled and requires networkPolicy.ingressController with a podSelector.
+ingress.enabled alone renders no rule: the controller's namespace is not known, and admitting every
+namespace would let in-cluster callers skip the Ingress. NOTES.txt warns to set ingressController.
 Output is unindented and empty when no rule applies; callers should pipe through `nindent`.
 Usage: {{- with include "sonarqube.networkPolicy.entryPointRule" . }}{{ . | nindent 4 }}{{- end }}
 */}}
 {{- define "sonarqube.networkPolicy.entryPointRule" -}}
 {{- $controller := .Values.networkPolicy.ingressController -}}
-{{- if or $controller .Values.ingress.enabled .Values.httproute.enabled -}}
-{{- $notRelease := dict "key" "kubernetes.io/metadata.name" "operator" "NotIn" "values" (list .Release.Namespace) -}}
-{{- $peer := dict "namespaceSelector" (dict "matchExpressions" (list $notRelease)) -}}
+{{- if or $controller .Values.httproute.enabled -}}
+{{- $peer := dict -}}
 {{- if $controller -}}
 {{- if not $controller.namespaceSelector -}}
 {{- fail "networkPolicy.ingressController.namespaceSelector is required: a podSelector alone matches pods in the release namespace, including the Hunter runtime." -}}
 {{- end -}}
 {{- $peer = $controller -}}
-{{- else if not .Values.ingress.enabled -}}
+{{- else -}}
 {{- $gatewayNamespace := default .Release.Namespace .Values.httproute.gatewayNamespace -}}
 {{- if and (eq $gatewayNamespace .Release.Namespace) .Values.hunterAgent.enabled -}}
 {{- fail "networkPolicy.ingressController is required when the Gateway runs in the release namespace and hunterAgent is enabled: a namespace-wide rule would admit the Hunter runtime. Select the Gateway data-plane pods with a namespaceSelector and podSelector, or set httproute.gatewayNamespace to a different namespace." -}}
