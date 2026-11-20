@@ -57,6 +57,19 @@ spec:
         - port: {{ .Values.service.internalPort }}
           protocol: TCP
 {{- end }}
+{{- if .Values.remediationAgent.enabled }}
+{{- /* The Remediation runtime reaches SonarQube through the egress proxy. Hunter must not, so this
+       follows remediationAgent rather than the proxy being deployed. */}}
+    - from:
+        - podSelector:
+            matchLabels: {{- include "sonarqube.agentEgressProxy.selectorLabels" . | nindent 14 }}
+      ports:
+        - port: {{ .Values.service.internalPort }}
+          protocol: TCP
+{{- end }}
+{{- with include "sonarqube.networkPolicy.entryPointRule" . }}
+{{- . | nindent 4 }}
+{{- end }}
   egress:
     - to:
         - podSelector:

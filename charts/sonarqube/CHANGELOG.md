@@ -15,6 +15,8 @@ All changes to this chart will be documented in this file.
 * Document `hunterAgent.image` and `remediationAgent.image`, and the gVisor files and node labels that `helm uninstall` leaves behind when the installer created them
 * Warn at install time when `prometheusExporter` is at version 1.6.0 with no `downloadURL`: scrape `/metrics`, and built-in JVM metrics use OpenMetrics names (`jvm_info` is now `jvm_runtime_info`; the `*_created` series are no longer exported). Set `prometheusExporter.prometheusAcknowledged` to hide the note
 * Restart the gVisor installer pods on chart upgrades and gVisor value changes, so they always run the current scripts
+* Admit the Agent Egress Proxy to SonarQube when `networkPolicy.enabled` and `remediationAgent.enabled` are set, so the Remediation runtime's rule and analysis requests are no longer blocked. The Hunter Agent stays unable to reach SonarQube
+* Admit the Ingress controller or Gateway API data plane to SonarQube when `networkPolicy.enabled` is set, so the UI no longer needs a user-written policy. Set `networkPolicy.ingressController` (`namespaceSelector`, optional `podSelector`) for an Ingress, or `httproute.gatewayNamespace` (another namespace than the release one) for an HTTPRoute. Without them no rule is rendered, as before, and NOTES prints a warning; set `networkPolicy.ingressController` with a `podSelector` for a Gateway data plane in the release namespace
 
 ## [2026.5.1000]
 * Upgrade Chart's version to 2026.5.1000

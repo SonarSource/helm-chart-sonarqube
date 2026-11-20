@@ -150,6 +150,14 @@ spec:
       ports:
         - port: 9000
           protocol: TCP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sonarqube-dce-agent-egress-proxy
+              release: remediation-agent-values.yaml
+      ports:
+        - port: 9000
+          protocol: TCP
   egress:
     - to:
         - podSelector:

@@ -1974,3 +1974,38 @@ Fail helm upgrade across an Elasticsearch major while search pods are still runn
 {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Ingress rule for traffic that reaches SonarQube through an Ingress controller or a Gateway API data
+plane. Those run in their own namespace, so the peer is a namespaceSelector; a podSelector alone only
+matches the release namespace.
+A rule is rendered only when the user says where the entry point runs. The peer is, in order:
+  - networkPolicy.ingressController, verbatim. This is required for ingress.enabled and also covers
+    an Ingress or Gateway this chart does not create;
+  - httproute.enabled with httproute.gatewayNamespace set to a namespace other than the release one.
+Otherwise no rule is rendered and NOTES.txt warns: the controller's namespace is unknown, and guessing
+(every namespace, or the release namespace, which also holds the Hunter runtime) would let other
+callers skip the Ingress/Gateway.
+Output is unindented and empty when no rule applies; callers should pipe through `nindent`.
+Usage: {{- with include "sonarqube.networkPolicy.entryPointRule" . }}{{ . | nindent 4 }}{{- end }}
+*/}}
+{{- define "sonarqube.networkPolicy.entryPointRule" -}}
+{{- $controller := .Values.networkPolicy.ingressController -}}
+{{- $gatewayNamespace := .Values.httproute.gatewayNamespace -}}
+{{- $peer := dict -}}
+{{- if $controller -}}
+{{- if not $controller.namespaceSelector -}}
+{{- fail "networkPolicy.ingressController.namespaceSelector is required: a podSelector alone matches pods in the release namespace, including the Hunter runtime." -}}
+{{- end -}}
+{{- $peer = $controller -}}
+{{- else if and .Values.httproute.enabled $gatewayNamespace (ne $gatewayNamespace .Release.Namespace) -}}
+{{- $peer = dict "namespaceSelector" (dict "matchLabels" (dict "kubernetes.io/metadata.name" $gatewayNamespace)) -}}
+{{- end -}}
+{{- if $peer -}}
+- from:
+    - {{- toYaml $peer | nindent 6 }}
+  ports:
+    - port: {{ .Values.service.internalPort }}
+      protocol: TCP
+{{- end -}}
+{{- end -}}

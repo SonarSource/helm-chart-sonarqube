@@ -611,6 +611,25 @@ networkPolicy:
   # If you plan on using the jmx exporter, you need to define where the traffic is coming from
   prometheusNamespace: "monitoring"
 
+  # Pods that forward external traffic to SonarQube (an Ingress controller or a Gateway API data
+  # plane), admitted on service.internalPort. Required with ingress.enabled: the controller's
+  # namespace is not known, so without it no rule is rendered and the Ingress cannot reach SonarQube.
+  # With httproute.enabled, httproute.gatewayNamespace is used when it is another namespace than the
+  # release one; otherwise no rule is rendered, since admitting the release namespace would also admit
+  # the Hunter runtime. Set this value, with a podSelector, for a Gateway data plane in the release
+  # namespace, outside httproute.gatewayNamespace (e.g. Envoy Gateway uses envoy-gateway-system), or
+  # for an Ingress/Gateway this chart does not create.
+  # namespaceSelector is required; podSelector is optional and applies within that namespace. A
+  # controller using hostNetwork reaches SonarQube from the node IP, which neither selector
+  # matches: use additionalNetworkPolicies with an ipBlock instead.
+  # ingressController:
+  #   namespaceSelector:
+  #     matchLabels:
+  #       kubernetes.io/metadata.name: ingress-nginx
+  #   podSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/name: ingress-nginx
+
   # If you are using a external database and enable network Policies to be created
   # you will need to explicitly allow egress traffic to your database
   # (DEPRECATED) please use additionalNetworkPolicies instead
@@ -1743,6 +1762,8 @@ agentEgressProxy:
   # Leaving this empty is a valid but near-useless configuration: the runtimes can still reach
   # SonarQube's own agentic endpoints (hardcoded, see squid.conf) but nothing else, so no external
   # LLM provider is callable. Set at least the provider domain the runtimes are pointed at.
+  # Do not list a domain that matches the SonarQube Service FQDN (e.g. .svc.cluster.local): the
+  # SonarQube policy admits the whole proxy pod, so Hunter would reach SonarQube through it.
   allowedDomains: []
   # - .anthropic.com
   # Raw squid.conf lines spliced in after the generated allow rules but *before* the final
