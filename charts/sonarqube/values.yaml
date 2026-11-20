@@ -147,11 +147,11 @@ networkPolicy:
   # Pods that forward external traffic to SonarQube (an Ingress controller or a Gateway API data
   # plane), admitted on service.internalPort. Required with ingress.enabled: the controller's
   # namespace is not known, so without it no rule is rendered and the Ingress cannot reach SonarQube.
-  # For httproute.enabled it defaults to httproute.gatewayNamespace. If that is unset or the release
-  # namespace, the whole release namespace is admitted, or rendering fails when hunterAgent.enabled
-  # is true, since that would admit the Hunter runtime. Set this value with a podSelector then.
-  # Set it as well when the Ingress/Gateway is not created by this chart, or when the Gateway data
-  # plane runs outside httproute.gatewayNamespace (e.g. Envoy Gateway uses envoy-gateway-system).
+  # With httproute.enabled, httproute.gatewayNamespace is used when it is another namespace than the
+  # release one; otherwise no rule is rendered, since admitting the release namespace would also admit
+  # the Hunter runtime. Set this value, with a podSelector, for a Gateway data plane in the release
+  # namespace, outside httproute.gatewayNamespace (e.g. Envoy Gateway uses envoy-gateway-system), or
+  # for an Ingress/Gateway this chart does not create.
   # namespaceSelector is required; podSelector is optional and applies within that namespace. A
   # controller using hostNetwork reaches SonarQube from the node IP, which neither selector
   # matches: use additionalNetworkPolicies with an ipBlock instead.

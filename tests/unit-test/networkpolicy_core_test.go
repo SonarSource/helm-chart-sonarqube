@@ -214,35 +214,54 @@ func TestCoreNetworkPolicyAdmitsEntryPoint(t *testing.T) {
 			assert.Nil(t, peer.PodSelector)
 		})
 
-		t.Run(c.chart.name+": httproute without gatewayNamespace and hunter enabled fails", func(t *testing.T) {
-			values := hunterAgentValues()
-			values["httproute.enabled"] = "true"
-			values["httproute.gateway"] = "my-gateway"
-			err := renderCoreNetworkPolicyE(t, i, values, nil)
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), "networkPolicy.ingressController is required")
+		t.Run(c.chart.name+": httproute without gatewayNamespace admits no entry point, with or without hunter", func(t *testing.T) {
+			// Admitting the release namespace would also admit sibling pods such as Hunter.
+			for name, values := range map[string]map[string]string{
+				"hunter off": {},
+				"hunter on":  hunterAgentValues(),
+			} {
+				values["httproute.enabled"] = "true"
+				values["httproute.gateway"] = "my-gateway"
+				policy := renderCoreNetworkPolicy(t, i, values, nil)
+				assert.Empty(t, entryPointRules(policy), name)
+			}
 		})
 
-		t.Run(c.chart.name+": httproute gatewayNamespace equal to the release namespace and hunter enabled fails", func(t *testing.T) {
-			values := hunterAgentValues()
-			values["httproute.enabled"] = "true"
-			values["httproute.gateway"] = "my-gateway"
-			values["httproute.gatewayNamespace"] = coreNetworkPolicyNamespace
-			err := renderCoreNetworkPolicyE(t, i, values, nil)
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), "networkPolicy.ingressController is required")
-		})
-
-		t.Run(c.chart.name+": httproute without gatewayNamespace and no hunter admits the release namespace", func(t *testing.T) {
+		t.Run(c.chart.name+": httproute gatewayNamespace equal to the release namespace admits no entry point", func(t *testing.T) {
 			policy := renderCoreNetworkPolicy(t, i, map[string]string{
-				"httproute.enabled": "true",
-				"httproute.gateway": "my-gateway",
+				"httproute.enabled":          "true",
+				"httproute.gateway":          "my-gateway",
+				"httproute.gatewayNamespace": coreNetworkPolicyNamespace,
+			}, nil)
+			assert.Empty(t, entryPointRules(policy))
+		})
+
+		t.Run(c.chart.name+": ingress and httproute together admit only the gateway namespace", func(t *testing.T) {
+			policy := renderCoreNetworkPolicy(t, i, map[string]string{
+				"ingress.enabled":            "true",
+				"httproute.enabled":          "true",
+				"httproute.gateway":          "my-gateway",
+				"httproute.gatewayNamespace": "gw-ns",
 			}, nil)
 
 			rules := entryPointRules(policy)
 			require.Len(t, rules, 1)
-			assert.Equal(t, map[string]string{"kubernetes.io/metadata.name": coreNetworkPolicyNamespace},
+			assert.Equal(t, map[string]string{"kubernetes.io/metadata.name": "gw-ns"},
 				rules[0].From[0].NamespaceSelector.MatchLabels)
+		})
+
+		t.Run(c.chart.name+": httproute in the release namespace renders with an ingressController podSelector", func(t *testing.T) {
+			policy := renderCoreNetworkPolicy(t, i, map[string]string{
+				"httproute.enabled": "true",
+				"httproute.gateway": "my-gateway",
+			}, map[string]string{
+				"networkPolicy.ingressController": `{"namespaceSelector":{"matchLabels":{"kubernetes.io/metadata.name":"sq-test"}},` +
+					`"podSelector":{"matchLabels":{"gateway.networking.k8s.io/gateway-name":"my-gateway"}}}`,
+			})
+
+			rules := entryPointRules(policy)
+			require.Len(t, rules, 1)
+			require.NotNil(t, rules[0].From[0].PodSelector, "namespace-wide admission would let Hunter in")
 		})
 
 		t.Run(c.chart.name+": ingressController with only a podSelector fails", func(t *testing.T) {
@@ -259,20 +278,6 @@ func TestCoreNetworkPolicyAdmitsEntryPoint(t *testing.T) {
 			})
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), "namespaceSelectr")
-		})
-
-		t.Run(c.chart.name+": httproute in the release namespace renders with an ingressController podSelector", func(t *testing.T) {
-			policy := renderCoreNetworkPolicy(t, i, map[string]string{
-				"httproute.enabled": "true",
-				"httproute.gateway": "my-gateway",
-			}, map[string]string{
-				"networkPolicy.ingressController": `{"namespaceSelector":{"matchLabels":{"kubernetes.io/metadata.name":"sq-test"}},` +
-					`"podSelector":{"matchLabels":{"gateway.networking.k8s.io/gateway-name":"my-gateway"}}}`,
-			})
-
-			rules := entryPointRules(policy)
-			require.Len(t, rules, 1)
-			require.NotNil(t, rules[0].From[0].PodSelector, "namespace-wide admission would let Hunter in")
 		})
 
 		t.Run(c.chart.name+": ingressController alone admits it, without ingress or httproute", func(t *testing.T) {
