@@ -603,7 +603,7 @@ data:
   # and drives them via `chroot /host` so they use the node's own wget/systemctl/containerd.
   run.sh: |
     #!/bin/sh
-    set -euo pipefail
+    set -eu
     DOWNLOAD_DIR=/host/opt/gvisor/download
     trap 'rm -rf /host/tmp/gvisor-sa "${DOWNLOAD_DIR}"' EXIT
     echo "[gvisor-installer] node=${NODE_NAME}"

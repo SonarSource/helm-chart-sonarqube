@@ -512,6 +512,7 @@ func TestGvisorInstallerArchiveLayout(t *testing.T) {
 
 				run := scripts["run.sh"]
 				assert.True(t, strings.HasPrefix(run, "#!/bin/sh\n"), "run.sh runs on the installer image's sh")
+				assert.NotContains(t, run, "pipefail", "dash (Debian bookworm, Ubuntu 24.04 /bin/sh) rejects set -o pipefail")
 				fetchIdx := strings.Index(run, "install-gvisor.sh fetch")
 				unpackIdx := strings.Index(run, `tar -xjf "${DOWNLOAD_DIR}/gvisor.tar.bz2"`)
 				binIdx := strings.Index(run, `mv "${unpacked}/gvisor-bin" /host/usr/local/bin/gvisor-bin`)
