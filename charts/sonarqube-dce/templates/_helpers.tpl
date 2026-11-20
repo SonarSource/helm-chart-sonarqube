@@ -116,6 +116,7 @@ Usage: {{ include "sonarqube.gvisor.release" . }}
 
 {{/*
 "true" when the gVisor release ships gvisor.tar.bz2 (20260721 and later), else "false".
+20260721 is the first release published with gvisor.tar.bz2 (x86_64 and aarch64); 20260714 has only the separate files.
 Usage: {{ include "sonarqube.gvisor.archive" . }}
 */}}
 {{- define "sonarqube.gvisor.archive" -}}
