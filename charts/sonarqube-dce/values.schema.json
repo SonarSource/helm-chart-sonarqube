@@ -1250,9 +1250,9 @@
                             }
                         },
                         "runscVersion": {
-                            "type": [
-                                "string",
-                                "number"
+                            "anyOf": [
+                                { "type": "integer", "minimum": 10000000, "maximum": 99999999 },
+                                { "type": "string", "pattern": "^[0-9]{8}(\\.[0-9]+)?$" }
                             ]
                         },
                         "containerdConfigPath": {

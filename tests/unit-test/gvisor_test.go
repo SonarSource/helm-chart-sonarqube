@@ -266,7 +266,9 @@ func TestGvisorInstallerDaemonSet(t *testing.T) {
 
 			require.Len(t, podSpec.Containers, 1)
 			container := podSpec.Containers[0]
-			assert.Equal(t, "debian@sha256:1710bde34461551a19a47c787885ec9ad7058d9a5bead2affb8d088fa2f8502b", container.Image)
+			assert.Equal(t, "alpine@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf", container.Image)
+			// alpine has no bash: run.sh is POSIX sh, the host scripts use the node's bash through chroot.
+			assert.Equal(t, []string{"/bin/sh", "/scripts/run.sh"}, container.Command)
 			require.NotNil(t, container.SecurityContext)
 			require.NotNil(t, container.SecurityContext.Privileged)
 			assert.True(t, *container.SecurityContext.Privileged)
@@ -303,7 +305,7 @@ func TestGvisorInstallerImageDigestFallback(t *testing.T) {
 				}
 			}
 			require.Len(t, daemonSet.Spec.Template.Spec.Containers, 1)
-			assert.Equal(t, "debian:stable-slim", daemonSet.Spec.Template.Spec.Containers[0].Image)
+			assert.Equal(t, "alpine:3.24.4", daemonSet.Spec.Template.Spec.Containers[0].Image)
 		})
 	}
 }
@@ -404,7 +406,7 @@ func TestGvisorInstallerCleansUpAfterLabelling(t *testing.T) {
 		t.Run(chart.name, func(t *testing.T) {
 			script := gvisorInstallerScript(t, chart, "run.sh")
 
-			trapIdx := strings.Index(script, "trap 'rm -rf /host/tmp/gvisor-sa' EXIT")
+			trapIdx := strings.Index(script, "trap 'rm -rf /host/tmp/gvisor-sa \"${DOWNLOAD_DIR}\"' EXIT")
 			installIdx := strings.Index(script, "chroot /host /bin/bash /opt/gvisor/install-gvisor.sh")
 			require.NotEqual(t, -1, trapIdx, "expected run.sh to register a cleanup EXIT trap")
 			require.NotEqual(t, -1, installIdx)
@@ -460,5 +462,115 @@ func TestGvisorValidationToggles(t *testing.T) {
 				})
 			}
 		})
+	}
+}
+
+// renderGvisorScripts renders the installer fixture with extra values and returns its ConfigMap scripts.
+func renderGvisorScripts(t *testing.T, chart agentChart, setValues, setStrValues map[string]string) (map[string]string, error) {
+	t.Helper()
+	output, err := helm.RenderTemplateE(t, &helm.Options{
+		Logger:       logger.Discard,
+		ValuesFiles:  []string{chart.valuesDir + "/gvisor-installer.yaml"},
+		SetValues:    setValues,
+		SetStrValues: setStrValues,
+	}, chart.path, chart.release, []string{"templates/gvisor.yaml"})
+	if err != nil {
+		return nil, err
+	}
+	var configMap corev1.ConfigMap
+	for _, doc := range splitGvisorDocs(output) {
+		if strings.Contains(doc, "kind: ConfigMap") {
+			helm.UnmarshalK8SYaml(t, doc, &configMap)
+		}
+	}
+	require.NotEmpty(t, configMap.Name)
+	return configMap.Data, nil
+}
+
+// From release 20260721, gVisor ships gvisor.tar.bz2 (with gvisor-bin/, which runsc needs next to it);
+// from 20260831 it no longer ships the separate files (SONAR-33332). The host downloads and verifies
+// the archive, the pod unpacks it, then the host configures containerd.
+func TestGvisorInstallerArchiveLayout(t *testing.T) {
+	for _, chart := range agentCharts {
+		for _, release := range []string{"", "20260721", "20261116.0"} {
+			t.Run(chart.name+"/"+release, func(t *testing.T) {
+				setStr := map[string]string{}
+				if release != "" {
+					setStr["gvisor.installer.runscVersion"] = release
+				}
+				scripts, err := renderGvisorScripts(t, chart, nil, setStr)
+				require.NoError(t, err)
+
+				install := scripts["install-gvisor.sh"]
+				assert.Contains(t, install, `for f in gvisor.tar.bz2 gvisor.tar.bz2.sha512; do`)
+				assert.Contains(t, install, "sha512sum -c gvisor.tar.bz2.sha512")
+				assert.NotContains(t, install, "containerd-shim-runsc-v1.sha512")
+				assert.Contains(t, install, `if [[ "${PHASE}" == fetch ]]; then`)
+				if release != "" {
+					assert.Contains(t, install, `GVISOR_RELEASE="`+release+`"`)
+				}
+
+				run := scripts["run.sh"]
+				assert.True(t, strings.HasPrefix(run, "#!/bin/sh\n"), "run.sh runs on the installer image's sh")
+				fetchIdx := strings.Index(run, "install-gvisor.sh fetch")
+				unpackIdx := strings.Index(run, `tar -xjf "${DOWNLOAD_DIR}/gvisor.tar.bz2"`)
+				binIdx := strings.Index(run, `mv "${unpacked}/gvisor-bin" /host/usr/local/bin/gvisor-bin`)
+				runscIdx := strings.Index(run, `mv "${unpacked}/runsc" /host/usr/local/bin/runsc`)
+				configureIdx := strings.Index(run, "install-gvisor.sh configure")
+				for name, idx := range map[string]int{"fetch": fetchIdx, "unpack": unpackIdx, "gvisor-bin": binIdx, "runsc": runscIdx, "configure": configureIdx} {
+					require.NotEqual(t, -1, idx, "expected the %s step in run.sh", name)
+				}
+				assert.Less(t, fetchIdx, unpackIdx)
+				assert.Less(t, binIdx, runscIdx, "runsc is moved last: its presence marks a complete install")
+				assert.Less(t, runscIdx, configureIdx)
+				assert.Contains(t, run, "gvisor.installer.image needs tar with bzip2 support")
+			})
+		}
+	}
+}
+
+// Releases before 20260721 keep the separate-file download, in one host call.
+func TestGvisorInstallerLegacyLayout(t *testing.T) {
+	for _, chart := range agentCharts {
+		for _, release := range []string{"20260706", "20260714"} {
+			t.Run(chart.name+"/"+release, func(t *testing.T) {
+				scripts, err := renderGvisorScripts(t, chart, nil, map[string]string{"gvisor.installer.runscVersion": release})
+				require.NoError(t, err)
+
+				install := scripts["install-gvisor.sh"]
+				assert.Contains(t, install, "for f in runsc runsc.sha512 containerd-shim-runsc-v1 containerd-shim-runsc-v1.sha512; do")
+				assert.Contains(t, install, "mv runsc containerd-shim-runsc-v1 /usr/local/bin")
+				assert.NotContains(t, install, "gvisor.tar.bz2.sha512")
+				assert.NotContains(t, install, "PHASE}\" == fetch")
+
+				run := scripts["run.sh"]
+				assert.Contains(t, run, "chroot /host /bin/bash /opt/gvisor/install-gvisor.sh\n")
+				assert.NotContains(t, run, "tar -xjf")
+			})
+		}
+	}
+}
+
+// An unquoted release (a YAML number) renders as the release name, not in float notation.
+func TestGvisorInstallerNumericRelease(t *testing.T) {
+	for _, chart := range agentCharts {
+		t.Run(chart.name, func(t *testing.T) {
+			scripts, err := renderGvisorScripts(t, chart, map[string]string{"gvisor.installer.runscVersion": "20261116"}, nil)
+			require.NoError(t, err)
+			assert.Contains(t, scripts["install-gvisor.sh"], `GVISOR_RELEASE="20261116"`)
+		})
+	}
+}
+
+// Anything but a gVisor release name fails at render time instead of on every node.
+func TestGvisorInstallerRejectsInvalidRelease(t *testing.T) {
+	for _, chart := range agentCharts {
+		for _, release := range []string{"latest", "2026-11-16", "20261116-rc1"} {
+			t.Run(chart.name+"/"+release, func(t *testing.T) {
+				_, err := renderGvisorScripts(t, chart, nil, map[string]string{"gvisor.installer.runscVersion": release})
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), "runscVersion")
+			})
+		}
 	}
 }

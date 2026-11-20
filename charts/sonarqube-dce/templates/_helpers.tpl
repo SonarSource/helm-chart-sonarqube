@@ -99,6 +99,30 @@ Usage: {{ include "sonarqube.gvisor.enabled" . }}
 {{- end -}}
 
 {{/*
+gvisor.installer.runscVersion as a release name (YYYYMMDD or YYYYMMDD.N); fails on anything else.
+Usage: {{ include "sonarqube.gvisor.release" . }}
+*/}}
+{{- define "sonarqube.gvisor.release" -}}
+{{- $v := .Values.gvisor.installer.runscVersion -}}
+{{- if or (kindIs "float64" $v) (kindIs "int64" $v) (kindIs "int" $v) -}}
+{{- $v = printf "%d" (int64 $v) -}}
+{{- end -}}
+{{- $v = toString $v -}}
+{{- if not (regexMatch "^[0-9]{8}([.][0-9]+)?$" $v) -}}
+{{- fail (printf "gvisor.installer.runscVersion must be a gVisor release such as 20261116 or 20261116.0, got %q" $v) -}}
+{{- end -}}
+{{- $v -}}
+{{- end -}}
+
+{{/*
+"true" when the gVisor release ships gvisor.tar.bz2 (20260721 and later), else "false".
+Usage: {{ include "sonarqube.gvisor.archive" . }}
+*/}}
+{{- define "sonarqube.gvisor.archive" -}}
+{{- ge (atoi (substr 0 8 (include "sonarqube.gvisor.release" .))) 20260721 -}}
+{{- end -}}
+
+{{/*
 RuntimeClass for the agent runtime pods: OpenShift.agentRuntimeClassName on OpenShift ("kata" by
 default - created by the sandboxed containers operator, never by this chart), gVisor's elsewhere
 when that feature is on, else the generic agentRuntimeSandbox.runtimeClassName for any other

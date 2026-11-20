@@ -1831,16 +1831,18 @@ gvisor:
     # not work on CRI-O (OpenShift) or on managed nodes with an immutable OS.
     enabled: true
     image:
-      repository: debian
-      tag: stable-slim
+      repository: alpine
+      tag: "3.24.4"
       # Pinned for a reproducible pull; bump deliberately. Set to "" to use repository:tag.
-      digest: sha256:1710bde34461551a19a47c787885ec9ad7058d9a5bead2affb8d088fa2f8502b
+      # Releases from 20260721 need tar with bzip2 support in this image to unpack gvisor.tar.bz2.
+      digest: sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
       pullPolicy: IfNotPresent
       # pullSecrets:
       #   - name: my-repo-secret
     # Pinned gVisor release for reproducible installs (not "latest"); bump deliberately.
-    # See https://github.com/google/gvisor/tags for the release list.
-    runscVersion: "20260706"
+    # See https://github.com/google/gvisor/tags for the release list. Releases from 20260721 are
+    # installed from gvisor.tar.bz2, earlier ones from the separate runsc and shim files.
+    runscVersion: "20261116"
     containerdConfigPath: /etc/containerd/config.toml
     # Rendered to /etc/containerd/runsc.toml. network=host avoids gVisor's netstack breaking
     # cluster DNS/kube-proxy — unrelated to Kubernetes hostNetwork; pod isolation is unaffected.

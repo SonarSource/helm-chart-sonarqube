@@ -490,16 +490,48 @@ data:
   # Container entrypoint. Runs in the installer pod, copies the host-facing scripts onto the node,
   # and drives them via `chroot /host` so they use the node's own wget/systemctl/containerd.
   run.sh: |
-    #!/usr/bin/env bash
+    #!/bin/sh
     set -euo pipefail
-    trap 'rm -rf /host/tmp/gvisor-sa' EXIT
+    DOWNLOAD_DIR=/host/opt/gvisor/download
+    trap 'rm -rf /host/tmp/gvisor-sa "${DOWNLOAD_DIR}"' EXIT
     echo "[gvisor-installer] node=${NODE_NAME}"
+    rm -rf "${DOWNLOAD_DIR}"
     mkdir -p /host/opt/gvisor
     cp /scripts/install-gvisor.sh /host/opt/gvisor/install-gvisor.sh
     cp /scripts/label-node.sh /host/opt/gvisor/label-node.sh
     chmod +x /host/opt/gvisor/install-gvisor.sh /host/opt/gvisor/label-node.sh
     echo "[gvisor-installer] running installer in host context"
-    chroot /host /bin/bash /opt/gvisor/install-gvisor.sh
+    chroot /host /bin/bash /opt/gvisor/install-gvisor.sh fetch
+    # Unpack in the pod: node images often have no bzip2.
+    if [ -f "${DOWNLOAD_DIR}/gvisor.tar.bz2" ]; then
+      unpacked="${DOWNLOAD_DIR}/unpacked"
+      mkdir -p "${unpacked}"
+      if ! tar -xjf "${DOWNLOAD_DIR}/gvisor.tar.bz2" -C "${unpacked}"; then
+        echo "[gvisor-installer] ERROR: cannot unpack gvisor.tar.bz2; gvisor.installer.image needs tar with bzip2 support" >&2
+        exit 1
+      fi
+      for f in runsc containerd-shim-runsc-v1; do
+        if [ ! -f "${unpacked}/${f}" ]; then
+          echo "[gvisor-installer] ERROR: gvisor.tar.bz2 has no ${f}" >&2
+          exit 1
+        fi
+      done
+      # runsc re-execs itself as an unprivileged user: keep everything world-readable/executable.
+      chmod -R a+rX "${unpacked}"
+      chmod a+x "${unpacked}/runsc" "${unpacked}/containerd-shim-runsc-v1"
+      mkdir -p /host/usr/local/bin
+      # runsc looks for gvisor-bin/ next to its own binary.
+      if [ -d "${unpacked}/gvisor-bin" ]; then
+        rm -rf /host/usr/local/bin/gvisor-bin
+        mv "${unpacked}/gvisor-bin" /host/usr/local/bin/gvisor-bin
+      fi
+      mv "${unpacked}/containerd-shim-runsc-v1" /host/usr/local/bin/containerd-shim-runsc-v1
+      # runsc last: its presence is what marks a complete install.
+      mv "${unpacked}/runsc" /host/usr/local/bin/runsc
+      rm -rf "${DOWNLOAD_DIR}"
+      echo "[gvisor-installer] installed runsc to /usr/local/bin"
+    fi
+    chroot /host /bin/bash /opt/gvisor/install-gvisor.sh configure
     echo "[gvisor-installer] labeling node ${NODE_NAME}"
     SA=/var/run/secrets/kubernetes.io/serviceaccount
     mkdir -p /host/tmp/gvisor-sa
@@ -510,8 +542,10 @@ data:
     rm -rf /host/tmp/gvisor-sa
     echo "[gvisor-installer] done; idling to keep the DaemonSet pod Running"
     exec tail -f /dev/null
-  # Runs on the host (via chroot). Idempotent and version-aware: skips the download when runsc is
-  # already present, and only appends the containerd runtime handler when not already registered.
+  # Runs on the host (via chroot). Idempotent: skips the download when runsc is already present
+  # (whatever its release), and only appends the containerd runtime handler when not already
+  # registered. For releases shipping gvisor.tar.bz2, run.sh calls it twice: "fetch" downloads and
+  # verifies the archive, run.sh unpacks it, then "configure" does the rest.
   # Validates the config before ever restarting into it, verifies containerd is actually healthy
   # afterwards, and rolls back on any failure so a broken node is never left worse than it was found.
   install-gvisor.sh: |
@@ -525,12 +559,13 @@ data:
     # is NOT proof the running daemon loaded it (a restart may have failed on an earlier run), so we
     # track a confirmed restart separately and retry until it succeeds.
     RESTART_SENTINEL="/etc/containerd/.sonarqube-runsc-restarted"
-    GVISOR_RELEASE="20260706"
+    GVISOR_RELEASE="20261116"
+    PHASE="${1:-all}"
     RUNSC_HANDLER="runsc"
     RUNSC_MARKER="ConfigPath = \"${RUNSC_CONFIG}\""
     RUNSC_CONFIG_HEADER="# Managed by SonarQube Helm chart (gVisor installer)"
 
-    echo "[install-gvisor] starting (release ${GVISOR_RELEASE})"
+    echo "[install-gvisor] starting (release ${GVISOR_RELEASE}, phase ${PHASE})"
 
     # Pre-flight: if containerd already exposes the target handler (e.g. GKE Sandbox or another
     # provider's own sandbox runtime), the node is already sandboxed and this installer has nothing
@@ -608,8 +643,14 @@ data:
     # itself as an unprivileged user). Skipped if already present.
     if command -v runsc >/dev/null 2>&1; then
       echo "[install-gvisor] runsc already present, skipping download"
+    elif [[ "${PHASE}" == configure ]]; then
+      echo "[install-gvisor] ERROR: runsc not installed after unpacking gvisor.tar.bz2" >&2
+      exit 1
     else
-      workdir="$(mktemp -d)"
+      # Kept for run.sh, which unpacks it and removes the directory.
+      workdir=/opt/gvisor/download
+      rm -rf "${workdir}"
+      mkdir -p "${workdir}"
       pushd "${workdir}" >/dev/null
       (
         set -e
@@ -638,17 +679,17 @@ data:
           done
           return 1
         }
-        for f in runsc runsc.sha512 containerd-shim-runsc-v1 containerd-shim-runsc-v1.sha512; do
+        for f in gvisor.tar.bz2 gvisor.tar.bz2.sha512; do
           fetch_retry "${URL}/${f}" "${f}"
         done
-        sha512sum -c runsc.sha512 -c containerd-shim-runsc-v1.sha512
-        rm -f -- *.sha512
-        chmod a+rx runsc containerd-shim-runsc-v1
-        mv runsc containerd-shim-runsc-v1 /usr/local/bin
+        sha512sum -c gvisor.tar.bz2.sha512
+        rm -f -- gvisor.tar.bz2.sha512
       )
       popd >/dev/null
-      rm -rf "${workdir}"
-      echo "[install-gvisor] installed runsc to /usr/local/bin"
+      echo "[install-gvisor] downloaded and verified gvisor.tar.bz2"
+    fi
+    if [[ "${PHASE}" == fetch ]]; then
+      exit 0
     fi
 
     # Write the runsc runtime config (flags passed to the shim via ConfigPath below). Only touch it
@@ -1218,7 +1259,7 @@ spec:
       annotations:
         # Roll the installer pods when their scripts can change (chart upgrade or gvisor.* values),
         # so an upgrade runs the new scripts.
-        checksum/scripts: 7452182273ad47ac380cc53395104f1300019a2e9f60ecba3408c47a7c52f0c2
+        checksum/scripts: 8bd7ec5d5119da077bd2b35c2be3be06b46ce6b61c7c75ec2348dc96661419c7
       labels:
         app: sonarqube-dce-gvisor-installer
         release: agentic-scheduling-values.yaml
@@ -1231,9 +1272,9 @@ spec:
         - operator: Exists
       containers:
         - name: gvisor-installer
-          image: debian@sha256:1710bde34461551a19a47c787885ec9ad7058d9a5bead2affb8d088fa2f8502b
+          image: alpine@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
           imagePullPolicy: IfNotPresent
-          command: ["/bin/bash", "/scripts/run.sh"]
+          command: ["/bin/sh", "/scripts/run.sh"]
           # Privileged by design: mounts the host filesystem to install runsc and restart containerd.
           # The deliberate trust-tier exception called out in values.yaml — not hardened like the runtimes.
           securityContext:
