@@ -1,6 +1,10 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2026.5.1007]
+* Upgrade Chart's version to 2026.5.1007
+* Upgrade the Agent Orchestrator to 2026.5.5
+
 ## [2026.5.1006]
 * Upgrade Chart's version to 2026.5.1006
 * Upgrade the Agent Orchestrator to 2026.5.4
