@@ -108,6 +108,10 @@ helm upgrade -n sonarqube-dce <yourReleaseName> <yourNewChart> --reset-then-reus
 
 On `helm upgrade`, the chart fails while search pods are still running on the previous Elasticsearch major. The check relies on `lookup`, so it does not run under `helm template` or GitOps tools that render manifests (Argo CD, Flux), nor for custom image tags: in those cases follow the procedure above yourself. Set `searchNodes.skipEsMajorUpgradeCheck: true` only if you need to bypass the check.
 
+### Upgrade to 2026.6.1000
+
+* **gVisor installer**: `gvisor.installer.image` now defaults to `alpine` (pinned by digest) instead of `debian:stable-slim`, and `gvisor.installer.runscVersion` to `20261116`. From release `20260721`, the installer downloads `gvisor.tar.bz2` and unpacks it in the installer pod, so an installer image you mirror or override must provide `tar` with bzip2 support. Nodes that already have `runsc` keep their release, and do not get `gvisor-bin/`. To move such a node to the new release, drain it, remove `/usr/local/bin/runsc`, `/usr/local/bin/containerd-shim-runsc-v1` and `/usr/local/bin/gvisor-bin/` from it, then delete its installer pod.
+
 ### Upgrade to 2026.5.1000
 
 Chart `2026.5.1000` (SonarQube Server 2026.5 LTA) contains the following breaking or behavior changes:
@@ -318,7 +322,7 @@ kubectl logs -n sonarqube-dce -l app=sonarqube-dce-gvisor-installer,release=<you
 
 On a node where the installer did run, it can leave:
 
-* `/usr/local/bin/runsc` and `/usr/local/bin/containerd-shim-runsc-v1`, only if the log says `installed runsc to /usr/local/bin`
+* `/usr/local/bin/runsc`, `/usr/local/bin/containerd-shim-runsc-v1` and, from release `20260721`, `/usr/local/bin/gvisor-bin/`, only if the log says `installed runsc to /usr/local/bin`
 * `/etc/containerd/runsc.toml`, only if its first line is `# Managed by SonarQube Helm chart (gVisor installer)`
 * the `runsc` runtime block in `gvisor.installer.containerdConfigPath` (default `/etc/containerd/config.toml`), and the backup `<path>.sonarqube-runsc.bak`. The installer appends a blank line, the comment `# gVisor sandbox runtime (managed by SonarQube Helm chart)`, and two tables, `[plugins."<cri plugin>".containerd.runtimes.<handler>]` and its `.options`. The `.bak` is the config from before the install, so it does not match the file once the block is appended. If the config has not changed since the install apart from that block, restore the `.bak` over it. Otherwise delete that comment and those two tables. If the installer created that config because none existed, delete the file
 * `/etc/containerd/.sonarqube-runsc-restarted` and `/opt/gvisor/`
@@ -331,7 +335,7 @@ kubectl label node <node> gvisor.enabled-
 
 ```bash
 rm -rf /opt/gvisor /etc/containerd/.sonarqube-runsc-restarted
-# delete /usr/local/bin/runsc and /usr/local/bin/containerd-shim-runsc-v1 only if the log says "installed runsc to /usr/local/bin"
+# delete /usr/local/bin/runsc, /usr/local/bin/containerd-shim-runsc-v1 and /usr/local/bin/gvisor-bin/ only if the log says "installed runsc to /usr/local/bin"
 # delete /etc/containerd/runsc.toml only if its first line is "# Managed by SonarQube Helm chart (gVisor installer)"
 # the .bak is the config from before the install. If the file has not changed since
 # then apart from the runsc block, restore <path>.sonarqube-runsc.bak over
@@ -928,7 +932,7 @@ configuration described in the database prerequisite above.
 
 The agent runtimes execute LLM-driven jobs, so they run under a sandboxed container runtime:
 
-* **gVisor (default).** `gvisor.enabled=true` creates a `gvisor` RuntimeClass (handler `runsc`) and schedules the agents on nodes labeled `gvisor.enabled: "true"`. The bundled installer (`gvisor.installer.enabled`) is convenient for testing, but it is a privileged DaemonSet that only works on self-managed containerd nodes. In production, provision `runsc` yourself (node image, GKE Sandbox, ...), label the nodes, and set `gvisor.installer.enabled=false`. `RuntimeClass` is cluster-scoped: give each release its own `gvisor.runtimeClassName`.
+* **gVisor (default).** `gvisor.enabled=true` creates a `gvisor` RuntimeClass (handler `runsc`) and schedules the agents on nodes labeled `gvisor.enabled: "true"`. The bundled installer (`gvisor.installer.enabled`) is convenient for testing, but it is a privileged DaemonSet that only works on self-managed containerd nodes. In production, provision `runsc` yourself (node image, GKE Sandbox, ...), label the nodes, and set `gvisor.installer.enabled=false`. To install another gVisor release, set `gvisor.installer.runscVersion` to one of the [gVisor releases](https://github.com/google/gvisor/tags) (`YYYYMMDD` or `YYYYMMDD.N`); the installer only installs it on nodes without `runsc`. `RuntimeClass` is cluster-scoped: give each release its own `gvisor.runtimeClassName`.
 * **Bring your own secure runtime.** Set `gvisor.enabled=false`, `agentRuntimeSandbox.enabled=true` and `agentRuntimeSandbox.runtimeClassName` to a RuntimeClass your platform provides, e.g. Kata Containers (`kata-mshv-vm-isolation` on AKS Pod Sandboxing).
 * **OpenShift.** gVisor is not available; the agents run under Kata Containers through `OpenShift.agentRuntimeClassName` (default `kata`, or `kata-remote` for peer pods). Install the OpenShift sandboxed containers operator first: the chart does not create this RuntimeClass and fails the install if it is missing.
 
@@ -1445,11 +1449,11 @@ See [Agentic features](#agentic-features) for how to enable and configure these 
 | `gvisor.handler`                                                 | containerd runtime handler the `RuntimeClass` targets                                                                                   | `runsc`                                                                        |
 | `gvisor.nodeSelector`                                            | `RuntimeClass` scheduling selector, and the label the installer applies when ready (set `null` to disable pinning)                      | `{gvisor.enabled: "true"}`                                                     |
 | `gvisor.installer.enabled`                                       | Deploy the privileged installer DaemonSet (requires `gvisor.enabled=true`)                                                              | `true`                                                                        |
-| `gvisor.installer.image.repository`                              | Installer image repository                                                                                                              | `debian`                                                                       |
-| `gvisor.installer.image.tag`                                     | Installer image tag (human-readable; ignored once `digest` is set)                                                                      | `stable-slim`                                                                  |
-| `gvisor.installer.image.digest`                                  | Pinned installer image digest, for a reproducible pull; blank falls back to `repository:tag`                                            | pinned `debian:stable-slim` digest                                             |
+| `gvisor.installer.image.repository`                              | Installer image repository; from release `20260721` it must provide `tar` with bzip2 support                                            | `alpine`                                                                       |
+| `gvisor.installer.image.tag`                                     | Installer image tag (human-readable; ignored once `digest` is set)                                                                      | `3.24.4`                                                                       |
+| `gvisor.installer.image.digest`                                  | Pinned installer image digest, for a reproducible pull; blank falls back to `repository:tag`                                            | pinned `alpine:3.24.4` digest                                                  |
 | `gvisor.installer.image.pullPolicy`                              | Installer image pull policy                                                                                                              | `IfNotPresent`                                                                 |
-| `gvisor.installer.runscVersion`                                  | Pinned gVisor release to install                                                                                                        | `"20260706"`                                                                   |
+| `gvisor.installer.runscVersion`                                  | Pinned gVisor release to install (`YYYYMMDD` or `YYYYMMDD.N`, quoted); from `20260721` the installer uses `gvisor.tar.bz2`, earlier releases the separate `runsc` files | `"20261116"`                                                                   |
 | `gvisor.installer.containerdConfigPath`                          | Path to the node's containerd config                                                                                                    | `/etc/containerd/config.toml`                                                  |
 | `gvisor.installer.runscConfig.network`                           | `runsc` network mode written to `runsc.toml`                                                                                            | `host`                                                                         |
 | `gvisor.installer.runscConfig.overlay2`                          | `runsc` overlay2 setting written to `runsc.toml`                                                                                        | `root:self,size=50g`                                                           |
