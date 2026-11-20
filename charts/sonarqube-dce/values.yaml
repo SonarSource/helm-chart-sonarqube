@@ -1371,9 +1371,15 @@ agentOrchestrator:
   # - name: agentic-storage
   #   persistentVolumeClaim:
   #     claimName: agentic-storage
+  # - name: orchestrator-custom-ca
+  #   secret:
+  #     secretName: orchestrator-custom-ca
   extraVolumeMounts: []
   # - name: agentic-storage
   #   mountPath: /agentic-storage
+  # - name: orchestrator-custom-ca
+  #   mountPath: /custom-ca
+  #   readOnly: true
   # Plain Kubernetes HPA on CPU/Memory for the orchestrator. Off by default; replicaCount above
   # still governs a non-autoscaled install.
   autoscaling:

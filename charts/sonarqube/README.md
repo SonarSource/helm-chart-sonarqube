@@ -758,6 +758,45 @@ agentEgressProxy:
 
 The Vortex pod can take several minutes to become ready on a first start, while it loads its analyzers.
 
+#### Private CA certificates for the Agent Orchestrator
+
+Create a Secret in the release namespace with one CA certificate per `.crt` or `.pem` file:
+
+```sh
+kubectl create secret generic orchestrator-custom-ca --from-file=private-ca.crt
+```
+
+Mount the Secret in the Orchestrator:
+
+```yaml
+agentOrchestrator:
+  extraVolumes:
+    - name: orchestrator-custom-ca
+      secret:
+        secretName: orchestrator-custom-ca
+  extraVolumeMounts:
+    - name: orchestrator-custom-ca
+      mountPath: /custom-ca
+      readOnly: true
+```
+
+The Orchestrator imports these certificates into its JVM truststore at startup. With the default
+`readOnlyRootFilesystem: true`, an init container copies the image's bundled truststore into a
+writable volume. The Orchestrator keeps the public roots and imports the private CA into that copy.
+Only the truststore file is writable; the root filesystem stays read-only. The init container uses
+`agentOrchestrator.image`, the Orchestrator's container security context, and `initContainers.resources`.
+Custom images must provide `sh`, `cp`, `chmod`, and the JVM truststore at
+`/opt/java/openjdk/lib/security/cacerts`, with `JAVA_HOME=/opt/java/openjdk`.
+
+After changing the Secret, recreate the Orchestrator pods, for example with `kubectl rollout restart`
+on the Orchestrator Deployment. A container restart alone does not pick up rotated certificates,
+and a removed CA stays trusted until the pods are recreated.
+
+This mount does not configure the agent runtimes or Vortex. For the runtimes, configure their own
+`extraVolumes` and `extraVolumeMounts`
+with the runtime CA Secret mounted at `/custom-ca`. Database TLS still needs the driver's own
+configuration described in the database prerequisite above.
+
 #### Sandboxing
 
 The agent runtimes execute LLM-driven jobs, so they run under a sandboxed container runtime:

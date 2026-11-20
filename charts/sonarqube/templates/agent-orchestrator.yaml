@@ -60,7 +60,29 @@ spec:
       securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- $oracleDriver := and .Values.jdbcOverwrite.oracleJdbcDriver .Values.jdbcOverwrite.oracleJdbcDriver.url }}
+      {{- $orchestratorSecurityContext := .Values.agentOrchestrator.containerSecurityContext | default dict }}
       initContainers:
+        {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
+        - name: init-orchestrator-truststore
+          image: "{{ .Values.agentOrchestrator.image.repository }}:{{ .Values.agentOrchestrator.image.tag }}"
+          imagePullPolicy: {{ .Values.agentOrchestrator.image.pullPolicy }}
+          {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" $orchestratorSecurityContext))) }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.initContainers.resources }}
+          resources: {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command:
+            - sh
+            - -e
+            - -c
+            - |
+              cp -L "$JAVA_HOME/lib/security/cacerts" /orchestrator-truststore/cacerts
+              chmod 600 /orchestrator-truststore/cacerts
+          volumeMounts:
+            - name: orchestrator-truststore
+              mountPath: /orchestrator-truststore
+        {{- end }}
         - name: wait-for-sonarqube
           image: {{ include "sonarqube.image" . }}
           imagePullPolicy: {{ (fromYaml (include "sonarqube.agent.sonarqubeImage" .)).pullPolicy }}
@@ -127,7 +149,6 @@ spec:
         - name: agent-orchestrator
           image: "{{ .Values.agentOrchestrator.image.repository }}:{{ .Values.agentOrchestrator.image.tag }}"
           imagePullPolicy: {{ .Values.agentOrchestrator.image.pullPolicy }}
-          {{- $orchestratorSecurityContext := .Values.agentOrchestrator.containerSecurityContext | default dict }}
           {{- with (fromYaml (include "sonarqube.agent.containerSecurityContext" (dict "ctx" . "securityContext" $orchestratorSecurityContext))) }}
           securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -282,6 +303,9 @@ spec:
           {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey $keyMount $oracleDriver .Values.agentOrchestrator.extraVolumeMounts }}
           volumeMounts:
             {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
+            - name: orchestrator-truststore
+              mountPath: /opt/java/openjdk/lib/security/cacerts
+              subPath: cacerts
             - name: tmp
               mountPath: /tmp
             {{- end }}
@@ -317,6 +341,9 @@ spec:
       {{- if or $orchestratorSecurityContext.readOnlyRootFilesystem .Values.sonarSecretKey $keyVolume $oracleDriver .Values.agentOrchestrator.extraVolumes }}
       volumes:
         {{- if $orchestratorSecurityContext.readOnlyRootFilesystem }}
+        - name: orchestrator-truststore
+          emptyDir:
+            sizeLimit: 10Mi
         - name: tmp
           emptyDir: {}
         {{- end }}
