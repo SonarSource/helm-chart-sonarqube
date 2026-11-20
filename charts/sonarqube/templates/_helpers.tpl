@@ -51,7 +51,15 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/part-of: sonarqube
 app.kubernetes.io/component: {{ include "sonarqube.fullname" . }}
-app.kubernetes.io/version: {{ (tpl (include "image.tag" .) . ) | trunc 63 | trimSuffix "-" | quote }}
+app.kubernetes.io/version: {{ include "sonarqube.versionLabel" (tpl (include "image.tag" .) .) | quote }}
+{{- end -}}
+
+{{/*
+Turn an image tag into a valid label value: drop any "@<digest>" suffix, truncate to 63 chars
+and strip trailing non-alphanumerics. Takes the tag string as context.
+*/}}
+{{- define "sonarqube.versionLabel" -}}
+{{- regexReplaceAll "[^A-Za-z0-9]+$" (regexReplaceAll "@.*$" . "" | trunc 63) "" -}}
 {{- end -}}
 
 {{/*
