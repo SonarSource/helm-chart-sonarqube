@@ -2,6 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [2026.6.1000]
+* Support private CA imports in the Agent Orchestrator while keeping its default read-only root filesystem
 * Use `/opt/sonarqube` for all installation paths when `sonarqubeFolder` is empty or null. Preserve nonempty custom paths
 * Add `applicationNodes.waitForSearch.enabled` (default `false`) so application pods can wait until the search Service has a ready endpoint. Skipped when `istio.enabled` is `true`. Rejected at install time when `searchNodes.replicaCount` is `0`
 * Update MCP to 2026.5.1, Agent Orchestrator and Hunter Agent to 2026.5.2, and Remediation Agent to 2026.5.1

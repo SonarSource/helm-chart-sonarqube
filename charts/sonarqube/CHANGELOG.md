@@ -2,6 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [2026.6.1000]
+* Support private CA imports in the Agent Orchestrator while keeping its default read-only root filesystem
 * Use `/opt/sonarqube` for all installation paths when `sonarqubeFolder` is empty or null. Preserve nonempty custom paths
 * Update MCP to 2026.5.1, Agent Orchestrator and Hunter Agent to 2026.5.2, and Remediation Agent to 2026.5.1
 * Add `AZURE` and `GCS` storage settings for the Agent Orchestrator and Vortex: `storage.azure.container`, `storage.azure.connectionString`, `storage.gcs.projectId` and `storage.gcs.credentialsJson`. `vortexAnalysis.storage.region` is now required only for `S3`, and `vortexAnalysis.storage.bucket` is not required for `AZURE`. `AZURE` requires `storage.azure.container` and either `storage.azure.connectionString` or `storage.existingSecret`

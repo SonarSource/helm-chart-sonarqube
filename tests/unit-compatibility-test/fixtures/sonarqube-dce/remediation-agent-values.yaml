@@ -1492,6 +1492,30 @@ spec:
       terminationGracePeriodSeconds: 2580
       automountServiceAccountToken: true
       initContainers:
+        - name: init-orchestrator-truststore
+          image: "example.com/agent-orchestrator:1.0.0"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 900
+            runAsNonRoot: true
+            runAsUser: 900
+            seccompProfile:
+              type: RuntimeDefault
+          command:
+            - sh
+            - -e
+            - -c
+            - |
+              cp -L "$JAVA_HOME/lib/security/cacerts" /orchestrator-truststore/cacerts
+              chmod 600 /orchestrator-truststore/cacerts
+          volumeMounts:
+            - name: orchestrator-truststore
+              mountPath: /orchestrator-truststore
         - name: wait-for-sonarqube
           image: sonarqube:2026.5.0-datacenter-app
           imagePullPolicy: IfNotPresent
@@ -1586,6 +1610,9 @@ spec:
               ephemeral-storage: 512Mi
               memory: 512Mi
           volumeMounts:
+            - name: orchestrator-truststore
+              mountPath: /opt/java/openjdk/lib/security/cacerts
+              subPath: cacerts
             - name: tmp
               mountPath: /tmp
             - name: agentic-keys
@@ -1605,6 +1632,9 @@ spec:
             periodSeconds: 30
       serviceAccountName: agent-orchestrator
       volumes:
+        - name: orchestrator-truststore
+          emptyDir:
+            sizeLimit: 10Mi
         - name: tmp
           emptyDir: {}
         - name: agentic-keys
