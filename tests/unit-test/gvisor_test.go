@@ -1,6 +1,9 @@
 package tests
 
 import (
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -571,6 +574,108 @@ func TestGvisorInstallerRejectsInvalidRelease(t *testing.T) {
 				_, err := renderGvisorScripts(t, chart, nil, map[string]string{"gvisor.installer.runscVersion": release})
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "runscVersion")
+			})
+		}
+	}
+}
+
+// runGvisorPreflight runs the rendered install-gvisor.sh in the given phase with a PATH holding only
+// the given mock commands (plus the system tools), against a containerd config at configPath.
+func runGvisorPreflight(t *testing.T, chart agentChart, phase string, mocks map[string]string, configContent string) (string, error) {
+	t.Helper()
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "config.toml")
+	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0o644))
+	scripts, err := renderGvisorScripts(t, chart, map[string]string{"gvisor.installer.containerdConfigPath": configPath}, nil)
+	require.NoError(t, err)
+	scriptPath := filepath.Join(dir, "install-gvisor.sh")
+	require.NoError(t, os.WriteFile(scriptPath, []byte(scripts["install-gvisor.sh"]), 0o755))
+	binDir := filepath.Join(dir, "bin")
+	require.NoError(t, os.Mkdir(binDir, 0o755))
+	for name, body := range mocks {
+		require.NoError(t, os.WriteFile(filepath.Join(binDir, name), []byte("#!/bin/sh\n"+body+"\n"), 0o755))
+	}
+	bash, err := exec.LookPath("bash")
+	require.NoError(t, err)
+	cmd := exec.Command(bash, scriptPath, phase)
+	cmd.Env = []string{"PATH=" + binDir + ":/usr/bin:/bin"}
+	output, err := cmd.CombinedOutput()
+	return string(output), err
+}
+
+// When containerd still exposes the handler but runsc or its shim is gone (the README upgrade steps
+// remove them), the pre-flight must not skip: it reinstalls on nodes whose handler this installer
+// registered, and fails on the others rather than labeling a node that cannot run gVisor pods
+// (SONAR-33514).
+func TestGvisorInstallerPreflightRequiresBinaries(t *testing.T) {
+	crictl := `echo '{"config":{"containerd":{"runtimes":{"runc":{},"runsc":{}}}}}'`
+	ownedConfig := "version = 2\n\n# gVisor sandbox runtime (managed by SonarQube Helm chart)\n" +
+		"[plugins.\"io.containerd.grpc.v1.cri\".containerd.runtimes.runsc]\n  runtime_type = \"io.containerd.runsc.v1\"\n" +
+		"[plugins.\"io.containerd.grpc.v1.cri\".containerd.runtimes.runsc.options]\n  TypeUrl = \"io.containerd.runsc.v1.options\"\n" +
+		"  ConfigPath = \"/etc/containerd/runsc.toml\"\n"
+	foreignConfig := "version = 2\n"
+
+	for _, chart := range agentCharts {
+		t.Run(chart.name+"/binaries present", func(t *testing.T) {
+			output, err := runGvisorPreflight(t, chart, "fetch",
+				map[string]string{"crictl": crictl, "runsc": "", "containerd-shim-runsc-v1": ""}, ownedConfig)
+			require.NoError(t, err, output)
+			assert.Contains(t, output, "skipping installation")
+		})
+		for _, missing := range []string{"runsc", "containerd-shim-runsc-v1"} {
+			present := map[string]string{"runsc": "containerd-shim-runsc-v1", "containerd-shim-runsc-v1": "runsc"}[missing]
+			t.Run(chart.name+"/"+missing+" missing, installer-owned", func(t *testing.T) {
+				output, err := runGvisorPreflight(t, chart, "configure",
+					map[string]string{"crictl": crictl, present: ""}, ownedConfig)
+				require.Error(t, err, output)
+				assert.NotContains(t, output, "skipping installation")
+				assert.Contains(t, output, "but "+missing+" is missing; reinstalling")
+				// The configure phase runs after run.sh unpacked the archive: reaching this check
+				// proves the pre-flight let the install go ahead.
+				assert.Contains(t, output, "not installed after unpacking gvisor.tar.bz2")
+			})
+			t.Run(chart.name+"/"+missing+" missing, not installer-owned", func(t *testing.T) {
+				output, err := runGvisorPreflight(t, chart, "fetch",
+					map[string]string{"crictl": crictl, present: ""}, foreignConfig)
+				require.Error(t, err, output)
+				assert.NotContains(t, output, "skipping installation")
+				assert.Contains(t, output, "but "+missing+" is not on the node; not labeling it")
+			})
+		}
+	}
+}
+
+// install-gvisor.sh must fail, so run.sh never labels the node, when runsc or its shim is missing at
+// the end of the install (SONAR-33514).
+func TestGvisorInstallerChecksBinariesBeforeLabelling(t *testing.T) {
+	for _, chart := range agentCharts {
+		for _, release := range []string{"", "20260706"} {
+			t.Run(chart.name+"/"+release, func(t *testing.T) {
+				setStr := map[string]string{}
+				if release != "" {
+					setStr["gvisor.installer.runscVersion"] = release
+				}
+				scripts, err := renderGvisorScripts(t, chart, nil, setStr)
+				require.NoError(t, err)
+				install := scripts["install-gvisor.sh"]
+
+				assert.Contains(t, install, "for f in runsc containerd-shim-runsc-v1; do")
+				restartIdx := strings.Index(install, "containerd already serving runsc; nothing to do")
+				checkIdx := strings.Index(install, "not found on the node; not labeling it")
+				doneIdx := strings.Index(install, `echo "[install-gvisor] done"`)
+				for name, idx := range map[string]int{"restart": restartIdx, "binary check": checkIdx, "done": doneIdx} {
+					require.NotEqual(t, -1, idx, "expected the %s step in install-gvisor.sh", name)
+				}
+				assert.Less(t, restartIdx, checkIdx)
+				assert.Less(t, checkIdx, doneIdx)
+				assert.Contains(t, install, `if [[ "${reinstall}" != true ]] && command -v runsc >/dev/null 2>&1; then`)
+
+				run := scripts["run.sh"]
+				installIdx := strings.LastIndex(run, "/opt/gvisor/install-gvisor.sh")
+				labelIdx := strings.Index(run, "chroot /host /bin/bash /opt/gvisor/label-node.sh")
+				require.NotEqual(t, -1, labelIdx)
+				assert.Less(t, installIdx, labelIdx, "run.sh labels the node only after install-gvisor.sh succeeded")
+				assert.Contains(t, run, "set -eu")
 			})
 		}
 	}

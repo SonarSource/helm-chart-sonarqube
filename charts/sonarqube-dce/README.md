@@ -110,7 +110,7 @@ On `helm upgrade`, the chart fails while search pods are still running on the pr
 
 ### Upgrade to 2026.6.1000
 
-* **gVisor installer**: `gvisor.installer.image` now defaults to `alpine` (pinned by digest) instead of `debian:stable-slim`, and `gvisor.installer.runscVersion` to `20261116`. From release `20260721`, the installer downloads `gvisor.tar.bz2` and unpacks it in the installer pod, so an installer image you mirror or override must provide `tar` with bzip2 support. Nodes that already have `runsc` keep their release, and do not get `gvisor-bin/`. To move such a node to the new release, drain it, remove `/usr/local/bin/runsc`, `/usr/local/bin/containerd-shim-runsc-v1` and `/usr/local/bin/gvisor-bin/` from it, then delete its installer pod.
+* **gVisor installer**: `gvisor.installer.image` now defaults to `alpine` (pinned by digest) instead of `debian:stable-slim`, and `gvisor.installer.runscVersion` to `20261116`. From release `20260721`, the installer downloads `gvisor.tar.bz2` and unpacks it in the installer pod, so an installer image you mirror or override must provide `tar` with bzip2 support. Nodes that already have `runsc` keep their release, and do not get `gvisor-bin/`. To move such a node to the new release, drain it, remove `/usr/local/bin/runsc`, `/usr/local/bin/containerd-shim-runsc-v1` and `/usr/local/bin/gvisor-bin/` from it, then delete its installer pod. The new pod reinstalls them, and you can uncordon the node once it is `Running`.
 
 ### Upgrade to 2026.5.1000
 
@@ -310,7 +310,7 @@ helm list -n sonarqube-dce
 helm uninstall -n sonarqube-dce <yourReleaseName>
 ```
 
-`helm uninstall` removes the chart's Kubernetes resources. It does not undo the [gVisor installer](#sandboxing). Remove only what that installer wrote. It skips the download when `runsc` is already on the node, and it leaves an existing `/etc/containerd/runsc.toml` alone unless the first line is `# Managed by SonarQube Helm chart (gVisor installer)`. When containerd already exposes the handler, the installer leaves containerd and `runsc` alone, but still writes `/opt/gvisor/` and labels the node.
+`helm uninstall` removes the chart's Kubernetes resources. It does not undo the [gVisor installer](#sandboxing). Remove only what that installer wrote. It skips the download when `runsc` is already on the node, and it leaves an existing `/etc/containerd/runsc.toml` alone unless the first line is `# Managed by SonarQube Helm chart (gVisor installer)`. When containerd already exposes the handler and `runsc` and `containerd-shim-runsc-v1` are on the node, the installer leaves containerd and `runsc` alone, but still writes `/opt/gvisor/` and labels the node. If one of them is missing, it reinstalls them when it registered the handler itself, and otherwise fails without labeling the node.
 
 Before `helm uninstall`, read the installer log. The pods are labeled `app=sonarqube-dce-gvisor-installer` and `release=<yourReleaseName>`, unless `nameOverride` changes the chart name. Pass `--tail=-1`, or `kubectl logs` shows only the last 10 lines and can drop `installed runsc to /usr/local/bin`.
 
