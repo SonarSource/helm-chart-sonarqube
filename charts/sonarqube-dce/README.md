@@ -110,7 +110,7 @@ On `helm upgrade`, the chart fails while search pods are still running on the pr
 
 ### Upgrade to 2026.6.1000
 
-* **gVisor installer**: `gvisor.installer.image` now defaults to `alpine` (pinned by digest) instead of `debian:stable-slim`, and `gvisor.installer.runscVersion` to `20261116`. From release `20260721`, the installer downloads `gvisor.tar.bz2` and unpacks it in the installer pod, so an installer image you mirror or override must provide `tar` with bzip2 support. Nodes that already have `runsc` keep their release, and do not get `gvisor-bin/`. To move such a node to the new release, drain it, remove `/usr/local/bin/runsc`, `/usr/local/bin/containerd-shim-runsc-v1` and `/usr/local/bin/gvisor-bin/` from it, then delete its installer pod. The new pod reinstalls them, and you can uncordon the node once it is `Running`.
+* **gVisor installer**: `gvisor.installer.image` now defaults to `alpine` (pinned by digest) instead of `debian:stable-slim`, and `gvisor.installer.runscVersion` to `20261116`. From release `20260721`, the installer downloads `gvisor.tar.bz2` and unpacks it in the installer pod, so an installer image you mirror or override must provide `tar` with bzip2 support. Nodes that already have `runsc` keep their release, and do not get `gvisor-bin/`. To move such a node to the new release, drain it, remove `/usr/local/bin/runsc`, `/usr/local/bin/containerd-shim-runsc-v1` and `/usr/local/bin/gvisor-bin/` from it, then delete its installer pod. The new pod reinstalls them. Uncordon the node only once that pod's log ends with `[gvisor-installer] done; idling to keep the DaemonSet pod Running`: the pod is `Running` while it installs, and stays `Running` if the install fails.
 
 ### Upgrade to 2026.5.1000
 
