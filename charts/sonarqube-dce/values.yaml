@@ -3,6 +3,8 @@
 # Declare variables to be passed into your templates.
 
 searchNodes:
+  # Pod grace period in seconds (minimum 0, 0 stops the pod immediately). Unset uses the Kubernetes default (30s).
+  # terminationGracePeriodSeconds: 120
   image:
     repository: sonarqube
     tag: 2026.5.0-datacenter-search
@@ -164,6 +166,8 @@ searchNodes:
   topologySpreadConstraints: []
 
 applicationNodes:
+  # Pod grace period in seconds (minimum 0, 0 stops the pod immediately). Unset uses the Kubernetes default (30s).
+  # terminationGracePeriodSeconds: 120
   image:
     repository: sonarqube
     tag: 2026.5.0-datacenter-app
@@ -1917,9 +1921,6 @@ agentRuntimeSandbox:
 # adminJobAnnotations: {}
 # deprecated please use sonarWebContext at the value top level
 #   sonarWebContext: /
-
-# (DEPRECATED) This value is not used in the templates.
-terminationGracePeriodSeconds: 60
 
 # Hook Job that runs derive-keys.sh (baked into the Agent Orchestrator image) and materializes
 # the per-consumer signing/verification key Secrets consumed by the Agent Orchestrator, Hunter

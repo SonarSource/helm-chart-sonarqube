@@ -1504,7 +1504,7 @@ See [Agentic features](#agentic-features) for how to enable and configure these 
 | `account.securityContext`           | (DEPRECATED) SecurityContext for change-password-hook. Please use `setAdminPassword.securityContext` instead.                                                                  | [Restricted podSecurityStandard](#kubernetes---pod-security-standards) |
 | `curlContainerImage`                | (DEPRECATED) Curl container image. Please use `setAdminPassword.image` instead.                                                                                                | `"image.repository":"image.tag"`                                       |
 | `adminJobAnnotations`               | (DEPRECATED) Custom annotations for admin hook Job. Please use `setAdminPassword.annotations` instead.                                                                         | `{}`                                                                   |
-| `terminationGracePeriodSeconds`     | Configuration of `terminationGracePeriodSeconds`                                                                                                                               | `60`                                                                   |
+| `terminationGracePeriodSeconds`     | Pod grace period in seconds (minimum 0, 0 stops the pod immediately). Unset uses the Kubernetes default (30s) | `nil` |
 
 For overriding variables see: [Customizing the chart](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing)
 
