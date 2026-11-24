@@ -1457,6 +1457,10 @@
         },
         "applicationNodes": {
             "properties": {
+                "terminationGracePeriodSeconds": {
+                    "type": "integer",
+                    "minimum": 0
+                },
                 "jvmOpts": {
                     "type": "string",
                     "deprecated": true,
@@ -1593,6 +1597,10 @@
         },
         "searchNodes": {
             "properties": {
+                "terminationGracePeriodSeconds": {
+                    "type": "integer",
+                    "minimum": 0
+                },
                 "skipEsMajorUpgradeCheck": {
                     "type": "boolean",
                     "$comment": "Skip the Elasticsearch major-upgrade check"
@@ -1618,11 +1626,6 @@
             "type": "string",
             "deprecated": true,
             "$comment": "(DEPRECATED) Must match the SonarQube image installation path. Do not change or unset it. A future release will replace this setting with a fixed path. Empty values use /opt/sonarqube."
-        },
-        "terminationGracePeriodSeconds": {
-            "type": "integer",
-            "deprecated": true,
-            "$comment": "(DEPRECATED) This value is not used in the templates"
         },
         "elasticsearch": {
             "type": "object",

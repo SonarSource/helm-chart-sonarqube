@@ -553,6 +553,9 @@ spec:
       topologySpreadConstraints:
 {{ toYaml . | indent 8 }}
     {{- end }}
+{{- if not (kindIs "invalid" .Values.ApplicationNodes.terminationGracePeriodSeconds) }}
+      terminationGracePeriodSeconds: {{ .Values.ApplicationNodes.terminationGracePeriodSeconds }}
+{{- end }}
       serviceAccountName: {{ template "sonarqube.serviceAccountName" . }}
       volumes:
       {{- if or $hasMergedProps .Values.sonarSecretKey }}

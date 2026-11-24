@@ -475,6 +475,9 @@ spec:
   {{- with .Values.affinity }}
   affinity: {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- if not (kindIs "invalid" .Values.terminationGracePeriodSeconds) }}
+  terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+  {{- end }}
   serviceAccountName: {{ include "sonarqube.serviceAccountName" . }}
   volumes:
     {{- with .Values.persistence.volumes }}
