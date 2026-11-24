@@ -132,9 +132,14 @@ sonarWebContext: ""
 # nginx:
 #   enabled: false
 
+# (DEPRECATED) The ingress-nginx controller was retired. Please use one of the alternatives and visit https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/ for more details.
 # Install the nginx ingress helm chart
 ingress-nginx:
   enabled: false
+  controller:
+    config:
+      # HTTP/2 is disabled because of known HTTP/2 vulnerabilities in the bundled NGINX
+      use-http2: "false"
 
   # You can add here any values from the official nginx ingress chart
   # controller:
