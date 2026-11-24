@@ -6,7 +6,7 @@ metadata:
   name: prometheus-monitoring-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.8
+    chart: sonarqube-2026.1.9
     release: prometheus-monitoring-values.yaml
     heritage: Helm
 type: Opaque
@@ -21,7 +21,7 @@ metadata:
   name: prometheus-monitoring-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.8
+    chart: sonarqube-2026.1.9
     release: prometheus-monitoring-values.yaml
     heritage: Helm
 type: Opaque
@@ -40,7 +40,7 @@ metadata:
   name: prometheus-monitoring-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.8
+    chart: sonarqube-2026.1.9
     release: prometheus-monitoring-values.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: prometheus-monitoring-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.8
+    chart: sonarqube-2026.1.9
     release: prometheus-monitoring-values.yaml
     heritage: Helm
 data:
@@ -101,7 +101,7 @@ metadata:
   name: prometheus-monitoring-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.8
+    chart: sonarqube-2026.1.9
     release: prometheus-monitoring-values.yaml
     heritage: Helm
 data:
@@ -115,7 +115,7 @@ metadata:
   name: prometheus-monitoring-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.8
+    chart: sonarqube-2026.1.9
     release: prometheus-monitoring-values.yaml
     heritage: Helm
 spec:
@@ -137,7 +137,7 @@ metadata:
   name: prometheus-monitoring-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.8
+    chart: sonarqube-2026.1.9
     release: prometheus-monitoring-values.yaml
     heritage: Helm
     app.kubernetes.io/name: prometheus-monitoring-values.yaml
@@ -145,7 +145,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: prometheus-monitoring-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.1.8-enterprise"
+    app.kubernetes.io/version: "2026.1.9-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -157,10 +157,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 569ecd1b2ede84f744613b58bb26c848ca7bf4d4fd0eab2b12b8067568a5721f
-        checksum/init-sysctl: f5cff9a4a710550c01c4b6b2c31e8ffe3cb47b5d2b6ff274d336d6e67a1c928a
-        checksum/plugins: 89c1dfb87ac01457a8ed94770c310562220bc7a01a65fadd1bce5873317497ea
-        checksum/secret: a9c089e81756c36c38e557754028e4cd90c5d3a25a7bc095849440779f87318c
+        checksum/config: 56d367c9b84130dbe2fac2c53269864d050c2a6cd774ba9e904b677024fb5bba
+        checksum/init-sysctl: a8f44bcc9043918e78f1704a9d04089063e5e7ace967a12e833f91a20932eaf6
+        checksum/plugins: 4992ea11d142bfd5c4961a2f63b89b12ce05be02f9b29afe1143c6a82f56d5cc
+        checksum/secret: 3ae7ab88b466f64ead37549f1d14e9c86e5cde909c094ad7df5879be9a88024b
       labels:
         app: sonarqube
         release: prometheus-monitoring-values.yaml
@@ -170,7 +170,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.1.8-enterprise
+          image: sonarqube:2026.1.9-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -189,7 +189,7 @@ spec:
               value: ""
       containers:
         - name: sonarqube
-          image: sonarqube:2026.1.8-enterprise
+          image: sonarqube:2026.1.9-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -206,7 +206,7 @@ spec:
               memory: 2048M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.1.8
+              value: 2026.1.9
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -336,14 +336,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.1.8
+    chart: sonarqube-2026.1.9
     release: prometheus-monitoring-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: prometheus-monitoring-values.yaml-ui-test
-      image: "sonarqube:2026.1.8-enterprise"
+      image: "sonarqube:2026.1.9-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['wget']
       args: [
