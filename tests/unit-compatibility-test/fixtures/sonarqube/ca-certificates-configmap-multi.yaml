@@ -6,7 +6,7 @@ metadata:
   name: ca-certificates-configmap-multi.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: ca-certificates-configmap-multi.yaml
     heritage: Helm
 type: Opaque
@@ -21,7 +21,7 @@ metadata:
   name: ca-certificates-configmap-multi.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: ca-certificates-configmap-multi.yaml
     heritage: Helm
 type: Opaque
@@ -40,7 +40,7 @@ metadata:
   name: ca-certificates-configmap-multi.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: ca-certificates-configmap-multi.yaml
     heritage: Helm
 data:
@@ -54,7 +54,7 @@ metadata:
   name: ca-certificates-configmap-multi.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: ca-certificates-configmap-multi.yaml
     heritage: Helm
 data:
@@ -101,7 +101,7 @@ metadata:
   name: ca-certificates-configmap-multi.yaml-sonarqube-install-oracle-jdbc-driver
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: ca-certificates-configmap-multi.yaml
     heritage: Helm
 data:
@@ -118,7 +118,7 @@ metadata:
   name: ca-certificates-configmap-multi.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: ca-certificates-configmap-multi.yaml
     heritage: Helm
 data:
@@ -135,7 +135,7 @@ metadata:
   name: ca-certificates-configmap-multi.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: ca-certificates-configmap-multi.yaml
     heritage: Helm
 spec:
@@ -157,7 +157,7 @@ metadata:
   name: ca-certificates-configmap-multi.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: ca-certificates-configmap-multi.yaml
     heritage: Helm
     app.kubernetes.io/name: ca-certificates-configmap-multi.yaml
@@ -165,7 +165,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: ca-certificates-configmap-multi.yaml-sonarqube
-    app.kubernetes.io/version: "2026.5.5-enterprise"
+    app.kubernetes.io/version: "2026.5.6-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -177,10 +177,10 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: ba9f0292f51579c399a461d339d7cf0e310522678f53013afe082a833c9c071f
-        checksum/init-sysctl: 8ae6567240edb978950575d47939ce9356efa997eee66c907bbed31e16a0ed28
-        checksum/plugins: d2c61efff96df7754fdfa16c43c06d37ab16f73c1c438876880e1f7c7c770402
-        checksum/secret: 5e162fd7879e06c8c015d155d2281541436551eebcfd7de73721346e2462b54c
+        checksum/config: 8761d439a2cefad1dc5385d578f3cc0896ea773cdb1b471678b1e65859b7350b
+        checksum/init-sysctl: 78a06154af8756bc5216e694f56cb5d0525987fafae1319c60adda0aabf5b43a
+        checksum/plugins: 5059e0414911e980f1ac794e40c8917d1ca299591cba2170087a4d1336b712e3
+        checksum/secret: 57eafb3344ab8ef16d2c33ea83adf8cf8a54d1e7dc95ec374a3653f6e701922e
       labels:
         app: sonarqube
         release: ca-certificates-configmap-multi.yaml
@@ -190,7 +190,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: ca-certs
-          image: sonarqube:2026.5.5-enterprise
+          image: sonarqube:2026.5.6-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-c"]
           args:
@@ -229,7 +229,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: init-sysctl
-          image: sonarqube:2026.5.5-enterprise
+          image: sonarqube:2026.5.6-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -247,7 +247,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: install-plugins
-          image: sonarqube:2026.5.5-enterprise
+          image: sonarqube:2026.5.6-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
           securityContext:
@@ -294,7 +294,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
         - name: install-oracle-jdbc-driver
-          image: sonarqube:2026.5.5-enterprise
+          image: sonarqube:2026.5.6-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_oracle_jdbc_driver.sh"]
           securityContext:
@@ -329,7 +329,7 @@ spec:
               value: -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
       containers:
         - name: sonarqube
-          image: sonarqube:2026.5.5-enterprise
+          image: sonarqube:2026.5.6-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -346,7 +346,7 @@ spec:
               memory: 4096M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.5.1007
+              value: 2026.5.1008
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -471,14 +471,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: ca-certificates-configmap-multi.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: ca-certificates-configmap-multi.yaml-ui-test
-      image: "sonarqube:2026.5.5-enterprise"
+      image: "sonarqube:2026.5.6-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [
