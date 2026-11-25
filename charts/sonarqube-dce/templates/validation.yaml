@@ -423,3 +423,45 @@
 {{- fail (printf "\n ** The values.yaml file is not valid. ** \n istio.istiodClusterIP is \"auto\" but the %q Service in namespace %q could not be resolved to a usable ClusterIP at render time - no live cluster, a wrong istio.namespace/istio.revision, istiod not installed yet, or a headless Service. Without it, the agent runtime falls back to a kube-dns/openshift-dns egress rule, reopening the DNS covert channel this design exists to close. Fix istio.namespace/istio.revision, install istiod first, or set istio.istiodClusterIP explicitly (a real ClusterIP, or \"\" to knowingly accept DNS egress) to bypass this check." (include "sonarqube.istio.istiodServiceName" .) .Values.istio.namespace) -}}
   {{- end -}}
 {{- end -}}
+
+{{/* Filesystem log reads need the same shared store and relative artifact root. */}}
+{{- if and .Values.agentOrchestrator.enabled (has .Values.agentOrchestrator.storage.type (list "FILESYSTEM" "NFS")) -}}
+{{- $writer := .Values.agentOrchestrator -}}
+{{- $server := fromYaml (include "applicationNodes" .) -}}
+{{- $base := required "agentOrchestrator.storage.filesystem.baseDir is required for Server job log access" $writer.storage.filesystem.baseDir | clean -}}
+{{- if not (hasPrefix "/" $base) -}}
+{{- fail "agentOrchestrator.storage.filesystem.baseDir must be absolute for Server job log access" -}}
+{{- end -}}
+{{- $serverBase := get ($server.sonarProperties | default dict) "sonar.agentic.runtime.storage.filesystem.base-dir" | default $base | clean -}}
+{{- $matched := false -}}
+{{- range $wm := $writer.extraVolumeMounts -}}
+  {{- $wp := clean $wm.mountPath -}}
+  {{- if and (not $wm.subPathExpr) (not $wm.readOnly) (or (eq $wp $base) (hasPrefix (printf "%s/" (trimSuffix "/" $wp)) $base)) -}}
+    {{- $writerRoot := clean (printf "/%s/%s" (default "" $wm.subPath) (trimPrefix (printf "%s/" (trimSuffix "/" $wp)) (printf "%s/" $base) | trimSuffix "/")) -}}
+    {{- if eq $wp $base -}}{{- $writerRoot = clean (printf "/%s" (default "" $wm.subPath)) -}}{{- end -}}
+    {{- range $wv := $writer.extraVolumes -}}
+      {{- if eq $wv.name $wm.name -}}
+        {{- range $sm := $server.extraVolumeMounts -}}
+          {{- $sp := clean $sm.mountPath -}}
+          {{- if and (not $sm.subPathExpr) (or (eq $sp $serverBase) (hasPrefix (printf "%s/" (trimSuffix "/" $sp)) $serverBase)) -}}
+            {{- $serverRoot := clean (printf "/%s/%s" (default "" $sm.subPath) (trimPrefix (printf "%s/" (trimSuffix "/" $sp)) (printf "%s/" $serverBase) | trimSuffix "/")) -}}
+            {{- if eq $sp $serverBase -}}{{- $serverRoot = clean (printf "/%s" (default "" $sm.subPath)) -}}{{- end -}}
+            {{- range $sv := $server.extraVolumes -}}
+              {{- if and (eq $sv.name $sm.name) (eq $writerRoot $serverRoot) -}}
+                {{- if and $wv.persistentVolumeClaim $sv.persistentVolumeClaim -}}
+                  {{- if eq $wv.persistentVolumeClaim.claimName $sv.persistentVolumeClaim.claimName -}}{{- $matched = true -}}{{- end -}}
+                {{- else if and $wv.nfs $sv.nfs -}}
+                  {{- if and (eq $wv.nfs.server $sv.nfs.server) (eq (clean $wv.nfs.path) (clean $sv.nfs.path)) -}}{{- $matched = true -}}{{- end -}}
+                {{- end -}}
+              {{- end -}}
+            {{- end -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if not $matched -}}
+{{- fail "Server job log access requires matching agentOrchestrator.extraVolumes/extraVolumeMounts and ApplicationNodes.extraVolumes/extraVolumeMounts: use the same PVC or NFS export and artifact root; subPathExpr is not supported" -}}
+{{- end -}}
+{{- end -}}

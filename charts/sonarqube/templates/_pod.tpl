@@ -11,6 +11,9 @@ metadata:
     {{- end }}
     checksum/plugins: {{ include (print $.Template.BasePath "/install-plugins.yaml") . | sha256sum }}
     checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+    {{- if and .Values.agentOrchestrator.enabled (not .Values.agentOrchestrator.storage.existingSecret) }}
+    checksum/runtime-storage-secret: {{ include (print $.Template.BasePath "/agent-orchestrator-secret.yaml") . | sha256sum }}
+    {{- end }}
     {{- if .Values.prometheusExporter.enabled }}
     checksum/prometheus-config: {{ include (print $.Template.BasePath "/prometheus-config.yaml") . | sha256sum }}
     checksum/prometheus-ce-config: {{ include (print $.Template.BasePath "/prometheus-ce-config.yaml") . | sha256sum }}
@@ -116,6 +119,15 @@ spec:
           if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
             awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
           fi
+          {{- if .Values.agentOrchestrator.enabled }}
+          {{- with include "sonarqube.runtimeStorageCredentialScript" . }}
+          {{- . | nindent 10 }}
+          {{- end }}
+          if [ -f /tmp/props/secret.properties ]; then
+            printf '\n' >> /tmp/result/sonar.properties
+            cat /tmp/props/secret.properties >> /tmp/result/sonar.properties
+          fi
+          {{- end }}
       volumeMounts:
         - mountPath: /tmp/result
           name: concat-dir
@@ -137,6 +149,9 @@ spec:
       {{- end }}
       env:
         {{- (include "sonarqube.combined_env" . | fromJsonArray) | toYaml | trim | nindent 8 }}
+        {{- with include "sonarqube.runtimeStorageCredentialEnv" . }}
+        {{- . | nindent 8 }}
+        {{- end }}
     {{- end }}
     {{- if .Values.prometheusExporter.enabled }}
     - name: inject-prometheus-exporter

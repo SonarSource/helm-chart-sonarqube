@@ -46,6 +46,9 @@ spec:
         checksum/plugins: {{ include (print $.Template.BasePath "/install-plugins.yaml") . | sha256sum }}
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- if and .Values.agentOrchestrator.enabled (not .Values.agentOrchestrator.storage.existingSecret) }}
+        checksum/runtime-storage-secret: {{ include (print $.Template.BasePath "/agent-orchestrator-secret.yaml") . | sha256sum }}
+        {{- end }}
 {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}
         checksum/prometheus-config: {{ include (print $.Template.BasePath "/prometheus-config.yaml") . | sha256sum }}
         checksum/prometheus-ce-config: {{ include (print $.Template.BasePath "/prometheus-ce-config.yaml") . | sha256sum }}
@@ -125,6 +128,15 @@ spec:
             if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
               awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
             fi
+            {{- if .Values.agentOrchestrator.enabled }}
+            {{- with include "sonarqube.runtimeStorageCredentialScript" . }}
+            {{- . | nindent 12 }}
+            {{- end }}
+            if [ -f /tmp/props/secret.properties ]; then
+              printf '\n' >> /tmp/result/sonar.properties
+              cat /tmp/props/secret.properties >> /tmp/result/sonar.properties
+            fi
+            {{- end }}
           volumeMounts:
           {{- if or $hasMergedProps .Values.sonarSecretKey }}
             - mountPath: /tmp/props/sonar.properties
@@ -143,9 +155,15 @@ spec:
           {{- end }}
           resources:
 {{ toYaml .Values.initContainers.resources | indent 12 }}
-          {{- with .Values.env }}
+          {{- $runtimeStorageEnv := include "sonarqube.runtimeStorageCredentialEnv" . }}
+          {{- if or .Values.env $runtimeStorageEnv }}
           env:
+            {{- with .Values.env }}
             {{- . | toYaml | trim | nindent 12 }}
+            {{- end }}
+            {{- with $runtimeStorageEnv }}
+            {{- . | nindent 12 }}
+            {{- end }}
           {{- end }}
       {{- end }}
       {{- if .Values.ApplicationNodes.prometheusExporter.enabled }}

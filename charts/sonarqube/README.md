@@ -643,11 +643,15 @@ The chart can deploy the SonarQube agentic components next to SonarQube Server:
 * **Database.** The Agent Orchestrator shares SonarQube's database and supports the same ones: **PostgreSQL**, **Microsoft SQL Server** and **Oracle** (see the [installation requirements](https://docs.sonarsource.com/sonarqube-server/server-installation/server-host-requirements)). In this chart, set `jdbcOverwrite.enabled=true`: the embedded H2 database is not reachable from the orchestrator. It connects with the full `jdbcOverwrite.jdbcUrl`, parameters included. `agentOrchestrator.coreDb.*` defaults to the `jdbcOverwrite` values and can override them individually: `coreDb.jdbcUrl` for the URL, `coreDb.username` and `coreDb.passwordSecretName`/`passwordSecretKey` for the credentials. The legacy `coreDb.endpoint`/`coreDb.name` are still supported for PostgreSQL: the orchestrator then builds the URL from them, without the `jdbcOverwrite.jdbcUrl` parameters. Prefer `coreDb.jdbcUrl`. Microsoft SQL Server and Oracle need an orchestrator image that reads `CORE_DB_JDBC_URL`: images that do not read `CORE_DB_JDBC_URL` support PostgreSQL only. Check that the selected image supports your database.
   * **Oracle.** Set `jdbcOverwrite.oracleJdbcDriver.url`: the chart installs that driver in the orchestrator pod the same way as in SonarQube's, including `jdbcOverwrite.oracleJdbcDriver.netrcCreds` and `caCerts` for the download. As for SonarQube, an Oracle URL without that driver is not rejected at install time: the orchestrator fails to start instead.
   * **Database TLS and files referenced by the URL.** `caCerts` is not added to the orchestrator's truststore: it only covers SonarQube's own connections and the Oracle driver download. For a database whose certificate is signed by a private CA, mount the CA or truststore in the orchestrator with `agentOrchestrator.extraVolumes`/`extraVolumeMounts` and reference it from `agentOrchestrator.coreDb.jdbcUrl` with the driver's own parameter, e.g. `sslrootcert=` for PostgreSQL or `trustStore=`/`trustStorePassword=` for Microsoft SQL Server. The same applies to any URL parameter pointing at a file in the SonarQube pod, such as `sslrootcert=`, `trustStore=` or `TNS_ADMIN=`: that file does not exist in the orchestrator pod, so override the URL with `agentOrchestrator.coreDb.jdbcUrl`.
-* **Storage.** The agentic features share an object store: the Agent Orchestrator writes the job artifacts to it (`agentOrchestrator.storage`), SonarQube reads the agent job logs from it (`sonar.agentic.storage.*` in `sonarProperties`), and Vortex restores the analysis context from it (`vortexAnalysis.storage`). The simplest setup points all three at the same bucket. Supported backends:
+* **Storage.** The Agent Orchestrator writes job artifacts to `agentOrchestrator.storage`. When it is enabled, the chart gives SonarQube Server the same backend, bucket or container, and artifact root through `sonar.agentic.runtime.storage.*`. The Server uses these settings to download job logs. Vortex analysis context uses `vortexAnalysis.storage` and the independent Server namespace `sonar.agentic.storage.*`; it can use a different location. Explicit properties in `sonarProperties` keep their existing precedence. Supported backends:
   * `S3` (default, recommended for production): AWS S3, or any S3-compatible endpoint such as MinIO via `endpoint` and path-style addressing. Credentials come from inline keys, an `existingSecret`, or, when both are blank, the pod's IAM identity (node instance role or IRSA through the component's `serviceAccount.annotations`).
   * `FILESYSTEM` / `NFS`: a shared `ReadWriteMany` volume mounted through `extraVolumes`/`extraVolumeMounts`, with `storage.filesystem.baseDir` set. Use a single `securityContext.fsGroup` across the orchestrator and the agents.
   * `AZURE`: Azure Blob Storage. Set `storage.type: AZURE`, `storage.azure.container` and `storage.azure.connectionString` (or an `existingSecret`) on `agentOrchestrator` and `vortexAnalysis`. One of the two is required: the chart fails the render when neither is set. Azure does not use `bucket` or `region`. Managed identity is not supported.
   * `GCS`: Google Cloud Storage. Set `storage.type: GCS` and `storage.bucket`, plus `storage.gcs.projectId` if it can't be resolved from the credentials. Credentials come from `storage.gcs.credentialsJson` (a service-account key), an `existingSecret`, or, when both are blank, Application Default Credentials such as GKE Workload Identity through the component's `serviceAccount.annotations`. GCS does not use `region`.
+
+  The Server reuses the Orchestrator's inline or existing Secret credentials. The properties init container writes them to the Server's private `sonar.properties` volume; credentials are not put in a ConfigMap. The generated property suffixes match the Server parser: `access-key`, `secret-key`, `path-style-access`, `azure.connection-string`, `azure.container`, `gcs.project-id`, and `gcs.credentials-json`. Without static S3 or GCS credentials, configure each pod's identity separately. The Server does not inherit the Orchestrator's service account. User Secret properties override generated credentials. A Helm upgrade that changes inline storage credentials restarts the Server to reload them. After rotating an externally managed Secret, restart the Server and Orchestrator pods to reload its credentials.
+
+  For `FILESYSTEM` or `NFS`, mount the same PVC or NFS export on the Orchestrator and the Server, with the same relative artifact root. Set `agentOrchestrator.storage.filesystem.baseDir` to an absolute path. The chart sets the Server property `sonar.agentic.runtime.storage.filesystem.base-dir` from it. Configure the Server mounts through `extraVolumes`/`extraVolumeMounts` and the writer mounts through `agentOrchestrator.extraVolumes`/`extraVolumeMounts`. Rendering fails if these settings do not identify the same store and root. `emptyDir` and `subPathExpr` cannot establish a shared store. Keep the runtime mounts restricted to their own subdirectories. The Server needs read access to all job artifacts. Use one shared `fsGroup` for filesystem access.
 
   Example for Azure Blob Storage (create the Secret first, with one key per component):
 
@@ -728,7 +732,7 @@ edition: enterprise
 monitoringPasscode: "<your-passcode>"   # or monitoringPasscodeSecretName/Key
 sonarProperties:
   sonar.agentic.storage.type: S3
-  sonar.agentic.storage.bucket: my-agentic-artifacts
+  sonar.agentic.storage.bucket: my-analysis-context
   sonar.agentic.storage.region: eu-west-1
 jdbcOverwrite:
   enabled: true
@@ -749,7 +753,7 @@ vortexAnalysis:
   storage:
     type: S3
     region: eu-west-1
-    bucket: my-agentic-artifacts
+    bucket: my-analysis-context
 hunterAgent:
   enabled: true
 remediationAgent:

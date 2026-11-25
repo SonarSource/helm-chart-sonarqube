@@ -404,6 +404,11 @@ metadata:
 data:
   sonar.properties: |
     sonar.agentic.orchestrator.signingKeyPath=/opt/sonarqube/agentic-keys/agentic-shared
+    sonar.agentic.runtime.storage.bucket=agent-jobs
+    sonar.agentic.runtime.storage.endpoint=
+    sonar.agentic.runtime.storage.path-style-access=true
+    sonar.agentic.runtime.storage.region=us-east-1
+    sonar.agentic.runtime.storage.type=S3
     sonar.agentic.signing.secretFile=/opt/sonarqube/agentic-secret/instance-secret
     sonar.hunteragent.orchestrator.url=http://agentic-scheduling-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
     sonar.remediationagent.orchestrator.url=http://agentic-scheduling-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
@@ -1894,10 +1899,11 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: c2c04b25ed1e0960bd84c04c08c6dd89fd38da5f1a037049a0f7b0898407f4b9
+        checksum/config: f9ee6ee8fbc5acb534598cafe8a5ef63b2ac7fdab1c4041d42cb28f72f2e681e
         checksum/init-sysctl: 6786f247dbd48de4bb7abc6f4bf1a824f9693584082afe06dd562b0b86d28cd6
         checksum/plugins: a9eae54fb06a896bba7a7d3b59cc3f40e09681ed97415ad346f4e77284946e96
         checksum/secret: cfcb102bd062f07c0580ee65a1fdbbf6d33bf8f2cb9064f05213610511628e32
+        checksum/runtime-storage-secret: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
       labels:
         app: sonarqube
         release: agentic-scheduling-values.yaml
@@ -1940,6 +1946,10 @@ spec:
               fi
               if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
                 awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+              fi
+              if [ -f /tmp/props/secret.properties ]; then
+                printf '\n' >> /tmp/result/sonar.properties
+                cat /tmp/props/secret.properties >> /tmp/result/sonar.properties
               fi
           volumeMounts:
             - mountPath: /tmp/result
