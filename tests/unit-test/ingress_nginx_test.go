@@ -60,6 +60,8 @@ var ingressNginxHttp2Cases = []ingressNginxHttp2Case{
 	{"bool-true", []string{"--set", "ingress-nginx.controller.config.use-http2=true"}, "true", true},
 	{"string-false", []string{"--set-string", "ingress-nginx.controller.config.use-http2=false"}, "false", false},
 	{"bool-false", []string{"--set", "ingress-nginx.controller.config.use-http2=false"}, "false", false},
+	{"string-False", []string{"--set-string", "ingress-nginx.controller.config.use-http2=False"}, "False", false},
+	{"number-zero", []string{"--set", "ingress-nginx.controller.config.use-http2=0"}, "0", false},
 	{"config-removed", []string{"--set", "ingress-nginx.controller.config=null"}, "", true},
 }
 
