@@ -26,7 +26,7 @@ WARNING: The embedded PostgreSQL is intended for evaluation only, it is DEPRECAT
 {{- end }}
 {{- $ingressNginx := index .Values "ingress-nginx" }}
 {{ if or (.Values.nginx).enabled $ingressNginx.enabled }}
-{{- if not (has (lower (toString (dig "controller" "config" "use-http2" "true" $ingressNginx))) (list "false" "f" "0")) }}
+{{- if not (has (toString (dig "controller" "config" "use-http2" "true" $ingressNginx)) (list "false" "False" "FALSE" "f" "F" "0")) }}
 WARNING: You have enabled the ingress-nginx controller, which is deprecated and no longer maintained. The NGINX version it ships is affected by known HTTP/2 security vulnerabilities, and HTTP/2 is enabled on port 443.
          Please move to the Gateway API or another maintained ingress controller. As a temporary workaround, you can disable HTTP/2 (ingress-nginx.controller.config.use-http2="false").
          Please visit https://community.sonarsource.com/t/security-advisory-sonarqube-server-helm-charts-guidance-for-nginx-http-2/192015 for more information.
