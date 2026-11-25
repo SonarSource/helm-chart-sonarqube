@@ -24,9 +24,16 @@ WARNING:
 WARNING: The embedded PostgreSQL is intended for evaluation only, it is DEPRECATED, and it will be REMOVED in a future release.
          Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#production-use-case for more information.
 {{- end }}
-{{ if or (.Values.nginx).enabled (index .Values "ingress-nginx" "enabled") }}
-WARNING: The ingress nginx controller dependency has been upgraded to a major version (4.x), please carefully read the changelogs at https://github.com/kubernetes/ingress-nginx/releases and refer to the documentation at https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/.
-         Please also visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#production-use-case for more information.
+{{- $ingressNginx := index .Values "ingress-nginx" }}
+{{ if or (.Values.nginx).enabled $ingressNginx.enabled }}
+{{- if not (has (toString (dig "controller" "config" "use-http2" "true" $ingressNginx)) (list "false" "False" "FALSE" "f" "F" "0")) }}
+WARNING: You have enabled the ingress-nginx controller, which is deprecated and no longer maintained. The NGINX version it ships is affected by known HTTP/2 security vulnerabilities, and HTTP/2 is enabled on port 443.
+         Please move to the Gateway API or another maintained ingress controller. As a temporary workaround, you can disable HTTP/2 (ingress-nginx.controller.config.use-http2="false").
+         Please visit https://community.sonarsource.com/t/security-advisory-sonarqube-server-helm-charts-guidance-for-nginx-http-2/192015 for more information.
+{{- else }}
+WARNING: The ingress-nginx controller dependency is deprecated. A replacement for this dependency will be included in a future release.
+         Please visit https://artifacthub.io/packages/helm/sonarqube/sonarqube-dce#ingress-use-cases-deprecated for more information.
+{{- end }}
 {{- end }}
 {{ if hasKey .Values.logging "jsonOutput" }}
 WARNING: The logging.jsonOutput value is deprecated in favor of the ENV var SONAR_LOG_JSONOUTPUT or the sonar.properties's sonar.log.jsonOutput.

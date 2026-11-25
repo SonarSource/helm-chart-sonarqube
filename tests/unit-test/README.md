@@ -6,5 +6,5 @@ In order to execute the unit schema validation tests, you need to have golang in
 When the pre-requisites are fulfilled, just run:
 
 ```bash
-go test -v schema_test.go
+go test -v schema_test.go ingress_nginx_test.go
 ```
