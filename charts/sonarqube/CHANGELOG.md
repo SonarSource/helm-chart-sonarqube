@@ -4,6 +4,8 @@ All changes to this chart will be documented in this file.
 ## [2026.1.9]
 * Upgrade Chart's version to 2026.1.9
 * Upgrade SonarQube Server to 2026.1.9
+* Disable HTTP/2 by default on the ingress-nginx controller
+* Warn when HTTP/2 is enabled on the ingress-nginx controller
 
 ## [2026.1.8]
 * Upgrade Chart's version to 2026.1.8

@@ -609,6 +609,7 @@ The following table lists the configurable parameters of the SonarQube chart and
 | `noProxy`                | No proxy for downloading JMX agent and install plugins, will superseed initContainer specific no proxy variables      | ``      |
 | `nodeEncryption.enabled` | Secure the communication between Application and Search nodes using TLS                                               | `false` |
 | `ingress-nginx.enabled`  | (DEPRECATED) Install Nginx Ingress Helm                                                                                           | `false` |
+| `ingress-nginx.controller.config.use-http2` | (DEPRECATED) Enable HTTP/2 on the Nginx Ingress controller | `"false"` |
 
 ### NetworkPolicies
 
