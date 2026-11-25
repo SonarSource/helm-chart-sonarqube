@@ -4,6 +4,89 @@ entries:
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
+          description: "Upgrade Chart's version to 2026.5.1008"
+        - kind: changed
+          description: "Upgrade SonarQube Server to 2026.5.6"
+        - kind: changed
+          description: "Upgrade the Agent Orchestrator to 2026.5.6"
+        - kind: changed
+          description: "Upgrade the Remediation Agent, Vortex and MCP Server to 2026.5.2"
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/images: |
+        - name: sonarqube-community
+          image: sonarqube:26.9.0.129388-community
+        - name: sonarqube-developer
+          image: sonarqube:2026.5.6-developer
+        - name: sonarqube-enterprise
+          image: sonarqube:2026.5.6-enterprise
+        - name: sonarqube-mcp
+          image: sonarsource/sonarqube-mcp:2026.5.2
+        - name: sonarqube-agent-orchestrator
+          image: sonarsource/sonarqube-agent-orchestrator:2026.5.6
+        - name: sonarqube-hunter-agent
+          image: sonarsource/sonarqube-hunter-agent:2026.5.2
+        - name: sonarqube-remediation-agent
+          image: sonarsource/sonarqube-remediation-agent:2026.5.2
+        - name: sonar-vortex
+          image: sonarsource/sonar-vortex:2026.5.2
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
+      charts.openshift.io/name: sonarqube
+    apiVersion: v2
+    appVersion: 2026.5.6
+    created: "2026-11-25T15:05:05.262976635Z"
+    dependencies:
+    - condition: keda.enabled
+      name: keda
+      repository: https://kedacore.github.io/charts
+      version: 2.20.2
+    description: SonarQube is a self-managed, automatic code review tool that systematically
+      helps you deliver clean code. As a core element of our Sonar solution, SonarQube
+      integrates into your existing workflow and detects issues in your code to help
+      you perform continuous code inspections of your projects. The tool analyses
+      30+ different programming languages and integrates into your CI pipeline and
+      DevOps platform to ensure that your code meets high-quality standards.
+    digest: 52783d40032b54d2f9b9e4d9145c17b779195c52accc93b71ba9d50db69c0cd1
+    home: https://www.sonarqube.org/
+    icon: https://raw.githubusercontent.com/SonarSource/sonarqube-static-resources/master/helm/SonarQubeServerLogo.png
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: carmine.vassallo@sonarsource.com
+      name: carminevassallo
+    - email: emma.mansalier@sonarsource.com
+      name: emma44-m
+    - email: hatem.amairi@sonarsource.com
+      name: hatem-amairi-sonarsource
+    - email: jimil.desai@sonarsource.com
+      name: jimil09
+    - email: julien.lancelot@sonarsource.com
+      name: julienlancelot
+    - email: lukasz.jarocki@sonarsource.com
+      name: lukasz-jarocki-sonarsource
+    - email: matteo.mara@sonarsource.com
+      name: matteo-mara-sonarsource
+    - email: navya.otturu@sonarsource.com
+      name: navyatejaotturu-sonarsource
+    name: sonarqube
+    sources:
+    - https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-2026.5.1008-sonarqube-dce-2026.5.1008/sonarqube-2026.5.1008.tgz
+    version: 2026.5.1008
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
           description: "Upgrade Chart's version to 2026.5.1007"
         - kind: changed
           description: "Upgrade the Agent Orchestrator to 2026.5.5"
@@ -6361,6 +6444,87 @@ entries:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-1.1.1+98.tgz
     version: 1.1.1+98
   sonarqube-dce:
+  - annotations:
+      artifacthub.io/changes: |
+        - kind: changed
+          description: "Upgrade Chart's version to 2026.5.1008"
+        - kind: changed
+          description: "Upgrade SonarQube Server to 2026.5.6"
+        - kind: changed
+          description: "Upgrade the Agent Orchestrator to 2026.5.6"
+        - kind: changed
+          description: "Upgrade the Remediation Agent, Vortex and MCP Server to 2026.5.2"
+      artifacthub.io/containsSecurityUpdates: "true"
+      artifacthub.io/images: |
+        - name: sonarqube-app
+          image: sonarqube:2026.5.6-datacenter-app
+        - name: sonarqube-search
+          image: sonarqube:2026.5.6-datacenter-search
+        - name: sonarqube-mcp
+          image: sonarsource/sonarqube-mcp:2026.5.2
+        - name: sonarqube-agent-orchestrator
+          image: sonarsource/sonarqube-agent-orchestrator:2026.5.6
+        - name: sonarqube-hunter-agent
+          image: sonarsource/sonarqube-hunter-agent:2026.5.2
+        - name: sonarqube-remediation-agent
+          image: sonarsource/sonarqube-remediation-agent:2026.5.2
+        - name: sonar-vortex
+          image: sonarsource/sonar-vortex:2026.5.2
+      artifacthub.io/links: |
+        - name: support
+          url: https://community.sonarsource.com/
+        - name: Chart Source
+          url: https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
+      charts.openshift.io/name: sonarqube-dce
+    apiVersion: v2
+    appVersion: 2026.5.6
+    created: "2026-11-25T15:05:05.274973172Z"
+    dependencies:
+    - condition: keda.enabled
+      name: keda
+      repository: https://kedacore.github.io/charts
+      version: 2.20.2
+    description: SonarQube is a self-managed, automatic code review tool that systematically
+      helps you deliver clean code. As a core element of our Sonar solution, SonarQube
+      integrates into your existing workflow and detects issues in your code to help
+      you perform continuous code inspections of your projects. The tool analyses
+      30+ different programming languages and integrates into your CI pipeline and
+      DevOps platform to ensure that your code meets high-quality standards.
+    digest: 5aa7310c60194184b96be3857681d31e358581e5bb823d4993409fa9819529c4
+    home: https://www.sonarqube.org/
+    icon: https://raw.githubusercontent.com/SonarSource/sonarqube-static-resources/master/helm/SonarQubeServerLogo.png
+    keywords:
+    - coverage
+    - security
+    - code
+    - quality
+    kubeVersion: '>= 1.24.0-0'
+    maintainers:
+    - email: carmine.vassallo@sonarsource.com
+      name: carminevassallo
+    - email: emma.mansalier@sonarsource.com
+      name: emma44-m
+    - email: hatem.amairi@sonarsource.com
+      name: hatem-amairi-sonarsource
+    - email: jimil.desai@sonarsource.com
+      name: jimil09
+    - email: julien.lancelot@sonarsource.com
+      name: julienlancelot
+    - email: lukasz.jarocki@sonarsource.com
+      name: lukasz-jarocki-sonarsource
+    - email: matteo.mara@sonarsource.com
+      name: matteo-mara-sonarsource
+    - email: navya.otturu@sonarsource.com
+      name: navyatejaotturu-sonarsource
+    name: sonarqube-dce
+    sources:
+    - https://github.com/SonarSource/helm-chart-sonarqube/tree/master/charts/sonarqube-dce
+    - https://github.com/SonarSource/docker-sonarqube
+    - https://github.com/SonarSource/sonarqube
+    type: application
+    urls:
+    - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-2026.5.1008-sonarqube-dce-2026.5.1008/sonarqube-dce-2026.5.1008.tgz
+    version: 2026.5.1008
   - annotations:
       artifacthub.io/changes: |
         - kind: changed
@@ -13202,4 +13366,4 @@ entries:
     urls:
     - https://github.com/SonarSource/helm-chart-sonarqube/releases/download/sonarqube-helm-repo-release/sonarqube-lts-1.0.16+98.tgz
     version: 1.0.16+98
-generated: "2026-11-25T09:46:41.784634429Z"
+generated: "2026-11-25T15:05:05.24935809Z"
