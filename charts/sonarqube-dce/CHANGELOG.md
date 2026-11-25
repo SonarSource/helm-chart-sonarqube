@@ -1,6 +1,12 @@
 # SonarQube Chart Changelog
 All changes to this chart will be documented in this file.
 
+## [2026.5.1008]
+* Upgrade Chart's version to 2026.5.1008
+* Upgrade SonarQube Server to 2026.5.6
+* Upgrade the Agent Orchestrator to 2026.5.6
+* Upgrade the Remediation Agent, Vortex and MCP Server to 2026.5.2
+
 ## [2026.5.1007]
 * Upgrade Chart's version to 2026.5.1007
 * Upgrade the Agent Orchestrator to 2026.5.5

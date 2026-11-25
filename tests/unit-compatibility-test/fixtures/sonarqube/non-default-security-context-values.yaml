@@ -6,7 +6,7 @@ metadata:
   name: non-default-security-context-values.yaml-sonarqube-monitoring-passcode
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: non-default-security-context-values.yaml
     heritage: Helm
 type: Opaque
@@ -21,7 +21,7 @@ metadata:
   name: non-default-security-context-values.yaml-sonarqube-admin-password
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: non-default-security-context-values.yaml
     heritage: Helm
 type: Opaque
@@ -37,7 +37,7 @@ metadata:
   name: non-default-security-context-values.yaml-sonarqube-http-proxies
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: non-default-security-context-values.yaml
     heritage: Helm
 type: Opaque
@@ -56,7 +56,7 @@ metadata:
   name: non-default-security-context-values.yaml-sonarqube-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: non-default-security-context-values.yaml
     heritage: Helm
 data:
@@ -70,7 +70,7 @@ metadata:
   name: non-default-security-context-values.yaml-sonarqube-init-sysctl
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: non-default-security-context-values.yaml
     heritage: Helm
 data:
@@ -117,7 +117,7 @@ metadata:
   name: non-default-security-context-values.yaml-sonarqube-install-plugins
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: non-default-security-context-values.yaml
     heritage: Helm
 data:
@@ -134,7 +134,7 @@ metadata:
   name: non-default-security-context-values.yaml-sonarqube-prometheus-ce-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: non-default-security-context-values.yaml
     heritage: Helm
 data:
@@ -150,7 +150,7 @@ metadata:
   name: non-default-security-context-values.yaml-sonarqube-prometheus-config
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: non-default-security-context-values.yaml
     heritage: Helm
 data:
@@ -166,7 +166,7 @@ metadata:
   name: non-default-security-context-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: non-default-security-context-values.yaml
     heritage: Helm
 spec:
@@ -188,7 +188,7 @@ metadata:
   name: non-default-security-context-values.yaml-sonarqube
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: non-default-security-context-values.yaml
     heritage: Helm
     app.kubernetes.io/name: non-default-security-context-values.yaml
@@ -196,7 +196,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: sonarqube
     app.kubernetes.io/component: non-default-security-context-values.yaml-sonarqube
-    app.kubernetes.io/version: "2026.5.5-enterprise"
+    app.kubernetes.io/version: "2026.5.6-enterprise"
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -208,12 +208,12 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 23a343e222f69f86cb56c0b7e1a4c44d758833e2fa01b64eb36412a34d4f3af0
-        checksum/init-sysctl: c9d404c0ea2bcae83600152a197763e906d35f33fe58100b815b30e56c4b8b09
-        checksum/plugins: e689adc4aa6cef2674d3cc39f16c0da848c17b82a9cd76ab4f274667ea836337
-        checksum/secret: eb3d6c3a41750532788fbf1e85770fdc302d4a901dd53e8c273449f4d34cd21b
-        checksum/prometheus-config: 351ea015b5e2209f6486c9761253d4670d8fbf9810c1771988f199d3243f070a
-        checksum/prometheus-ce-config: b52d8bf8120d0dbcfc7c648fa165bd9d12e22926326683ea24810763c0ecfc87
+        checksum/config: 7d9b0c6ef564677e6667b6888e0721ea7ef366fd62f316f1979ce4eec69f5505
+        checksum/init-sysctl: d1122e6a4b60b940e5d9de0d13d69bc3fad521e0b01559b8356c334afb1a09ad
+        checksum/plugins: 2ab17eceffa189cdbd700e48f86dd9c70d2416d7105226b3cf1dc7f62820ca4c
+        checksum/secret: 938969c06abbda5d8aceca40bf907b26a1e0f8f04cad488610f139b38b3c86e8
+        checksum/prometheus-config: 8cbb8d731e02832cadb4fa62bc6acfa1fc580d8780e8a77ba717dbb27b2e50fb
+        checksum/prometheus-ce-config: 889511dd6284d945851079575a144f2ed7b1834aae32c86ffb91667e8d5c152b
       labels:
         app: sonarqube
         release: non-default-security-context-values.yaml
@@ -223,7 +223,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: init-sysctl
-          image: sonarqube:2026.5.5-enterprise
+          image: sonarqube:2026.5.6-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
@@ -241,7 +241,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
         - name: inject-prometheus-exporter
-          image: sonarqube:2026.5.5-enterprise
+          image: sonarqube:2026.5.6-enterprise
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -283,7 +283,7 @@ spec:
             - name: SONAR_CE_JAVAOPTS
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
         - name: install-plugins
-          image: sonarqube:2026.5.5-enterprise
+          image: sonarqube:2026.5.6-enterprise
           imagePullPolicy: IfNotPresent
           command: ["sh", "-e", "/tmp/scripts/install_plugins.sh"]
           securityContext:
@@ -327,7 +327,7 @@ spec:
               value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8001:/opt/sonarqube/conf/prometheus-ce-config.yaml
       containers:
         - name: sonarqube
-          image: sonarqube:2026.5.5-enterprise
+          image: sonarqube:2026.5.6-enterprise
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -350,7 +350,7 @@ spec:
               memory: 4096M
           env:
             - name: SONAR_HELM_CHART_VERSION
-              value: 2026.5.1007
+              value: 2026.5.1008
             - name: SONAR_WEB_SYSTEMPASSCODE
               valueFrom:
                 secretKeyRef:
@@ -476,14 +476,14 @@ metadata:
     "sidecar.istio.io/inject": "false"
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: non-default-security-context-values.yaml
     heritage: Helm
 spec:
   automountServiceAccountToken: false
   containers:
     - name: non-default-security-context-values.yaml-ui-test
-      image: "sonarqube:2026.5.5-enterprise"
+      image: "sonarqube:2026.5.6-enterprise"
       imagePullPolicy: IfNotPresent
       command: ['curl']
       args: [
@@ -515,7 +515,7 @@ metadata:
   name: non-default-security-context-values.yaml-sonarqube-change-admin-password-hook
   labels:
     app: sonarqube
-    chart: sonarqube-2026.5.1007
+    chart: sonarqube-2026.5.1008
     release: non-default-security-context-values.yaml
     heritage: Helm
   annotations:
@@ -528,7 +528,7 @@ spec:
       name: non-default-security-context-values.yaml-sonarqube-change-admin-password-hook
       labels:
         app: sonarqube
-        chart: sonarqube-2026.5.1007
+        chart: sonarqube-2026.5.1008
         release: non-default-security-context-values.yaml
         heritage: Helm
       annotations:
