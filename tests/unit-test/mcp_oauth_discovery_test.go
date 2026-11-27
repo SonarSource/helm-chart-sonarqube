@@ -81,10 +81,11 @@ func TestMcpOAuthDiscoveryIngress(t *testing.T) {
 				assert.Equal(t, paths[0].Backend, paths[1].Backend)
 			})
 
-			t.Run("discovery path follows the host pathType", func(t *testing.T) {
+			t.Run("discovery path stays ImplementationSpecific with a Prefix host", func(t *testing.T) {
 				paths := ingressPaths(t, chart, map[string]string{"sonarWebContext": "/sonarqube/", "ingress.hosts[0].pathType": "Prefix"})
 				require.Len(t, paths, 2)
-				assert.Equal(t, networkingv1.PathTypePrefix, *paths[1].PathType)
+				assert.Equal(t, networkingv1.PathTypePrefix, *paths[0].PathType)
+				assert.Equal(t, networkingv1.PathTypeImplementationSpecific, *paths[1].PathType)
 			})
 
 			t.Run("no web context adds no path", func(t *testing.T) {

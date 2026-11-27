@@ -47,7 +47,8 @@ spec:
             port:
               number: {{ default $servicePort .servicePort }}
         path: /.well-known/oauth-authorization-server{{ trimSuffix "/" $webContext }}
-        pathType: {{ default "ImplementationSpecific" .pathType }}
+        {{- /* ingress-nginx 1.12+ rejects "." in Prefix and Exact paths */}}
+        pathType: ImplementationSpecific
       {{- end }}
   {{- end }}
   {{- if .Values.ingress.tls }}
