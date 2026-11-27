@@ -19,6 +19,9 @@ spec:
     {{- if .Values.httproute.gatewayNamespace }}
     namespace: {{ .Values.httproute.gatewayNamespace }}
     {{- end }}
+    {{- if .Values.httproute.gatewaySectionName }}
+    sectionName: {{ .Values.httproute.gatewaySectionName }}
+    {{- end }}
   hostnames:
     {{- with .Values.httproute.hostnames }}
     {{- toYaml . | nindent 4 }}
