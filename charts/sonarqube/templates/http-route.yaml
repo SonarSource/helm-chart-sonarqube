@@ -28,7 +28,7 @@ spec:
     - path:
         type: PathPrefix
         value: {{ include "sonarqube.webcontext" . }}
-    {{- if and .Values.mcp.enabled (ne (include "sonarqube.webcontext" .) "/") }}
+    {{- if ne (include "sonarqube.webcontext" .) "/" }}
     {{- /* MCP OAuth clients fetch the authorization server metadata at the host root (RFC 8414) */}}
     - path:
         type: PathPrefix

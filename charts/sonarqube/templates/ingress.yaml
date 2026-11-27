@@ -2,7 +2,7 @@
 {{- $serviceName := include "sonarqube.fullname" . -}}
 {{- $servicePort := .Values.service.externalPort -}}
 {{- $webContext := include "sonarqube.webcontext" . -}}
-{{- $mcpOAuthDiscovery := and .Values.mcp.enabled (ne $webContext "/") -}}
+{{- $mcpOAuthDiscovery := ne $webContext "/" -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -34,7 +34,7 @@ spec:
               number: {{ default $servicePort .servicePort }}
         path: {{ .path | default (include "sonarqube.webcontext" $) }}
         pathType: {{ default "ImplementationSpecific" .pathType }}
-      {{- if and $mcpOAuthDiscovery (not .path) }}
+      {{- if and $mcpOAuthDiscovery (not (has .path (list "/" "/*"))) }}
       {{- /* MCP OAuth clients fetch the authorization server metadata at the host root (RFC 8414) */}}
       - backend:
           service:

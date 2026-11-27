@@ -11,7 +11,7 @@ import (
 )
 
 // With a web context, RFC 8414 puts the authorization server metadata of the MCP OAuth issuer at the
-// host root, so the default Ingress and HTTPRoute route that path too when MCP is enabled.
+// host root, so the default Ingress and HTTPRoute route that path too, whether or not the chart runs MCP.
 
 const mcpOAuthDiscoveryPath = "/.well-known/oauth-authorization-server/sonarqube"
 
@@ -92,12 +92,25 @@ func TestMcpOAuthDiscoveryIngress(t *testing.T) {
 				assert.Len(t, ingressPaths(t, chart, nil), 1)
 			})
 
-			t.Run("custom host path adds no path", func(t *testing.T) {
-				assert.Len(t, ingressPaths(t, chart, map[string]string{"sonarWebContext": "/sonarqube/", "ingress.hosts[0].path": "/"}), 1)
-			})
+			for _, rootPath := range []string{"/", "/*"} {
+				t.Run("host root path "+rootPath+" adds no path", func(t *testing.T) {
+					assert.Len(t, ingressPaths(t, chart, map[string]string{"sonarWebContext": "/sonarqube/", "ingress.hosts[0].path": rootPath}), 1)
+				})
+			}
 
-			t.Run("mcp disabled adds no path", func(t *testing.T) {
-				assert.Len(t, ingressPaths(t, chart, map[string]string{"sonarWebContext": "/sonarqube/", "mcp.enabled": "false"}), 1)
+			for _, contextPath := range []string{"/sonarqube", "/sonarqube/*"} {
+				t.Run("custom path "+contextPath+" adds the discovery path", func(t *testing.T) {
+					paths := ingressPaths(t, chart, map[string]string{"sonarWebContext": "/sonarqube/", "ingress.hosts[0].path": contextPath})
+					require.Len(t, paths, 2)
+					assert.Equal(t, contextPath, paths[0].Path)
+					assert.Equal(t, mcpOAuthDiscoveryPath, paths[1].Path)
+				})
+			}
+
+			t.Run("mcp disabled still adds the discovery path", func(t *testing.T) {
+				paths := ingressPaths(t, chart, map[string]string{"sonarWebContext": "/sonarqube/", "mcp.enabled": "false"})
+				require.Len(t, paths, 2)
+				assert.Equal(t, mcpOAuthDiscoveryPath, paths[1].Path)
 			})
 		})
 	}
@@ -117,14 +130,14 @@ func TestMcpOAuthDiscoveryHTTPRoute(t *testing.T) {
 
 			t.Run("custom rules are left as set", func(t *testing.T) {
 				assert.Equal(t, []string{"PathPrefix /bar"}, httpRouteMatches(t, chart, map[string]string{
-					"sonarWebContext":                        "/sonarqube/",
+					"sonarWebContext":                          "/sonarqube/",
 					"httproute.rules[0].matches[0].path.type":  "PathPrefix",
 					"httproute.rules[0].matches[0].path.value": "/bar",
 				}))
 			})
 
-			t.Run("mcp disabled adds no match", func(t *testing.T) {
-				assert.Equal(t, []string{"PathPrefix /sonarqube/"},
+			t.Run("mcp disabled still adds the discovery match", func(t *testing.T) {
+				assert.Equal(t, []string{"PathPrefix /sonarqube/", "PathPrefix " + mcpOAuthDiscoveryPath},
 					httpRouteMatches(t, chart, map[string]string{"sonarWebContext": "/sonarqube/", "mcp.enabled": "false"}))
 			})
 		})
