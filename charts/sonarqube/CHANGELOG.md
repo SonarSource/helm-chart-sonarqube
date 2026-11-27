@@ -21,6 +21,7 @@ All changes to this chart will be documented in this file.
 * Admit the Agent Egress Proxy to SonarQube when `networkPolicy.enabled` and `remediationAgent.enabled` are set, so the Remediation runtime's rule and analysis requests are no longer blocked. The Hunter Agent stays unable to reach SonarQube
 * Admit the Ingress controller or Gateway API data plane to SonarQube when `networkPolicy.enabled` is set, so the UI no longer needs a user-written policy. Set `networkPolicy.ingressController` (`namespaceSelector`, optional `podSelector`) for an Ingress, or `httproute.gatewayNamespace` (another namespace than the release one) for an HTTPRoute. Without them no rule is rendered, as before, and NOTES prints a warning; set `networkPolicy.ingressController` with a `podSelector` for a Gateway data plane in the release namespace
 * Fix the `app.kubernetes.io/version` label when the image tag is pinned with a digest (`<tag>@sha256:<digest>`) or is longer than 63 characters, so Kubernetes no longer rejects the workload
+* Publish the chart to the GitHub Container Registry as an OCI artifact: `oci://ghcr.io/sonarsource/helm-chart-sonarqube/sonarqube`
 
 ## [2026.5.1000]
 * Upgrade Chart's version to 2026.5.1000
