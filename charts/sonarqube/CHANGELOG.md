@@ -2,6 +2,7 @@
 All changes to this chart will be documented in this file.
 
 ## [2026.6.1000]
+* With a web context, route the MCP OAuth discovery path `/.well-known/oauth-authorization-server/<web context>` in every Ingress host whose path is not `/` or `/*`, and in the default HTTPRoute rule
 * Support private CA imports in the Agent Orchestrator while keeping its default read-only root filesystem
 * Install gVisor releases from 20260721 on from their `gvisor.tar.bz2` archive, with `gvisor-bin/` next to `runsc`. Upgrade the default gVisor release to 20261116 and the gVisor installer image to `alpine:3.24.4` (pinned digest), which unpacks the archive. `gvisor.installer.runscVersion` must now be a gVisor release such as `20261116` or `20261116.0`
 * Use `/opt/sonarqube` for all installation paths when `sonarqubeFolder` is empty or null. Preserve nonempty custom paths
