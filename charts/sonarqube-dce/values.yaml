@@ -514,6 +514,7 @@ httproute:
   # hostnames:
   #   - sonarqube.your-org.com
   # The rules are optional, by default we will create one with the SonarWebContext prefix and the SonarQube service values
+  # Custom rules replace it: with mcp.enabled and a web context, also match /.well-known/oauth-authorization-server/<web context>
   # rules:
   # - matches:
   #   - path:
@@ -549,6 +550,7 @@ ingress:
   hosts:
     - name: sonarqube.your-org.com
   #     Different clouds or configurations might need /* as the default path
+  #     With a custom path, mcp.enabled and a web context, also route /.well-known/oauth-authorization-server/<web context>
   #     path: /
       # For additional control over serviceName and servicePort
       # serviceName: someService
@@ -908,6 +910,9 @@ extraConfig:
 # When enabled, a separate MCP server is deployed alongside SonarQube and
 # SonarQube application nodes are automatically configured to connect to it via
 # SONAR_MCP_ENABLED and SONAR_MCP_SERVERURL environment variables.
+# OAuth access to the MCP server requires sonar.core.serverBaseURL (in applicationNodes.sonarProperties)
+# set to the public HTTPS URL, web context included. With a web context, the default Ingress and HTTPRoute
+# also route the OAuth discovery path /.well-known/oauth-authorization-server/<web context>.
 mcp:
   enabled: false
 
