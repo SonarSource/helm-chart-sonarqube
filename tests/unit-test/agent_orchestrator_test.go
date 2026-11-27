@@ -441,11 +441,11 @@ func TestAgentOrchestratorStorageEnv(t *testing.T) {
 			// A FILESYSTEM backend needs no bucket/region (see agent_dependency_validation_test.go
 			// for the matching validation-relaxation case) and hands the base dir through instead.
 			t.Run("FILESYSTEM sets the base dir, no bucket needed", func(t *testing.T) {
-				container := renderAgentOrchestrator(t, chart, map[string]string{
+				container := renderAgentOrchestrator(t, chart, withServerRuntimeFilesystem(chart, map[string]string{
 					"agentOrchestrator.storage.bucket":             "",
 					"agentOrchestrator.storage.type":               "FILESYSTEM",
 					"agentOrchestrator.storage.filesystem.baseDir": "/agentic-storage",
-				}).Spec.Template.Spec.Containers[0]
+				})).Spec.Template.Spec.Containers[0]
 
 				typeEnv := findEnvByName(container, "SONAR_AGENTIC_ORCHESTRATOR_STORAGE_TYPE")
 				require.NotNil(t, typeEnv)

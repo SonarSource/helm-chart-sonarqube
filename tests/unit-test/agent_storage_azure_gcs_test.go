@@ -418,11 +418,11 @@ func TestFilesystemAndNFSWithExistingSecretInjectNoS3Keys(t *testing.T) {
 						assert.Nil(t, findEnvByName(vortex.Spec.Template.Spec.Containers[0], name), name)
 					}
 
-					orchestrator, err := renderAgentOrchestratorDeployment(t, chart, map[string]string{
+					orchestrator, err := renderAgentOrchestratorDeployment(t, chart, withServerRuntimeFilesystem(chart, map[string]string{
 						"agentOrchestrator.storage.type":               storageType,
 						"agentOrchestrator.storage.filesystem.baseDir": "/data",
 						"agentOrchestrator.storage.existingSecret":     "my-secret",
-					})
+					}))
 					require.NoError(t, err)
 					for _, name := range []string{"AGENTIC_STORAGE_ACCESS_KEY", "AGENTIC_STORAGE_SECRET_KEY"} {
 						assert.Nil(t, findEnvByName(orchestrator.Spec.Template.Spec.Containers[0], name), name)

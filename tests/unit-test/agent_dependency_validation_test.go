@@ -357,6 +357,7 @@ func TestOrchestratorStorageBucketRequiredUnlessFileBased(t *testing.T) {
 					values["agentOrchestrator.storage.bucket"] = ""
 					values["agentOrchestrator.storage.type"] = storageType
 					values["agentOrchestrator.storage.filesystem.baseDir"] = "/agentic-storage"
+					withServerRuntimeFilesystem(chart, values)
 					_, err := renderWithValidation(t, chart, values)
 					require.NoError(t, err)
 				})

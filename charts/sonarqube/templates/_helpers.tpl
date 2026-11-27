@@ -1793,7 +1793,7 @@ aren't picked up by plain Configuration.get() consumers (SONAR-31416). Additive:
 for consumers like hunter-agent-unified-app that read them via Spring instead.
 */}}
 {{- define "sonarqube.agentHealthProperties" -}}
-{{- $props := dict -}}
+{{- $props := fromYaml (include "sonarqube.runtimeStorageProperties" .) | default dict -}}
 {{- if .Values.agentOrchestrator.enabled -}}
 {{- $_ := set $props "sonar.hunteragent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
 {{- $_ := set $props "sonar.remediationagent.orchestrator.url" (include "sonarqube.agentOrchestrator.url" .) -}}
@@ -1858,5 +1858,82 @@ Usage: {{- with include "sonarqube.networkPolicy.entryPointRule" . }}{{ . | nind
   ports:
     - port: {{ .Values.service.internalPort }}
       protocol: TCP
+{{- end -}}
+{{- end -}}
+
+{{/* The Server reads job artifacts from the Orchestrator store, independently of Vortex. */}}
+{{- define "sonarqube.runtimeStorageProperties" -}}
+{{- $props := dict -}}
+{{- if .Values.agentOrchestrator.enabled -}}
+{{- $s := .Values.agentOrchestrator.storage -}}
+{{- $prefix := "sonar.agentic.runtime.storage." -}}
+{{- range $key, $value := dict "type" $s.type "bucket" $s.bucket "endpoint" $s.endpoint "region" $s.region "path-style-access" $s.pathStyle -}}
+{{- $_ := set $props (printf "%s%s" $prefix $key) (toString $value) -}}
+{{- end -}}
+{{- if has $s.type (list "FILESYSTEM" "NFS") -}}
+{{- $_ := set $props (printf "%sfilesystem.base-dir" $prefix) $s.filesystem.baseDir -}}
+{{- end -}}
+{{- if eq $s.type "AZURE" -}}
+{{- $_ := set $props (printf "%sazure.container" $prefix) $s.azure.container -}}
+{{- end -}}
+{{- if eq $s.type "GCS" -}}
+{{- $_ := set $props (printf "%sgcs.project-id" $prefix) $s.gcs.projectId -}}
+{{- end -}}
+{{- end -}}
+{{- toYaml $props -}}
+{{- end -}}
+
+{{/* Reuse the writer's Secret keys. Values enter only the properties init container. */}}
+{{- define "sonarqube.runtimeStorageCredentials" -}}
+{{- $credentials := dict -}}
+{{- if .Values.agentOrchestrator.enabled -}}
+{{- $s := .Values.agentOrchestrator.storage -}}
+{{- if and (eq $s.type "S3") (or $s.existingSecret $s.accessKey $s.secretKey) -}}
+{{- $_ := set $credentials "access-key" "AGENTIC_STORAGE_ACCESS_KEY" -}}
+{{- $_ := set $credentials "secret-key" "AGENTIC_STORAGE_SECRET_KEY" -}}
+{{- else if and (eq $s.type "AZURE") (or $s.existingSecret $s.azure.connectionString) -}}
+{{- $_ := set $credentials "azure.connection-string" "SONAR_AGENTIC_ORCHESTRATOR_STORAGE_AZURE_CONNECTION_STRING" -}}
+{{- else if and (eq $s.type "GCS") (or $s.existingSecret $s.gcs.credentialsJson) -}}
+{{- $_ := set $credentials "gcs.credentials-json" "SONAR_AGENTIC_ORCHESTRATOR_STORAGE_GCS_CREDENTIALS_JSON" -}}
+{{- end -}}
+{{- end -}}
+{{- toYaml $credentials -}}
+{{- end -}}
+
+{{- define "sonarqube.runtimeStorageCredentialEnv" -}}
+{{- $ctx := . -}}
+{{- range $suffix, $secretKey := fromYaml (include "sonarqube.runtimeStorageCredentials" .) -}}
+{{- $property := printf "sonar.agentic.runtime.storage.%s" $suffix -}}
+{{- if not (hasKey ($ctx.Values.sonarProperties | default dict) $property) }}
+- name: {{ printf "RUNTIME_STORAGE_%s" ($suffix | upper | replace "." "_" | replace "-" "_") }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ default (include "sonarqube.agentOrchestrator.fullname" $ctx) $ctx.Values.agentOrchestrator.storage.existingSecret }}
+      key: {{ $secretKey }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Escape Java properties without placing credential values in the shell command. */}}
+{{- define "sonarqube.runtimeStorageCredentialScript" -}}
+{{- $ctx := . -}}
+{{- range $suffix, $secretKey := fromYaml (include "sonarqube.runtimeStorageCredentials" .) -}}
+{{- $property := printf "sonar.agentic.runtime.storage.%s" $suffix -}}
+{{- if not (hasKey ($ctx.Values.sonarProperties | default dict) $property) }}
+awk 'BEGIN {
+  value = ENVIRON["{{ printf "RUNTIME_STORAGE_%s" ($suffix | upper | replace "." "_" | replace "-" "_") }}"]
+  printf "{{ $property }}="
+  for (i = 1; i <= length(value); i++) {
+    c = substr(value, i, 1)
+    if (c == "\\") printf "\\\\"
+    else if (c == "\n") printf "\\n"
+    else if (c == "\r") printf "\\r"
+    else if (c == "\t") printf "\\t"
+    else if (c == " ") printf "\\ "
+    else printf "%s", c
+  }
+  printf "\n"
+}' >> /tmp/result/sonar.properties
+{{- end -}}
 {{- end -}}
 {{- end -}}

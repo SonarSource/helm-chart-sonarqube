@@ -567,6 +567,11 @@ metadata:
 data:
   sonar.properties: |
     sonar.agentic.orchestrator.signingKeyPath=/opt/sonarqube/agentic-keys/agentic-shared
+    sonar.agentic.runtime.storage.bucket=agent-artifacts
+    sonar.agentic.runtime.storage.endpoint=
+    sonar.agentic.runtime.storage.path-style-access=false
+    sonar.agentic.runtime.storage.region=eu-west-1
+    sonar.agentic.runtime.storage.type=S3
     sonar.agentic.signing.secretFile=/opt/sonarqube/agentic-secret/instance-secret
     sonar.hunteragent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator.default.svc.cluster.local:8080
     sonar.remediationagent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-dce-agent-orchestrator.default.svc.cluster.local:8080
@@ -1849,8 +1854,9 @@ spec:
         sonarqube.datacenter/type: "app"
       annotations:
         checksum/plugins: 6337deb7401f5563375e563d2c02d06ca297f24e3d5d97be0d160910bc10587b
-        checksum/config: e6737264e9e2468727278299401f18eda32f6b01a1a4f77071fab4ea954b7f2f
+        checksum/config: f31d123fcb27bf23113806bf78007f6eedc5023bf1e233bb40136702157ec580
         checksum/secret: 54b4f2b3a0b58ebf71a6ecad674a958c1bbb05a595832c348654e2e07fafaae0
+        checksum/runtime-storage-secret: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
     spec:
       automountServiceAccountToken: false
       initContainers:
@@ -1870,6 +1876,10 @@ spec:
             fi
             if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
               awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+            fi
+            if [ -f /tmp/props/secret.properties ]; then
+              printf '\n' >> /tmp/result/sonar.properties
+              cat /tmp/props/secret.properties >> /tmp/result/sonar.properties
             fi
           volumeMounts:
             - mountPath: /tmp/props/sonar.properties
@@ -2225,7 +2235,7 @@ spec:
       annotations:
         checksum/init-sysctl: 20a853e197b3fc25dee00325a8f2ec3acc5c41bf6623c1ba015c8a628c40ccbf
         checksum/init-fs: c563d10ff969bfde298932690aa411ded6ce6fb85b53cce7637ffb715e366daf
-        checksum/config: e6737264e9e2468727278299401f18eda32f6b01a1a4f77071fab4ea954b7f2f
+        checksum/config: f31d123fcb27bf23113806bf78007f6eedc5023bf1e233bb40136702157ec580
         checksum/secret: 54b4f2b3a0b58ebf71a6ecad674a958c1bbb05a595832c348654e2e07fafaae0
     spec:
       automountServiceAccountToken: false

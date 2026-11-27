@@ -427,6 +427,11 @@ metadata:
 data:
   sonar.properties: |
     sonar.agentic.orchestrator.signingKeyPath=/opt/sonarqube/agentic-keys/agentic-shared
+    sonar.agentic.runtime.storage.bucket=agent-artifacts
+    sonar.agentic.runtime.storage.endpoint=
+    sonar.agentic.runtime.storage.path-style-access=false
+    sonar.agentic.runtime.storage.region=eu-west-1
+    sonar.agentic.runtime.storage.type=S3
     sonar.agentic.signing.secretFile=/opt/sonarqube/agentic-secret/instance-secret
     sonar.hunteragent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
     sonar.remediationagent.orchestrator.url=http://remediation-agent-values.yaml-sonarqube-agent-orchestrator.default.svc.cluster.local:8080
@@ -1685,10 +1690,11 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: 301f057fe4ace623882c4c8c1f6bb66a02bf27cc847cf2547ecd363d83538151
+        checksum/config: f232c9b2e5ad77b2429deba9ae997edc98f86a77174a7e064d63a5baaf6d2271
         checksum/init-sysctl: 5416299564aaece89f87b1201694c7a4ba821ad17fd566efe8a704f04ca4134e
         checksum/plugins: 78c83ff02062f109d62ae557c0e5eeb9d08f29e17e8c7b13234dda6526241343
         checksum/secret: 8721403a0508cba0b998297d027205b9708d1357acdbca588b46b9c6214f46eb
+        checksum/runtime-storage-secret: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
       labels:
         app: sonarqube
         release: remediation-agent-values.yaml
@@ -1731,6 +1737,10 @@ spec:
               fi
               if [ -f /tmp/props/sonar.properties -a -f /tmp/props/secret.properties ]; then
                 awk 1 /tmp/props/sonar.properties /tmp/props/secret.properties > /tmp/result/sonar.properties
+              fi
+              if [ -f /tmp/props/secret.properties ]; then
+                printf '\n' >> /tmp/result/sonar.properties
+                cat /tmp/props/secret.properties >> /tmp/result/sonar.properties
               fi
           volumeMounts:
             - mountPath: /tmp/result
