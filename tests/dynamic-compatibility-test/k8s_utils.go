@@ -112,7 +112,9 @@ func CheckSonarQubeUpAndRunning(t *testing.T, kubectlOptions *k8s.KubectlOptions
 
 	retries := 15
 	sleep := 5 * time.Second
-	endpoint := fmt.Sprintf("http://%s/api/system/status", tunnel.Endpoint())
+	// tunnel.Endpoint() is a kubectl port-forward target bound to localhost,
+	// never reachable off-box, so plain HTTP here carries no eavesdropping risk.
+	endpoint := fmt.Sprintf("http://%s/api/system/status", tunnel.Endpoint()) // NOSONAR go:S5332 -- loopback-only port-forward tunnel
 	tlsConfig := tls.Config{}
 	http_helper.HttpGetWithRetryWithCustomValidation(
 		t,
