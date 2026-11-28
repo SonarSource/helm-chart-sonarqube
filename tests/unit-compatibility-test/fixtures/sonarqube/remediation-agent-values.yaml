@@ -531,10 +531,30 @@ data:
     # risks clobbering it. The RuntimeClass itself isn't gated by this: it's rendered independently
     # of the installer, so scheduling is unaffected. label-node.sh still runs afterwards so the
     # scheduler admits pods here.
+    # A registered handler without its binaries cannot run pods (e.g. after runsc was removed to
+    # upgrade the node): reinstall them when this installer registered the handler, and fail instead
+    # of labeling the node otherwise.
+    missing_binaries() {
+      local f missing=""
+      for f in runsc containerd-shim-runsc-v1; do
+        command -v "${f}" >/dev/null 2>&1 || missing="${missing} ${f}"
+      done
+      echo "${missing# }"
+    }
+    reinstall=false
     if command -v crictl >/dev/null 2>&1; then
       if crictl_info="$(crictl info 2>/dev/null)" && grep -q "\"${RUNSC_HANDLER}\"" <<<"${crictl_info}"; then
-        echo "[install-gvisor] containerd already exposes the \"${RUNSC_HANDLER}\" runtime; skipping installation"
-        exit 0
+        missing="$(missing_binaries)"
+        if [[ -z "${missing}" ]]; then
+          echo "[install-gvisor] containerd already exposes the \"${RUNSC_HANDLER}\" runtime; skipping installation"
+          exit 0
+        elif [[ -f "${CONTAINERD_CONFIG}" ]] && grep -qF "${RUNSC_MARKER}" "${CONTAINERD_CONFIG}"; then
+          echo "[install-gvisor] containerd exposes the \"${RUNSC_HANDLER}\" runtime registered by this installer, but ${missing} is missing; reinstalling"
+          reinstall=true
+        else
+          echo "[install-gvisor] ERROR: containerd exposes the \"${RUNSC_HANDLER}\" runtime, but ${missing} is not on the node; not labeling it" >&2
+          exit 1
+        fi
       fi
     fi
 
@@ -598,11 +618,12 @@ data:
     }
 
     # Install runsc + containerd shim into /usr/local/bin, world-readable/executable (runsc re-execs
-    # itself as an unprivileged user). Skipped if already present.
-    if command -v runsc >/dev/null 2>&1; then
+    # itself as an unprivileged user). Skipped if already present, unless the pre-flight asked for a
+    # reinstall.
+    if [[ "${reinstall}" != true ]] && command -v runsc >/dev/null 2>&1; then
       echo "[install-gvisor] runsc already present, skipping download"
     elif [[ "${PHASE}" == configure ]]; then
-      echo "[install-gvisor] ERROR: runsc not installed after unpacking gvisor.tar.bz2" >&2
+      echo "[install-gvisor] ERROR: runsc or containerd-shim-runsc-v1 not installed after unpacking gvisor.tar.bz2" >&2
       exit 1
     else
       # Kept for run.sh, which unpacks it and removes the directory.
@@ -793,6 +814,13 @@ data:
       fi
     else
       echo "[install-gvisor] containerd already serving runsc; nothing to do"
+    fi
+
+    # run.sh labels the node once this script succeeds: never succeed without both binaries.
+    missing="$(missing_binaries)"
+    if [[ -n "${missing}" ]]; then
+      echo "[install-gvisor] ERROR: ${missing} not found on the node; not labeling it" >&2
+      exit 1
     fi
 
     echo "[install-gvisor] done"
